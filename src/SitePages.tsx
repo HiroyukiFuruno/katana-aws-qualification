@@ -1,7 +1,6 @@
-import { certifications } from './certifications';
+import { CertificationDirectory } from './CertificationDirectory';
 import { localePath } from './locales';
 import { SiteControls, usePreferences } from './preferences';
-import { levelMessage } from './Roadmap';
 
 export function SiteHeader({ section }: { section: string }) {
   const { locale, t } = usePreferences();
@@ -71,31 +70,14 @@ export function Home() {
 }
 
 export function StudyDirectory() {
-  const { locale, t } = usePreferences();
+  const { t } = usePreferences();
   return (
     <main id="main" className="shell study-directory">
       <div className="intro">
         <h1>{t('chooseCourse')}</h1>
         <p>{t('studyEntry')}</p>
       </div>
-      <ul className="course-grid">
-        {certifications
-          .filter((cert) => cert.course)
-          .map((cert) => (
-            <li key={cert.id}>
-              <a className="entry-card" href={localePath(locale, `study/${cert.id}`)}>
-                <small>
-                  {cert.id.toUpperCase()} · {t(levelMessage[cert.level])}
-                  {cert.beta ? ` · ${t('beta')}` : ''}
-                </small>
-                <h2>{cert.name}</h2>
-                <span className="entry-action">
-                  {t('openCourse')} <span aria-hidden="true">→</span>
-                </span>
-              </a>
-            </li>
-          ))}
-      </ul>
+      <CertificationDirectory mode="study" />
     </main>
   );
 }

@@ -1,3 +1,4 @@
+import { CertificationDirectory } from './CertificationDirectory';
 import { examPrices, pricingUrl } from './certificationPricing';
 import { certificationGuides, officialGuideLink } from './certificationGuides';
 import { certifications } from './certifications';
@@ -14,19 +15,7 @@ export function CertificationPages({ id }: { id?: string }) {
     return (
       <main id="main" className="shell study-directory">
         <h1>{t('certGuides')}</h1>
-        <ul className="course-grid">
-          {certifications.map((entry) => (
-            <li key={entry.id}>
-              <a className="entry-card" href={localePath(locale, `certifications/${entry.id}`)}>
-                <small>
-                  {entry.id.toUpperCase()} · {t(levelMessage[entry.level])}
-                </small>
-                <h2>{entry.name}</h2>
-                <p lang="ja">{entry.focus}</p>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <CertificationDirectory mode="certifications" />
       </main>
     );
   }

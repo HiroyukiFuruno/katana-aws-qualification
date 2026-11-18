@@ -9,7 +9,9 @@ const origin = 'https://kaq.katana-projects.org';
 const template = await readFile('dist/index.html', 'utf8');
 const indexTitles = {
   '': messages.landingTitle,
-  study: messages.chooseCourse,
+  study: messages.study,
+  'study/fundamentals': messages.learnFundamentals,
+  'study/questions': messages.learnFromQuestions,
   assessment: messages.skillsAssessment,
   certifications: messages.certGuides,
   glossary: messages.glossary,

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { certifications, type Course } from './certifications';
 import { Roadmap } from './Roadmap';
-import { Home, NotFound, SiteHeader, StudyDirectory } from './SitePages';
+import { FundamentalsPage, Home, NotFound, SiteHeader, StudyDirectory, StudyPaths } from './SitePages';
 import { localePath } from './locales';
 import { GlossaryPage } from './GlossaryPage';
 import { routeAt } from './routes';
@@ -193,7 +193,7 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
   }, [course]);
 
   const pages = [
-    ['study', t('study')],
+    ['study', t('learnFromQuestions')],
     ['exam', t('exam')],
     ['review', t('review')],
     ['settings', t('settings')],
@@ -453,8 +453,12 @@ function App() {
       <SiteHeader section={section} />
       {selected?.course ? (
         <CourseApp id={selected.id} name={selected.name} course={selected.course} />
-      ) : section === 'study' ? (
+      ) : section === 'study' && courseId === 'questions' ? (
         <StudyDirectory />
+      ) : section === 'study' && courseId === 'fundamentals' ? (
+        <FundamentalsPage />
+      ) : section === 'study' ? (
+        <StudyPaths />
       ) : section === 'certifications' ? (
         <CertificationPages id={courseId} />
       ) : section === 'glossary' ? (

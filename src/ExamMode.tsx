@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { QuestionSetPicker, type QuestionSet } from './QuestionSetPicker';
 import { LearningNotes } from './LearningNotes';
 import type { ExamBlueprint } from './certifications';
 import { saveExam, type Attempt } from './history';
@@ -10,8 +11,9 @@ import {
 
 type Filter = 'all' | 'unanswered' | 'flagged';
 
-export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, examKey }: {
+export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, examKey, sets }: {
   bank: Question[];
+  sets: QuestionSet[];
   archivedBank: Question[];
   blueprint: ExamBlueprint;
   examKey: string;
@@ -29,7 +31,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
   const activeSince = useRef(Date.now());
   const pending = useRef(false);
   const failedAuto = useRef(false);
-  const byKey = new Map([...archivedBank, ...bank].map(question => [questionKey(question), question]));
+  const byKey = new Map([...archivedBank, ...sets.flatMap(set => set.questions), ...bank].map(question => [questionKey(question), question]));
   const questions = draft?.order.map(key => byKey.get(key)).filter(question => question !== undefined) ?? [];
   const correctRevision = draft?.order.length === questions.length;
   const question = questions[draft?.position ?? 0];
@@ -104,8 +106,8 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
     if (expired && correctRevision && !completed && !failedAuto.current) void submit();
   }, [expired, correctRevision, completed, submit]);
 
-  function start() {
-    if (!available) return;
+  function start(count: number, fixed?: QuestionSet) {
+    if (!available && !fixed) return;
     try {
       const current = readExam(examKey);
       const currentCompleted = current && history.some(attempt => attempt.examId === current.id);
@@ -113,7 +115,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
         setDraft(current);
         return;
       }
-      const next = newExam(bank, blueprint);
+      const next = newExam(bank, blueprint, Date.now(), count, fixed?.questions);
       storeExam(examKey, next);
       setDraft(next);
       setNow(Date.now());
@@ -162,7 +164,8 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
         return <div key={category}><dt>{category}</dt><dd>{items.filter(item => item.isCorrect).length} / {items.length}</dd></div>;
       })}
     </dl>
-    <div className="exam-actions"><button className="primary" onClick={start}>もう一度受験する</button>
+    <QuestionSetPicker bank={bank} sets={sets} onStart={start} buttonLabel="次の模擬試験を開始" />
+    <div className="exam-actions">
       <label><input type="checkbox" checked={showAll} onChange={event => setShowAll(event.target.checked)} /> 正解した問題も表示</label></div>
     {error && <p role="alert">{error}</p>}
     <div className="exam-solutions">{attempts.map((attempt, index) => {
@@ -182,12 +185,12 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
   </section>;
 
   if (!draft) return <section className="card">
-    <h2>フル模擬試験</h2>
+    <h2>模擬試験の出題設定</h2>
     <p className="exam-score">{Object.values(blueprint.distribution).reduce((sum, count) => sum + count, 0)}問 / {blueprint.minutes}分</p>
-    <p>試験ガイドの4分野に沿った模試。正誤と解説は提出後に表示します。全問の正答率を集計します。</p>
+    <p>制限時間は選んだ問題数に比例します。正誤と解説は提出後に表示します。</p>
     <p>開始するとカウントダウンが始まり、ページを離れても時間は進みます。</p>
     {!available && <p role="alert">模擬試験に必要な分野別の問題数を満たしていません。</p>}
-    <button className="primary" disabled={!available} onClick={start}>模擬試験を開始</button>
+    <QuestionSetPicker bank={bank} sets={sets} onStart={start} buttonLabel="模擬試験を開始" />
     {error && <p role="alert">{error}</p>}
   </section>;
 

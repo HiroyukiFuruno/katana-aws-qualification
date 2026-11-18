@@ -29,14 +29,14 @@ export function LearningNotes({ question, selected }: { question: Question; sele
       <dt>正解の決め手</dt><dd>{notes.reason}</dd>
       <dt>AWSの仕様と使い分け</dt><dd>{notes.concept}</dd>
     </dl>
-    <details>
+    {notes.check && <details>
       <summary>理解度チェック</summary>
       <p>{notes.check.prompt}</p>
       <details className="learning-answer">
         <summary>考え方を確認</summary>
         <p>{notes.check.answer}</p>
       </details>
-    </details>
+    </details>}
     <a href={question.source.url} target="_blank" rel="noreferrer">{question.source.label} ↗</a>
   </section>;
 }

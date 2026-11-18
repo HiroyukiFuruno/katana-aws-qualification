@@ -11,7 +11,7 @@ export type Question = {
   learning?: {
     reason: string;
     concept: string;
-    check: { prompt: string; answer: string };
+    check?: { prompt: string; answer: string };
   };
 };
 
@@ -32,7 +32,9 @@ export async function loadQuestions(filename: string): Promise<Question[]> {
         !text(question.source?.url) || !question.source.url.startsWith('https://') ||
         (question.learning !== undefined && ![
           question.learning?.reason, question.learning?.concept,
-          question.learning?.check?.prompt, question.learning?.check?.answer,
+        ].every(text)) ||
+        (question.learning?.check !== undefined && ![
+          question.learning.check?.prompt, question.learning.check?.answer,
         ].every(text)) ||
         !Array.isArray(question.choices) || question.choices.length < 2 ||
         !question.choices.every(choice => choice && [choice.id, choice.text, choice.explanation].every(text)) ||

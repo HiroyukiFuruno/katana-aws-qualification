@@ -92,3 +92,9 @@
 | 10 | Auroraのリーダーエンドポイントによる分散が接続単位であることを追記。 |
 
 [AWS公式サンプル問題](https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf)
+
+## 他資格の初回レビュー
+
+2026-11-19に、SAA-C03以外の12コースに追加したオリジナル演習72問を確認した。各問で要件を満たす選択肢が一つに絞れるか、各誤答の解説が設問の前提と一致するか、正答後に確認できる補足があるかを点検した。例えばCodeDeployの問題では初回に移すトラフィック比率を指定し、KMSの問題では管理主体と鍵の種類を明示した。各資格の初回分は全6問で、本試験の出題範囲全体をカバーする模試はSAA-C03に収録している。
+
+[AWS認定 試験ガイド一覧](https://docs.aws.amazon.com/aws-certification/latest/examguides/)

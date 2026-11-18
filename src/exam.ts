@@ -20,7 +20,8 @@ export function canStartExam(questions: Question[], blueprint: ExamBlueprint) {
     questions.filter(question => question.category === category).length >= count);
 }
 
-function shuffle<T>(items: T[]) {
+export function shuffle<T>(source: readonly T[]) {
+  const items = [...source];
   for (let i = items.length - 1; i > 0; i--) {
     const other = Math.floor(Math.random() * (i + 1));
     [items[i], items[other]] = [items[other], items[i]];
@@ -28,14 +29,16 @@ function shuffle<T>(items: T[]) {
   return items;
 }
 
-export function newExam(questions: Question[], blueprint: ExamBlueprint, now = Date.now()): ExamDraft {
-  if (!canStartExam(questions, blueprint)) throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
-  const selected = Object.entries(blueprint.distribution).flatMap(([category, count]) =>
+export function newExam(questions: Question[], blueprint: ExamBlueprint, now = Date.now(), count?: number, fixed?: Question[]): ExamDraft {
+  if (!fixed && !canStartExam(questions, blueprint)) throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
+  const selected = fixed ?? Object.entries(blueprint.distribution).flatMap(([category, count]) =>
     shuffle(questions.filter(question => question.category === category)).slice(0, count));
-  const order = shuffle(selected.map(questionKey));
+  const order = (fixed ?? shuffle(selected).slice(0, count)).map(questionKey);
+  const fullLength = Object.values(blueprint.distribution).reduce((sum, value) => sum + value, 0);
+  const duration = blueprint.minutes * order.length / fullLength;
   return {
     id: crypto.randomUUID(),
-    deadline: now + blueprint.minutes * 60_000,
+    deadline: now + Math.round(duration * 60_000),
     order, position: 0, responses: {},
   };
 }

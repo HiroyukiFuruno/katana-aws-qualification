@@ -16,6 +16,7 @@ export type Course = {
   mock: string;
   archives: string[];
   exam: ExamBlueprint;
+  setSize?: number;
 };
 
 type Certification = {
@@ -30,12 +31,12 @@ type Certification = {
   course?: Course;
 };
 
-export const certifications: Certification[] = [
+const catalog: Certification[] = [
   { id: 'clf-c02', name: 'Cloud Practitioner', level: '基礎', skills: ['fundamentals'], focus: '責任共有、料金、基本サービス' },
   { id: 'aif-c01', name: 'AI Practitioner', level: '基礎', skills: ['ai'], focus: 'AIと生成AIの基礎、責任ある利用' },
   { id: 'saa-c03', name: 'Solutions Architect', level: 'アソシエイト', skills: ['architecture', 'security', 'networking', 'fundamentals'], focus: '可用性・性能・コストを満たす構成設計',
     course: {
-      practice: [{ path: 'courses/saa-c03/mock-questions.json', label: '応用問題' }, { path: 'courses/saa-c03/questions.json', label: '公式サンプルの再構成問題' }],
+      practice: [{ path: 'courses/saa-c03/mock-questions.json', label: 'オリジナル模試 第1回' }, { path: 'courses/saa-c03/questions.json', label: '公式サンプルの再構成問題' }],
       mock: 'courses/saa-c03/mock-questions.json',
       archives: ['courses/saa-c03/mock-questions-v1.json'],
       exam: { minutes: 130, distribution: { セキュリティ: 19, レジリエンス: 17, パフォーマンス: 16, コスト最適化: 13 } },
@@ -52,3 +53,17 @@ export const certifications: Certification[] = [
   { id: 'ans-c01', name: 'Advanced Networking', level: '専門', skills: ['networking', 'operations'], focus: 'ハイブリッド接続、経路、トラブルシューティング', retireOn: '2026-12-31' },
   { id: 'ai-business-strategist', name: 'AI Business Strategist', level: 'ビジネス', skills: ['ai', 'fundamentals'], focus: 'AI導入の判断、ガバナンス、事業成果', beta: true },
 ];
+
+const starterCourseIds = new Set(['clf-c02', 'aif-c01', 'dva-c02', 'soa-c03', 'dea-c01', 'mla-c01', 'sap-c02', 'dop-c02', 'aip-c01', 'scs-c03', 'ans-c01', 'ai-business-strategist']);
+
+export const certifications: Certification[] = catalog.map(certification => {
+  if (certification.course || !starterCourseIds.has(certification.id)) return certification;
+  const bank = 'courses/' + certification.id + '/questions.json';
+  return { ...certification, course: {
+    practice: [{ path: bank, label: 'オリジナル演習' }],
+    mock: bank,
+    archives: [],
+    exam: { minutes: 12, distribution: { [certification.focus]: 6 } },
+    setSize: 3,
+  } };
+});

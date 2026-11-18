@@ -1,7 +1,10 @@
+import { SiteFooter } from "./SiteFooter";
 import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { certifications, type Course } from './certifications';
 import { Roadmap } from './Roadmap';
+import { QuestionSetPicker, type QuestionSet } from './QuestionSetPicker';
+import { shuffle } from './exam';
 import { ExamMode } from './ExamMode';
 import { QuestionCard } from './QuestionCard';
 import { examKeyFor, exportHistory, historyKey, readHistory, resetHistory, saveAttempt, statsFor, type Attempt, type Mode } from './history';
@@ -47,6 +50,15 @@ function Settings({ count, onReset, onExport }: { count: number; onReset: () => 
 function CourseApp({ id, course, onHome }: { id: string; course: Course; onHome: () => void }) {
   const [practiceSets, setPracticeSets] = useState<{ label: string; questions: Question[] }[]>([]);
   const questions = practiceSets.flatMap(set => set.questions);
+  const questionSets: QuestionSet[] = practiceSets.flatMap(set => {
+    const size = course.setSize;
+    if (!size) return [set];
+    return Array.from({ length: Math.ceil(set.questions.length / size) }, (_, index) => ({
+      label: `${set.label} 第${index + 1}回`,
+      questions: set.questions.slice(index * size, (index + 1) * size),
+    }));
+  });
+  const randomBank = [...new Map(questions.map(question => [questionKey(question), question])).values()];
 
   const [mockBank, setMockBank] = useState<Question[]>([]);
   const [archivedBank, setArchivedBank] = useState<Question[]>([]);
@@ -166,8 +178,8 @@ function CourseApp({ id, course, onHome }: { id: string; course: Course; onHome:
       </div>
       {notice && <p className="notice" role="status">{notice}</p>}
       {page === 'settings' ? <Settings count={courseHistory.length} onReset={reset} onExport={download} /> :
-        page === 'exam' ? mockError ? <p role="alert">{mockError}</p> :
-          mockBank.length ? <ExamMode examKey={examKeyFor(id)} blueprint={course.exam} bank={mockBank} archivedBank={archivedBank} history={history} onSaved={updateExamHistory} /> :
+        page === 'exam' ? mockError || loadingError ? <p role="alert">{mockError || loadingError}</p> :
+          mockBank.length && questions.length ? <ExamMode sets={questionSets} examKey={examKeyFor(id)} blueprint={course.exam} bank={mockBank} archivedBank={archivedBank} history={history} onSaved={updateExamHistory} /> :
             <p role="status">模擬試験の問題を読み込んでいます。</p> :
         loadingError ? <p className="notice" role="alert">{loadingError}</p> :
         !questions.length ? <p role="status">問題を読み込んでいます。</p> :
@@ -189,10 +201,9 @@ function CourseApp({ id, course, onHome }: { id: string; course: Course; onHome:
           </> : <p>現在の問題セットに誤答履歴はありません。</p>}
         </section> : <section className="card">
           <h2>問題セット</h2>
-          {practiceSets.map(({ label, questions }) => <div className="practice-set" key={label}>
-            <p>{label} · {questions.length}問</p>
-            <button className="primary" onClick={() => start(questions)}>{label}を解く</button>
-          </div>)}
+          <QuestionSetPicker bank={randomBank} sets={questionSets} buttonLabel="学習を始める"
+            onStart={(count, fixed) => start(fixed?.questions ?? shuffle(randomBank).slice(0, count))} />
+          <p><a href="https://aws.amazon.com/certification/certification-prep/" target="_blank" rel="noreferrer">AWS公式の練習問題・模試</a></p>
         </section>}
     </main>
   </>;
@@ -202,9 +213,9 @@ function App() {
   const [courseId, setCourseId] = useState<string>();
   const selected = certifications.find(cert => cert.id === courseId);
   useEffect(() => { window.scrollTo(0, 0); }, [courseId]);
-  if (selected?.course) return <CourseApp key={selected.id} id={selected.id}
-    course={selected.course} onHome={() => setCourseId(undefined)} />;
   return <>
+    {selected?.course ? <CourseApp key={selected.id} id={selected.id}
+      course={selected.course} onHome={() => setCourseId(undefined)} /> : <>
     <header><div className="shell topbar"><a className="brand" href="./">KatanA<span> AWS</span></a></div></header>
     <main className="shell">
       <div className="intro"><p className="eyebrow">AWS CERTIFICATION</p>
@@ -213,6 +224,8 @@ function App() {
       </div>
       <Roadmap onStudy={setCourseId} />
     </main>
+    </>}
+    <SiteFooter />
   </>;
 }
 

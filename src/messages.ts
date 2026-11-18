@@ -1,6 +1,30 @@
 import type { Locale } from './locales';
 
 export const messages = {
+  glossary: {
+    ja: 'AWS用語集',
+    en: 'AWS glossary',
+    'zh-CN': 'AWS 术语表',
+    'zh-TW': 'AWS 術語表',
+    ko: 'AWS 용어집',
+    pt: 'Glossário da AWS',
+    fr: 'Glossaire AWS',
+    de: 'AWS-Glossar',
+    es: 'Glosario de AWS',
+    it: 'Glossario AWS',
+  },
+  glossaryIntro: {
+    ja: 'AWS認定の学習で出てくる略語と、設計や運用の判断に必要な用語をアルファベット順で確認できます。解説は日本語です。',
+    en: 'AWS certification acronyms and concepts in alphabetical order, with explanations in Japanese.',
+    'zh-CN': '按字母顺序查阅 AWS 认证缩写和概念，释义为日语。',
+    'zh-TW': '按字母順序查閱 AWS 認證縮寫和概念，釋義為日文。',
+    ko: 'AWS 자격증의 약어와 개념을 알파벳순으로 확인하세요. 설명은 일본어입니다.',
+    pt: 'Siglas e conceitos da certificação AWS em ordem alfabética, com explicações em japonês.',
+    fr: 'Sigles et concepts de la certification AWS par ordre alphabétique, avec des explications en japonais.',
+    de: 'Abkürzungen und Konzepte der AWS-Zertifizierung in alphabetischer Reihenfolge, mit Erklärungen auf Japanisch.',
+    es: 'Siglas y conceptos de certificación de AWS en orden alfabético, con explicaciones en japonés.',
+    it: 'Sigle e concetti della certificazione AWS in ordine alfabetico, con spiegazioni in giapponese.',
+  },
   certPricing: {
     ja: 'AWS公式の料金表',
     en: 'Official AWS pricing',

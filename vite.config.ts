@@ -1,8 +1,9 @@
 import { defineConfig, loadEnv, type HtmlTagDescriptor } from 'vite';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, isPreview, mode }) => {
   const env = loadEnv(mode, process.cwd());
   return {
+    appType: command === 'serve' && !isPreview ? 'spa' : 'mpa',
     plugins: [
       {
         name: 'google-site-integrations',

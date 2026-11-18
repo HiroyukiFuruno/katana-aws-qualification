@@ -3,17 +3,17 @@ import { join } from 'node:path';
 import { certifications } from '../src/certifications.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
+import { publishedPages } from '../src/routes.ts';
 
 const origin = 'https://kaq.katana-projects.org';
 const template = await readFile('dist/index.html', 'utf8');
-const entries = [
-  '',
-  'study',
-  'assessment',
-  'certifications',
-  ...certifications.map((cert) => `certifications/${cert.id}`),
-  ...certifications.filter((cert) => cert.course).map((cert) => `study/${cert.id}`),
-];
+const indexTitles = {
+  '': messages.landingTitle,
+  study: messages.chooseCourse,
+  assessment: messages.skillsAssessment,
+  certifications: messages.certGuides,
+  glossary: messages.glossary,
+};
 const published: string[] = [];
 
 function escapeHtml(value: string) {
@@ -25,27 +25,22 @@ function escapeHtml(value: string) {
 }
 
 for (const locale of locales) {
-  for (const entry of entries) {
+  for (const entry of publishedPages) {
     const path = localePath(locale, entry);
     const certification = certifications.find((cert) => cert.id === entry.split('/')[1]);
-    const baseTitle =
-      entry === ''
-        ? messages.landingTitle[locale]
-        : entry === 'study'
-          ? messages.chooseCourse[locale]
-          : entry === 'assessment'
-            ? messages.skillsAssessment[locale]
-            : entry === 'certifications'
-              ? messages.certGuides[locale]
-              : certification && `${certification.name} (${certification.id.toUpperCase()})`;
+    const baseTitle = Object.hasOwn(indexTitles, entry)
+      ? indexTitles[entry as keyof typeof indexTitles][locale]
+      : certification && `${certification.name} (${certification.id.toUpperCase()})`;
     if (!baseTitle) throw new Error(`Missing title for ${entry}`);
-    const alternateLinks = locales
+    const alternateLinks = [...locales, 'x-default']
       .map(
         (alternate) =>
-          `<link rel="alternate" hreflang="${alternate}" href="${origin}${localePath(alternate, entry)}">`,
+          `<link rel="alternate" hreflang="${alternate}" href="${origin}${localePath(alternate === 'x-default' ? 'en' : alternate, entry)}">`,
       )
       .join('\n');
-    const description = escapeHtml(messages.landingIntro[locale]);
+    const description = escapeHtml(
+      (entry === 'glossary' ? messages.glossaryIntro : messages.landingIntro)[locale],
+    );
     const html = template
       .replace('lang="en"', `lang="${locale}"`)
       .replace(

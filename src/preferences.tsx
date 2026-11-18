@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { localeAt, localePath, locales, pageAt, type Locale } from './locales';
+import { localePath, locales, type Locale } from './locales';
 import { messages, type Message } from './messages';
+import { routeAt } from './routes';
 
 const labels = [
   'English',
@@ -46,9 +47,9 @@ const Preferences = createContext<{
 });
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState(() => localeAt(location.pathname));
+  const [locale, setLocale] = useState(() => routeAt(location.pathname)?.locale ?? 'en');
   useEffect(() => {
-    const onPopState = () => setLocale(localeAt(location.pathname));
+    const onPopState = () => setLocale(routeAt(location.pathname)?.locale ?? 'en');
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -58,7 +59,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   function changeLocale(next: Locale) {
     if (next === locale) return;
-    const path = localePath(next, pageAt(location.pathname));
+    const path = localePath(next, routeAt(location.pathname)?.page);
     history.pushState(null, '', path + location.search + location.hash);
     writePreference(localeKey, next);
     setLocale(next);

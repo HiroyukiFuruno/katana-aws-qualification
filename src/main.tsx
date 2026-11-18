@@ -7,8 +7,10 @@ import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { certifications, type Course } from './certifications';
 import { Roadmap } from './Roadmap';
-import { Home, SiteHeader, StudyDirectory } from './SitePages';
-import { localePath, pageAt } from './locales';
+import { Home, NotFound, SiteHeader, StudyDirectory } from './SitePages';
+import { localePath } from './locales';
+import { GlossaryPage } from './GlossaryPage';
+import { routeAt } from './routes';
 import { QuestionSetPicker, type QuestionSet } from './QuestionSetPicker';
 import { selectExamQuestions, shuffle } from './exam';
 import { ExamMode } from './ExamMode';
@@ -417,8 +419,9 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
 function App() {
   useEffect(initializeAnalytics, []);
   const { t, locale } = usePreferences();
-  const page = pageAt(location.pathname);
-  const [section, courseId] = page.split('/');
+  const route = routeAt(location.pathname);
+  if (!route) return <NotFound />;
+  const [section, courseId] = route.page.split('/');
   const selected = section === 'study' ? certifications.find((cert) => cert.id === courseId) : undefined;
 
   return (
@@ -430,6 +433,8 @@ function App() {
         <StudyDirectory />
       ) : section === 'certifications' ? (
         <CertificationPages id={courseId} />
+      ) : section === 'glossary' ? (
+        <GlossaryPage />
       ) : section === 'assessment' ? (
         <main className="shell" id="main">
           <div className="intro">

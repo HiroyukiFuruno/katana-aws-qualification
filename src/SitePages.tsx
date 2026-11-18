@@ -32,6 +32,12 @@ export function SiteHeader({ section }: { section: string }) {
           >
             {t('certGuides')}
           </a>
+          <a
+            href={localePath(locale, 'glossary')}
+            aria-current={section === 'glossary' ? 'page' : undefined}
+          >
+            {t('glossary')}
+          </a>
         </nav>
         <SiteControls />
       </div>
@@ -39,13 +45,34 @@ export function SiteHeader({ section }: { section: string }) {
   );
 }
 
+export function NotFound() {
+  return (
+    <main id="main" className="shell">
+      <h1>404 — Page not found</h1>
+      <a href={localePath('en')}>KatanA AWS Qualification</a>
+    </main>
+  );
+}
+
 export function Home() {
   const { locale, t } = usePreferences();
+  const title = t('landingTitle');
+  const phraseBoundary = locale === 'ja' ? title.indexOf('、') + 1 : 0;
   return (
     <main id="main" className="landing">
       <section className="landing-hero">
         <div className="shell">
-          <h1>{t('landingTitle')}</h1>
+          <h1>
+            {phraseBoundary > 0 ? (
+              <>
+                {title.slice(0, phraseBoundary)}
+                <wbr />
+                {title.slice(phraseBoundary)}
+              </>
+            ) : (
+              title
+            )}
+          </h1>
           <p>{t('landingIntro')}</p>
         </div>
       </section>

@@ -16,6 +16,7 @@ export function SiteFooter() {
           <a href={localePath(locale, 'study')}>{t('study')}</a>
           <a href={localePath(locale, 'assessment')}>{t('skillsAssessment')}</a>
           <a href={localePath(locale, 'certifications')}>{t('certGuides')}</a>
+          <a href={localePath(locale, 'glossary')}>{t('glossary')}</a>
         </nav>
       </div>
     </footer>

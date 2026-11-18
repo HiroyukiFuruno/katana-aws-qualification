@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
-import { localeAt, localePath, locales, pageAt } from '../src/locales.ts';
+import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
+import { publishedPages, routeAt } from '../src/routes.ts';
 
 function tokens(value: string) {
   return [...value.matchAll(/\{(\w+)\}/g)].map(([, name]) => name).sort();
@@ -29,10 +30,20 @@ for (const file of (await readdir('src')).filter((name) => name.endsWith('.tsx')
 }
 
 for (const locale of locales) {
-  for (const page of ['', 'assessment', 'study', 'study/saa-c03']) {
+  for (const page of publishedPages) {
     const path = localePath(locale, page);
-    assert.equal(localeAt(path), locale);
-    assert.equal(pageAt(path), page);
+    assert.deepEqual(routeAt(path), { locale, page }, path);
+    if (path !== '/') assert.deepEqual(routeAt(path.slice(0, -1)), { locale, page }, path);
   }
+}
+for (const missing of [
+  '/en/',
+  '/en/study/',
+  '/xx/',
+  '/ja/study/missing/',
+  '/assessment/extra/',
+  '/ja//glossary/',
+]) {
+  assert.equal(routeAt(missing), undefined, missing);
 }
 console.log(`Validated ${Object.keys(messages).length} messages and ${locales.length} locale routes`);

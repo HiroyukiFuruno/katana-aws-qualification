@@ -5,6 +5,10 @@ import { levelMessage } from './Roadmap';
 
 const nameOrder = new Intl.Collator('en', { sensitivity: 'base' });
 
+function examVersion(id: string) {
+  return Number(id.match(/-c(\d+)$/)?.[1] ?? Infinity);
+}
+
 export function CertificationDirectory({ mode }: { mode: 'certifications' | 'study' }) {
   const { locale, t } = usePreferences();
   const visible = certifications.filter((cert) => mode === 'certifications' || cert.course);
@@ -12,7 +16,7 @@ export function CertificationDirectory({ mode }: { mode: 'certifications' | 'stu
   return Object.entries(levelMessage).map(([level, label]) => {
     const group = visible
       .filter((cert) => cert.level === level)
-      .sort((a, b) => nameOrder.compare(a.name, b.name));
+      .sort((a, b) => examVersion(a.id) - examVersion(b.id) || nameOrder.compare(a.name, b.name));
     if (!group.length) return null;
 
     return (

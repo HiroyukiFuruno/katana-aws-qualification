@@ -55,6 +55,7 @@ export function SiteFooter() {
         <nav aria-label={t('footerNavigation')}>
           <a href={localePath(locale, 'study')}>{t('study')}</a>
           <a href={localePath(locale, 'assessment')}>{t('skillsAssessment')}</a>
+          <a href={localePath(locale, 'certifications')}>{t('certGuides')}</a>
         </nav>
         <details>
           <summary>{t('privacy')}</summary>

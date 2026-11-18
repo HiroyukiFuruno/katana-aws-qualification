@@ -27,6 +27,12 @@ export function SiteHeader({ section }: { section: string }) {
           >
             {t('skillsAssessment')}
           </a>
+          <a
+            href={localePath(locale, 'certifications')}
+            aria-current={section === 'certifications' ? 'location' : undefined}
+          >
+            {t('certGuides')}
+          </a>
         </nav>
         <SiteControls />
       </div>

@@ -10,6 +10,8 @@ const entries = [
   '',
   'study',
   'assessment',
+  'certifications',
+  ...certifications.map((cert) => `certifications/${cert.id}`),
   ...certifications.filter((cert) => cert.course).map((cert) => `study/${cert.id}`),
 ];
 const published: string[] = [];
@@ -32,7 +34,9 @@ for (const locale of locales) {
           ? messages.chooseCourse[locale]
           : entry === 'assessment'
             ? messages.skillsAssessment[locale]
-            : entry.split('/')[1].toUpperCase();
+            : entry === 'certifications'
+              ? messages.certGuides[locale]
+              : entry.split('/')[1].toUpperCase();
     const alternateLinks = locales
       .map(
         (alternate) =>

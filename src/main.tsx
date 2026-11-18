@@ -1,3 +1,4 @@
+import { CertificationPages } from './CertificationPages';
 import type { Message } from './messages';
 import { usePreferences, PreferencesProvider } from './preferences';
 import { SiteFooter } from './SiteFooter';
@@ -421,6 +422,8 @@ function App() {
         <CourseApp id={selected.id} course={selected.course} />
       ) : section === 'study' ? (
         <StudyDirectory />
+      ) : section === 'certifications' ? (
+        <CertificationPages id={courseId} />
       ) : section === 'assessment' ? (
         <main className="shell" id="main">
           <div className="intro">

@@ -11,7 +11,7 @@ export function SiteHeader({ section }: { section: string }) {
       </a>
       <div className="shell topbar">
         <a className="brand" href={localePath(locale)}>
-          KatanA<span> AWS</span>
+          KatanA<span> AWS Qualification</span>
         </a>
         <nav className="site-navigation" aria-label={t('navigation')}>
           <a

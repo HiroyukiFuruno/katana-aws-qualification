@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="shell footer-grid">
         <div className="footer-brand">
           <a className="brand" href={localePath(locale)}>
-            KatanA<span> AWS</span>
+            KatanA<span> AWS Qualification</span>
           </a>
           <a href={`https://katana-series.katana-projects.org${localePath(locale)}`}>{t('series')}</a>
         </div>

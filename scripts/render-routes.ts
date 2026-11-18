@@ -48,7 +48,10 @@ for (const locale of locales) {
     const description = escapeHtml(messages.landingIntro[locale]);
     const html = template
       .replace('lang="en"', `lang="${locale}"`)
-      .replace(/<title>[^<]+<\/title>/, `<title>${escapeHtml(baseTitle)} | KatanA AWS</title>`)
+      .replace(
+        /<title>[^<]+<\/title>/,
+        `<title>${escapeHtml(baseTitle)} | KatanA AWS Qualification</title>`,
+      )
       .replace(
         /<meta name="description" content="[^"]*">/,
         `<meta name="description" content="${description}">`,

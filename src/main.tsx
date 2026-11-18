@@ -450,7 +450,7 @@ function App() {
 
   return (
     <>
-      <SiteHeader section={section} />
+      <SiteHeader section={section} subpage={courseId} />
       {selected?.course ? (
         <CourseApp id={selected.id} name={selected.name} course={selected.course} />
       ) : section === 'study' && courseId === 'questions' ? (

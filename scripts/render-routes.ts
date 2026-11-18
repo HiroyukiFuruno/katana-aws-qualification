@@ -27,6 +27,7 @@ function escapeHtml(value: string) {
 for (const locale of locales) {
   for (const entry of entries) {
     const path = localePath(locale, entry);
+    const certification = certifications.find((cert) => cert.id === entry.split('/')[1]);
     const baseTitle =
       entry === ''
         ? messages.landingTitle[locale]
@@ -36,7 +37,8 @@ for (const locale of locales) {
             ? messages.skillsAssessment[locale]
             : entry === 'certifications'
               ? messages.certGuides[locale]
-              : entry.split('/')[1].toUpperCase();
+              : certification && `${certification.name} (${certification.id.toUpperCase()})`;
+    if (!baseTitle) throw new Error(`Missing title for ${entry}`);
     const alternateLinks = locales
       .map(
         (alternate) =>

@@ -52,7 +52,7 @@ const catalog: Certification[] = [
   },
   {
     id: 'saa-c03',
-    name: 'Solutions Architect',
+    name: 'Solutions Architect – Associate',
     level: 'アソシエイト',
     skills: ['architecture', 'security', 'networking', 'fundamentals'],
     focus: '可用性・性能・コストを満たす構成設計',
@@ -100,7 +100,7 @@ const catalog: Certification[] = [
   },
   {
     id: 'sap-c03',
-    name: 'Solutions Architect',
+    name: 'Solutions Architect – Professional',
     level: 'プロフェッショナル',
     skills: ['architecture', 'networking', 'security', 'operations'],
     focus: '組織横断の設計、移行、複雑な構成',

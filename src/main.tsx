@@ -89,7 +89,7 @@ function Settings({
   );
 }
 
-function CourseApp({ id, course }: { id: string; course: Course }) {
+function CourseApp({ id, name, course }: { id: string; name: string; course: Course }) {
   const { t, locale } = usePreferences();
   const [practiceSets, setPracticeSets] = useState<{ label: Message; questions: Question[] }[]>([]);
   const questions = practiceSets.flatMap((set) => set.questions);
@@ -258,7 +258,9 @@ function CourseApp({ id, course }: { id: string; course: Course }) {
       </div>
       <main className="shell" id="main">
         <div className="intro">
-          <p className="eyebrow">AWS CERTIFICATION / {id.toUpperCase()}</p>
+          <p className="eyebrow">
+            {name} · {id.toUpperCase()}
+          </p>
           <h1>{pages.find(([id]) => page === id)?.[1]}</h1>
           {page === 'study' && <p>{t('studyIntro')}</p>}
           {page === 'review' && <p>{t('reviewIntro')}</p>}
@@ -423,7 +425,7 @@ function App() {
     <>
       <SiteHeader section={section} />
       {selected?.course ? (
-        <CourseApp id={selected.id} course={selected.course} />
+        <CourseApp id={selected.id} name={selected.name} course={selected.course} />
       ) : section === 'study' ? (
         <StudyDirectory />
       ) : section === 'certifications' ? (

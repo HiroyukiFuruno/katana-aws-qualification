@@ -46,7 +46,7 @@ function StudyNavigation({ active, subpage }: { active: boolean; subpage?: strin
         ref={button}
         type="button"
       >
-        {t('study')}
+        {t(locale === 'ja' ? 'studyTab' : 'study')}
       </button>
       <ul className="study-navigation-links" hidden={!open} id="study-navigation-links">
         <li>

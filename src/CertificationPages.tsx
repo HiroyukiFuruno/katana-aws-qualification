@@ -1,4 +1,5 @@
-import { certificationGuides } from './certificationGuides';
+import { examPrices, pricingUrl } from './certificationPricing';
+import { certificationGuides, officialGuideLink } from './certificationGuides';
 import { certifications } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
@@ -30,6 +31,11 @@ export function CertificationPages({ id }: { id?: string }) {
     );
   }
 
+  const price = examPrices(certification, locale);
+  const official = officialGuideLink(guide.path, locale);
+  const difficulty = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(
+    guide.difficulty,
+  );
   return (
     <main id="main" className="shell">
       <div className="intro">
@@ -43,11 +49,36 @@ export function CertificationPages({ id }: { id?: string }) {
         <h1>{certification.name}</h1>
       </div>
       <article className="card">
+        <h2>{t('certFee')}</h2>
+        <p>
+          {price.beta && (
+            <>
+              {t('certFeeBeta')} · <strong>{price.beta}</strong>
+              <br />
+              {t('certFeeStandard')} ·{' '}
+            </>
+          )}
+          <strong>{price.standard}</strong>
+          {' · '}
+          <a href={pricingUrl(locale)}>{t('certPricing')}</a>
+        </p>
         <h2>{t('certScope')}</h2>
         <p lang="ja">{guide.scope}</p>
-        <h2>
-          {t('certDifficulty')} · {guide.difficulty}/5
-        </h2>
+        <h2>{t('certDifficulty')}</h2>
+        <div
+          className="difficulty-rating"
+          role="img"
+          aria-label={`${t('certDifficulty')} ${difficulty}/5`}
+        >
+          <span aria-hidden="true">★★★★★</span>
+          <span
+            className="difficulty-rating-fill"
+            aria-hidden="true"
+            style={{ width: `${guide.difficulty * 20}%` }}
+          >
+            ★★★★★
+          </span>
+        </div>
         <p lang="ja">{guide.why}</p>
         <h2>{t('certAudience')}</h2>
         <p lang="ja">{guide.audience}</p>
@@ -57,10 +88,7 @@ export function CertificationPages({ id }: { id?: string }) {
               {t('openCourse')}
             </a>
           )}
-          <a
-            className="entry-action"
-            href={`https://docs.aws.amazon.com/aws-certification/latest/${guide.path}.html`}
-          >
+          <a className="entry-action" href={official.href} hrefLang={official.language}>
             {t('certOfficial')}
           </a>
         </div>

@@ -1,3 +1,4 @@
+import { AnalyticsSettings, initializeAnalytics } from './AnalyticsSettings';
 import { CertificationPages } from './CertificationPages';
 import type { Message } from './messages';
 import { usePreferences, PreferencesProvider } from './preferences';
@@ -82,6 +83,8 @@ function Settings({
           </button>
         </div>
       </dialog>
+      <hr />
+      <AnalyticsSettings />
     </section>
   );
 }
@@ -410,6 +413,7 @@ function CourseApp({ id, course }: { id: string; course: Course }) {
 }
 
 function App() {
+  useEffect(initializeAnalytics, []);
   const { t, locale } = usePreferences();
   const page = pageAt(location.pathname);
   const [section, courseId] = page.split('/');

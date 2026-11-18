@@ -1,6 +1,8 @@
+import type { Locale } from './locales';
+
 type CertificationGuide = {
   scope: string;
-  difficulty: 1 | 2 | 3 | 4 | 5;
+  difficulty: number;
   why: string;
   audience: string;
   path: string;
@@ -41,7 +43,7 @@ export const certificationGuides: Record<string, CertificationGuide> = {
     difficulty: 3,
     why: '症状から原因を切り分け、運用の制約に合う復旧・改善方法を選びます。',
     audience: 'クラウド運用担当者や、監視と障害対応を体系化したいSRE。',
-    path: 'cloudops-engineer-associate-03',
+    path: 'sysops-administrator-associate-03',
   },
   'dea-c01': {
     scope: 'データの取り込み、変換、保存、パイプライン運用、アクセス管理を扱います。',
@@ -102,3 +104,42 @@ export const certificationGuides: Record<string, CertificationGuide> = {
     path: 'ai-business-strategist-01',
   },
 };
+
+// AWS sometimes serves English content under a localized URL. These editions
+// were checked against the language of the guide itself.
+const guideLocales: Readonly<Record<string, readonly Locale[]>> = {
+  'cloud-practitioner-02': ['ja', 'zh-CN', 'zh-TW', 'ko', 'pt', 'fr', 'de', 'es', 'it'],
+  'ai-practitioner-01': ['ja', 'zh-CN', 'zh-TW', 'ko', 'pt', 'fr', 'de', 'es', 'it'],
+  'solutions-architect-associate-03': ['ja', 'zh-CN', 'zh-TW', 'ko', 'pt', 'fr', 'es', 'it'],
+  'developer-associate-02': ['ja', 'zh-CN', 'ko', 'pt', 'es'],
+  'data-engineer-associate-01': ['ja', 'zh-CN', 'ko'],
+  'machine-learning-engineer-associate-01': ['ja', 'zh-CN', 'ko'],
+  'solutions-architect-professional-03': ['zh-CN'],
+  'devops-engineer-professional-02': ['ja', 'zh-CN', 'ko'],
+  'ai-professional-01': ['ja', 'zh-CN', 'ko'],
+  'security-specialty-03': ['ja', 'zh-CN', 'ko', 'pt', 'es'],
+  'advanced-networking-specialty-01': ['ja', 'zh-CN', 'ko'],
+  'ai-business-strategist-01': ['ja', 'zh-CN', 'ko', 'pt', 'es'],
+  'sysops-administrator-associate-03': ['ja', 'zh-CN', 'ko'],
+};
+
+const awsDocsLocales: Partial<Record<Locale, string>> = {
+  ja: 'ja_jp',
+  'zh-CN': 'zh_cn',
+  'zh-TW': 'zh_tw',
+  ko: 'ko_kr',
+  pt: 'pt_br',
+  fr: 'fr_fr',
+  de: 'de_de',
+  es: 'es_es',
+  it: 'it_it',
+};
+
+export function officialGuideLink(path: string, locale: Locale) {
+  const language = guideLocales[path]?.includes(locale) ? locale : 'en';
+  const prefix = awsDocsLocales[language];
+  return {
+    language,
+    href: `https://docs.aws.amazon.com/${prefix ? `${prefix}/` : ''}aws-certification/latest/${path}/${path}.html`,
+  };
+}

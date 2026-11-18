@@ -16,8 +16,10 @@ export type ExamDraft = {
 };
 
 export function canStartExam(questions: Question[], blueprint: ExamBlueprint) {
-  return Object.entries(blueprint.distribution).every(([category, count]) =>
-    questions.filter(question => question.category === category).length >= count);
+  return Object.entries(blueprint.distribution).every(
+    ([category, count]) =>
+      questions.filter((question) => question.category === category).length >= count,
+  );
 }
 
 export function shuffle<T>(source: readonly T[]) {
@@ -29,17 +31,29 @@ export function shuffle<T>(source: readonly T[]) {
   return items;
 }
 
-export function newExam(questions: Question[], blueprint: ExamBlueprint, now = Date.now(), count?: number, fixed?: Question[]): ExamDraft {
-  if (!fixed && !canStartExam(questions, blueprint)) throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
-  const selected = fixed ?? Object.entries(blueprint.distribution).flatMap(([category, count]) =>
-    shuffle(questions.filter(question => question.category === category)).slice(0, count));
+export function newExam(
+  questions: Question[],
+  blueprint: ExamBlueprint,
+  now = Date.now(),
+  count?: number,
+  fixed?: Question[],
+): ExamDraft {
+  if (!fixed && !canStartExam(questions, blueprint))
+    throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
+  const selected =
+    fixed ??
+    Object.entries(blueprint.distribution).flatMap(([category, count]) =>
+      shuffle(questions.filter((question) => question.category === category)).slice(0, count),
+    );
   const order = (fixed ?? shuffle(selected).slice(0, count)).map(questionKey);
   const fullLength = Object.values(blueprint.distribution).reduce((sum, value) => sum + value, 0);
-  const duration = blueprint.minutes * order.length / fullLength;
+  const duration = (blueprint.minutes * order.length) / fullLength;
   return {
     id: crypto.randomUUID(),
     deadline: now + Math.round(duration * 60_000),
-    order, position: 0, responses: {},
+    order,
+    position: 0,
+    responses: {},
   };
 }
 
@@ -55,7 +69,8 @@ export function storeExam(examKey: string, draft: ExamDraft) {
 export function remainingLabel(deadline: number, now: number) {
   const seconds = Math.max(0, Math.ceil((deadline - now) / 1000));
   return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
-    .map(value => String(value).padStart(2, '0')).join(':');
+    .map((value) => String(value).padStart(2, '0'))
+    .join(':');
 }
 
 export function getResponse(draft: ExamDraft, key: string): ExamResponse {

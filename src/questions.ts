@@ -19,30 +19,44 @@ export const questionKey = (question: Pick<Question, 'id' | 'revision'>) =>
   JSON.stringify([question.id, question.revision]);
 
 export async function loadQuestions(filename: string): Promise<Question[]> {
-  const response = await fetch('./' + filename, { cache: 'no-cache' });
-  if (!response.ok) throw new Error('問題データを取得できませんでした。');
+  const response = await fetch(`/${filename}`, { cache: 'no-cache' });
+  if (!response.ok) throw new Error('loadQuestionError');
   const questions: Question[] = await response.json();
   const text = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
   if (!Array.isArray(questions) || !questions.length) throw new Error('問題データが空です。');
   const ids = new Set<string>();
   for (const question of questions) {
-    if (!question || !text(question.id) || ids.has(question.id) ||
-        !Number.isSafeInteger(question.revision) || question.revision < 1 ||
-        ![question.category, question.version, question.title, question.prompt, question.source?.label].every(text) ||
-        !text(question.source?.url) || !question.source.url.startsWith('https://') ||
-        (question.learning !== undefined && ![
-          question.learning?.reason, question.learning?.concept,
-        ].every(text)) ||
-        (question.learning?.check !== undefined && ![
-          question.learning.check?.prompt, question.learning.check?.answer,
-        ].every(text)) ||
-        !Array.isArray(question.choices) || question.choices.length < 2 ||
-        !question.choices.every(choice => choice && [choice.id, choice.text, choice.explanation].every(text)) ||
-        new Set(question.choices.map(choice => choice.id)).size !== question.choices.length ||
-        !Array.isArray(question.correct) || !question.correct.length ||
-        new Set(question.correct).size !== question.correct.length ||
-        !question.correct.every(id => question.choices.some(choice => choice.id === id))) {
-      throw new Error('問題データの形式を確認してください。');
+    if (
+      !question ||
+      !text(question.id) ||
+      ids.has(question.id) ||
+      !Number.isSafeInteger(question.revision) ||
+      question.revision < 1 ||
+      ![
+        question.category,
+        question.version,
+        question.title,
+        question.prompt,
+        question.source?.label,
+      ].every(text) ||
+      !text(question.source?.url) ||
+      !question.source.url.startsWith('https://') ||
+      (question.learning !== undefined &&
+        ![question.learning?.reason, question.learning?.concept].every(text)) ||
+      (question.learning?.check !== undefined &&
+        ![question.learning.check?.prompt, question.learning.check?.answer].every(text)) ||
+      !Array.isArray(question.choices) ||
+      question.choices.length < 2 ||
+      !question.choices.every(
+        (choice) => choice && [choice.id, choice.text, choice.explanation].every(text),
+      ) ||
+      new Set(question.choices.map((choice) => choice.id)).size !== question.choices.length ||
+      !Array.isArray(question.correct) ||
+      !question.correct.length ||
+      new Set(question.correct).size !== question.correct.length ||
+      !question.correct.every((id) => question.choices.some((choice) => choice.id === id))
+    ) {
+      throw new Error('invalidQuestionData');
     }
     ids.add(question.id);
   }

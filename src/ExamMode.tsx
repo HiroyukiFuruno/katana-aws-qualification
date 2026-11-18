@@ -1,3 +1,5 @@
+import type { Message } from './messages';
+import { usePreferences } from './preferences';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QuestionSetPicker, type QuestionSet } from './QuestionSetPicker';
 import { LearningNotes } from './LearningNotes';
@@ -5,13 +7,28 @@ import type { ExamBlueprint } from './certifications';
 import { saveExam, type Attempt } from './history';
 import { questionKey, type Question } from './questions';
 import {
-  canStartExam, getResponse, isAnswered, newExam, readExam, remainingLabel, storeExam,
-  type ExamDraft, type ExamResponse,
+  canStartExam,
+  getResponse,
+  isAnswered,
+  newExam,
+  readExam,
+  remainingLabel,
+  storeExam,
+  type ExamDraft,
+  type ExamResponse,
 } from './exam';
 
 type Filter = 'all' | 'unanswered' | 'flagged';
 
-export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, examKey, sets }: {
+export function ExamMode({
+  bank,
+  archivedBank,
+  history,
+  onSaved,
+  blueprint,
+  examKey,
+  sets,
+}: {
   bank: Question[];
   sets: QuestionSet[];
   archivedBank: Question[];
@@ -20,9 +37,10 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
   history: Attempt[];
   onSaved: (history: Attempt[], indexFailed: boolean) => void;
 }) {
+  const { t } = usePreferences();
   const [draft, setDraft] = useState<ExamDraft>();
   const [now, setNow] = useState(Date.now);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<Message | ''>('');
   const [filter, setFilter] = useState<Filter>('all');
   const [submitting, setSubmitting] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -31,16 +49,22 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
   const activeSince = useRef(Date.now());
   const pending = useRef(false);
   const failedAuto = useRef(false);
-  const byKey = new Map([...archivedBank, ...sets.flatMap(set => set.questions), ...bank].map(question => [questionKey(question), question]));
-  const questions = draft?.order.map(key => byKey.get(key)).filter(question => question !== undefined) ?? [];
+  const byKey = new Map(
+    [...archivedBank, ...sets.flatMap((set) => set.questions), ...bank].map((question) => [
+      questionKey(question),
+      question,
+    ]),
+  );
+  const questions =
+    draft?.order.map((key) => byKey.get(key)).filter((question) => question !== undefined) ?? [];
   const correctRevision = draft?.order.length === questions.length;
   const question = questions[draft?.position ?? 0];
   const key = question ? questionKey(question) : '';
-  const attempts = draft ? history.filter(attempt => attempt.examId === draft.id) : [];
+  const attempts = draft ? history.filter((attempt) => attempt.examId === draft.id) : [];
   const completed = attempts.length > 0;
   const expired = !!draft && now >= draft.deadline;
   const available = canStartExam(bank, blueprint);
-  const unanswered = draft ? questions.filter(question => !isAnswered(draft, question)).length : 0;
+  const unanswered = draft ? questions.filter((question) => !isAnswered(draft, question)).length : 0;
 
   useEffect(() => {
     function refresh() {
@@ -48,7 +72,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
         setDraft(readExam(examKey));
         activeSince.current = Date.now();
       } catch {
-        setError('受験データを読み込めませんでした。');
+        setError('examLoadFailed');
       }
     }
     function onStorage(event: StorageEvent) {
@@ -59,8 +83,9 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
     return () => window.removeEventListener('storage', onStorage);
   }, [examKey]);
 
+  const draftId = draft?.id;
   useEffect(() => {
-    if (!draft || completed || expired) return;
+    if (!draftId || completed || expired) return;
     const tick = () => setNow(Date.now());
     const interval = window.setInterval(tick, 250);
     document.addEventListener('visibilitychange', tick);
@@ -68,7 +93,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', tick);
     };
-  }, [draft?.id, completed, expired]);
+  }, [draftId, completed, expired]);
 
   useEffect(() => {
     if (draft?.position === undefined) return;
@@ -85,17 +110,26 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
       const current = readExam(examKey);
       if (!current || current.id !== draft.id) throw new Error('Stale exam');
       const end = Math.min(Date.now(), current.deadline);
-      const result = await saveExam(examKey, current.id, current.deadline, questions.map((question, index) => {
-        const response = getResponse(current, questionKey(question));
-        return {
-          question, selected: response.selected, selectedAt: response.selectedAt,
-          durationMs: response.durationMs + (index === current.position ? Math.max(0, end - activeSince.current) : 0),
-        };
-      }));
+      const result = await saveExam(
+        examKey,
+        current.id,
+        current.deadline,
+        questions.map((question, index) => {
+          const response = getResponse(current, questionKey(question));
+          return {
+            question,
+            selected: response.selected,
+            selectedAt: response.selectedAt,
+            durationMs:
+              response.durationMs +
+              (index === current.position ? Math.max(0, end - activeSince.current) : 0),
+          };
+        }),
+      );
       onSaved(result.history, result.indexFailed);
     } catch {
       failedAuto.current = true;
-      setError('採点結果を保存できませんでした。保存領域を確認して、採点を再試行してください。');
+      setError('examGradeFailed');
     } finally {
       pending.current = false;
       setSubmitting(false);
@@ -110,7 +144,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
     if (!available && !fixed) return;
     try {
       const current = readExam(examKey);
-      const currentCompleted = current && history.some(attempt => attempt.examId === current.id);
+      const currentCompleted = current && history.some((attempt) => attempt.examId === current.id);
       if (current && !currentCompleted) {
         setDraft(current);
         return;
@@ -125,7 +159,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
       setShowAll(false);
       setError('');
     } catch {
-      setError('受験データを保存できませんでした。');
+      setError('examSaveFailed');
     }
   }
 
@@ -140,129 +174,272 @@ export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, exam
       if (!current || current.id !== draft.id || current.position !== draft.position) return;
       const response = getResponse(current, key);
       const next = {
-        ...current, position,
-        responses: { ...current.responses, [key]: {
-          ...response, ...patch, durationMs: response.durationMs + Math.max(0, at - activeSince.current),
-        } },
+        ...current,
+        position,
+        responses: {
+          ...current.responses,
+          [key]: {
+            ...response,
+            ...patch,
+            durationMs: response.durationMs + Math.max(0, at - activeSince.current),
+          },
+        },
       };
       storeExam(examKey, next);
       activeSince.current = at;
       setDraft(next);
       setError('');
     } catch {
-      setError('回答を保存できませんでした。');
+      setError('answerSaveFailed');
     }
   }
 
-  if (completed) return <section className="card">
-    <h2>模擬試験の結果</h2>
-    <p className="exam-score">{attempts.filter(attempt => attempt.isCorrect).length} / {attempts.length} 問正解</p>
-    <p>複数選択は完全一致で採点し、未回答は不正解として集計します。</p>
-    <dl className="domain-scores">
-      {[...new Set(attempts.map(attempt => attempt.category))].sort().map(category => {
-        const items = attempts.filter(attempt => attempt.category === category);
-        return <div key={category}><dt>{category}</dt><dd>{items.filter(item => item.isCorrect).length} / {items.length}</dd></div>;
-      })}
-    </dl>
-    <QuestionSetPicker bank={bank} sets={sets} onStart={start} buttonLabel="次の模擬試験を開始" />
-    <div className="exam-actions">
-      <label><input type="checkbox" checked={showAll} onChange={event => setShowAll(event.target.checked)} /> 正解した問題も表示</label></div>
-    {error && <p role="alert">{error}</p>}
-    <div className="exam-solutions">{attempts.map((attempt, index) => {
-      if (!showAll && attempt.isCorrect) return null;
-      const item = byKey.get(questionKey({ id: attempt.questionId, revision: attempt.questionRevision }));
-      const answered = attempt.selected.length === attempt.correct.length;
-      return <details key={attempt.questionId}>
-        <summary>第{index + 1}問 · {attempt.isCorrect ? '正解' : answered ? '不正解' : '未回答'} · {item?.title ?? attempt.questionId}</summary>
-        <p>{item?.prompt}</p>
-        <p>選択 {attempt.selected.join('・') || 'なし'} ／ 正解 {attempt.correct.join('・')}</p>
-        {item && <LearningNotes question={item} selected={attempt.selected} />}
-        {item && <ul>{item.choices.map(choice => <li key={choice.id}>
-          <strong>{choice.id} {attempt.correct.includes(choice.id) ? '正解' : '不正解'} · {choice.text}</strong><br />{choice.explanation}
-        </li>)}</ul>}
-      </details>;
-    })}</div>
-  </section>;
+  if (completed)
+    return (
+      <section className="card">
+        <h2>{t('examResults')}</h2>
+        <p className="exam-score">
+          {t('score', {
+            correct: attempts.filter((attempt) => attempt.isCorrect).length,
+            total: attempts.length,
+          })}
+        </p>
+        <p>{t('examGrading')}</p>
+        <dl className="domain-scores">
+          {[...new Set(attempts.map((attempt) => attempt.category))].sort().map((category) => {
+            const items = attempts.filter((attempt) => attempt.category === category);
+            return (
+              <div key={category}>
+                <dt>{category}</dt>
+                <dd>
+                  {items.filter((item) => item.isCorrect).length} / {items.length}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+        <QuestionSetPicker bank={bank} sets={sets} onStart={start} buttonLabel={t('nextExam')} />
+        <div className="exam-actions">
+          <label>
+            <input
+              type="checkbox"
+              checked={showAll}
+              onChange={(event) => setShowAll(event.target.checked)}
+            />{' '}
+            {t('includeCorrect')}
+          </label>
+        </div>
+        {error && <p role="alert">{t(error)}</p>}
+        <div className="exam-solutions">
+          {attempts.map((attempt, index) => {
+            if (!showAll && attempt.isCorrect) return null;
+            const item = byKey.get(
+              questionKey({ id: attempt.questionId, revision: attempt.questionRevision }),
+            );
+            const answered = attempt.selected.length === attempt.correct.length;
+            return (
+              <details key={attempt.questionId}>
+                <summary>
+                  {t('questionNumber', { number: index + 1 })} ·{' '}
+                  {attempt.isCorrect ? t('correct') : answered ? t('incorrect') : t('unanswered')} ·{' '}
+                  {item?.title ?? attempt.questionId}
+                </summary>
+                <p>{item?.prompt}</p>
+                <p>
+                  {t('selected')} {attempt.selected.join('・') || t('none')} ／ {t('correct')}{' '}
+                  {attempt.correct.join('・')}
+                </p>
+                {item && <LearningNotes question={item} selected={attempt.selected} />}
+                {item && (
+                  <ul>
+                    {item.choices.map((choice) => (
+                      <li key={choice.id}>
+                        <strong>
+                          {choice.id}{' '}
+                          {attempt.correct.includes(choice.id) ? t('correct') : t('incorrect')} ·{' '}
+                          {choice.text}
+                        </strong>
+                        <br />
+                        {choice.explanation}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </details>
+            );
+          })}
+        </div>
+      </section>
+    );
 
-  if (!draft) return <section className="card">
-    <h2>模擬試験の出題設定</h2>
-    <p className="exam-score">{Object.values(blueprint.distribution).reduce((sum, count) => sum + count, 0)}問 / {blueprint.minutes}分</p>
-    <p>制限時間は選んだ問題数に比例します。正誤と解説は提出後に表示します。</p>
-    <p>開始するとカウントダウンが始まり、ページを離れても時間は進みます。</p>
-    {!available && <p role="alert">模擬試験に必要な分野別の問題数を満たしていません。</p>}
-    <QuestionSetPicker bank={bank} sets={sets} onStart={start} buttonLabel="模擬試験を開始" />
-    {error && <p role="alert">{error}</p>}
-  </section>;
+  if (!draft)
+    return (
+      <section className="card">
+        <h2>{t('examSetup')}</h2>
+        <p className="exam-score">
+          {t('examLength', {
+            count: Object.values(blueprint.distribution).reduce((sum, count) => sum + count, 0),
+            minutes: blueprint.minutes,
+          })}
+        </p>
+        <p>{t('examTiming')}</p>
+        <p>{t('examTimerWarning')}</p>
+        {!available && <p role="alert">{t('tooFew')}</p>}
+        <QuestionSetPicker bank={bank} sets={sets} onStart={start} buttonLabel={t('startExam')} />
+        {error && <p role="alert">{t(error)}</p>}
+      </section>
+    );
 
-  if (!correctRevision || !question) return <p role="alert">開始時の問題セットを読み込めないため、この試験は再開できません。</p>;
+  if (!correctRevision || !question) return <p role="alert">{t('cannotResume')}</p>;
 
   const response = getResponse(draft, key);
   const count = question.correct.length;
-  return <>
-    <div className={`exam-bar ${draft.deadline - now <= 300_000 ? 'ending' : ''}`}>
-      <div><strong>第 {draft.position + 1} 問 / {questions.length}</strong><br />
-        <span>回答済み {questions.length - unanswered} · 未回答 {unanswered}</span></div>
-      <div className="exam-clock" role="timer" aria-label="残り時間">{remainingLabel(draft.deadline, now)}</div>
-    </div>
-    {expired && <p className="notice">制限時間に達しました。</p>}
-    {error && <p className="notice" role="alert">{error}</p>}
-    <section className="card">
-      <div className="question-meta"><span>{count}つ選択</span></div>
-      <h2 ref={questionHeading} tabIndex={-1} className="exam-question-title">第{draft.position + 1}問</h2>
-      <p className="prompt">{question.prompt}</p>
-      <fieldset disabled={expired || submitting}>
-        <legend className="sr-only">回答選択肢</legend>
-        {question.choices.map(choice => {
-          const selected = response.selected.includes(choice.id);
-          return <label key={choice.id} className={`choice choice-wrap ${selected ? 'picked' : ''}`}>
-            <input type={count === 1 ? 'radio' : 'checkbox'} name="exam-answer" checked={selected}
-              disabled={!selected && count > 1 && response.selected.length === count}
-              onChange={() => update(draft.position, {
-                selected: count === 1 ? [choice.id] : selected
-                  ? response.selected.filter(id => id !== choice.id) : [...response.selected, choice.id],
-                selectedAt: Date.now(),
-              })} />
-            <span className="letter">{choice.id}</span><span>{choice.text}</span>
-          </label>;
-        })}
-      </fieldset>
-      <div className="exam-actions">
-        <button disabled={expired || submitting || !response.selected.length}
-          onClick={() => update(draft.position, { selected: [], selectedAt: undefined })}>選択を消す</button>
-        <button aria-pressed={response.flagged} disabled={expired || submitting}
-          onClick={() => update(draft.position, { flagged: !response.flagged })}>見直しマーク</button>
+  return (
+    <>
+      <div className={`exam-bar ${draft.deadline - now <= 300_000 ? 'ending' : ''}`}>
+        <div>
+          <strong>{t('position', { current: draft.position + 1, total: questions.length })}</strong>
+          <br />
+          <span>
+            {t('answered')} {questions.length - unanswered} · {t('unanswered')} {unanswered}
+          </span>
+        </div>
+        <div className="exam-clock" role="timer" aria-label={t('remaining')}>
+          {remainingLabel(draft.deadline, now)}
+        </div>
       </div>
-      <div className="exam-actions exam-nav">
-        <button disabled={expired || submitting || draft.position === 0}
-          onClick={() => update(draft.position - 1)}>前の問題</button>
-        <button className="primary" disabled={expired || submitting || draft.position + 1 === questions.length}
-          onClick={() => update(draft.position + 1)}>次の問題</button>
-      </div>
-    </section>
-    <section className="card exam-map">
-      <h2>問題一覧</h2>
-      <label>表示 <select value={filter} onChange={event => setFilter(event.target.value as Filter)}>
-        <option value="all">すべて</option><option value="unanswered">未回答のみ</option><option value="flagged">見直しのみ</option>
-      </select></label>
-      <div className="exam-grid">{questions.map((item, index) => {
-        const flagged = getResponse(draft, questionKey(item)).flagged;
-        const answered = isAnswered(draft, item);
-        if ((filter === 'flagged' && !flagged) || (filter === 'unanswered' && answered)) return null;
-        return <button key={item.id} className={answered ? 'answered' : ''} disabled={expired || submitting}
-          aria-label={`第${index + 1}問 ${answered ? '回答済み' : '未回答'}${flagged ? ' 見直し' : ''}`}
-          aria-current={index === draft.position ? 'step' : undefined}
-          onClick={() => update(index)}>{index + 1}{flagged ? ' ⚑' : ''}</button>;
-      })}</div>
-      <button className="primary" disabled={submitting}
-        onClick={() => expired ? void submit() : dialog.current?.showModal()}>{expired ? '採点する' : '試験を提出する'}</button>
-    </section>
-    <dialog ref={dialog} aria-labelledby="exam-submit">
-      <h2 id="exam-submit">模擬試験を提出しますか？</h2>
-      <p>未回答 {unanswered}問。提出すると採点結果と解説を表示します。</p>
-      <div className="dialog-actions">
-        <button autoFocus onClick={() => dialog.current?.close()}>試験に戻る</button>
-        <button className="primary" onClick={() => void submit()}>提出する</button>
-      </div>
-    </dialog>
-  </>;
+      {expired && <p className="notice">{t('expired')}</p>}
+      {error && (
+        <p className="notice" role="alert">
+          {t(error)}
+        </p>
+      )}
+      <section className="card">
+        <div className="question-meta">
+          <span>{t('choose', { count })}</span>
+        </div>
+        <h2 ref={questionHeading} tabIndex={-1} className="exam-question-title">
+          {t('questionNumber', { number: draft.position + 1 })}
+        </h2>
+        <p className="prompt" lang="ja">
+          {question.prompt}
+        </p>
+        <fieldset disabled={expired || submitting}>
+          <legend className="sr-only">{t('choices')}</legend>
+          {question.choices.map((choice) => {
+            const selected = response.selected.includes(choice.id);
+            return (
+              <label key={choice.id} className={`choice choice-wrap ${selected ? 'picked' : ''}`}>
+                <input
+                  type={count === 1 ? 'radio' : 'checkbox'}
+                  name="exam-answer"
+                  checked={selected}
+                  disabled={!selected && count > 1 && response.selected.length === count}
+                  onChange={() =>
+                    update(draft.position, {
+                      selected:
+                        count === 1
+                          ? [choice.id]
+                          : selected
+                            ? response.selected.filter((id) => id !== choice.id)
+                            : [...response.selected, choice.id],
+                      selectedAt: Date.now(),
+                    })
+                  }
+                />
+                <span className="letter">{choice.id}</span>
+                <span lang="ja">{choice.text}</span>
+              </label>
+            );
+          })}
+        </fieldset>
+        <div className="exam-actions">
+          <button
+            type="button"
+            disabled={expired || submitting || !response.selected.length}
+            onClick={() => update(draft.position, { selected: [], selectedAt: undefined })}
+          >
+            {t('clearChoice')}
+          </button>
+          <button
+            type="button"
+            aria-pressed={response.flagged}
+            disabled={expired || submitting}
+            onClick={() => update(draft.position, { flagged: !response.flagged })}
+          >
+            {t('flag')}
+          </button>
+        </div>
+        <div className="exam-actions exam-nav">
+          <button
+            type="button"
+            disabled={expired || submitting || draft.position === 0}
+            onClick={() => update(draft.position - 1)}
+          >
+            {t('previous')}
+          </button>
+          <button
+            type="button"
+            className="primary"
+            disabled={expired || submitting || draft.position + 1 === questions.length}
+            onClick={() => update(draft.position + 1)}
+          >
+            {t('nextExamQuestion')}
+          </button>
+        </div>
+      </section>
+      <section className="card exam-map">
+        <h2>{t('questionList')}</h2>
+        <label>
+          {t('show')}{' '}
+          <select value={filter} onChange={(event) => setFilter(event.target.value as Filter)}>
+            <option value="all">{t('all')}</option>
+            <option value="unanswered">{t('unansweredOnly')}</option>
+            <option value="flagged">{t('flaggedOnly')}</option>
+          </select>
+        </label>
+        <div className="exam-grid">
+          {questions.map((item, index) => {
+            const flagged = getResponse(draft, questionKey(item)).flagged;
+            const answered = isAnswered(draft, item);
+            if ((filter === 'flagged' && !flagged) || (filter === 'unanswered' && answered)) return null;
+            return (
+              <button
+                type="button"
+                key={item.id}
+                className={answered ? 'answered' : ''}
+                disabled={expired || submitting}
+                aria-label={`${t('questionNumber', { number: index + 1 })} ${answered ? t('answered') : t('unanswered')}${flagged ? ` ${t('flagged')}` : ''}`}
+                aria-current={index === draft.position ? 'step' : undefined}
+                onClick={() => update(index)}
+              >
+                {index + 1}
+                {flagged ? ' ⚑' : ''}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          className="primary"
+          disabled={submitting}
+          onClick={() => (expired ? void submit() : dialog.current?.showModal())}
+        >
+          {expired ? t('grade') : t('submitExam')}
+        </button>
+      </section>
+      <dialog ref={dialog} aria-labelledby="exam-submit">
+        <h2 id="exam-submit">{t('confirmSubmit')}</h2>
+        <p>{t('submissionWarning', { count: unanswered })}</p>
+        <div className="dialog-actions">
+          <button type="button" onClick={() => dialog.current?.close()}>
+            {t('backToExam')}
+          </button>
+          <button type="button" className="primary" onClick={() => void submit()}>
+            {t('submit')}
+          </button>
+        </div>
+      </dialog>
+    </>
+  );
 }

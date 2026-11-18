@@ -38,21 +38,28 @@ export function readHistory(): Attempt[] {
 }
 
 function readCookie() {
-  return document.cookie.split(';').map(part => part.trim()).find(part => part.startsWith(cookieName + '='));
+  return document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${cookieName}=`));
 }
 
 function syncIncorrectIds(history: Attempt[]) {
-  const ids = [...new Set(history.filter(attempt => !attempt.isCorrect).map(attempt => attempt.questionId))];
+  const ids = [
+    ...new Set(history.filter((attempt) => !attempt.isCorrect).map((attempt) => attempt.questionId)),
+  ];
   if (!ids.length) return;
-  const cookie = cookieName + '=' + encodeURIComponent(JSON.stringify(ids));
+  const cookie = `${cookieName}=${encodeURIComponent(JSON.stringify(ids))}`;
   let stored = false;
   try {
     if (cookie.length <= 3800) {
-      document.cookie = cookie + '; Path=/; Max-Age=31536000; SameSite=Lax' +
+      document.cookie =
+        cookie +
+        '; Path=/; Max-Age=31536000; SameSite=Lax' +
         (location.protocol === 'https:' ? '; Secure' : '');
       stored = readCookie() === cookie;
     }
-    if (!stored) document.cookie = cookieName + '=; Path=/; Max-Age=0; SameSite=Lax';
+    if (!stored) document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
   } catch {
     // The detailed history remains authoritative when cookies are blocked.
   }
@@ -66,27 +73,44 @@ export function withHistoryLock<T>(operation: () => T): Promise<T> {
 }
 
 export function statsFor(history: Attempt[], question: Question) {
-  const attempts = history.filter(a => questionKey({ id: a.questionId, revision: a.questionRevision }) === questionKey(question));
+  const attempts = history.filter(
+    (a) => questionKey({ id: a.questionId, revision: a.questionRevision }) === questionKey(question),
+  );
   return {
     total: attempts.length,
-    wrong: attempts.filter(attempt => !attempt.isCorrect).length,
-    lastReview: attempts.findLast(attempt => attempt.mode === 'review'),
+    wrong: attempts.filter((attempt) => !attempt.isCorrect).length,
+    lastReview: attempts.findLast((attempt) => attempt.mode === 'review'),
   };
 }
 
 function makeAttempt(
-  history: Attempt[], question: Question, selected: string[], mode: Attempt['mode'],
-  durationMs: number, answeredAt: string, examId?: string,
+  history: Attempt[],
+  question: Question,
+  selected: string[],
+  mode: Attempt['mode'],
+  durationMs: number,
+  answeredAt: string,
+  examId?: string,
 ): Attempt {
   const stats = statsFor(history, question);
   const correct = question.correct;
-  const isCorrect = correct.length === selected.length && correct.every(id => selected.includes(id));
+  const isCorrect = correct.length === selected.length && correct.every((id) => selected.includes(id));
   return {
-    schemaVersion: 1, questionId: question.id, questionRevision: question.revision,
-    category: question.category, sourceVersion: question.version,
-    answeredAt, selected, correct, isCorrect, durationMs,
-    attemptNumber: stats.total + 1, priorIncorrectCount: stats.wrong,
-    mode, reviewCorrect: mode === 'review' ? isCorrect : null, reward: isCorrect ? 1 : 0,
+    schemaVersion: 1,
+    questionId: question.id,
+    questionRevision: question.revision,
+    category: question.category,
+    sourceVersion: question.version,
+    answeredAt,
+    selected,
+    correct,
+    isCorrect,
+    durationMs,
+    attemptNumber: stats.total + 1,
+    priorIncorrectCount: stats.wrong,
+    mode,
+    reviewCorrect: mode === 'review' ? isCorrect : null,
+    reward: isCorrect ? 1 : 0,
     ...(examId === undefined ? {} : { examId }),
   };
 }
@@ -111,19 +135,29 @@ export function saveAttempt(question: Question, selected: string[], mode: Mode, 
 }
 
 export function saveExam(
-  examKey: string, id: string, deadline: number,
+  examKey: string,
+  id: string,
+  deadline: number,
   answers: { question: Question; selected: string[]; durationMs: number; selectedAt?: number }[],
 ) {
   return withHistoryLock(() => {
     const history = readHistory();
-    const previous = history.filter(attempt => attempt.examId === id);
+    const previous = history.filter((attempt) => attempt.examId === id);
     if (previous.length) return { attempts: previous, history, indexFailed: false };
     const draft = localStorage.getItem(examKey);
     if (!draft || JSON.parse(draft).id !== id) throw new Error('受験データが更新されました。');
     const submittedAt = Math.min(Date.now(), deadline);
     const attempts = answers.map(({ question, selected, durationMs, selectedAt }) =>
-      makeAttempt(history, question, selected, 'exam', durationMs,
-        new Date(selectedAt ?? submittedAt).toISOString(), id));
+      makeAttempt(
+        history,
+        question,
+        selected,
+        'exam',
+        durationMs,
+        new Date(selectedAt ?? submittedAt).toISOString(),
+        id,
+      ),
+    );
     const updated = [...history, ...attempts];
     return { attempts, history: updated, indexFailed: persist(updated) };
   });
@@ -132,7 +166,7 @@ export function saveExam(
 export function resetHistory() {
   return withHistoryLock(() => {
     try {
-      document.cookie = cookieName + '=; Path=/; Max-Age=0; SameSite=Lax';
+      document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
       if (readCookie()) throw new Error('誤答Cookieを削除できませんでした。');
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'SecurityError')) throw error;
@@ -143,15 +177,15 @@ export function resetHistory() {
       if (key?.startsWith(examKeyPrefix)) keys.push(key);
     }
     for (const key of keys) localStorage.removeItem(key);
-    if (keys.some(key => localStorage.getItem(key) !== null)) {
+    if (keys.some((key) => localStorage.getItem(key) !== null)) {
       throw new Error('学習データの削除を確認できませんでした。');
     }
   });
 }
 
 export function exportHistory(history: Attempt[]) {
-  const data = history.map(attempt => JSON.stringify(attempt)).join('\n');
-  const url = URL.createObjectURL(new Blob([data + '\n'], { type: 'application/x-ndjson' }));
+  const data = history.map((attempt) => JSON.stringify(attempt)).join('\n');
+  const url = URL.createObjectURL(new Blob([`${data}\n`], { type: 'application/x-ndjson' }));
   const link = document.createElement('a');
   link.href = url;
   link.download = 'saa-study-history.jsonl';

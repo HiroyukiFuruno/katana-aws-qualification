@@ -1,0 +1,95 @@
+import { certifications } from './certifications';
+import { localePath } from './locales';
+import { SiteControls, usePreferences } from './preferences';
+import { levelMessage } from './Roadmap';
+
+export function SiteHeader({ section }: { section: string }) {
+  const { locale, t } = usePreferences();
+  return (
+    <header className="site-header">
+      <a className="skip-link" href="#main">
+        {t('skip')}
+      </a>
+      <div className="shell topbar">
+        <a className="brand" href={localePath(locale)}>
+          KatanA<span> AWS</span>
+        </a>
+        <nav className="site-navigation" aria-label={t('navigation')}>
+          <a
+            href={localePath(locale, 'study')}
+            aria-current={section === 'study' ? 'location' : undefined}
+          >
+            {t('study')}
+          </a>
+          <a
+            href={localePath(locale, 'assessment')}
+            aria-current={section === 'assessment' ? 'page' : undefined}
+          >
+            {t('skillsAssessment')}
+          </a>
+        </nav>
+        <SiteControls />
+      </div>
+    </header>
+  );
+}
+
+export function Home() {
+  const { locale, t } = usePreferences();
+  return (
+    <main id="main" className="landing">
+      <section className="landing-hero">
+        <div className="shell">
+          <h1>{t('landingTitle')}</h1>
+          <p>{t('landingIntro')}</p>
+        </div>
+      </section>
+      <div className="shell entry-grid">
+        <a className="entry-card" href={localePath(locale, 'study')}>
+          <h2>{t('chooseCourse')}</h2>
+          <p>{t('studyEntry')}</p>
+          <span className="entry-action">
+            {t('browseCourses')} <span aria-hidden="true">→</span>
+          </span>
+        </a>
+        <a className="entry-card" href={localePath(locale, 'assessment')}>
+          <h2>{t('skillsAssessment')}</h2>
+          <p>{t('assessmentEntry')}</p>
+          <span className="entry-action">
+            {t('assessmentSetup')} <span aria-hidden="true">→</span>
+          </span>
+        </a>
+      </div>
+    </main>
+  );
+}
+
+export function StudyDirectory() {
+  const { locale, t } = usePreferences();
+  return (
+    <main id="main" className="shell study-directory">
+      <div className="intro">
+        <h1>{t('chooseCourse')}</h1>
+        <p>{t('studyEntry')}</p>
+      </div>
+      <ul className="course-grid">
+        {certifications
+          .filter((cert) => cert.course)
+          .map((cert) => (
+            <li key={cert.id}>
+              <a className="entry-card" href={localePath(locale, `study/${cert.id}`)}>
+                <small>
+                  {cert.id.toUpperCase()} · {t(levelMessage[cert.level])}
+                  {cert.beta ? ` · ${t('beta')}` : ''}
+                </small>
+                <h2>{cert.name}</h2>
+                <span className="entry-action">
+                  {t('openCourse')} <span aria-hidden="true">→</span>
+                </span>
+              </a>
+            </li>
+          ))}
+      </ul>
+    </main>
+  );
+}

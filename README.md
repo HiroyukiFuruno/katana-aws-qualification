@@ -1,14 +1,16 @@
 # KatanA AWS
 
-AWS SAA-C03の演習・誤答復習用アプリ。ReactとTypeScriptで実装し、Viteで静的ファイルを生成する。サーバー側の学習データベースは不要。
+AWS認定13資格の学習・模擬試験・誤答復習とスキル査定のアプリ。ReactとTypeScriptで実装し、Viteで静的ファイルを生成する。サーバー側の学習データベースは不要。
 
 ## 起動
 
-Node.js 22.13以降で `npm ci`、`npm run dev` を実行する。配布用には `npm run build` を実行し、生成された `dist/` をHTTP(S)で配信する。
+Node.js 26とBun 1.4.4を使用する。`bun install --frozen-lockfile` で依存関係を導入し、`bun run dev` で起動する。`bun run check` はLint、フォーマット、翻訳キーとプレースホルダーの整合性、教材データの検証、型チェック、静的ビルドを実行する。Vercel本番ビルドにも同じチェックが適用される。
+
+トップページから「資格を選んで勉強する」と「スキルを査定する」に進める。英語は `/`、日本語は `/ja/`、ほかの言語は言語コードのプレフィックスに対応する。翻訳は `src/messages.ts` で管理し、問題・選択肢・解説・査定問題の本文は日本語で提供する。ライトとダークの選択はブラウザ内に保存し、未選択の場合はOSの設定に従う。
 
 ## 問題の追加・改訂
 
-問題データの編集先は `public/courses/saa-c03/questions.json`。配信時は `dist/courses/saa-c03/questions.json` としてそのまま配信される。画面コードは問題数やカテゴリを固定していない。
+問題データは `public/courses/<資格ID>/` のJSONに置く。対応するパスは `src/certifications.ts` で管理する。画面コードは問題数やカテゴリを固定していない。
 
 - `id` は一意の設問ID。選択肢の `id` も設問内で一意にする。
 - `correct` は正解の選択肢IDの配列。配列の長さが必要な選択数になる。

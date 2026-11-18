@@ -1,0 +1,330 @@
+[
+  {
+    "id": "dva-c02-practice-01",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "部分バッチの再試行",
+    "prompt": "標準SQSで10件を受けたLambdaが、1件の形式エラーを捕捉して9件は保存できた。Lambdaからキューの削除APIを呼ばず、成功分を完了扱いにし、失敗分だけをDLQに達するまで再試行したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ReportBatchItemFailuresを有効にし、失敗したメッセージIDを返す",
+        "explanation": "Lambdaが失敗した個別項目を認識できる。"
+      },
+      {
+        "id": "B",
+        "text": "バッチサイズとウィンドウを小さくする",
+        "explanation": "失敗時の巻き添えは減るが、成功と失敗を応答で区別しない。"
+      },
+      {
+        "id": "C",
+        "text": "1件の失敗を未処理例外としてスローする",
+        "explanation": "バッチ全体が失敗扱いになる。"
+      },
+      {
+        "id": "D",
+        "text": "Visibility Timeoutを短くする",
+        "explanation": "項目別の成否を伝えず、処理時間より短ければ重複も起こりやすい。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "Lambdaが失敗した個別項目を認識できる。",
+      "concept": "部分失敗応答を使ってもSQS全体がExactly Onceになるわけではない。書き込みは冪等に設計する。"
+    }
+  },
+  {
+    "id": "dva-c02-practice-02",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "前回版への復帰",
+    "prompt": "複数クライアントが同一のLambdaエイリアスARNを参照する。ライブラリ変更後の新しいコードを一部だけに流し、手動で従来版へ即時復帰できるようにしたい。追加のルーターやリリースサービスを設けずにどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Lambdaの予約済み同時実行数を設定する",
+        "explanation": "同時実行数の制御であり、新旧版の転送比率は変えない。"
+      },
+      {
+        "id": "B",
+        "text": "毎回$LATESTのコードを上書きする",
+        "explanation": "旧版への一部転送や版を固定した呼び出しを表現できない。"
+      },
+      {
+        "id": "C",
+        "text": "関数URLを版ごとに作ってクライアントで振り分ける",
+        "explanation": "クライアントにルーティング変更が必要になり、同一ARNを維持できない。"
+      },
+      {
+        "id": "D",
+        "text": "バージョンを発行し、エイリアスの重み付きルーティングを設定する",
+        "explanation": "エイリアスで二つの発行済みバージョンへの振り分けを管理できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "エイリアスで二つの発行済みバージョンへの振り分けを管理できる。",
+      "concept": "CodeDeployを併用すると、エイリアスのカナリア移行とアラームによるロールバックを自動化できる。"
+    }
+  },
+  {
+    "id": "dva-c02-practice-03",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "条件付き登録",
+    "prompt": "決済コールバックが同じ注文IDを並行で送ってくる。初回にだけDynamoDBへ初期状態を登録し、処理済み注文の状態をその後の再送が上書きしないようにする。追加のロックテーブルを使わず実現するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "PutItemにattribute_not_existsの条件を設定する",
+        "explanation": "条件確認と書き込みが一つの操作となる。"
+      },
+      {
+        "id": "B",
+        "text": "UpdateItemで状態を無条件に初期値にする",
+        "explanation": "再送で既存の状態を上書きする。"
+      },
+      {
+        "id": "C",
+        "text": "GetItemで存在確認してから無条件にPutItemする",
+        "explanation": "確認と書き込みの間に別処理が登録できる。"
+      },
+      {
+        "id": "D",
+        "text": "強い整合性のあるScanを先に実行する",
+        "explanation": "最新状態の読み取りでも、後続の書き込みとの間の競合は防がない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "条件確認と書き込みが一つの操作となる。",
+      "concept": "一意性を守る条件をデータストアの書き込み側で評価すれば、アプリ側の事前確認に依存しない。"
+    }
+  },
+  {
+    "id": "dva-c02-practice-04",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "ブラウザからの直接アップロード",
+    "prompt": "商品画像を受け付けるAPIではバックエンドが会員とアップロード先の一つのキーを決める。ブラウザは署名済みリクエストで直接PUTし、認証情報は取得せず、10分でアップロード権を失う構成にしたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バケットポリシーで全員にPutObjectを許可する",
+        "explanation": "認証を経ない利用者や他のキーまで操作できる構成になる。"
+      },
+      {
+        "id": "B",
+        "text": "S3のCORSルールだけを変更する",
+        "explanation": "ブラウザのオリジン制約を扱うが、S3 APIの認可にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "キーを指定した署名付きPUT URLをバックエンドで発行する",
+        "explanation": "指定操作を期限付きで委譲できる。"
+      },
+      {
+        "id": "D",
+        "text": "期限付きの署名付きGET URLを発行する",
+        "explanation": "署名はHTTP操作に結び付き、PUT権限を与えない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "指定操作を期限付きで委譲できる。",
+      "concept": "署名付きURLは有効な間に他者へ渡ると使われ得る。発行対象、キー、期限を限定する。"
+    }
+  },
+  {
+    "id": "dva-c02-practice-05",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "SDKの権限",
+    "prompt": "同じクラスターの決済用FargateタスクはDynamoDBに書けるが、別の集計用タスクは書けないようにする。両方とも同じプライベートECRイメージを取得できている。SDKに静的キーを設定せず、新しい書き込み権限をどこに与えるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "アプリのタスクロールにDynamoDB権限を追加する",
+        "explanation": "タスク内のアプリが利用する資格情報を制御する。"
+      },
+      {
+        "id": "B",
+        "text": "タスクに静的アクセスキーを環境変数で注入する",
+        "explanation": "実行アプリから使えるが、タスクの短期資格情報を使う要件を外す。"
+      },
+      {
+        "id": "C",
+        "text": "ECRのリポジトリポリシーを変更する",
+        "explanation": "イメージへのアクセスを制御するが、DynamoDBへの書き込みには効かない。"
+      },
+      {
+        "id": "D",
+        "text": "タスク実行ロールだけを変更する",
+        "explanation": "主にECSエージェントの起動準備向けで、タスク内アプリの権限を与えない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "タスク内のアプリが利用する資格情報を制御する。",
+      "concept": "タスクの起動に使う権限と、起動後のアプリが使う権限を分ける。"
+    }
+  },
+  {
+    "id": "dva-c02-practice-06",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "処理の再試行と二重決済",
+    "prompt": "決済先は同じキーと同じ送信内容を同一操作として処理する。決済が成功後に応答が消失し、ワーカーが再起動しても再試行したい。最初の送信と再試行は別プロセスになり得る。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "応答を受け取った時点で処理済みフラグだけを保存する",
+        "explanation": "成功後に応答が失われるとフラグは立たない。"
+      },
+      {
+        "id": "B",
+        "text": "決済を呼ぶ前にSQSメッセージを削除する",
+        "explanation": "二重処理は減るが、呼び出しが失敗すると業務処理そのものを失う。"
+      },
+      {
+        "id": "C",
+        "text": "注文ごとに同じ冪等キーを再試行でも使う",
+        "explanation": "決済側が同じ操作と認識できる。"
+      },
+      {
+        "id": "D",
+        "text": "リクエストごとに新しい冪等キーを採番する",
+        "explanation": "決済側には別の操作として見える。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "決済側が同じ操作と認識できる。",
+      "concept": "外部APIのタイムアウトは「失敗確定」を意味しない。再試行時の同一性を保つ。"
+    }
+  },
+  {
+    "id": "dva-c02-practice-07",
+    "revision": 1,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "欠損時の再開位置",
+    "prompt": "Kinesisを読むLambdaはバッチを順に処理する。4番目のレコードで障害が出た場合、少なくとも4番目から再処理できるようにしたい。正常に処理した頭の3件の再実行は避けたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "エラーを捕捉して成功を返す",
+        "explanation": "処理失敗分もチェックポイントを通過する。"
+      },
+      {
+        "id": "B",
+        "text": "ReportBatchItemFailuresを有効にし、失敗したシーケンス番号を返す",
+        "explanation": "ストリーム処理は最小の失敗番号を再開位置として扱う。"
+      },
+      {
+        "id": "C",
+        "text": "バッチ全体を失敗させる",
+        "explanation": "再試行が先頭から始まり、条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "SQSのメッセージIDを失敗応答に返す",
+        "explanation": "Kinesisではレコードのシーケンス番号を返す必要がある。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "ストリーム処理は最小の失敗番号を再開位置として扱う。",
+      "concept": "SQSとKinesisでは部分失敗応答の識別子と再試行範囲が異なる。"
+    }
+  },
+  {
+    "id": "dva-c02-practice-08",
+    "revision": 1,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "書き込みとイベント発行",
+    "prompt": "注文サービスはDynamoDBに注文を登録し、後続サービスにイベントを届ける。登録直後にプロセスが落ちてイベントが失われる事象を防ぎ、受信側では重複処理を抑えたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "登録後に同じアプリから通知し、エラーなら注文を削除する",
+        "explanation": "プロセス停止時に補償が走らない。"
+      },
+      {
+        "id": "B",
+        "text": "DynamoDB Streamsで登録確定後の変更を取り出し、受信側を冪等にする",
+        "explanation": "確定した変更とイベント源が結び付き、再配信にも対応できる。"
+      },
+      {
+        "id": "C",
+        "text": "Scanの結果を1分ごとにすべて再送する",
+        "explanation": "変更イベントを区別できず、全件再送を要する。"
+      },
+      {
+        "id": "D",
+        "text": "先にイベントを発行してから注文を登録する",
+        "explanation": "登録失敗時に存在しない注文のイベントが届く。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "確定した変更とイベント源が結び付き、再配信にも対応できる。",
+      "concept": "二重書きでは片方だけ成功する。確定変更を読む方式でもコンシューマーの冪等性が必要である。"
+    }
+  }
+]

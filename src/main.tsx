@@ -179,7 +179,7 @@ function CourseApp({ id, course, onHome }: { id: string; course: Course; onHome:
       {notice && <p className="notice" role="status">{notice}</p>}
       {page === 'settings' ? <Settings count={courseHistory.length} onReset={reset} onExport={download} /> :
         page === 'exam' ? mockError || loadingError ? <p role="alert">{mockError || loadingError}</p> :
-          mockBank.length && questions.length ? <ExamMode sets={questionSets} examKey={examKeyFor(id)} blueprint={course.exam} bank={mockBank} archivedBank={archivedBank} history={history} onSaved={updateExamHistory} /> :
+          mockBank.length && questions.length ? <ExamMode sets={questionSets} examKey={examKeyFor(course.examStorageId ?? id)} blueprint={course.exam} bank={mockBank} archivedBank={archivedBank} history={history} onSaved={updateExamHistory} /> :
             <p role="status">模擬試験の問題を読み込んでいます。</p> :
         loadingError ? <p className="notice" role="alert">{loadingError}</p> :
         !questions.length ? <p role="status">問題を読み込んでいます。</p> :

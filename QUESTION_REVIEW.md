@@ -98,3 +98,13 @@
 2026-11-19に、SAA-C03以外の12コースに追加したオリジナル演習72問を確認した。各問で要件を満たす選択肢が一つに絞れるか、各誤答の解説が設問の前提と一致するか、正答後に確認できる補足があるかを点検した。例えばCodeDeployの問題では初回に移すトラフィック比率を指定し、KMSの問題では管理主体と鍵の種類を明示した。各資格の初回分は全6問で、本試験の出題範囲全体をカバーする模試はSAA-C03に収録している。
 
 [AWS認定 試験ガイド一覧](https://docs.aws.amazon.com/aws-certification/latest/examguides/)
+
+## 2026-11-19 全資格の拡充レビュー
+
+12資格の既存72問を、業務シナリオ、制約、選択肢別の根拠を持つ設問として改訂した。全13資格に2問ずつ計26問を追加し、うち3問は2択回答形式とした。設問と正解の対応、複数選択の指定、誤答が満たさない条件を確認した。例えばKinesisの部分失敗はSQSのメッセージIDと区別し、RAGの検索漏れと生成段階の根拠不足を異なる指標で測る。Transit Gatewayの最長一致と同一プレフィックスでの優先順位も問題文で分離した。
+
+Solutions Architect ProfessionalはSAP-C03のガイドへ更新し、旧版の模試履歴・途中データを読み込めるよう旧データを保持した。SAA-C03には短縮版の第2回を追加した。他の資格は各8問の短縮演習で、公式の出題配分や本試験の全範囲を網羅する回ではない。難易度は設問レビューで確認し、受験統計による校正は行っていない。
+
+- [AWS認定の試験ガイド一覧](https://docs.aws.amazon.com/aws-certification/latest/examguides/)
+- [SAP-C02とSAP-C03の比較](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-professional-03/sap-03-comparison.html)
+- [LambdaのKinesis部分バッチ失敗](https://docs.aws.amazon.com/lambda/latest/dg/services-kinesis-batchfailurereporting.html)

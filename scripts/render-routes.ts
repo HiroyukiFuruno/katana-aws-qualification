@@ -4,7 +4,7 @@ import { certifications } from '../src/certifications.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
 
-const origin = 'https://katana-saa.vercel.app';
+const origin = 'https://kaq.katana-projects.org';
 const template = await readFile('dist/index.html', 'utf8');
 const entries = [
   '',

@@ -1,4 +1,4 @@
-import { examPrices, pricingUrl } from './certificationPricing';
+import { examPrices, pricingUrl, yenExchangeSource } from './certificationPricing';
 import { certificationGuides, officialGuideLink } from './certificationGuides';
 import { certifications } from './certifications';
 import { localePath } from './locales';
@@ -48,7 +48,7 @@ export function CertificationPages({ id }: { id?: string }) {
         </p>
         <h1>{certification.name}</h1>
       </div>
-      <article className="card">
+      <section className="card">
         <h2>{t('certFee')}</h2>
         <p>
           {price.beta && (
@@ -62,6 +62,13 @@ export function CertificationPages({ id }: { id?: string }) {
           {' · '}
           <a href={pricingUrl(locale)}>{t('certPricing')}</a>
         </p>
+      </section>
+      <p className="cert-fee-note">
+        {t('certExchangeNote', { conversion: price.conversion, rate: price.rate, date: price.date })}
+        {' · '}
+        <a href={yenExchangeSource}>{t('certExchangeSource')}</a>
+      </p>
+      <article className="card">
         <h2>{t('certScope')}</h2>
         <p lang="ja">{guide.scope}</p>
         <h2>{t('certDifficulty')}</h2>

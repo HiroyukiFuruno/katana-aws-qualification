@@ -1,0 +1,2987 @@
+[
+  {
+    "id": "mock-secure-01",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "組織全体のS3アクセス制限",
+    "prompt": "監査チームのAWSアカウントへバケットの読み取りを公開する。将来メンバーアカウントが入れ替わってもポリシーの列挙は避けたい。組織内でも監査用ロールだけを許可する。どの条件で許可するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "PrincipalOrgIDだけを条件にする",
+        "explanation": "組織内のロールを監査用途に絞れない。"
+      },
+      {
+        "id": "B",
+        "text": "組織の管理アカウントIDをPrincipalにする",
+        "explanation": "メンバーアカウントの監査ロールを直接表現しない。"
+      },
+      {
+        "id": "C",
+        "text": "aws:PrincipalOrgIDとaws:PrincipalArnの監査ロールパターンをAND条件で照合する",
+        "explanation": "所属組織とアクセス主体を同時に検証できる。"
+      },
+      {
+        "id": "D",
+        "text": "aws:SourceOrgIDとロールパターンを照合する",
+        "explanation": "SourceOrgIDは対応するサービス間呼び出し向けで、ロールの直接アクセスの所属を検証する条件ではない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "所属組織とアクセス主体を同時に検証できる。",
+      "concept": "PrincipalOrgIDは主体の組織所属、PrincipalArnは主体のARNを評価する。ロールセッションからのリクエストでPrincipalArnが指すのは元のIAMロールのARN。",
+      "check": {
+        "prompt": "組織内の同名ロールが別パスにも作られる場合、どこを絞る？",
+        "answer": "PrincipalArnのパターンに監査用のロールパスまで含める。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-02",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "CloudFrontからのプライベート配信",
+    "prompt": "有料動画をCloudFrontで配信する。視聴者ごとに1時間だけ複数セグメントへのアクセスを認め、S3 URLの直打ちを防ぎたい。どの構成が適切か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3ウェブサイトエンドポイントをOACで保護する",
+        "explanation": "OACはS3のRESTオリジンに設定し、ウェブサイトエンドポイントには適用できない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudFrontの署名付きCookieで対象パスと有効期限を制御する",
+        "explanation": "同一条件で多数のセグメントURLを保護できる。"
+      },
+      {
+        "id": "C",
+        "text": "S3バケット全体を読み取り公開し、CloudFrontのWAFで署名を検証する",
+        "explanation": "S3への直接アクセスはWAFを通らない。"
+      },
+      {
+        "id": "D",
+        "text": "S3の公開アクセスをブロックし、OACとバケットポリシーで対象ディストリビューションを許可する",
+        "explanation": "視聴者がオリジンを直接迂回できなくなる。"
+      },
+      {
+        "id": "E",
+        "text": "Origin Shieldを有効にする",
+        "explanation": "オリジン負荷を抑える機能で、視聴者認証は行わない。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "同一条件で多数のセグメントURLを保護できる。 視聴者がオリジンを直接迂回できなくなる。",
+      "concept": "署名付きCookieは視聴者からCloudFrontへのアクセスを認可し、OACはCloudFrontからS3 RESTオリジンへのリクエストを署名する。S3側は対象ディストリビューションだけに許可する。",
+      "check": {
+        "prompt": "ダウンロード対象が単一ファイルで、利用者がCookieを扱えない場合は？",
+        "answer": "視聴者側には署名付きURLを使える。オリジンのOACは引き続き使う。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-03",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "KMS外部アカウントへの読み取り",
+    "prompt": "アカウントAのS3データをカスタマーマネージドKMSキーで暗号化している。アカウントBのETLロールにのみ読み取りを許可する。S3読み取り許可は設定済み。追加で必要な組み合わせはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AのキーポリシーでBのETLロールに復号を許可する",
+        "explanation": "キー所有側の信頼が必要になる。"
+      },
+      {
+        "id": "B",
+        "text": "S3バケットポリシーにkms:Decryptを追加する",
+        "explanation": "S3バケットポリシーを介してKMSキーの利用は許可できない。"
+      },
+      {
+        "id": "C",
+        "text": "AのキーをAWSマネージドキーaws/s3へ切り替える",
+        "explanation": "aws/s3のキーポリシーを編集して他アカウントへ許可できない。"
+      },
+      {
+        "id": "D",
+        "text": "BのETLロールにkms:GenerateDataKeyだけを許可する",
+        "explanation": "既存オブジェクトの読み取りは復号の権限を必要とする。"
+      },
+      {
+        "id": "E",
+        "text": "BのETLロールのIAMポリシーでAのキーに対するkms:Decryptを許可する",
+        "explanation": "クロスアカウントアクセスでは呼び出し側にも対応する許可が必要になる。"
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-modifying-external-accounts.html",
+      "label": "AWS公式資料 · KMSのクロスアカウントアクセス"
+    },
+    "learning": {
+      "reason": "キー所有側の信頼が必要になる。 クロスアカウントアクセスでは呼び出し側にも対応する許可が必要になる。",
+      "concept": "SSE-KMSではS3がKMSでデータキーを復号する。クロスアカウントではキー側の信頼と呼び出し側IAMの許可を確認し、読み取りにはkms:Decryptを付与する。",
+      "check": {
+        "prompt": "バケットポリシーにGetObjectを追加しても復号エラーが残った。次にどこを見る？",
+        "answer": "暗号化に使われた実際のキーを特定し、そのキーポリシーと呼び出しロールのIAMポリシーを確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-04",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "ECSの権限境界",
+    "prompt": "ECS Fargateの業務コンテナが注文用SQSを読み取る。同じサービスで別のジョブが使うキューへの権限は付与しない。ECR取得とログ送信はECS側が行う。どこに権限を割り当てるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "実行ロールに注文用SQSとECRの権限をすべて付与する",
+        "explanation": "コンテナ内SDKが実行ロールの認証情報を通常利用する構成ではない。"
+      },
+      {
+        "id": "B",
+        "text": "タスクロールに対象SQSの読み取り権限、タスク実行ロールにECRとログの権限を付与する",
+        "explanation": "アプリとECS基盤のAPI操作を別々に制限できる。"
+      },
+      {
+        "id": "C",
+        "text": "クラスター共通のEC2インスタンスプロファイルにSQS権限を付ける",
+        "explanation": "Fargateの実行基盤を利用者のインスタンスプロファイルで管理しない。"
+      },
+      {
+        "id": "D",
+        "text": "SQSポリシーで同じVPCの全プリンシパルを許可する",
+        "explanation": "ネットワークの境界だけでは業務ジョブを識別できない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "アプリとECS基盤のAPI操作を別々に制限できる。",
+      "concept": "アプリSDKが使う資格情報はタスクロールから取得する。Fargateのイメージ取得やawslogsドライバーの操作には実行ロールが使われる。",
+      "check": {
+        "prompt": "アプリ自身がS3へ書き込むようになった。どちらに権限を追加する？",
+        "answer": "該当タスク定義のタスクロールに、対象バケットへの必要な書き込み権限を追加する。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-05",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "CloudFrontのキャッシュと個人情報",
+    "prompt": "静的アセットと個人別の注文APIを同じCloudFrontドメインで提供する。注文APIはBearerトークンを検証し、異なる利用者にレスポンスが共有されてはならない。静的アセットのキャッシュは維持する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "全パスのキャッシュキーにURLパスだけを使い、Authorizationを転送する",
+        "explanation": "トークンがオリジンに届いてもキャッシュヒットでは別利用者に同じ応答を返し得る。"
+      },
+      {
+        "id": "B",
+        "text": "Authorizationを転送せず、APIのCache-Controlだけをprivateにする",
+        "explanation": "オリジンがトークンを検証できない。"
+      },
+      {
+        "id": "C",
+        "text": "動的APIと静的ファイルに同じ長い最小TTLを設定する",
+        "explanation": "個別応答に対してキャッシュ禁止の指示を上書きし得る。"
+      },
+      {
+        "id": "D",
+        "text": "APIを別ビヘイビアにし、キャッシュを無効にしてAuthorizationを転送する",
+        "explanation": "既定の静的パスのキャッシュを残し、APIへの認証情報を保持できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/add-origin-custom-headers.html",
+      "label": "AWS公式資料 · Authorizationヘッダーの転送"
+    },
+    "learning": {
+      "reason": "既定の静的パスのキャッシュを残し、APIへの認証情報を保持できる。",
+      "concept": "キャッシュポリシーは保存とキーを制御し、オリジンリクエストポリシーは追加で何を転送するかを制御する。パスに応じたビヘイビアで静的アセットと分離できる。",
+      "check": {
+        "prompt": "CachingDisabledだけを設定して認証エラーが出たら？",
+        "answer": "Authorizationがオリジンへ転送されるポリシーを確認する。キャッシュの無効化だけで認証ヘッダーが転送されるわけではない。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-06",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EKSのポッド別権限",
+    "prompt": "既存のEKSでOIDCプロバイダーが構成済み。決済Podだけが特定のSecrets Managerシークレットを取得する必要がある。IAMロールはノード上の他のPodと共有したくない。追加エージェントを導入できないときの構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象ServiceAccountにIRSAを設定し、信頼ポリシーをnamespaceとServiceAccountに限定する",
+        "explanation": "既存のOIDCフェデレーションを使い、認証情報をPodの主体に絞れる。"
+      },
+      {
+        "id": "B",
+        "text": "ワーカーノードのIAMロールにシークレット取得権限を付ける",
+        "explanation": "同じノード上のワークロードへの権限分離にならない。"
+      },
+      {
+        "id": "C",
+        "text": "EKS Pod Identityに切り替え、エージェントは追加しない",
+        "explanation": "一般的なEC2ワーカーノードではPod Identity Agentが必要。"
+      },
+      {
+        "id": "D",
+        "text": "Kubernetes RBACでServiceAccountにsecretsのgetを付与する",
+        "explanation": "Kubernetes APIの権限であり、Secrets Managerの操作を許可しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "既存のOIDCフェデレーションを使い、認証情報をPodの主体に絞れる。",
+      "concept": "IRSAはクラスタのOIDC発行元と連携する。IAMロールの信頼ポリシーでaudとServiceAccountのsubを限定し、権限ポリシーでシークレットを限定する。",
+      "check": {
+        "prompt": "ロールの権限ポリシーで対象シークレットを絞れば、他のPodもロールを引き受けられる状態で問題ない？",
+        "answer": "問題がある。アクセス対象の絞り込みと、誰がその権限を使えるかの絞り込みは別々に必要。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-07",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "プライベートサブネットからのS3アクセス",
+    "prompt": "EC2のバッチから同一リージョンのS3へアクセスする。インターネット経路は禁止で、特定バケットだけを許可したい。バッチが使う経路に時間課金を増やしたくない。選ぶべき組み合わせはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "PrivateLinkのS3インターフェイスエンドポイントを作成する",
+        "explanation": "プライベートな接続だが、エンドポイントの時間課金が発生する。"
+      },
+      {
+        "id": "B",
+        "text": "NATゲートウェイの送信先をS3の公開アドレスに限定する",
+        "explanation": "インターネット経路を排除せず、NATの料金が増える。"
+      },
+      {
+        "id": "C",
+        "text": "S3ゲートウェイエンドポイントを作成し、バッチのルートテーブルに関連付ける",
+        "explanation": "同一VPC・リージョンのS3にインターネットを経由せず接続できる。"
+      },
+      {
+        "id": "D",
+        "text": "エンドポイントポリシーで対象バケットを絞る",
+        "explanation": "エンドポイント経由で到達できるS3リソースを制限できる。"
+      },
+      {
+        "id": "E",
+        "text": "S3用セキュリティグループにバケットARNを登録する",
+        "explanation": "セキュリティグループはIAMのリソースARNを評価しない。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "同一VPC・リージョンのS3にインターネットを経由せず接続できる。 エンドポイント経由で到達できるS3リソースを制限できる。",
+      "concept": "ゲートウェイ型の経路はS3のマネージドプレフィックスリストを利用する。エンドポイントポリシーは追加の制限で、IAMやバケットポリシーの許可を代替しない。",
+      "check": {
+        "prompt": "対象バケットを経由可能にしたのに403が出たら？",
+        "answer": "エンドポイントポリシーだけで許可は発生しない。ロールやバケット側の許可、暗号化時のKMS権限を確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-08",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "踏み台なしの運用アクセス",
+    "prompt": "プライベートEC2に対して運用担当がシェルを開きたい。インバウンドポートは開けず、利用者はIAMで制御し、シェルセッションログはCloudWatch Logsに残したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "EC2 Instance Connect EndpointでSSHする",
+        "explanation": "インバウンドSSHの許可が必要で、シェル内容のCloudWatch出力も別途必要。"
+      },
+      {
+        "id": "B",
+        "text": "Systems Manager Session Managerの標準セッションを使い、必要なVPCエンドポイントとログ出力を設定する",
+        "explanation": "IAMで開始を制御し、標準セッションではシェル入出力を記録できる。"
+      },
+      {
+        "id": "C",
+        "text": "Session ManagerのSSHトンネルだけを許可する",
+        "explanation": "SSHトンネルの暗号化されたセッション内容はSession Managerで記録できない。"
+      },
+      {
+        "id": "D",
+        "text": "Client VPNでSSHまたはRDPに接続する",
+        "explanation": "接続先のインバウンド許可が必要で、セッション記録も別構成になる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "IAMで開始を制御し、標準セッションではシェル入出力を記録できる。",
+      "concept": "標準シェルのログをCloudWatch Logsに送れる。SSHやポート転送のセッション内容はSession Managerでは記録できない。閉域ではSSMとログ送信に必要なエンドポイントも確認する。",
+      "check": {
+        "prompt": "CloudTrailのStartSessionがあれば、入力したコマンドも確認できる？",
+        "answer": "開始操作は追跡できるが、コマンドと出力を見るには標準シェルのセッションログを別途設定する。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-09",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "データの持ち出し防止",
+    "prompt": "組織のメンバーアカウントで、通常の管理者にS3の公開アクセスブロックを解除させたくない。承認済みのセキュリティ運用ロールには例外を認める。新規アカウントにも適用する手段はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各管理者のIAMユーザーに拒否ポリシーを追加する",
+        "explanation": "新規ロールやアカウントへの漏れを防ぎにくい。"
+      },
+      {
+        "id": "B",
+        "text": "AWS Configの管理ルールで非準拠を記録する",
+        "explanation": "事後検出であり、解除のAPI呼び出しを阻止しない。"
+      },
+      {
+        "id": "C",
+        "text": "OrganizationsのSCPで対象の操作を明示的に拒否し、承認ロールを条件で除外する",
+        "explanation": "OU配下のメンバーアカウントへ上限を適用し、管理者による解除を防げる。"
+      },
+      {
+        "id": "D",
+        "text": "Organizationsのタグポリシーで公開設定を制御する",
+        "explanation": "タグポリシーはS3公開アクセスブロックのAPIを制御しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "OU配下のメンバーアカウントへ上限を適用し、管理者による解除を防げる。",
+      "concept": "SCPはメンバーアカウントの権限の上限を制限し、当該アカウントのrootにも適用される。例外ロールが実際に操作するには別途IAMの許可が必要。",
+      "check": {
+        "prompt": "SCPのDenyからロールを除外した時点で、そのロールは操作できる？",
+        "answer": "除外はSCPによる拒否を取り除くだけ。ロールに必要な許可があることも確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-10",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Private API Gateway",
+    "prompt": "VPC内の複数サービスがAPI GatewayのREST APIを呼ぶ。許可されたVPCエンドポイント以外からは、認証情報が盗まれた場合でもAPIを呼び出せないようにしたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "REST APIをプライベートエンドポイントタイプにし、execute-api用インターフェイスエンドポイントを使う",
+        "explanation": "公開経路を使わずAPIへ到達できる。"
+      },
+      {
+        "id": "B",
+        "text": "リージョナルAPIにして、オリジン向けにCloudFront OACを設定する",
+        "explanation": "APIへの直接呼び出しを特定VPCエンドポイントに限定する設定ではない。"
+      },
+      {
+        "id": "C",
+        "text": "CORSでVPCのCIDRを許可する",
+        "explanation": "CORSはブラウザ側のオリジン制御で、エンドポイントの強制には使えない。"
+      },
+      {
+        "id": "D",
+        "text": "APIのリソースポリシーでaws:SourceVpceが許可リスト外の場合に明示拒否する",
+        "explanation": "IAMで許可されても、意図しないエンドポイントからのアクセスを拒否できる。"
+      },
+      {
+        "id": "E",
+        "text": "VPCのNATゲートウェイのElastic IPを認証方式にする",
+        "explanation": "送信元IPでは盗まれた認証情報による別経路の呼び出しをVPCエンドポイントで縛れない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "公開経路を使わずAPIへ到達できる。 IAMで許可されても、意図しないエンドポイントからのアクセスを拒否できる。",
+      "concept": "インターフェイスエンドポイントは通信経路を作る。APIのリソースポリシーでaws:SourceVpceを照合すると、同じVPC内の別エンドポイントを除外できる。",
+      "check": {
+        "prompt": "許可・不許可のエンドポイントが同じVPCにある場合、SourceVpcだけで識別できる？",
+        "answer": "できない。両者でVPC IDが同じため、SourceVpceを使う。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-11",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "変更不能な監査ログ",
+    "prompt": "運用管理者にも監査ログを7年間消去させない。組織内の管理者による上書きやバージョン指定削除に対して、S3で保持期限を強制する必要がある。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3 Versioningと通常のライフサイクルだけを使用する",
+        "explanation": "権限を持つ主体はバージョンを指定して削除できる。"
+      },
+      {
+        "id": "B",
+        "text": "S3 Object Lockのコンプライアンスモードで保持期間を設定する",
+        "explanation": "保持期限前の保護対象バージョンの削除や保持期間短縮を強制的に防ぐ。"
+      },
+      {
+        "id": "C",
+        "text": "ガバナンスモードを使用し管理者へBypassGovernanceRetentionを付与する",
+        "explanation": "バイパス権限を持つ管理者が保持を回避できる。"
+      },
+      {
+        "id": "D",
+        "text": "S3 Glacier Deep Archiveへ移行する",
+        "explanation": "保存階層は削除操作をロックしない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "保持期限前の保護対象バージョンの削除や保持期間短縮を強制的に防ぐ。",
+      "concept": "Object Lockのコンプライアンスモードは期限まで保護対象バージョンの削除を防ぐ。通常の削除で削除マーカーが追加されても、保護中のバージョンは保持される。",
+      "check": {
+        "prompt": "GETで見えないが旧版を保持しているか確認したい場合は？",
+        "answer": "バージョン一覧と対象バージョンの保持設定を確認する。最新が削除マーカーでも下の版は残り得る。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-12",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Lambdaの秘密情報ローテーション",
+    "prompt": "LambdaがRDS PostgreSQLに接続する。認証情報を定期変更し、デプロイし直さずに新しい値へ追従したい。データベースはプライベートサブネットにある。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "暗号化した環境変数にパスワードを保存し、定期的にKMSキーをローテーションする",
+        "explanation": "KMSキーの回転ではDBのパスワードは変更されない。"
+      },
+      {
+        "id": "B",
+        "text": "パスワードをSSM SecureStringに置き、値の有効期限ポリシーだけを設定する",
+        "explanation": "有効期限はDBユーザーのパスワード変更と同期しない。"
+      },
+      {
+        "id": "C",
+        "text": "Secrets ManagerでRDS認証情報をローテーションし、Lambdaは実行時にシークレットを取得する",
+        "explanation": "ローテーション先のDBへ到達可能にすれば、アプリの再デプロイなしで値が更新される。"
+      },
+      {
+        "id": "D",
+        "text": "S3のSSE-KMSオブジェクトへ値を保存し、バージョニングを有効にする",
+        "explanation": "保存時の暗号化と版管理だけではDB認証情報を変更しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "ローテーション先のDBへ到達可能にすれば、アプリの再デプロイなしで値が更新される。",
+      "concept": "Secrets Managerのローテーションは新しい値をDBにも設定する必要がある。アプリはAWSCURRENTを取得し、キャッシュした資格情報が古ければ再取得して接続する。",
+      "check": {
+        "prompt": "KMSキーだけをローテーションすれば、DBの古いパスワードで入れなくなる？",
+        "answer": "ならない。KMSのローテーションとDBパスワードの変更は独立した操作。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-13",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "CloudTrailの権限分離",
+    "prompt": "全リージョン・全メンバーアカウントの管理イベントを、ログアーカイブ用アカウントのS3へ集約する。新規アカウントを自動で対象に含め、メンバー管理者に停止させない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各アカウントでイベント履歴を有効とし、監査時にCSVを手動で保存する",
+        "explanation": "継続的な集約と新規アカウントの自動対応ができない。"
+      },
+      {
+        "id": "B",
+        "text": "メンバーごとに独立したCloudTrail証跡を作る",
+        "explanation": "メンバー側の管理者が変更できる設計になりやすい。"
+      },
+      {
+        "id": "C",
+        "text": "AWS Configの組織アグリゲーターだけを構成する",
+        "explanation": "構成・準拠情報の集約であり、APIイベントの証跡ではない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailのマルチリージョン組織証跡を作成し、ログアーカイブのS3に配信する",
+        "explanation": "組織単位で記録・集約し、メンバー管理者は組織証跡を変更できない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "組織単位で記録・集約し、メンバー管理者は組織証跡を変更できない。",
+      "concept": "組織証跡とマルチリージョン設定は別の軸。ログを別アカウントのS3へ配信する場合はバケット側で当該証跡の配信を許可する。",
+      "check": {
+        "prompt": "管理イベントのみの組織証跡で、S3 GetObjectも記録できる？",
+        "answer": "GetObjectはデータイベント。監査要件に応じて対象バケットのデータイベントを設定する。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-14",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "ALBでHTTPアプリを防御",
+    "prompt": "公開ALBの背後にHTTPアプリがある。IPごとの異常なリクエスト頻度とSQLインジェクションを、アプリへ届く前に制御したい。URL単位の例外も指定したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ALBにAWS WAFを関連付け、レートベースルールとSQLi検査ルールを設定する",
+        "explanation": "HTTPリクエストの内容と集計条件を見て、対象パスに範囲を絞れる。"
+      },
+      {
+        "id": "B",
+        "text": "ALBのセキュリティグループでリクエスト数を制限する",
+        "explanation": "セキュリティグループはレートやHTTPペイロードを検査しない。"
+      },
+      {
+        "id": "C",
+        "text": "AWS Shield Advancedだけを有効化し、SQL構文を判定する",
+        "explanation": "アプリ層のSQLi検査はWAFルールで行う。"
+      },
+      {
+        "id": "D",
+        "text": "GuardDutyの検出結果をSecurity Hubへ集約する",
+        "explanation": "セキュリティの所見は集められるが、リクエストごとの事前ブロックは行わない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "HTTPリクエストの内容と集計条件を見て、対象パスに範囲を絞れる。",
+      "concept": "WAFのレートベースルールはリクエストを指定キーで集計する。スコープダウンで集計対象のパスを絞れる。SQLi検査も同じパスだけに制限する。",
+      "check": {
+        "prompt": "WAFの集計キーを全IP共通にした場合、1人の高頻度アクセスだけを制限できる？",
+        "answer": "できない。IP別の制限にするにはIPごとに集計する。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-15",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "クロスアカウントS3アップロード",
+    "prompt": "取引先のAWSロールから受領用S3へ納品させる。納品物は受領側が自動で所有し、取引先にはアップロード以外を許可しない。ACLの差異に左右されない構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "オブジェクトライター設定のままバケットACLで読み取りを許可する",
+        "explanation": "通常は書き込んだ側がオブジェクトを所有し、ACL依存も残る。"
+      },
+      {
+        "id": "B",
+        "text": "バケット所有者優先を使い、ACLヘッダーは任意にする",
+        "explanation": "bucket-owner-full-controlが付かないオブジェクトの所有を保証できない。"
+      },
+      {
+        "id": "C",
+        "text": "バケット所有者強制を選び、特定プレフィックスへのPutObjectだけを取引先ロールに許可する",
+        "explanation": "ACLを無効にしてバケット所有側が所有し、権限を必要操作に絞れる。"
+      },
+      {
+        "id": "D",
+        "text": "取引先へ受領用S3の読み書きアクセスポイントを付与する",
+        "explanation": "納品だけという制約に対して読み取りまで許可する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "ACLを無効にしてバケット所有側が所有し、権限を必要操作に絞れる。",
+      "concept": "Bucket owner enforcedではACLが無効で、バケット所有アカウントがオブジェクトを所有する。PutObjectのAllowはバケット内の特定プレフィックスに絞れる。",
+      "check": {
+        "prompt": "同じ取引先に一覧を認めるにはPutObjectだけでよい？",
+        "answer": "一覧には別のs3:ListBucketの許可が必要。今回の納品専用ロールには付与しない。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-16",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "組織外へのキー利用制約",
+    "prompt": "データキーを生成できる業務ロールがある。権限を対象KMSキーに絞った上で、ロールからKMSを直接呼ぶ経路は除き、S3経由の利用だけを許可したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "aws:SourceIpでVPCのプライベートCIDRを許可する",
+        "explanation": "KMSの呼び出しがS3経由かどうかは判定しない。"
+      },
+      {
+        "id": "B",
+        "text": "kms:ViaServiceに対象リージョンのS3サービス名を指定する",
+        "explanation": "対応サービスを経由するリクエストに限定できる。"
+      },
+      {
+        "id": "C",
+        "text": "kms:KeyOriginをAWS_KMSに指定する",
+        "explanation": "鍵素材の由来の条件であり、呼び出し経路ではない。"
+      },
+      {
+        "id": "D",
+        "text": "aws:PrincipalServiceNameにS3だけを指定する",
+        "explanation": "サービスが利用者の代理で実行するKMS操作の識別にはViaServiceを使う。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "対応サービスを経由するリクエストに限定できる。",
+      "concept": "kms:ViaServiceは対応サービスが主体の代理でKMSを使う条件。S3以外のサービスやKMSへの直接リクエストには、S3向け条件のAllowは適用されない。",
+      "check": {
+        "prompt": "ViaServiceの条件付きAllowを追加したが、別のポリシーでKMSへの直接呼び出しも許可していた。何を見直す？",
+        "answer": "両方の適用を評価し、無条件の直接アクセス許可を取り除く。条件付きAllowは他のAllowを打ち消さない。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-17",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "ユーザー認証とSTS",
+    "prompt": "モバイル利用者は既存のOIDC IdPでサインインする。ログイン済み利用者に、S3の自分の保存領域へアクセスする短期AWS認証情報を付与したい。既存IdPは維持する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CognitoユーザープールのIDトークンを、そのままS3のSignature V4署名に使う",
+        "explanation": "IDトークンだけではAWS APIの署名キーを得られない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudFrontの署名付きURLを全ユーザーへ配布し、任意のS3操作を許可する",
+        "explanation": "署名付きURLは任意のAWS API向け一時認証情報ではない。"
+      },
+      {
+        "id": "C",
+        "text": "IAMユーザーを利用者ごとに作り、モバイルへ長期キーを配布する",
+        "explanation": "期限付きの認証情報とする条件を満たせない。"
+      },
+      {
+        "id": "D",
+        "text": "Cognito IDプールをOIDC IdPに関連付け、IAMロールとID単位のS3プレフィックス制約を設定する",
+        "explanation": "既存のユーザー認証を使い、権限を限定した一時AWS認証情報を得られる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "既存のユーザー認証を使い、権限を限定した一時AWS認証情報を得られる。",
+      "concept": "Cognito IDプールはフェデレーションにより、一時AWS資格情報を返す。IAMロールで利用者ごとのS3プレフィックスを制限する。ユーザープールは主にアプリの認証トークンを扱う。",
+      "check": {
+        "prompt": "ユーザープールのIDトークンだけで通常のS3 SDKを使える？",
+        "answer": "直接は使えない。S3 SDKで署名するための一時AWS資格情報を別途得る。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-18",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "オンプレミスからのS3到達",
+    "prompt": "オンプレミスの監査サーバーがSite-to-Site VPN、VPCを経由してS3に接続する。S3の公開IPへはルーティングせず、最小の運用負荷でプライベートIP宛てに接続したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VPCにS3インターフェイスエンドポイントを配置し、オンプレミスからVPN経由でそのプライベートDNSを解決する",
+        "explanation": "インターフェイスエンドポイントはVPN経由で到達でき、S3宛てに公開インターネット経路を要しない。"
+      },
+      {
+        "id": "B",
+        "text": "VPCのS3ゲートウェイエンドポイントをVPNへ広告する",
+        "explanation": "ゲートウェイエンドポイントをオンプレミスからVPN越しに利用できない。"
+      },
+      {
+        "id": "C",
+        "text": "オンプレミスからVPCのNATゲートウェイでS3公開エンドポイントへ出る",
+        "explanation": "通信先を公開IPにしない条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "S3バケットの公開アクセスブロックを解除し、VPNからその公開URLを呼ぶ",
+        "explanation": "アクセス設定を変えても公開IPを用いない接続にはならない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "インターフェイスエンドポイントはVPN経由で到達でき、S3宛てに公開インターネット経路を要しない。",
+      "concept": "インターフェイスエンドポイントはVPCのサブネットにプライベートIPを持つENIを用意する。VPNからのルート、DNS解決、エンドポイントのセキュリティグループを確認する。",
+      "check": {
+        "prompt": "名前解決はできるがVPNからのHTTPSだけタイムアウトする。何を見る？",
+        "answer": "オンプレミスからエンドポイントENIまでの経路と、エンドポイントの443/TCPへのインバウンド許可を確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-secure-19",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "VPC間でサービスだけを提供",
+    "prompt": "共通サービスを複数のAWSアカウントに提供する。連携先とCIDRが重複し、利用者側から提供側の他サブネットにルーティングさせたくない。TCPの業務ポートだけを公開する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VPC Peeringを張り、双方でCIDR全体を広告する",
+        "explanation": "CIDR重複で接続できず、ネットワーク単位の共有になる。"
+      },
+      {
+        "id": "B",
+        "text": "Transit Gatewayへ双方を接続し、重複CIDRを双方へ伝播する",
+        "explanation": "重複ルートを前提にする設計に適さず、サービス単位の公開ではない。"
+      },
+      {
+        "id": "C",
+        "text": "提供側のNLBをPrivateLinkエンドポイントサービスとして公開し、利用側でインターフェイスエンドポイントを作る",
+        "explanation": "接続先を特定TCPサービスに絞れ、CIDRが重複しても使用できる。"
+      },
+      {
+        "id": "D",
+        "text": "サービスをインターネット向けALBへ移す",
+        "explanation": "公開網を経由させず提供側のTCPサービスだけを接続する構成にならない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "接続先を特定TCPサービスに絞れ、CIDRが重複しても使用できる。",
+      "concept": "PrivateLinkでは提供側のNLB背後のサービスを、利用側VPCのインターフェイスエンドポイント経由で使える。互いの全サブネットへのルートを作らずに済む。",
+      "check": {
+        "prompt": "利用側から提供側の別のEC2へ直接SSHもできる？",
+        "answer": "できない。接続で公開されたサービスへの入口であり、任意のサブネットへルーティングする機能ではない。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-01",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "S3イベントの重複と順序",
+    "prompt": "同じS3キーへの更新をイベントで受けて検索インデックスへ反映する。イベントは逆順や重複で届き得る。最後の更新結果を古いイベントで上書きしないためには何をするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "イベント作成日時を分単位に丸め、同じ分は先着順にする",
+        "explanation": "同一分に別の更新がある場合や逆順配信に対応できない。"
+      },
+      {
+        "id": "B",
+        "text": "同じキーのS3 sequencerを正規化して比較し、保存済み値より新しい更新だけを条件付きで受理する",
+        "explanation": "同一キーの作成・削除イベントの順序を比較でき、条件付き更新で並行処理の競合を防げる。"
+      },
+      {
+        "id": "C",
+        "text": "EventBridgeから標準SQSへ送り、FIFO順で受信したと仮定する",
+        "explanation": "標準SQSの順序は保証されず、上流で逆順になったイベントも修正しない。"
+      },
+      {
+        "id": "D",
+        "text": "S3 VersionIdを文字列で比較し、新しそうなものを採用する",
+        "explanation": "VersionIdは辞書順の時系列を保証しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "同一キーの作成・削除イベントの順序を比較でき、条件付き更新で並行処理の競合を防げる。",
+      "concept": "S3通知のsequencerは同じオブジェクトキー内だけで比較できる。長さが異なる場合は短い値を左ゼロ埋めして比較する。",
+      "check": {
+        "prompt": "キーの異なる二つのイベントをsequencerの大小で比較できる？",
+        "answer": "できない。キーをまたいだ順序の判断には別の仕組みが必要。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-02",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "決済処理の多重実行",
+    "prompt": "SQSから注文を処理し、タイムアウト時に再試行される。決済APIは注文IDを冪等キーとして受け付ける。1件の注文で複数回課金されないことと、失敗した場合に再試行できることを両立する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "SQSのVisibility Timeoutだけを延ばす",
+        "explanation": "処理失敗後の再配信や、決済成功後・削除前の失敗を排除できない。"
+      },
+      {
+        "id": "B",
+        "text": "決済前にSQSからメッセージを削除する",
+        "explanation": "決済を完了できなかった注文が再試行されなくなる。"
+      },
+      {
+        "id": "C",
+        "text": "同一注文の全試行で共通の冪等キーを渡し、決済結果が確定してからメッセージを削除する",
+        "explanation": "再処理時も同じ決済として扱いつつ、未完了の注文は再配信で処理できる。"
+      },
+      {
+        "id": "D",
+        "text": "SQS FIFOの重複排除だけを使い決済IDを毎回生成する",
+        "explanation": "送信側の重複排除は受信処理の再試行を無くさない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "再処理時も同じ決済として扱いつつ、未完了の注文は再配信で処理できる。",
+      "concept": "FIFOの送信重複排除は、外部APIで生じる副作用の一意性を保証しない。メッセージ削除は決済結果の確定後に行う。",
+      "check": {
+        "prompt": "タイムアウトごとに新しい冪等キーを生成すると？",
+        "answer": "同じ注文でもAPIが別操作とみなすため、二重請求を防げない。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-03",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "可用性と災害対策",
+    "prompt": "EC2とRDSのシステムで、リージョン障害時にRPO数分、RTO 30分を求められた。待機リージョンで常時稼働するアプリ容量は最小限にしつつ、通常時からヘルスチェック可能にしたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "毎日スナップショットを複製し、障害後に全サービスを作成する",
+        "explanation": "RPO数分を満たしにくく、事前のアプリヘルスチェックもできない。"
+      },
+      {
+        "id": "B",
+        "text": "単一リージョンのMulti-AZ構成にする",
+        "explanation": "AZ障害には対応するがリージョン全体の障害には対応できない。"
+      },
+      {
+        "id": "C",
+        "text": "両リージョンを最初から本番の全容量で常時稼働させる",
+        "explanation": "最小の待機容量で運用する条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "DBを継続的にリージョン間複製し、アプリの縮小構成を待機先で稼働させ、切り替えと増強を自動化する",
+        "explanation": "ウォームスタンバイなら平時の動作確認と迅速な復旧を両立できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "ウォームスタンバイなら平時の動作確認と迅速な復旧を両立できる。",
+      "concept": "ウォームスタンバイは縮小した構成を稼働させ、障害時に昇格・増強する。RPOは失うデータ量の時間幅、RTOは復旧にかけられる時間。",
+      "check": {
+        "prompt": "複製遅延が8分ならRPO 5分を達成したと言える？",
+        "answer": "言えない。複製遅延と、昇格や切替にかかる時間を別々に計測する。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-04",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "同一グループ内の順序と並列処理",
+    "prompt": "受付APIは契約IDごとの変更指示を正しい順序で処理する必要がある。別契約間では順序不要で、特定の契約の処理が遅くてもほかの契約を進めたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "SQS FIFOで契約IDをMessageGroupIdにし、同一グループ内は逐次処理する",
+        "explanation": "グループ単位で順序を保ちつつ、異なるグループは並行処理できる。"
+      },
+      {
+        "id": "B",
+        "text": "すべての契約で共通のMessageGroupIdを使う",
+        "explanation": "契約をまたいだ並列性が失われる。"
+      },
+      {
+        "id": "C",
+        "text": "標準SQSに契約IDを付け、受信順だけで更新する",
+        "explanation": "標準キューでは同一契約の配信順を保証できない。"
+      },
+      {
+        "id": "D",
+        "text": "イベントIDをMessageGroupIdにし、契約IDをDeduplicationIdにする",
+        "explanation": "契約内の順序がなくなり、異なる変更も重複と見なされ得る。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "グループ単位で順序を保ちつつ、異なるグループは並行処理できる。",
+      "concept": "FIFOのMessageGroupIdは順序の単位。DeduplicationIdは送信の重複排除に使い、指示の順序を決めない。",
+      "check": {
+        "prompt": "すべての契約で共通のMessageGroupIdを使ったら？",
+        "answer": "順序はより広い範囲でそろうが、遅い契約が他の契約の処理まで妨げ、並列性が落ちる。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-05",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "SQSバッチの部分失敗",
+    "prompt": "SQS標準キューをLambdaで処理する。10件中1件だけ失敗した際、成功した9件の再処理と、失敗した1件の喪失をともに避けたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "関数例外を捕捉し、常に空のレスポンスを返す",
+        "explanation": "全件成功扱いになり、失敗分も削除され得る。"
+      },
+      {
+        "id": "B",
+        "text": "イベントソースマッピングでReportBatchItemFailuresを有効化し、失敗したメッセージIDを返す",
+        "explanation": "一部失敗を通知し、成功分を削除して失敗分のみ再試行できる。"
+      },
+      {
+        "id": "C",
+        "text": "Visibility Timeoutを短くし、バッチ全体を例外で終了する",
+        "explanation": "一部だけでなく全件が再試行される。"
+      },
+      {
+        "id": "D",
+        "text": "処理前に受け取った10件をすべて削除する",
+        "explanation": "失敗分をキューから再処理できなくなる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "一部失敗を通知し、成功分を削除して失敗分のみ再試行できる。",
+      "concept": "SQSイベントソースマッピングの部分バッチ応答を使う。SQS標準キューは少なくとも1回の配信なので、部分失敗を扱っても冪等性は必要。",
+      "check": {
+        "prompt": "関数が例外を外まで投げた場合、バッチの成功分はどうなる？",
+        "answer": "バッチ全体が失敗扱いになる。レコードごとに例外を処理し、失敗IDの一覧を返す。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-06",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "AZ障害時のインターネット出口",
+    "prompt": "プライベートサブネットのWebワーカーが3つのAZにあり、外部APIへ常時接続する。AZ障害で他AZの通信まで止まるのを避け、クロスAZ通信料も避けたい。ゾーナルNATゲートウェイを使う。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "1つのゾーナルNATを用意し3つのAZから共用する",
+        "explanation": "そのAZやNATに依存し、他AZ利用分にクロスAZ転送が生じる。"
+      },
+      {
+        "id": "B",
+        "text": "NATを各AZに置くが、全サブネットの経路は単一NATへ向ける",
+        "explanation": "他AZのNATが用意されても通常の経路は単一AZに集中する。"
+      },
+      {
+        "id": "C",
+        "text": "外部API宛てにS3ゲートウェイエンドポイントを設定する",
+        "explanation": "任意の外部インターネットAPIへのルートは提供しない。"
+      },
+      {
+        "id": "D",
+        "text": "AZごとにゾーナルNATを配置し、それぞれのプライベートサブネットから同一AZのNATへルーティングする",
+        "explanation": "単一のAZに依存せず、NATまでのクロスAZ経路も避けられる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "単一のAZに依存せず、NATまでのクロスAZ経路も避けられる。",
+      "concept": "ゾーナル構成ではAZごとにサブネットのルートテーブルから同じAZのNATへ送る。外部から見える送信元IPは各NATに割り当てたEIP。",
+      "check": {
+        "prompt": "3台用意しても全サブネットが同じNATを向いていたら？",
+        "answer": "出口は実質的に単一AZに集中する。配置だけでなく各プライベートルートを確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-07",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "ECSの安全な展開",
+    "prompt": "ECSのHTTPサービスでは既存接続を維持し、起動直後の新タスクが処理可能になるまでルーティングしたくない。不良なデプロイを検知した場合に前回成功版へ自動で戻したい。ECSローリング更新を使用する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ALBのヘルスチェックと登録解除の遅延を調整する",
+        "explanation": "準備済みターゲットへ流し、旧タスクの進行中リクエストに完了猶予を与えられる。"
+      },
+      {
+        "id": "B",
+        "text": "最低ヘルシー率を0%にする",
+        "explanation": "すべての旧タスクを先に停止できるため、接続を維持しにくい。"
+      },
+      {
+        "id": "C",
+        "text": "ECSデプロイサーキットブレーカーのロールバックを有効にする",
+        "explanation": "安定状態へ到達しない展開を検出し、直前の成功した展開へ戻せる。"
+      },
+      {
+        "id": "D",
+        "text": "ECRイメージスキャンの重大所見だけで展開判定する",
+        "explanation": "イメージの静的所見ではアプリの起動・ヘルスチェック失敗を判定しない。"
+      },
+      {
+        "id": "E",
+        "text": "Route 53のTTLだけを伸ばす",
+        "explanation": "同じALBのターゲットの準備状態と展開結果には作用しない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "準備済みターゲットへ流し、旧タスクの進行中リクエストに完了猶予を与えられる。 安定状態へ到達しない展開を検出し、直前の成功した展開へ戻せる。",
+      "concept": "ALBのヘルスチェックと登録解除遅延はトラフィックを扱う。ECSのサーキットブレーカーはデプロイ失敗の判定と完了済み版への復帰を扱う。",
+      "check": {
+        "prompt": "プロセス起動直後にHTTP 200を返すチェックで十分？",
+        "answer": "業務処理の準備がまだなら不十分。準備完了を反映するヘルスチェックが必要。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-08",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "DNSで障害先を除外",
+    "prompt": "リージョンAを通常系、Bを待機系にする。普段Bにはユーザートラフィックを送らず、AのALBが正常でなくなったらBに切り替えたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "レイテンシーベースルーティングでAとBを公開する",
+        "explanation": "正常時からBが選ばれる可能性がある。"
+      },
+      {
+        "id": "B",
+        "text": "Route 53のフェイルオーバールーティングを使い、ALBのターゲットヘルス評価を設定する",
+        "explanation": "通常はプライマリを返し、異常時に正常なセカンダリを返せる。"
+      },
+      {
+        "id": "C",
+        "text": "位置情報ルーティングで全世界をAに割り当てる",
+        "explanation": "障害時の待機切替を単独では定義しない。"
+      },
+      {
+        "id": "D",
+        "text": "DNSレコードのTTLを極端に長くし、AとBを同一レコードへ追加する",
+        "explanation": "通常系への固定と迅速な異常時切り替えに適さない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "通常はプライマリを返し、異常時に正常なセカンダリを返せる。",
+      "concept": "Route 53のフェイルオーバールーティングはDNSの応答先を変える。既にクライアントが保持するDNS応答や接続は、その瞬間には入れ替わらない。",
+      "check": {
+        "prompt": "切替後にも古いALBへ接続する利用者がいる理由は？",
+        "answer": "DNSキャッシュや既存接続が残っている可能性がある。新規DNS応答とクライアントの実際の接続を区別する。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-09",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Redisのフェイルオーバー",
+    "prompt": "キャッシュミス急増がDB停止につながるため、プライマリ障害で空のキャッシュに切り替わる設計は避ける。ElastiCache for ValkeyにAZをまたぐ自動昇格を使う。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "プライマリノードだけの構成でスナップショットを毎日作る",
+        "explanation": "AZ障害時の同期的な待機先昇格にはならず、キャッシュが古くなる。"
+      },
+      {
+        "id": "B",
+        "text": "同じAZのアプリへクライアントキャッシュを配置する",
+        "explanation": "同じAZの障害を共有し、キャッシュサーバーの待機先は得られない。"
+      },
+      {
+        "id": "C",
+        "text": "別AZのレプリカを持つレプリケーショングループでMulti-AZと自動フェイルオーバーを有効化する",
+        "explanation": "レプリカの昇格で既存キャッシュを可能な範囲で維持できる。"
+      },
+      {
+        "id": "D",
+        "text": "バックアップを別リージョンにコピーし、毎回手動で復元する",
+        "explanation": "同一リージョン内の自動昇格と短時間切替を満たさない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "レプリカの昇格で既存キャッシュを可能な範囲で維持できる。",
+      "concept": "ElastiCacheの自動フェイルオーバーはレプリカを昇格する。非同期複製では、障害直前のすべてのキャッシュ更新が残る保証はない。",
+      "check": {
+        "prompt": "同じAZのレプリカを増やせば、AZ全体の停止も吸収できる？",
+        "answer": "吸収できない。AZ障害を想定するならレプリカを別AZに置く。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-10",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "オンプレミスの接続冗長化",
+    "prompt": "主回線はAWS Direct Connectで、オンプレミスからTransit Gateway配下のVPCへ接続している。予備の専用回線を新設できないが、専用回線障害時にも同じネットワークへ到達したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Direct Connectの同じ物理接続に2つ目のVIFを作る",
+        "explanation": "同一物理回線の障害に対して冗長化できない。"
+      },
+      {
+        "id": "B",
+        "text": "VPNを同じDirect Connect物理経路だけに依存させる",
+        "explanation": "主回線と同じ障害に巻き込まれる。"
+      },
+      {
+        "id": "C",
+        "text": "NATゲートウェイを二重化する",
+        "explanation": "オンプレミスからのルートを冗長化しない。"
+      },
+      {
+        "id": "D",
+        "text": "独立したインターネット回線からSite-to-Site VPNをTGWに接続し、動的経路を設定する",
+        "explanation": "別経路を持ち、主回線の経路が撤回されたらVPNへ切り替えられる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "別経路を持ち、主回線の経路が撤回されたらVPNへ切り替えられる。",
+      "concept": "独立した回線でSite-to-Site VPNを構成し、BGP等の動的経路で平時の優先と撤回後の切替を制御する。",
+      "check": {
+        "prompt": "同じDirect Connect上でVIFを追加すれば断線対策になる？",
+        "answer": "設定上は経路が増えても、物理回線断への冗長化にはならない。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-11",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "リージョン障害に備えたデータ書き込み",
+    "prompt": "ユーザープロファイルを2リージョンのアプリが平時から読み書きする。書き込み先リージョンが停止しても対向リージョンへの接続変更で書き込みを継続したい。競合があった場合の最終書き込み優先を許容する。 双方向複製と競合解決はAWSに任せたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DynamoDBグローバルテーブルをマルチリージョン結果整合性で構成する",
+        "explanation": "各レプリカに書き込め、競合は最終書き込み優先で解決する。"
+      },
+      {
+        "id": "B",
+        "text": "DynamoDBのPITRを有効にし、全要求を単一リージョンへ送る",
+        "explanation": "別リージョンの同時書き込みと即時切替を提供しない。"
+      },
+      {
+        "id": "C",
+        "text": "Auroraの通常のリードレプリカを両リージョンの独立ライターとして扱う",
+        "explanation": "読み取りレプリカを同時に独立ライターとして扱えない。"
+      },
+      {
+        "id": "D",
+        "text": "DynamoDB Streamsから相互に独立したテーブルへ、リージョン間の変更だけをコピーする",
+        "explanation": "自前で循環複製の防止と競合解決が必要になる。グローバルテーブルはこの要件をマネージドで満たす。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "各レプリカに書き込め、競合は最終書き込み優先で解決する。",
+      "concept": "DynamoDBグローバルテーブルのMRECでは各リージョンで書き込みを受け、非同期で複製し、競合を解決する。同時更新をアプリで合算する仕組みではない。",
+      "check": {
+        "prompt": "別リージョンで書いた直後に、どのリージョンでも必ず同じ値が返る？",
+        "answer": "MRECでは保証されない。複製遅延を許容する設計かを確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-12",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "複数ステップの業務再試行",
+    "prompt": "注文では与信、在庫取り置き、配送確定の順に処理する。配送確定が失敗した場合に在庫を解放し、一時エラーは指数バックオフで再試行したい。実行履歴から失敗した工程も把握する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各処理に独立したEventBridgeルールを作り、完了順は監視だけで追う",
+        "explanation": "失敗経路や補償の順序を一元管理できない。"
+      },
+      {
+        "id": "B",
+        "text": "Step Functions StandardでRetryとCatchを設定し、失敗時に補償タスクへ分岐する",
+        "explanation": "実行状態と履歴を保持し、再試行や補償を工程ごとに定義できる。"
+      },
+      {
+        "id": "C",
+        "text": "Lambdaに全処理を実装し、常に関数全体を最初から再実行する",
+        "explanation": "工程単位の再試行や既済工程の補償を管理しづらい。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatchアラームで失敗を通知するだけにする",
+        "explanation": "工程の再試行や在庫解放は実行されない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "実行状態と履歴を保持し、再試行や補償を工程ごとに定義できる。",
+      "concept": "Standardは長時間実行と実行履歴に対応する。Retryは再試行、Catchはエラー処理への遷移であり、在庫の解放は明示した補償タスクが行う。",
+      "check": {
+        "prompt": "在庫取り置き後に配送が失敗すれば、Step Functionsが在庫を自動で戻す？",
+        "answer": "自動では戻らない。Catchの遷移先に在庫解放を実装する。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-13",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Kinesisのデータ再生",
+    "prompt": "複数コンシューマーがイベントの履歴をそれぞれ保持しながら処理する。新しい集計ロジックをデプロイ後、元イベントを7日前まで遡って再実行したい。通常処理のチェックポイントは保つ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "標準SQSで既に削除済みのメッセージを可視化する",
+        "explanation": "削除したメッセージの再取得はできない。"
+      },
+      {
+        "id": "B",
+        "text": "Kinesisの保持時間を24時間のままとし、開始位置だけTRIM_HORIZONにする",
+        "explanation": "保持期間外のデータまでは戻れない。"
+      },
+      {
+        "id": "C",
+        "text": "Kinesis Data Streamsの保持を7日以上にし、再処理用の別コンシューマーで時刻から読み直す",
+        "explanation": "保持されたデータを既存コンシューマーの進捗と独立して再生できる。"
+      },
+      {
+        "id": "D",
+        "text": "EventBridge Pipesのフィルターだけを変更する",
+        "explanation": "既に失われた7日分の記録を作成する機能ではない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "保持されたデータを既存コンシューマーの進捗と独立して再生できる。",
+      "concept": "Kinesis Data Streamsは保持期間内のレコードをコンシューマーが再読できる。既存の保持期間を過ぎたデータは後から延長しても復元できない。",
+      "check": {
+        "prompt": "昨日までの24時間保持を今日7日に延ばせば、先週のデータも読める？",
+        "answer": "既に期限切れになった分は読めない。必要な保持期間は前もって設定する。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-14",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "S3保護と復旧",
+    "prompt": "運用ミスで削除された旧版を復旧できるようにし、リージョン喪失時には別リージョンから参照したい。既存オブジェクトも対象とし、誤った削除マーカーは複製先へ適用しない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "送信元と送信先のS3バージョニングを有効化し、削除マーカー複製を無効としたCRRを設定する",
+        "explanation": "新規オブジェクトを複製しつつ、対象の削除マーカーを反映しない。"
+      },
+      {
+        "id": "B",
+        "text": "S3 One Zone-IAへ移行する",
+        "explanation": "単一AZのストレージクラスで、別リージョンの複製は作らない。"
+      },
+      {
+        "id": "C",
+        "text": "リージョン内で同じバケットの別プレフィックスにコピーする",
+        "explanation": "リージョン障害に対応できない。"
+      },
+      {
+        "id": "D",
+        "text": "ライブCRRだけを設定すれば既存オブジェクトも自動複製される",
+        "explanation": "設定前の既存オブジェクトにはバッチ複製などの処理が必要。"
+      },
+      {
+        "id": "E",
+        "text": "S3 Batch Replicationで既存オブジェクトを複製する",
+        "explanation": "ライブレプリケーションの対象にならなかった既存データをバックフィルできる。"
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "新規オブジェクトを複製しつつ、対象の削除マーカーを反映しない。 ライブレプリケーションの対象にならなかった既存データをバックフィルできる。",
+      "concept": "CRRは両バケットでバージョニングを使用する。既存オブジェクトのバックフィルにはBatch Replicationを使い、削除マーカーの複製は設定で制御する。",
+      "check": {
+        "prompt": "新規のサンプル1件が複製されたら、既存分の移行完了も判断できる？",
+        "answer": "できない。既存分のバッチ結果や対象のインベントリを別途確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-15",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "RDSの復元ポイント",
+    "prompt": "同一リージョンのRDS PostgreSQLで正午に誤更新が発生した。障害直前のデータを検証用に別インスタンスへ復元し、現用DBは止めずに比較したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Multi-AZスタンバイを正午前に巻き戻す",
+        "explanation": "同期スタンバイは誤更新も反映するため、任意時刻の復元に使えない。"
+      },
+      {
+        "id": "B",
+        "text": "現用DBを直前のスナップショットでインプレース上書きする",
+        "explanation": "インプレースの復元ではなく、現用DBの維持も求められている。"
+      },
+      {
+        "id": "C",
+        "text": "リードレプリカの昇格だけを実施する",
+        "explanation": "昇格は時刻指定の復元を行わず、更新が既にレプリカへ届いている可能性がある。"
+      },
+      {
+        "id": "D",
+        "text": "RDSの自動バックアップからポイントインタイム復元し、新規DBを作成する",
+        "explanation": "トランザクションログを使って指定時点の別DBを作り、現用DBを保てる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "トランザクションログを使って指定時点の別DBを作り、現用DBを保てる。",
+      "concept": "RDSのPITRは保持範囲内の指定時点へ新しいDBを作る。スタンバイやレプリカは通常更新も反映するので、指定時点への巻き戻しとは別。",
+      "check": {
+        "prompt": "誤更新がレプリカにも反映されていたら、昇格で戻せる？",
+        "answer": "戻せない。誤更新前の指定時点でPITRする。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-16",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EventBridgeの配信失敗",
+    "prompt": "監査イベントをEventBridgeから処理先へ配信する。権限障害が再試行期間を超えたとき、失敗イベントを保全して原因調査・再処理したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ターゲットの再試行回数を最大にするだけにする",
+        "explanation": "再試行枯渇後の保全先がない。"
+      },
+      {
+        "id": "B",
+        "text": "ターゲットにSQS標準キューのDLQを設定し、EventBridgeの送信をキューポリシーで許可する",
+        "explanation": "配信できなかったイベントとエラー情報をDLQで保持できる。"
+      },
+      {
+        "id": "C",
+        "text": "Lambdaへの非同期呼び出し成功後の通知だけを設定する",
+        "explanation": "EventBridgeがターゲットに配信できなかった段階を捕捉しない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatchのメトリクスだけを保持する",
+        "explanation": "失敗件数は分かってもイベント本体を再処理できない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "配信できなかったイベントとエラー情報をDLQで保持できる。",
+      "concept": "EventBridgeターゲットのDLQは未配信イベントとエラー情報を保持する。Lambda側の非同期失敗送信先はLambdaが受理した後の失敗を扱う。",
+      "check": {
+        "prompt": "Lambdaの権限不足でEventBridgeから呼べない。Lambda側だけに失敗送信先がある場合は？",
+        "answer": "受理前の失敗なのでそこには入らない。EventBridgeターゲット側にDLQを設定する。"
+      }
+    }
+  },
+  {
+    "id": "mock-resilience-17",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "リージョン切替時の静的配信",
+    "prompt": "CloudFrontの背後に、2つのリージョンへ事前複製した同じ静的サイトがある。プライマリS3 RESTオリジンが指定の5xxを返した場合に、利用者のURLを変えずGETを待機側へ転送したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudFrontオリジングループを作成し、5xxをフェイルオーバー条件にする",
+        "explanation": "同じディストリビューションで対象メソッドの失敗をセカンダリオリジンへ切り替えられる。"
+      },
+      {
+        "id": "B",
+        "text": "CloudFrontのオリジンリクエストポリシーでS3のURLをキャッシュキーに追加する",
+        "explanation": "ヘッダーやクエリなどの転送設定で、エラー時の切替を実装しない。"
+      },
+      {
+        "id": "C",
+        "text": "S3のバケットポリシーで2リージョンのアクセスを許可する",
+        "explanation": "権限設定ではCloudFrontの接続先は選ばれない。"
+      },
+      {
+        "id": "D",
+        "text": "S3のイベントをSNSに配信する",
+        "explanation": "オブジェクトイベント通知で、読み取り時のHTTPフェイルオーバーは行わない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "同じディストリビューションで対象メソッドの失敗をセカンダリオリジンへ切り替えられる。",
+      "concept": "オリジングループのフェイルオーバーは条件に設定したエラー時に働く。対象メソッドはGET、HEAD、OPTIONSで、任意の書き込みに使える仕組みではない。",
+      "check": {
+        "prompt": "同じグループでPOSTの書き込み先も自動で切り替わる？",
+        "answer": "切り替わらない。書き込み系のフェイルオーバーは別に設計する。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-01",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "RDSの接続ストーム",
+    "prompt": "数千のLambdaが短時間に起動し、RDS PostgreSQLが最大接続数に達する。既存SQLはそのままに、認証情報を管理しつつ接続再利用を行う。ストレージやCPUには余裕がある。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "リードレプリカを追加してすべての書き込みを送る",
+        "explanation": "書き込み先はライターであり、接続の再利用にもならない。"
+      },
+      {
+        "id": "B",
+        "text": "EBSのIOPSを増やす",
+        "explanation": "同時接続数の上限を直接解決しない。"
+      },
+      {
+        "id": "C",
+        "text": "LambdaとRDSの間にRDS Proxyを追加する",
+        "explanation": "DB接続をプールし、高いLambda並行性とDB接続数を分離できる。"
+      },
+      {
+        "id": "D",
+        "text": "API Gatewayのキャッシュだけを使用する",
+        "explanation": "更新処理などキャッシュされない呼び出しの接続集中を防げない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "DB接続をプールし、高いLambda並行性とDB接続数を分離できる。",
+      "concept": "RDS Proxyは背後のDB接続をプールし、条件が合えばクライアント間で再利用する。セッション状態によるピン留めや長いトランザクションは再利用効率に影響する。",
+      "check": {
+        "prompt": "プロキシを入れればDB接続が常に一定数になる？",
+        "answer": "ならない。ピン留めや同時トランザクション数によっては多くのDB接続が必要。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-02",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "DynamoDBの偏り",
+    "prompt": "注文イベントをDynamoDBに書き込む。特定のテナントの単一パーティションキーに定常的な大量書き込みが集中し、テーブル全体に余剰容量があるのにスロットリングされる。読み取りで複数シャードを問い合わせる変更は可。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "テナントIDに分散サフィックスを加え、書き込み先のパーティションキーを分散する",
+        "explanation": "単一のホットキーへの書き込み集中を設計上解消できる。"
+      },
+      {
+        "id": "B",
+        "text": "テーブルのキャパシティを増やすだけにする",
+        "explanation": "単一の物理パーティションの処理上限はテーブル全体の余裕だけでは解決できない。"
+      },
+      {
+        "id": "C",
+        "text": "DAXを追加して書き込み処理を高速化する",
+        "explanation": "DAXは主に低レイテンシーの読み取りキャッシュで、永続書き込みのホットキーを分散しない。"
+      },
+      {
+        "id": "D",
+        "text": "GSIで同じテナントIDを再度パーティションキーにする",
+        "explanation": "ベーステーブルの集中を残し、インデックス側にも偏りが生じ得る。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "単一のホットキーへの書き込み集中を設計上解消できる。",
+      "concept": "書き込みシャーディングでキーに分散値を加えると偏りを減らせる。テナント全件を読む際は全シャードへQueryし、結果をまとめる必要がある。",
+      "check": {
+        "prompt": "シャードを増やすとデメリットは？",
+        "answer": "全件取得には問い合わせ先が増える。書き込み分散と読取コストのバランスで決める。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-03",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EBSの持続IOPS",
+    "prompt": "単一ボリュームに800 GiBのDBがあり、バーストではなく持続32,000 IOPSと低い遅延の安定性が必要。インスタンスは各候補の帯域条件を満たす。99.999%のボリューム耐久性も必要なときの構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "gp2を800 GiBで利用する",
+        "explanation": "このサイズのベースラインは要件を下回る。"
+      },
+      {
+        "id": "B",
+        "text": "io2 Block Expressを32,000 IOPS以上でプロビジョニングする",
+        "explanation": "高いプロビジョンドIOPSと低遅延を狙う用途に適する。"
+      },
+      {
+        "id": "C",
+        "text": "st1で短時間バーストに依存する",
+        "explanation": "シーケンシャルスループット向けHDDで、持続する高いランダムIOPSに適さない。"
+      },
+      {
+        "id": "D",
+        "text": "インスタンスストアを永続ボリュームとして使用する",
+        "explanation": "停止やホスト障害をまたぐ永続性を提供しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/sql-server-ec2-ha-dr/appendix.html",
+      "label": "AWS公式資料 · EBS SSDタイプの比較"
+    },
+    "learning": {
+      "reason": "高いプロビジョンドIOPSと低遅延を狙う用途に適する。",
+      "concept": "io2 Block Expressは高い持続IOPSと99.999%の設計耐久性を提供する。ボリュームの値だけでなくEC2側のEBS帯域・IOPS上限も確認する。",
+      "check": {
+        "prompt": "必要IOPSを設定したのに実測が伸びないとき、どこを確認する？",
+        "answer": "インスタンス側のEBS上限、I/Oサイズから決まるスループット、キュー深度などを確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-04",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Linuxの共有ファイル",
+    "prompt": "複数AZで増減するLinux EC2が共通のファイル群を並行更新する。既存アプリはPOSIX権限とファイルロックを利用する。容量は事前に決められない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3をアプリから直接使用して既存のPOSIXロックを取得する",
+        "explanation": "S3はオブジェクトAPIで、既存のPOSIXファイルロックを維持できない。"
+      },
+      {
+        "id": "B",
+        "text": "同一EBS gp3を全AZのEC2に接続する",
+        "explanation": "EBSはAZ内リソースでgp3はMulti-Attachにも対応しない。"
+      },
+      {
+        "id": "C",
+        "text": "各AZにローカルEBSを置いて夜間にrsyncする",
+        "explanation": "同時更新と共有ロックを提供しない。"
+      },
+      {
+        "id": "D",
+        "text": "EFS Regionalを使用し、各AZにマウントターゲットを配置する",
+        "explanation": "複数AZのLinuxクライアントが共有NFSを利用でき、容量を事前配分しなくてよい。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "複数AZのLinuxクライアントが共有NFSを利用でき、容量を事前配分しなくてよい。",
+      "concept": "EFS RegionalはNFSの共有ファイルシステムを提供し、データとメタデータを複数AZに保管する。マウントターゲットは各AZから入るための接続点。",
+      "check": {
+        "prompt": "EFS One Zoneに別AZから接続できれば、データも複数AZにある？",
+        "answer": "ない。接続可能なAZと、ファイルデータを保管するAZは別。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-05",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "世界各地からのS3アップロード",
+    "prompt": "利用者は各大陸から大容量動画を単一リージョンのS3にアップロードする。長距離経路の転送時間を改善し、失敗時にファイル全体を再送しない構成を選ぶ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudFrontでGETのキャッシュTTLを増やす",
+        "explanation": "ダウンロードキャッシュ設定はアップロードの転送や再送を改善しない。"
+      },
+      {
+        "id": "B",
+        "text": "S3 Intelligent-TieringでFA階層に固定する",
+        "explanation": "保存後のストレージ階層であり、長距離転送の改善策ではない。"
+      },
+      {
+        "id": "C",
+        "text": "S3 Transfer Accelerationのエンドポイントを使用する",
+        "explanation": "近くのエッジからAWSネットワークを利用する転送経路を使える。"
+      },
+      {
+        "id": "D",
+        "text": "コピー先にS3 Cross-Region Replicationを構成する",
+        "explanation": "S3への受領後に複製する機能で、最初のアップロード経路を改善しない。"
+      },
+      {
+        "id": "E",
+        "text": "S3マルチパートアップロードを使用してパート単位で再試行する",
+        "explanation": "失敗した部分だけを再送でき、パートを並列転送できる。"
+      }
+    ],
+    "correct": [
+      "C",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "近くのエッジからAWSネットワークを利用する転送経路を使える。 失敗した部分だけを再送でき、パートを並列転送できる。",
+      "concept": "Transfer Accelerationはエッジ経由の経路を提供する。マルチパートではUploadIdと各パートの結果を管理し、失敗したパートだけを再送して最後に完成させる。",
+      "check": {
+        "prompt": "Accelerationだけで単一PUTを途中から再開できる？",
+        "answer": "できない。転送経路を改善する機能であり、再送範囲を小さくするにはマルチパートが必要。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-06",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Auroraの読み取りスケール",
+    "prompt": "Auroraのライターで読み取り負荷が増え、注文書き込みが遅い。許容できる読み取りレプリカの遅延内で、アプリの読み取り負荷を複数レプリカへ逃がしたい。レプリカ数は負荷に合わせ自動増減させる。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Aurora Global Databaseを導入し、書き込み元リージョンを変更する",
+        "explanation": "同一リージョン内の動的な読み取り分散が主目的ではない。"
+      },
+      {
+        "id": "B",
+        "text": "Aurora Auto Scalingでリードレプリカを増減させ、読み取り接続にリーダーエンドポイントを使う",
+        "explanation": "接続先の選択をリーダーエンドポイントに任せ、読み取り容量を調節できる。"
+      },
+      {
+        "id": "C",
+        "text": "リーダーのインスタンスエンドポイントを全クライアントに固定する",
+        "explanation": "増設したレプリカへ新規接続を分散できない。"
+      },
+      {
+        "id": "D",
+        "text": "ライターへのSQL接続をRDS Proxyでプールし、全SQLを同じライターに送る",
+        "explanation": "接続管理の負担は減るが、クエリの実行負荷はライターに残り、レプリカの自動増減も行わない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "接続先の選択をリーダーエンドポイントに任せ、読み取り容量を調節できる。",
+      "concept": "Aurora Auto Scalingはリードレプリカ数を調整する。リーダーエンドポイントは新規接続を振り分けるので、長寿命の単一接続ではSQLが分散されない。",
+      "check": {
+        "prompt": "レプリカが4台あるのに集計が1台へ集中する理由は？",
+        "answer": "集計プールが同じ接続を使い続けている可能性がある。接続の寿命や数を確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-07",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "高頻度更新APIのキャッシュ",
+    "prompt": "商品詳細APIは同じSKUに大量の読取が集中する。価格は更新直後の短い遅れを許容し、欠損時はDBを参照する。障害でキャッシュが消えてもDBの更新自体を失わない設計が必要。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ElastiCacheでcache-asideを使い、DBを永続元としてTTLや更新時無効化を設定する",
+        "explanation": "DBで更新を確定し、反復読み取りをキャッシュに逃がせる。"
+      },
+      {
+        "id": "B",
+        "text": "価格の永続元をキャッシュ単体とし、DBには書かない",
+        "explanation": "キャッシュが失われた場合に価格更新の耐久性を保証できない。"
+      },
+      {
+        "id": "C",
+        "text": "各EC2のローカルキャッシュで有効期限を設けず運用する",
+        "explanation": "更新が他ノードに伝播せず、短い遅延条件を守れない。"
+      },
+      {
+        "id": "D",
+        "text": "読取のたびにバッチ処理で全SKUをS3へ再出力する",
+        "explanation": "同一SKUの反復読取に対し大きな追加処理が発生する。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "DBで更新を確定し、反復読み取りをキャッシュに逃がせる。",
+      "concept": "cache-asideはミス時にDBを読み、結果をキャッシュへ入れる。短いTTLや更新時の無効化で鮮度を管理し、障害時のDBへの集中には別途備える。",
+      "check": {
+        "prompt": "キャッシュにしかない最新値を後でDBへ流す設計のリスクは？",
+        "answer": "書き戻し前の障害で、確定したと見せた更新を失う可能性がある。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-08",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Kinesisの独立読み取り",
+    "prompt": "5つのKinesisコンシューマーが同じシャードを読む。既存のリアルタイム検知は、別コンシューマーの大量読取に影響させたくない。送信側のシャード割り当ては変えられない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "レコード保持期間だけ延長する",
+        "explanation": "読み取りスループットの共有は解消されない。"
+      },
+      {
+        "id": "B",
+        "text": "プロデューサーが同一イベントを5回書き込む",
+        "explanation": "書き込み負荷が上がるが、同一シャードの読み取り枠は共有される。"
+      },
+      {
+        "id": "C",
+        "text": "検知コンシューマーをEnhanced Fan-Outに登録する",
+        "explanation": "登録コンシューマーはシャードあたり専用の読み取りスループットを得られる。"
+      },
+      {
+        "id": "D",
+        "text": "チェックポイントの更新間隔を全コンシューマーで長くする",
+        "explanation": "読み取り帯域を独立させる効果はない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "登録コンシューマーはシャードあたり専用の読み取りスループットを得られる。",
+      "concept": "Enhanced Fan-Outの登録コンシューマーは、シャードごとに専用の読み取りスループットを利用する。データ保持期間の変更では読み取り枠は増えない。",
+      "check": {
+        "prompt": "バックフィルのために保持期間を延長したら、検知の帯域は独立する？",
+        "answer": "独立しない。保持は再読できる時間、Enhanced Fan-Outは読み取り枠の分離。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-09",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Lambdaの起動遅延",
+    "prompt": "本番APIがJavaのLambdaエイリアスを使用している。ピークの予定が事前に分かり、ピーク開始時の初期化済み実行環境を一定数確保したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Reserved Concurrencyだけを設定する",
+        "explanation": "同時実行枠を確保・制限するが、実行環境の初期化は保証しない。"
+      },
+      {
+        "id": "B",
+        "text": "関数タイムアウトを延ばす",
+        "explanation": "リクエストの初期化遅延を解消しない。"
+      },
+      {
+        "id": "C",
+        "text": "関数URLを増やしてエイリアスごとの割当をなくす",
+        "explanation": "エンドポイントを増やしても実行環境が事前に初期化されない。"
+      },
+      {
+        "id": "D",
+        "text": "ピークの直前からエイリアスのProvisioned Concurrencyをスケジュールする",
+        "explanation": "予定時刻までに指定数の初期化済み環境を用意できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "予定時刻までに指定数の初期化済み環境を用意できる。",
+      "concept": "Reserved Concurrencyは同時実行枠を確保・制限する。Provisioned Concurrencyは特定バージョンやエイリアス向けに初期化済み環境を確保し、使用しなくても確保中は費用がかかる。",
+      "check": {
+        "prompt": "Reserved Concurrencyを200にすると、コールドスタートもなくなる？",
+        "answer": "枠を確保するだけなので、初期化済みであることは保証しない。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-10",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "トラフィックに先行する容量増強",
+    "prompt": "EC2 Auto Scalingのアプリは毎日正午の直前まで低負荷で、正午ちょうどに予測可能な急増がある。新規インスタンスがリクエストを処理するまで8分かかる。初動のキュー滞留を最小化したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "定刻より十分前に必要容量を増やすスケジュールアクションを作る",
+        "explanation": "トラフィックが来る前に初期化を終えられる。"
+      },
+      {
+        "id": "B",
+        "text": "正午にCPUしきい値を超えてから通常の動的スケーリングで増やす",
+        "explanation": "起動待ち時間を経てから容量が増える。"
+      },
+      {
+        "id": "C",
+        "text": "インスタンスウォームアップだけを8分に設定する",
+        "explanation": "初期化直後のメトリクス評価を調整するが、事前に起動する設定ではない。"
+      },
+      {
+        "id": "D",
+        "text": "起動時間よりも短い間隔でヘルスチェックを実行する",
+        "explanation": "利用可能な容量を事前に増やす仕組みではない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "トラフィックが来る前に初期化を終えられる。",
+      "concept": "スケジュールアクションは時刻に基づき容量を変える。ウォームアップは新規インスタンスのメトリクスを扱う仕組みで、起動を前倒ししない。",
+      "check": {
+        "prompt": "開始時刻が不明で、長期の周期的な需要が観測される場合は？",
+        "answer": "データが十分なら予測スケーリングを検討できる。既知の単発イベントには時刻指定が適する。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-11",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "分析クエリの読み取り量",
+    "prompt": "S3上のJSONログからAthenaで直近1日の一部列のみを読み取る。1レコードの全フィールドを取得する必要はない。スキャン量とクエリ時間を減らす変更を選べ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "すべてのログをひとつのgzip圧縮JSONファイルにまとめる",
+        "explanation": "列単位の選択や日付単位の読み飛ばしに適さない。"
+      },
+      {
+        "id": "B",
+        "text": "ログをParquetへ変換する",
+        "explanation": "列指向形式により必要な列を主にスキャンできる。"
+      },
+      {
+        "id": "C",
+        "text": "各検索でWHERE句を省略する",
+        "explanation": "日付による読み飛ばしが効かない。"
+      },
+      {
+        "id": "D",
+        "text": "ログを日付でパーティション化し、クエリで日付キーを絞り込む",
+        "explanation": "対象日のパーティションだけをスキャンできる。"
+      },
+      {
+        "id": "E",
+        "text": "対象のS3データをVersioningで複製する",
+        "explanation": "バージョン管理でAthenaの読み取り範囲は縮小しない。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "列指向形式により必要な列を主にスキャンできる。 対象日のパーティションだけをスキャンできる。",
+      "concept": "Athenaでは日付パーティションを条件に含めると対象範囲を絞れる。Parquetでは列指向の形式により、不要な列の読み取りを抑えられる。",
+      "check": {
+        "prompt": "JSONをgzip圧縮しただけで、必要な列だけ物理的に読める？",
+        "answer": "読めない。圧縮による容量削減と列指向での列の読み飛ばしは異なる。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-12",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "グローバルTCP入口",
+    "prompt": "グローバルな独自TCPアプリを2リージョンで運用する。取引先のファイアウォールが許可する宛先IPを少数の固定IPv4に限定し、リージョン障害時の切替をDNSキャッシュに依存させたくない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Route 53の低TTLレコードだけでNLBを公開する",
+        "explanation": "クライアントのDNSキャッシュに依存し、共通の固定入口IPにもならない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudFrontのオリジングループを使う",
+        "explanation": "CloudFrontは任意の独自TCPの透過転送用途ではない。"
+      },
+      {
+        "id": "C",
+        "text": "Global Acceleratorで両リージョンのNLBをエンドポイントに設定する",
+        "explanation": "固定Anycast IPで受け付け、正常なエンドポイントへTCPをルーティングできる。"
+      },
+      {
+        "id": "D",
+        "text": "リージョンごとのEIPをクライアントへ固定設定する",
+        "explanation": "リージョン切替を提供する共通の入口を持てない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "固定Anycast IPで受け付け、正常なエンドポイントへTCPをルーティングできる。",
+      "concept": "Global Acceleratorは固定のAnycast IPで受け付け、正常なリージョンのNLBなどへTCPを転送する。障害時に既存接続まで無瞬断で引き継ぐ保証はない。",
+      "check": {
+        "prompt": "Route 53のTTLを短くすれば固定の入口と同等？",
+        "answer": "ならない。クライアントのDNS再解決に依存し、共通の固定Anycast入口も提供しない。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-13",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "SMBの互換性",
+    "prompt": "Windows EC2の業務アプリが共有ファイルにアクセスする。SMB、Active Directoryの既存グループ、Windows ACLが必須で、AZ障害時もフェイルオーバーさせたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Amazon FSx for Windows File ServerのMulti-AZ構成をADへ参加させる",
+        "explanation": "SMBとWindows ACLを使いながら、AZをまたいでサービスを維持できる。"
+      },
+      {
+        "id": "B",
+        "text": "Amazon EFS Regionalを直接WindowsクライアントのSMB共有にする",
+        "explanation": "EFSはNFSサービスで既存のSMBとWindows ACLの要件に一致しない。"
+      },
+      {
+        "id": "C",
+        "text": "S3を直接UNCパスとして設定する",
+        "explanation": "S3のオブジェクトAPIを業務アプリはSMBとして使えない。"
+      },
+      {
+        "id": "D",
+        "text": "1台のWindows EC2上でSMBを公開し、EBSのスナップショットだけを複製する",
+        "explanation": "障害時にマネージドなMulti-AZ切替がない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "SMBとWindows ACLを使いながら、AZをまたいでサービスを維持できる。",
+      "concept": "FSx for Windows File ServerはWindows ACLを扱える。Multi-AZ構成では別AZの待機ファイルサーバーへフェイルオーバーする。",
+      "check": {
+        "prompt": "Single-AZのバックアップで同じものが得られる？",
+        "answer": "データ復元には使えるが、自動フェイルオーバーとは異なり、新しい環境への復元が必要。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-14",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "HPCの一時作業領域",
+    "prompt": "数百台のLinux計算ノードが、S3にある参照データを使いながら並列で共通の作業ファイルを読み書きする。高い並列スループットが必須で、処理後は成果物をS3に戻したい。 ファイルの転送管理もマネージド機能に任せたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各ノードのインスタンスストアに成果物を分散し、共有ファイルとして扱う",
+        "explanation": "個々のローカルディスクは共有名前空間を提供しない。"
+      },
+      {
+        "id": "B",
+        "text": "FSx for LustreをS3データリポジトリに関連付ける",
+        "explanation": "HPC向け並列ファイルシステムを使い、データリポジトリとの連携ができる。"
+      },
+      {
+        "id": "C",
+        "text": "EFS Regionalをマウントし、各ノードでAWS CLIを使ってS3と双方向同期する",
+        "explanation": "共有POSIXストレージは提供するが、高い並列I/O向けのLustreと、S3データリポジトリとのネイティブ連携をまとめて提供しない。"
+      },
+      {
+        "id": "D",
+        "text": "単一EC2のEBSを全ノードのローカルデバイスとして接続する",
+        "explanation": "多数ノードにまたがるHPC向け共有ファイルシステムにならない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "HPC向け並列ファイルシステムを使い、データリポジトリとの連携ができる。",
+      "concept": "FSx for Lustreは並列I/O向け。S3とのデータリポジトリ関連付けにより、S3のオブジェクトとファイルシステム間でインポートやエクスポートを管理できる。",
+      "check": {
+        "prompt": "各ノードがS3を個別にコピーするだけで同じ構成になる？",
+        "answer": "ならない。共有名前空間がなく、各ノードの同期も自分で管理することになる。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-15",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "DynamoDBの検索モデル",
+    "prompt": "DynamoDBの主キーは注文ID。配送担当者は倉庫IDと出荷期限の範囲で頻繁に検索する。既存の主キーを維持し、結果整合性でよい。全件スキャンを避ける方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Scanに倉庫IDと期限のFilterExpressionを加える",
+        "explanation": "読み取った後に絞るため、スキャン自体は避けられない。"
+      },
+      {
+        "id": "B",
+        "text": "注文IDをパーティションキーに維持したLSIを作り、倉庫IDだけをソートキーにする",
+        "explanation": "LSIのクエリでも注文IDを特定する必要がある。"
+      },
+      {
+        "id": "C",
+        "text": "DAXへScanを移し、インデックスを作らない",
+        "explanation": "キャッシュは検索条件に合うキー構造を提供しない。"
+      },
+      {
+        "id": "D",
+        "text": "倉庫IDをパーティションキー、出荷期限をソートキーにしたGSIを作ってQueryする",
+        "explanation": "倉庫と期限で必要な範囲を直接検索できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "倉庫と期限で必要な範囲を直接検索できる。",
+      "concept": "GSIは元テーブルと異なるパーティションキーを使える。倉庫IDと期限でQueryする。フィルターは読んだ後に適用される。",
+      "check": {
+        "prompt": "倉庫IDだけのGSIに期限フィルターを付けると？",
+        "answer": "Scanは避けられるが、その倉庫の期限外の項目も読み取ってから除外する。"
+      }
+    }
+  },
+  {
+    "id": "mock-performance-16",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "CloudFrontのキャッシュ効率",
+    "prompt": "画像の内容が変わるときだけ変化するversionクエリがある。分析用utmパラメータは多数の値を持つが、画像の内容に影響しない。旧版と新版を区別しつつヒット率を改善したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "versionだけをキャッシュキーに含めるキャッシュポリシーを適用する",
+        "explanation": "コンテンツを変えるパラメータだけで分離し、utmの違いでは同じキャッシュを使える。"
+      },
+      {
+        "id": "B",
+        "text": "クエリをすべてキャッシュキーに入れる",
+        "explanation": "utmの差異で同じ画像が別エントリに分かれる。"
+      },
+      {
+        "id": "C",
+        "text": "クエリを一切含めず長いTTLを設定する",
+        "explanation": "同じパスの旧版と新版が同一キャッシュキーになる。"
+      },
+      {
+        "id": "D",
+        "text": "全リクエストのキャッシュを無効にする",
+        "explanation": "版の取得はできても、ヒット率向上の要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "コンテンツを変えるパラメータだけで分離し、utmの違いでは同じキャッシュを使える。",
+      "concept": "キャッシュキーに入れる値と、オリジンに転送する値は別の設定で扱える。キャッシュキーに含めたクエリはオリジンにも転送される。",
+      "check": {
+        "prompt": "versionをオリジンへ転送したがキャッシュキーに入れなかった場合は？",
+        "answer": "キャッシュミス時は正しくても、別バージョンの応答が既存キャッシュから返る可能性がある。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-01",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "S3の予測できないアクセス",
+    "prompt": "保管する動画素材は4 MiB以上。案件によりアクセス頻度が大きく変わり、固定の日数で低頻度階層に移すと再取得費が読めない。全素材をいつでもミリ秒で取得したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "作成30日でStandard-IAに固定し、取得は従来どおり行う",
+        "explanation": "アクセスの変動によって取り出し料金が発生する。"
+      },
+      {
+        "id": "B",
+        "text": "作成後すぐS3 Glacier Deep Archiveに移し、必要になったら復元する",
+        "explanation": "即時読み取りの要件を満たさない。"
+      },
+      {
+        "id": "C",
+        "text": "S3 Intelligent-Tieringを使い、オプションの非同期アーカイブ階層を有効にしない",
+        "explanation": "アクセス実績で階層を移し、取り出し料金なしでミリ秒アクセスを維持する。"
+      },
+      {
+        "id": "D",
+        "text": "特定案件で使うデータをすべてOne Zone-IAに移す",
+        "explanation": "固定低頻度階層ではパターン変動に追従せず、取り出し料金もある。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "アクセス実績で階層を移し、取り出し料金なしでミリ秒アクセスを維持する。",
+      "concept": "S3 Intelligent-Tieringはアクセス実績に応じて階層を移す。監視・自動化の料金がある。オプションの非同期アーカイブ階層を使う場合は復元待ちが必要。",
+      "check": {
+        "prompt": "即時取得を守りながらDeep Archive Accessを有効にできる？",
+        "answer": "その階層へ移ったオブジェクトは復元待ちが必要なため、この要件では有効にしない。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-02",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EC2とFargateの利用料",
+    "prompt": "EC2の最低稼働分を今後も契約型の割引でカバーしたい。半年以内に一部がFargateへ移行し、EC2のインスタンスファミリーも変える計画がある。コミットは予測できる最低利用額に限る。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "EC2 Instance Savings Plansを現行ファミリーに購入する",
+        "explanation": "そのファミリーの適用範囲を超える変更やFargateをカバーしない。"
+      },
+      {
+        "id": "B",
+        "text": "Compute Savings Plansを最低利用額に相当する分だけ購入する",
+        "explanation": "適用対象のEC2利用が変わっても対応し、Fargateにも適用される。"
+      },
+      {
+        "id": "C",
+        "text": "現行EC2のゾーン指定Reserved Instancesをピーク容量分購入する",
+        "explanation": "Fargateへの移行に追従できず、コミットが最低利用分を超える。"
+      },
+      {
+        "id": "D",
+        "text": "On-Demand Capacity Reservationを最低容量分作成する",
+        "explanation": "容量確保はできるが、それ自体は長期割引を提供しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "適用対象のEC2利用が変わっても対応し、Fargateにも適用される。",
+      "concept": "Compute Savings Plansは時間あたりの利用額をコミットし、条件を満たすEC2、Fargate、Lambdaに適用できる。EC2 Instance Savings Plansは適用範囲が狭い。",
+      "check": {
+        "prompt": "なぜピークではなく安定した最小利用額で契約する？",
+        "answer": "未使用分のコミットも支払うため。変動分まで固定すると稼働が下振れした際に余りやすい。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-03",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "スポットで安全にバッチを回す",
+    "prompt": "夜間処理は再開点をS3へ保存でき、中断しても許容締切に間に合う。EC2の割安な余剰容量を使いつつ、1種類のインスタンス不足で全体が停止するのを避けたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "複数ファミリーと複数AZをSpot容量候補に設定する",
+        "explanation": "利用できるSpotプールが増え、特定プールの不足への依存を減らす。"
+      },
+      {
+        "id": "B",
+        "text": "Spotを単一インスタンスタイプの単一AZへ固定する",
+        "explanation": "一つの容量プールに依存する。"
+      },
+      {
+        "id": "C",
+        "text": "一時ディスクだけにチェックポイントを書き出す",
+        "explanation": "インスタンス中断後、ほかのインスタンスから参照できない。"
+      },
+      {
+        "id": "D",
+        "text": "価格と容量を考慮するSpot配分戦略を用い、永続チェックポイントから再開する",
+        "explanation": "中断リスクを低減しつつ、異なるインスタンスでも処理を再開できる。"
+      },
+      {
+        "id": "E",
+        "text": "EC2 Instance Savings Plansを購入してSpot料金へ適用する",
+        "explanation": "Savings PlansはSpot利用料金に適用されない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "利用できるSpotプールが増え、特定プールの不足への依存を減らす。 中断リスクを低減しつつ、異なるインスタンスでも処理を再開できる。",
+      "concept": "SpotプールはインスタンスタイプとAZの組み合わせ。価格だけでなく容量も考慮した配分と代替候補を使う。チェックポイントで中断後の再開に備える。",
+      "check": {
+        "prompt": "永続チェックポイントでSpot中断そのものを防げる？",
+        "answer": "防げない。中断後に別の容量で失った作業を抑えて再開するための対策。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-04",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "不要なNAT転送",
+    "prompt": "プライベートEC2から毎日数TBを同一リージョンのS3へ転送している。外部APIにも同じNATを経由するためNATの削除はできない。S3転送に起因するNAT処理料金を外したい。 同一VPCからのアクセスであり、新規のエンドポイント処理料金も避けたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3インターフェイスエンドポイントへ全転送する",
+        "explanation": "NATは回避できるがエンドポイントの時間・データ処理料があり、同一VPCからでは無料のゲートウェイ型が低コスト。"
+      },
+      {
+        "id": "B",
+        "text": "NATのElastic IPを複数に増やす",
+        "explanation": "接続数の制約は緩和できても、S3通信のNAT経由と処理料金は残る。"
+      },
+      {
+        "id": "C",
+        "text": "S3ゲートウェイエンドポイントをEC2のルートテーブルへ追加する",
+        "explanation": "S3のプレフィックス宛てだけをNATから分離し、外部APIは引き続きNATを使える。"
+      },
+      {
+        "id": "D",
+        "text": "CloudFrontディストリビューションをアップロード先にする",
+        "explanation": "プライベートEC2から公開エッジへの通信がNATを経由する問題を解決しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "S3のプレフィックス宛てだけをNATから分離し、外部APIは引き続きNATを使える。",
+      "concept": "同一リージョンのS3ゲートウェイエンドポイントでは、S3宛てプレフィックスのルートを追加する。ゲートウェイ型にはエンドポイント自体の時間・データ処理料金がない。",
+      "check": {
+        "prompt": "S3の経路を変えた後、NATを削除できる？",
+        "answer": "外部APIが引き続きNATを使うため、この条件では残す。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-05",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EBSの容量と性能の分離",
+    "prompt": "gp2の2 TiBボリュームを使っているが、データ量は800 GiBで、容量を大きくした理由は6,000 IOPSを得るためだった。必要性能を維持しつつ、不要な容量の費用を下げたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "既存gp2のModifyVolumeでサイズだけを1 TiBへ縮小する",
+        "explanation": "EBSは既存ボリュームをその操作で縮小できず、gp2ではベースラインIOPSも容量依存。"
+      },
+      {
+        "id": "B",
+        "text": "必要なIOPSと帯域を設定した小さいgp3を新規作成し、データを移行して切り替える",
+        "explanation": "gp3は容量と性能を独立して設定できる。"
+      },
+      {
+        "id": "C",
+        "text": "既存スナップショットを1 TiBのgp3へ直接復元する",
+        "explanation": "元のボリュームより小さいサイズにスナップショットから直接復元できない。"
+      },
+      {
+        "id": "D",
+        "text": "ボリュームをst1に変え、バーストでランダムI/Oを処理する",
+        "explanation": "持続する高IOPSのランダムI/O要件に向かない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "gp3は容量と性能を独立して設定できる。",
+      "concept": "gp3は容量から独立して性能を指定できる。既存EBSの容量は縮小できず、スナップショットの直接復元先も元より小さくできない。",
+      "check": {
+        "prompt": "gp2をその場でgp3に変更するだけで容量課金を半分にできる？",
+        "answer": "容量は同じまま。小容量の新規ボリュームへのデータ移行が必要。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-06",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "長期ログ保管の費用",
+    "prompt": "監査ログは最初の30日は頻繁に、以降は年1回程度読む。31日目以降は48時間以内に取得できればよく、7年保管する。数MiB以上のオブジェクトにまとめている。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "全期間をS3 Standardにする",
+        "explanation": "低頻度の長期保管に追加要件以上の費用がかかる。"
+      },
+      {
+        "id": "B",
+        "text": "30日後にS3 Standard-IAへ移行し、そのまま保管する",
+        "explanation": "ミリ秒アクセスが不要で保管年数が長く、より低コストのアーカイブクラスを使える。"
+      },
+      {
+        "id": "C",
+        "text": "作成直後にS3 Glacier Deep Archiveへ移行する",
+        "explanation": "最初の30日の頻繁な読み取りに適さない。"
+      },
+      {
+        "id": "D",
+        "text": "S3 Standardから30日後にS3 Glacier Deep Archiveへ移行する",
+        "explanation": "初期の即時アクセスを維持し、以降は48時間の取り出し猶予を使って低い保管単価を得られる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "初期の即時アクセスを維持し、以降は48時間の取り出し猶予を使って低い保管単価を得られる。",
+      "concept": "S3 Glacier Deep Archiveは通常のGETの前に復元が必要。取り出しは方式によって通常の時間が異なり、Bulkは通常48時間以内が目安。",
+      "check": {
+        "prompt": "以降のログも即時取得が必須に変わったら？",
+        "answer": "Deep Archiveは適さない。即時取得できるクラスの保管料と取り出し料を比較する。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-07",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "DynamoDBの不規則な負荷",
+    "prompt": "新サービスのDynamoDBには、ときどき短時間のバーストがあるが、普段はほとんどアクセスがない。ピークを事前に予測できず、手動で容量を調整できない。増加率はオンデマンドのスケーリング範囲内とする。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "オンデマンドキャパシティモードを使う",
+        "explanation": "リクエスト単位で課金され、事前の容量配分をせずに変動へ追従できる。"
+      },
+      {
+        "id": "B",
+        "text": "ピーク相当のプロビジョンド容量を常時設定する",
+        "explanation": "閑散時もプロビジョンド容量の費用を負担する。"
+      },
+      {
+        "id": "C",
+        "text": "低いプロビジョンド容量と長時間のスケーリング猶予を設定する",
+        "explanation": "急なバーストが始まった直後のスロットリングが起きやすい。"
+      },
+      {
+        "id": "D",
+        "text": "テーブルをDAXへ置き換える",
+        "explanation": "DAXはDynamoDBの永続ストアを置き換えず、別途クラスター料金が発生する。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "リクエスト単位で課金され、事前の容量配分をせずに変動へ追従できる。",
+      "concept": "DynamoDBオンデマンドは要求量に応じて課金する。以前のピークを大きく飛び越える急増など、スケーリング範囲外ではスロットリングし得る。",
+      "check": {
+        "prompt": "オンデマンドへ変えると、どんな急増でも無制限に受けられる？",
+        "answer": "無制限ではない。既存ピーク、クォータ、キー分布などを確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-08",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "ログのクエリと保持",
+    "prompt": "CloudWatch Logsに障害解析用ログが無期限で蓄積している。即時検索は直近14日のみ必要。規制上は1年間保持したいが、古いログのクエリは年数回だけで、取り込み経路は変えたくない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudWatch Logsの保持期限だけ14日にする",
+        "explanation": "別のアーカイブがなければ規制上必要な過去データも失う。"
+      },
+      {
+        "id": "B",
+        "text": "必要ログをS3へ継続配信し、古いログを低コスト階層へ移行する",
+        "explanation": "即時検索を必要としない期間の保管先を分けられる。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatch Logs Insightsを多用して保管費を下げる",
+        "explanation": "クエリを実行しても保持期限や保管量は変わらない。"
+      },
+      {
+        "id": "D",
+        "text": "Glacierの復元だけでCloudWatch Logsの14日間の即時検索を置き換える",
+        "explanation": "復元が必要なため日常の即時検索要件を満たさない。"
+      },
+      {
+        "id": "E",
+        "text": "S3への既存ログのバックフィルを確認してCloudWatch Logsの保持期限を14日に設定する",
+        "explanation": "1年間保持する履歴を失わず、即時検索先の保管費を削減できる。"
+      }
+    ],
+    "correct": [
+      "B",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "即時検索を必要としない期間の保管先を分けられる。 1年間保持する履歴を失わず、即時検索先の保管費を削減できる。",
+      "concept": "サブスクリプションは新しいログの継続配信に使い、S3エクスポートは既存ログの移行に使える。切替時の重複や抜けを検証してから保持設定を変える。",
+      "check": {
+        "prompt": "今からサブスクリプションを作れば半年前のログも移る？",
+        "answer": "移らない。レトロスペクティブな転送は別に計画する。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-09",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "S3の未完了アップロード",
+    "prompt": "クライアントが不安定な回線でマルチパートアップロードを途中放棄し、完成したオブジェクト数の割にS3保管量が増える。通常のアップロードは24時間内に完了する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "現在のオブジェクトを2日後にExpireする",
+        "explanation": "完成品に作用する設定で、未完了のパート削除は専用ルールを使う。"
+      },
+      {
+        "id": "B",
+        "text": "S3のDelete Markerを削除する",
+        "explanation": "未完了パートはDelete Markerと無関係。"
+      },
+      {
+        "id": "C",
+        "text": "ライフサイクルで開始後2日を超えた未完了マルチパートを中止する",
+        "explanation": "古い未完了アップロードのパートを削除し、正常アップロードには完了猶予を残せる。"
+      },
+      {
+        "id": "D",
+        "text": "S3 Intelligent-Tieringを設定して未完了パートを移す",
+        "explanation": "未完了のパートをオブジェクトの階層移行で削除できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "古い未完了アップロードのパートを削除し、正常アップロードには完了猶予を残せる。",
+      "concept": "ライフサイクルのAbortIncompleteMultipartUploadは、開始から指定日数を過ぎた未完了アップロードを止める。完成済みオブジェクトのExpirationとは別機能。",
+      "check": {
+        "prompt": "通常アップロードに3日かかるなら2日で中止してよい？",
+        "answer": "正常分も中止され得る。正常処理が終わる時間より長く設定する。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-10",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "分析環境のアイドル費",
+    "prompt": "小規模なSQL分析が週に数回発生する。元データはS3のParquetで、クエリは標準SQL、ジョブ開始待ちを許容できる。常時サーバーの費用をなくし、部門ごとのスキャン量の上限も設定したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "EC2にPrestoを常時稼働させて部門で共有する",
+        "explanation": "散発的な処理にもアイドル時間のEC2費用が発生する。"
+      },
+      {
+        "id": "B",
+        "text": "Athenaのオンデマンドクエリを使い、部門ごとにワークグループとスキャン量制限を設定する",
+        "explanation": "サーバーを常時確保せず、クエリごとのスキャン量を制御できる。"
+      },
+      {
+        "id": "C",
+        "text": "Redshiftのプロビジョンドクラスターを常時利用する",
+        "explanation": "アイドル時もクラスター容量に対して課金される。"
+      },
+      {
+        "id": "D",
+        "text": "AWS GlueのSparkジョブに標準SQLを組み込み、部門で共通の実行枠を使う",
+        "explanation": "アイドル課金は回避し得るが、Athenaのスキャン量制限に相当する要件には追加実装が必要。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "サーバーを常時確保せず、クエリごとのスキャン量を制御できる。",
+      "concept": "AthenaはS3のデータを直接SQLで読む。オンデマンドではスキャン量が費用の軸で、ワークグループのクエリ別制限で過大なクエリを中止できる。",
+      "check": {
+        "prompt": "ワークグループのクエリ別上限を、部門の月間予算上限とみなせる？",
+        "answer": "みなせない。1クエリあたりの制限と、月間の累積費用・使用量の監視は別。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-11",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "イメージの世代管理",
+    "prompt": "ECRにコミット単位のイメージを大量にpushする。本番の巻き戻し用にリリースイメージを90日保存し、毎回生成されるCI用タグは直近10件だけ残す。イメージには単一の用途別タグが付く。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ECRのスキャン時に古いイメージを自動削除する",
+        "explanation": "イメージスキャンは脆弱性の検出機能で、保存世代は管理しない。"
+      },
+      {
+        "id": "B",
+        "text": "リポジトリ全体でイメージ10件を超えたら削除する",
+        "explanation": "本番リリースの90日保持を意図せず破る。"
+      },
+      {
+        "id": "C",
+        "text": "CIイメージとリリースイメージをすべて別アカウントに複製する",
+        "explanation": "保持ポリシーを満たさず、ストレージも追加で消費する。"
+      },
+      {
+        "id": "D",
+        "text": "用途別タグのプレフィックスごとにECRライフサイクルポリシーを作成する",
+        "explanation": "CIでは件数、リリースでは経過期間を条件として削除できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "CIでは件数、リリースでは経過期間を条件として削除できる。",
+      "concept": "ECRライフサイクルポリシーではタグ条件と件数または経過日数を組み合わせる。ルールはイメージを対象にするため複数タグがある構成では評価結果も確認する。",
+      "check": {
+        "prompt": "CIタグとリリースタグが同じイメージに付く構成へ変えたら？",
+        "answer": "今の前提が崩れる。リリースが対象に入らないか、優先順位とプレビューを再確認する。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-12",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "定期実行する長時間コンテナ",
+    "prompt": "月に数回だけ2時間動くコンテナ処理がある。ホストを管理せず、処理時だけ計算資源に課金されるようにしたい。起動は時刻固定で、処理中のSpot回収は許容しない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "EventBridge SchedulerからECS RunTaskを呼び、Fargateの通常容量で実行する",
+        "explanation": "起動時だけタスクが稼働し、利用者がホストを管理せず、Spot回収を前提としない。"
+      },
+      {
+        "id": "B",
+        "text": "Lambdaの単一実行としてコンテナを2時間動かす",
+        "explanation": "Lambdaの単一実行は最大15分。"
+      },
+      {
+        "id": "C",
+        "text": "常時起動のEC2へコンテナを配置し、cronで起動する",
+        "explanation": "アイドル中のEC2料金とホスト管理が残る。"
+      },
+      {
+        "id": "D",
+        "text": "Fargate Spotのタスクをスケジュールする",
+        "explanation": "容量回収で途中終了し得る。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "起動時だけタスクが稼働し、利用者がホストを管理せず、Spot回収を前提としない。",
+      "concept": "EventBridge Schedulerは時刻に合わせてECS RunTaskを呼ぶ。Fargateの通常容量なら基盤EC2を持つ必要がなく、常駐サービスの最低タスク数も不要。",
+      "check": {
+        "prompt": "起動の成否とタスク完了の成否は同じ？",
+        "answer": "別。RunTaskが受理されてもジョブは失敗し得るため、タスクの終了状態を観測する。"
+      }
+    }
+  },
+  {
+    "id": "mock-cost-13",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "NAT料金を抑えたサービス接続",
+    "prompt": "複数のプライベートサブネットで動くワーカーはAWS内のDynamoDBとのみ通信する。ロードマップでも外部接続はなく、VPC単位で数TBを処理する。AWSリージョンはワーカーとテーブルで同じ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "パブリックNATを維持し、ワーカーと同じAZへ移す",
+        "explanation": "クロスAZ費用は減らせるが、NATの時間・データ処理料金が残る。"
+      },
+      {
+        "id": "B",
+        "text": "DynamoDBゲートウェイエンドポイントを関連付け、他用途がないNATを削除する",
+        "explanation": "通信を維持しながら不要になったNAT課金をなくせる。"
+      },
+      {
+        "id": "C",
+        "text": "DynamoDB Acceleratorを作りNAT経由アクセスをすべてDAXへ切り替える",
+        "explanation": "キャッシュノードの追加料金があり、全DynamoDB操作の経路をそのまま置き換える用途ではない。"
+      },
+      {
+        "id": "D",
+        "text": "ネットワークをNATインスタンスへ移行する",
+        "explanation": "インスタンスの費用と運用が残り、サービス専用エンドポイントで満たせる条件に対して負担が大きい。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "通信を維持しながら不要になったNAT課金をなくせる。",
+      "concept": "DynamoDBのゲートウェイエンドポイントはVPC内のルートテーブルに関連付ける。共有VPCのゲートウェイエンドポイントをTGW越しに推移的に利用することはできない。",
+      "check": {
+        "prompt": "NATをワーカーごとのVPCへ移しただけなら？",
+        "answer": "TGW料金は避けられても、DynamoDB通信のNATデータ処理料金は残る。"
+      }
+    }
+  }
+]

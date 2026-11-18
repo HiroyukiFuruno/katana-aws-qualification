@@ -1,0 +1,470 @@
+[
+  {
+    "id": "aws-saa-c03-sample-01",
+    "revision": 1,
+    "category": "ネットワーク",
+    "version": "SAA-C03 sample / 2022",
+    "title": "プライベートサブネットの外向き通信",
+    "prompt": "公開Web層とは別に、プライベートサブネットのEC2でアプリケーションを動かしている。アプリ層のEC2にパブリックIPを割り当てず、インターネットからの直接着信を許可せずに、EC2から更新パッケージを取得したい。必要な変更を選べ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "パブリックサブネットにパブリックNATゲートウェイを置く",
+        "explanation": "パブリックNATゲートウェイをパブリックサブネットに置き、Elastic IPを割り当てる。そのサブネットにはインターネットゲートウェイへの既定ルートが必要。"
+      },
+      {
+        "id": "B",
+        "text": "アプリ層のデフォルトルートをNATゲートウェイに向ける",
+        "explanation": "EC2からの外向き通信をNATへ送り、応答だけを元の接続へ戻せる。"
+      },
+      {
+        "id": "C",
+        "text": "アプリ層のEC2にElastic IPを付ける",
+        "explanation": "Elastic IPを付けるだけでは、プライベートサブネットからの経路は成立しない。"
+      },
+      {
+        "id": "D",
+        "text": "アプリ層のデフォルトルートを直接インターネットゲートウェイに向ける",
+        "explanation": "プライベートIPv4のみのEC2に、インターネットゲートウェイは外向きNATを提供しない。"
+      },
+      {
+        "id": "E",
+        "text": "アプリ層と同じプライベートサブネットにNATインスタンスを置く",
+        "explanation": "同一の隔離されたプライベートサブネットに置くだけでは、NATインスタンス自身がインターネットへ到達できない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "B"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=1",
+      "label": "AWS公式サンプル 第1問をもとに再構成"
+    },
+    "learning": {
+      "reason": "プライベートEC2に公開IPを割り当てずに外へ出るには、NATの配置とEC2のルート設定が両方必要。",
+      "concept": "パブリックNATは送信元を変換する。EC2側のデフォルトルートをNATに向け、NAT側のサブネットからはインターネットゲートウェイへ到達させる。",
+      "check": {
+        "prompt": "NATを作っただけでEC2の経路も変わる？",
+        "answer": "変わらない。EC2側のルートテーブルを関連付けて既定経路を確認する。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-02",
+    "revision": 1,
+    "category": "コンピューティング",
+    "version": "SAA-C03 sample / 2022",
+    "title": "EC2のメモリ状態を保持",
+    "prompt": "休業中はEC2の計算料金を抑えたい。再開時には稼働中のプロセスが保持していたRAMの内容を復元する必要がある。要件を満たす手順はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "インスタンスストアに退避し、停止後に再接続する",
+        "explanation": "インスタンスストアのデータは停止をまたいで保持できない。"
+      },
+      {
+        "id": "B",
+        "text": "EBSスナップショットから復元する",
+        "explanation": "EBSスナップショットが保持するのはボリュームの状態で、RAMの内容は含まれない。"
+      },
+      {
+        "id": "C",
+        "text": "休止対応のEC2で休止を実行する",
+        "explanation": "休止によってRAMがルートEBSへ書き出され、起動時に復元される。"
+      },
+      {
+        "id": "D",
+        "text": "同じAZで通常の停止と起動を行う",
+        "explanation": "AZを維持しても通常停止の前のRAMは復元されない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=1",
+      "label": "AWS公式サンプル 第2問をもとに再構成"
+    },
+    "learning": {
+      "reason": "再開時に必要なのはディスク内容だけでなく、停止前のRAM。",
+      "concept": "EC2の休止ではRAMの内容をルートEBSに保存して再開時に復元する。対応インスタンスやOSなどの前提がある。",
+      "check": {
+        "prompt": "通常停止前のEBSスナップショットに実行中プロセスのRAMも入る？",
+        "answer": "入らない。スナップショットが保存するのはボリュームの内容。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-03",
+    "revision": 1,
+    "category": "ネットワーク",
+    "version": "SAA-C03 sample / 2022",
+    "title": "同一のプライベートIPで切り替え",
+    "prompt": "監視クライアントは固定のプライベートIPv4へ接続する。同一AZの待機EC2へ、クライアント側の宛先を変えずに切り替えるにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ALBにプライマリの既存IPをリスナーIPとして設定する",
+        "explanation": "ALBのリスナーで既存EC2のプライベートIPを引き継ぐことはできない。"
+      },
+      {
+        "id": "B",
+        "text": "DHCPオプションセットで待機EC2に同じIPを割り当てる",
+        "explanation": "DHCPオプションセットはEC2ごとのプライベートIPの切り替えに使えない。"
+      },
+      {
+        "id": "C",
+        "text": "対象IPを付けたセカンダリENIを待機EC2へ付け替える",
+        "explanation": "同じAZではセカンダリENIを別のEC2へ移し、ENI上のIPを維持できる。"
+      },
+      {
+        "id": "D",
+        "text": "プライマリのElastic IPを待機EC2へ移す",
+        "explanation": "Elastic IPを移しても既存のプライベートIPv4宛ての通信には対応できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=1",
+      "label": "AWS公式サンプル 第3問をもとに再構成"
+    },
+    "learning": {
+      "reason": "クライアントが覚えているプライベートIPを、引き続きそのまま使わせる。",
+      "concept": "セカンダリENIは条件を満たす同一AZ内の別EC2に移せる。IPがENIとともに移る。インスタンスのプライマリENIは同じ方法では移せない。",
+      "check": {
+        "prompt": "待機サーバーを別AZに置いてENIをそのまま移せる？",
+        "answer": "移せない。ENIの移動は同一AZに限られ、別AZでは違う切替方式が必要。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-04",
+    "revision": 1,
+    "category": "ストレージ",
+    "version": "SAA-C03 sample / 2022",
+    "title": "ブラウザからS3へ認証付きGET",
+    "prompt": "ウェブアプリのJavaScriptが、異なるオリジンにあるS3へ認証付きGETを行う。リクエストの認証設定は済んでいる。ブラウザが応答を読み取るために何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3バケットのCORS設定でアプリのオリジンとGETを許可する",
+        "explanation": "S3 CORSでWebアプリのオリジン、GET、必要に応じAuthorizationなどプリフライト対象のヘッダーを認める。リクエストの認証とブラウザのCORS検証は別に行われる。"
+      },
+      {
+        "id": "B",
+        "text": "S3バージョニングを有効にする",
+        "explanation": "バージョニングはオブジェクトの世代管理に使う。"
+      },
+      {
+        "id": "C",
+        "text": "JavaScriptファイルを署名付きURLで配信する",
+        "explanation": "スクリプトの取得URLを変えても、アプリからS3への応答に必要なCORS設定は追加されない。"
+      },
+      {
+        "id": "D",
+        "text": "バケットポリシーでパブリック実行を許可する",
+        "explanation": "S3にブラウザ上の実行を許可する権限はなく、バケットポリシーではCORSヘッダーを返せない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=2",
+      "label": "AWS公式サンプル 第4問をもとに再構成"
+    },
+    "learning": {
+      "reason": "AWS側の認証を通過しても、ブラウザが異なるオリジンの応答を読めるとは限らない。",
+      "concept": "S3 CORSで許可するオリジン、メソッド、必要ならヘッダーを定義する。CORS自体はS3のアクセス権限を付与しない。",
+      "check": {
+        "prompt": "CORSを許可すればS3の403はすべて解決する？",
+        "answer": "しない。署名やIAM、バケットポリシーに起因する拒否は別に確認する。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-05",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 sample / 2022",
+    "title": "顧客管理の鍵でS3を暗号化",
+    "prompt": "S3へ投入するデータは保管開始時点から暗号化する。鍵は社内で保管し、AWSに永続保管させない。S3バケットはSSE-Cリクエストを受け付ける設定済みとする。要件を満たす方式を選べ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "SSE-S3で暗号化する",
+        "explanation": "SSE-S3で使う鍵はS3が管理する。"
+      },
+      {
+        "id": "B",
+        "text": "通常のAWS KMS管理キーでSSE-KMSを使用する",
+        "explanation": "この方式では暗号化にAWS KMSで管理される鍵を用いる。"
+      },
+      {
+        "id": "C",
+        "text": "SSE-Cを使用し、リクエストごとに顧客の鍵を提供する",
+        "explanation": "S3がサーバー側で暗号化し、提供された鍵そのものは永続保管しない。"
+      },
+      {
+        "id": "D",
+        "text": "顧客の鍵でクライアント側暗号化を行ってから送信する",
+        "explanation": "S3は暗号化済みデータを受け取り、鍵の保管は社内で行える。"
+      },
+      {
+        "id": "E",
+        "text": "平文をアップロードし、S3イベントでLambdaを起動して暗号化し直す",
+        "explanation": "S3の既定暗号化が働いても、アップロード時点では顧客の社内鍵による暗号化にならない。後からLambdaで再暗号化する方式は条件に合わない。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=2",
+      "label": "AWS公式サンプル 第5問をもとに再構成"
+    },
+    "learning": {
+      "reason": "保存開始時点から自社の鍵で保護する。S3側で都度鍵を渡す方式と、送信前に暗号化する方式がある。",
+      "concept": "SSE-Cではリクエスト時に顧客鍵を提供する。クライアント側暗号化ではS3に送る時点で暗号文になっている。いずれも鍵を失えば復号できない。",
+      "check": {
+        "prompt": "S3でSSE-Cを使った場合、後日の読み取りに鍵は必要？",
+        "answer": "必要。S3がそのオブジェクトを復号するために対応する顧客鍵を送る。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-06",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 sample / 2022",
+    "title": "月末だけ増えるバッチ処理",
+    "prompt": "夜間バッチは通常7時間で終わるが、月末の増加分により期限の10時間を超える見込みだ。処理開始後は途中で中断できない。増加分に対して余分な長期契約を避けながらEC2容量を補うにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "月末にオンデマンドインスタンスを追加する",
+        "explanation": "需要が増加する期間だけ容量を追加でき、Spotの回収による中断を前提としない。"
+      },
+      {
+        "id": "B",
+        "text": "追加分のリザーブドインスタンス契約を結ぶ",
+        "explanation": "毎月の短時間だけ必要な容量に対して長期コミットメントが発生する。"
+      },
+      {
+        "id": "C",
+        "text": "月末にSpotインスタンスを追加する",
+        "explanation": "EC2はSpot容量を回収できるため、中断不可の制約を満たせない。"
+      },
+      {
+        "id": "D",
+        "text": "ベースラインの予約対象を常時大型化する",
+        "explanation": "閑散期間まで余分な処理能力に費用を払うことになる。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=2",
+      "label": "AWS公式サンプル 第6問をもとに再構成"
+    },
+    "learning": {
+      "reason": "増加は月末だけで、途中停止を許容しない。短期間に絞って中断リスクを避ける。",
+      "concept": "オンデマンド利用は長期コミットなしで容量を追加できる。Spotは余剰容量が回収され得る。オンデマンドは希望する容量の確保まで約束するわけではない。",
+      "check": {
+        "prompt": "再開可能なバッチに変わった場合、何が比較対象になる？",
+        "answer": "Spotが候補になる。中断と再試行を含めた完了時間・コストを比較する。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-07",
+    "revision": 1,
+    "category": "耐障害性",
+    "version": "SAA-C03 sample / 2022",
+    "title": "投票の集中をデータベースから切り離す",
+    "prompt": "短い時間帯に大量の投票が届く。受付用EC2からRDSに直接書き込むと、DBが追いつかず投票受付に失敗する。ピーク時にも受付を続け、DBが処理できる速度で保存するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "受付をAPI GatewayとLambdaへ移し、直接書き込みを続ける",
+        "explanation": "受付層をスケールしてもDBへの集中書き込みを吸収できない。"
+      },
+      {
+        "id": "B",
+        "text": "RDSのMulti-AZ DBインスタンス構成にして、プライマリとスタンバイの両方に書き込む",
+        "explanation": "Multi-AZ DBインスタンスのスタンバイをアプリから書き込み先にできない。"
+      },
+      {
+        "id": "C",
+        "text": "受付でSQSに投票を蓄積し、並列度を制御したワーカーでRDSへ保存する",
+        "explanation": "キューがピークを吸収する。再配信を考慮し、ワーカーは投票IDで冪等に保存する。"
+      },
+      {
+        "id": "D",
+        "text": "投票時間に合わせて毎回DBインスタンスを再構成する",
+        "explanation": "サイズ変更だけでは書き込み量を制御できず、適用方式によっては停止も伴う。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=3",
+      "label": "AWS公式サンプル 第7問をもとに再構成"
+    },
+    "learning": {
+      "reason": "入口で投票の突発負荷を受け止め、DBには処理できる速度で流す。",
+      "concept": "SQSで受付と保存を疎結合にする。標準SQSでは再配信も起こり得るため、DB書き込みを投票ID等で冪等にする。",
+      "check": {
+        "prompt": "ワーカーの並列度を無制限にすると？",
+        "answer": "DBの処理能力を超えて書き込みが集中し、キューで負荷を平準化する効果が失われる。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-08",
+    "revision": 1,
+    "category": "耐障害性",
+    "version": "SAA-C03 sample / 2022",
+    "title": "Web層とDB層を複数AZへ",
+    "prompt": "Web用EC2をパブリックサブネットに、自己管理DBをプライベートサブネットに置く構成が単一AZで動いている。DBはRDSに移行可能で、両層をAZ障害に耐えられるようにしたい。必要な変更を選べ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同じAZにパブリックとプライベートのサブネットを追加する",
+        "explanation": "サブネットを増やしてもAZ障害の影響範囲は変わらない。"
+      },
+      {
+        "id": "B",
+        "text": "複数AZにまたがるALBとEC2 Auto ScalingグループをWeb層に使う",
+        "explanation": "トラフィックと稼働インスタンスを複数AZへ分散できる。"
+      },
+      {
+        "id": "C",
+        "text": "現在の単一AZ内のWeb用EC2をALBとAuto Scalingで運用する",
+        "explanation": "Web層の配置が単一AZに残るため、AZ全体の障害時に処理を続けられない。"
+      },
+      {
+        "id": "D",
+        "text": "DBを別AZのパブリックサブネットにある単一EC2へ移す",
+        "explanation": "単一DBのままで、DB層のプライベート配置も失われる。"
+      },
+      {
+        "id": "E",
+        "text": "複数AZのプライベートサブネットを用意し、RDS Multi-AZ DBインスタンス構成へ移行する",
+        "explanation": "別AZのスタンバイを設け、プライマリの障害時にフェイルオーバーできる。"
+      }
+    ],
+    "correct": [
+      "B",
+      "E"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=3",
+      "label": "AWS公式サンプル 第8問をもとに再構成"
+    },
+    "learning": {
+      "reason": "Web層とDB層の片方だけを冗長化しても、単一AZ障害への耐性は得られない。",
+      "concept": "ALBとAuto Scalingグループを複数AZに配置し、RDS Multi-AZ DBインスタンス構成では別AZのスタンバイへ切り替える。",
+      "check": {
+        "prompt": "Multi-AZ DBインスタンスのスタンバイを普段の読取先にできる？",
+        "answer": "できない。この構成のスタンバイは可用性向け。読み取りの拡張は別に検討する。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-09",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 sample / 2022",
+    "title": "スケールアウト時の起動猶予",
+    "prompt": "正午に負荷が急上昇する。EC2を増やしてから処理能力として使えるまで約1分かかり、既存のスケーリングは起動直後のメトリクスを取り込んでしまう。スケーリング判断を改善する設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "NLBのターゲットグループでスロースタートを有効にする",
+        "explanation": "スロースタートはALBターゲットグループの機能で、NLBには適用できない。また、配信の調整はAuto Scalingのメトリクス集計とは別。"
+      },
+      {
+        "id": "B",
+        "text": "ElastiCacheを追加する",
+        "explanation": "キャッシュは適切なリクエストを軽減できるが、EC2の起動直後の評価方法は変わらない。"
+      },
+      {
+        "id": "C",
+        "text": "ステップスケーリングでインスタンスのウォームアップ時間を設定する",
+        "explanation": "ウォームアップ中のインスタンスのメトリクスを集約から外し、起動途中の値による判断のブレを抑える。"
+      },
+      {
+        "id": "D",
+        "text": "ALBをCloudFrontのオリジンに設定する",
+        "explanation": "キャッシュ可能な応答の負荷は軽減できるが、起動途中のEC2のメトリクス評価は変わらない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=4",
+      "label": "AWS公式サンプル 第9問をもとに再構成"
+    },
+    "learning": {
+      "reason": "起動直後の値で追加スケーリングを判断すると、まだ働けない新規分の影響を受ける。",
+      "concept": "ウォームアップは新規EC2を集計に含めるタイミングを制御する。ALBのスロースタートは健全なターゲットへの配信比率の調整で、メトリクス集計とは別。",
+      "check": {
+        "prompt": "営業開始前にEC2を先に起動する目的でウォームアップを使える？",
+        "answer": "使えない。既知の時刻に容量を前倒しするにはスケジュールなどを使う。"
+      }
+    }
+  },
+  {
+    "id": "aws-saa-c03-sample-10",
+    "revision": 1,
+    "category": "データベース",
+    "version": "SAA-C03 sample / 2022",
+    "title": "Auroraの読み取りと書き込みを分離",
+    "prompt": "Auroraのライターで読み取りクエリがI/Oを消費し、書き込み遅延が増えている。読み取り処理をオフロードするにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DB側で汎用のリードスルーキャッシュを有効化する",
+        "explanation": "その設定だけで読み取りを別インスタンスに振り分けるAurora機能はない。"
+      },
+      {
+        "id": "B",
+        "text": "アプリをMulti-AZのスタンバイという役割に直接接続する",
+        "explanation": "Auroraでは読み取り用インスタンスを明示的に設け、対応するエンドポイントでルーティングする。"
+      },
+      {
+        "id": "C",
+        "text": "Auroraレプリカを追加し、アプリの読み取りをリーダーエンドポイントへ向ける",
+        "explanation": "Auroraレプリカを追加し、読み取り接続をリーダーエンドポイントへ送る。接続単位で振り分けられ、SQL文を透過的に読み書き分離する機能ではない。"
+      },
+      {
+        "id": "D",
+        "text": "独立したAuroraデータベースを作ってから、同一クラスターのリードレプリカとして接続する",
+        "explanation": "同一クラスターのAuroraレプリカはそのクラスターにDBインスタンスを追加して構成する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://d1.awsstatic.com/ja_JP/training-and-certification/docs-sa-assoc/AWS-Certified-Solutions-Architect-Associate_Sample-Questions.pdf#page=4",
+      "label": "AWS公式サンプル 第10問をもとに再構成"
+    },
+    "learning": {
+      "reason": "書き込み先を維持し、読み取り用の接続だけをレプリカへ送る。",
+      "concept": "Auroraのレプリカはライターとクラスターのストレージを共有し、結果整合の読み取りを担える。リーダーエンドポイントは新規接続を分散する。",
+      "check": {
+        "prompt": "注文直後の更新結果を必ず読める必要がある場合、どこを読む？",
+        "answer": "レプリカの反映遅延を許容できない読み取りは、必要に応じてライターへ送る。"
+      }
+    }
+  }
+]

@@ -11,7 +11,10 @@ export function SiteHeader({ section }: { section: string }) {
       </a>
       <div className="shell topbar">
         <a className="brand" href={localePath(locale)}>
-          KatanA<span> AWS Qualification</span>
+          <img src="/katana-icon-128.png" width="40" height="40" alt="" />
+          <span className="brand-name">
+            KatanA <span>AWS Qualification</span>
+          </span>
         </a>
         <nav className="site-navigation" aria-label={t('navigation')}>
           <a
@@ -32,10 +35,37 @@ export function SiteHeader({ section }: { section: string }) {
           >
             {t('certGuides')}
           </a>
+          <a
+            href={localePath(locale, 'glossary')}
+            aria-current={section === 'glossary' ? 'page' : undefined}
+          >
+            {t('glossary')}
+          </a>
         </nav>
         <SiteControls />
       </div>
     </header>
+  );
+}
+
+export function NotFound() {
+  return (
+    <main id="main" className="shell">
+      <h1>404 — Page not found</h1>
+      <a href={localePath('en')}>KatanA AWS Qualification</a>
+    </main>
+  );
+}
+
+function wrapJapanesePhrase(text: string, japanese: boolean) {
+  const boundary = japanese ? text.indexOf('、') + 1 : 0;
+  if (!boundary) return text;
+  return (
+    <>
+      {text.slice(0, boundary)}
+      <wbr />
+      {text.slice(boundary)}
+    </>
   );
 }
 
@@ -45,8 +75,8 @@ export function Home() {
     <main id="main" className="landing">
       <section className="landing-hero">
         <div className="shell">
-          <h1>{t('landingTitle')}</h1>
-          <p>{t('landingIntro')}</p>
+          <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja')}</h1>
+          <p>{wrapJapanesePhrase(t('landingIntro'), locale === 'ja')}</p>
         </div>
       </section>
       <div className="shell entry-grid">

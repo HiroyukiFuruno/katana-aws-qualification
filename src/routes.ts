@@ -1,0 +1,25 @@
+import { certifications } from './certifications.ts';
+import { localePath, locales, type Locale } from './locales.ts';
+
+export const publishedPages = [
+  '',
+  'study',
+  'assessment',
+  'certifications',
+  'glossary',
+  'privacy',
+  ...certifications.map((cert) => `certifications/${cert.id}`),
+  ...certifications.filter((cert) => cert.course).map((cert) => `study/${cert.id}`),
+];
+
+const routes = new Map<string, { locale: Locale; page: string }>();
+for (const locale of locales) {
+  for (const page of publishedPages) {
+    routes.set(localePath(locale, page), { locale, page });
+  }
+}
+
+export function routeAt(path: string) {
+  if (!path.startsWith('/')) return undefined;
+  return routes.get(path.endsWith('/') ? path : `${path}/`);
+}

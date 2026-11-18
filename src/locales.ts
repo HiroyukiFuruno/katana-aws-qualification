@@ -8,14 +8,3 @@ export function localePath(locale: Locale, page = '') {
     (locale === 'en' && !page ? '' : '/')
   );
 }
-
-export function localeAt(path: string): Locale {
-  const first = path.split('/')[1];
-  return locales.find((locale) => locale === first) ?? 'en';
-}
-
-export function pageAt(path: string) {
-  const segments = path.split('/').filter(Boolean);
-  if (locales.some((locale) => locale === segments[0])) segments.shift();
-  return segments.join('/');
-}

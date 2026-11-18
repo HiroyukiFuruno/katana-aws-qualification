@@ -5,20 +5,20 @@ import type { Question } from './questions';
 export type QuestionSet = { label: string; questions: Question[] };
 
 export function QuestionSetPicker({
-  bank,
+  maxCount,
   sets,
   onStart,
   buttonLabel,
 }: {
-  bank: Question[];
+  maxCount: number;
   sets: QuestionSet[];
   onStart: (count: number, fixed?: QuestionSet) => void;
   buttonLabel: string;
 }) {
   const { t } = usePreferences();
   const [selection, setSelection] = useState('random');
-  const counts = Array.from({ length: bank.length }, (_, index) => index + 1);
-  const [count, setCount] = useState(Math.min(10, bank.length));
+  const counts = Array.from({ length: maxCount }, (_, index) => index + 1);
+  const [count, setCount] = useState(Math.min(10, maxCount));
   const fixed = selection === 'random' ? undefined : sets[Number(selection)];
 
   return (
@@ -49,7 +49,7 @@ export function QuestionSetPicker({
       <button
         type="button"
         className="primary"
-        disabled={!bank.length}
+        disabled={!fixed && !maxCount}
         onClick={() => onStart(fixed?.questions.length ?? count, fixed)}
       >
         {buttonLabel}

@@ -52,9 +52,23 @@ async function load(path: string) {
 for (const { course } of certifications) {
   if (!course) continue;
   const bank = await load(course.mock);
+  const groups = new Map<string, string>();
+  for (const question of bank) {
+    if (!question.similarityGroup) continue;
+    assert.match(question.similarityGroup, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+    const category = groups.get(question.similarityGroup);
+    assert(!category || category === question.category, `${course.mock}: group crosses exam categories`);
+    groups.set(question.similarityGroup, question.category);
+  }
   for (const [category, required] of Object.entries(course.exam.distribution)) {
     assert(
-      bank.filter((question) => question.category === category).length >= required,
+      new Set(
+        bank
+          .filter((question) => question.category === category)
+          .map((question) =>
+            question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`,
+          ),
+      ).size >= required,
       `${course.mock}: ${category}`,
     );
   }

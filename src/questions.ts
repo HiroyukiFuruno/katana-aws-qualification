@@ -2,6 +2,7 @@ export type Question = {
   id: string;
   revision: number;
   category: string;
+  similarityGroup?: string;
   version: string;
   title: string;
   prompt: string;
@@ -30,6 +31,8 @@ export async function loadQuestions(filename: string): Promise<Question[]> {
       !question ||
       !text(question.id) ||
       ids.has(question.id) ||
+      (question.similarityGroup !== undefined &&
+        !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(question.similarityGroup)) ||
       !Number.isSafeInteger(question.revision) ||
       question.revision < 1 ||
       ![

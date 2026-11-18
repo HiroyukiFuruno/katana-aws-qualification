@@ -8,7 +8,7 @@ import { Roadmap } from './Roadmap';
 import { Home, SiteHeader, StudyDirectory } from './SitePages';
 import { localePath, pageAt } from './locales';
 import { QuestionSetPicker, type QuestionSet } from './QuestionSetPicker';
-import { shuffle } from './exam';
+import { selectExamQuestions, shuffle } from './exam';
 import { ExamMode } from './ExamMode';
 import { QuestionCard } from './QuestionCard';
 import {
@@ -288,7 +288,16 @@ function CourseApp({ id, course }: { id: string; course: Course }) {
             </p>
           ) : mockBank.length && questions.length ? (
             <ExamMode
-              sets={questionSets}
+              sets={
+                course.fixedExamFromBlueprint
+                  ? [
+                      {
+                        label: t('numberedSet', { label: t('shortExam'), number: 1 }),
+                        questions: selectExamQuestions(mockBank, course.exam),
+                      },
+                    ]
+                  : questionSets
+              }
               examKey={examKeyFor(course.examStorageId ?? id)}
               blueprint={course.exam}
               bank={mockBank}
@@ -369,8 +378,17 @@ function CourseApp({ id, course }: { id: string; course: Course }) {
           <section className="card">
             <h2>{t('questionSets')}</h2>
             <QuestionSetPicker
-              bank={randomBank}
-              sets={questionSets}
+              maxCount={randomBank.length}
+              sets={
+                course.fixedExamFromBlueprint
+                  ? [
+                      {
+                        label: t('numberedSet', { label: t('shortExam'), number: 1 }),
+                        questions: selectExamQuestions(mockBank, course.exam),
+                      },
+                    ]
+                  : questionSets
+              }
               buttonLabel={t('startStudy')}
               onStart={(count, fixed) => start(fixed?.questions ?? shuffle(randomBank).slice(0, count))}
             />

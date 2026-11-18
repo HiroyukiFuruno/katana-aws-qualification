@@ -8,6 +8,8 @@ import { saveExam, type Attempt } from './history';
 import { questionKey, type Question } from './questions';
 import {
   canStartExam,
+  examLength,
+  uniqueExamQuestions,
   getResponse,
   isAnswered,
   newExam,
@@ -64,6 +66,10 @@ export function ExamMode({
   const completed = attempts.length > 0;
   const expired = !!draft && now >= draft.deadline;
   const available = canStartExam(bank, blueprint);
+  const fixedSets = sets
+    .map((set) => ({ ...set, questions: uniqueExamQuestions(set.questions) }))
+    .filter((set) => set.questions.length);
+  const maxCount = available ? examLength(blueprint) : 0;
   const unanswered = draft ? questions.filter((question) => !isAnswered(draft, question)).length : 0;
 
   useEffect(() => {
@@ -218,7 +224,12 @@ export function ExamMode({
             );
           })}
         </dl>
-        <QuestionSetPicker bank={bank} sets={sets} onStart={start} buttonLabel={t('nextExam')} />
+        <QuestionSetPicker
+          maxCount={maxCount}
+          sets={fixedSets}
+          onStart={start}
+          buttonLabel={t('nextExam')}
+        />
         <div className="exam-actions">
           <label>
             <input
@@ -278,14 +289,19 @@ export function ExamMode({
         <h2>{t('examSetup')}</h2>
         <p className="exam-score">
           {t('examLength', {
-            count: Object.values(blueprint.distribution).reduce((sum, count) => sum + count, 0),
+            count: examLength(blueprint),
             minutes: blueprint.minutes,
           })}
         </p>
         <p>{t('examTiming')}</p>
         <p>{t('examTimerWarning')}</p>
         {!available && <p role="alert">{t('tooFew')}</p>}
-        <QuestionSetPicker bank={bank} sets={sets} onStart={start} buttonLabel={t('startExam')} />
+        <QuestionSetPicker
+          maxCount={maxCount}
+          sets={fixedSets}
+          onStart={start}
+          buttonLabel={t('startExam')}
+        />
         {error && <p role="alert">{t(error)}</p>}
       </section>
     );

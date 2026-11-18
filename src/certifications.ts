@@ -19,6 +19,7 @@ export type Course = {
   archives: string[];
   exam: ExamBlueprint;
   setSize?: number;
+  fixedExamFromBlueprint?: boolean;
   examStorageId?: string;
 };
 
@@ -166,6 +167,16 @@ export const certifications: Certification[] = catalog.map((certification) => {
   if (certification.course || !starterCourseIds.has(certification.id)) return certification;
   const legacyId = certification.id === 'sap-c03' ? 'sap-c02' : certification.id;
   const bank = `courses/${certification.id}/mock-2026-11.json`;
+  const professional = certification.id === 'sap-c03';
+  const uniqueCounts: Record<string, number> = {
+    'aif-c01': 9,
+    'aip-c01': 9,
+    'clf-c02': 9,
+    'dop-c02': 9,
+    'mla-c01': 9,
+    'scs-c03': 9,
+  };
+  const count = uniqueCounts[certification.id] ?? 10;
   return {
     ...certification,
     course: {
@@ -173,7 +184,19 @@ export const certifications: Certification[] = catalog.map((certification) => {
       mock: bank,
       archives: [`courses/${legacyId}/questions.json`],
       examStorageId: legacyId,
-      exam: { minutes: 16, distribution: { [certification.focus]: 8 } },
+      exam: professional
+        ? {
+            minutes: 48,
+            distribution: {
+              クラウドアーキテクチャ: 5,
+              'セキュリティ・コンプライアンス・ガバナンス': 5,
+              コスト最適化: 3,
+              'レジリエンス・移行・事業継続': 3,
+              '運用上の優秀性・自動化': 4,
+            },
+          }
+        : { minutes: count * 2, distribution: { [certification.focus]: count } },
+      fixedExamFromBlueprint: professional,
       setSize: 4,
     },
   };

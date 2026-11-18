@@ -15,11 +15,45 @@ export type ExamDraft = {
   responses: Record<string, ExamResponse>;
 };
 
-export function canStartExam(questions: Question[], blueprint: ExamBlueprint) {
-  return Object.entries(blueprint.distribution).every(
-    ([category, count]) =>
-      questions.filter((question) => question.category === category).length >= count,
+export function uniqueExamQuestions(questions: readonly Question[]) {
+  const seen = new Set<string>();
+  return questions.filter((question) => {
+    const key = question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export function examLength(blueprint: ExamBlueprint) {
+  return Object.values(blueprint.distribution).reduce((sum, count) => sum + count, 0);
+}
+
+export function selectExamQuestions(
+  questions: Question[],
+  blueprint: ExamBlueprint,
+  count = examLength(blueprint),
+) {
+  const fullLength = examLength(blueprint);
+  if (!Number.isInteger(count) || count < 1 || count > fullLength) return [];
+  const distinct = uniqueExamQuestions(questions);
+  const quotas = Object.entries(blueprint.distribution).map(([category, target]) => ({
+    category,
+    count: Math.floor((count * target) / fullLength),
+    remainder: (count * target) % fullLength,
+  }));
+  const unallocated = count - quotas.reduce((sum, quota) => sum + quota.count, 0);
+  for (const quota of [...quotas].sort((a, b) => b.remainder - a.remainder).slice(0, unallocated)) {
+    quota.count++;
+  }
+  const result = quotas.flatMap(({ category, count }) =>
+    distinct.filter((question) => question.category === category).slice(0, count),
   );
+  return result.length === count ? result : [];
+}
+
+export function canStartExam(questions: Question[], blueprint: ExamBlueprint) {
+  return selectExamQuestions(questions, blueprint).length > 0;
 }
 
 export function shuffle<T>(source: readonly T[]) {
@@ -38,15 +72,12 @@ export function newExam(
   count?: number,
   fixed?: Question[],
 ): ExamDraft {
-  if (!fixed && !canStartExam(questions, blueprint))
-    throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
-  const selected =
-    fixed ??
-    Object.entries(blueprint.distribution).flatMap(([category, count]) =>
-      shuffle(questions.filter((question) => question.category === category)).slice(0, count),
-    );
-  const order = (fixed ?? shuffle(selected).slice(0, count)).map(questionKey);
-  const fullLength = Object.values(blueprint.distribution).reduce((sum, value) => sum + value, 0);
+  const selected = fixed
+    ? uniqueExamQuestions(fixed)
+    : shuffle(selectExamQuestions(shuffle(questions), blueprint, count));
+  if (!selected.length) throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
+  const order = selected.map(questionKey);
+  const fullLength = examLength(blueprint);
   const duration = (blueprint.minutes * order.length) / fullLength;
   return {
     id: crypto.randomUUID(),

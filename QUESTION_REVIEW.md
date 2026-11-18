@@ -108,3 +108,13 @@ Solutions Architect ProfessionalはSAP-C03のガイドへ更新し、旧版の�
 - [AWS認定の試験ガイド一覧](https://docs.aws.amazon.com/aws-certification/latest/examguides/)
 - [SAP-C02とSAP-C03の比較](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-professional-03/sap-03-comparison.html)
 - [LambdaのKinesis部分バッチ失敗](https://docs.aws.amazon.com/lambda/latest/dg/services-kinesis-batchfailurereporting.html)
+
+## 2026-11-19 全資格の追加問題とSAP-C03短縮模試
+
+SAP-C03に18問、ほかの12資格に各2問、合計42問を追加した。既存の設問キーと正解は維持した。新規問題は正答が成立する条件、各誤答が満たさない要件、採点形式と選択数、既存設問との判断の重複を確認した。SAP-C03のレビューでは、イベント処理の低遅延要件を明記し、Cost Categoriesの分割配賦結果が請求額に反映されると読めないよう、結果の参照先を限定した。
+
+SAP-C03は26問の問題プールから、5分野を5・5・3・3・4問に配分する20問・48分の短縮模試を提供する。20問未満では各分野に比例した整数枠を求め、端数の大きい分野から残枠を配る。類似問題の出題制限には、設問の分野と独立した `similarityGroup` を使う。同じ判断を問う問題を追加するときは、既存と同じ識別子を付ける。
+
+- [AWS公式 SAP-C02／SAP-C03の出題配分比較](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-professional-03/sap-03-comparison.html)
+- [AWS Cost Categoriesの分割配賦](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/splitcharge-cost-categories.html)
+- [S3アーカイブの取得時間](https://docs.aws.amazon.com/AmazonS3/latest/userguide/restoring-objects-retrieval-options.html)

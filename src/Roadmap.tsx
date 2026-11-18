@@ -1,7 +1,8 @@
 import { usePreferences } from './preferences';
 import { useState } from 'react';
 import { assessmentItems, profileKey, recommend, remainingCertifications } from './assessment';
-import { certifications, skills } from './certifications';
+import { CertificationDirectory } from './CertificationDirectory';
+import { levelMessage, skills } from './certifications';
 
 type Profile = { earned: string[]; answers: Record<string, number> };
 
@@ -20,14 +21,6 @@ function loadProfile(): Profile {
     return { earned: [], answers: {} };
   }
 }
-
-export const levelMessage = {
-  基礎: 'foundational',
-  アソシエイト: 'associate',
-  プロフェッショナル: 'professional',
-  専門: 'specialty',
-  ビジネス: 'business',
-} as const;
 
 export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
   const { t, locale } = usePreferences();
@@ -98,24 +91,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
         <section className="card roadmap-card">
           <h2>{t('earned')}</h2>
           <p>{t('earnedIntro')}</p>
-          <div className="cert-grid">
-            {certifications.map((cert) => (
-              <label className="cert-check" key={cert.id}>
-                <input
-                  type="checkbox"
-                  checked={profile.earned.includes(cert.id)}
-                  onChange={(event) => toggleEarned(cert.id, event.target.checked)}
-                />
-                <span>
-                  <strong>{cert.name}</strong>
-                  <small>
-                    {cert.id.toUpperCase()} · {t(levelMessage[cert.level])}
-                    {cert.beta ? ` · ${t('beta')}` : ''}
-                  </small>
-                </span>
-              </label>
-            ))}
-          </div>
+          <CertificationDirectory mode="earned" selected={profile.earned} onToggle={toggleEarned} />
           {remaining.length ? (
             <button type="button" className="primary" onClick={enterAssessment}>
               {complete ? t('certOrder') : t('startAssessment', { count: items.length })}

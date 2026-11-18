@@ -1,7 +1,10 @@
-import { certifications } from './certifications';
+import { certifications, levelMessage } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
-import { levelMessage } from './Roadmap';
+
+type DirectoryProps =
+  | { mode: 'certifications' | 'study' }
+  | { mode: 'earned'; selected: string[]; onToggle: (id: string, checked: boolean) => void };
 
 const nameOrder = new Intl.Collator('en', { sensitivity: 'base' });
 
@@ -9,40 +12,70 @@ function examVersion(id: string) {
   return Number(id.match(/-c(\d+)$/)?.[1] ?? Infinity);
 }
 
-export function CertificationDirectory({ mode }: { mode: 'certifications' | 'study' }) {
+export function CertificationDirectory(props: DirectoryProps) {
   const { locale, t } = usePreferences();
-  const visible = certifications.filter((cert) => mode === 'certifications' || cert.course);
+  const { mode } = props;
+  const Heading = mode === 'earned' ? 'h3' : 'h2';
+  const visible = certifications.filter((cert) => mode !== 'study' || cert.course);
 
-  return Object.entries(levelMessage).map(([level, label]) => {
-    const group = visible
-      .filter((cert) => cert.level === level)
-      .sort((a, b) => examVersion(a.id) - examVersion(b.id) || nameOrder.compare(a.name, b.name));
-    if (!group.length) return null;
+  return (
+    <div
+      className={
+        mode === 'earned' ? 'certification-directory earned-directory' : 'certification-directory'
+      }
+    >
+      {Object.entries(levelMessage).map(([level, label]) => {
+        const group = visible
+          .filter((cert) => cert.level === level)
+          .sort((a, b) => examVersion(a.id) - examVersion(b.id) || nameOrder.compare(a.name, b.name));
+        if (!group.length) return null;
 
-    return (
-      <section key={label} className="certification-group" aria-labelledby={`group-${label}`}>
-        <h2 id={`group-${label}`}>{t(label)}</h2>
-        <ul className="course-grid">
-          {group.map((cert) => (
-            <li key={cert.id}>
-              <a className="entry-card" href={localePath(locale, `${mode}/${cert.id}`)}>
-                <small>
-                  {cert.id.toUpperCase()}
-                  {cert.beta ? ` · ${t('beta')}` : ''}
-                </small>
-                <h3>{cert.name}</h3>
-                {mode === 'certifications' ? (
-                  <p lang="ja">{cert.focus}</p>
-                ) : (
-                  <span className="entry-action">
-                    {t('openCourse')} <span aria-hidden="true">→</span>
-                  </span>
-                )}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    );
-  });
+        return (
+          <section key={label} className="certification-group" aria-labelledby={`group-${label}`}>
+            <Heading id={`group-${label}`} className="certification-group-title">
+              {t(label)}
+            </Heading>
+            <ul className="course-grid">
+              {group.map((cert) => {
+                const code = (
+                  <small className="certification-code">
+                    {cert.id.toUpperCase()}
+                    {cert.beta ? ` · ${t('beta')}` : ''}
+                  </small>
+                );
+                return (
+                  <li key={cert.id}>
+                    {props.mode === 'earned' ? (
+                      <label className="certification-row cert-check">
+                        <input
+                          type="checkbox"
+                          checked={props.selected.includes(cert.id)}
+                          onChange={(event) => props.onToggle(cert.id, event.currentTarget.checked)}
+                        />
+                        <span className="certification-row-content">
+                          <strong>{cert.name}</strong>
+                          {code}
+                        </span>
+                      </label>
+                    ) : (
+                      <a className="certification-row" href={localePath(locale, `${mode}/${cert.id}`)}>
+                        <div className="certification-row-content">
+                          {code}
+                          <h3>{cert.name}</h3>
+                          {mode === 'certifications' && <p lang="ja">{cert.focus}</p>}
+                        </div>
+                        <span aria-hidden="true" className="certification-row-arrow">
+                          →
+                        </span>
+                      </a>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+  );
 }

@@ -35,6 +35,14 @@ type Certification = {
   course?: Course;
 };
 
+export const levelMessage = {
+  基礎: 'foundational',
+  アソシエイト: 'associate',
+  プロフェッショナル: 'professional',
+  専門: 'specialty',
+  ビジネス: 'business',
+} as const;
+
 const catalog: Certification[] = [
   {
     id: 'clf-c02',

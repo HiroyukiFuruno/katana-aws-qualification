@@ -1,10 +1,9 @@
 import { CertificationDirectory } from './CertificationDirectory';
 import { examPrices, pricingUrl } from './certificationPricing';
 import { certificationGuides, officialGuideLink } from './certificationGuides';
-import { certifications } from './certifications';
+import { certifications, levelMessage } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
-import { levelMessage } from './Roadmap';
 
 export function CertificationPages({ id }: { id?: string }) {
   const { locale, t } = usePreferences();

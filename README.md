@@ -46,4 +46,4 @@ JSONLは1行1回答。回答日時はUTCのISO 8601、所要時間は設問の�
 
 GA4 は KatanA 本家と同じ測定 ID を使い、サイトのプライバシー設定で同意した場合に読み込みます。Google Search Console で URL プレフィックスの HTML タグ認証を選んだ場合は、Vercel の Production に `VITE_GOOGLE_SITE_VERIFICATION` を設定してデプロイし、`/sitemap.xml` を送信します。
 
-AdSense の確認用にアカウントのメタタグと `/ads.txt` を公開します。AdSense のサイト一覧でこの公開 URL の審査が完了し、プライバシーとメッセージで必要な地域の同意メッセージを公開し、自動広告を有効にした後、Vercel の Production に `VITE_ADSENSE_SERVING=1` を設定して再デプロイします。
+AdSense の確認用にアカウントのメタタグと `/ads.txt` を公開します。親ドメインが承認され、対象地域の同意メッセージが公開済みであることを確認した上で、Vercel の Production に `VITE_ADSENSE_SERVING=1` を設定すると、資格別解説でKAQ専用の広告ユニットが有効になります。

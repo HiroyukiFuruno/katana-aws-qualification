@@ -15,16 +15,6 @@ export default defineConfig(({ command, isPreview, mode }) => {
               throw new Error('Invalid Google Search Console verification token');
             tags.push({ tag: 'meta', attrs: { name: 'google-site-verification', content: token } });
           }
-          if (mode === 'production' && env.VITE_ADSENSE_SERVING === '1') {
-            tags.push({
-              tag: 'script',
-              attrs: {
-                async: true,
-                crossorigin: 'anonymous',
-                src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6906125453421012',
-              },
-            });
-          }
           return tags;
         },
       },

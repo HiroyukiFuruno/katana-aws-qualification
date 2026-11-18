@@ -96,7 +96,7 @@ export function SiteHeader({ section, subpage }: { section: string; subpage?: st
             href={localePath(locale, 'assessment')}
             aria-current={section === 'assessment' ? 'page' : undefined}
           >
-            {t('skillsAssessment')}
+            {t('skillsAssessmentNav')}
           </a>
           <a
             href={localePath(locale, 'certifications')}

@@ -193,11 +193,12 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
   }, [course]);
 
   const pages = [
-    ['study', t('learnFromQuestions')],
-    ['exam', t('exam')],
-    ['review', t('review')],
-    ['settings', t('settings')],
+    ['study', 'studyTab', 'learnFromQuestions'],
+    ['exam', 'exam', 'exam'],
+    ['review', 'reviewTab', 'review'],
+    ['settings', 'settings', 'settings'],
   ] as const;
+  const heading = pages.find(([id]) => page === id)?.[2];
   const start = (items: Question[]) => setSession({ questions: items, index: 0, correct: 0 });
 
   async function answer(selected: string[], elapsed: number) {
@@ -277,7 +278,7 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
               >
                 {courseMenuIcons[id]}
               </svg>
-              {label}
+              {t(label)}
             </button>
           ))}
         </nav>
@@ -287,7 +288,7 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
           <p className="eyebrow">
             {name} · {id.toUpperCase()}
           </p>
-          <h1>{pages.find(([id]) => page === id)?.[1]}</h1>
+          <h1>{heading && t(heading)}</h1>
           {page === 'study' && <p>{t('studyIntro')}</p>}
           {page === 'review' && <p>{t('reviewIntro')}</p>}
         </div>

@@ -17,7 +17,7 @@ function formatPrice(locale: Locale, currency: 'JPY' | 'USD', amount: number) {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    currencyDisplay: locale === 'ja' && currency === 'JPY' ? 'name' : 'code',
+    currencyDisplay: 'code',
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   }).format(amount);

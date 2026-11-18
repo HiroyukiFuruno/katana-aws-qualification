@@ -4,6 +4,8 @@ import { localePath, locales, type Locale } from './locales.ts';
 export const publishedPages = [
   '',
   'study',
+  'study/fundamentals',
+  'study/questions',
   'assessment',
   'certifications',
   'glossary',

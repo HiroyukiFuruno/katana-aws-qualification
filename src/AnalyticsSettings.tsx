@@ -46,8 +46,7 @@ export function AnalyticsSettings() {
   const { t } = usePreferences();
   const [consent, setConsent] = useState(readConsent);
   return (
-    <details>
-      <summary>{t('privacy')}</summary>
+    <section className="card" aria-label={t('privacy')}>
       <label>
         <input
           type="checkbox"
@@ -75,6 +74,6 @@ export function AnalyticsSettings() {
         {t('analytics')}
       </label>
       <p>{t('analyticsScope')}</p>
-    </details>
+    </section>
   );
 }

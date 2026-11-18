@@ -7,6 +7,7 @@ export const publishedPages = [
   'assessment',
   'certifications',
   'glossary',
+  'privacy',
   ...certifications.map((cert) => `certifications/${cert.id}`),
   ...certifications.filter((cert) => cert.course).map((cert) => `study/${cert.id}`),
 ];

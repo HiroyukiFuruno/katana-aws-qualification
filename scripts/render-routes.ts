@@ -13,6 +13,7 @@ const indexTitles = {
   assessment: messages.skillsAssessment,
   certifications: messages.certGuides,
   glossary: messages.glossary,
+  privacy: messages.privacy,
 };
 const published: string[] = [];
 

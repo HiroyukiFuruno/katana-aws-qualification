@@ -32,6 +32,18 @@ import './style.css';
 type Page = Mode | 'exam' | 'settings';
 type Session = { questions: Question[]; index: number; correct: number };
 
+const courseMenuIcons = {
+  study: <path d="M12 6v15M3 4h5c2 0 4 1 4 2 0-1 2-2 4-2h5v15h-5c-2 0-4 1-4 2 0-1-2-2-4-2H3z" />,
+  exam: (
+    <>
+      <circle cx="12" cy="14" r="8" />
+      <path d="M9 2h6m4 5 2-2m-9 5v4l2 2" />
+    </>
+  ),
+  review: <path d="M3 5v6h6m-6 0a9 9 0 1 1 2 7" />,
+  settings: <path d="M4 6h4m4 0h8M4 12h9m4 0h3M4 18h3m4 0h9M8 4v4m9 2v4m-6 2v4" />,
+};
+
 function Settings({
   count,
   onReset,
@@ -85,8 +97,6 @@ function Settings({
           </button>
         </div>
       </dialog>
-      <hr />
-      <AnalyticsSettings />
     </section>
   );
 }
@@ -253,6 +263,20 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
                 }
               }}
             >
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {courseMenuIcons[id]}
+              </svg>
               {label}
             </button>
           ))}
@@ -435,6 +459,11 @@ function App() {
         <CertificationPages id={courseId} />
       ) : section === 'glossary' ? (
         <GlossaryPage />
+      ) : section === 'privacy' ? (
+        <main className="shell" id="main">
+          <h1>{t('privacy')}</h1>
+          <AnalyticsSettings />
+        </main>
       ) : section === 'assessment' ? (
         <main className="shell" id="main">
           <div className="intro">

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { certifications, type Course } from './certifications';
+import { Roadmap } from './Roadmap';
 import { ExamMode } from './ExamMode';
 import { QuestionCard } from './QuestionCard';
-import { exportHistory, historyKey, readHistory, resetHistory, saveAttempt, statsFor, type Attempt, type Mode } from './history';
+import { examKeyFor, exportHistory, historyKey, readHistory, resetHistory, saveAttempt, statsFor, type Attempt, type Mode } from './history';
 import { loadQuestions, questionKey, type Question } from './questions';
 import './style.css';
 
@@ -29,7 +31,7 @@ function Settings({ count, onReset, onExport }: { count: number; onReset: () => 
     <button className="primary" disabled={!count || busy} onClick={onExport}>JSONLをダウンロード</button>
     <hr />
     <h3>履歴と進捗の初期化</h3>
-    <p>このブラウザに保存した回答履歴、誤答、復習結果、模擬試験の解答と途中経過を削除します。</p>
+    <p>このブラウザに保存した回答履歴、誤答、復習結果、模擬試験の解答と途中経過を、全資格分まとめて削除します。</p>
     <button className="danger" disabled={busy} onClick={() => dialog.current?.showModal()}>学習データをリセット</button>
     <dialog ref={dialog} aria-labelledby="reset-title">
       <h2 id="reset-title">学習データを削除しますか？</h2>
@@ -42,8 +44,10 @@ function Settings({ count, onReset, onExport }: { count: number; onReset: () => 
   </section>;
 }
 
-function App() {
-  const [questions, setQuestions] = useState<Question[]>([]);
+function CourseApp({ id, course, onHome }: { id: string; course: Course; onHome: () => void }) {
+  const [practiceSets, setPracticeSets] = useState<{ label: string; questions: Question[] }[]>([]);
+  const questions = practiceSets.flatMap(set => set.questions);
+
   const [mockBank, setMockBank] = useState<Question[]>([]);
   const [archivedBank, setArchivedBank] = useState<Question[]>([]);
   const [mockError, setMockError] = useState('');
@@ -54,17 +58,29 @@ function App() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const question = session?.questions[session.index];
-  const summaries = [...questions, ...mockBank].map(question => ({ question, ...statsFor(history, question) }));
+  const knownQuestions = new Map([...questions, ...mockBank].map(question => [questionKey(question), question]));
+  const courseIds = new Set([...knownQuestions.values(), ...archivedBank].map(question => question.id));
+  const courseHistory = history.filter(attempt => courseIds.has(attempt.questionId));
+  const summaries = [...knownQuestions.values()].map(question => ({ question, ...statsFor(courseHistory, question) }));
   const review = summaries.filter(stats => stats.wrong > 0)
     .sort((a, b) => b.wrong - a.wrong);
-  const rate = history.length ? Math.round(100 * history.filter(a => a.isCorrect).length / history.length) + '%' : '—';
+  const rate = courseHistory.length ? Math.round(100 * courseHistory.filter(a => a.isCorrect).length / courseHistory.length) + '%' : '—';
 
   useEffect(() => {
-    loadQuestions().then(setQuestions).catch(error => setLoadingError(error.message));
-    Promise.all([loadQuestions('mock-questions.json'), loadQuestions('mock-questions-v1.json')])
+    const banks = new Map<string, Promise<Question[]>>();
+    function load(path: string) {
+      const cached = banks.get(path);
+      if (cached) return cached;
+      const request = loadQuestions(path);
+      banks.set(path, request);
+      return request;
+    }
+    Promise.all(course.practice.map(async ({ path, label }) => ({ label, questions: await load(path) })))
+      .then(setPracticeSets).catch(error => setLoadingError(error.message));
+    Promise.all([load(course.mock), Promise.all(course.archives.map(load))])
       .then(([current, archived]) => {
         setMockBank(current);
-        setArchivedBank(archived);
+        setArchivedBank(archived.flat());
       })
       .catch(error => setMockError(error.message));
     function refresh() {
@@ -83,7 +99,7 @@ function App() {
     refresh();
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [course]);
 
   const pages = [['study', '学習'], ['exam', '模擬試験'], ['review', '誤答復習'], ['settings', '設定']] as const;
   const start = (items: Question[]) => setSession({ questions: items, index: 0, correct: 0 });
@@ -124,7 +140,7 @@ function App() {
 
   function download() {
     try {
-      const current = readHistory();
+      const current = readHistory().filter(attempt => courseIds.has(attempt.questionId));
       if (current.length) exportHistory(current);
     } catch {
       setNotice('エクスポート用の学習履歴を読み込めませんでした。');
@@ -132,26 +148,26 @@ function App() {
   }
 
   return <>
-    <header><div className="shell topbar"><a className="brand" href="./">KatanA<span> SAA</span></a>
+    <header><div className="shell topbar"><a className="brand" href="./" onClick={event => { event.preventDefault(); if (!busy) onHome(); }}>KatanA<span> AWS</span></a>
       <nav aria-label="学習メニュー">{pages.map(([id, label]) =>
         <button key={id} disabled={busy} aria-current={page === id ? 'page' : undefined}
           onClick={() => { if (page !== id) { setPage(id); setSession(undefined); setNotice(''); } }}>{label}</button>)}</nav>
     </div></header>
     <main className="shell">
-      <div className="intro"><p className="eyebrow">AWS CERTIFICATION / SAA-C03</p>
+      <div className="intro"><p className="eyebrow">AWS CERTIFICATION / {id.toUpperCase()}</p>
         <h1>{pages.find(([id]) => page === id)?.[1]}</h1>
         {page === 'study' && <p>設問に答えたあと、選択肢ごとの技術的根拠を確認できます。</p>}
         {page === 'review' && <p>累計誤答回数が多い設問から出題します。</p>}
       </div>
       <div className="metrics" aria-label="学習進捗">
-        <div><span>回答数</span><strong>{history.length}</strong></div>
+        <div><span>回答数</span><strong>{courseHistory.length}</strong></div>
         <div><span>正答率</span><strong>{rate}</strong></div>
         <div><span>誤答した現行設問</span><strong>{review.length}</strong></div>
       </div>
       {notice && <p className="notice" role="status">{notice}</p>}
-      {page === 'settings' ? <Settings count={history.length} onReset={reset} onExport={download} /> :
+      {page === 'settings' ? <Settings count={courseHistory.length} onReset={reset} onExport={download} /> :
         page === 'exam' ? mockError ? <p role="alert">{mockError}</p> :
-          mockBank.length ? <ExamMode bank={mockBank} archivedBank={archivedBank} history={history} onSaved={updateExamHistory} /> :
+          mockBank.length ? <ExamMode examKey={examKeyFor(id)} blueprint={course.exam} bank={mockBank} archivedBank={archivedBank} history={history} onSaved={updateExamHistory} /> :
             <p role="status">模擬試験の問題を読み込んでいます。</p> :
         loadingError ? <p className="notice" role="alert">{loadingError}</p> :
         !questions.length ? <p role="status">問題を読み込んでいます。</p> :
@@ -173,14 +189,29 @@ function App() {
           </> : <p>現在の問題セットに誤答履歴はありません。</p>}
         </section> : <section className="card">
           <h2>問題セット</h2>
-          {mockBank.length > 0 && <>
-            <p>応用問題 · {mockBank.length}問。1問ごとに採点と解説を表示します。</p>
-            <button className="primary" onClick={() => start(mockBank)}>応用問題を学習する</button>
-            <hr />
-          </>}
-          <p>AWS公式サンプルをもとに再構成 · {questions.length}問</p>
-          <button onClick={() => start(questions)}>公式サンプルの再構成問題を解く</button>
+          {practiceSets.map(({ label, questions }) => <div className="practice-set" key={label}>
+            <p>{label} · {questions.length}問</p>
+            <button className="primary" onClick={() => start(questions)}>{label}を解く</button>
+          </div>)}
         </section>}
+    </main>
+  </>;
+}
+
+function App() {
+  const [courseId, setCourseId] = useState<string>();
+  const selected = certifications.find(cert => cert.id === courseId);
+  useEffect(() => { window.scrollTo(0, 0); }, [courseId]);
+  if (selected?.course) return <CourseApp key={selected.id} id={selected.id}
+    course={selected.course} onHome={() => setCourseId(undefined)} />;
+  return <>
+    <header><div className="shell topbar"><a className="brand" href="./">KatanA<span> AWS</span></a></div></header>
+    <main className="shell">
+      <div className="intro"><p className="eyebrow">AWS CERTIFICATION</p>
+        <h1>資格ロードマップ</h1>
+        <p>分野別の理解度を確認し、AWS資格をどの順番で取得するか決める。</p>
+      </div>
+      <Roadmap onStudy={setCourseId} />
     </main>
   </>;
 }

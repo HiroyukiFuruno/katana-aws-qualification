@@ -18,7 +18,7 @@ export type Question = {
 export const questionKey = (question: Pick<Question, 'id' | 'revision'>) =>
   JSON.stringify([question.id, question.revision]);
 
-export async function loadQuestions(filename = 'questions.json'): Promise<Question[]> {
+export async function loadQuestions(filename: string): Promise<Question[]> {
   const response = await fetch('./' + filename, { cache: 'no-cache' });
   if (!response.ok) throw new Error('問題データを取得できませんでした。');
   const questions: Question[] = await response.json();

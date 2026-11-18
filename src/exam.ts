@@ -1,14 +1,5 @@
-import { examKey } from './history';
+import type { ExamBlueprint } from './certifications';
 import { questionKey, type Question } from './questions';
-
-const domainCounts = {
-  セキュリティ: 19,
-  レジリエンス: 17,
-  パフォーマンス: 16,
-  コスト最適化: 13,
-};
-export const EXAM_QUESTIONS = Object.values(domainCounts).reduce((sum, count) => sum + count, 0);
-export const EXAM_MINUTES = 130;
 
 export type ExamResponse = {
   selected: string[];
@@ -24,8 +15,8 @@ export type ExamDraft = {
   responses: Record<string, ExamResponse>;
 };
 
-export function canStartExam(questions: Question[]) {
-  return Object.entries(domainCounts).every(([category, count]) =>
+export function canStartExam(questions: Question[], blueprint: ExamBlueprint) {
+  return Object.entries(blueprint.distribution).every(([category, count]) =>
     questions.filter(question => question.category === category).length >= count);
 }
 
@@ -37,24 +28,24 @@ function shuffle<T>(items: T[]) {
   return items;
 }
 
-export function newExam(questions: Question[], now = Date.now()): ExamDraft {
-  if (!canStartExam(questions)) throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
-  const selected = Object.entries(domainCounts).flatMap(([category, count]) =>
+export function newExam(questions: Question[], blueprint: ExamBlueprint, now = Date.now()): ExamDraft {
+  if (!canStartExam(questions, blueprint)) throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
+  const selected = Object.entries(blueprint.distribution).flatMap(([category, count]) =>
     shuffle(questions.filter(question => question.category === category)).slice(0, count));
   const order = shuffle(selected.map(questionKey));
   return {
     id: crypto.randomUUID(),
-    deadline: now + EXAM_MINUTES * 60_000,
+    deadline: now + blueprint.minutes * 60_000,
     order, position: 0, responses: {},
   };
 }
 
-export function readExam(): ExamDraft | undefined {
+export function readExam(examKey: string): ExamDraft | undefined {
   const raw = localStorage.getItem(examKey);
   return raw ? JSON.parse(raw) : undefined;
 }
 
-export function storeExam(draft: ExamDraft) {
+export function storeExam(examKey: string, draft: ExamDraft) {
   localStorage.setItem(examKey, JSON.stringify(draft));
 }
 

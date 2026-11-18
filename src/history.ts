@@ -21,7 +21,11 @@ export type Attempt = {
 };
 
 export const historyKey = 'saa-study.attempts.v1';
-export const examKey = 'saa-study.exam.v1';
+const legacyExamKey = 'saa-study.exam.v1';
+const examKeyPrefix = 'katana.certification-exam.v1.';
+export function examKeyFor(certificationId: string) {
+  return certificationId === 'saa-c03' ? legacyExamKey : examKeyPrefix + certificationId;
+}
 const wrongKey = 'saa-study.incorrect.v1';
 const cookieName = 'saa_study_incorrect_v1';
 
@@ -107,7 +111,7 @@ export function saveAttempt(question: Question, selected: string[], mode: Mode, 
 }
 
 export function saveExam(
-  id: string, deadline: number,
+  examKey: string, id: string, deadline: number,
   answers: { question: Question; selected: string[]; durationMs: number; selectedAt?: number }[],
 ) {
   return withHistoryLock(() => {
@@ -133,11 +137,13 @@ export function resetHistory() {
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'SecurityError')) throw error;
     }
-    localStorage.removeItem(wrongKey);
-    localStorage.removeItem(examKey);
-    localStorage.removeItem(historyKey);
-    if (localStorage.getItem(historyKey) !== null || localStorage.getItem(wrongKey) !== null ||
-        localStorage.getItem(examKey) !== null) {
+    const keys = [wrongKey, historyKey, legacyExamKey];
+    for (let index = 0; index < localStorage.length; index++) {
+      const key = localStorage.key(index);
+      if (key?.startsWith(examKeyPrefix)) keys.push(key);
+    }
+    for (const key of keys) localStorage.removeItem(key);
+    if (keys.some(key => localStorage.getItem(key) !== null)) {
       throw new Error('学習データの削除を確認できませんでした。');
     }
   });

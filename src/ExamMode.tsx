@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LearningNotes } from './LearningNotes';
-import { examKey, saveExam, type Attempt } from './history';
+import type { ExamBlueprint } from './certifications';
+import { saveExam, type Attempt } from './history';
 import { questionKey, type Question } from './questions';
 import {
-  EXAM_MINUTES, EXAM_QUESTIONS, canStartExam, getResponse, isAnswered, newExam, readExam, remainingLabel, storeExam,
+  canStartExam, getResponse, isAnswered, newExam, readExam, remainingLabel, storeExam,
   type ExamDraft, type ExamResponse,
 } from './exam';
 
 type Filter = 'all' | 'unanswered' | 'flagged';
 
-export function ExamMode({ bank, archivedBank, history, onSaved }: {
+export function ExamMode({ bank, archivedBank, history, onSaved, blueprint, examKey }: {
   bank: Question[];
   archivedBank: Question[];
+  blueprint: ExamBlueprint;
+  examKey: string;
   history: Attempt[];
   onSaved: (history: Attempt[], indexFailed: boolean) => void;
 }) {
@@ -34,13 +37,13 @@ export function ExamMode({ bank, archivedBank, history, onSaved }: {
   const attempts = draft ? history.filter(attempt => attempt.examId === draft.id) : [];
   const completed = attempts.length > 0;
   const expired = !!draft && now >= draft.deadline;
-  const available = canStartExam(bank);
+  const available = canStartExam(bank, blueprint);
   const unanswered = draft ? questions.filter(question => !isAnswered(draft, question)).length : 0;
 
   useEffect(() => {
     function refresh() {
       try {
-        setDraft(readExam());
+        setDraft(readExam(examKey));
         activeSince.current = Date.now();
       } catch {
         setError('受験データを読み込めませんでした。');
@@ -52,7 +55,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved }: {
     refresh();
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [examKey]);
 
   useEffect(() => {
     if (!draft || completed || expired) return;
@@ -77,10 +80,10 @@ export function ExamMode({ bank, archivedBank, history, onSaved }: {
     setError('');
     dialog.current?.close();
     try {
-      const current = readExam();
+      const current = readExam(examKey);
       if (!current || current.id !== draft.id) throw new Error('Stale exam');
       const end = Math.min(Date.now(), current.deadline);
-      const result = await saveExam(current.id, current.deadline, questions.map((question, index) => {
+      const result = await saveExam(examKey, current.id, current.deadline, questions.map((question, index) => {
         const response = getResponse(current, questionKey(question));
         return {
           question, selected: response.selected, selectedAt: response.selectedAt,
@@ -95,7 +98,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved }: {
       pending.current = false;
       setSubmitting(false);
     }
-  }, [draft, correctRevision, completed, questions, onSaved]);
+  }, [draft, correctRevision, completed, questions, onSaved, examKey]);
 
   useEffect(() => {
     if (expired && correctRevision && !completed && !failedAuto.current) void submit();
@@ -104,14 +107,14 @@ export function ExamMode({ bank, archivedBank, history, onSaved }: {
   function start() {
     if (!available) return;
     try {
-      const current = readExam();
+      const current = readExam(examKey);
       const currentCompleted = current && history.some(attempt => attempt.examId === current.id);
       if (current && !currentCompleted) {
         setDraft(current);
         return;
       }
-      const next = newExam(bank);
-      storeExam(next);
+      const next = newExam(bank, blueprint);
+      storeExam(examKey, next);
       setDraft(next);
       setNow(Date.now());
       activeSince.current = Date.now();
@@ -131,7 +134,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved }: {
       return;
     }
     try {
-      const current = readExam();
+      const current = readExam(examKey);
       if (!current || current.id !== draft.id || current.position !== draft.position) return;
       const response = getResponse(current, key);
       const next = {
@@ -140,7 +143,7 @@ export function ExamMode({ bank, archivedBank, history, onSaved }: {
           ...response, ...patch, durationMs: response.durationMs + Math.max(0, at - activeSince.current),
         } },
       };
-      storeExam(next);
+      storeExam(examKey, next);
       activeSince.current = at;
       setDraft(next);
       setError('');
@@ -180,8 +183,8 @@ export function ExamMode({ bank, archivedBank, history, onSaved }: {
 
   if (!draft) return <section className="card">
     <h2>フル模擬試験</h2>
-    <p className="exam-score">{EXAM_QUESTIONS}問 / {EXAM_MINUTES}分</p>
-    <p>試験ガイドの4分野に沿った模試。正誤と解説は提出後に表示します。全65問の正答率を集計します。</p>
+    <p className="exam-score">{Object.values(blueprint.distribution).reduce((sum, count) => sum + count, 0)}問 / {blueprint.minutes}分</p>
+    <p>試験ガイドの4分野に沿った模試。正誤と解説は提出後に表示します。全問の正答率を集計します。</p>
     <p>開始するとカウントダウンが始まり、ページを離れても時間は進みます。</p>
     {!available && <p role="alert">模擬試験に必要な分野別の問題数を満たしていません。</p>}
     <button className="primary" disabled={!available} onClick={start}>模擬試験を開始</button>

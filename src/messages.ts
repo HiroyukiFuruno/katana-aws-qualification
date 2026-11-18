@@ -481,18 +481,6 @@ export const messages = {
     es: 'Las preguntas y explicaciones están en japonés.',
     it: 'Le domande e le spiegazioni sono in giapponese.',
   },
-  series: {
-    ja: 'KatanA シリーズ公式サイト',
-    en: 'Official KatanA series site',
-    'zh-CN': 'KatanA 系列官网',
-    'zh-TW': 'KatanA 系列官網',
-    ko: 'KatanA 시리즈 공식 사이트',
-    pt: 'Site oficial da série KatanA',
-    fr: 'Site officiel de la série KatanA',
-    de: 'Offizielle Website der KatanA-Reihe',
-    es: 'Sitio oficial de la serie KatanA',
-    it: 'Sito ufficiale della serie KatanA',
-  },
   privacy: {
     ja: 'プライバシー設定',
     en: 'Privacy settings',

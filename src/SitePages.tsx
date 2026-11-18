@@ -11,7 +11,10 @@ export function SiteHeader({ section }: { section: string }) {
       </a>
       <div className="shell topbar">
         <a className="brand" href={localePath(locale)}>
-          KatanA<span> AWS Qualification</span>
+          <img src="/katana-icon-128.png" width="40" height="40" alt="" />
+          <span className="brand-name">
+            KatanA <span>AWS Qualification</span>
+          </span>
         </a>
         <nav className="site-navigation" aria-label={t('navigation')}>
           <a
@@ -54,26 +57,26 @@ export function NotFound() {
   );
 }
 
+function wrapJapanesePhrase(text: string, japanese: boolean) {
+  const boundary = japanese ? text.indexOf('、') + 1 : 0;
+  if (!boundary) return text;
+  return (
+    <>
+      {text.slice(0, boundary)}
+      <wbr />
+      {text.slice(boundary)}
+    </>
+  );
+}
+
 export function Home() {
   const { locale, t } = usePreferences();
-  const title = t('landingTitle');
-  const phraseBoundary = locale === 'ja' ? title.indexOf('、') + 1 : 0;
   return (
     <main id="main" className="landing">
       <section className="landing-hero">
         <div className="shell">
-          <h1>
-            {phraseBoundary > 0 ? (
-              <>
-                {title.slice(0, phraseBoundary)}
-                <wbr />
-                {title.slice(phraseBoundary)}
-              </>
-            ) : (
-              title
-            )}
-          </h1>
-          <p>{t('landingIntro')}</p>
+          <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja')}</h1>
+          <p>{wrapJapanesePhrase(t('landingIntro'), locale === 'ja')}</p>
         </div>
       </section>
       <div className="shell entry-grid">

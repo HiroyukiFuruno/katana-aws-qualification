@@ -1,4 +1,4 @@
-import { examPrices, pricingUrl, yenExchangeSource } from './certificationPricing';
+import { examPrices, pricingUrl } from './certificationPricing';
 import { certificationGuides, officialGuideLink } from './certificationGuides';
 import { certifications } from './certifications';
 import { localePath } from './locales';
@@ -64,9 +64,7 @@ export function CertificationPages({ id }: { id?: string }) {
         </p>
       </section>
       <p className="cert-fee-note">
-        {t('certExchangeNote', { conversion: price.conversion, rate: price.rate, date: price.date })}
-        {' · '}
-        <a href={yenExchangeSource}>{t('certExchangeSource')}</a>
+        {t('certExchangeNote', { conversion: price.conversion, rate: price.rate })}
       </p>
       <article className="card">
         <h2>{t('certScope')}</h2>

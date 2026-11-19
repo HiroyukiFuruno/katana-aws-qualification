@@ -1008,3 +1008,72 @@ AWSの出典で正答の条件と誤答の根拠を確認し、追加問を含�
 
 - [ECSのENIトランキング要件](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-eni.html#container-instance-eni-considerations)
 - [IAMのaws:ViaAWSService条件キー](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-viaawsservice)
+
+## AIP-C01のフル模試1回分
+
+AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・12・11%。これを75問の整数配分23・20・15・9・8問に換算した。初回は単一選択63問と複数選択12問を収録した。4択・5択のすべての回答の組み合わせを使い、採点1,392通りを検証した。
+
+新規問同士2,775組と既存16版との1,200組を比較し、同じ再順位付けを問う候補やクロスリージョンの処理範囲を選ぶ候補を差し替えた。S3ファイルを個別に削除したときの増分同期と、コネクターの削除後にベクトルを保持する設定は、対象が異なることを確認した。66件のAWS公式出典に到達できることを確認した。
+
+フル模試128回を生成し、出題の5分野の配分と全75問の出題を確認した。カスタム1〜75問の件数と時間も確認した。既存16版はそのまま保管し、独立375問を揃えた後に画面の出題先を切り替える。
+
+- [AWS認定生成AIデベロッパーの試験案内](https://aws.amazon.com/certification/certified-generative-ai-developer-professional/)
+- [AIP-C01の試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-professional-01/ai-professional-01.html)
+- [ベクトルストアの次元設定](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-setup.html)
+- [Step FunctionsとBedrockの最適化統合](https://docs.aws.amazon.com/step-functions/latest/dg/connect-bedrock.html)
+- [Bedrock GuardrailsのAutomated Reasoning](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-automated-reasoning-checks.html)
+
+## AIP-C01の重複しないフル模試2回分
+
+75問を追加し、先行75問と旧版16レコードの内容を保持した。独立150問の配分は46・40・30・18・16問。単一選択128問、複数選択22問を収録し、単一選択の正答はA〜Dが各32問。
+
+現行問同士11,175組と旧版との2,400組を表記と正答に必要な判断で比較した。重複していた非同期推論の縮退、Lambda実行設定、エージェントのメモリの分離は、推論環境の負荷試験、フローの完了イベント、生イベントの保持期間に差し替えた。全150問に対応するAWS公式出典120件の到達を確認した。
+
+75問・180分のフル模試を重複なしで2回生成し、128組の生成結果で全150問が使われることを確認した。カスタム全75件数と採点2,752通りも検証した。
+
+- [Bedrock FlowsのInvokeFlow](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeFlow.html)
+- [AgentCore Memoryの保持期間](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-create-a-memory-store.html)
+- [SageMaker Inference Recommender](https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html)
+
+## AIP-C01の重複しないフル模試3回分
+
+75問を追加し、先行150問の本文と順序、旧版16レコードを保持した。独立225問の分野別配分は69・60・45・27・24問。内訳は単一選択193問と複数選択32問。
+
+現行問同士25,200組と旧版との3,600組を比較した。同期ExpressとAPI Gatewayの組み合わせを再び問う候補は、REST API経由でLambdaの応答をストリーミングする設問に差し替えた。独立処理の並列化を繰り返し問う候補は、子ワークフローの完了を待ってJSONの結果を受け取る設問に変更した。呼び出しログは対象APIのAWSアカウントとリージョンに適用されるため、記録範囲の異なる用途をアカウントで分離する設問にした。個別ページへ到達するAWS公式出典185件を確認した。
+
+75問・180分のフル模試を重複なしで3回生成する検査を128組行い、全225問の出題、カスタム1〜75問、4,112通りの採点を確認した。独立375問の確認後に画面の出題先を切り替える。
+
+- [API GatewayとLambdaの応答ストリーミング](https://docs.aws.amazon.com/apigateway/latest/developerguide/response-transfer-mode-lambda.html)
+- [Step Functionsの子ワークフローの出力形式](https://docs.aws.amazon.com/step-functions/latest/dg/connect-stepfunctions.html)
+- [Bedrockモデル呼び出しログの適用範囲](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)
+- [S3 Vectorsでのメタデータの絞り込み](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-metadata-filtering.html)
+
+## AIP-C01の重複しないフル模試4回分
+
+75問を追加し、先行225問の本文・順序と旧版16レコードを保持した。独立300問の分野別配分は92・80・60・36・32問。単一選択258問、複数選択42問を収録した。
+
+現行問同士44,850組と旧版との4,800組を比較した。既出の推論データのサンプリングを問う候補は、モデル応答時間と推論基盤の追加時間を分けて調べる設問へ変更した。再びGuardrailの公開前テストを問う候補は、Security Lakeの監査イベント取り込みに差し替えた。ログの集約を問う設問では、モデル呼び出しログを各アカウントで受け、CloudWatch Logsで一元化する方式へ修正した。AWS公式出典253件の個別ページへの到達を確認した。
+
+75問・180分のフル模試を重複なしで4回生成する検査を128組行い、全300問の出題、1〜75問のカスタム件数、5,472通りの採点を確認した。出題先の切り替えは残り75問の検証後に行う。
+
+- [SageMakerのCloudWatchメトリクス](https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html)
+- [Security Lakeのカスタムソース](https://docs.aws.amazon.com/security-lake/latest/userguide/custom-sources.html)
+- [CloudWatch Logsのアカウント横断ログ集約](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatchLogs_Centralization.html)
+- [Glueのカタログ側パーティション絞り込み](https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-pushdown.html)
+
+## AIP-C01のフル模試5回分と旧版互換性
+
+75問を追加した。公開前レビューで先行300問のBedrock FlowsやBatch inferenceの解説を見直し、判断が重なる設問を差し替えた。新しい模試の問題バンクは独立した375問で、分野別の内訳は115・100・75・45・40問。75問・180分のフル模試1回あたり23・20・15・9・8問を抽出する。問題バンク全体の内訳は択一322問と複数選択53問で、カスタムでは1〜75問を選択できる。
+
+現行問同士70,125組と旧版との6,000組を照合した。判断が重複した設問は、文字起こし結果から録音区間を特定する設問、ワークフロー定義の検証、BedrockバッチジョブからS3への経路制御に差し替えた。EventBridgeの配送失敗とLambdaの受理後の実行失敗の違いも設問に反映した。AWS公式出典324ページへ個別に到達することを確認した。
+
+重複のないフル模試5回分を128組生成して分野別の件数を確認した。全375問が抽出され、6,848通りの回答で採点を確認した。公開済みの問題データ16レコードと模試の保存キーは維持し、旧版の途中保存と採点履歴は引き続き旧版の問題を参照する。
+
+- [AWSのAIP-C01試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-professional-01/ai-professional-01.html)
+- [API Gateway WebSocketの接続管理](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-how-to-call-websocket-api-connections.html)
+- [OpenSearch ServiceのIndex State Management](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ism.html)
+- [Bedrockの蒸留用データ](https://docs.aws.amazon.com/bedrock/latest/userguide/distillation-prepare-datasets.html)
+- [BedrockバッチジョブのVPC設定](https://docs.aws.amazon.com/bedrock/latest/userguide/batch-vpc.html)
+- [Bedrock Flowsの複数ターンの再開](https://docs.aws.amazon.com/bedrock/latest/userguide/flows-multi-turn-invocation.html)
+- [Bedrock FlowsのLambda functionノード](https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html)
+- [EventBridgeの配送失敗とデッドレターキュー](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-dlq.html)

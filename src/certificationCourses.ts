@@ -1,8 +1,9 @@
 import { advancedNetworkingCourse } from './advancedNetworkingCourse.ts';
 import type { Certification, Course } from './certificationTypes';
+import { generativeAiDeveloperCourse } from './generativeAiDeveloperCourse.ts';
 import { securitySpecialtyCourse } from './securitySpecialtyCourse.ts';
 
-const starterCourseIds = new Set(['clf-c02', 'mla-c01', 'sap-c03', 'aip-c01', 'ai-business-strategist']);
+const starterCourseIds = new Set(['clf-c02', 'mla-c01', 'sap-c03', 'ai-business-strategist']);
 
 const developerMock = 'courses/dva-c03/mock-2026-11.json';
 
@@ -86,7 +87,6 @@ const devOpsCourse: Course = {
 
 const uniqueCounts: Record<string, number> = {
   'aif-c01': 9,
-  'aip-c01': 9,
   'mla-c01': 9,
 };
 
@@ -126,6 +126,7 @@ export function withAvailableCourses(catalog: Certification[]): Certification[] 
     if (certification.id === 'dop-c02') return { ...certification, course: devOpsCourse };
     if (certification.id === 'scs-c03') return { ...certification, course: securitySpecialtyCourse };
     if (certification.id === 'ans-c01') return { ...certification, course: advancedNetworkingCourse };
+    if (certification.id === 'aip-c01') return { ...certification, course: generativeAiDeveloperCourse };
     if (starterCourseIds.has(certification.id)) {
       return { ...certification, course: starterCourse(certification) };
     }

@@ -1,6 +1,7 @@
 import { AccountBenefits } from './auth/AccountBenefits';
 import { AccountEntryCta } from './auth/AccountEntryCta';
 import { CertificationDirectory } from './CertificationDirectory';
+import { LandingCatalogStats } from './LandingCatalogStats';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
 
@@ -33,6 +34,7 @@ export function Home() {
         <div className="shell">
           <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja')}</h1>
           <p>{wrapJapanesePhrase(t('landingIntro'), locale === 'ja')}</p>
+          <LandingCatalogStats />
           <AccountEntryCta />
         </div>
       </section>

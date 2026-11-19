@@ -1,5 +1,11 @@
 import type { ExamBlueprint } from './certifications';
-import { examDomainOf, isAnswerComplete, questionKey, type Question } from './questions';
+import {
+  examDomainOf,
+  isAnswerComplete,
+  type Question,
+  questionGroupKey,
+  questionKey,
+} from './questions';
 
 export type ExamResponse = {
   selected: string[];
@@ -18,7 +24,7 @@ export type ExamDraft = {
 function uniqueExamQuestions(questions: readonly Question[]) {
   const seen = new Set<string>();
   return questions.filter((question) => {
-    const key = question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`;
+    const key = questionGroupKey(question);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

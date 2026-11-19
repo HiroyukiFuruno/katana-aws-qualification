@@ -911,3 +911,17 @@ AWSの試験ガイドの分野比率16・14・18・20・18・14%に合わせ、6
 - [Auto ScalingのStandby状態](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-enter-exit-standby.html)
 - [Verified Accessの信頼プロバイダー](https://docs.aws.amazon.com/verified-access/latest/ug/trust-providers.html)
 - [KMSキーの削除の取り消し](https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys-cancelling-key-deletion.html)
+
+## SCS-C03の重複しないフル模試4回分
+
+65問を追加し、既存195問を維持した。独立260問を6分野に40・36・48・52・48・36問ずつ収録する。単一選択228問、複数選択27問、並べ替え4問、組み合わせ1問。単一選択の正答位置はA〜Dで各57問。
+
+GuardDutyの実行時監視の確認、稼働中の複数EBSからの証拠保全、Route 53のDNSSEC委任、Kubernetesの名前空間単位の認可、RDSのCA切替、組織の監査ログ保管と調査の分離などを追加した。同じサービスを扱う設問は、制約と正答に必要な判断を既存問と照合した。例えば、GuardDutyのS3スキャン結果を通知で取得する既存問に対し、追加問は未検査のオブジェクトを読み取らせないバケットポリシーを扱う。
+
+フル模試を512回生成し、65問・170分と6分野の配分を検証した。互いに重複しないフル模試4回分を128組生成し、カスタム全65件数、採点4,596通り、出典URL253件、旧版16レコードの参照を確認した。
+
+- [SCS-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/security-specialty-03/security-specialty-03.html)
+- [GuardDutyのスキャン結果によるS3アクセス制御](https://docs.aws.amazon.com/guardduty/latest/ug/tag-based-access-s3-malware-protection.html)
+- [Route 53のDNSSEC署名と委任](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-enable-signing.html)
+- [KubernetesのRoleBindingとClusterRoleBinding](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+- [RDSのTLS証明書のローテーション](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html)

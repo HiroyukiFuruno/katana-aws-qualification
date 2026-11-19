@@ -705,3 +705,14 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 
 - [EFSの項目レベル復元](https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-efs.html)
 - [VPC IPAMのCIDR使用状況と重複](https://docs.aws.amazon.com/vpc/latest/ipam/monitor-cidr-compliance-ipam.html)
+
+## SOA-C03の重複しないフル模試3回分
+
+新規65問を追加し、既存130問を維持した。独立195問の分野別内訳は順に42・42・42・33・36問。単一選択174問、複数選択21問で、単一選択の正答位置はAから順に44・44・43・43問。
+
+正答の決め手が近い草稿を照合した。タグによるバックアップ選択の繰り返しはEBS Multi-Attachの条件へ、既出のゾーンシフトに近い草稿はS3の削除マーカーからの復旧へ差し替えた。複製速度の設定が既出のため、新たにDataSyncでは差分の転送後に既存コピーを含めて検証する判断を扱った。AWS DevOps Agentの調査レビューでは、対応を承認する前に結論の根拠を評価する手順を問う。
+
+出典192件、全3,456通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、配分14・14・14・11・12問のフル模試を、互いに問題が重複しない3回分として128組生成した。分野ごとの5倍まで、順に28・28・28・22・24問を追加する。
+
+- [AWS DataSyncの検証設定](https://docs.aws.amazon.com/datasync/latest/userguide/configure-data-verification-options.html)
+- [AWS DevOps Agentの調査レビュー](https://docs.aws.amazon.com/devopsagent/latest/userguide/working-with-devops-agent-reviewing-investigations.html)

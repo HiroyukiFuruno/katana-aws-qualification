@@ -1,5 +1,5 @@
 import { certifications } from './certifications.ts';
-import { localePath, locales, type Locale } from './locales.ts';
+import { type Locale, localePath, locales } from './locales.ts';
 
 export const publishedPages = [
   '',
@@ -14,9 +14,11 @@ export const publishedPages = [
   ...certifications.filter((cert) => cert.course).map((cert) => `study/${cert.id}`),
 ];
 
+export const accountPages = ['login', 'auth/callback', 'dashboard'];
+
 const routes = new Map<string, { locale: Locale; page: string }>();
 for (const locale of locales) {
-  for (const page of publishedPages) {
+  for (const page of [...publishedPages, ...accountPages]) {
     routes.set(localePath(locale, page), { locale, page });
   }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AccountNavigation, useHomePath } from './auth/AccountNavigation';
 import { localePath } from './locales';
 import { SiteControls, usePreferences } from './preferences';
 
@@ -74,13 +75,14 @@ function StudyNavigation({ active, subpage }: { active: boolean; subpage?: strin
 
 export function SiteHeader({ section, subpage }: { section: string; subpage?: string }) {
   const { locale, t } = usePreferences();
+  const homePath = useHomePath();
   return (
     <header className="site-header">
       <a className="skip-link" href="#main">
         {t('skip')}
       </a>
       <div className="shell topbar">
-        <a className="brand" href={localePath(locale)}>
+        <a className="brand" href={homePath}>
           <img src="/katana-icon-128.png" width="40" height="40" alt="" />
           <span className="brand-name">
             KatanA <span>AWS Qualification</span>
@@ -110,7 +112,10 @@ export function SiteHeader({ section, subpage }: { section: string; subpage?: st
             {t('glossary')}
           </a>
         </nav>
-        <SiteControls />
+        <div className="account-controls">
+          <AccountNavigation />
+          <SiteControls />
+        </div>
       </div>
     </header>
   );

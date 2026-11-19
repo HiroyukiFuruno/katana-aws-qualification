@@ -1,0 +1,98 @@
+name: kaq-auth-integration
+services:
+  database:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: supabase_auth_admin
+      POSTGRES_PASSWORD: integration-only
+      POSTGRES_DB: kaq_auth
+    tmpfs:
+      - /var/lib/postgresql
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/auth.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U supabase_auth_admin -d kaq_auth]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  auth:
+    image: supabase/gotrue:v2.198.0
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://127.0.0.1:54331/auth/v1
+      GOTRUE_SITE_URL: http://127.0.0.1:5173
+      GOTRUE_URI_ALLOW_LIST: http://127.0.0.1:5173/auth/callback/,http://127.0.0.1:5173/ja/auth/callback/,http://127.0.0.1:5173/zh-CN/auth/callback/,http://127.0.0.1:5173/zh-TW/auth/callback/,http://127.0.0.1:5173/ko/auth/callback/,http://127.0.0.1:5173/pt/auth/callback/,http://127.0.0.1:5173/fr/auth/callback/,http://127.0.0.1:5173/de/auth/callback/,http://127.0.0.1:5173/es/auth/callback/,http://127.0.0.1:5173/it/auth/callback/
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:integration-only@database:5432/kaq_auth?search_path=auth
+      GOTRUE_JWT_SECRET: kaq-integration-only-jwt-secret-not-for-production
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "false"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+      GOTRUE_SECURITY_MANUAL_LINKING_ENABLED: "true"
+      GOTRUE_CUSTOM_OAUTH_ENABLED: "true"
+      GOTRUE_EXTERNAL_GITHUB_ENABLED: "true"
+      GOTRUE_EXTERNAL_GITHUB_CLIENT_ID: integration-redirect-check
+      GOTRUE_EXTERNAL_GITHUB_SECRET: integration-only-not-a-github-credential
+      GOTRUE_EXTERNAL_GITHUB_REDIRECT_URI: http://127.0.0.1:54331/auth/v1/callback
+      GOTRUE_EXTERNAL_KEYCLOAK_ENABLED: "true"
+      GOTRUE_EXTERNAL_KEYCLOAK_CLIENT_ID: kaq
+      GOTRUE_EXTERNAL_KEYCLOAK_SECRET: integration-only
+      GOTRUE_EXTERNAL_KEYCLOAK_URL: https://kaq-idp:54441/realms/kaq
+      GOTRUE_EXTERNAL_KEYCLOAK_REDIRECT_URI: http://127.0.0.1:54331/auth/v1/callback
+      GOTRUE_LOG_LEVEL: warn
+      GOTRUE_CORS_ALLOWED_HEADERS: apikey
+      SSL_CERT_FILE: /etc/kaq-test/server.crt
+    volumes:
+      - ../../test-results/auth/tls:/etc/kaq-test:ro
+  gateway:
+    image: nginx:1.29-alpine
+    ports:
+      - "127.0.0.1:54331:80"
+    volumes:
+      - ./gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - auth
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O - http://127.0.0.1/auth/v1/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  kaq-idp:
+    image: quay.io/keycloak/keycloak:26.8.2
+    command:
+      [
+        start-dev,
+        --import-realm,
+        --http-port=54440,
+        --https-port=54441,
+        --https-certificate-file=/opt/keycloak/conf/tls/server.crt,
+        --https-certificate-key-file=/opt/keycloak/conf/tls/server.key,
+      ]
+    environment:
+      KC_HOSTNAME: https://kaq-idp:54441
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_MANAGEMENT_SCHEME: http
+    ports:
+      - "127.0.0.1:54440:54440"
+      - "127.0.0.1:54441:54441"
+    volumes:
+      - ./realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ../../test-results/auth/tls:/opt/keycloak/conf/tls:ro
+    healthcheck:
+      test:
+        [
+          CMD,
+          bash,
+          -ec,
+          "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3; read -r status <&3; [[ $$status == *'200 OK'* ]]",
+        ]
+      interval: 2s
+      timeout: 2s
+      retries: 30

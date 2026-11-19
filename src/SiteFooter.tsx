@@ -1,8 +1,10 @@
+import { useHomePath } from './auth/AccountNavigation';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
 
 export function SiteFooter() {
   const { t, locale } = usePreferences();
+  const homePath = useHomePath();
   return (
     <footer className="site-footer">
       <div className="shell footer-grid">
@@ -16,7 +18,7 @@ export function SiteFooter() {
             KatanA Website
           </a>
         </nav>
-        <a className="brand" href={localePath(locale)}>
+        <a className="brand" href={homePath}>
           KatanA<span> AWS Qualification</span>
         </a>
       </div>

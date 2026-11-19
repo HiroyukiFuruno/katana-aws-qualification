@@ -1008,3 +1008,17 @@ AWSの出典で正答の条件と誤答の根拠を確認し、追加問を含�
 
 - [ECSのENIトランキング要件](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-eni.html#container-instance-eni-considerations)
 - [IAMのaws:ViaAWSService条件キー](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-viaawsservice)
+
+## AIP-C01のフル模試1回分
+
+AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・12・11%。これを75問の整数配分23・20・15・9・8問に換算した。初回は単一選択63問と複数選択12問を収録した。4択・5択のすべての回答の組み合わせを使い、採点1,392通りを検証した。
+
+新規問同士2,775組と既存16版との1,200組を比較し、同じ再順位付けを問う候補やクロスリージョンの処理範囲を選ぶ候補を差し替えた。S3ファイルを個別に削除したときの増分同期と、コネクターの削除後にベクトルを保持する設定は、対象が異なることを確認した。66件のAWS公式出典に到達できることを確認した。
+
+フル模試128回を生成し、出題の5分野の配分と全75問の出題を確認した。カスタム1〜75問の件数と時間も確認した。既存16版はそのまま保管し、独立375問を揃えた後に画面の出題先を切り替える。
+
+- [AWS認定生成AIデベロッパーの試験案内](https://aws.amazon.com/certification/certified-generative-ai-developer-professional/)
+- [AIP-C01の試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-professional-01/ai-professional-01.html)
+- [ベクトルストアの次元設定](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-setup.html)
+- [Step FunctionsとBedrockの最適化統合](https://docs.aws.amazon.com/step-functions/latest/dg/connect-bedrock.html)
+- [Bedrock GuardrailsのAutomated Reasoning](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-automated-reasoning-checks.html)

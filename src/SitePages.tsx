@@ -6,6 +6,7 @@ import { LandingCatalogStats } from './LandingCatalogStats';
 import { LandingFaq } from './LandingFaq';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
+import './landing.css';
 
 export function NotFound() {
   return (

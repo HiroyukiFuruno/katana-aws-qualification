@@ -21,3 +21,20 @@ test('Google configuration is independent of GitHub and absent flags stay disabl
   ]);
   expect(configuredProviders({ google: false })).toEqual([]);
 });
+
+test('Microsoft uses Azure without mail or storage scopes and stays independently disabled', () => {
+  const microsoft = configuredProviders({ microsoft: true }).find(
+    (provider) => provider.id === 'microsoft',
+  );
+  expect(microsoft).toEqual({
+    id: 'microsoft',
+    backend: 'azure',
+    name: 'Microsoft',
+    scopes: 'openid profile email',
+  });
+  expect(configuredProviders({ github: true, microsoft: true }).map((provider) => provider.id)).toEqual([
+    'github',
+    'microsoft',
+  ]);
+  expect(configuredProviders({ microsoft: false })).toEqual([]);
+});

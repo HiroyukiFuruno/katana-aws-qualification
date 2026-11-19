@@ -15,6 +15,7 @@ export function createAccountAuth(): AccountAuth | null {
     configuredProviders({
       github: import.meta.env.VITE_AUTH_GITHUB_ENABLED === 'true',
       google: import.meta.env.VITE_AUTH_GOOGLE_ENABLED === 'true',
+      microsoft: import.meta.env.VITE_AUTH_MICROSOFT_ENABLED === 'true',
     }),
     location.origin,
   );

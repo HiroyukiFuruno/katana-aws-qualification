@@ -1,29 +1,14 @@
 import { usePreferences } from './preferences';
 import { useState } from 'react';
-import { assessmentItems, profileKey, recommend, remainingCertifications } from './assessment';
+import { assessmentItems, profileKey, remainingCertifications } from './assessment';
 import { CertificationDirectory } from './CertificationDirectory';
-import { levelMessage, skills } from './certifications';
+import { AssessmentQuestion } from './AssessmentQuestion';
+import { RoadmapResults } from './RoadmapResults';
 
-type Profile = { earned: string[]; answers: Record<string, number> };
-
-function loadProfile(): Profile {
-  try {
-    const saved = JSON.parse(localStorage.getItem(profileKey) ?? 'null');
-    return {
-      earned: Array.isArray(saved?.earned)
-        ? saved.earned
-            .filter((id: unknown): id is string => typeof id === 'string')
-            .map((id: string) => (id === 'sap-c02' ? 'sap-c03' : id))
-        : [],
-      answers: saved?.answers && typeof saved.answers === 'object' ? saved.answers : {},
-    };
-  } catch {
-    return { earned: [], answers: {} };
-  }
-}
+import { loadProfile, type Profile } from './roadmapProfile';
 
 export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
-  const { t, locale } = usePreferences();
+  const { t } = usePreferences();
   const [profile, setProfile] = useState(loadProfile);
   const [position, setPosition] = useState(0);
   const [phase, setPhase] = useState<'setup' | 'questions' | 'result'>('setup');
@@ -101,153 +86,33 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
           )}
         </section>
       ) : phase === 'questions' && item ? (
-        <section className="card roadmap-card">
-          <p className="eyebrow">
-            {skills[item.skill]} · {position + 1} / {items.length}
-          </p>
-          <h2 lang="ja">{item.prompt}</h2>
-          {locale !== 'ja' && <p>{t('contentLanguage')}</p>}
-          <fieldset>
-            <legend className="sr-only">{t('choices')}</legend>
-            {item.options.map((option, index) => (
-              <label className="choice choice-wrap" key={option}>
-                <input
-                  type="radio"
-                  name={item.id}
-                  checked={profile.answers[item.id] === index}
-                  onChange={() => selectAnswer(index)}
-                />
-                <span lang="ja">{option}</span>
-              </label>
-            ))}
-            <label className="choice choice-wrap">
-              <input
-                type="radio"
-                name={item.id}
-                checked={profile.answers[item.id] === item.options.length}
-                onChange={() => selectAnswer(item.options.length)}
-              />
-              {t('unknown')}
-            </label>
-          </fieldset>
-          <div className="exam-actions">
-            <button
-              type="button"
-              onClick={() => (position ? setPosition(position - 1) : setPhase('setup'))}
-            >
-              {t('back')}
-            </button>
-            <button
-              type="button"
-              className="primary"
-              disabled={profile.answers[item.id] === undefined}
-              onClick={() => {
-                if (position < items.length - 1) setPosition(position + 1);
-                else if (complete) setPhase('result');
-                else
-                  setPosition(items.findIndex((question) => profile.answers[question.id] === undefined));
-              }}
-            >
-              {position === items.length - 1 ? t('viewAssessment') : t('next')}
-            </button>
-          </div>
-        </section>
+        <AssessmentQuestion
+          item={item}
+          answer={profile.answers[item.id]}
+          position={position}
+          total={items.length}
+          selectAnswer={selectAnswer}
+          onBack={() => (position ? setPosition(position - 1) : setPhase('setup'))}
+          onNext={() => {
+            if (position < items.length - 1) setPosition(position + 1);
+            else if (complete) setPhase('result');
+            else setPosition(items.findIndex((question) => profile.answers[question.id] === undefined));
+          }}
+        />
       ) : (
-        <>
-          <section className="card roadmap-card">
-            <h2>{t('assessmentResults')}</h2>
-            <p className="exam-score">
-              {t('score', {
-                correct: items.filter((item) => profile.answers[item.id] === item.correct).length,
-                total: items.length,
-              })}
-            </p>
-            <details className="exam-solutions">
-              <summary>{t('viewAnswers')}</summary>
-              <ol className="roadmap-results">
-                {items.map((item) => {
-                  const chosen = profile.answers[item.id];
-                  const correct = chosen === item.correct;
-                  const answer =
-                    chosen === item.options.length
-                      ? t('unknown')
-                      : (item.options[chosen] ?? t('unanswered'));
-                  return (
-                    <li key={item.id}>
-                      <strong className={correct ? 'good-text' : 'bad-text'}>
-                        {correct ? `○ ${t('correct')}` : `× ${t('incorrect')}`}
-                      </strong>
-                      <p>{item.prompt}</p>
-                      <p>
-                        {t('yourAnswer')} · {answer}
-                      </p>
-                      {!correct && (
-                        <p>
-                          {t('correct')} · {item.options[item.correct]}
-                        </p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
-            </details>
-          </section>
-          <section className="card roadmap-card">
-            <h2>{t('recommended')}</h2>
-            <p>{t('recommendedIntro')}</p>
-            <ol className="roadmap-results">
-              {recommend(profile.earned, profile.answers, today).map(({ cert, gaps, priority }) => (
-                <li key={cert.id}>
-                  <strong>
-                    {cert.name} · {t(levelMessage[cert.level])}
-                  </strong>{' '}
-                  <small>
-                    {cert.id.toUpperCase()}
-                    {cert.beta ? ` · ${t('beta')}` : ''}
-                  </small>
-                  <p>
-                    {t('studyScope')} · {cert.focus}
-                  </p>
-                  <p>
-                    {gaps.length
-                      ? `${t('reviewTopics')} · ${gaps.map((skill) => skills[skill]).join('、')}`
-                      : t('allTopicsCorrect')}
-                    {priority > 0 && ` · ${t('retirementPriority')}`}
-                    {cert.retireOn && ` · ${t('retirement', { date: cert.retireOn })}`}
-                  </p>
-                  {cert.buildsOn && (
-                    <p>
-                      {t('relatedCerts')} · {cert.buildsOn.map((id) => id.toUpperCase()).join('、')}
-                    </p>
-                  )}
-                  {cert.course ? (
-                    <button type="button" onClick={() => onStudy(cert.id)}>
-                      {t('openCourse')}
-                    </button>
-                  ) : (
-                    <small>{t('coursePending')}</small>
-                  )}
-                </li>
-              ))}
-            </ol>
-            <p>{t('roadmapScope')}</p>
-            <div className="exam-actions">
-              <button type="button" onClick={() => setPhase('setup')}>
-                {t('editEarned')}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  persist({ ...profile, answers: {} });
-                  setPosition(0);
-                  setPhase('questions');
-                }}
-              >
-                {t('retakeAssessment')}
-              </button>
-            </div>
-          </section>
-        </>
+        <RoadmapResults
+          items={items}
+          earned={profile.earned}
+          answers={profile.answers}
+          today={today}
+          onStudy={onStudy}
+          onEdit={() => setPhase('setup')}
+          onRetake={() => {
+            persist({ ...profile, answers: {} });
+            setPosition(0);
+            setPhase('questions');
+          }}
+        />
       )}
     </>
   );

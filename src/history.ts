@@ -1,25 +1,7 @@
-import { isCorrectAnswer, questionKey, type Question } from './questions';
+import { type Attempt, makeAttempt, type Mode } from './attempts';
+import type { Question } from './questions';
 
-export type Mode = 'study' | 'review';
-export type Attempt = {
-  schemaVersion: 1;
-  questionId: string;
-  questionRevision: number;
-  category: string;
-  sourceVersion: string;
-  answeredAt: string;
-  selected: string[];
-  correct: string[];
-  format?: Question['format'];
-  isCorrect: boolean;
-  durationMs: number;
-  attemptNumber: number;
-  priorIncorrectCount: number;
-  mode: Mode | 'exam';
-  examId?: string;
-  reviewCorrect: boolean | null;
-  reward: 0 | 1;
-};
+export { type Attempt, type Mode, statsFor } from './attempts';
 
 export const historyKey = 'saa-study.attempts.v1';
 const legacyExamKey = 'saa-study.exam.v1';
@@ -71,50 +53,6 @@ function syncIncorrectIds(history: Attempt[]) {
 export function withHistoryLock<T>(operation: () => T): Promise<T> {
   if (navigator.locks) return navigator.locks.request(historyKey, operation);
   return Promise.resolve().then(operation);
-}
-
-export function statsFor(history: Attempt[], question: Question) {
-  const attempts = history.filter(
-    (a) => questionKey({ id: a.questionId, revision: a.questionRevision }) === questionKey(question),
-  );
-  return {
-    total: attempts.length,
-    wrong: attempts.filter((attempt) => !attempt.isCorrect).length,
-    lastReview: attempts.findLast((attempt) => attempt.mode === 'review'),
-  };
-}
-
-function makeAttempt(
-  history: Attempt[],
-  question: Question,
-  selected: string[],
-  mode: Attempt['mode'],
-  durationMs: number,
-  answeredAt: string,
-  examId?: string,
-): Attempt {
-  const stats = statsFor(history, question);
-  const correct = question.correct;
-  const isCorrect = isCorrectAnswer(question, selected);
-  return {
-    schemaVersion: 1,
-    questionId: question.id,
-    questionRevision: question.revision,
-    category: question.category,
-    sourceVersion: question.version,
-    answeredAt,
-    selected,
-    correct,
-    ...(question.format ? { format: question.format } : {}),
-    isCorrect,
-    durationMs,
-    attemptNumber: stats.total + 1,
-    priorIncorrectCount: stats.wrong,
-    mode,
-    reviewCorrect: mode === 'review' ? isCorrect : null,
-    reward: isCorrect ? 1 : 0,
-    ...(examId === undefined ? {} : { examId }),
-  };
 }
 
 function persist(history: Attempt[]) {

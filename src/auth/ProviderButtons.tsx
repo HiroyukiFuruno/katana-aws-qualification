@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { usePreferences } from '../preferences';
 import { useAccount } from './AuthContext';
+import { ProviderIcon } from './ProviderIcon';
+import './provider-buttons.css';
 
 export function ProviderButtons({ link = false }: { link?: boolean }) {
   const { service, state } = useAccount();
@@ -34,11 +36,17 @@ export function ProviderButtons({ link = false }: { link?: boolean }) {
         <button
           key={provider.id}
           type="button"
-          className="primary"
+          aria-busy={busy}
+          className="account-provider-button"
+          data-provider={provider.id}
           disabled={busy}
           onClick={() => void start(provider.id)}
         >
-          {t(link ? 'accountLinkProvider' : 'accountSignInProvider', { provider: provider.name })}
+          <ProviderIcon providerId={provider.id} />
+          <span className="account-provider-label">
+            {t(link ? 'accountLinkProvider' : 'accountSignInProvider', { provider: provider.name })}
+          </span>
+          {busy && <span aria-hidden="true" className="account-provider-busy" />}
         </button>
       ))}
       {!service?.providers.length && <p role="status">{t('accountUnavailable')}</p>}

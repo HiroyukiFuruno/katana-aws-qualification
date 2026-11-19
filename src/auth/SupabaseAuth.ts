@@ -1,6 +1,7 @@
 import type { GoTrueClient, Provider } from '@supabase/auth-js';
 import type { Locale } from '../locales';
 import { accountFrom } from './account';
+import { type AccountDeletionBackend, requestAccountDeletion } from './deletion';
 import { callbackCode, callbackPath } from './navigation';
 import type { Account, AccountAuth, AuthProvider } from './types';
 
@@ -9,6 +10,7 @@ export class SupabaseAuth implements AccountAuth {
     private readonly client: GoTrueClient,
     readonly providers: readonly AuthProvider[],
     private readonly origin: string,
+    private readonly deletionBackend?: AccountDeletionBackend,
   ) {}
 
   async getAccount() {
@@ -63,6 +65,19 @@ export class SupabaseAuth implements AccountAuth {
   async signOut() {
     const { error } = await this.client.signOut();
     if (error) throw error;
+  }
+
+  async deleteAccount(expectedAccountId: string) {
+    if (!this.deletionBackend) throw new Error('Account deletion is unavailable');
+    const { data, error } = await this.client.getSession();
+    if (error) throw error;
+    if (!data.session?.access_token) throw new Error('Authentication required');
+    const { data: verified, error: userError } = await this.client.getUser(data.session.access_token);
+    if (userError) throw userError;
+    if (verified.user?.id !== expectedAccountId) throw new Error('Account changed');
+    await requestAccountDeletion(this.deletionBackend, data.session.access_token);
+    const { error: signOutError } = await this.client.signOut({ scope: 'local' });
+    if (signOutError) throw signOutError;
   }
 
   async linkIdentity(providerId: string, locale: Locale) {

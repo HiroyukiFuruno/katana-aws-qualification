@@ -19,5 +19,9 @@ export function createAccountAuth(): AccountAuth | null {
       facebook: import.meta.env.VITE_AUTH_FACEBOOK_ENABLED === 'true',
     }),
     location.origin,
+    {
+      url: new URL('/functions/v1/delete-account', configuration.url).href,
+      key: configuration.key,
+    },
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
 import { useAccount } from './AuthContext';
+import { DeleteAccount } from './DeleteAccount';
 import { ProviderButtons } from './ProviderButtons';
 
 export function AccountSettings() {
@@ -32,33 +33,36 @@ export function AccountSettings() {
   }
 
   return (
-    <section className="card layout-stack">
-      <h2>{t('accountSettings')}</h2>
-      {account.email && <p>{account.email}</p>}
-      <h3>{t('accountLinkedProviders')}</h3>
-      <ul className="action-list">
-        {account.identities.map((identity) => (
-          <li key={identity.id}>
-            <span>
-              {service.providers.find((provider) => provider.backend === identity.provider)?.name ??
-                identity.provider}
-            </span>
-            <button
-              type="button"
-              disabled={busy || account.identities.length < 2}
-              onClick={() => void perform(identity.id)}
-            >
-              {t('accountUnlink')}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p>{t('accountKeepIdentity')}</p>
-      <ProviderButtons link />
-      <button type="button" disabled={busy} onClick={() => void perform()}>
-        {t('accountSignOut')}
-      </button>
-      {failed && <p role="alert">{t('accountActionFailed')}</p>}
-    </section>
+    <>
+      <section className="card layout-stack">
+        <h2>{t('accountSettings')}</h2>
+        {account.email && <p>{account.email}</p>}
+        <h3>{t('accountLinkedProviders')}</h3>
+        <ul className="action-list">
+          {account.identities.map((identity) => (
+            <li key={identity.id}>
+              <span>
+                {service.providers.find((provider) => provider.backend === identity.provider)?.name ??
+                  identity.provider}
+              </span>
+              <button
+                type="button"
+                disabled={busy || account.identities.length < 2}
+                onClick={() => void perform(identity.id)}
+              >
+                {t('accountUnlink')}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <p>{t('accountKeepIdentity')}</p>
+        <ProviderButtons link />
+        <button type="button" disabled={busy} onClick={() => void perform()}>
+          {t('accountSignOut')}
+        </button>
+        {failed && <p role="alert">{t('accountActionFailed')}</p>}
+      </section>
+      <DeleteAccount key={account.id} />
+    </>
   );
 }

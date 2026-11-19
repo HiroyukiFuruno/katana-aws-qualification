@@ -43,3 +43,11 @@ GitHubのOpen Issue #17, #19〜#25の本文を要件・DoDの一次情報とす�
 ## 先行修正の公開
 #28/#29はPR #30/main `2024339`で公開・Close。認証回復とアバター/無料CTA、単体38件・実Auth/browser25件、本番mobile/回復/認可再開を検証済み。
 #19の追加後はmain統合状態で単体40件・実Auth27件成功。Google本番設定の最終反映は管理ログイン待ち。
+
+## 更新された着手順序と公開状況
+
+2026-11-20本人承認「Amazonを保留して先へ進める」により、#21のGoTrue v2.198.0 subject mapping非互換は上流待ちとして分離。#23の依存を#18/#19/#20/#22へ更新済みで、他SSO・永続化・ダッシュボードを先行する。#21はOpenで未対応として維持する。
+
+GitHubはManagement APIからKeychain内の実credential再設定後、本人Chromeで実ログイン→dashboard→identity1件とアバター表示まで確認済み。GoogleはPR32/main d074b9a・本番有効化済み、本人の基本情報共有同意だけ独立フォローアップ。#33はPR34/main0c44321を公開し、本番8条件のカード余白/横overflow/FAQ開閉を検査済み。
+
+- [/] 追加フィードバック: ログインボタンをベンダーごとの公式ロゴ/カラーへ変更（20261120_provider_buttons.md）。

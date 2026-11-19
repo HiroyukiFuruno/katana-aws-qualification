@@ -1,5 +1,6 @@
-import { usePreferences } from './preferences';
 import { useId } from 'react';
+import { usePreferences } from './preferences';
+import { QuestionSources } from './QuestionSources';
 import type { Question } from './questions';
 
 export function LearningNotes({ question, selected }: { question: Question; selected: string[] }) {
@@ -20,11 +21,7 @@ export function LearningNotes({ question, selected }: { question: Question; sele
     })),
   ];
   if (!notes) {
-    return (
-      <a href={question.source.url} target="_blank" rel="noreferrer">
-        {question.source.label} ↗
-      </a>
-    );
+    return <QuestionSources question={question} />;
   }
 
   return (
@@ -61,9 +58,7 @@ export function LearningNotes({ question, selected }: { question: Question; sele
           </details>
         </details>
       )}
-      <a href={question.source.url} target="_blank" rel="noreferrer">
-        {question.source.label} ↗
-      </a>
+      <QuestionSources question={question} />
     </section>
   );
 }

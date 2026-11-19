@@ -9,6 +9,7 @@ import { dashboardPath } from './auth/navigation';
 import { CertificationPages } from './CertificationPages';
 import { CourseApp } from './CourseApp';
 import { certifications } from './certifications';
+import { FundamentalsPage } from './fundamentals/FundamentalsPage';
 import { GlossaryPage } from './GlossaryPage';
 import { localePath } from './locales';
 import { PreferencesProvider, usePreferences } from './preferences';
@@ -16,7 +17,7 @@ import { Roadmap } from './Roadmap';
 import { accountPages, routeAt } from './routes';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
-import { FundamentalsPage, Home, NotFound, StudyDirectory, StudyPaths } from './SitePages';
+import { Home, NotFound, StudyDirectory, StudyPaths } from './SitePages';
 import './style.css';
 
 function App() {
@@ -62,13 +63,7 @@ function App() {
           <AccountPrivacy />
         </main>
       ) : section === 'assessment' ? (
-        <main className="shell" id="main">
-          <div className="intro">
-            <h1>{t('skillsAssessment')}</h1>
-            <p>{t('roadmapIntro')}</p>
-          </div>
-          <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
-        </main>
+        <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
       ) : (
         <Home />
       )}

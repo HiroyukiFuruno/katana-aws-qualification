@@ -38,7 +38,7 @@ try {
     spawnSync('docker', [...compose, 'logs', '--no-color', 'kaq-idp'], { stdio: 'inherit' });
     throw error;
   }
-  run('bunx', ['playwright', 'test']);
+  run('bunx', ['playwright', 'test', ...process.argv.slice(2)]);
 } finally {
   mkdirSync('test-results/auth', { recursive: true });
   const logs = spawnSync('docker', [...compose, 'logs', '--no-color'], { encoding: 'utf8' });

@@ -37,6 +37,7 @@ export default defineConfig({
       VITE_AUTH_GITHUB_ENABLED: 'true',
       VITE_AUTH_GOOGLE_ENABLED: 'true',
       VITE_AUTH_MICROSOFT_ENABLED: 'true',
+      VITE_AUTH_FACEBOOK_ENABLED: 'true',
     },
   },
 });

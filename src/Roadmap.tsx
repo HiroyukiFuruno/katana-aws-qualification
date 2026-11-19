@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { AssessmentQuestion } from './AssessmentQuestion';
-import { assessmentItems, profileKey, remainingCertifications } from './assessment';
+import {
+  assessmentDate,
+  assessmentEstimate,
+  assessmentItems,
+  profileKey,
+  remainingCertifications,
+} from './assessment';
 import { AccountBenefits } from './auth/AccountBenefits';
 import { CertificationDirectory } from './CertificationDirectory';
 import { usePreferences } from './preferences';
@@ -14,7 +20,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
   const [position, setPosition] = useState(0);
   const [phase, setPhase] = useState<'setup' | 'questions' | 'result'>('setup');
   const [saveError, setSaveError] = useState(false);
-  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+  const today = assessmentDate();
   const remaining = remainingCertifications(profile.earned, today);
   const items = assessmentItems(profile.earned, today);
   const item = items[position];
@@ -81,7 +87,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
           <CertificationDirectory mode="earned" selected={profile.earned} onToggle={toggleEarned} />
           {remaining.length ? (
             <button type="button" className="primary" onClick={enterAssessment}>
-              {complete ? t('certOrder') : t('startAssessment', { count: items.length })}
+              {complete ? t('certOrder') : t('startAssessment', assessmentEstimate(items.length))}
             </button>
           ) : (
             <p role="status">{t('allEarned')}</p>

@@ -925,3 +925,17 @@ GuardDutyの実行時監視の確認、稼働中の複数EBSからの証拠保�
 - [Route 53のDNSSEC署名と委任](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-enable-signing.html)
 - [KubernetesのRoleBindingとClusterRoleBinding](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [RDSのTLS証明書のローテーション](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html)
+
+## SCS-C03の重複しないフル模試5回分
+
+最終65問を追加し、既存260問は維持した。独立325問を6分野に50・45・60・65・60・45問ずつ収録する。内訳は単一選択285問、複数選択34問、並べ替え4問、組み合わせ2問。単一選択の正答位置はA〜Dの順に72・71・71・71問。
+
+暗号操作とKMS構成変更の監査分類、障害演習の停止条件、Direct Connectのリンク暗号化、Athenaへの利用者ID伝播、CloudFrontのフィールド暗号化、バックアップ計画の継続評価を追加した。既存のS3の非TLS拒否と正答の条件が重なる候補は、利用者IDをデータサービスへ引き継ぐ設問に差し替えた。同じサービスを扱う残りの候補についても、正答に必要な判断を照合した。
+
+フル模試の生成512回で65問・170分と6分野の配分を確認した。互いに重複しないフル模試5回分を128組生成し、全65カスタム件数、採点5,738通り、出典URL316件、旧版16レコードの参照を確認した。
+
+- [SCS-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/security-specialty-03/security-specialty-03.html)
+- [Fault Injection Serviceの停止条件](https://docs.aws.amazon.com/fis/latest/userguide/stop-conditions.html)
+- [Direct ConnectのMACsec](https://docs.aws.amazon.com/directconnect/latest/UserGuide/MACsec.html)
+- [Athenaと信頼されたID伝播](https://docs.aws.amazon.com/singlesignon/latest/userguide/tip-usecase-ate.html)
+- [AWS Backup Audit Managerのコントロール](https://docs.aws.amazon.com/aws-backup/latest/devguide/choosing-controls.html)

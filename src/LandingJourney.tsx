@@ -1,4 +1,5 @@
 import { assessmentDate, assessmentEstimate, assessmentItems } from './assessment';
+import { AccountEntryCta } from './auth/AccountEntryCta';
 import { LandingCatalogStats } from './LandingCatalogStats';
 import { LandingSectionTitle } from './LandingStory';
 import { localePath } from './locales';
@@ -67,6 +68,9 @@ export function LandingPaths() {
             {t('assessmentSetup')} <span aria-hidden="true">↗</span>
           </span>
         </a>
+      </div>
+      <div className="landing-registration">
+        <AccountEntryCta />
       </div>
     </section>
   );

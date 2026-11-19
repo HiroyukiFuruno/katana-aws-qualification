@@ -13,6 +13,11 @@ test('landing explains its concept and value before presenting learning tools', 
   expect(boxes[2]!.y).toBeGreaterThanOrEqual(boxes[1]!.y + boxes[1]!.height + 24);
   await expect(page.locator('.landing-hero a')).toHaveAttribute('href', '#landing-concept-title');
   await expect(page.locator('.landing-values article')).toHaveCount(3);
+  const registration = page.getByRole('link', { name: '無料アカウントを作成', exact: true });
+  await expect(registration).toBeVisible();
+  await expect(registration).toHaveAttribute('href', '/ja/login/');
+  const registrationBox = await registration.boundingBox();
+  expect(registrationBox!.y).toBeGreaterThan(boxes[1]!.y + boxes[1]!.height);
 });
 
 test('landing uses visible typographic emphasis and keeps account details secondary', async ({

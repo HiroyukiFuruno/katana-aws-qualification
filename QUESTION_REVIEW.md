@@ -1047,3 +1047,16 @@ AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・
 - [Step Functionsの子ワークフローの出力形式](https://docs.aws.amazon.com/step-functions/latest/dg/connect-stepfunctions.html)
 - [Bedrockモデル呼び出しログの適用範囲](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)
 - [S3 Vectorsでのメタデータの絞り込み](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-metadata-filtering.html)
+
+## AIP-C01の重複しないフル模試4回分
+
+75問を追加し、先行225問の本文・順序と旧版16レコードを保持した。独立300問の分野別配分は92・80・60・36・32問。単一選択258問、複数選択42問を収録した。
+
+現行問同士44,850組と旧版との4,800組を比較した。既出の推論データのサンプリングを問う候補は、モデル応答時間と推論基盤の追加時間を分けて調べる設問へ変更した。再びGuardrailの公開前テストを問う候補は、Security Lakeの監査イベント取り込みに差し替えた。ログの集約を問う設問では、モデル呼び出しログを各アカウントで受け、CloudWatch Logsで一元化する方式へ修正した。AWS公式出典253件の個別ページへの到達を確認した。
+
+75問・180分のフル模試を重複なしで4回生成する検査を128組行い、全300問の出題、1〜75問のカスタム件数、5,472通りの採点を確認した。出題先の切り替えは残り75問の検証後に行う。
+
+- [SageMakerのCloudWatchメトリクス](https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html)
+- [Security Lakeのカスタムソース](https://docs.aws.amazon.com/security-lake/latest/userguide/custom-sources.html)
+- [CloudWatch Logsのアカウント横断ログ集約](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatchLogs_Centralization.html)
+- [Glueのカタログ側パーティション絞り込み](https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-pushdown.html)

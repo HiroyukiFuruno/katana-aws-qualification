@@ -9865,5 +9865,3290 @@
       "reason": "ModelErrorのOriginalStatusCodeとOriginalMessageはコンテナ側の情報、LogStreamArnは関連ログの調査に使える。",
       "concept": "InvokeEndpointのModelErrorの元応答とログの相関"
     }
+  },
+  {
+    "id": "aip-c01-d1-070",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "d1-dynamodb-pitr-export-baseline",
+    "title": "トラフィックへ影響を与えず特定時点の学習データを作る",
+    "prompt": "DynamoDBに稼働中の問い合わせ台帳があり、ポイントインタイムリカバリを有効にしている。昨夜の承認済み基準時刻に存在していた全項目から、生成AI評価の再現用データセットをS3へ用意したい。本番の読み取り容量を消費せず、データの選別はエクスポート後に行う。どの方法が適切か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "基準時刻を終了時刻としたDynamoDBの増分エクスポートだけを保存する。",
+        "explanation": "増分の対象は指定した期間中に変更された項目で、変更されなかった項目が含まれない。"
+      },
+      {
+        "id": "B",
+        "text": "基準時刻を指定したDynamoDBのフルエクスポートをS3へ実行する。",
+        "explanation": "保持期間内の指定時点の表全体をS3へ非同期に出力し、表の読み取りキャパシティを消費しない。"
+      },
+      {
+        "id": "C",
+        "text": "強い整合性を指定したScanでページ単位に読み、各ページをS3へ書く。",
+        "explanation": "本番表の読み取り容量を使う。ページ間で同じ時点の表を読むスナップショットにはならない。"
+      },
+      {
+        "id": "D",
+        "text": "基準時刻にStreamsを読んでS3へ出力する。",
+        "explanation": "Streamsは項目の変更を保持する仕組みで、変更のない項目を含む時点の全体像を渡さない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/S3DataExport.HowItWorks.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "評価で同じ時点の表全体を再現するには、保持期間内の時刻を指定してフルエクスポートする。増分や変更ストリームは単独では全体を再現できない。",
+      "concept": "DynamoDBの時点指定フルエクスポートと増分の使い分け"
+    }
+  },
+  {
+    "id": "aip-c01-d1-071",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "data-schema-registry-backward-all",
+    "title": "新しい読み手が過去の全イベントを再処理できるか検証する",
+    "prompt": "問い合わせイベントを長期間保存し、応答モデル向けの前処理を更新するたびに全期間を再処理する。Amazon MSKのAvroメッセージはAWS Glue Schema Registryに登録した複数の旧版を含み、新しい消費側は旧版のすべてを読めなければならない。旧い消費側が新規イベントを読む互換性は必要ない。この要件に直接対応する互換性モードはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "BACKWARD_ALL",
+        "explanation": "新版の消費側が保存済みのすべての旧版を読めるように互換性を検査する。"
+      },
+      {
+        "id": "B",
+        "text": "BACKWARD",
+        "explanation": "新版から旧版を読める方向は合っているが、過去のすべての版に対する検査にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "FORWARD_ALL",
+        "explanation": "すべての旧版の消費側が新版を読む方向を確認する。今回必要な方向とは異なる。"
+      },
+      {
+        "id": "D",
+        "text": "NONE",
+        "explanation": "スキーマを登録できるが、旧イベントを新版で読めるか確認しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "新しい消費側が過去の全版を読める保証にはBACKWARD_ALLを使う。一つ前との互換性と、過去すべてとの互換性は別の条件である。",
+      "concept": "保存済みイベントを再処理するためのスキーマ互換性"
+    }
+  },
+  {
+    "id": "aip-c01-d1-072",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "d1-feature-store-late-event-history",
+    "title": "遅れて到着した特徴量を履歴だけに反映する",
+    "prompt": "推論ルーティング用のSageMaker Feature Storeで、顧客Aのイベント時刻12:00の特徴量が現在のオンライン値である。取り込みの遅れで、同じレコード識別子の11:00の値が後から届いた。オンラインとオフラインの両ストアは有効で、11:00は実際に観測された値として学習履歴にも必要である。どの対応が適切か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "11:00のイベント時刻を現在の処理時刻に変えて取り込む。",
+        "explanation": "旧い観測が新しいイベントとして扱われ、現行のオンライン値を上書きし得る。"
+      },
+      {
+        "id": "B",
+        "text": "同じ顧客についてオンラインレコードを削除してから、11:00と12:00を順に再投入する。",
+        "explanation": "オンラインの使用中の値を削除する必要がなく、不要な空白時間や履歴への影響を招く。"
+      },
+      {
+        "id": "C",
+        "text": "11:00をevent timeのままレコードを取り込む。",
+        "explanation": "オンラインでは12:00のレコードを保持し、オフラインへは後着の11:00も履歴として保存する。"
+      },
+      {
+        "id": "D",
+        "text": "11:00を破棄し、既に登録された12:00だけ残す。",
+        "explanation": "オンラインは最新のままだが、学習に必要な過去の観測が欠ける。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-concepts.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "オンラインの新旧は到着順ではなくevent timeで決まる。遅延したイベントも本来の時刻を保つと、最新値を壊さず履歴を蓄積できる。",
+      "concept": "Feature Storeの遅延イベントとイベント時刻"
+    }
+  },
+  {
+    "id": "aip-c01-d1-073",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "s3-vectors-inventory-enumeration",
+    "title": "検索せず索引のベクトルキーを全件照合する",
+    "prompt": "支援ボットのRAG索引で、移行元台帳とAmazon S3 Vectorsのベクトルキーを全件突き合わせる。索引から文書IDを含むメタデータも取りたいが、元の類似検索クエリは手元にない。移行監査でどの設定を使うか。2つ選択せよ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "QueryVectorsを文書ごとに呼び出し、上位候補を繰り返し検索する。",
+        "explanation": "近傍検索の候補は類似度に依存するため、全キーの列挙を保証しない。"
+      },
+      {
+        "id": "B",
+        "text": "ListVectorsで索引を列挙し、返された継続トークンがなくなるまでページを取得する。",
+        "explanation": "類似度の順位に依存せず、指定したインデックスのキーを順次列挙できる。"
+      },
+      {
+        "id": "C",
+        "text": "GetVectorsへ文書の説明文を渡し、説明の一致で全キーを取得する。",
+        "explanation": "GetVectorsは既知のベクトルキーを入力とする。本文や説明の一致検索ではない。"
+      },
+      {
+        "id": "D",
+        "text": "ListVectorsのreturnMetadataを有効にする。",
+        "explanation": "インデックス内のベクトルに保存された対応付け用のメタデータを各ページで取得できる。"
+      },
+      {
+        "id": "E",
+        "text": "ListVectorIndexesでインデックス一覧を取得し、名前から文書IDを組み立てる。",
+        "explanation": "返されるのはインデックスの情報で、インデックスに登録済みの個々のキーは分からない。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-list.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "監査で全ベクトルを列挙するなら、類似検索ではなくListVectorsのページングを使う。メタデータを返す設定で台帳と突き合わせる。",
+      "concept": "S3 Vectorsのインベントリ列挙とメタデータ取得"
+    }
+  },
+  {
+    "id": "aip-c01-d1-074",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kb-web-crawl-subpath-scope",
+    "title": "承認された同一ホストの公開ヘルプページだけを収集する",
+    "prompt": "自社の公開ヘルプをBedrock Knowledge BasesのWeb Crawlerで収集する。開始URLのページには、同じホストのリリースノートと他ホストのコミュニティがリンクされている。承認範囲は同じホストの/help/配下だけで、リンクの構成は変更できない。どの設定が範囲を直接制御するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "開始URLを/help/の1件にすれば、スコープやURLフィルターは設定しない。",
+        "explanation": "開始ページからリンクをたどる。開始URLだけでは同一ホスト内の対象外パスを除外できない。"
+      },
+      {
+        "id": "B",
+        "text": "スコープを同一ホストに設定し、収集するURLを/help/配下に一致するパターンに絞る。",
+        "explanation": "ホスト外への探索と、同じホスト内の対象外パスの収集を別々の条件で制限する。"
+      },
+      {
+        "id": "C",
+        "text": "同じホスト全体を収集した後、生成用プロンプトでリリースノートを無視する。",
+        "explanation": "プロンプトは検索や回答に影響しても、対象外のデータを索引へ取り込まない要件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "ページのレート制限を下げて、同じホスト以外へ到達しないようにする。",
+        "explanation": "レート制限は取得頻度を調整する。URLやホストの許可範囲を指定する機能ではない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/webcrawl-data-source-connector.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "許可済み範囲を収集時に制御するには、クローラーでホストのスコープとURLパターンを指定する。",
+      "concept": "Web Crawlerの探索スコープとURLパターンの役割"
+    }
+  },
+  {
+    "id": "aip-c01-d1-075",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "prompt-draft-variant-controlled-comparison",
+    "title": "モデルとテンプレートの変更を混ぜずに比較する",
+    "prompt": "問い合わせ要約のプロンプトをBedrock Prompt managementで移行先モデル向けに調整する。まずモデルだけを変えた場合の違いを見て、既に本番で使用中の公開版への影響を避けたい。最適な初回比較はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "下書きでモデルだけが異なるプロンプトバリアントを比較し、同じテンプレート・テスト変数と対応する共通推論設定で出力を確認する。",
+        "explanation": "検証の入力条件をそろえたまま、出力の差を候補モデルの変更として評価できる。"
+      },
+      {
+        "id": "B",
+        "text": "本番版を参照するアプリのモデルとテンプレートを同時に変え、今後届く問い合わせを比較に使う。",
+        "explanation": "本番への影響が生じ、モデルと文面と入力差のどれが出力差を生んだか切り分けにくい。"
+      },
+      {
+        "id": "C",
+        "text": "旧モデルは実案件、新モデルは短い合成入力を使用してそれぞれ下書きを試す。",
+        "explanation": "入力の長さや内容にも差があり、モデルだけを変えた比較にならない。"
+      },
+      {
+        "id": "D",
+        "text": "先に新しい版を作ってから、旧版を本番で上書きし、エラーログで差を測る。",
+        "explanation": "旧版の本番運用を維持しながら行う下書き比較ではなく、出力品質もエラーログだけでは判断できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-management-create.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "変更する要因をモデルに限定し、Prompt managementの下書き比較で同じテスト変数を使う。検証に本番版の差し替えは不要である。",
+      "concept": "公開前に見るプロンプトバリアントの比較条件"
+    }
+  },
+  {
+    "id": "aip-c01-d1-076",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "vector-opensearch-disk-rescore-tradeoff",
+    "title": "圧縮候補検索と原精度の再スコアを組み合わせる",
+    "prompt": "FAQのベクトル索引を運用するOpenSearch Serviceで、全精度ベクトルをメモリに置く費用が課題になっている。評価ではストレージからの追加読み出しを許容でき、候補順位を元の精度で再計算したい。対応インデックスでどう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "on_diskモードで圧縮ベクトルから候補を選び、最終候補をディスク上の全精度ベクトルで再スコアする。",
+        "explanation": "候補選択のメモリ使用量を減らしつつ、選ばれた候補の順位を全精度で再評価できる。"
+      },
+      {
+        "id": "B",
+        "text": "in_memoryモードのまま、S3へのスナップショット間隔を延ばす。",
+        "explanation": "バックアップの頻度を変えても、検索時のベクトルのメモリ使用量は変わらない。"
+      },
+      {
+        "id": "C",
+        "text": "on_diskモードの圧縮距離だけで最終順位を確定し、全精度での再スコアは行わない。",
+        "explanation": "メモリ削減に寄与しても、全精度で順位を再評価する要件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "すべての候補をスクリプトで全走査し、圧縮なしのベクトルを各クエリで全件比較する。",
+        "explanation": "近似検索で絞った候補だけを再評価する設計と異なり、全件読み出しの計算量が増える。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/cost-optimization.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "on_diskモードの二段階検索では、圧縮済み表現で候補を絞り、選ばれた部分だけ全精度で再スコアできる。最終順位と候補段階の再現率は分けて評価する。",
+      "concept": "OpenSearchのon_disk検索のメモリと再スコアの関係"
+    }
+  },
+  {
+    "id": "aip-c01-d1-077",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "data-comprehend-pii-offsets-redaction",
+    "title": "検出した個人情報だけを索引前にマスクする",
+    "prompt": "英語の問い合わせメッセージを集めたRAG用コーパスで、原文の内容を最大限保ちつつ、インデックス登録前に指定した種類の個人情報だけをマスクする。利用者は判定が不要な文にも数字を含めるため、数字の一括マスクは認められない。Comprehendの同期処理をどう使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DetectPiiEntitiesで検出タイプと開始・終了オフセットを受け取り、条件に合う部分だけを元テキスト内で置換してから索引へ渡す。",
+        "explanation": "PIIの位置を文字列に対応付け、タイプを絞って機械的にマスクできる。"
+      },
+      {
+        "id": "B",
+        "text": "DetectEntitiesの一般固有表現だけを取得し、戻り値のスコアを文字位置として置換する。",
+        "explanation": "一般固有表現はPIIカテゴリ専用ではない。スコアは検出信頼度で、位置ではない。"
+      },
+      {
+        "id": "C",
+        "text": "PIIの有無だけを問い合わせごとに判定し、検出ありのメッセージを全文置換する。",
+        "explanation": "本文の有用な残りの情報を保持できなくなる。"
+      },
+      {
+        "id": "D",
+        "text": "索引を作成した後で回答に使う引用だけをマスクする。",
+        "explanation": "生成結果に表示される箇所は減らせても、索引前にマスクする要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/comprehend/latest/APIReference/API_DetectPiiEntities.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "PII検出のタイプと位置を使えば、指定カテゴリだけを対象にし、その他の文字を残せる。",
+      "concept": "ComprehendのPII検出オフセットを使う前処理"
+    }
+  },
+  {
+    "id": "aip-c01-d1-078",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "data-textract-custom-queries-adapter",
+    "title": "文書様式に固有の質問の抽出精度を改善する",
+    "prompt": "保険申請書から「契約更新区分」を取得するTextractのQueriesを使っている。質問自体は適切だが、社内様式によって回答が空になったり隣接欄が返ったりする。代表文書と人手で確認した回答は用意できる。既存の標準OCRを使いながら、該当クエリの抽出を様式に合わせるにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AnalyzeExpenseへ入力を移し、請求書の標準項目として取得する。",
+        "explanation": "AnalyzeExpenseは請求書や領収書を対象とし、今回の社内保険申請様式の質問を学習しない。"
+      },
+      {
+        "id": "B",
+        "text": "解析結果をそのまま埋め込んで、Bedrockのチャンク長を増やす。",
+        "explanation": "チャンク長は抽出後の索引に影響する。Textractが誤った欄を選ぶ原因には対処しない。"
+      },
+      {
+        "id": "C",
+        "text": "正解を付けた代表文書でCustom Queriesのアダプターを学習し、Textractの分析リクエストにアダプターのIDとバージョンを指定する。",
+        "explanation": "TextractのQueriesの応答を対象様式に合わせ、検証済みアダプター版を指定できる。"
+      },
+      {
+        "id": "D",
+        "text": "クエリ名に既存フォームのページ番号を加え、文書の追加例を使わず本番に戻す。",
+        "explanation": "ページの指定と正解例を使ったカスタマイズは別で、様式ごとの回答パターンをアダプターへ反映しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/textract/latest/dg/textract-using-adapters.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Custom Queriesのアダプターは代表文書と注釈に基づき、特定の質問について既存の解析を調整できる。",
+      "concept": "Textract Custom Queriesのアダプター版指定"
+    }
+  },
+  {
+    "id": "aip-c01-d1-079",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kb-fixed-chunk-boundary-overlap",
+    "title": "定型マニュアルのチャンク境界で手順が欠けるのを抑える",
+    "prompt": "ログ保持の都合で原文の置き換えはできない。ナレッジベースの文書は定型の短い操作手順で、同程度の長さの断片を保ちたい。現状は固定長の断片が重ならないため、各断片の最後の条件と次の断片の最初の操作が別々になり、一方だけが引用される。最初に試すチャンク設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "固定長戦略の最大トークン数を半減し、重なりを無効のままにする。",
+        "explanation": "境界の数が増えるが、境界をまたぐ条件と操作の欠落を防がない。"
+      },
+      {
+        "id": "B",
+        "text": "No Chunkingに変更し、すべてのマニュアルを一文書一断片として保存する。",
+        "explanation": "境界はなくなるが、同程度の大きさの短い断片を保つ要件から外れる。"
+      },
+      {
+        "id": "C",
+        "text": "固定長戦略の最大トークン数を維持し、隣接チャンクが一部重なるように割合を設定する。",
+        "explanation": "境界付近の内容が隣接断片にも含まれるため、一方を検索したときも近い文脈を返しやすい。"
+      },
+      {
+        "id": "D",
+        "text": "リランキングで断片の順位を調整し、既存のチャンク境界を維持する。",
+        "explanation": "検索順位に影響しても、一つの断片に含まれる境界付近のテキストを増やさない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "定型の断片長を保ちながら境界付近の文脈を届かせたいときは、固定長の重なりを使う。",
+      "concept": "Knowledge Basesの固定長分割におけるoverlapPercentage"
+    }
+  },
+  {
+    "id": "aip-c01-d1-080",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kb-ingestion-document-readiness",
+    "title": "直接取り込んだ文書が索引化済みになってから検索へ出す",
+    "prompt": "サポート記事を個別にBedrock Knowledge Basesへ直接取り込んでいる。文書の登録リクエストを受け付けた時点で利用可能フラグを付けると、索引に入る前に検索要求が走る。対象の文書識別子は保存している。特定の文書の利用可否を判断する処理をどう変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "データソースと文書識別子を使ってGetKnowledgeBaseDocumentsを呼び、文書状態がINDEXEDになってから利用可能にする。",
+        "explanation": "文書単位の状態を調べ、受付済みだが索引化未完了の文書を区別する。"
+      },
+      {
+        "id": "B",
+        "text": "IngestKnowledgeBaseDocumentsが成功レスポンスを返した時点で利用可能にする。",
+        "explanation": "受付状態と索引化の完了状態を区別できない。"
+      },
+      {
+        "id": "C",
+        "text": "バケットに同じ名前のS3オブジェクトが存在するかだけを確認する。",
+        "explanation": "ストレージ上に原文があることは、対象のナレッジベースの索引に入った証拠にならない。"
+      },
+      {
+        "id": "D",
+        "text": "任意のテスト文でRetrieveを一回呼び、候補が一件でも返れば新規記事を有効にする。",
+        "explanation": "既存の別記事が返る可能性があり、対象の記事の利用状態は確定しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_GetKnowledgeBaseDocuments.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "文書の索引化完了を待つ場合、取得要求の成功ではなく、文書IDに紐づく索引状態を確認する。",
+      "concept": "Bedrock Knowledge Basesの直接取り込みにおける文書状態"
+    }
+  },
+  {
+    "id": "aip-c01-d1-081",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "model-jumpstart-licensed-deployment-path",
+    "title": "利用許諾が必要なモデルの配備を承認履歴と結び付ける",
+    "prompt": "生成AIチームはSageMaker JumpStartの特定モデルをPython SDKから配備する。利用許諾に同意する必要があるが、本番配備パイプラインの権限は付与済みで、所属組織では指定バージョンの許諾を法務が承認したときだけ配備できる。どう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "承認済みモデルのIDと版をパイプラインで確認し、承認が成立したときだけSDKの配備でaccept_eulaを指定する。",
+        "explanation": "配備時の同意を明示し、組織が確認したライセンスの版と対象のモデルを対応付ける。"
+      },
+      {
+        "id": "B",
+        "text": "実行ロールにSageMakerの権限を追加し、許諾の確認を省く。",
+        "explanation": "AWSの操作権限はモデル提供者の利用許諾への同意とは別である。"
+      },
+      {
+        "id": "C",
+        "text": "以前に使った別モデルの承認番号を流用し、モデルのバージョンを固定しない。",
+        "explanation": "ライセンスの審査対象と実際の配備物が一致する保証がなくなる。"
+      },
+      {
+        "id": "D",
+        "text": "配備が成功してから承認を待ち、推論呼び出しだけを停止する。",
+        "explanation": "承認後に配備する要件に反し、配備段階の明示的な同意にも対応しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/jumpstart-foundation-models-use-python-sdk.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "AWSのAPI権限、組織内の承認、モデル提供者の許諾はそれぞれ必要な確認である。対象モデルが求めるSDKでの同意は、版を確認した承認後に行う。",
+      "concept": "JumpStart SDKのモデル利用許諾と承認ゲート"
+    }
+  },
+  {
+    "id": "aip-c01-d1-082",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "model-nova-video-s3-content",
+    "title": "大きい動画をS3参照でマルチモーダル推論に渡す",
+    "prompt": "Amazon Novaの動画対応モデルを使用し、同一リージョンのS3に保存された動画から保守作業の要約を生成する。動画はモデルとS3入力の上限内だが、アプリの許容するリクエスト本文サイズを超える。既存の動画を再アップロードせずに処理するにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3のURIをユーザーメッセージのテキストに書き、モデルが入力動画として自動判別することを期待する。",
+        "explanation": "テキストのURIは動画ソースを指定する構造にならず、そのまま文字列として扱われる。"
+      },
+      {
+        "id": "B",
+        "text": "動画のコンテンツブロックのソースにS3のURIを指定し、そのオブジェクトを読み取る権限を設定する。",
+        "explanation": "動画のバイト列を推論リクエストに埋め込まず、メディアとしてS3オブジェクトを参照できる。"
+      },
+      {
+        "id": "C",
+        "text": "S3の動画を全量ダウンロードし、同じリクエストへbase64で埋め込む。",
+        "explanation": "入力サイズの制約を超え、アプリ側の転送量も増える。"
+      },
+      {
+        "id": "D",
+        "text": "動画のfilenameだけをDocumentBlockの名前に指定し、実データは送らない。",
+        "explanation": "名前はメディアソースの代替にならず、動画の内容を処理できない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/nova/latest/nova2-userguide/request-response-schema.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応モデルの動画コンテンツブロックにはS3参照を使える。動画ソースと通常のテキストをフィールドで区別する。",
+      "concept": "Amazon Novaの動画コンテンツをS3参照で渡す方式"
+    }
+  },
+  {
+    "id": "aip-c01-d1-083",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "model-bedrock-availability-preflight",
+    "title": "推論せず候補モデルを利用できる状態か確かめる",
+    "prompt": "新しいBedrock基盤モデルの導入画面では、対象AWSアカウントとリージョンで実際に利用準備が整っている候補だけを選ばせたい。契約が未確認の候補では診断用の推論も実行しない。モデル名と入出力のモダリティは別途取得済みである。導入前に追加で何を調べるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ListFoundationModelsのモデル一覧に名前があれば、利用資格を含めて準備済みとする。",
+        "explanation": "カタログへの掲載はモデルの発見に使えるが、別に管理される利用資格や契約の状態を判断しない。"
+      },
+      {
+        "id": "B",
+        "text": "GetFoundationModelで出力モダリティを確認し、TEXTなら導入可能とする。",
+        "explanation": "生成能力の条件に使えるものの、契約やこのアカウントからの利用可否とは関係しない。"
+      },
+      {
+        "id": "C",
+        "text": "GetFoundationModelAvailabilityを対象リージョンで呼び出し、リージョンでの可用性と、契約・利用資格・認可の状態を区別して確認する。",
+        "explanation": "導入前の状態を問い合わせるAPIで、リージョン、契約、エンタイトルメント、認可について別のフィールドが返る。"
+      },
+      {
+        "id": "D",
+        "text": "InvokeModelでテスト用の最小入力を送り、成功したものだけを表示する。",
+        "explanation": "推論による確認は、同意を確認する前に呼び出さない制約を満たさない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/APIReference/API_GetFoundationModelAvailability.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "モデルの能力と導入可能な状態は別々に管理される。導入条件には対象アカウント・リージョンで返る可用性の各要素を使う。",
+      "concept": "Bedrockで推論前に基盤モデルの利用状態を確認するAPI"
+    }
+  },
+  {
+    "id": "aip-c01-d1-084",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kb-external-single-document-no-index",
+    "title": "継続索引を作らず今回のファイルだけに質問する",
+    "prompt": "審査アプリが、担当者の選んだS3上のPDF一件について、その場で質問と出典を返す。S3上の原本は保存するが、案件ごとのナレッジベースやベクトル索引を作らない方針である。外部ソースに対応するモデルを選んだ後、どの構成で生成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "RetrieveAndGenerateの型をKNOWLEDGE_BASEにし、文書のS3 URIをknowledgeBaseIdに指定する。",
+        "explanation": "この型では登録済みナレッジベースの識別子が必要で、S3 URIを代用できない。"
+      },
+      {
+        "id": "B",
+        "text": "RetrieveでS3 URIへのフィルターだけを設定する。",
+        "explanation": "Retrieveは既存のナレッジベースから検索する。これだけでは動的な単一文書の回答を生成しない。"
+      },
+      {
+        "id": "C",
+        "text": "RetrieveAndGenerateの型をEXTERNAL_SOURCESにし、今回使うPDFをS3ソースとして指定する。",
+        "explanation": "ナレッジベースを作成せず、指定した一文書を根拠に質問へ回答するための設定である。"
+      },
+      {
+        "id": "D",
+        "text": "各PDFを個別のカスタムデータソースに取り込み、一度だけ生成してから削除する。",
+        "explanation": "後で削除しても、案件単位で索引への登録を行うことになり方針に反する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-chatdoc.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "一回の単一ファイルに対する根拠付きの回答には、外部ソースを指定できるRetrieveAndGenerateを使う。",
+      "concept": "Bedrockの単一外部文書からの検索付き生成"
+    }
+  },
+  {
+    "id": "aip-c01-d1-085",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "model-sagemaker-uncompressed-shards",
+    "title": "圧縮せず複数のモデルシャードを推論環境へ配置する",
+    "prompt": "SageMaker AIのリアルタイム推論に、独自コンテナで読み込む数十個のモデルシャードを配備する。モデルファイルは専用のS3プレフィックスへ非圧縮で書き込み済みで、コンテナのイメージへ組み込まない。エンドポイント作成時にtar.gzの展開を行わずファイルを取り込む構成を2つ選択せよ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CreateModelにModelDataSourceを指定し、専用プレフィックスをS3Prefixとして渡す。",
+        "explanation": "モデルデータの置き場所をS3プレフィックスで特定し、複数オブジェクトを推論環境に配置できる。"
+      },
+      {
+        "id": "B",
+        "text": "ModelDataUrlにプレフィックスだけを指定し、形式は従来の圧縮アーカイブのままにする。",
+        "explanation": "複数の非圧縮オブジェクトをプレフィックスから取り込む条件を指定していない。"
+      },
+      {
+        "id": "C",
+        "text": "S3DataSourceのCompressionTypeをNoneにする。",
+        "explanation": "オブジェクトが非圧縮ファイルであることを指定して、圧縮アーカイブ用の展開を行わない。"
+      },
+      {
+        "id": "D",
+        "text": "CompressionTypeをGzipにし、S3Prefixの個々のファイルは非圧縮のまま保存する。",
+        "explanation": "取り込み時に期待する圧縮形式と実ファイルの形式が一致しない。"
+      },
+      {
+        "id": "E",
+        "text": "SageMaker学習ジョブのFastFile入力モードをエンドポイントに設定する。",
+        "explanation": "学習データの読み出し設定は、CreateModelが推論時の成果物を取り込む方式を変更しない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/large-model-inference-uncompressed.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "推論モデルが複数の非圧縮ファイルで構成されるときはModelDataSourceでプレフィックスを指定し、非圧縮として扱う。",
+      "concept": "SageMaker AIで非圧縮の複数モデル成果物をデプロイする設定"
+    }
+  },
+  {
+    "id": "aip-c01-d1-086",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "model-nova-sft-canonical-turns",
+    "title": "複数ターンの応答例を追加学習用に正規化する",
+    "prompt": "社内でレビュー済みの対話をAmazon Nova 2の教師ありファインチューニングに使う。元データは各ターンが別々のCSV行で、対話ごとにまとめられる。今回はテキストだけを使い、実際のターン順は維持する。学習形式に沿う変換を2つ選択せよ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同じ発言者の全行を先にまとめ、assistantの全発言を後ろに連結する。",
+        "explanation": "接続が失われ、ユーザーと応答の交互ターンを保てない。"
+      },
+      {
+        "id": "B",
+        "text": "会話例ごとに一つのJSONオブジェクトを作り、JSONLの各行に格納する。",
+        "explanation": "別会話を混ぜず、一行を一つの学習例として渡せる。"
+      },
+      {
+        "id": "C",
+        "text": "JSONLの一行を一つのターンにして、別行にある他の発言に自動で結合させる。",
+        "explanation": "一行が独立した学習例であり、対話の前後をモデルへ正しく渡せない。"
+      },
+      {
+        "id": "D",
+        "text": "最後のassistantを削除し、学習時にモデルが評価対象の正解を推測する。",
+        "explanation": "教師あり学習に必要な応答例を失い、最後がassistantである条件も満たさない。"
+      },
+      {
+        "id": "E",
+        "text": "各例のmessagesをuserから始め、userとassistantを交互に並べ、assistantの正解応答で終える。",
+        "explanation": "対話順の条件を満たし、最後に監督対象の応答を含められる。"
+      }
+    ],
+    "correct": [
+      "B",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/nova/latest/nova2-userguide/nova-data-prep-sft-2.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Nova 2の教師あり学習では、一行一会話例と役割順を同時に満たす。元CSVの一行をそのまま一例にはしない。",
+      "concept": "Amazon Nova 2教師あり学習データのJSONLと対話順"
+    }
+  },
+  {
+    "id": "aip-c01-d1-087",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "model-sagemaker-quantized-candidate",
+    "title": "量子化した候補モデルを別の配備成果物として検証する",
+    "prompt": "自社ホストの対応モデルは、推論用GPUのメモリ上限に収まらず、次のインスタンスクラスへ上げると費用が上限を超える。重みの精度を下げた候補を別に作って、元モデルと同じ業務入力で品質を確認してから配備したい。どのSageMaker AI機能を選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同じ成果物を変更せず、オートスケーリングの最大インスタンス数だけを増やす。",
+        "explanation": "処理台数は増やせるが、一インスタンスに読み込むモデルのメモリ要件を下げない。"
+      },
+      {
+        "id": "B",
+        "text": "リクエストの最大出力トークンだけを減らして、別の低精度の成果物が作られるのを待つ。",
+        "explanation": "入力ごとの生成上限が変わるだけで、モデル重みの精度や形式を変換しない。"
+      },
+      {
+        "id": "C",
+        "text": "Inference Recommenderで推奨インスタンスを選び、元の成果物をそのまま使う。",
+        "explanation": "インフラ候補を比較する機能で、低精度モデルの成果物は作らない。"
+      },
+      {
+        "id": "D",
+        "text": "推論最適化ジョブで量子化構成を有効にし、出力された候補を業務評価後に配備する。",
+        "explanation": "推論用の低精度の成果物を生成でき、元のモデルと候補を同じ評価セットで比較できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/model-optimize-create-job.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "重みの精度を下げた配備候補を作るならモデルそのものを量子化する。元の成果物と同じ条件で品質を評価する。",
+      "concept": "SageMaker AI推論最適化ジョブの量子化成果物"
+    }
+  },
+  {
+    "id": "aip-c01-d1-088",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-data-quality-record-routes",
+    "title": "品質に合わないレコードだけを分けて取り込む",
+    "prompt": "Glue StudioでS3の問い合わせデータをRAG取り込み用に変換する。必須の所有部門が空のレコード、または有効期限の形式に合わないレコードだけを調査用S3に送り、正常な行は同じジョブで下流へ進めたい。ジョブ全体の合否で止めずにどの方法を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "表全体の品質スコアが100%未満なら、ジョブを失敗にして全行を調査用へ送る。",
+        "explanation": "表単位の判定では違反行だけを特定できず、正常な行も取り込みを止める。"
+      },
+      {
+        "id": "B",
+        "text": "入力全体に一つのCloudWatchアラームを作成し、アラーム識別子を違反行の識別子として使う。",
+        "explanation": "アラームは運用通知に使えるが、ルールに違反したデータの行を示さない。"
+      },
+      {
+        "id": "C",
+        "text": "処理済みデータのジョブブックマークを進めず再実行し、行レベルの違反だけを自動的に分離する。",
+        "explanation": "ブックマークは取り込み進捗で、レコードの品質判定や宛先を切り替えない。"
+      },
+      {
+        "id": "D",
+        "text": "行レベルで評価可能なデータ品質ルールを定義し、行レベルの評価結果を出力して行の合否で宛先を分ける。",
+        "explanation": "ルール結果を各行に対応付けて取り込むため、合格行と違反行を同じジョブで分離できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/tutorial-data-quality.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "データ品質の行レベル出力を使えば、正常分の読み込みを継続しつつ、違反した行だけを調査用に振り分けられる。",
+      "concept": "Glue Data Qualityの行レベル出力と違反行の隔離"
+    }
+  },
+  {
+    "id": "aip-c01-d1-089",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-sensitive-data-detection",
+    "title": "取り込みデータの機密項目を検出する",
+    "prompt": "AI学習前のCSVデータに個人情報が含まれるかを検出し、保護チームへ分類結果を渡したい。最も適切なGlue機能はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CSVのファイル名を変更する",
+        "explanation": "内容を検出しない。"
+      },
+      {
+        "id": "B",
+        "text": "OpenSearchへそのまま投入する",
+        "explanation": "機密分類を行わない。"
+      },
+      {
+        "id": "C",
+        "text": "GlueのDetect Sensitive Data transformを使用する",
+        "explanation": "データ内の機密情報を検出・処理できる。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatch alarmだけを作る",
+        "explanation": "項目を分類しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/detect-PII.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "AI利用前にデータ内の機密性を把握する。",
+      "concept": "Glue sensitive data detection"
+    }
+  },
+  {
+    "id": "aip-c01-d1-090",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-partition-catalog-side-predicate",
+    "title": "Glueカタログ側で対象日付のパーティションに絞る",
+    "prompt": "Glueジョブで大量のパーティションを持つS3データセットから、その月のレビュー済み対話だけを再加工する。数百万件のパーティションをまずクライアントに列挙する方法は時間制約を超える。日付キーを使ってカタログ側で絞り込む構成を2つ選択せよ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Glue Data Catalogで対象の日付キーを含むパーティションインデックスを作成する。",
+        "explanation": "カタログ上の検索で絞り込みに使うキーを索引化できる。"
+      },
+      {
+        "id": "B",
+        "text": "push_down_predicateだけを設定し、カタログのパーティションを先にすべて取得する。",
+        "explanation": "S3からデータを読む対象は絞れるが、カタログの大量列挙を避ける目的にはカタログ側の述語が必要になる。"
+      },
+      {
+        "id": "C",
+        "text": "ジョブブックマークの完了時刻を基準月の末日に変更する。",
+        "explanation": "ブックマークは前回からの処理状態であり、カタログ側のパーティション索引や日付絞り込みではない。"
+      },
+      {
+        "id": "D",
+        "text": "読み取りの追加オプションでcatalogPartitionPredicateに対象月の日付条件を指定する。",
+        "explanation": "条件評価がカタログ側で行われ、対象外のパーティションをすべてジョブ側へ列挙する必要が減る。"
+      },
+      {
+        "id": "E",
+        "text": "読み込み後のDynamicFrameで日付をフィルタリングする。",
+        "explanation": "すべてのパーティションの取得とS3データの読み込みを先に行う。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-pushdown.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "パーティションインデックスを作り、サーバー側の述語を使う。対象月に限る条件を、読み込み後ではなくカタログから行う。",
+      "concept": "Glueのパーティションインデックスとカタログ側の述語"
+    }
+  },
+  {
+    "id": "aip-c01-d1-091",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "opensearch-index-template-vector",
+    "title": "新規ベクトル索引へ同じmappingを強制する",
+    "prompt": "複数チームがOpenSearchに新しいベクトル索引を作る。検索で必要なvector fieldとmetadata mappingを一貫適用したい。最も適切な機能はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "index templateでmappingとsettingsを定義する",
+        "explanation": "新規索引に共通mapping/settingsを自動適用できる。"
+      },
+      {
+        "id": "B",
+        "text": "各チームが任意にmappingを作る",
+        "explanation": "検索契約が不整合になる。"
+      },
+      {
+        "id": "C",
+        "text": "索引名だけを統一する",
+        "explanation": "field mappingを強制しない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatch Logsへmappingを書く",
+        "explanation": "索引作成へ適用されない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/data-streams.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "検索スキーマを組織的な契約として維持する。",
+      "concept": "OpenSearch index templates"
+    }
+  },
+  {
+    "id": "aip-c01-d1-092",
+    "revision": 1,
+    "category": "基盤モデルの統合・データ管理・コンプライアンス",
+    "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "opensearch-vector-snapshot-migration",
+    "title": "ベクトル索引を検証可能に移行する",
+    "prompt": "OpenSearchのベクトル索引を新ドメインへ移行する。ロールバック可能な移行前コピーと、移行後の検索検証が必要である。2つ選択してください。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "旧ドメインを最初に削除する",
+        "explanation": "ロールバックを失う。"
+      },
+      {
+        "id": "B",
+        "text": "移行前にsnapshotを作成する",
+        "explanation": "索引データの復元可能なコピーを保持できる。"
+      },
+      {
+        "id": "C",
+        "text": "索引名だけを変更する",
+        "explanation": "データ移行をしない。"
+      },
+      {
+        "id": "D",
+        "text": "復元後に代表クエリで検索結果を検証する",
+        "explanation": "索引・embedding契約の回帰を確認できる。"
+      },
+      {
+        "id": "E",
+        "text": "CloudTrailを無効化する",
+        "explanation": "監査性を失う。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-snapshots.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "検索索引移行は復元性と品質検証を組み合わせる。",
+      "concept": "OpenSearch snapshot migration"
+    }
+  },
+  {
+    "id": "aip-c01-d2-061",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "flows-version-alias-deployment",
+    "title": "Flowの検証済み版を本番へ固定する",
+    "prompt": "Flow編集を続けながら、本番アプリは検証済みのFlow定義だけを呼びたい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "常にDRAFTを呼ぶ",
+        "explanation": "未検証変更が反映される。"
+      },
+      {
+        "id": "B",
+        "text": "modelIdだけを固定する",
+        "explanation": "Flow定義を固定しない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailで版を選ぶ",
+        "explanation": "実行先を制御しない。"
+      },
+      {
+        "id": "D",
+        "text": "Flow versionを作成し本番aliasをそのversionへ向ける",
+        "explanation": "aliasで本番が使う版を固定できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/flows-deploy.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Flow versionとaliasで本番版を固定する。",
+      "concept": "Bedrock Flows version alias"
+    }
+  },
+  {
+    "id": "aip-c01-d2-062",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kb-retrieve-api-external-orchestration",
+    "title": "アプリ制御でKnowledge Base検索を統合する",
+    "prompt": "既存チャットアプリがKnowledge Baseから根拠を取得し、独自のUIで引用を表示してから別の推論へ渡す。Agentに検索オーケストレーションを任せないAPIはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "InvokeAgentだけを使う",
+        "explanation": "Agentのオーケストレーションに依存する。"
+      },
+      {
+        "id": "B",
+        "text": "S3 ListObjectsを使う",
+        "explanation": "意味検索をしない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailから文書を取得する",
+        "explanation": "検索APIではない。"
+      },
+      {
+        "id": "D",
+        "text": "Retrieve APIで検索結果と引用情報をアプリへ返す",
+        "explanation": "検索結果をアプリが直接扱える。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-test-retrieve.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Retrieve APIがKnowledge Base結果をアプリへ返す。",
+      "concept": "Knowledge Base Retrieve API"
+    }
+  },
+  {
+    "id": "aip-c01-d2-063",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "rest-api-validate-required-classifier-fields",
+    "title": "構造が不正な入力を基盤モデルへ渡す前に止める",
+    "prompt": "レビュー支援のREST APIから、languageとdocumentIdを必須とするJSONをLambda経由で基盤モデルへ渡す。入力構造を満たさない要求はLambdaを起動せず4xxで返し、利用者別の認可は既存のまま維持したい。API Gatewayのメソッドでどの設定を行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "メソッドでレスポンスモデルを割り当て、成功応答を定義する。",
+        "explanation": "レスポンスのモデルはクライアントから受け取る本文を検証する設定ではない。"
+      },
+      {
+        "id": "B",
+        "text": "application/jsonに必須プロパティを定義したリクエストモデルを割り当て、本文を検証するリクエストバリデーターを有効にする。",
+        "explanation": "統合先を呼ぶ前にAPI Gatewayが本文をリクエストモデルに対して検証する。"
+      },
+      {
+        "id": "C",
+        "text": "JWTのaudienceを二つ追加し、JSONのlanguageとdocumentIdを含む要求だけを通す。",
+        "explanation": "トークンの対象者の検証と本文のスキーマは役割が異なる。"
+      },
+      {
+        "id": "D",
+        "text": "必須パスパラメータだけを検証し、リクエストモデルは設定しない。",
+        "explanation": "パスの検証では必須のJSON本文プロパティを検査しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-validation-set-up.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "本文のモデルと検証機能をメソッドで指定する。認可後の本文がスキーマを満たさない場合も、統合先を呼ばずに検出できる。",
+      "concept": "REST APIの本文モデルとリクエストバリデーション"
+    }
+  },
+  {
+    "id": "aip-c01-d2-064",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "sfn-ecs-sync-network-config",
+    "title": "Fargateタスクへ実行時ネットワーク設定を渡す",
+    "prompt": "Step FunctionsがFargateタスクを.syncで起動する。private subnetとSecurity Groupを実行時に指定し、タスク終了を待つにはどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Task definitionへVPC IDを文字列連結する",
+        "explanation": "実行時ネットワーク指定ではない。"
+      },
+      {
+        "id": "B",
+        "text": "固定Waitで終了を待つ",
+        "explanation": "実際の完了に連動しない。"
+      },
+      {
+        "id": "C",
+        "text": "RunTaskのArgumentsでNetworkConfiguration.AwsvpcConfigurationにサブネットとセキュリティグループを渡す。",
+        "explanation": "subnetとSecurity Groupを渡せる。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailでsubnetを指定する",
+        "explanation": "RunTask設定ではない。"
+      },
+      {
+        "id": "E",
+        "text": "ECS RunTask.sync統合を使う",
+        "explanation": "タスク完了を待機できる。"
+      }
+    ],
+    "correct": [
+      "C",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-ecs.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "RunTask.syncとawsvpcConfigurationでFargateの実行・待機を構成する。",
+      "concept": "Step Functions ECS Fargate sync"
+    }
+  },
+  {
+    "id": "aip-c01-d2-065",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "sfn-ecs-task-role-boundary",
+    "title": "ECS統合の実行ロール権限を分ける",
+    "prompt": "Step FunctionsがECSタスクを開始する。state machineの実行ロールにはRunTask権限、タスクにはS3読取だけを与えたい。どれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "利用者へAdministratorAccessを付与する",
+        "explanation": "権限境界を失う。"
+      },
+      {
+        "id": "B",
+        "text": "task definitionへS3キーを書く",
+        "explanation": "IAM権限を付与しない。"
+      },
+      {
+        "id": "C",
+        "text": "state machine実行ロールへecs:RunTaskと必要なiam:PassRoleを許可する",
+        "explanation": "Step Functionsがタスクを開始できる。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailをtask roleにする",
+        "explanation": "実行主体ではない。"
+      },
+      {
+        "id": "E",
+        "text": "task roleへS3読取だけを付与する",
+        "explanation": "コンテナ内のAWSアクセスを最小化できる。"
+      }
+    ],
+    "correct": [
+      "C",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-ecs.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "実行ロールとtask roleで開始権限とコンテナ権限を分離する。",
+      "concept": "ECS integration IAM"
+    }
+  },
+  {
+    "id": "aip-c01-d2-066",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "rest-api-integration-preserve-client-contract",
+    "title": "公開REST APIの項目名を変えずに推論先へ渡す",
+    "prompt": "公開REST APIのJSONではdocument_idを受け取るが、Bedrock推論を呼ぶ既存Lambdaの非プロキシ統合はdocumentIdとrequestIdを受け取る。既存クライアントと既存Lambdaは変更できず、requestIdはAPI Gatewayが発行した値を引き渡す。どう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "メソッドリクエストのモデルでdocument_idを定義し、統合リクエストの本文はそのまま渡す。",
+        "explanation": "本文の構造を定義しても入力プロパティ名の変換やコンテキスト値の追加にはならない。"
+      },
+      {
+        "id": "B",
+        "text": "統合レスポンスのマッピングテンプレートでrequestIdとdocumentIdを追加する。",
+        "explanation": "レスポンスはLambdaを呼んだ後の処理であるため、Lambdaへの入力を変更できない。"
+      },
+      {
+        "id": "C",
+        "text": "統合リクエストのapplication/json用マッピングテンプレートでdocument_idをdocumentIdへ写し、$context.requestIdを追加する。",
+        "explanation": "統合リクエストの本文を既存Lambdaが受け入れる契約へ変換し、API Gatewayのコンテキスト値も渡せる。"
+      },
+      {
+        "id": "D",
+        "text": "Lambdaプロキシ統合に切り替え、テンプレートを削除する。",
+        "explanation": "プロキシのイベント形式が渡るようになり、既存Lambdaが期待する変換済みの本文を用意しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "入力の契約変換は統合リクエスト側で行う。本文と$contextを使うことで公開側と推論側の既存の値を変えずにつなげられる。",
+      "concept": "API Gateway RESTの非プロキシ統合における入力マッピング"
+    }
+  },
+  {
+    "id": "aip-c01-d2-067",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-openai-compatible-base-url",
+    "title": "OpenAI SDKをBedrock互換endpointへ向ける",
+    "prompt": "既存PythonアプリのOpenAI互換SDKをBedrockの対応モデルへ移行する。アプリのchat completion呼出し形式を大きく変えずに接続先を変えるにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWSアクセスキーをsystem promptへ書く",
+        "explanation": "認証情報の安全な統合ではない。"
+      },
+      {
+        "id": "B",
+        "text": "model名をS3 URIにする",
+        "explanation": "model指定ではない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailをSDK endpointにする",
+        "explanation": "推論APIを呼ばない。"
+      },
+      {
+        "id": "D",
+        "text": "OpenAI clientのbase_urlをBedrockのOpenAI互換endpointに設定する",
+        "explanation": "互換API endpointへSDKを向けられる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/inference-chat-completions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "OpenAI互換endpointへbase URLを向けて既存SDKを統合できる。",
+      "concept": "Bedrock OpenAI compatibility"
+    }
+  },
+  {
+    "id": "aip-c01-d2-068",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "sfn-distributed-map-s3-result-writer",
+    "title": "多数の子ワークフローの結果をS3へ引き渡す",
+    "prompt": "Step Functions Distributed Mapで多数の文書の埋め込みを作成する。子実行の結果を親ステートへすべて返すと、出力のサイズ制限に達する。下流の集計はS3にある子実行結果を非同期に読みたい。Mapのどの構成が適切か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ItemReaderを出力バケットに向け、入力と出力の両方を暗黙で管理させる。",
+        "explanation": "ItemReaderはMapが反復する入力の読み取り用であり、子実行の結果を保存しない。"
+      },
+      {
+        "id": "B",
+        "text": "ResultWriterの宛先をS3に指定し、ステートマシンの実行ロールに対象プレフィックスへの書き込みを許可する。",
+        "explanation": "子実行の結果をS3に出力でき、親ステートの単一ペイロードに全件を収めなくて済む。"
+      },
+      {
+        "id": "C",
+        "text": "各子実行の入力に次の文書の成果物を追加し、最後の子実行からだけ返す。",
+        "explanation": "個々の実行のデータを蓄積すると上限を避けにくく、各結果をS3に記録する要件も満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "親のChoiceステートをMapの後に置き、合計サイズが大きい場合に破棄する。",
+        "explanation": "後段へ値が渡る前にMapの結果がサイズ上限に達するため、後から破棄しても回避できない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-resultwriter.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "結果の書き込み先をMap自体のResultWriterでS3に切り替える。入力の読み取り設定と、結果の保存設定は別の機能である。",
+      "concept": "Distributed MapのResultWriterによる結果ペイロードの分離"
+    }
+  },
+  {
+    "id": "aip-c01-d2-069",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-scheduler-sfn-input",
+    "title": "定時にState Machineへ業務入力を渡す",
+    "prompt": "月曜から金曜の朝にStep Functionsを開始し、固定の処理モードをJSON入力として渡したい。起動だけを行うLambdaを管理しない構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudTrailを9時にpollする",
+        "explanation": "定時起動を提供しない。"
+      },
+      {
+        "id": "B",
+        "text": "Wait stateを永久に実行する",
+        "explanation": "スケジュール管理に不向き。"
+      },
+      {
+        "id": "C",
+        "text": "promptへ時刻を書く",
+        "explanation": "実行を開始しない。"
+      },
+      {
+        "id": "D",
+        "text": "EventBridge SchedulerのターゲットにState MachineとJSON inputを設定する",
+        "explanation": "指定時刻に入力付きでworkflowを起動できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-targets.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SchedulerはStep Functions targetへ入力を渡して起動できる。",
+      "concept": "EventBridge Scheduler Step Functions"
+    }
+  },
+  {
+    "id": "aip-c01-d2-070",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "scheduler-timezone-dst",
+    "title": "夏時間を含む現地時刻でworkflowを起動する",
+    "prompt": "海外拠点の毎朝9時にworkflowを起動する。UTC換算を手作業で保守せず、夏時間変更にも追従したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "UTC cronへ固定オフセットを足す",
+        "explanation": "DST時にずれる。"
+      },
+      {
+        "id": "B",
+        "text": "EventBridge SchedulerでIANA timezoneを指定する",
+        "explanation": "タイムゾーンとDSTを考慮して実行できる。"
+      },
+      {
+        "id": "C",
+        "text": "Lambda内で現在時刻を比較する",
+        "explanation": "常時実行が必要になる。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailのイベント時刻を使う",
+        "explanation": "定時実行を保証しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SchedulerはIANA timezoneとDSTを扱える。",
+      "concept": "Scheduler timezone"
+    }
+  },
+  {
+    "id": "aip-c01-d2-071",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "transcribe-bedrock-transcript-s3",
+    "title": "Transcribe出力を基盤モデル処理へ渡す",
+    "prompt": "録音をTranscribeで文字起こしし、完了後のJSON transcriptを基盤モデル要約workflowへ渡す。音声処理完了前に要約を始めない構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "音声ファイル名をpromptへ渡して要約する",
+        "explanation": "文字起こし結果を使わない。"
+      },
+      {
+        "id": "B",
+        "text": "Transcribe jobの出力先S3を指定し、完了イベントで要約workflowを起動する",
+        "explanation": "完成したtranscriptを後段へ渡せる。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrail本文をモデルへ渡す",
+        "explanation": "transcriptではない。"
+      },
+      {
+        "id": "D",
+        "text": "Transcribe開始直後に要約を呼ぶ",
+        "explanation": "出力が未完成である。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/transcribe/latest/dg/monitoring-events.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Transcribe出力をS3へ置き、完了後の統合で利用できる。",
+      "concept": "Transcribe to Bedrock integration"
+    }
+  },
+  {
+    "id": "aip-c01-d2-072",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "bda-async-blueprint-output",
+    "title": "BDA非同期処理の結果を後段へ渡す",
+    "prompt": "大量の帳票をBedrock Data Automationで抽出する。HTTP同期接続を待たず、完了後に抽出結果をworkflowで処理したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "browserを開いたまま同期結果を待つ",
+        "explanation": "長時間処理の統合に不適切。"
+      },
+      {
+        "id": "B",
+        "text": "非同期BDAジョブを開始し、出力先とジョブ完了状態を使って後段を起動する",
+        "explanation": "大量・長時間の抽出を非同期で統合できる。"
+      },
+      {
+        "id": "C",
+        "text": "モデルIDへPDFを連結する",
+        "explanation": "BDAジョブを作らない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailを抽出エンジンにする",
+        "explanation": "帳票抽出を実行しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/bda-using-api.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "BDAは非同期推論ジョブと出力を用いた統合を提供する。",
+      "concept": "Bedrock Data Automation async"
+    }
+  },
+  {
+    "id": "aip-c01-d2-073",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "agentcore-memory-resource-create",
+    "title": "AgentCore Memoryリソースをアプリ用に作成する",
+    "prompt": "AgentCore Runtimeアプリへ長期記憶を追加する。実行ごとに新しい記憶領域を作らず、アプリが共有するMemoryリソースを事前作成して参照したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "sessionIdごとに新Memoryを作る",
+        "explanation": "長期記憶を分断する。"
+      },
+      {
+        "id": "B",
+        "text": "Memoryリソースを作成し、Runtimeアプリ設定でそのMemory IDを関連付ける",
+        "explanation": "アプリが同じMemoryを継続して利用できる。"
+      },
+      {
+        "id": "C",
+        "text": "モデルIDをMemory IDとして使う",
+        "explanation": "モデルとMemoryは別リソースである。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailへ会話を保存する",
+        "explanation": "AgentCore Memoryの統合ではない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Memoryリソースを作成してRuntimeアプリの記憶機能として使う。",
+      "concept": "AgentCore Memory resource"
+    }
+  },
+  {
+    "id": "aip-c01-d2-074",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "appconfig-lambda-extension-cache",
+    "title": "LambdaでAppConfig設定をキャッシュする",
+    "prompt": "LambdaがAppConfig設定を頻繁に読む。呼出しごとに設定APIを直接呼ばず、実行環境内で更新を取得したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "設定をpromptへ固定する",
+        "explanation": "更新を反映できない。"
+      },
+      {
+        "id": "B",
+        "text": "AWS AppConfig Lambda extensionを使う",
+        "explanation": "ローカル取得とキャッシュを提供する。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailを設定ストアにする",
+        "explanation": "設定取得APIではない。"
+      },
+      {
+        "id": "D",
+        "text": "毎回S3一覧を走査する",
+        "explanation": "AppConfig設定取得ではない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-integration-lambda-extensions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Lambda extensionがAppConfig設定のローカルキャッシュを提供する。",
+      "concept": "AppConfig Lambda extension"
+    }
+  },
+  {
+    "id": "aip-c01-d2-075",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "lex-bedrock-lambda-fulfillment",
+    "title": "Lex会話からBedrock要約を呼ぶ",
+    "prompt": "Lex botが意図とスロットを収集後、バックエンドLambdaでBedrock要約を作って応答する。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "LexスロットをmodelIdへ指定する",
+        "explanation": "モデル選択ではない。"
+      },
+      {
+        "id": "B",
+        "text": "利用者にBedrock認証情報を配る",
+        "explanation": "安全な統合でない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailへ会話を送る",
+        "explanation": "Lex応答を返さない。"
+      },
+      {
+        "id": "D",
+        "text": "LexのLambda fulfillmentでスロットを検証してBedrock Runtimeを呼ぶ",
+        "explanation": "会話状態と推論を安全なバックエンドで統合できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lexv2/latest/dg/lambda.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Lex Lambda fulfillmentで入力検証と外部サービス呼出しを実装できる。",
+      "concept": "Lex Bedrock fulfillment"
+    }
+  },
+  {
+    "id": "aip-c01-d2-076",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "apigateway-http-jwt-authorizer",
+    "title": "JWTでHTTP APIを認可する",
+    "prompt": "モバイルアプリのHTTP APIをOIDC発行JWTで保護し、検証済みclaimsをバックエンドへ渡す。カスタム認可Lambdaは避ける。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "JWTをpromptへ貼る",
+        "explanation": "API入口で認可しない。"
+      },
+      {
+        "id": "B",
+        "text": "HTTP APIのJWT authorizerでissuerとaudienceを設定する",
+        "explanation": "GatewayがJWTを検証しclaimsを渡せる。"
+      },
+      {
+        "id": "C",
+        "text": "APIキーだけを使う",
+        "explanation": "OIDC claims検証にならない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailでトークンを検証する",
+        "explanation": "リクエスト認可を実行しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "JWT authorizerがissuerとaudienceを検証する。",
+      "concept": "API Gateway JWT authorizer"
+    }
+  },
+  {
+    "id": "aip-c01-d2-077",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "apigateway-lambda-authorizer-cache-key",
+    "title": "Lambda authorizerのキャッシュを利用者単位に分離する",
+    "prompt": "REST APIのLambda authorizerで認可結果をキャッシュする。別利用者が同じ認可結果を受けないようにするにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Authorizationヘッダーをidentity sourceとしてキャッシュキーへ含める",
+        "explanation": "利用者トークンごとに認可結果を分離できる。"
+      },
+      {
+        "id": "B",
+        "text": "全利用者で固定文字列をidentity sourceにする",
+        "explanation": "認可結果が共有される。"
+      },
+      {
+        "id": "C",
+        "text": "モデルIDをidentity sourceにする",
+        "explanation": "呼出し主体を識別しない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrail event IDを使う",
+        "explanation": "安定した認可情報でない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-use-lambda-authorizer.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "identity sourceがauthorizer cache keyを構成する。",
+      "concept": "Lambda authorizer cache key"
+    }
+  },
+  {
+    "id": "aip-c01-d2-078",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "bda-custom-blueprint-invoke",
+    "title": "BDAの独自帳票項目をBlueprintで抽出する",
+    "prompt": "請求書の標準項目ではなく、自社固有の契約番号と検査区分をBedrock Data Automationで抽出する。アプリ側でOCR後の正規表現を保守しない構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "モデルIDへ項目名を連結する",
+        "explanation": "BDAの抽出スキーマを指定しない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudTrailをOCRエンジンにする",
+        "explanation": "帳票本文を抽出しない。"
+      },
+      {
+        "id": "C",
+        "text": "S3 Lifecycleで項目を作る",
+        "explanation": "抽出処理を実行しない。"
+      },
+      {
+        "id": "D",
+        "text": "必要な項目を定義したcustom blueprintを作成してBDA呼出しで指定する",
+        "explanation": "独自の抽出スキーマをBlueprintとして適用できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/bda-custom-output-idp.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "custom blueprintで固有帳票の抽出項目を定義して適用できる。",
+      "concept": "Bedrock Data Automation custom blueprint"
+    }
+  },
+  {
+    "id": "aip-c01-d2-079",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-pipes-lambda-enrichment",
+    "title": "イベントをLambdaで補強してから宛先へ送る",
+    "prompt": "SQSへ届く問い合わせイベントへ、既存Lambdaで顧客ランクを補足してからStep Functionsへ渡す。独自のpollingサービスを作らず、失敗時の運用もマネージドにしたい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Lambdaが無限ループでSQSをpollする",
+        "explanation": "Pipesのマネージド統合を使わない。"
+      },
+      {
+        "id": "B",
+        "text": "EventBridge PipesでSQS source、Lambda enrichment、Step Functions targetを設定する",
+        "explanation": "source・enrichment・targetをマネージドに接続できる。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailからSQS本文を取得する",
+        "explanation": "メッセージ処理パイプラインではない。"
+      },
+      {
+        "id": "D",
+        "text": "promptに顧客ランクを推測させる",
+        "explanation": "既存顧客データの補強を保証しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "EventBridge Pipesはsource、enrichment、targetを接続する。",
+      "concept": "EventBridge Pipes enrichment"
+    }
+  },
+  {
+    "id": "aip-c01-d2-080",
+    "revision": 1,
+    "category": "実装と統合",
+    "examDomain": "実装と統合",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "connect-preserve-first-lambda-result",
+    "title": "複数の関数を呼んだ後も最初の生成結果を会話分岐に使う",
+    "prompt": "Amazon Connectの問い合わせフローで、最初のLambda呼び出しがBedrockの分類結果priorityを、二つ目がCRM照会結果を返す。CRM照会の後に最初のpriorityで分岐したい。S3やDynamoDBへ追加保存しない構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "二つ目の呼び出し後に$.External.priorityを直接参照する。",
+        "explanation": "Externalは最後のLambda呼び出しへの参照なので、最初のpriorityは維持されない。"
+      },
+      {
+        "id": "B",
+        "text": "二つ目の呼び出し後に$.External.priorityを連絡先属性へコピーする。",
+        "explanation": "コピーする時点ではExternalの参照が既に二つ目の応答へ変わっている。"
+      },
+      {
+        "id": "C",
+        "text": "最初の呼び出しの直後にSet contact attributesでExternalのpriorityを連絡先の属性に保存してから、二つ目を呼ぶ。",
+        "explanation": "Externalが次の関数の結果へ変わる前に保存すると、後段は連絡先属性から最初の結果を取得できる。"
+      },
+      {
+        "id": "D",
+        "text": "最初のpriorityを二つ目の関数のログへ書き、フローはCloudWatch Logsを直接参照する。",
+        "explanation": "ログへの書き出しはフロー内の属性を保存せず、参照の経路も変える必要がある。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/connect/latest/adminguide/connect-lambda-functions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Externalは最後のLambda応答を指す。後の呼び出しをまたいで使う値は、その呼び出し直後に連絡先属性へ保存する。",
+      "concept": "Amazon ConnectのExternal結果と連絡先属性の有効範囲"
+    }
+  },
+  {
+    "id": "aip-c01-d3-046",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kb-kms-transient-ingestion-key",
+    "title": "既存の検索索引と別に取り込み時の一時データを暗号化する",
+    "prompt": "既存のOpenSearchインデックスを使うBedrock Knowledge Basesで、S3原本と検索索引は顧客管理キーで暗号化済みである。取り込み中にBedrockが一時保存する処理データにも、審査済みのKMSキーを指定しなければならない。どの設定を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "検索索引の暗号化設定だけを確認し、データソースには暗号化構成を追加しない。",
+        "explanation": "検索索引の暗号化は永続データ保護であり、取り込み中のストレージに使う鍵を選択しない。"
+      },
+      {
+        "id": "B",
+        "text": "元のS3バケットのKMSキーを追加設定し、Bedrockの一時データにも同じ設定が継承されるとみなす。",
+        "explanation": "原本の保管場所に適用した暗号化設定は、Bedrockの取り込み用ストレージのキー設定を代替しない。"
+      },
+      {
+        "id": "C",
+        "text": "検索時に使用するセッション用のKMSキーだけを指定する。",
+        "explanation": "セッション用キーは検索段階に関係し、取り込み処理の一時保存を暗号化する設定ではない。"
+      },
+      {
+        "id": "D",
+        "text": "ナレッジベースのデータソースにサーバー側暗号化構成として指定キーを設定し、サービスロールとキーポリシーで必要な利用を許可する。",
+        "explanation": "Bedrockの取り込み用一時データの暗号化先を指定できる。S3原本とベクトル索引に使う暗号化は別に管理する。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/encryption-kb.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "データの保管段階ごとにキーの適用範囲が違う。既存のベクトルストアを構成する場合、取り込み用ストレージの暗号化はデータソースで指定する。",
+      "concept": "Bedrock Knowledge Basesの一時取り込みストレージのKMS"
+    }
+  },
+  {
+    "id": "aip-c01-d3-047",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "iam-access-analyzer-unused-permissions",
+    "title": "AI実行ロールの未使用権限を見直す",
+    "prompt": "AI推論ロールに付与した権限を最小化するため、実際に使われていない許可を特定したい。最も適切な機能はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IAM Access Analyzerのunused access findingsを使う",
+        "explanation": "未使用のロール権限を分析できる。"
+      },
+      {
+        "id": "B",
+        "text": "CloudTrailを削除する",
+        "explanation": "分析根拠を失う。"
+      },
+      {
+        "id": "C",
+        "text": "AdministratorAccessを付ける",
+        "explanation": "最小権限に反する。"
+      },
+      {
+        "id": "D",
+        "text": "バケット名を変更する",
+        "explanation": "権限を分析しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-findings-view.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "継続的に最小権限へ近づける。",
+      "concept": "Unused access analysis"
+    }
+  },
+  {
+    "id": "aip-c01-d3-048",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-guardrail-blocked-message",
+    "title": "遮断時に安全な代替案内を返す",
+    "prompt": "Guardrailが出力を遮断した場合、アプリで利用者へ安全な案内を返したい。最も適切な処理はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "遮断された本文をそのまま返す",
+        "explanation": "安全制御を迂回する。"
+      },
+      {
+        "id": "B",
+        "text": "Guardrailのintervened結果を検出して代替メッセージを返す",
+        "explanation": "介入結果をアプリ側で安全に処理できる。"
+      },
+      {
+        "id": "C",
+        "text": "モデルを再試行し続ける",
+        "explanation": "介入理由を解決しない。"
+      },
+      {
+        "id": "D",
+        "text": "ログを無効化する",
+        "explanation": "調査性を失う。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "安全制御の結果をUXへ安全に反映する。",
+      "concept": "Guardrail intervention handling"
+    }
+  },
+  {
+    "id": "aip-c01-d3-049",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "s3-access-grants-ai-data",
+    "title": "学習データへの一時アクセスを配布する",
+    "prompt": "多数の利用者へS3学習データの限定アクセスを発行し、個別バケットポリシー管理を避けたい。最も適切な機能はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "全員へS3管理者権限を付ける",
+        "explanation": "最小権限でない。"
+      },
+      {
+        "id": "B",
+        "text": "バケットを公開する",
+        "explanation": "保護要件に反する。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailだけを使う",
+        "explanation": "許可を発行しない。"
+      },
+      {
+        "id": "D",
+        "text": "S3 Access Grantsを使用する",
+        "explanation": "S3データへのスケーラブルなアクセス許可を管理できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-grants.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "データアクセスを一元的に最小化する。",
+      "concept": "S3 Access Grants"
+    }
+  },
+  {
+    "id": "aip-c01-d3-050",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-custom-model-encryption-key",
+    "title": "カスタムモデル成果物の暗号鍵を管理する",
+    "prompt": "組織固有データで作成するBedrockカスタムモデルの成果物を、組織が管理する暗号鍵で保護したい。最も適切な設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "モデル名を暗号化する",
+        "explanation": "成果物を暗号化しない。"
+      },
+      {
+        "id": "B",
+        "text": "Provisioned Throughputを購入する",
+        "explanation": "推論容量であり暗号境界ではない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailだけを有効にする",
+        "explanation": "成果物を暗号化しない。"
+      },
+      {
+        "id": "D",
+        "text": "カスタムモデルジョブでcustomer managed KMS keyを指定する",
+        "explanation": "対応するカスタムモデル処理で顧客管理KMSキーを使用できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateModelCustomizationJob.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "モデル成果物の保護鍵を組織統制下に置く。",
+      "concept": "Custom model KMS encryption"
+    }
+  },
+  {
+    "id": "aip-c01-d3-051",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "artifact-organization-agreement-scope",
+    "title": "生成AI運用向けの契約を組織全体に適用する手続き",
+    "prompt": "同じAWS Organizationsに属する複数のアカウントで個人データを扱う生成AIを運用する。法務責任者はAWS Artifactで、対象の組織契約をアカウント単位に繰り返さず引き受けたい。運用側は契約手続きを行わず、受諾済みの契約を確認できればよい。どの手順を選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "一つのメンバーアカウントでアカウント契約を受諾し、適用範囲をSCPで組織全体へ広げる。",
+        "explanation": "SCPはAWSアクションを制約する仕組みで、契約の当事者や適用範囲を変更しない。"
+      },
+      {
+        "id": "B",
+        "text": "必要なArtifact権限を持つ責任者が管理アカウントで組織の契約を受諾し、メンバー側には受諾済み契約の閲覧に必要な権限を用意する。",
+        "explanation": "組織向け契約は管理アカウントで組織を代表して受諾する。メンバーアカウントでは権限があればその内容を確認できる。"
+      },
+      {
+        "id": "C",
+        "text": "管理アカウントからArtifact Reportsの監査報告書を保存し、その操作を契約受諾として記録する。",
+        "explanation": "監査証跡をダウンロードする操作と、組織の契約を受諾する操作は別である。"
+      },
+      {
+        "id": "D",
+        "text": "全メンバーへ契約受諾権限を与え、各アカウントの担当者が個別に同意する。",
+        "explanation": "組織を代表し一度だけ取り扱い、メンバーには閲覧だけを求める要件に合わない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/artifact/latest/ug/accept-org-agreement.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "組織の契約を受諾する場所と、メンバーによる受諾済み契約の閲覧は別である。組織の手続きは管理アカウントで行える。",
+      "concept": "AWS Artifactの組織向け契約の受諾範囲"
+    }
+  },
+  {
+    "id": "aip-c01-d3-052",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-logging-cloudwatch-org-centralization",
+    "title": "各アカウントで受けた推論ログを監査用アカウントに集約する",
+    "prompt": "同じAWS Organizationsの複数アカウントで承認済みのBedrock推論ログを有効化する。推論を処理する各アカウントの構成は維持し、監査担当が中央のセキュリティアカウントでログを検索できるようにする。独自の転送アプリを保守せずに実現する構成を2つ選択せよ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各ソースのBedrockモデル呼び出しログで、監査用の別アカウントのS3バケットを直接宛先にする。",
+        "explanation": "Bedrockの直接配信先はソースと同じアカウント・リージョンに置く必要がある。"
+      },
+      {
+        "id": "B",
+        "text": "Bedrockのモデル呼び出しログを、各ソースアカウントとリージョン内のCloudWatch Logsロググループへ出力する。",
+        "explanation": "Bedrockが直接配信できる同一アカウント・リージョンの宛先を使って、承認済みの推論ログを受け取る。"
+      },
+      {
+        "id": "C",
+        "text": "組織のCloudTrailだけを集約して、推論入出力の全データを読む。",
+        "explanation": "CloudTrailのAPI利用記録はモデル呼び出しログのペイロードを置き換えない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatchのクロスアカウントメトリクスダッシュボードを作り、元のログは保存しない。",
+        "explanation": "メトリクス表示は必要なログ本文の保管と検索を提供しない。"
+      },
+      {
+        "id": "E",
+        "text": "組織のCloudWatch Logsのログ一元化ルールで、対象ロググループを監査用アカウントに集約する。",
+        "explanation": "ログサービス側の一元化機能で、個別アプリの転送処理を導入せずに組織のログを複製できる。"
+      }
+    ],
+    "correct": [
+      "B",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatchLogs_Centralization.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "各ソースアカウント内でモデル呼び出しログを受けてからCloudWatch Logsで中央へ集約する。直接配信と監査用の集約はサービス側の別設定である。",
+      "concept": "Bedrockログのローカル配信とCloudWatch Logsの組織集約"
+    }
+  },
+  {
+    "id": "aip-c01-d3-053",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-logs-data-protection",
+    "title": "アプリログ内の機密値を利用者へ伏せる",
+    "prompt": "生成AIアプリのCloudWatch Logsで、運用者に機密値を表示させず検出だけは行いたい。最も適切な機能はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ログを完全削除する",
+        "explanation": "運用調査性を失う。"
+      },
+      {
+        "id": "B",
+        "text": "S3 Versioningを有効にする",
+        "explanation": "ログ値をマスクしない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatch Logs data protection policyを設定する",
+        "explanation": "検出した機密データをログ表示時にマスクできる。"
+      },
+      {
+        "id": "D",
+        "text": "モデル温度を下げる",
+        "explanation": "ログ保護でない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "監視と機密情報保護を両立する。",
+      "concept": "Log data protection"
+    }
+  },
+  {
+    "id": "aip-c01-d3-054",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-guardrail-resource-policy",
+    "title": "Guardrail管理を中央チームに限定する",
+    "prompt": "各アプリチームは承認済みGuardrailを利用できるが、Guardrail設定の変更は中央チームだけに限定したい。2つ選択してください。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "利用者へApplyGuardrail権限だけを付与する",
+        "explanation": "利用と管理の権限を分離できる。"
+      },
+      {
+        "id": "B",
+        "text": "全員へAdministratorAccessを付与する",
+        "explanation": "職務分離に反する。"
+      },
+      {
+        "id": "C",
+        "text": "モデル名を非公開にする",
+        "explanation": "変更権限を制限しない。"
+      },
+      {
+        "id": "D",
+        "text": "中央ロールだけへCreate/UpdateGuardrailを許可する",
+        "explanation": "設定変更を中央統制できる。"
+      },
+      {
+        "id": "E",
+        "text": "CloudTrailを無効化する",
+        "explanation": "監査性を失う。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/security_iam_id-based-policy-examples.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "安全ポリシーの利用と変更を分離する。",
+      "concept": "Guardrail IAM separation"
+    }
+  },
+  {
+    "id": "aip-c01-d3-055",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "macie-automated-discovery-frequency",
+    "title": "新規学習バケットを継続的に分類する",
+    "prompt": "新規に追加されるS3学習データも継続して機密データのリスクを把握したい。最も適切なMacie機能はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Automated sensitive data discoveryを有効にする",
+        "explanation": "S3全体の対象を継続評価できる。"
+      },
+      {
+        "id": "B",
+        "text": "一回限りのInventoryを作る",
+        "explanation": "内容分類を継続しない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailだけを使う",
+        "explanation": "機密データを発見しない。"
+      },
+      {
+        "id": "D",
+        "text": "バケット名を変える",
+        "explanation": "分類されない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/macie/latest/user/discovery-asdd.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "データ資産の増加に分類統制を追随させる。",
+      "concept": "Automated discovery"
+    }
+  },
+  {
+    "id": "aip-c01-d3-056",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "config-rag-staging-missing-owner-tag",
+    "title": "S3の取り込み領域で必須タグが欠落したバケットを検出する",
+    "prompt": "RAGの取り込みに用いるS3バケットは古いものも含め、所有者と用途のタグを付ける必要がある。作成を止める制御は別工程で検討し、まず記録対象のバケットにタグが欠落したら継続的に検出したい。対象にするAWS Configルールはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3バケットを対象にrequired-tagsマネージドルールを設定して、必要なタグキーを指定する。",
+        "explanation": "対応する記録済みリソースのタグを評価し、指定したタグがないバケットを非準拠として検出する。"
+      },
+      {
+        "id": "B",
+        "text": "Organizationsのタグポリシーで、指定したタグ値だけに表記を統一する。",
+        "explanation": "指定タグ値の統制はできるが、タグをまったく付与していないバケットの検出を代替しない。"
+      },
+      {
+        "id": "C",
+        "text": "S3イベント通知の対象をPutObjectだけにする。",
+        "explanation": "オブジェクトの追加を通知する。バケットそのものに必須タグがあるかは判定しない。"
+      },
+      {
+        "id": "D",
+        "text": "タグ名をCost Explorerへ登録し、付いていないバケットがすべて直ちに検出されるようにする。",
+        "explanation": "請求の分類設定であり、バケット構成のタグの有無を監査する機能ではない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/config/latest/developerguide/required-tags.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Configの必須タグルールは記録済みのS3バケットを評価する。タグの欠落を見つける目的に合い、作成時の拒否制御とは独立して適用できる。",
+      "concept": "S3バケットのタグ欠落を検出するConfigマネージドルール"
+    }
+  },
+  {
+    "id": "aip-c01-d3-057",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-agent-invoke-only-approved-alias",
+    "title": "実行ロールで承認済みのエージェントエイリアスだけを呼べるようにする",
+    "prompt": "同じBedrockエージェントに、検証用と本番用の二つのエイリアスがある。本番アプリのIAMロールには呼び出しだけを許可し、誤設定で検証用を指定しても呼べない条件を強制したい。このロールには他の許可がない。どの許可を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "bedrock:InvokeAgentを全リソースに許可し、アプリの設定値を本番IDにする。",
+        "explanation": "既定設定では本番が選ばれるが、誤って検証用を指定したときもIAMの許可が残る。"
+      },
+      {
+        "id": "B",
+        "text": "bedrock:UpdateAgentAliasを本番のエイリアスに許可する。",
+        "explanation": "エイリアスの変更操作であり、推論のための呼び出しを許可しない。"
+      },
+      {
+        "id": "C",
+        "text": "bedrock:InvokeAgentのリソースに、本番のagent-alias ARNだけを指定する。",
+        "explanation": "InvokeAgentは呼び出すエイリアスのリソースを指定できる。本番のエイリアスに対象を限定できる。"
+      },
+      {
+        "id": "D",
+        "text": "bedrock:InvokeModelを本番のエイリアスARNに許可する。",
+        "explanation": "モデルの推論アクションとエージェントの呼び出しは異なる。対象リソースの型も合わない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/service-authorization/latest/reference/list_bedrock.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "本番と検証が同じエージェントを参照していても、実行ロールの許可の対象を本番のエイリアスに限定できる。",
+      "concept": "InvokeAgentのエイリアス単位のIAMスコープ"
+    }
+  },
+  {
+    "id": "aip-c01-d3-058",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "iam-identity-center-permission-set",
+    "title": "AI運用者の職務別権限を一元化する",
+    "prompt": "複数AWSアカウントのAI運用者へ、監査担当と設定変更担当で異なる権限を一貫付与したい。最も適切なサービスはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各アカウントでIAM userを手作成する",
+        "explanation": "一貫性を保ちにくい。"
+      },
+      {
+        "id": "B",
+        "text": "アクセスキーを共有する",
+        "explanation": "職務分離に反する。"
+      },
+      {
+        "id": "C",
+        "text": "モデル名を変える",
+        "explanation": "認可に無関係。"
+      },
+      {
+        "id": "D",
+        "text": "IAM Identity Centerのpermission setを使う",
+        "explanation": "複数アカウントへ職務別権限を割り当てられる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "人の権限を組織横断で職務別に管理する。",
+      "concept": "Permission sets"
+    }
+  },
+  {
+    "id": "aip-c01-d3-059",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "security-lake-ocsf-ai-custom-source",
+    "title": "生成AIアプリの監査イベントをセキュリティレイクへ登録する",
+    "prompt": "社内生成AIアプリで独自の認可・監査イベントをJSONに記録している。組織のAmazon Security Lakeで他のイベントと同じ方法で検索したい。イベント生成側で必要な形式への前処理を加える。カスタムソースとして受け付けられるようにするにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "元のJSONを圧縮し、任意のS3プレフィックスに保存する。",
+        "explanation": "圧縮だけではスキーマ、Parquet、Security Lakeのパーティションの条件を満たさない。"
+      },
+      {
+        "id": "B",
+        "text": "元のJSONからCloudWatchメトリクスフィルターで件数を作り、メトリクスだけを登録する。",
+        "explanation": "集計値は警報に使えるが、イベント単位の調査用ログをSecurity Lakeへ登録できない。"
+      },
+      {
+        "id": "C",
+        "text": "イベントをOCSFの対応クラスへ変換し、クラスが混在しないParquetにまとめ、指定の領域・アカウント・日付のパーティションで渡す。",
+        "explanation": "カスタムソースに求められる共通スキーマ、ファイル形式、パーティションに沿って配信できる。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailの管理イベントにアプリ名のタグを追加して、独自監査行の代わりに使う。",
+        "explanation": "管理イベントはAWS API操作の記録で、アプリで独自に発生する認可イベントの個別値を含まない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/security-lake/latest/userguide/custom-sources.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Security Lakeのカスタムソースでは、送信側でイベントをOCSFに正規化し、Parquetとパーティションの要件を満たす。",
+      "concept": "Security Lakeカスタムソースの監査ログ形式"
+    }
+  },
+  {
+    "id": "aip-c01-d3-060",
+    "revision": 1,
+    "category": "AIの安全性・セキュリティ・ガバナンス",
+    "examDomain": "AIの安全性・セキュリティ・ガバナンス",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "organizations-tag-policy-ai-assets",
+    "title": "AI資産タグの表記を組織で統一する",
+    "prompt": "複数アカウントのAI資産で、データ分類タグのキーと許可値の表記ゆれを防ぎたい。最も適切なOrganizations機能はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "資産名へ分類名を入れる",
+        "explanation": "タグ値を強制しない。"
+      },
+      {
+        "id": "B",
+        "text": "tag policyでタグキーと値を標準化する",
+        "explanation": "組織内リソースタグの標準を定義できる。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailを使う",
+        "explanation": "表記を標準化しない。"
+      },
+      {
+        "id": "D",
+        "text": "各チームへメールする",
+        "explanation": "継続的に強制できない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_tag-policies.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "資産の分類メタデータを組織横断で一貫させる。",
+      "concept": "Organizations tag policies"
+    }
+  },
+  {
+    "id": "aip-c01-d4-028",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4-d4-sagemaker-shadow-variant",
+    "title": "新モデルを利用者へ返さず比較する",
+    "prompt": "新推論モデルのレイテンシを本番トラフィックで比較したいが、利用者への応答は既存モデルから返したい。適切なSageMaker構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "候補モデルを即時100%配信する。",
+        "explanation": "利用者影響を避けられない。"
+      },
+      {
+        "id": "B",
+        "text": "入力を削除する。",
+        "explanation": "比較できない。"
+      },
+      {
+        "id": "C",
+        "text": "ログを無効化する。",
+        "explanation": "観測できない。"
+      },
+      {
+        "id": "D",
+        "text": "shadow variantへ本番要求を複製し、既存production variantだけの応答を返す。",
+        "explanation": "正しい。shadow testingは応答を利用者に返さず候補モデルを観測できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/model-shadow-deployment.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SageMaker shadow testingは本番要求を候補へ複製して比較する。",
+      "concept": "shadow variantによる安全な推論性能比較"
+    }
+  },
+  {
+    "id": "aip-c01-d4-029",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "d4-sagemaker-overhead-versus-model-latency",
+    "title": "モデル処理と推論基盤のどちらで待ち時間が伸びたか調べる",
+    "prompt": "SageMaker AIのリアルタイム推論で応答が遅くなった。モデルの処理時間の増加と、SageMaker側で追加される時間の増加を分けて判断したい。クライアント側の通信時間を別に計測している。どのCloudWatchメトリクスで比較するか。2つ選択せよ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ModelLatencyでモデルコンテナへの要求と応答に要した時間を確認する。",
+        "explanation": "推論コンテナ側の応答に関連する時間の傾向を見られる。"
+      },
+      {
+        "id": "B",
+        "text": "InvocationsPerInstanceだけで基盤の遅延を特定する。",
+        "explanation": "要求量は把握できるが、どちらの段階で時間を要したかは測れない。"
+      },
+      {
+        "id": "C",
+        "text": "OverheadLatencyでSageMaker側の追加時間を確認する。",
+        "explanation": "サービスが受信してから応答するまでの時間からModelLatencyを引いた部分を表す。"
+      },
+      {
+        "id": "D",
+        "text": "ModelLatencyをTCP接続などクライアントからサービスまでの時間として扱う。",
+        "explanation": "モデル側のメトリクスであり、クライアントからのネットワーク時間そのものではない。"
+      },
+      {
+        "id": "E",
+        "text": "GPUUtilizationをモデルのレイテンシとして読み替える。",
+        "explanation": "GPUの使用率を表し、要求と応答の経過時間にはならない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/monitoring-cloudwatch.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ホスト側のモデル応答時間とサービスの追加時間は別のメトリクスである。個別に比較してから、変化した側の構成や負荷を調べる。",
+      "concept": "SageMakerのModelLatencyとOverheadLatencyの分離"
+    }
+  },
+  {
+    "id": "aip-c01-d4-030",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d4-lambda-reserved-concurrency",
+    "title": "前処理Lambdaの同時実行を隔離する",
+    "prompt": "生成AI前処理Lambdaの急増が、同一アカウントの重要な決済Lambdaの同時実行枠を奪っている。前処理の最大同時実行を明示的に制限する設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "temperatureを下げる。",
+        "explanation": "Lambda同時実行数を制御しない。"
+      },
+      {
+        "id": "B",
+        "text": "ログを削除する。",
+        "explanation": "容量競合を解決しない。"
+      },
+      {
+        "id": "C",
+        "text": "前処理Lambdaへreserved concurrencyを設定する。",
+        "explanation": "正しい。関数ごとの最大同時実行を予約・制限できる。"
+      },
+      {
+        "id": "D",
+        "text": "S3へ移す。",
+        "explanation": "Lambda予約枠を設定しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "reserved concurrencyは関数の最大同時実行を確保・制限する。",
+      "concept": "前処理Lambdaの同時実行隔離"
+    }
+  },
+  {
+    "id": "aip-c01-d4-031",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4-d4-cloudwatch-cost-anomaly",
+    "title": "生成AI関連費用の予期しない増加を検出する",
+    "prompt": "月次請求を待たずにAWS利用料の予期しない増加を検出し、担当者へ通知したい。最も適切なAWSサービスはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudTrailを削除する。",
+        "explanation": "費用異常を検出しない。"
+      },
+      {
+        "id": "B",
+        "text": "モデルを再学習する。",
+        "explanation": "請求異常監視ではない。"
+      },
+      {
+        "id": "C",
+        "text": "S3を空にする。",
+        "explanation": "原因を分析できない。"
+      },
+      {
+        "id": "D",
+        "text": "AWS Cost Anomaly Detectionでモニターとアラートを設定する。",
+        "explanation": "正しい。利用料の異常を検出して通知できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/cost-management/latest/userguide/manage-ad.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Cost Anomaly Detectionは異常なAWSコストを検出・通知する。",
+      "concept": "生成AIワークロードの費用異常検知"
+    }
+  },
+  {
+    "id": "aip-c01-d4-032",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d4-provisioned-concurrency",
+    "title": "Lambda推論前処理のコールドスタートを抑える",
+    "prompt": "朝の開始直後だけLambda前処理のコールドスタートが顕著である。予測可能な開始時刻に低レイテンシを保つ設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Provisioned Concurrencyを必要なエイリアスへ設定する。",
+        "explanation": "正しい。初期化済み環境を確保できる。"
+      },
+      {
+        "id": "B",
+        "text": "ログを削除する。",
+        "explanation": "コールドスタートを減らさない。"
+      },
+      {
+        "id": "C",
+        "text": "Batch inferenceへ変更する。",
+        "explanation": "即時要求を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "温度を下げる。",
+        "explanation": "Lambda初期化と無関係。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Provisioned Concurrencyは初期化済み実行環境を確保する。",
+      "concept": "予測可能な推論前処理のコールドスタート最適化"
+    }
+  },
+  {
+    "id": "aip-c01-d4-033",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "d4-rest-api-deduplicated-cache-dimensions",
+    "title": "公開した要約の同じ版・言語だけを応答キャッシュで再利用する",
+    "prompt": "公開マニュアルの要約は文書ID、版、出力言語で内容が決まる。利用者や権限による差はなく、各版は公開後に変更しない。API Gatewayの同じGETメソッドにこれら3つがパラメータで届く。モデル呼び出しを減らしつつ、他言語や他版の応答を返さない設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "キャッシュキーは文書IDだけに設定し、TTLは短い時間にする。",
+        "explanation": "TTLが残る間は、同じ文書IDの異なる版・言語にも同じ応答が使われ得る。"
+      },
+      {
+        "id": "B",
+        "text": "版と出力言語をキーにし、文書IDの差はLambdaが検証する。",
+        "explanation": "キャッシュヒットではLambdaを呼ばないため、別文書の値が返されるのを後段で止められない。"
+      },
+      {
+        "id": "C",
+        "text": "メソッドの応答キャッシュを有効にして、文書ID、版、出力言語のすべてをキャッシュキーに含める。",
+        "explanation": "応答を決める入力が同じ場合だけ再利用し、異なる版や言語は別のエントリになる。"
+      },
+      {
+        "id": "D",
+        "text": "すべてのGETリクエストの直前にキャッシュを無効化し、既存のレスポンス検証を維持する。",
+        "explanation": "新鮮な結果は得られるが、同じ条件の応答を再利用してモデル呼び出しを減らせない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じ応答として扱うかはキャッシュキーが決める。応答の内容に影響する入力パラメータはすべてキーに含める。",
+      "concept": "API Gatewayの応答内容に対応するキャッシュキー"
+    }
+  },
+  {
+    "id": "aip-c01-d4-034",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d4-lambda-power-tuning-metric",
+    "title": "前処理Lambdaのメモリ割当を測定する",
+    "prompt": "画像前処理Lambdaの実行時間と費用を改善したい。設定値を推測せず比較する適切な方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "複数メモリ設定でDurationとMax Memory Usedを計測して選ぶ。",
+        "explanation": "正しい。メモリ設定ごとの性能・使用量を比較できる。"
+      },
+      {
+        "id": "B",
+        "text": "temperatureを変える。",
+        "explanation": "Lambda資源設定を測らない。"
+      },
+      {
+        "id": "C",
+        "text": "ログを無効化する。",
+        "explanation": "計測できない。"
+      },
+      {
+        "id": "D",
+        "text": "常に最大メモリにする。",
+        "explanation": "費用最適とは限らない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/python-logging.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "LambdaはDurationとMax Memory UsedをCloudWatchで確認できる。",
+      "concept": "前処理Lambdaのメモリ・実行時間最適化"
+    }
+  },
+  {
+    "id": "aip-c01-d4-035",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d4-sqs-batch-failure-isolation",
+    "title": "非同期前処理の失敗を分離する",
+    "prompt": "推論前処理をSQSからLambdaで実行し、一部メッセージだけ失敗する。成功分を再処理せず失敗分だけ再試行したい。適切な設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "常にバッチ全体を失敗にする。",
+        "explanation": "成功分も繰り返す。"
+      },
+      {
+        "id": "B",
+        "text": "SQSを削除する。",
+        "explanation": "復旧できない。"
+      },
+      {
+        "id": "C",
+        "text": "出力を無視する。",
+        "explanation": "失敗を分離しない。"
+      },
+      {
+        "id": "D",
+        "text": "Lambdaのpartial batch responseを実装する。",
+        "explanation": "正しい。失敗したメッセージIDだけを返して再試行できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "partial batch responseはSQSバッチ内の失敗メッセージだけを再試行対象にする。",
+      "concept": "非同期前処理の部分バッチ失敗隔離"
+    }
+  },
+  {
+    "id": "aip-c01-d4-036",
+    "revision": 1,
+    "category": "生成AIアプリの運用効率・最適化",
+    "examDomain": "生成AIアプリの運用効率・最適化",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d4-s3-lifecycle-log-cost",
+    "title": "古い推論ログの保存費用を最適化する",
+    "prompt": "監査保持が必要な推論ログは初月だけ頻繁に参照し、その後はほぼ参照しない。S3費用を抑える適切な設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3 Lifecycleで経過日数に応じて低頻度アクセスまたはアーカイブへ移行する。",
+        "explanation": "正しい。アクセス頻度に合わせてストレージクラスを移行できる。"
+      },
+      {
+        "id": "B",
+        "text": "直ちに全ログを削除する。",
+        "explanation": "監査保持要件に反する。"
+      },
+      {
+        "id": "C",
+        "text": "モデルを再学習する。",
+        "explanation": "ログ保存費用と無関係。"
+      },
+      {
+        "id": "D",
+        "text": "温度を変える。",
+        "explanation": "S3保管コストを変えない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "S3 Lifecycleは経過日数に基づきストレージクラス移行を自動化できる。",
+      "concept": "推論監査ログのライフサイクル費用最適化"
+    }
+  },
+  {
+    "id": "aip-c01-d5-025",
+    "revision": 1,
+    "category": "テスト・検証・トラブルシューティング",
+    "examDomain": "テスト・検証・トラブルシューティング",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4-d5-sagemaker-model-monitor-baseline",
+    "title": "本番データの分布変化を検出する",
+    "prompt": "SageMaker Model Monitorを既に利用している環境で、推論入力の分布が学習時から変化して品質低下が疑われる。既存機能で基準と本番入力のデータ特性を定期比較する設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Model Monitorのbaselineとmonitoring scheduleを使う。",
+        "explanation": "正しい。基準線とキャプチャデータを比較して偏りを検出できる。"
+      },
+      {
+        "id": "B",
+        "text": "temperatureを固定する。",
+        "explanation": "データ分布を比較しない。"
+      },
+      {
+        "id": "C",
+        "text": "ログを削除する。",
+        "explanation": "監視不能になる。"
+      },
+      {
+        "id": "D",
+        "text": "モデルを直ちに削除する。",
+        "explanation": "原因を特定できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-data-quality.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Model Monitorはbaselineと本番データを使い品質・偏りを監視する。",
+      "concept": "データドリフトの基準線比較"
+    }
+  },
+  {
+    "id": "aip-c01-d5-026",
+    "revision": 1,
+    "category": "テスト・検証・トラブルシューティング",
+    "examDomain": "テスト・検証・トラブルシューティング",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4-d5-agent-trace-request-id",
+    "title": "エージェント実行をセッション単位で再現する",
+    "prompt": "同じ利用者の複数ターンでだけエージェントの挙動が変わる。調査時に一連の実行を結び付ける最も重要な識別子はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ブラウザの色を保存する。",
+        "explanation": "実行を識別しない。"
+      },
+      {
+        "id": "B",
+        "text": "温度だけを保存する。",
+        "explanation": "会話を結び付けない。"
+      },
+      {
+        "id": "C",
+        "text": "同じagent sessionIdをアプリログとトレースで保存する。",
+        "explanation": "正しい。セッションIDで会話内の実行を関連付けられる。"
+      },
+      {
+        "id": "D",
+        "text": "ログを無効にする。",
+        "explanation": "再現調査できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/agents-session-state.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Bedrock AgentsはsessionIdで会話セッションを管理する。",
+      "concept": "エージェント障害のセッション相関"
+    }
+  },
+  {
+    "id": "aip-c01-d5-027",
+    "revision": 1,
+    "category": "テスト・検証・トラブルシューティング",
+    "examDomain": "テスト・検証・トラブルシューティング",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4-d5-evaluation-human-preference",
+    "title": "二つの回答の好みを直接比較する",
+    "prompt": "正解が一つに定まらない創造的な説明文で、専門家に二つのモデル回答のどちらが有用か選ばせたい。適切な評価方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "入力トークン数だけを比較する。",
+        "explanation": "有用性を測らない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudTrailだけを読む。",
+        "explanation": "回答品質を評価しない。"
+      },
+      {
+        "id": "C",
+        "text": "human-based model evaluationで評価者の比較・選好を収集する。",
+        "explanation": "正しい。人手評価は主観的な品質と選好を収集できる。"
+      },
+      {
+        "id": "D",
+        "text": "出力を削除する。",
+        "explanation": "比較不能になる。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/evaluation.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "human-based evaluationは人間の評価・選好を利用できる。",
+      "concept": "主観的品質に対するペア比較評価"
+    }
+  },
+  {
+    "id": "aip-c01-d5-028",
+    "revision": 1,
+    "category": "テスト・検証・トラブルシューティング",
+    "examDomain": "テスト・検証・トラブルシューティング",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4-d5-model-monitor-ground-truth-join-failure",
+    "title": "推論IDを真値の記録にそろえてモデル品質を測定する",
+    "prompt": "既存顧客としてSageMaker Model Monitorのモデル品質モニタリングを運用している。呼び出し側が推論ごとにinferenceIdを指定しており、キャプチャにも記録されている。正解ラベルをS3へ追加したが、キャプチャされた予測と突き合わせられない。現在はラベル行のeventMetadata.eventIdにアプリが発行する別のチケットIDを入れている。修正はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各ラベル行のeventMetadata.eventIdに、対応するキャプチャのinferenceIdと同じ値を記録する。",
+        "explanation": "キャプチャにinferenceIdがある場合は、その値が結合キーとして優先される。"
+      },
+      {
+        "id": "B",
+        "text": "同じ時間帯に保存されたラベルと予測をS3ファイル名の順で組にする。",
+        "explanation": "到着順やファイル名では、特定の推論と実際の正解を一意に対応できない。"
+      },
+      {
+        "id": "C",
+        "text": "キャプチャ側の自動生成eventIdだけを使い、既存のinferenceIdは無視する。",
+        "explanation": "inferenceIdが存在する場合はその値が使われるため、eventIdを使う前提が合わない。"
+      },
+      {
+        "id": "D",
+        "text": "モデルの予測値自体をラベルとしてS3へ書き、結合できるようにする。",
+        "explanation": "予測結果を正解として扱うとモデルの実品質を検証できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-merge.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "呼び出し側が推論IDを渡した場合はラベル側の識別子も一致させる。ラベルが遅れて届いても、予測結果を同じ事象の正解と比較できる。",
+      "concept": "Model Monitorの真値マージとinferenceIdの優先"
+    }
+  },
+  {
+    "id": "aip-c01-d5-029",
+    "revision": 1,
+    "category": "テスト・検証・トラブルシューティング",
+    "examDomain": "テスト・検証・トラブルシューティング",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d5-cloudwatch-log-retention-audit",
+    "title": "調査ログの保持期間を検証する",
+    "prompt": "推論障害の調査に必要なCloudWatch Logsが30日後に消えていた。保持要件を満たす再発防止策はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "毎回ログを手作業でダウンロードする。",
+        "explanation": "継続的な保持統制にならない。"
+      },
+      {
+        "id": "B",
+        "text": "ログを無効にする。",
+        "explanation": "調査証跡を失う。"
+      },
+      {
+        "id": "C",
+        "text": "該当log groupに要件に合うretention policyを明示設定する。",
+        "explanation": "正しい。保持期間はlog group単位で設定できる。"
+      },
+      {
+        "id": "D",
+        "text": "モデルを再学習する。",
+        "explanation": "ログ保持と無関係。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutRetentionPolicy.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudWatch Logsの保持期間はlog groupのretention policyで管理する。",
+      "concept": "生成AI運用ログの保持統制"
+    }
+  },
+  {
+    "id": "aip-c01-d5-030",
+    "revision": 1,
+    "category": "テスト・検証・トラブルシューティング",
+    "examDomain": "テスト・検証・トラブルシューティング",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d5-sagemaker-endpoint-quota",
+    "title": "Endpoint作成時のクォータ超過を区別する",
+    "prompt": "新しいSageMaker endpointの作成がResourceLimitExceededで失敗した。コンテナログには起動試行もない。最初に確認すべきことはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "コンテナのstderrだけを修正する。",
+        "explanation": "コンテナ開始前の上限超過を解決しない。"
+      },
+      {
+        "id": "B",
+        "text": "対象リージョンのendpointまたはインスタンス関連Service Quotasを確認する。",
+        "explanation": "正しい。ResourceLimitExceededはリソース上限超過を示す。"
+      },
+      {
+        "id": "C",
+        "text": "モデル出力を短くする。",
+        "explanation": "endpoint作成クォータと無関係。"
+      },
+      {
+        "id": "D",
+        "text": "ログを削除する。",
+        "explanation": "上限を増やさない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateEndpoint.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SageMakerのリソース上限はService Quotasで確認・申請する。",
+      "concept": "SageMaker endpoint作成時のクォータ障害診断"
+    }
+  },
+  {
+    "id": "aip-c01-d5-031",
+    "revision": 1,
+    "category": "テスト・検証・トラブルシューティング",
+    "examDomain": "テスト・検証・トラブルシューティング",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d5-iam-passrole-denied",
+    "title": "ジョブ作成時のPassRole拒否を切り分ける",
+    "prompt": "SageMaker Processingジョブ作成がAccessDeniedで失敗し、指定実行ロールは存在する。呼び出し元が最初に確認すべきIAM権限はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3ログを削除する。",
+        "explanation": "IAM拒否を解決しない。"
+      },
+      {
+        "id": "B",
+        "text": "指定実行ロールに対するiam:PassRole権限を確認する。",
+        "explanation": "正しい。サービスへ実行ロールを渡す呼び出し元にはPassRoleが必要である。"
+      },
+      {
+        "id": "C",
+        "text": "temperatureを変える。",
+        "explanation": "ジョブ作成権限と無関係。"
+      },
+      {
+        "id": "D",
+        "text": "モデル出力を短くする。",
+        "explanation": "権限を付与しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "AWSサービスにロールを渡す操作にはiam:PassRoleが必要である。",
+      "concept": "SageMakerジョブ作成時のPassRole認可診断"
+    }
+  },
+  {
+    "id": "aip-c01-d5-032",
+    "revision": 1,
+    "category": "テスト・検証・トラブルシューティング",
+    "examDomain": "テスト・検証・トラブルシューティング",
+    "version": "AIP-C01 オリジナル問題 2026-11",
+    "similarityGroup": "w4r-d5-cloudwatch-alarm-missing-data",
+    "title": "メトリクス欠損時のアラーム動作を検証する",
+    "prompt": "推論エンドポイントが停止するとメトリクスが届かず、異常アラームがOKのままになる。欠損を異常として扱うCloudWatchアラーム設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "欠損を常にnotBreachingにする。",
+        "explanation": "停止を正常と扱う。"
+      },
+      {
+        "id": "B",
+        "text": "ログを削除する。",
+        "explanation": "監視を悪化させる。"
+      },
+      {
+        "id": "C",
+        "text": "モデルを再学習する。",
+        "explanation": "アラーム評価に関係しない。"
+      },
+      {
+        "id": "D",
+        "text": "treatMissingDataをbreachingに設定する。",
+        "explanation": "正しい。欠損データをしきい値超過として評価できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/alarms-and-missing-data.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudWatchアラームは欠損データの扱いを設定できる。",
+      "concept": "可観測性欠損を含むアラーム復旧性検証"
+    }
   }
 ]

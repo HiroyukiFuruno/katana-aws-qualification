@@ -71,12 +71,10 @@ test('GitHub button starts the configured OAuth authorization request', async ({
   expect(target.searchParams.get('code_challenge')).toBeTruthy();
 });
 
-test('provider buttons preserve keyboard focus and localized labels at every target viewport', async ({
-  page,
-}) => {
-  for (const width of [320, 390, 768, 1280]) {
-    await page.setViewportSize({ width, height: 844 });
-    for (const colorScheme of ['light', 'dark'] as const) {
+for (const width of [320, 390, 768, 1280]) {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`provider labels and focus fit ${width}px in ${colorScheme}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
       await page.emulateMedia({ colorScheme });
       for (const locale of locales) {
         await page.goto(localePath(locale, 'login'));
@@ -87,12 +85,15 @@ test('provider buttons preserve keyboard focus and localized labels at every tar
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
           width,
         );
-        await expect(button.locator('.account-provider-label')).toHaveCSS('overflow-wrap', 'anywhere');
         for (const candidate of await page.locator('.account-provider-button').all()) {
           const box = await candidate.boundingBox();
           expect(box?.height).toBeGreaterThanOrEqual(48);
           expect(box?.x).toBeGreaterThanOrEqual(0);
           expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width);
+          await expect(candidate.locator('.account-provider-label')).toHaveCSS(
+            'overflow-wrap',
+            'anywhere',
+          );
           expect(
             await candidate
               .locator('.account-provider-label')
@@ -100,6 +101,6 @@ test('provider buttons preserve keyboard focus and localized labels at every tar
           ).toBe(true);
         }
       }
-    }
+    });
   }
-});
+}

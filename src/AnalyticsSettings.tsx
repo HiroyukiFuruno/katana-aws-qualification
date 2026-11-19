@@ -1,4 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  clearAnalyticsCookies,
+  cookiesAllowed,
+  openCookieSettings,
+  useCookieConsent,
+} from './CookieConsent';
 import { usePreferences } from './preferences';
 
 const analyticsId = 'G-XS97G1267H';
@@ -15,6 +21,7 @@ function readConsent() {
 }
 
 function applyConsent(consent: boolean) {
+  consent = consent && cookiesAllowed();
   browser[disableKey] = !consent;
   if (!consent || document.getElementById('katana-analytics')) return;
 
@@ -38,13 +45,17 @@ function applyConsent(consent: boolean) {
   document.head.appendChild(script);
 }
 
-export function initializeAnalytics() {
-  applyConsent(readConsent());
+export function initializeAnalytics(allowed = cookiesAllowed()) {
+  applyConsent(allowed && readConsent());
 }
 
 export function AnalyticsSettings() {
   const { t } = usePreferences();
+  const cookieConsent = useCookieConsent();
   const [consent, setConsent] = useState(readConsent);
+  useEffect(() => {
+    setConsent(cookieConsent.value === 'granted' && readConsent());
+  }, [cookieConsent]);
   return (
     <section className="card" aria-label={t('privacy')}>
       <label>
@@ -53,6 +64,10 @@ export function AnalyticsSettings() {
           checked={consent}
           onChange={(event) => {
             const granted = event.currentTarget.checked;
+            if (granted && !cookiesAllowed()) {
+              openCookieSettings();
+              return;
+            }
             try {
               localStorage.setItem(preferenceKey, granted ? 'granted' : 'denied');
             } catch {
@@ -60,12 +75,7 @@ export function AnalyticsSettings() {
             }
             browser[disableKey] = !granted;
             if (!granted) {
-              for (const cookie of ['_ga', '_ga_XS97G1267H']) {
-                // biome-ignore lint/suspicious/noDocumentCookie: Synchronously clear the existing GA4 cookie on opt-out.
-                document.cookie = `${cookie}=; Max-Age=0; Path=/`;
-                // biome-ignore lint/suspicious/noDocumentCookie: Also clear the domain-scoped GA4 cookie.
-                document.cookie = `${cookie}=; Max-Age=0; Path=/; Domain=${location.hostname}`;
-              }
+              clearAnalyticsCookies();
             }
             applyConsent(granted);
             setConsent(granted);

@@ -1,5 +1,4 @@
 import { CertificationDirectory } from './CertificationDirectory';
-import { CertificationGuideAd } from './CertificationGuideAd';
 import { examPrices, pricingUrl } from './certificationPricing';
 import { certificationGuides, officialGuideLink } from './certificationGuides';
 import { certifications, levelMessage } from './certifications';
@@ -87,7 +86,6 @@ export function CertificationPages({ id }: { id?: string }) {
           </a>
         </div>
       </article>
-      <CertificationGuideAd />
     </main>
   );
 }

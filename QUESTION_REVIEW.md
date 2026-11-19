@@ -1022,3 +1022,15 @@ AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・
 - [ベクトルストアの次元設定](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-setup.html)
 - [Step FunctionsとBedrockの最適化統合](https://docs.aws.amazon.com/step-functions/latest/dg/connect-bedrock.html)
 - [Bedrock GuardrailsのAutomated Reasoning](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-automated-reasoning-checks.html)
+
+## AIP-C01の重複しないフル模試2回分
+
+75問を追加し、先行75問と旧版16レコードの内容を保持した。独立150問の配分は46・40・30・18・16問。単一選択128問、複数選択22問を収録し、単一選択の正答はA〜Dが各32問。
+
+現行問同士11,175組と旧版との2,400組を表記と正答に必要な判断で比較した。重複していた非同期推論の縮退、Lambda実行設定、エージェントのメモリの分離は、推論環境の負荷試験、フローの完了イベント、生イベントの保持期間に差し替えた。全150問に対応するAWS公式出典120件の到達を確認した。
+
+75問・180分のフル模試を重複なしで2回生成し、128組の生成結果で全150問が使われることを確認した。カスタム全75件数と採点2,752通りも検証した。
+
+- [Bedrock FlowsのInvokeFlow](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeFlow.html)
+- [AgentCore Memoryの保持期間](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-create-a-memory-store.html)
+- [SageMaker Inference Recommender](https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html)

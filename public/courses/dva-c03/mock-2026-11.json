@@ -11353,5 +11353,2842 @@
       "reason": "配信の途中で発生した負荷と、最終結果として失敗した件数を分ける。",
       "concept": "再試行の回数は最終的に失われたイベントの数ではない。"
     }
+  },
+  {
+    "id": "dva-c03-d1-076",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "dynamodb-atomic-counter-transaction-request-token",
+    "title": "応答が途切れた集計書き込みの再送",
+    "prompt": "入荷処理はDynamoDBのTransactWriteItemsで受入履歴を作成し、数量を加算する。初回の応答を受け取れず、数秒後には同じ入力で再送する。処理の成否にかかわらず数量を一度だけ加算し、DynamoDBに別のロック項目を用意したくない。何を指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "応答が届かなければ同じデータを新しいリクエストトークンで再送する。",
+        "explanation": "初回が成功していた場合にも同じ書き込みが新規操作として扱われ、数量が追加され得る。"
+      },
+      {
+        "id": "B",
+        "text": "ClientRequestTokenに受入処理の固定IDを指定し、再送にもその値を使う。",
+        "explanation": "有効期間内に同一の書き込みを再送しても、追加の変更は行われない。"
+      },
+      {
+        "id": "C",
+        "text": "ReturnConsumedCapacityにTOTALを指定し、初回の結果を呼び出し元で照会する。",
+        "explanation": "この設定は成功した応答の消費容量を返すもので、応答を失った操作を特定できない。"
+      },
+      {
+        "id": "D",
+        "text": "再送時にClientRequestTokenを変えず、入力する更新時刻を現在時刻に直す。",
+        "explanation": "同じトークンで入力を変えるとIdempotentParameterMismatchになる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TransactWriteItems.html",
+      "label": "DynamoDB TransactWriteItems"
+    },
+    "learning": {
+      "reason": "同じ論理操作には同じトークンと同じリクエストを使う。",
+      "concept": "10分の有効期間ではトークンが同じ書き込みの重複実行を防ぐ。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-077",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "dynamodb-streams-order-item-per-key",
+    "title": "状態変更の順序保証が及ぶ範囲",
+    "prompt": "DynamoDB Streamsで商品ごとの状態を外部検索へ複製する。異なる商品間の変更順は不要だが、同じ商品に対する連続した「受付、公開」はその順で適用したい。書き込み元の時刻で全レコードを並べ替える案が出た。Streamsが保存する順序をどう利用するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "最新のNewImageだけを取り出し、旧状態からの遷移を省略する。",
+        "explanation": "一つ前の状態を外部システムへ適用する契約を守れない。"
+      },
+      {
+        "id": "B",
+        "text": "シャードをまたいでSequenceNumberを数値比較し、全テーブルの順序を復元する。",
+        "explanation": "シャードをまたぐ比較でテーブル全体の順序は得られない。"
+      },
+      {
+        "id": "C",
+        "text": "すべてのレコードをApproximateCreationDateTimeでソートし、その時刻を一意な永続カーソルとして使う。",
+        "explanation": "概算時刻は一意な位置情報ではなく、異なる変更が同じ値を持ち得る。"
+      },
+      {
+        "id": "D",
+        "text": "同一項目の変更をストリームの順序で処理し、項目間の並びはアプリの契約に含めない。",
+        "explanation": "同一項目のストリームレコードは変更と同じ順序で記録される。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html",
+      "label": "DynamoDB Streams"
+    },
+    "learning": {
+      "reason": "DynamoDB Streamsの順序保証を項目キー単位で使う。",
+      "concept": "近接する変更時刻は、異なる項目を貫く並びを作る根拠にならない。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-078",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-selective-list-prefix-delimiter",
+    "title": "直下のフォルダーとファイルだけを一覧",
+    "prompt": "S3の管理画面で顧客ごとのパス配下を1階層ずつ表示したい。顧客Aのinvoice.pdfと月別サブフォルダーを表示し、サブフォルダー内の全ファイルは取得しない。対象のキーはcustomer-a/で始まる。ListObjectsV2をどう呼ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Prefixをcustomer-a/、Delimiterを/として、ContentsとCommonPrefixesをそれぞれ描画する。",
+        "explanation": "直下のキーと、次の区切りの位置までをまとめたグループが返る。"
+      },
+      {
+        "id": "B",
+        "text": "StartAfterをcustomer-a/に指定し、次の顧客名に出会うまで順に取得する。",
+        "explanation": "直下のフォルダーがまとめられず、サブフォルダーの全キーを読むことになる。"
+      },
+      {
+        "id": "C",
+        "text": "Prefixをcustomer-a/*/にして、ワイルドカードで任意の階層を指定する。",
+        "explanation": "Prefixは文字列の前方一致で、アスタリスクをワイルドカードとして扱わない。"
+      },
+      {
+        "id": "D",
+        "text": "MaxKeysを1にして各キーの末尾の区切り位置を判断する。",
+        "explanation": "応答件数を制限しても、キーをグループ化する動作には変わらない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html",
+      "label": "S3 ListObjectsV2"
+    },
+    "learning": {
+      "reason": "Prefixで対象のパスを絞り、Delimiterで次の区切りまでをグループにする。",
+      "concept": "ContentsとCommonPrefixesを使い、ファイルと一段下のグループを表示できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-079",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudfront-origin-request-policy-non-key-header",
+    "title": "既存キャッシュを維持しオリジンに視聴端末を伝える",
+    "prompt": "CloudFront配下の画像は全端末で同じ内容を返す。オリジンではキャッシュミスで実際に受けたアクセスの端末区分だけを記録したい。ブラウザーが送信するX-Device-Classを、キャッシュの効率を保ってオリジンへ渡すにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "キャッシュポリシーでヘッダーをキーに含め、オリジンリクエストポリシーは変更しない。",
+        "explanation": "オリジンに渡るが、端末区分ごとにキャッシュが分かれる。"
+      },
+      {
+        "id": "B",
+        "text": "CloudFrontのオリジンカスタムヘッダーにdesktopと固定設定する。",
+        "explanation": "すべてのオリジン要求が同じ値になり、閲覧者が送った分類が失われる。"
+      },
+      {
+        "id": "C",
+        "text": "レスポンスヘッダーポリシーで同じ名前のヘッダーを追加する。",
+        "explanation": "閲覧者への応答を変える設定で、オリジン向けリクエストには追加しない。"
+      },
+      {
+        "id": "D",
+        "text": "オリジンリクエストポリシーでヘッダーを転送し、キャッシュポリシーではキーの要素に加えない。",
+        "explanation": "オリジン要求だけに付与でき、キャッシュのバリエーションが増えない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/understanding-how-origin-request-policies-and-cache-policies-work-together.html",
+      "label": "CloudFrontのキャッシュポリシーとオリジンリクエストポリシー"
+    },
+    "learning": {
+      "reason": "応答が変わらないヘッダーはキャッシュキーに加えず、オリジンへ転送できる。",
+      "concept": "オリジンに実際に到達した要求の計測と、キャッシュヒットを含む閲覧数の計測は別である。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-080",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "lambda-async-event-age-expired-onfailure",
+    "title": "期限切れの非同期リクエストを破棄前に記録",
+    "prompt": "Lambdaを非同期実行して30秒単位の集計を通知している。障害時に内部キューへ滞留した複数分前のイベントを処理すると古い通知が届く。最初の試行を含め、受理後2分を超えたイベントは処理対象から外し、後で元のリクエストを調査したい。どの組み合わせが適切か。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "MaximumRetryAttemptsを2にし、失敗だけを関数本体のCloudWatch Logsへ出す。",
+        "explanation": "再試行回数は受理から2分の上限にならず、実行前の期限切れを関数は記録できない。"
+      },
+      {
+        "id": "B",
+        "text": "MaximumEventAgeInSecondsを120に設定する。",
+        "explanation": "Lambdaは上限時間を超えた非同期イベントを破棄対象にする。"
+      },
+      {
+        "id": "C",
+        "text": "Lambda本体のタイムアウトを120秒にする。",
+        "explanation": "実行開始後に関数が動ける時間で、待ち行列にいた時間を制限しない。"
+      },
+      {
+        "id": "D",
+        "text": "OnFailureの送信先に調査用のSQSキューを設定する。",
+        "explanation": "期限切れで処理できなかったイベントを含む呼び出し記録を受け取れる。"
+      },
+      {
+        "id": "E",
+        "text": "OnSuccessの送信先を設定し、そこにすべての期限切れを集約する。",
+        "explanation": "未処理で期限切れになったイベントは成功先の対象ではない。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-configuring.html",
+      "label": "Lambda非同期呼び出しの設定"
+    },
+    "learning": {
+      "reason": "イベントをキューに保持する時間と、期限切れになった呼び出しの行き先を設定する。",
+      "concept": "実行開始前に期限を過ぎる場合にも関数本体は呼ばれないため、外側で失敗を記録する。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-081",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sqs-fifo-queue-delay-vs-visibility-timeout",
+    "title": "初回から一定時間待ってから注文を引き渡す",
+    "prompt": "発注手続きは順序を保つためSQS FIFOへ投入している。取り消し猶予としてすべての新規メッセージを最初の受信まで45秒待たせたい。既存の受信側は変更せず、メッセージごとの異なる待ちは不要である。どの設定を用いるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "FIFOのSendMessageで毎回DelaySecondsを45にする。",
+        "explanation": "FIFOキューではメッセージ単位の遅延を設定できない。"
+      },
+      {
+        "id": "B",
+        "text": "ReceiveMessageWaitTimeSecondsを20にし、新着メッセージに複数回ポーリングを行う。",
+        "explanation": "ロングポーリングは受信できるメッセージを待つ仕組みで、個々の配送を遅らせない。"
+      },
+      {
+        "id": "C",
+        "text": "FIFOキューのDelaySecondsを45にする。",
+        "explanation": "キューの配送遅延を設定し、新規送信直後の受信を遅らせる。"
+      },
+      {
+        "id": "D",
+        "text": "FIFOキューのVisibilityTimeoutを45秒にする。",
+        "explanation": "受信済みメッセージの再表示を遅らせる値で、最初の受信は遅らない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-delay-queues.html",
+      "label": "SQSの遅延キュー"
+    },
+    "learning": {
+      "reason": "配送までの待ち時間と、受信済みメッセージの処理中に不可視にする時間は別である。",
+      "concept": "FIFOキューは個別メッセージタイマーを使わず、キュー単位の遅延を設定できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-082",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sns-subscription-redrive-when-endpoint-unreachable",
+    "title": "配送できなかった一つの購読経路を退避",
+    "prompt": "SNSトピックにはメールと二つのSQS購読がある。現在は権限変更で一つのSQSに渡せなかった通知を見失う。メールと他方の購読には変更を加えず、再試行しても対象購読に渡せなかった内容を調査用キューへ保管したい。どこに設定を入れるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "発行元がPublishの成功応答を調べ、個別購読への到着を成功応答から判定する。",
+        "explanation": "Publishの成功はSNSが受理したことを示し、各経路の配送完了は示さない。"
+      },
+      {
+        "id": "B",
+        "text": "失敗しているSNS購読のRedrivePolicyを調査用SQSへ向け、SNSから送信できるようにする。",
+        "explanation": "失敗を購読単位で退避し、正常な購読は設定変更なしで稼働できる。"
+      },
+      {
+        "id": "C",
+        "text": "SNSの配送ステータスログだけを有効にし、ログ行から失敗本文を復元する。",
+        "explanation": "配信結果の調査には使えるが、配送できなかった元のメッセージを退避用キューに保存しない。"
+      },
+      {
+        "id": "D",
+        "text": "配送先のSQSに受信失敗回数に基づくRedrivePolicyだけを設定する。",
+        "explanation": "SNSから着信していないメッセージにはSQSの受信回数が存在しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sns/latest/dg/sns-dead-letter-queues.html",
+      "label": "SNSのデッドレターキュー"
+    },
+    "learning": {
+      "reason": "SNSの配送失敗と、SQSに到着した後の処理失敗を区別する。",
+      "concept": "購読のRedrivePolicyはその購読へ引き渡せなかったメッセージを保存できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-083",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "step-functions-parallel-catch-within-optional-branch",
+    "title": "補足処理だけが失敗しても必須の結果をそろえる",
+    "prompt": "Step FunctionsのParallelで必須の在庫確認と任意の販促データ取得を並行実行する。販促データが提供元のタイムアウトで取れない場合だけ空の補足結果を使い、在庫確認の失敗はワークフロー全体の失敗としたい。どこでエラーを捕捉するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Parallel本体だけにStates.ALLのCatchを置き、失敗した場合は在庫も含めて空の結果にする。",
+        "explanation": "必須の在庫処理が失敗しても成功へ流れ、販促失敗時にも結果が揃わない。"
+      },
+      {
+        "id": "B",
+        "text": "販促データ取得タスクに該当タイムアウトのCatchを置き、同じ枝内の空の結果を返すフォールバックへ遷移する。",
+        "explanation": "販促側の既知の失敗を局所化し、在庫の未処理エラーは伝播する。"
+      },
+      {
+        "id": "C",
+        "text": "販促のタスクにRetryを設定し、Catchは設定しない。",
+        "explanation": "再試行が尽きるとエラーがParallelへ伝播し、空の補足結果を返せない。"
+      },
+      {
+        "id": "D",
+        "text": "両方の枝に同じStates.ALLのCatchを置き、失敗した枝は全て成功として扱う。",
+        "explanation": "在庫の失敗も握りつぶしてワークフロー全体の成否を誤る。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-parallel.html",
+      "label": "Step Functions Parallelのエラー処理"
+    },
+    "learning": {
+      "reason": "Parallel全体で失敗を扱う前に、省略が許される処理の枝で対象エラーを処理する。",
+      "concept": "任意の枝も合意した形式で成功終了すれば、Parallelは必須の枝と結果を返せる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-084",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "step-functions-ecs-runtask-sync-metadata-wait",
+    "title": "コンテナ終了後に集計結果を公開",
+    "prompt": "標準Step FunctionsがECS FargateのRunTaskを呼んでETLを開始し、その次の状態で出力を公開する。現在はタスクを開始した時点で次へ進むため未完了のファイルを拾う。コンテナの改修やポーリング用Lambdaを追加せず、タスク終了まで待ちたい。どの統合を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ステートのResourceにarn:aws:states:::ecs:runTask.syncを指定し、実行ロールに統合が必要とする権限を付与する。",
+        "explanation": "最適化された同期統合がECSタスク終了まで待つ。"
+      },
+      {
+        "id": "B",
+        "text": "Waitを固定で5分挟み、Fargateが5分以内に終わると仮定する。",
+        "explanation": "処理の実際の完了と同期せず、処理時間が延びると出力を早く公開する。"
+      },
+      {
+        "id": "C",
+        "text": "runTask.waitForTaskTokenを指定するだけで既存コンテナを起動する。",
+        "explanation": "コールバック方式ではトークンを受け取った処理が完了を通知する必要がある。"
+      },
+      {
+        "id": "D",
+        "text": "arn:aws:states:::ecs:runTaskを使い、起動APIのHTTP成功をコンテナ正常終了として扱う。",
+        "explanation": "起動の受理はタスクの終了を示さない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-ecs.html",
+      "label": "Step FunctionsとECSの統合"
+    },
+    "learning": {
+      "reason": "リクエスト応答とジョブ完了待機ではタスク状態が終了する条件が異なる。",
+      "concept": "ECS最適化統合はRunTaskの起動を要求し、その後のタスク終了を待機できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-085",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-pipe-dynamodb-stream-enrichment-before-target",
+    "title": "ストリームの行を既存処理で補足してキューへ渡す",
+    "prompt": "DynamoDB Streamsに注文IDを含む更新がある。SQSには既存Lambdaが別システムから取得する受付番号を含めてから配送し、対象はINSERTだけに絞りたい。常駐ワーカーを追加せず、フィルターから配送までを一つのマネージド連携で構成する方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "PipesをDynamoDB StreamsからSQSへつなぎ、イベント種別をフィルターし、既存Lambdaをエンリッチメントに設定する。",
+        "explanation": "対象のソースレコードをフィルターしてからLambdaを呼び、処理結果をターゲットへの入力にできる。"
+      },
+      {
+        "id": "B",
+        "text": "DynamoDBのProjectionExpressionに受付番号計算を記述し、Streamsへ連携する。",
+        "explanation": "ProjectionExpressionは既存属性を選ぶもので、ストリーム生成時の外部呼び出しには使えない。"
+      },
+      {
+        "id": "C",
+        "text": "SQSのメッセージ属性に計算式を入れ、SQS側の配送時に解決させる。",
+        "explanation": "SQSは値を保管・配送するが、外部アクセスを伴う式を評価しない。"
+      },
+      {
+        "id": "D",
+        "text": "EventBridgeルールの入力トランスフォーマーで、別システムへHTTP送信して受付番号を取得する。",
+        "explanation": "入力トランスフォーマーは既存の入力値を参照して形を変えるもので、外部参照を実行しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes.html",
+      "label": "Amazon EventBridge Pipes"
+    },
+    "learning": {
+      "reason": "Pipesはソースのフィルター、任意の拡張、ターゲットを順に結びつける。",
+      "concept": "受け取った入力の変換と、外部の値を計算・取得して組み込む処理の役割を区別する。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-086",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "appsync-pipeline-resolver-prev-result",
+    "title": "先行の検索結果を次のデータソースへ渡す",
+    "prompt": "AppSyncのパイプラインリゾルバーで、最初の関数が会員IDから契約IDを調べ、2番目の関数が契約IDから利用上限を読む。クライアントは会員IDしか渡さず、最初の関数の応答は契約IDを返す。2番目の関数のリクエストで何を参照するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ctx.prev.resultを読み、得た契約IDを2番目のデータソースのキーに使う。",
+        "explanation": "パイプラインの直前ステップが返した値を次の関数に引き継げる。"
+      },
+      {
+        "id": "B",
+        "text": "GraphQLを呼ぶ利用者のctx.identityをデータソースの契約IDとして使用する。",
+        "explanation": "認証された主体の情報を示すもので、最初の関数が返した契約IDではない。"
+      },
+      {
+        "id": "C",
+        "text": "ctx.argsからcontractIdを読み、クライアントが送信した値で検索する。",
+        "explanation": "このAPIの入力は会員IDだけで、契約IDは初期引数にない。"
+      },
+      {
+        "id": "D",
+        "text": "2番目の関数のリクエストでctx.resultから最初の関数の契約IDを読む。",
+        "explanation": "直前の関数からの受け渡しにはprev.resultを使い、現在のデータソース結果とは区別する。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-overview-js.html",
+      "label": "AppSync JavaScriptのパイプラインリゾルバー"
+    },
+    "learning": {
+      "reason": "連続する処理の間では、一つ前の応答結果を次の処理が参照できる。",
+      "concept": "クライアントの初期引数と、パイプライン内で取得した値は別のコンテキストにある。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-087",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "aws-java-s3-async-multipart-unknown-length-stream",
+    "title": "長さ不明のファイルを全量メモリに置かずに転送",
+    "prompt": "Javaのアプリは、事前に長さが分からない生成ファイルをS3へ直接ストリーミングする。現在の同期実装は長さを計算するために全量をメモリへ読み、サイズ上限で停止する。SDK v2の標準Javaクライアントを利用し、パートを手動管理せずに送信する方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同期クライアントのfromContentProviderで長さを省略し、同じ方式を継続する。",
+        "explanation": "同期経路ではSDKが長さを計算するためにストリーム全体をバッファリングし得る。"
+      },
+      {
+        "id": "B",
+        "text": "S3AsyncClientのマルチパートを有効にし、長さを指定しないAsyncRequestBodyでストリームを渡す。",
+        "explanation": "SDKがパート分割を管理するため、全体サイズを先に計算しなくてよい。"
+      },
+      {
+        "id": "C",
+        "text": "推定したContent-Lengthを指定し、実データが長い場合はそのまま送る。",
+        "explanation": "長さが実データに一致しないと送信内容の切り捨てや失敗につながる。"
+      },
+      {
+        "id": "D",
+        "text": "生成処理で全内容をByteArrayOutputStreamへ保存してから同期送信する。",
+        "explanation": "CDNやS3の設定に関係なく、アプリに必要なメモリはデータ量に応じて増える。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/best-practices-s3-uploads.html",
+      "label": "Java SDKのS3ストリームアップロード"
+    },
+    "learning": {
+      "reason": "長さ不明のストリームでは、マルチパート対応の非同期送信で全量の事前バッファリングを避けられる。",
+      "concept": "既知のContent-Lengthを要求する同期送信と、長さを指定しない対応の非同期送信を区別する。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-088",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "apigateway-websocket-route-selection-body-action",
+    "title": "同じWebSocket接続でコマンド別に処理",
+    "prompt": "チャットの同一WebSocket接続で、JSONのactionがjoinなら参加処理へ、sendなら送信処理へ渡したい。接続URLを増やさず、Lambda内の手動分岐をAPI Gatewayのルーティングへ移したい。何を変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "$connectを二つ用意して各メッセージのactionを比較する。",
+        "explanation": "$connectは接続時の専用ルートでデータフレームごとに実行されない。"
+      },
+      {
+        "id": "B",
+        "text": "$defaultに複数の統合を登録して本文によって先着順に実行する。",
+        "explanation": "ルートごとの統合を選ぶにはルート選択式とルートキーを設定する。"
+      },
+      {
+        "id": "C",
+        "text": "ルート選択式を$request.body.actionとし、joinとsendをルートキーにしてそれぞれ統合を割り当てる。",
+        "explanation": "同じAPIへのメッセージを本文の値ごとに異なる統合へ配信する。"
+      },
+      {
+        "id": "D",
+        "text": "すべてのメッセージでHTTPメソッドのPOSTやPUTを切り替える。",
+        "explanation": "確立したWebSocketのメッセージはHTTPメソッドでルーティングされない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/websocket-api-develop-routes.html",
+      "label": "API Gateway WebSocketのルート"
+    },
+    "learning": {
+      "reason": "ルート選択式から得た値とルートキーを対応させる。",
+      "concept": "接続・切断に使う特別なルートは送信メッセージの種類選択とは別である。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-089",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-converse-inferenceconfig-stop-sequences",
+    "title": "所定の区切り以降を返さない文章生成",
+    "prompt": "社内の要約APIはBedrock Converseを使う。モデルは要約の後ろに専用の区切り文字を生成し、その後に不要なメモを続ける場合がある。対応モデルで、アプリによる文字列切り取りだけに頼らず、区切りが生成された時点で推論に止まってほしい。何を指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "maxTokensを過去の要約の平均トークン数に固定する。",
+        "explanation": "必要な長さは入力ごとに変わり、区切り文字を認識できない。"
+      },
+      {
+        "id": "B",
+        "text": "ConverseのinferenceConfig.stopSequencesに区切り文字を設定する。",
+        "explanation": "対応モデルは指定の文字列を終了条件として処理する。"
+      },
+      {
+        "id": "C",
+        "text": "systemメッセージだけで区切り以降を生成しないように依頼する。",
+        "explanation": "指示はモデルによる解釈に依存し、推論APIの終了条件にはならない。"
+      },
+      {
+        "id": "D",
+        "text": "topPを下げ、区切り文字以降の語を確率的に出にくくする。",
+        "explanation": "サンプリングの範囲を変えるだけで、生成をそこで止める保証がない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_InferenceConfiguration.html",
+      "label": "Bedrock InferenceConfiguration"
+    },
+    "learning": {
+      "reason": "stopSequencesは特定の文字列を生成の終了条件にする。",
+      "concept": "maxTokensとstopSequencesは異なる理由で生成を止める。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-090",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-prompt-management-version-arn-variables",
+    "title": "検証したプロンプトを入力値だけ差し替え",
+    "prompt": "チームはBedrock Prompt managementで商品の説明文を作るテンプレートを検証した。配備済みのアプリは編集途中のドラフトの影響を受けず、商品名だけ実行ごとに差し替えたい。Converseの入力にどのフィールドを指定するか。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "promptVariablesにテンプレートの商品名に対応する値を設定する。",
+        "explanation": "変数を使うと、固定した定義で入力だけを変更できる。"
+      },
+      {
+        "id": "B",
+        "text": "modelIdに検証したプロンプトバージョンのARNを指定する。",
+        "explanation": "版を指定すると、ドラフトの更新に依存しない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatch Logsへ商品名を付加してから、変数未指定のまま同じテンプレートを呼ぶ。",
+        "explanation": "監視ログに出した値は推論入力には渡されない。"
+      },
+      {
+        "id": "D",
+        "text": "モデルIDは以前と同じにし、Prompt managementのコンソール上でドラフトを開いておく。",
+        "explanation": "アプリは編集画面の状態を参照しない。"
+      },
+      {
+        "id": "E",
+        "text": "ドラフトを毎回コピーし、アプリで展開した文字列をテンプレートIDとして送る。",
+        "explanation": "ドラフトの変更で結果が変わり得て、版の固定もできない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-management-test.html",
+      "label": "Bedrock Prompt managementの利用"
+    },
+    "learning": {
+      "reason": "呼び出すプロンプト定義は版を固定し、アプリの値は変数として渡す。",
+      "concept": "ドラフトの更新と、本番で使う定義の昇格を分けると追跡できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-091",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "kiro-spec-property-based-test-validate-invariant",
+    "title": "例を増やすだけでは見つからない集計条件",
+    "prompt": "KiroのSpecで、注文を分割しても各明細の合計金額が元の合計に一致する不変条件を定義した。固定した3例では、割引額と端数の組み合わせによる不具合を取り逃がした。任意の有効な入力に対し不変条件を繰り返し検査し、失敗時は小さい反例を得たい。何を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "失敗した手元の3注文をそのまま1セットの固定回帰テストへ追加する。",
+        "explanation": "既知の例は守れるが、任意の注文での性質は探索しない。"
+      },
+      {
+        "id": "B",
+        "text": "テスト入力を増やさずKiroの実装変更に対するコードカバレッジのみを測る。",
+        "explanation": "行が実行されたことと、合計条件が入力範囲で成り立つことは異なる。"
+      },
+      {
+        "id": "C",
+        "text": "期待する合計を現在の実装の返す合計から自動生成する。",
+        "explanation": "実装が誤ってもその値を基準にしてしまい、合計の不変条件を検出できない。"
+      },
+      {
+        "id": "D",
+        "text": "Specの正しさのプロパティとして合計保存を明記し、有効な注文を生成するプロパティベーステストを実装する。",
+        "explanation": "多様な入力で同じ主張を評価し、検査フレームワークで反例を縮小できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://kiro.dev/docs/specs/correctness/",
+      "label": "KiroのSpecと正しさのプロパティ"
+    },
+    "learning": {
+      "reason": "入力の例より、すべての有効な入力が満たす性質をテストで表す。",
+      "concept": "乱択生成と反例の縮小により、固定例で拾えない境界を再現できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-092",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-selective-recovery-delete-marker-remove-version",
+    "title": "誤削除された最新版をデータ復元なしで参照",
+    "prompt": "バージョニングを有効にしたS3の共有フォルダーで担当者がバージョンIDを指定せず削除した。直後から通常のGETは404だが、管理者はデータ版が残っており最新の削除マーカーだけが追加されたことを確認した。元のキーの通常GETを復旧し、新たなコピーを作らないにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "元のデータを取得し同じキーへPutObjectする。",
+        "explanation": "通常GETは復旧するが、新しいデータ版を作らない要件に反する。"
+      },
+      {
+        "id": "B",
+        "text": "削除マーカーのバージョンIDを指定しDeleteObjectを実行する。",
+        "explanation": "マーカーが除去され、直前のデータ版が通常のGETで再び取得できる。"
+      },
+      {
+        "id": "C",
+        "text": "バージョニングを停止して通常GETを再試行する。",
+        "explanation": "停止しても既存の削除マーカーが除去されるわけではない。"
+      },
+      {
+        "id": "D",
+        "text": "バージョンIDなしで同じキーをさらに一度削除する。",
+        "explanation": "新たな削除マーカーを追加する操作で、通常GETは復旧しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/ManagingDelMarkers.html",
+      "label": "S3の削除マーカー管理"
+    },
+    "learning": {
+      "reason": "通常GETでは最新バージョンが削除マーカーだと、オブジェクトは削除済みとして見える。",
+      "concept": "削除マーカーをバージョンIDで削除すれば、それ以前のデータ版を現在版として参照できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-093",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "appsync-lambda-batchinvoke-response-order",
+    "title": "一覧の子フィールドをまとめて解決する",
+    "prompt": "AppSyncで20件の記事を一覧表示し、それぞれのauthorフィールドを同じLambdaデータソースから解決する。いまはフィールドごとにLambdaが呼ばれる。バッチ対応の設定を追加できる。呼び出し回数を減らしながら、著者が見つからない記事も他の記事にずれずに返すにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "authorのリゾルバーでBatchInvokeを使い、Lambdaは入力と同じ順に結果を返す。見つからない位置にもnullを含める。",
+        "explanation": "複数の入力をまとめ、結果をリスト上の位置で元の記事に対応付けられる。"
+      },
+      {
+        "id": "B",
+        "text": "BatchInvokeを使い、Lambdaが見つけた著者だけを著者ID順で返す。",
+        "explanation": "結果の長さと順序が入力に合わなくなり、記事へ正しく対応しない。"
+      },
+      {
+        "id": "C",
+        "text": "記事ごとにLambdaのプロビジョンド同時実行を増やし、回数は最大20件に制限する。",
+        "explanation": "起動時の遅延は減らせるが、フィールド単位の呼び出しをまとめることにはならない。"
+      },
+      {
+        "id": "D",
+        "text": "Invokeのままリゾルバーのタイムアウトを延ばし、並行呼び出しが全件終わるのを待つ。",
+        "explanation": "1フィールドずつの呼び出しは続き、必要なバッチ化が行われない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-lambda-js.html",
+      "label": "AppSync Lambda JavaScriptリゾルバーのBatchInvoke"
+    },
+    "learning": {
+      "reason": "BatchInvokeの結果は入力と同じ長さで、同じ位置へ対応させる。",
+      "concept": "検索結果がない入力を省略すると、他のフィールドに誤って結果を対応付ける原因になる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-094",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-putevents-check-entry-error-not-status",
+    "title": "一括発行の一部だけを再送",
+    "prompt": "注文システムがイベントを10件ずつEventBridgeのPutEventsで発行している。レスポンスはHTTP 200だが、一部の通知が欠ける。再試行可能な個別エラーだけを拾い、成功した通知を重複して送る機会を減らしたい。どうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "最後の結果だけが全件の集約だと見なし、そのErrorCodeで一括処理する。",
+        "explanation": "結果は入力と一対一で、最後のエントリに他の成否は含まれない。"
+      },
+      {
+        "id": "B",
+        "text": "FailedEntryCountが正なら、全10件を同じ順番で再送する。",
+        "explanation": "成功として登録されたイベントも再送するため、既存のターゲット処理が重複し得る。"
+      },
+      {
+        "id": "C",
+        "text": "FailedEntryCountと各結果のErrorCodeを見て、同じインデックスの再試行可能な入力だけを再送する。",
+        "explanation": "入力と結果の順序が対応するため、一括操作の部分失敗を個別に処理できる。"
+      },
+      {
+        "id": "D",
+        "text": "HTTPステータスが200なら全件成功として、再送用データを破棄する。",
+        "explanation": "個別失敗が返っても失われる。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-putevents.html",
+      "label": "EventBridge PutEventsの失敗処理"
+    },
+    "learning": {
+      "reason": "HTTP成功と個々のイベント登録成功は独立している。",
+      "concept": "入力と結果エントリの対応を使うと、失敗分だけを抽出できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d1-095",
+    "revision": 1,
+    "category": "AWSサービスでの開発",
+    "examDomain": "AWSサービスでの開発",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sqs-fifo-content-based-deduplication-body-vs-attributes",
+    "title": "同じ本文を別の業務処理として届ける",
+    "prompt": "SQS FIFOで同じ顧客の処理を順番に届ける。本文が同じでも、別の操作IDがメッセージ属性にあるときは両方必要だ。再送時に同じ操作IDを使える。現在はコンテンツベースの重複排除で2件目が消える。送信側をどう変えるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "操作IDを属性に追加するだけで、MessageDeduplicationIdは指定しない。",
+        "explanation": "属性は内容ベースのハッシュに含まれず、同じ本文は同じIDになる。"
+      },
+      {
+        "id": "B",
+        "text": "再送も含め、すべての送信で新しいランダムなMessageDeduplicationIdを作る。",
+        "explanation": "別操作を区別できるが、同じ操作の再送が重複排除されない。"
+      },
+      {
+        "id": "C",
+        "text": "MessageDeduplicationIdに業務操作IDを明示し、同じ操作の再送ではその値を再利用する。",
+        "explanation": "本文が同じ別操作を区別し、同一操作の再試行を重複排除できる。"
+      },
+      {
+        "id": "D",
+        "text": "MessageGroupIdを送信ごとに乱数で指定する。",
+        "explanation": "顧客ごとに同じグループで順序を保つ要件を壊し、本文によるIDの問題もそのまま残る。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/using-messagededuplicationid-property.html",
+      "label": "SQS FIFOの重複排除ID"
+    },
+    "learning": {
+      "reason": "内容ベースのIDは本文のハッシュで、属性を含まない。",
+      "concept": "明示IDを渡すことで、サービスの重複排除範囲で業務上の同一性を表現できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-067",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "iam-policy-variables-principal-tag-s3-personal-prefix",
+    "title": "共通ロールを使う担当者ごとに保管先を分ける",
+    "prompt": "運用担当者が共通ロールを使う。サインイン時に認証基盤は利用者ごとに信頼できるProjectの割当IDを知っている。アップロードは既存S3バケットのprojects/割当ID/配下だけを許可し、担当者ごとのIAMポリシーを作りたくない。どんな組み合わせが必要か。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "信頼した認証基盤から、セッションにProjectタグとして割当IDを渡す。",
+        "explanation": "許可条件でセッションにひも付いた発行元管理の値を利用できる。"
+      },
+      {
+        "id": "B",
+        "text": "オブジェクトキーに割当IDを入れる命名規約をクライアント側に追加し、IAMはバケット全体を許可する。",
+        "explanation": "クライアントの規約に従わない要求はIAMによって制限されない。"
+      },
+      {
+        "id": "C",
+        "text": "s3:PutObjectのResourceのオブジェクトARNにprojects/${aws:PrincipalTag/Project}/*を使う。",
+        "explanation": "タグと一致するパスのオブジェクトだけを許可できる。"
+      },
+      {
+        "id": "D",
+        "text": "s3:PutObjectのResourceをバケット全体とし、s3:prefixでprojects/へ制限する。",
+        "explanation": "s3:prefixはListBucketのリスト条件で、PutObjectのリソースにはならない。"
+      },
+      {
+        "id": "E",
+        "text": "s3:ResourceTagだけを参照し、バケットに各担当者の割当IDを順番に設定する。",
+        "explanation": "バケット共通のタグでは同時に異なるセッションをパスに割り当てられない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_variables.html",
+      "label": "IAMポリシー変数"
+    },
+    "learning": {
+      "reason": "信頼されたセッションのタグをリソースパスの一部として参照できる。",
+      "concept": "タグ付与権限と対応するパスへの操作権限は両方を制御する。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-068",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "kms-key-policy-separate-administration-cryptographic-use",
+    "title": "管理担当と暗号操作担当を明示的に分ける",
+    "prompt": "カスタマーマネージドKMSキーを新設する。鍵管理担当の初期権限に用途更新や運用を任せる一方、データへの暗号化・復号はアプリロールだけに許可し、鍵管理担当の通常セッションでは暗号APIが使えないようにしたい。どう設計するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "両ロールにkms:DescribeKeyだけを付与し、アプリで鍵ARNを指定する。",
+        "explanation": "鍵の記述を参照できても暗号操作は許可されない。"
+      },
+      {
+        "id": "B",
+        "text": "アプリにkms:PutKeyPolicyだけを付与し、管理者の暗号操作を使って代理実行する。",
+        "explanation": "暗号操作の実行主体をアプリに限定する設計に合わず、アプリにも強すぎる権限を与える。"
+      },
+      {
+        "id": "C",
+        "text": "鍵の管理者にkms:*を付与し、暗号操作の許可ステートメントはアプリだけ別に置く。",
+        "explanation": "kms:*にEncryptやDecryptも含まれ、管理者の通常セッションでも利用できる。"
+      },
+      {
+        "id": "D",
+        "text": "管理用ステートメントに鍵管理操作を、別のアプリ用ステートメントに必要な暗号操作を付与する。",
+        "explanation": "通常の鍵操作とアプリの暗号化・復号を別のプリンシパルへ付与できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-default.html",
+      "label": "KMSキーポリシーの既定の構造"
+    },
+    "learning": {
+      "reason": "鍵管理APIとデータに対する暗号APIは別の権限である。",
+      "concept": "キーポリシー編集権限は後から権限を変更できるため、通常時の分離と特権変更の統制を区別する。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-069",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cognito-access-revocation-contained-api-live-state",
+    "title": "利用停止を独自JWT検証機能へ反映",
+    "prompt": "Cognitoユーザープールの利用者がログアウトしたら、同じ端末から独自APIへのアクセスを残りのJWT有効時間内でも直ちに拒否したい。APIはライブラリでJWTの署名、発行元、有効期限をローカル検証する。認証基盤でトークンを失効させる処理に加え、APIは何を行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "API側でexpに余裕時間を足し、Cognitoとの時計差を吸収する。",
+        "explanation": "有効期間を長く見積もる変更で、ログアウト直後の失効は確認しない。"
+      },
+      {
+        "id": "B",
+        "text": "CognitoのJWT署名鍵を取得し直し、失効したトークンの署名が自動で不正になるのを待つ。",
+        "explanation": "個別セッションの失効によって公開署名鍵が変わるわけではない。"
+      },
+      {
+        "id": "C",
+        "text": "独自APIの認可時に、対象セッションまたはトークンの失効状態をセッション記録で確認する。",
+        "explanation": "ローカルの署名検証に加えて、ログアウト後の失効を検出できる。"
+      },
+      {
+        "id": "D",
+        "text": "IDトークンの署名だけを追加で確認し、両方で署名が正しければアクセスを許可する。",
+        "explanation": "有効な署名が二つあっても、対象セッションが取り消されたかは分からない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/cognito/latest/developerguide/token-revocation.html",
+      "label": "Cognitoのトークン失効"
+    },
+    "learning": {
+      "reason": "JWTが失効しても、署名と期限の検査だけでは失効状態を知れない。",
+      "concept": "独自認可では実行中のセッション状態を参照する仕組みが必要になる。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-070",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cognito-pre-token-generation-set-access-scope-server-tag",
+    "title": "発行するアクセストークンを契約に合わせる",
+    "prompt": "CognitoのユーザープールがV2_0の事前トークン生成トリガーを利用できる。アプリクライアントが要求した同じスコープのうち、契約が失効している利用者にはreports/readを含めずにアクセストークンを発行したい。契約状態はサーバーだけが更新できる。何を構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "リソースサーバーにreports/readを定義して、クライアントへ未契約のとき自分で外すように依頼する。",
+        "explanation": "クライアントからの要求を信頼してしまい、発行側の契約判定がない。"
+      },
+      {
+        "id": "B",
+        "text": "IDトークンのemailクレームを対象者から削除する。",
+        "explanation": "アクセストークンのreports/readはIDトークンのemailとは別である。"
+      },
+      {
+        "id": "C",
+        "text": "Post confirmationトリガーだけで契約を読み、以降のトークンには変更を加えない。",
+        "explanation": "ユーザー確認時にだけ動く処理では、後日の契約変更を発行へ反映しない。"
+      },
+      {
+        "id": "D",
+        "text": "V2_0トリガーで契約を検査し、対象者のaccessTokenGeneration.scopesToSuppressにreports/readを追加する。",
+        "explanation": "指定のスコープをその発行応答のアクセストークンから除ける。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-token-generation.html",
+      "label": "Cognito事前トークン生成のLambdaトリガー"
+    },
+    "learning": {
+      "reason": "アクセストークンへ含めるスコープをトークン発行時にサーバー側で制御する。",
+      "concept": "API側は許可を得たスコープを別途検査し、契約の変更時に既発行のトークンへ必要な措置を取る。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-071",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-bucket-key-kms-encryption-context-bucket-arn",
+    "title": "S3バケットキーを導入したときのKMS条件",
+    "prompt": "監査バケットのSSE-KMSポリシーは暗号化コンテキストaws:s3:arnで対象バケットのオブジェクトARNを許可する。新しい書き込みでS3バケットキーを有効化するとKMSで拒否される。既存オブジェクトを読み続け、対象外バケットにはアクセスを広げない。どの条件へ移行するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "既存の許可に対象バケット自身のARNを加え、旧オブジェクトのARN条件は維持する。",
+        "explanation": "バケットキーを用いた処理と、以前のオブジェクトコンテキストを使う処理を両方許可できる。"
+      },
+      {
+        "id": "B",
+        "text": "KMS条件をすべて外し、同じIAMロールからのすべての利用を許可する。",
+        "explanation": "対象外の利用まで広げ、暗号化コンテキストでバケットを限定できなくなる。"
+      },
+      {
+        "id": "C",
+        "text": "既存のオブジェクトARN条件を削除し、対象バケットのARNだけに変える。",
+        "explanation": "以前に暗号化したオブジェクトに必要な条件が消え、既存データの読み取りを継続できない。"
+      },
+      {
+        "id": "D",
+        "text": "オブジェクトARNの条件だけを残し、PutObjectで対象バケットを別のリージョンに指定する。",
+        "explanation": "暗号化コンテキストがバケットARNに変わる問題を解決できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html",
+      "label": "S3バケットキーと暗号化コンテキスト"
+    },
+    "learning": {
+      "reason": "S3バケットキーでは暗号化コンテキストにバケットARNを使用する。",
+      "concept": "既存データに使ったオブジェクトARNと、新しいデータに使うバケットARNの両方を考慮する。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-072",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-default-kms-deny-explicit-different-encryption",
+    "title": "指定外の鍵を使う書き込みだけを拒否",
+    "prompt": "監査バケットの既定暗号化はカスタマーマネージドKMSキーKである。送信元は暗号化ヘッダーを省略して既定設定を利用してよいが、明示して別の鍵や方式を選ぶ書き込みを受け付けたくない。バケットの既定設定に加えてどの制御を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バケットのオブジェクト所有権をBucket owner enforcedに変更する。",
+        "explanation": "オブジェクトの所有権とACLを制御するもので、暗号化指定の上書きは止めない。"
+      },
+      {
+        "id": "B",
+        "text": "s3:PutObjectへ、暗号化方式または鍵IDのヘッダーが存在し許可値と異なる場合を明示拒否するバケットポリシーを設定する。",
+        "explanation": "ヘッダーなしの書き込みは既定設定を使い、誤った明示値だけを制限できる。"
+      },
+      {
+        "id": "C",
+        "text": "既定暗号化にKを設定するだけで、クライアントが送る指定を常に無視する。",
+        "explanation": "既定値は要求が指定を上書きできないという制限にはならない。"
+      },
+      {
+        "id": "D",
+        "text": "全PutObjectで鍵IDヘッダーのNullがtrueの場合を拒否する。",
+        "explanation": "省略して既定設定を使う正当な書き込みまで拒否する。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html",
+      "label": "S3のSSE-KMSとバケットポリシー"
+    },
+    "learning": {
+      "reason": "既定暗号化と、利用者が明示した暗号化方式や鍵の制限を分ける。",
+      "concept": "IAMの条件ではヘッダーなしと、あるが許可値と違う状態を区別できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-073",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "iam-scp-explicit-deny-no-role-policy-override",
+    "title": "業務ロールが許可済みでも組織の禁止が優先",
+    "prompt": "OrganizationsのメンバーアカウントでCIロールにアプリ用の作成権限を付けた。セキュリティ担当はこの環境からIAMユーザーを作れないように、親OUのSCPでiam:CreateUserを明示拒否している。後からIAMロールに同じ操作のAllowを追加した場合はどうなるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ロールの許可を追加しても、親OUのSCPの明示拒否が効くので作成できない。",
+        "explanation": "組織階層での明示拒否が適用され、メンバーアカウント内だけでは上書きできない。"
+      },
+      {
+        "id": "B",
+        "text": "ロールにサービスごとの権限を付ければ、組織の拒否は一般ルールなので上書きできる。",
+        "explanation": "許可の具体性の違いで明示拒否は無効にならない。"
+      },
+      {
+        "id": "C",
+        "text": "ロールの名前をOrganizationAccountAccessRoleに変えれば、自動でSCPの対象外になる。",
+        "explanation": "メンバーアカウントの通常のIAMロールを名前で対象外にする規則はない。"
+      },
+      {
+        "id": "D",
+        "text": "ロールを使うセッションに同じ操作のAllowを渡せば、ロールのSCP制約は引き継がれない。",
+        "explanation": "セッションポリシーは権限を制限できても、SCPで拒まれた操作を許可できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_evaluation.html",
+      "label": "AWS Organizations SCPの評価"
+    },
+    "learning": {
+      "reason": "組織レベルの明示拒否は、メンバーアカウント内のIDベースの許可より優先する。",
+      "concept": "必要な操作を組織が正式に許す場合は、適用されるポリシーの上限とロールの付与を両方確認する。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-074",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "lambda-secrets-extension-cache-auth-under-execution-role",
+    "title": "関数に秘密値を埋めず短時間だけキャッシュ",
+    "prompt": "LambdaがSecrets ManagerのDBシークレットをリクエストごとに読み、取得呼び出しが遅延を生む。既存ハンドラーは一般的なHTTPクライアントで呼べる。ZIPと環境変数には秘密値を置かず、公式の拡張機能で取得結果を実行環境内だけに短時間キャッシュしたい。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS Parameters and Secrets Lambda Extensionを追加し、実行ロールへ対象シークレットの取得を許可してローカルの拡張エンドポイントを使う。",
+        "explanation": "実行環境内のキャッシュを利用でき、秘密値をデプロイ成果物に含めない。"
+      },
+      {
+        "id": "B",
+        "text": "ビルド時にシークレットを読み、Lambdaレイヤーに平文JSONを含める。",
+        "explanation": "秘密値を成果物へ保存することになり、更新で再配備を要する。"
+      },
+      {
+        "id": "C",
+        "text": "シークレットの値を関数の環境変数に設定する。",
+        "explanation": "秘密の内容そのものを環境変数へ保存することになり、要件に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "API Gatewayの統合にシークレットの値を応答ヘッダーとして追加してLambdaへ流す。",
+        "explanation": "必要のない経路へ値を移すうえ、実行環境内での取得キャッシュにはならない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/with-secrets-manager.html",
+      "label": "LambdaのSecrets Manager利用"
+    },
+    "learning": {
+      "reason": "拡張機能は実行ロールで値を取得して実行環境内でキャッシュする。",
+      "concept": "TTLを設定し、ローテーション後に旧値を使用できる時間と取得遅延を調整する。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-075",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudfront-signed-url-custom-policy-cidr",
+    "title": "一つの配布ファイルを期限と接続元で制限",
+    "prompt": "専用線出口のIPv4アドレス範囲が固定の研修会社に、CloudFrontの単一ファイルへのURLを10分だけ提供したい。公開URLの発行先は利用者用アプリで、URLを知っているだけでは会社の範囲外から取得できないようにする。どの方法か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "定型ポリシーの署名付きURLを作り、アプリ内の説明文で許可CIDRを示す。",
+        "explanation": "定型ポリシーの期限は強制できるが、この方法では送信元ネットワークは検査しない。"
+      },
+      {
+        "id": "B",
+        "text": "オリジンのアクセスをCloudFrontだけに制限し、配布用URLは署名なしで発行する。",
+        "explanation": "閲覧者からCloudFrontに対する期限や接続元を限定できない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudFrontのキャッシュキーに閲覧者の国コードを追加する。",
+        "explanation": "キャッシュを分けても、会社のIPv4ネットワークのアクセス制御とはならない。"
+      },
+      {
+        "id": "D",
+        "text": "対象ファイルをリソースにし、有効期限とIpAddress条件を含むカスタムポリシーで署名付きURLを作る。",
+        "explanation": "閲覧者のIPv4範囲をCloudFrontで検査して範囲外の利用を拒否できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-creating-signed-url-custom-policy.html",
+      "label": "CloudFrontのカスタムポリシー付き署名URL"
+    },
+    "learning": {
+      "reason": "CloudFrontのカスタム署名ポリシーは有効期限とIPv4の送信元を合わせて制限できる。",
+      "concept": "版を指定したURL、期限、許可するネットワークを同じ署名対象にできる。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-076",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "iam-accessanalyzer-generate-template-cloudtrail-observed-actions",
+    "title": "稼働済みロールの広い権限を実績から絞る",
+    "prompt": "既存Lambdaに広いAWS権限があり、CloudTrailには計画した通常処理が記録されている。レビューの初期案として、このロールが直近に使用した操作に基づくIAMポリシーを作り、未実行の障害対応経路は追加で検証したい。どの機能を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IAMのポリシーシミュレーターで現在の権限が許可する全操作を新しいポリシーにする。",
+        "explanation": "許可済み操作を列挙しても、実際に使った操作としては絞り込めない。"
+      },
+      {
+        "id": "B",
+        "text": "IAM Access Analyzerのポリシー生成に対象ロールとCloudTrailの活動期間を指定し、生成された候補をレビューする。",
+        "explanation": "観測されたAWSの活動を基にポリシーテンプレートを得られる。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatchのLambda Invocationsを取得し、その呼び出し回数に基づき権限を削る。",
+        "explanation": "回数の合計から下流サービスのAPIアクションは判別できない。"
+      },
+      {
+        "id": "D",
+        "text": "IAM Access Analyzerのポリシー検証で現在のポリシーをそのまま検査する。",
+        "explanation": "構文やベストプラクティスの指摘は得られるが、実行した操作を抽出する機能ではない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-policy-generation.html",
+      "label": "IAM Access Analyzerのポリシー生成"
+    },
+    "learning": {
+      "reason": "CloudTrailの活動から最小権限ポリシーの候補を作成できる。",
+      "concept": "監査期間に実行しなかった作業まで網羅するものではなく、検証と補完が必要である。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-077",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudtrail-sourceidentity-assumerole-persist-through-chain",
+    "title": "共通ロールをまたいだ操作を利用者に帰属",
+    "prompt": "社内の認証基盤からIAMロールに入り、その後に別アカウントの共通ロールに切り替える。監査では共有セッション名だけでなく、最初に認証した利用者の固定IDを両方のロールの操作に結び付けたい。認証基盤側に信頼できるIDがある。どの機能を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各リソースへ最後に操作した利用者IDをタグとして書き戻す。",
+        "explanation": "並行操作で上書きされ、個々のCloudTrail操作へ帰属させられない。"
+      },
+      {
+        "id": "B",
+        "text": "各AssumeRoleのRoleSessionNameに同じ固定名productionを付ける。",
+        "explanation": "環境の名前を表すだけで、どの利用者か区別できない。"
+      },
+      {
+        "id": "C",
+        "text": "最初のLambdaのCloudWatch Logsに利用者IDを記録する。",
+        "explanation": "別アカウントの後続操作のセッション識別には反映されない。"
+      },
+      {
+        "id": "D",
+        "text": "初回ロールでSourceIdentityを設定・要求し、連鎖先の信頼にsts:SetSourceIdentityを許可してCloudTrailで確認する。",
+        "explanation": "操作のソースIDがロール切り替え後のセッションにも維持される。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_monitor.html",
+      "label": "IAMロールのソースIDと監査"
+    },
+    "learning": {
+      "reason": "AssumeRoleで設定したSourceIdentityは後続のロールチェーンでも維持される。",
+      "concept": "監査IDは信頼ポリシーと認証基盤で保証し、自由入力の名前とは区別する。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-078",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "apigateway-websocket-auth-only-at-connect",
+    "title": "接続後のアプリ操作を別の認可境界で守る",
+    "prompt": "API GatewayのWebSocket APIで、接続時に利用者を認証した後、宛先チャンネルごとに発言を許可する。接続中にもチャンネル権限は取り消される。カスタムLambdaオーソライザーをすべてのメッセージルートへ付ける案に代え、何を行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "$connectで認証し、利用者と接続IDを関連付け、メッセージ統合処理で操作時点のチャンネル権限を検査する。",
+        "explanation": "接続時の身元と、動的に変化する業務上の許可を分けて評価できる。"
+      },
+      {
+        "id": "B",
+        "text": "メッセージの本文に送信者IDを追加し、接続IDとの結び付きは確認しない。",
+        "explanation": "本文の入力だけでは接続を認証した利用者の操作だと確認できない。"
+      },
+      {
+        "id": "C",
+        "text": "各カスタムルートへ同じLambdaオーソライザーを登録し、統合側の権限チェックを外す。",
+        "explanation": "WebSocket APIのLambdaオーソライザーをこの形で個々のメッセージへ適用できない。"
+      },
+      {
+        "id": "D",
+        "text": "$connectで許可された時点のチャンネル一覧を使い、権限変更は一切読み直さない。",
+        "explanation": "接続後に権限を失った操作を拒否できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api-lambda-auth.html",
+      "label": "API Gateway WebSocketのLambdaオーソライザー"
+    },
+    "learning": {
+      "reason": "WebSocketのLambdaオーソライザーは接続時だけ利用できる。",
+      "concept": "接続の認証と、接続中の個々の業務操作に対する認可を分ける。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-079",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "rds-iam-db-connect-resource-id-not-instance-name",
+    "title": "IAM接続権限のARNが実際のDBを指すよう修正",
+    "prompt": "RDS PostgreSQLでIAMデータベース認証を有効にし、DBユーザーreportingに必要なDB側の設定を済ませた。トークン生成後、同じユーザーで接続する際に拒否された。rds-db:connectのARNには管理画面の表示用DBインスタンス名を入れている。何を修正するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IAMポリシーのサービス名をrdsへ変更し、rds:DescribeDBInstancesを許可する。",
+        "explanation": "DB情報を参照できてもデータベース接続の権限は付かない。"
+      },
+      {
+        "id": "B",
+        "text": "rds-db:connectのdbuserリソースにDbiResourceIdとreportingを使う。",
+        "explanation": "接続権限を照合するRDS内部のリソースIDとDBユーザーに一致する。"
+      },
+      {
+        "id": "C",
+        "text": "ARNのdbuserにアプリのIAMロール名を設定する。",
+        "explanation": "末尾はIAMロール名ではなくPostgreSQLのログインユーザー名である。"
+      },
+      {
+        "id": "D",
+        "text": "DBインスタンス名を入れたまま、トークン作成時のTCPポートだけを変更する。",
+        "explanation": "IAMが照合するリソースARNが変わらず、別のポートでは接続条件も壊れる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.IAMPolicy.html",
+      "label": "RDS IAMデータベース認証のポリシー"
+    },
+    "learning": {
+      "reason": "IAMデータベース接続用ARNには変更できないDBリソースIDとDBユーザー名を使う。",
+      "concept": "表示用のインスタンス識別子、エンドポイント、DbiResourceIdは異なる値である。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-080",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "secretsmanager-resource-policy-blockpublicpolicy-validation",
+    "title": "ポリシー保存時に意図しない公開を防ぐ",
+    "prompt": "社内でSecrets Managerのリソースポリシーを配備する。組織外の指定済みロールへの共有は既存の手順で必要だが、ワイルドカードなどによる広い公開アクセスを含むポリシーを更新操作そのもので拒否したい。何を加えるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "付与済みの具体的なプリンシパルを確認し、PutResourcePolicyでBlockPublicPolicyをtrueに指定する。",
+        "explanation": "公開範囲の検査を更新時に行い、広く許可するポリシーを保存しない。"
+      },
+      {
+        "id": "B",
+        "text": "すべてのシークレットを別のKMSキーへ変更し、ポリシー検査を省略する。",
+        "explanation": "暗号キーの指定だけでは、広いリソースポリシーの登録を拒否しない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailでPutResourcePolicyを通知し、管理者が翌日に検索する。",
+        "explanation": "検出には役立つが、広いアクセスのあるポリシーが一時的に有効になる。"
+      },
+      {
+        "id": "D",
+        "text": "Secrets Managerの自動ローテーションを短くし、公開ポリシーはそのまま登録する。",
+        "explanation": "資格情報の更新でアクセス許可の範囲は変わらない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html",
+      "label": "Secrets Managerのリソースポリシー"
+    },
+    "learning": {
+      "reason": "BlockPublicPolicyにより広いアクセスを認めるリソースポリシーの適用を拒否できる。",
+      "concept": "許可されたロールに限定した共有と、範囲が広すぎる付与を別として評価する。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-081",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "lambda-event-source-cross-account-sqs-policy-consumer",
+    "title": "別アカウントのキューから対象関数だけ処理",
+    "prompt": "アカウントAのLambdaが、同じリージョンにあるアカウントBの暗号化していないSQSをイベントソースとして処理する。Aの関数実行ロールは対象キューへのReceiveMessage、DeleteMessage、GetQueueAttributesが許可されている。Bが追加する権限はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Bのキューポリシーで対象のAの実行ロールに、必要な対象キューの操作を許可する。",
+        "explanation": "実行ロール側の許可とSQSリソース側の許可が揃い、イベントソースが処理できる。"
+      },
+      {
+        "id": "B",
+        "text": "BのキューポリシーからすべてのAllowを除去し、A側の実行ロールだけを使う。",
+        "explanation": "アカウントをまたぐ要求で必要なSQS側の許可が欠ける。"
+      },
+      {
+        "id": "C",
+        "text": "BのキューポリシーでAの関数ARNにlambda:InvokeFunctionを付ける。",
+        "explanation": "その権限をキューポリシーで付けても、AからSQSへの読み取り許可にはならない。"
+      },
+      {
+        "id": "D",
+        "text": "Aの関数へSQSサービスプリンシパルの呼び出し許可だけを付ける。",
+        "explanation": "この方式のイベントソースはキューを読み取るため、SQSが関数を直接Invokeする設定ではない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-configure.html",
+      "label": "LambdaのSQSイベントソースマッピング"
+    },
+    "learning": {
+      "reason": "アカウントをまたぐSQSアクセスでは、キュー側の許可も必要になる。",
+      "concept": "Lambdaがキューをポーリングする構成では、SQSが関数を直接呼び出す許可とは異なる。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-082",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "appsync-multiple-auth-per-field-iam-job",
+    "title": "公開スキーマの中で社内更新だけをバッチへ許可",
+    "prompt": "社内のAppSync APIはCognitoで利用者の読み取りを認証する。追加認可モードとしてAWS_IAMは既に設定した。バッチ処理はIAM実行ロールを持ち、特定のMutationだけを呼ばせたい。通常利用者には既存の読み取りを維持し、バッチロールにはほかのAPIフィールドを許可したくない。どの設定が適切か。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バッチにCognitoの共有利用者パスワードを保存して全フィールドへアクセスさせる。",
+        "explanation": "フィールドごとの最小権限と、バッチの既存IAMロールを使う要件を満たさない。"
+      },
+      {
+        "id": "B",
+        "text": "ロールにappsync:StartSchemaCreationだけを付与する。",
+        "explanation": "この操作はスキーマ作成向けで、GraphQLのMutation実行許可にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "対象のMutationをスキーマの@aws_iamで許可し、返却される型も必要なフィールドに同じ認可を適用する。",
+        "explanation": "IAM署名の呼び出しが対象フィールドと返却型の必要な値を使用できる。"
+      },
+      {
+        "id": "D",
+        "text": "実行ロールのappsync:GraphQLを対象のMutationフィールドARNに絞る。",
+        "explanation": "ロールに与えるGraphQL操作の範囲を必要なフィールドだけに限定できる。"
+      },
+      {
+        "id": "E",
+        "text": "デフォルト認可をAPI_KEYへ変更して、バッチと全利用者へ同じキーを配る。",
+        "explanation": "既存の利用者認証を維持できず、バッチだけの権限範囲も定まらない。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/appsync/latest/devguide/security-authz.html",
+      "label": "AppSyncの認証と認可"
+    },
+    "learning": {
+      "reason": "認可モード追加とスキーマの適用範囲、IAMのAPIフィールド権限を合わせる。",
+      "concept": "IAM方式をAPIに追加しても各フィールドへの許可をロールで制限できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d2-083",
+    "revision": 1,
+    "category": "セキュリティ",
+    "examDomain": "セキュリティ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "ssm-parameters-recursive-path-access-subtree-boundary",
+    "title": "共有設定ツリーで機密の子階層を切り離す",
+    "prompt": "Parameter Storeの/app/team配下を再帰取得する権限をアプリに与えたい。/app/team/secret配下の別システム用設定は渡したくない。親パスへのGetParametersByPathと子パスへの拒否を組み合わせた試験では、親から再帰すると子が列挙された。どの設計に変えるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "親パスへの再帰取得をそのまま許可し、子パスのGetParameterだけを明示拒否する。",
+        "explanation": "親のGetParametersByPathで取得できる範囲は変わらない。"
+      },
+      {
+        "id": "B",
+        "text": "アプリにWithDecryptionをfalseとして要求させ、同じIAM許可を与える。",
+        "explanation": "呼び出し元任せでパスの認可を行わず、シークレット名と非暗号化値の保護にもならない。"
+      },
+      {
+        "id": "C",
+        "text": "SecureStringをStringへ変更し、暗号化設定を単純にする。",
+        "explanation": "データ型を変更しても階層の再帰範囲は変わらず、暗号化保護も失う。"
+      },
+      {
+        "id": "D",
+        "text": "アプリ設定と機密設定を互いに祖先・子孫にならない別パスへ分け、アプリの再帰取得は専用パスだけに許可する。",
+        "explanation": "再帰取得で拡張される範囲に機密項目が入らない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-restrict-parameter-access.html",
+      "label": "Parameter Storeの階層アクセス制御"
+    },
+    "learning": {
+      "reason": "再帰取得できる親の下には、取得させたくない機密パラメーターを配置しない。",
+      "concept": "公開する設定と機密設定の階層を分けて、許可する再帰ルートを一致させる。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-056",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "lambda-publish-version-snapshot-before-promote",
+    "title": "QA確認時のコードと設定を一つの版で固定",
+    "prompt": "Lambdaの$LATESTを共有し、QAの承認後に運用チームが公開している。確認中に別の開発者がコードや環境変数を更新するため、承認時と本番の内容がずれる。QA開始時の内容を固定し、本番が公開時だけその版を指すようにする。何を行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "QAが終わるまでバージョンを発行せず、承認後に現在の設定で初めて発行する。",
+        "explanation": "QAの途中で発行対象が変わる問題が残る。"
+      },
+      {
+        "id": "B",
+        "text": "QAと本番の両方を修飾なしの関数ARNへ向け、承認後に現在の$LATESTを使う。",
+        "explanation": "別の配備で$LATESTが変わるため、承認した内容との一致を保てない。"
+      },
+      {
+        "id": "C",
+        "text": "QAの前にバージョンを発行してその番号のARNでテストし、承認後に本番エイリアスを同じ番号へ更新する。",
+        "explanation": "確認した版のコードと設定をそのまま本番に差し向けられる。"
+      },
+      {
+        "id": "D",
+        "text": "QA開始時にLambdaレイヤーだけを版固定し、関数コードは$LATESTで確認する。",
+        "explanation": "レイヤーを固定しても関数コードや関数設定は変更され得る。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-versions.html",
+      "label": "Lambdaの関数バージョン"
+    },
+    "learning": {
+      "reason": "テストするコードとバージョン固有の設定を公開バージョンで固定する。",
+      "concept": "変更できる$LATESTと、明示的に昇格する本番エイリアスで役割を分ける。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-057",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "codebuild-webhook-base-ref-pull-request-filter-groups",
+    "title": "PRだけ指定ブランチへ向いたときに起動",
+    "prompt": "GitHubと連携するCodeBuildで、mainを宛先とするPRの作成または更新だけを自動テストしたい。mainへの直接pushや、main以外を宛先とするPRは起動しない。ウェブフックのどこを設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "EVENTをPUSHだけにし、HEAD_REFをmainへ絞る。",
+        "explanation": "指定したのは直接pushで、PRの作成と更新は対象にならない。"
+      },
+      {
+        "id": "B",
+        "text": "同じグループにPRイベントとHEAD_REFの^refs/heads/main$を設定する。",
+        "explanation": "HEAD_REFはPRの送信元で、宛先がmainであることを指定できない。"
+      },
+      {
+        "id": "C",
+        "text": "同じフィルターグループにEVENTのPULL_REQUEST_CREATED、PULL_REQUEST_UPDATEDと、BASE_REFの^refs/heads/main$を設定する。",
+        "explanation": "PRの作成・更新で、基点がmainの場合だけテストを起動できる。"
+      },
+      {
+        "id": "D",
+        "text": "PRイベントとBASE_REF条件を別々のフィルターグループに入れる。",
+        "explanation": "いずれかのグループが成立すると起動するため、両条件を必須にできない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/github-webhook.html",
+      "label": "CodeBuildのGitHubウェブフックイベント"
+    },
+    "learning": {
+      "reason": "PRの宛先ブランチはBASE_REFで評価し、同じフィルター集合内でイベント種別と組み合わせる。",
+      "concept": "送信元ブランチとPRの宛先は独立した条件である。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-058",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-cross-region-artifact-store",
+    "title": "別リージョンの処理へ同じパイプラインから成果物を渡す",
+    "prompt": "東京のCodePipelineでアプリをビルドし、同じアカウントの大阪で対応するデプロイアクションを実行する。パイプラインは東京の成果物ストアだけを使用している。同じパイプラインでビルド成果物を大阪へ渡すため、どの変更が必要か。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "大阪リージョンの同一アカウントに成果物用S3バケットを用意し、artifactStoresの大阪エントリーへ登録する。",
+        "explanation": "アクションに渡す成果物のリージョン別ストアを定義する。"
+      },
+      {
+        "id": "B",
+        "text": "東京のartifactStoreを一つだけ設定し、両アクションのRegionに東京を指定する。",
+        "explanation": "大阪のアクションを実行する要件を満たさない。"
+      },
+      {
+        "id": "C",
+        "text": "大阪へ同名のS3バケットを作るだけで、artifactStoresには登録しない。",
+        "explanation": "CodePipelineは設定されていない別リージョンのストアを名前から推測しない。"
+      },
+      {
+        "id": "D",
+        "text": "大阪で実行するアクションの定義に大阪のRegionを指定する。",
+        "explanation": "CodePipelineがそのアクションをビルド元と異なるリージョンで実行する。"
+      },
+      {
+        "id": "E",
+        "text": "東京のアーティファクトバケットを公開し、大阪のアクション設定をそのURLへ向ける。",
+        "explanation": "CodePipelineのリージョン別ストア設定を満たさず、成果物を公開してしまう。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-cross-region.html",
+      "label": "CodePipelineのクロスリージョンアクション"
+    },
+    "learning": {
+      "reason": "パイプラインはアクションを置くリージョンごとのアーティファクトストアを使う。",
+      "concept": "アクションの実行リージョンと、その入力成果物が置かれるリージョンを合わせる。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-059",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-source-revision-override-commit-id-for-investigation",
+    "title": "現行先端を動かさず指定コミットを再現",
+    "prompt": "通常はmainの最新コミットを使うCodePipelineがある。数日前の不具合を調べるため、Gitのブランチ先端を動かさず、既存のCodeCommitソースアクションから特定コミットを選んでパイプラインを一度だけ手動実行したい。何を指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "StartPipelineExecutionのsourceRevisionsで対象ソースアクション名、revisionTypeのCOMMIT_ID、実際のコミットIDを指定する。",
+        "explanation": "ソースアクションに、今回の実行で取得する改訂を明示できる。"
+      },
+      {
+        "id": "B",
+        "text": "CodeBuildの処理終了後に、配備タグの名前をコミットIDへ書き換える。",
+        "explanation": "異なるコミットから作られたビルド成果物の中身は変わらない。"
+      },
+      {
+        "id": "C",
+        "text": "以前と同じ実行名をつけてソースの改訂を指定せず、同じ成果物が取れると仮定する。",
+        "explanation": "既定のソースは現在の設定に従い、過去のコミットを名前から取得しない。"
+      },
+      {
+        "id": "D",
+        "text": "パイプライン実行IDにGitコミットIDと同じ文字列を指定し、通常どおりmainを取得する。",
+        "explanation": "実行IDと取得するソースの改訂は関連付けられない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines-trigger-source-overrides.html",
+      "label": "CodePipelineのソース改訂の指定"
+    },
+    "learning": {
+      "reason": "手動実行時のソース改訂指定を使うと、リポジトリの可変な参照を動かさずに対象コミットを選べる。",
+      "concept": "パイプライン実行ID、ソースアクション名、GitのコミットIDは異なる値である。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-060",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-resource-signal-wait-instances-ready",
+    "title": "起動した全インスタンスが実際に設定を完了するまで待つ",
+    "prompt": "CloudFormationで2台のEC2を含む新しいAuto Scalingグループを作る。グループ作成後も各インスタンスのUser Dataが依存パッケージをインストールする。2台とも初期化できるまでスタックを作成完了とせず、期限を過ぎたら失敗にする。どの組み合わせか。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "User Dataに固定のsleepを入れ、CreationPolicyを使わない。",
+        "explanation": "スタックは固定待ちの終了や実際の成功を完了条件にしない。"
+      },
+      {
+        "id": "B",
+        "text": "各インスタンスで初期化の結果が確定した後に、cfn-signalでグループへ結果を送る。",
+        "explanation": "CloudFormationが実際の初期化結果を受け取れる。"
+      },
+      {
+        "id": "C",
+        "text": "CloudFormationのDependsOnで、別のS3バケットができた後にグループを作る。",
+        "explanation": "リソース間の作成順だけを指定し、各インスタンスの初期化結果を確認しない。"
+      },
+      {
+        "id": "D",
+        "text": "Auto ScalingグループにCreationPolicyのResourceSignalを付け、必要数を2、タイムアウトを運用上の上限にする。",
+        "explanation": "成功の件数を作成完了に必要な条件にできる。"
+      },
+      {
+        "id": "E",
+        "text": "失敗後のDeletionPolicyにRetainを指定する。",
+        "explanation": "削除の扱いに関する項目で、初期化の成功件数は判定しない。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html",
+      "label": "CloudFormation CreationPolicy"
+    },
+    "learning": {
+      "reason": "インフラの作成状態とアプリの初期化成功は別々に確認する。",
+      "concept": "ResourceSignalの必要件数と待機時間を定義し、初期化処理から成功を通知できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-061",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-stack-drift-detect-managed-properties",
+    "title": "手動変更とテンプレートの差を配備前に調べる",
+    "prompt": "引き継いだスタックに、運用中のコンソール変更が混在しているという申告があった。次の配備の前に、CloudFormationが対応しているリソースについて、明示したプロパティが実環境と一致するか見たい。リソースを変更せずに何を実行するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudTrailのUpdateStackだけを抽出し、記録がなければ手動変更がないと判断する。",
+        "explanation": "コンソールからリソース自身のAPIを直接呼ぶ変更はUpdateStackとして記録されない。"
+      },
+      {
+        "id": "B",
+        "text": "ドリフト検出を開始し、完了後にドリフトしたリソースの実際値と期待値を比較する。",
+        "explanation": "変更の適用なしに、管理対象で起きた定義との差を調査できる。"
+      },
+      {
+        "id": "C",
+        "text": "現在のテンプレートを指定して、テンプレート自体の妥当性だけを検証する。",
+        "explanation": "テンプレートの検証では、稼働中のリソースの実際値を調べない。"
+      },
+      {
+        "id": "D",
+        "text": "テスト用アカウントに現在のテンプレートで別のスタックを作り、作成成功を元環境の一致とみなす。",
+        "explanation": "別環境で作成できることから元環境の実際値は分からない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-drift.html",
+      "label": "CloudFormationのドリフト検出"
+    },
+    "learning": {
+      "reason": "実リソースと現在のスタック定義の差は、次版との計画差分と別に調べる。",
+      "concept": "ドリフト検出が対応するリソース型と、定義で値を指定したプロパティが対象になる。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-062",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sam-local-start-api-http-route-mapping",
+    "title": "HTTPメソッドとLambdaイベントの結線をローカル確認",
+    "prompt": "SAMで定義したローカルのAPIに、フロントエンドの実際のHTTPクライアントからGETとPOSTを送る。ルートが正しいLambdaに届き、HTTP応答へ変換されることをクラウドへ配備せずに確かめたい。どれを使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各ハンドラーへ直接sam local invokeを実行できれば、ルートの実アクセス確認に代える。",
+        "explanation": "直接呼び出しだけではフロントエンドからのHTTPリクエストがどの関数に届くかを検査できない。"
+      },
+      {
+        "id": "B",
+        "text": "sam validateを実行し、テンプレートが解析できればクライアントとの疎通を確認したとみなす。",
+        "explanation": "テンプレート検証は要求と応答の実行を行わない。"
+      },
+      {
+        "id": "C",
+        "text": "sam packageで成果物をS3へ置き、S3のオブジェクトURLへGETとPOSTを送る。",
+        "explanation": "成果物の保存先はローカルのAPI Gateway互換のルーティングを行わない。"
+      },
+      {
+        "id": "D",
+        "text": "SAMテンプレートのAPIが定義されたアプリをsam local start-apiで立ち上げ、各ローカルURLへクライアントから送信する。",
+        "explanation": "SAM CLIがHTTPエンドポイントを用意し、ルートに対応した関数を呼び出す。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-local-start-api.html",
+      "label": "SAM CLIのローカルAPIサーバー"
+    },
+    "learning": {
+      "reason": "ローカルHTTPサーバーはSAMのAPI定義とLambdaを結び付ける。",
+      "concept": "一度の関数呼び出しの確認と、複数のHTTPルートを通した検証を区別する。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-063",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "codebuild-secondary-artifacts-split-release-and-symbols",
+    "title": "同じビルドから配布物と内部診断物を分ける",
+    "prompt": "CodeBuildでバイナリと社内用デバッグ記号を生成する。CodePipelineの後続アクションは配布バイナリだけを検証・配備し、デバッグ記号は別の後続アクションで内部保管する。ビルドを再実行せず、二つを別の名前付き成果物として渡す設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "環境変数に二つのファイル名を登録し、CodeBuildの作業ディレクトリを後続アクションでそのまま参照する。",
+        "explanation": "別の実行環境にファイルは自動継承されない。"
+      },
+      {
+        "id": "B",
+        "text": "CodeBuildのキャッシュへ両ファイルを保存し、後続の配備処理で名前を指定する。",
+        "explanation": "キャッシュはビルドの高速化に使うもので、パイプラインの名前付き成果物にならない。"
+      },
+      {
+        "id": "C",
+        "text": "両方のファイルを一つのZIPにまとめ、各後続アクションへ同じ成果物を指定する。",
+        "explanation": "二つの独立した成果物として配備・保管する要件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "buildspecのsecondary-artifactsを使って集合ごとに識別子とファイルを指定し、CodePipelineの出力アーティファクト名を合わせる。",
+        "explanation": "二つの後続処理に、それぞれ必要なビルド成果物を独立して渡せる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html",
+      "label": "CodeBuildの成果物とsecondary-artifacts"
+    },
+    "learning": {
+      "reason": "生成元は一つでも、ファイルを異なる成果物集合へ割り付けられる。",
+      "concept": "後続のアクションへ入力として渡す成果物名を、ビルドの成果物識別子と揃える。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-064",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "codebuild-buildspec-project-override-precedence",
+    "title": "同じ環境変数でCIだけ異なる接続先にする",
+    "prompt": "共有buildspecにはAPP_STAGE=testがある。専用CodeBuildプロジェクトでAPP_STAGE=preprodに設定し、今回だけStartBuild APIでAPP_STAGE=stagingを上書きした。同じ名前をシェルで再設定しない。今回のコマンドが読む値はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "preprod。プロジェクトがソースより外で動くのでAPIの上書きより優先される。",
+        "explanation": "プロジェクトの定義はbuildspecより優先されるが、StartBuildの上書きには負ける。"
+      },
+      {
+        "id": "B",
+        "text": "staging。StartBuildのオーバーライドが最優先される。",
+        "explanation": "該当の実行だけに指定した値を用いる。"
+      },
+      {
+        "id": "C",
+        "text": "3つの値が区切り文字で連結され、アプリが選択する。",
+        "explanation": "同名環境変数について値を結合する規則はなく、一つの値が選ばれる。"
+      },
+      {
+        "id": "D",
+        "text": "test。buildspecは環境構築後に読まれるので常に優先される。",
+        "explanation": "buildspecのenvにある定義は、同名のプロジェクト値や開始時の値より下位になる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html",
+      "label": "CodeBuildの環境変数の優先順位"
+    },
+    "learning": {
+      "reason": "ビルド開始時のオーバーライドはプロジェクト定義とbuildspecより優先される。",
+      "concept": "実行ごと、プロジェクトごと、ファイルの初期値を異なる層として理解する。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-065",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "appconfig-extension-after-deployment-event-trigger",
+    "title": "設定の配布完了を既存の変更台帳へ通知",
+    "prompt": "AppConfigで機能設定を段階配布する。既存の変更台帳には、テスト段階や開始時点ではなく、対象の配布が完了した場合にだけ環境IDと配布IDを記録したい。設定値を読み取るアプリは変更しない。どの組み合わせか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "設定のJSONスキーマバリデーターに台帳の更新URLを追加する。",
+        "explanation": "スキーマ検査は配布完了の通知を行わない。"
+      },
+      {
+        "id": "B",
+        "text": "コードのリポジトリに設定をコミットした時点で配布完了を記録する。",
+        "explanation": "コミットはAppConfigの段階配布が終了した証拠にならない。"
+      },
+      {
+        "id": "C",
+        "text": "アプリの各インスタンスでGetLatestConfigurationの成功を検知し、そのたびに同じ台帳へ書く。",
+        "explanation": "各クライアントの取得は配布の完了を意味せず、アプリ改修と重複記録も発生する。"
+      },
+      {
+        "id": "D",
+        "text": "配布完了のアクションポイントON_DEPLOYMENT_COMPLETEで台帳更新Lambdaを呼ぶAppConfig拡張を関連付ける。",
+        "explanation": "完了のライフサイクルにフックし、アプリの設定取得に依存せず記録できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-creating-custom-extensions.html",
+      "label": "AWS AppConfigの拡張機能"
+    },
+    "learning": {
+      "reason": "設定配布のライフサイクルには、配布完了を処理するアクションポイントがある。",
+      "concept": "アプリの設定取得と、運用フロー向けの配布完了通知を分けられる。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-066",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "codedeploy-inplace-bundle-fileexists-overwrite-previous-asset",
+    "title": "既存の管理外ファイルと配備ファイルの衝突を解消",
+    "prompt": "EC2へのCodeDeployインプレース配備で、配備先に以前の手動導入が残した設定ファイルがある。今後はリビジョンのファイルを正とし、同名の場合は配備時に既存ファイルを置き換える。AppSpecに入れる設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AppSpecのfile_exists_behaviorにRETAINを設定する。",
+        "explanation": "競合した既存ファイルを残すため、新版を正にする要件と逆になる。"
+      },
+      {
+        "id": "B",
+        "text": "AppSpecのfile_exists_behaviorにDISALLOWを設定する。",
+        "explanation": "既存ファイルがあると配備が失敗するため、置換にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "AppSpecのfile_exists_behaviorにOVERWRITEを設定する。",
+        "explanation": "既存ファイルと競合した場合に配備リビジョンのファイルへ置き換える。"
+      },
+      {
+        "id": "D",
+        "text": "配備グループのロールバックを有効にして、競合時は以前の設定を復元する。",
+        "explanation": "配備の失敗後に戻す設定で、新しいファイルを正として上書きする挙動にはならない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file-structure-files.html",
+      "label": "CodeDeploy AppSpecのfile_exists_behavior"
+    },
+    "learning": {
+      "reason": "過去の配備で管理していない既存ファイルと衝突した場合の挙動を指定できる。",
+      "concept": "リビジョンが所有するファイルと、対象外で別途保持するファイルを配備定義で区別する。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-067",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "ecr-private-repository-required-digest-in-task-definition",
+    "title": "同じタグが動いても検証済みイメージを確実に配備",
+    "prompt": "ECSで同じlatestタグを開発チームが更新する。品質検証の際にイメージのダイジェストを記録した。承認後に別のイメージがlatestになっても、置換タスクが検証済みのイメージを確実に使うようにしたい。何をタスク定義に指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "imageにビルドで使ったコミットメッセージをタグとして設定する。",
+        "explanation": "その名前で対応するイメージを参照できる保証がなく、内容固定を示す値でもない。"
+      },
+      {
+        "id": "B",
+        "text": "latestを使い、タスクを複数回再起動してダウンロード時点をずらす。",
+        "explanation": "後から指した内容が正しいとは保証されない。"
+      },
+      {
+        "id": "C",
+        "text": "imageにECRリポジトリURIと検証したsha256ダイジェストを@で結合して指定する。",
+        "explanation": "タグが移動してもタスク定義が示すマニフェストは変わらない。"
+      },
+      {
+        "id": "D",
+        "text": "imageはlatestのままにし、タスク定義のリビジョン番号だけを増やす。",
+        "explanation": "タスク定義の版を固定しても、参照する可変タグの中身までは固定しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html",
+      "label": "ECSタスク定義のコンテナイメージ"
+    },
+    "learning": {
+      "reason": "ビルドの内容をイメージダイジェストで指定できる。",
+      "concept": "タグの現在値から解決する配備と、検証済みの内容を明示指定する配備は保証範囲が異なる。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-068",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sam-parameters-deployment-environment-config",
+    "title": "同じテンプレートを環境に合わせて配備",
+    "prompt": "開発・検証・本番で同じSAMテンプレートを使い、環境ごとのスタック名、リージョン、パラメーターをチーム内で再現したい。手動で値を並べる作業を減らし、配備ジョブの入力で対象環境を明示したい。どの方法を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "環境ごとにSAMテンプレートをコピーし、共通リソースの変更を手作業で反映する。",
+        "explanation": "設定が分岐し、同じテンプレートを使う要件を失う。"
+      },
+      {
+        "id": "B",
+        "text": "三つの環境に同じスタック名と固定パラメーターを渡し、配備後にコンソールで調整する。",
+        "explanation": "実環境がテンプレート外の変更に依存し、再現性が下がる。"
+      },
+      {
+        "id": "C",
+        "text": "samconfig.tomlに環境別のdeployパラメーターを定義し、sam deploy --config-envで明示選択する。",
+        "explanation": "同じテンプレートから環境ごとに再現性のあるオプションで配備できる。"
+      },
+      {
+        "id": "D",
+        "text": "全環境の認証情報とパラメーター値を関数のビルド成果物に埋め込む。",
+        "explanation": "配備先の選択と無関係な成果物を環境に依存させ、認証情報も不必要に保存する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html",
+      "label": "SAM CLI設定ファイルの環境"
+    },
+    "learning": {
+      "reason": "SAM CLIの設定ファイルはコマンドのオプションを名前付き環境ごとに保存できる。",
+      "concept": "テンプレートを共用し、差が必要な環境パラメーターだけを配備時に選択する。"
+    }
+  },
+  {
+    "id": "dva-c03-d3-069",
+    "revision": 1,
+    "category": "テストとデプロイ",
+    "examDomain": "テストとデプロイ",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-parameter-novalue-remove-property",
+    "title": "本番だけにDBの復元元を指定",
+    "prompt": "CloudFormationで本番DBを既存スナップショットから初回作成する。検証環境は空のデータベースから始める。同じテンプレートを使い、検証環境ではDBSnapshotIdentifierプロパティそのものを送らないようにする。どの式を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Fn::Ifで検証時は文字列nullを返す。",
+        "explanation": "文字列が値として渡され、プロパティを省略できない。"
+      },
+      {
+        "id": "B",
+        "text": "Fn::Ifで本番はスナップショットID、検証はAWS::NoValueを返す。",
+        "explanation": "条件に合わない環境ではプロパティを定義から取り除く。"
+      },
+      {
+        "id": "C",
+        "text": "リソース全体に本番だけのConditionを付ける。",
+        "explanation": "検証環境で空のDB自体も作成されなくなる。"
+      },
+      {
+        "id": "D",
+        "text": "DBSnapshotIdentifierの初期値として空のテーブル名を返す。",
+        "explanation": "プロパティを残したまま別種のリソース名を渡す。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-conditions.html",
+      "label": "CloudFormation AWS::NoValue"
+    },
+    "learning": {
+      "reason": "条件に応じて値を変えるだけでなく、プロパティ自体を条件付きで削除できる。",
+      "concept": "空文字を送る場合と、サービス側へそのプロパティを渡さない場合を区別する。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-056",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-percentile-low-sample-count-ignore",
+    "title": "閑散時間に少数アクセスのp99で状態が揺れる",
+    "prompt": "CloudWatchのアラームがAPI呼び出しのp99を監視する。深夜の1リクエストだけで状態が変わるが、リクエスト数が十分な時間にはp99の悪化を検出したい。閾値は維持し、統計の信頼性が足りない期間に現在状態を保つにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "単一の観測が閾値を超えたら必ずALARMとなるよう評価期間を1にする。",
+        "explanation": "少数サンプルで評価する原因を残す。"
+      },
+      {
+        "id": "B",
+        "text": "パーセンタイルアラームのEvaluateLowSampleCountPercentileをignoreにする。",
+        "explanation": "サンプル数が統計上少なすぎる期間は状態変更を抑制できる。"
+      },
+      {
+        "id": "C",
+        "text": "TreatMissingDataにnotBreachingだけを設定する。",
+        "explanation": "1リクエストから値が報告されている期間は欠損データとはみなされない。"
+      },
+      {
+        "id": "D",
+        "text": "p99をAverageへ変更し、同じ閾値を使う。",
+        "explanation": "リクエストが十分な期間にも上位の遅延をp99として監視できなくなる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/percentiles-with-low-samples.html",
+      "label": "CloudWatchの低サンプル数とパーセンタイル"
+    },
+    "learning": {
+      "reason": "データポイントなしと、少数のサンプルから得たパーセンタイルを区別する。",
+      "concept": "低サンプル数で評価しない設定は、その期間にアラーム状態を切り替えない。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-057",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-logs-live-tail-filter-during-release",
+    "title": "配備直後の新しいログ行だけを監視",
+    "prompt": "担当者は本番配備開始後の30分間、複数のCloudWatch Logsロググループで直近に到着するERRORを一つの画面に表示したい。過去ログの再集計や継続的な宛先設定を用意せず、作業が終わったら監視を閉じる。どの機能を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各ロググループのLive Tailの代わりにCloudWatchメトリクスフィルターで合計だけを表示する。",
+        "explanation": "件数の測定はできるが、必要なログ行自体は表示しない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatch Logs Live Tailセッションを開き、対象のロググループとERRORのフィルターパターンを指定する。",
+        "explanation": "新たに取り込まれる一致ログを作業中のセッションへ送れる。"
+      },
+      {
+        "id": "C",
+        "text": "古いログストリーム名を指定してGetLogEventsを一回呼び、その時点の出力を更新せずに表示する。",
+        "explanation": "以降に入ったログや複数グループを継続して確認できない。"
+      },
+      {
+        "id": "D",
+        "text": "ログの保持期間を1日に変え、毎回古いログを含む全件エクスポートを行う。",
+        "explanation": "保持期間を変えても新規到着分をライブ表示できない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatchLogs_LiveTail.html",
+      "label": "CloudWatch Logs Live Tail"
+    },
+    "learning": {
+      "reason": "調査中だけ新規の取り込みを追う場合はライブセッションを使える。",
+      "concept": "一定期間を対象に検索する機能や、常時送信する購読設定とは用途が異なる。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-058",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sqs-oldest-message-poison-standard-tail-rotation",
+    "title": "最古メッセージの経過時間だけで滞留を判定できない",
+    "prompt": "標準SQSキューで、同じメッセージを何度受信しても処理に失敗する。DLQへの移動条件にはまだ達していない。ApproximateAgeOfOldestMessageが下がった後もアプリログには同じ処理エラーがある。エラーを切り分けるとき、この指標をどう解釈するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "表示される秒数を受信回数に変換し、個別メッセージのReceiveCountとして使う。",
+        "explanation": "時間と受信回数は別の量であり、指標は個別メッセージを同定しない。"
+      },
+      {
+        "id": "B",
+        "text": "低下した時間分だけ処理が速くなったとして、同じエラーを過去の残存ログと扱う。",
+        "explanation": "指標の低下だけで障害メッセージが処理済みとは断定できない。"
+      },
+      {
+        "id": "C",
+        "text": "最古メッセージの経過時間から、一件目が必ずFIFO順に処理済みと判断する。",
+        "explanation": "標準キューには厳密な順序保証がなく、再受信の挙動も考慮していない。"
+      },
+      {
+        "id": "D",
+        "text": "再受信される処理不能メッセージが指標から外れる場合を考慮し、受信と失敗の記録およびDLQの状態を確認する。",
+        "explanation": "古い失敗メッセージが残った状態でも他の項目の経過時間が示され得る。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-available-cloudwatch-metrics.html",
+      "label": "SQSの最古メッセージ経過時間"
+    },
+    "learning": {
+      "reason": "標準キューでは複数回受信された処理不能メッセージを後ろへ移動する場合がある。",
+      "concept": "指標が下がっても、その一件の処理が成功して削除された証拠にはならない。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-059",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "ecs-container-health-command-loopback-shell-expansion",
+    "title": "タスク内のヘルスチェックでだけ環境変数が展開されない",
+    "prompt": "ECSのタスク定義のヘルスチェックをCMD形式にした。シェルが解釈する環境変数APP_PORTと論理演算子を同じコマンドで使っているため失敗する。コンテナにはシェルとcurlがあり、同じ操作をシェルで手動実行すると成功する。タスク定義をどう修正するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "タスク定義のヘルスチェックをCMD-SHELLの形式に変更する。",
+        "explanation": "コンテナ内のシェルが環境変数と演算子を解釈できる。"
+      },
+      {
+        "id": "B",
+        "text": "CMDのまま試行回数だけを増やす。",
+        "explanation": "解釈されないコマンドを繰り返しても、環境変数の展開は行われない。"
+      },
+      {
+        "id": "C",
+        "text": "Dockerイメージに同じCMD形式のHEALTHCHECKを追加し、タスク定義は変更しない。",
+        "explanation": "ECSでタスク定義のヘルスチェックが使われるため、既存の誤った形式が残る。"
+      },
+      {
+        "id": "D",
+        "text": "開始猶予時間を延ばして、CMDが環境変数を展開するまで待つ。",
+        "explanation": "猶予は失敗をカウントする時期の設定で、コマンドの評価方式は変えない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/healthcheck.html",
+      "label": "ECSのコンテナヘルスチェック"
+    },
+    "learning": {
+      "reason": "コマンドを直接実行するCMDと、シェルを介すCMD-SHELLで評価方法が異なる。",
+      "concept": "環境変数展開や論理演算子を使う場合はシェルが評価する形式にする。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-060",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "api-gateway-rest-unexpected-5xx-malformed-proxy-output-envelope",
+    "title": "Lambdaが成功なのにRESTクライアントには502",
+    "prompt": "REST APIのLambdaプロキシ統合で、呼び出された関数は例外を出さず、ログにはJSONの業務データを返したことが出る。クライアントは502を受ける。直近の変更で関数は出力として業務データのオブジェクトだけを直接返すようになった。どこを修正するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "関数タイムアウトだけを倍にして、同じオブジェクトを返す。",
+        "explanation": "実行は完了しており、戻り値の形式を変えなければ502は残る。"
+      },
+      {
+        "id": "B",
+        "text": "業務データが空の場合だけstatusCodeを追加し、通常のオブジェクトはそのまま返す。",
+        "explanation": "有効なプロキシ応答形式は通常の業務データを返す場合にも必要となる。"
+      },
+      {
+        "id": "C",
+        "text": "トップレベルに数値のstatusCodeを持たせ、業務データをJSON文字列にしたbodyを返す。",
+        "explanation": "REST APIのプロキシ応答の形式になり、ゲートウェイがHTTP応答を構築できる。"
+      },
+      {
+        "id": "D",
+        "text": "API Gatewayのデータキャッシュを有効にし、成功していた古いレスポンスを使い続ける。",
+        "explanation": "新しい呼び出しが返す不正形式を修正せず、キャッシュミスでは失敗する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html",
+      "label": "API Gateway Lambdaプロキシ統合の出力形式"
+    },
+    "learning": {
+      "reason": "RESTプロキシ統合にはレスポンスの包み方が定義されている。",
+      "concept": "Lambdaコードの終了が成功でも、ゲートウェイが解釈できない出力は失敗になる。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-061",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudfront-error-caching-minimum-ttl-origin-recovered",
+    "title": "オリジン復旧後も保存済みエラーが返る",
+    "prompt": "CloudFront配下のS3オリジンでオブジェクトの配備が遅れ、一部エッジが404を受け取った。S3で取得できるようになった後も同じURLはしばらく404のままである。成功レスポンスのTTLを維持して、今後の404の保持を短くするにはどこを調整するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "404を利用者へ200で返すカスタムエラー応答だけを設定する。",
+        "explanation": "表示するステータスを変えても、エラーを保持する期間の設定は残る。"
+      },
+      {
+        "id": "B",
+        "text": "CloudFrontの圧縮を無効化して、404のキャッシュだけを直ちに失効させる。",
+        "explanation": "圧縮はコンテンツ転送形式で、エラーの保持時間を調整しない。"
+      },
+      {
+        "id": "C",
+        "text": "404のカスタムエラー応答でError Caching Minimum TTLを下げ、オリジンが指定するエラーのキャッシュ有効期間も確認する。",
+        "explanation": "404のキャッシュを短くでき、200応答の通常のTTLを変えずに済む。"
+      },
+      {
+        "id": "D",
+        "text": "正常応答のキャッシュポリシーのDefault TTLだけを常に0にする。",
+        "explanation": "正常ファイルのキャッシュを失い、404専用の保持を直接設定しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/custom-error-pages-expiration.html",
+      "label": "CloudFrontのエラー応答のキャッシュ有効期間"
+    },
+    "learning": {
+      "reason": "エラー応答のキャッシュ期間は正常なオブジェクトの設定と別に扱える。",
+      "concept": "オリジンが返すキャッシュヘッダーの影響と、S3オリジンの最小1秒にも留意する。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-062",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "dynamodb-contributor-insights-hot-key-identification",
+    "title": "制限を起こすキーの候補をログに値を足さず見つける",
+    "prompt": "DynamoDBの基表で一部のキーに書き込みが集中する兆候があり、テーブル全体のスロットリング件数しか見えていない。アプリのログにすべての主キーを追加せず、処理量が多いキーやスロットルされたキーの上位を得たい。何を有効化するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DynamoDBのPoint-in-Time Recoveryを有効にして、最新のテーブルを復元する。",
+        "explanation": "データを復旧する機能で、アクセスごとのキーの偏りは集計しない。"
+      },
+      {
+        "id": "B",
+        "text": "対象テーブルでCloudWatch Contributor Insightsを有効にし、よくアクセスされるキーと制限されたキーのレポートを調べる。",
+        "explanation": "アプリに処理状況を追記せず、偏りが疑われるキーを切り分けられる。"
+      },
+      {
+        "id": "C",
+        "text": "すべてのSDK呼び出しでReturnItemCollectionMetricsをすぐ追加する。",
+        "explanation": "項目コレクションのメトリクスを得る設定で、制限されたキーの順位を管理するものではない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatchでConsumedWriteCapacityUnitsのSumを表示し、最大値の時刻をキー文字列とみなす。",
+        "explanation": "テーブル単位の消費量から個別キーを特定できない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/contributorinsights.html",
+      "label": "DynamoDBのCloudWatch Contributor Insights"
+    },
+    "learning": {
+      "reason": "テーブル単位の総量を見ても、負荷を支配するキーは分からない。",
+      "concept": "Contributor Insightsのルールにより、対象リソースのキー別の順位を確認できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-063",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "fargate-service-availability-insufficient-ip-resources",
+    "title": "CPU枠はあるのに新しいFargateタスクが配置されない",
+    "prompt": "ECS Fargateのサービスを拡張したら、直前まで同じイメージで動いていた新タスクが起動せず、サービスイベントに対象サブネットでネットワークインターフェイス用の空きIPがないとある。アカウントのCPU枠には余裕がある。同じVPC内で復旧するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "利用できるIPがある同じVPCの別サブネットを用意し、サービスのネットワーク設定で配置候補に加える。",
+        "explanation": "新しいタスクのENIに割り当てるIPを確保できる。"
+      },
+      {
+        "id": "B",
+        "text": "アカウントのFargate vCPUクォータだけを引き上げる。",
+        "explanation": "サブネットの利用可能IP数はvCPUの引き上げでは増えない。"
+      },
+      {
+        "id": "C",
+        "text": "ネットワークモードをbridgeへ変えて、既存のFargate上に配備する。",
+        "explanation": "Fargateではawsvpcが必要であり、bridgeへ切り替える解決はできない。"
+      },
+      {
+        "id": "D",
+        "text": "同じサブネットのままタスクCPUを半分にする。",
+        "explanation": "タスク数が変わらなければ、ENIに必要なIP数は減らない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-task-networking.html",
+      "label": "ECS Fargateのawsvpcネットワーク"
+    },
+    "learning": {
+      "reason": "FargateのタスクはそれぞれネットワークインターフェイスとプライベートIPを使う。",
+      "concept": "CPU、コンテナイメージ、サブネットのアドレス枠は独立して消費される。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-064",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "kinesis-iterator-age-correlate-read-throughput-throttling",
+    "title": "遅いコンシューマーのシャード読み取りを調べる",
+    "prompt": "共通スループットのKinesisコンシューマーを運用している。GetRecords.IteratorAgeMillisecondsが継続して上がり、同時間帯にReadProvisionedThroughputExceededが一部のシャードで増える。PutRecord系は成功し、アプリの処理時間に変化はない。最初にどの原因を疑うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ライターがPutRecordの上限を超え、まだ登録されていないレコードが年齢に加算されている。",
+        "explanation": "提示された容量超過は読み取り側で、未登録レコードを読むことはできない。"
+      },
+      {
+        "id": "B",
+        "text": "コンシューマー側のCPU負荷が上がったため、KinesisがReadProvisionedThroughputExceededを発行した。",
+        "explanation": "この指標はストリームの読み取り上限で拒否した要求を表し、読み手のCPU負荷は測定しない。"
+      },
+      {
+        "id": "C",
+        "text": "データ保持期間が短すぎて、すでに期限切れのレコードをGetRecordsが何度も読み取っている。",
+        "explanation": "期限切れは再取得できる古いデータとして残らず、読み取りスロットリングの指標も説明しない。"
+      },
+      {
+        "id": "D",
+        "text": "該当シャードの共有読み取り容量のスロットリングで、コンシューマーが新しいレコードに追いつけていない。",
+        "explanation": "読取失敗の増加と取得レコードの経過時間上昇を同時に説明できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html",
+      "label": "Kinesis Data StreamsのCloudWatchメトリクス"
+    },
+    "learning": {
+      "reason": "レコードの年齢と、読み取り側の容量超過を同じシャード・時刻で突き合わせる。",
+      "concept": "読み取り速度が取り込みに追いつかない原因を、書き込みの失敗と区別できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-065",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-request-metrics-prefix-filter-vs-storage-count",
+    "title": "同じバケットの配信対象だけの遅延を測る",
+    "prompt": "S3バケットには静的配信用のassets/と内部資料のprivate/が同居する。運用担当はassets/への要求だけについてCloudWatchでFirstByteLatencyや5xxErrorsを追いたい。内部資料について詳細メトリクスの追加料金を発生させたくない。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3 Inventoryをassets/に絞り、リクエストごとの応答時間と5xxを一覧から計算する。",
+        "explanation": "インベントリはオブジェクト等のリストで、要求ごとのレイテンシや応答コードを記録しない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatchの日次のバケットサイズメトリクスを使い、assets/の応答が遅い日を探す。",
+        "explanation": "BucketSizeBytesで得られるのはデータ量であり、対象の要求の最初のバイトまでの時間は測らない。"
+      },
+      {
+        "id": "C",
+        "text": "リクエストメトリクスの設定でassets/のプレフィックスフィルターを使う。",
+        "explanation": "該当キーの要求を分類し、対象のレイテンシとエラーを集計できる。"
+      },
+      {
+        "id": "D",
+        "text": "全バケットのリクエストメトリクスを有効にして、同じ合計値をassets/として表示する。",
+        "explanation": "内部資料の要求も集計・課金対象に加え、assets/だけの症状を分離できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/metrics-configurations.html",
+      "label": "S3リクエストメトリクスの設定"
+    },
+    "learning": {
+      "reason": "S3のリクエストメトリクスはプレフィックスなどで対象を限定できる。",
+      "concept": "日次のストレージ量と、要求数・最初のバイトまでの時間は別の指標である。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-066",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "bedrock-inference-throttling-on-demand-quota-token-burst",
+    "title": "同時生成で増えた上限超過を平滑化",
+    "prompt": "Bedrockで単一リージョンの同じモデルへオンデマンド推論する。短時間に大量の長文要求が来た場合だけThrottlingExceptionになり、リクエストや応答の内容に問題はない。即時同期応答は不要だ。モデルや配信リージョンを変えず上限内で処理を続けるにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "一度スロットルされた要求を全件即時に再試行し、同じサイズの入力を並行で送る。",
+        "explanation": "元の要求と再送が重なり、スロットルが続きやすくなる。"
+      },
+      {
+        "id": "B",
+        "text": "各要求のmaxTokensだけを下げ、入力トークン数と同時実行数は維持する。",
+        "explanation": "出力に由来する消費は抑えられるが、長文入力の集中やリクエスト数の上限は解決しない。"
+      },
+      {
+        "id": "C",
+        "text": "対象モデルのクォータに合わせてキューの取り出しと同時実行を調整し、スロットルは指数バックオフとジッターで再試行する。",
+        "explanation": "瞬間的なトークンや要求の集中を緩和できる。"
+      },
+      {
+        "id": "D",
+        "text": "ネットワークタイムアウトのみを長くし、送信速度は維持する。",
+        "explanation": "サービスが上限で拒否した要求はクライアント側の待ち時間延長だけでは通らない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/quotas.html",
+      "label": "Amazon Bedrockの推論クォータ"
+    },
+    "learning": {
+      "reason": "モデルと経路のリクエスト数やトークンの上限を確認し、負荷を平滑化する。",
+      "concept": "大量に同時再送する動作を避け、キューと待ち時間のばらつきを使って処理を分散できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-067",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "lambda-follow-up-metrics-postruntime-extension-duration",
+    "title": "関数の処理は速いが終了時の付加処理が重い",
+    "prompt": "監視拡張の追加後、Lambdaハンドラーの処理区間に変化がないが、実行終了時の時間が増えた。拡張機能が実行終了を通知するまでの後処理が増えているかを、関数のCloudWatch指標で測りたい。どの指標か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Throttlesを確認する。",
+        "explanation": "実行が拒否された件数であり、受理済み関数の後処理の時間を測らない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatch Logsの保持期間を延長して記録を増やす。",
+        "explanation": "過去ログは残るが、終了時に拡張が費やした時間を測る設定ではない。"
+      },
+      {
+        "id": "C",
+        "text": "Errorsを確認する。",
+        "explanation": "エラー件数を表すため、正常な実行での後処理時間は示さない。"
+      },
+      {
+        "id": "D",
+        "text": "PostRuntimeExtensionsDurationを確認する。",
+        "explanation": "ランタイムの終了後に実行した拡張の時間を測る指標である。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics-types.html",
+      "label": "Lambdaのパフォーマンスメトリクス"
+    },
+    "learning": {
+      "reason": "ランタイムが完了してから拡張機能が完了するまでを観測する指標がある。",
+      "concept": "初期化、ハンドラー処理、拡張の後処理を区別して切り分ける。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-068",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "xray-adaptive-sampling-fixed-target-first-and-rate",
+    "title": "低負荷サービスの少量のトレースを残しピークを抑える",
+    "prompt": "X-Rayのサンプリングルールを使うAPIに、平常時は毎秒0〜3件、ピーク時は数千件が来る。各秒に要求があれば最初の1件を確保し、追加分は5%だけトレースしたい。どのルールを指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Reservoir sizeを1、Fixed rateを1.0に設定する。",
+        "explanation": "固定枠を超えた要求まで全件サンプリングする。"
+      },
+      {
+        "id": "B",
+        "text": "Reservoir sizeを0、Fixed rateを0.05に設定する。",
+        "explanation": "全要求に割合だけが適用され、低負荷の秒に最初の1件を確保できない。"
+      },
+      {
+        "id": "C",
+        "text": "Reservoir sizeを5、Fixed rateを0.0に設定する。",
+        "explanation": "最大で最初の5件を固定で拾い、追加要求に5%を適用しない。"
+      },
+      {
+        "id": "D",
+        "text": "サンプリングルールのReservoir sizeを1、Fixed rateを0.05に設定する。",
+        "explanation": "各秒の固定枠を確保し、枠を超えた要求の5%をサンプリングする構成になる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/xray/latest/devguide/xray-console-sampling.html",
+      "label": "X-Rayのサンプリングルール"
+    },
+    "learning": {
+      "reason": "先に各秒の固定枠を使い、その枠を超えたリクエストへ割合を適用する。",
+      "concept": "固定枠と追加割合を組み合わせると、低負荷と高負荷で必要な観測量を確保できる。"
+    }
+  },
+  {
+    "id": "dva-c03-d4-069",
+    "revision": 1,
+    "category": "トラブルシューティングと最適化",
+    "examDomain": "トラブルシューティングと最適化",
+    "version": "DVA-C03 オリジナル問題 2026-11",
+    "similarityGroup": "opensearch-search-slow-logs-index-threshold-enable",
+    "title": "検索全体が遅い原因を対象シャードの検索処理から調査",
+    "prompt": "Amazon OpenSearch Serviceで一部の検索だけが遅い。どのインデックスのどのシャードで検索処理が長くかかったかを、一定の閾値を超えた場合にCloudWatch Logsへ記録したい。監査ログは設定済みだが遅いクエリの記録が得られない。何を追加するか。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ドメインからCloudWatch Logsへの検索スローログ公開を有効にする。",
+        "explanation": "ドメインで発生した検索スローログを受け取る経路になる。"
+      },
+      {
+        "id": "B",
+        "text": "インデクシングスローログだけを有効にし、書き込み時間を検索時間として読む。",
+        "explanation": "書き込みの遅延を測るため、検索クエリや取得段階の時間にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "対象インデックスで検索スローログのQueryとFetchに必要な閾値を設定する。",
+        "explanation": "設定閾値を超えたシャード側の検索段階をログに記録できる。"
+      },
+      {
+        "id": "D",
+        "text": "検索APIから返るドメイン全体の時間を集計し、遅いシャード名を合計値から推測する。",
+        "explanation": "合計の時間だけでは対象インデックスの個別シャードは特定できない。"
+      },
+      {
+        "id": "E",
+        "text": "監査ログの保持期間だけを延ばし、アクセス時刻を検索時間とみなす。",
+        "explanation": "操作時刻と各シャードの検索処理時間は別である。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createdomain-configure-slow-logs.html",
+      "label": "OpenSearch Serviceのslow logs"
+    },
+    "learning": {
+      "reason": "ドメインのログ公開と対象インデックスの検索スローログ閾値を揃える。",
+      "concept": "アクセス監査と検索内部の処理時間記録は用途が異なる。"
+    }
   }
 ]

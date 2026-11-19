@@ -669,3 +669,15 @@ AWSサービスでの開発20問、セキュリティ17問、テストとデプ�
 - [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
 - [Aurora Data APIの操作](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.calling.cli.html)
 - [Cognitoのユーザー存在エラー制御](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pool-managing-errors.html)
+
+## DVA-C03の独立325問と重複なしの模試5回分
+
+開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問を追加した。既存261レコードを保持し、累計326レコードのうち独立325問。各分野に100・85・70・70問を揃えた。単一選択297問、複数選択29問で、単一選択の正答位置はAから順に74・74・74・75問。
+
+新規設問では、一括発行結果の個別処理、GraphQLのバッチ結果の対応順、S3バケットキーを有効にした際の暗号化コンテキスト、配備時の初期化シグナル、検索シャードのスローログなどを扱う。一次資料へ照合し、既存のDAXの設問と同じ強い整合性を問う草稿はAppSyncのバッチリゾルバーへ差し替えた。SQSのグループIDで並び順を決める問題と、重複排除IDで同じ本文の別操作を区別する問題は、それぞれ別の設計判断を問う。
+
+出典308件の取得、全5,680通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、分野配分20・17・14・14問を満たす、相互に重複のない模試5回分を128組生成した。AWSの4分野の配分は採点対象50問に適用される。教材では練習結果を解説に反映するため全65問を採点する。
+
+- [DVA-C03公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/developer-associate-03.html)
+- [AppSyncのLambdaバッチリゾルバー](https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-lambda-js.html)
+- [S3バケットキーと暗号化コンテキスト](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html)

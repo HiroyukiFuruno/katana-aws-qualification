@@ -1,36 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { AccountNavigation, useHomePath } from './auth/AccountNavigation';
 import { localePath } from './locales';
 import { SiteControls, usePreferences } from './preferences';
+import { useDismissiblePopover } from './useDismissiblePopover';
 
 function StudyNavigation({ active, subpage }: { active: boolean; subpage?: string }) {
   const { locale, t } = usePreferences();
   const [open, setOpen] = useState(false);
-  const group = useRef<HTMLDivElement>(null);
-  const button = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function closeFromOutside(event: Event) {
-      if (event.target instanceof Node && !group.current?.contains(event.target)) setOpen(false);
-    }
-
-    function closeWithEscape(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return;
-      setOpen(false);
-      button.current?.focus();
-    }
-
-    document.addEventListener('pointerdown', closeFromOutside);
-    document.addEventListener('focusin', closeFromOutside);
-    document.addEventListener('keydown', closeWithEscape);
-    return () => {
-      document.removeEventListener('pointerdown', closeFromOutside);
-      document.removeEventListener('focusin', closeFromOutside);
-      document.removeEventListener('keydown', closeWithEscape);
-    };
-  }, [open]);
+  const { group, button } = useDismissiblePopover(open, setOpen);
 
   const currentQuestions =
     subpage === 'questions' ? 'page' : subpage && subpage !== 'fundamentals' ? 'location' : undefined;
@@ -113,8 +90,8 @@ export function SiteHeader({ section, subpage }: { section: string; subpage?: st
           </a>
         </nav>
         <div className="account-controls">
-          <AccountNavigation />
           <SiteControls />
+          <AccountNavigation />
         </div>
       </div>
     </header>

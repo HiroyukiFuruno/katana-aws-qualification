@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
+import { AccountBenefits } from './AccountBenefits';
 import { AccountSettings } from './AccountSettings';
 import { useAccount } from './AuthContext';
 import { dashboardPath } from './navigation';
@@ -26,11 +27,16 @@ export function AccountPages({ page }: { page: string }) {
           <ProviderButtons />
         </section>
       ) : !loggedIn ? (
-        <section className="card">
-          <p>{t('accountSsoOnly')}</p>
-          <ProviderButtons />
-          <a href={localePath(locale, 'study')}>{t('accountGuestStudy')}</a>
-        </section>
+        <div className="account-login-layout">
+          <section className="card account-login-card">
+            <p className="eyebrow">{t('accountLoginEyebrow')}</p>
+            <h2>{t('accountLoginTitle')}</h2>
+            <p>{t('accountSsoOnly')}</p>
+            <ProviderButtons />
+            <a href={localePath(locale, 'study')}>{t('accountGuestStudy')}</a>
+          </section>
+          <AccountBenefits />
+        </div>
       ) : (
         <>
           <section className="card">

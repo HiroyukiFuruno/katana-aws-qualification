@@ -1,9 +1,10 @@
-import type { Course } from './certifications';
+import { AccountBenefits } from './auth/AccountBenefits';
 import { CourseNavigation, CourseOverview } from './CourseNavigation';
 import { CoursePractice } from './CoursePractice';
 import { CourseSettings } from './CourseSettings';
-import { selectExamQuestions } from './exam';
+import type { Course } from './certifications';
 import { ExamMode } from './ExamMode';
+import { selectExamQuestions } from './exam';
 import { examKeyFor } from './history';
 import { usePreferences } from './preferences';
 import { useCourseBanks } from './useCourseBanks';
@@ -81,6 +82,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
           notice={notice}
         />
         {section()}
+        {page !== 'exam' && !progress.session && <AccountBenefits context="study" showAction />}
       </main>
     </>
   );

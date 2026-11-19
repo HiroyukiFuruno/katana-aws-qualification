@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { signIn } from './helpers';
+import { authorizationUrl, signIn } from './helpers';
 import { authOrigin, testKey } from './settings';
 
 test('custom provider administration rejects private issuer addresses', async ({ request }) => {
@@ -69,9 +69,21 @@ test('a consumed authorization code cannot be exchanged again', async ({ page })
     const url = new URL(request.url());
     if (url.pathname === '/ja/auth/callback/' && url.searchParams.has('code')) callback = url.href;
   });
-  await signIn(page);
+  await page.goto('/ja/login/');
+  const authorization = await authorizationUrl(page);
+  const verifier = await page.evaluate(() => localStorage.getItem('kaq.auth.v1-code-verifier'));
+  expect(verifier).toBeTruthy();
+  await page.goto(authorization);
+  await page.getByLabel('Username or email').fill('learner');
+  await page.getByLabel('Password', { exact: true }).fill('integration-only');
+  await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+  await expect(page).toHaveURL(/\/ja\/dashboard\/$/);
   expect(callback).toBeTruthy();
+  await page.evaluate(
+    (value) => localStorage.setItem('kaq.auth.v1-code-verifier', value ?? ''),
+    verifier,
+  );
   await page.goto(callback);
-  await expect(page.getByRole('alert')).toContainText('もう一度ログイン');
+  await expect(page.locator('[data-auth-failure="expired"]')).toBeVisible();
   await expect(page).toHaveURL(/\/ja\/auth\/callback\/$/);
 });

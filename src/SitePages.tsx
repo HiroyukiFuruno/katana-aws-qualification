@@ -36,7 +36,7 @@ export function Home() {
     <main id="main" className="landing">
       <section className="landing-hero">
         <div className="shell layout-stack">
-          <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja', '試験対策')}</h1>
+          <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja', 'AWS')}</h1>
           <p>{wrapJapanesePhrase(t('landingIntro'), locale === 'ja', 'KAQ')}</p>
           <LandingCatalogStats />
           <AccountEntryCta />
@@ -60,6 +60,11 @@ export function Home() {
             </span>
           </a>
         </div>
+        <section className="landing-concept layout-stack" aria-labelledby="landing-concept-title">
+          <h2 id="landing-concept-title">{t('landingConceptTitle')}</h2>
+          <p>{t('landingConceptIntro')}</p>
+          <p>{t('landingConceptUses')}</p>
+        </section>
         <AccountBenefits context="home" showAction />
         <LandingFaq />
       </div>

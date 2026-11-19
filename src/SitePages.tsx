@@ -164,6 +164,14 @@ export function Home() {
           </span>
         </a>
       </div>
+      <section className="shell landing-faq" aria-labelledby="landing-faq-title">
+        <h2 id="landing-faq-title">{t('landingFaq')}</h2>
+        <div className="card">
+          <h3>{t('commuteStudyQuestion')}</h3>
+          <p>{t('commuteStudyAnswer')}</p>
+          <a href={localePath(locale, 'study/questions')}>{t('learnFromQuestions')}</a>
+        </div>
+      </section>
     </main>
   );
 }

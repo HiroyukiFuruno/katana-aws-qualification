@@ -62,13 +62,7 @@ function App() {
           <AccountPrivacy />
         </main>
       ) : section === 'assessment' ? (
-        <main className="shell" id="main">
-          <div className="intro">
-            <h1>{t('skillsAssessment')}</h1>
-            <p>{t('roadmapIntro')}</p>
-          </div>
-          <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
-        </main>
+        <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
       ) : (
         <Home />
       )}

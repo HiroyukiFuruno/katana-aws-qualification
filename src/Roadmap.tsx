@@ -23,6 +23,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
   const today = assessmentDate();
   const remaining = remainingCertifications(profile.earned, today);
   const items = assessmentItems(profile.earned, today);
+  const estimate = assessmentEstimate(items.length);
   const item = items[position];
   const complete =
     items.length > 0 &&
@@ -73,7 +74,18 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
   }
 
   return (
-    <>
+    <main className="shell" id="main">
+      <div className="intro">
+        <h1>{t('skillsAssessment')}</h1>
+        <p>{t('roadmapIntro')}</p>
+        {phase === 'setup' && !complete && items.length > 0 && (
+          <p>
+            <output>
+              <strong>{t('assessmentDuration', estimate)}</strong>
+            </output>
+          </p>
+        )}
+      </div>
       {phase !== 'questions' && <AccountBenefits context="assessment" showAction />}
       {saveError && (
         <p className="notice" role="alert">
@@ -87,7 +99,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
           <CertificationDirectory mode="earned" selected={profile.earned} onToggle={toggleEarned} />
           {remaining.length ? (
             <button type="button" className="primary" onClick={enterAssessment}>
-              {complete ? t('certOrder') : t('startAssessment', assessmentEstimate(items.length))}
+              {complete ? t('certOrder') : t('startAssessment', estimate)}
             </button>
           ) : (
             <p role="status">{t('allEarned')}</p>
@@ -122,6 +134,6 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
           }}
         />
       )}
-    </>
+    </main>
   );
 }

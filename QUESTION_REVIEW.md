@@ -741,3 +741,68 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 - [Site-to-Site VPNのトンネルログ](https://docs.aws.amazon.com/vpn/latest/s2svpn/monitoring-logs.html)
 - [Secrets Managerのローテーション方式](https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotation-strategy.html)
 - [Shield Advancedのプロアクティブエンゲージメント](https://docs.aws.amazon.com/waf/latest/developerguide/ddos-srt-proactive-engagement.html)
+
+## DEA-C01のフル模試1回分
+
+新規56問と既存10問をレビューした。既存のIcebergのMERGEを選ぶ問題と、順不同の更新でMERGEを使う問題は同じ類似グループとした。どちらも出題候補として保持し、同じ回には片方だけを出す。既存10問は設問ID、改訂番号、本文、選択肢、正答を維持し、設問に対応する出典と分野を付けた。
+
+全66レコードのうち、独立した出題枠は65問。AWS公式の配分34・26・22・18％は採点対象に対する割合で、練習用には65問・130分に合わせて分野ごとに22・17・14・12問とした。単一選択59問、複数選択7問。フル模試の生成512回で毎回の配分と類似グループの排他を検証し、カスタム全65件数、全1,168通りの採点、出典65件も確認した。
+
+分野ごとの5倍に達するには、順に88・68・56・48問を追加する。
+
+- [DEA-C01の試験概要](https://aws.amazon.com/certification/certified-data-engineer-associate/)
+- [DEA-C01の公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01.html)
+- [AthenaのIcebergテーブルへのMERGE](https://docs.aws.amazon.com/athena/latest/ug/merge-into-statement.html)
+
+## DEA-C01の重複しないフル模試2回分
+
+新規65問を追加し、既存66レコードを維持した。類似グループで数えた独立130問の分野別内訳は44・34・28・24問。単一選択117問、複数選択14問で、単一選択の正答位置はAから順に30・29・29・29問。
+
+取り込みでは、Firehoseが意図的な破棄を認識する応答と、配信時にParquetへ変換する設定を別の判断として扱った。監視ではDMSの取得と適用の遅延を分け、Redshiftでは結果の処理がディスクへ退避した実行ステップを特定する。TLSの完全検証を別サービスで再び選ばせる草稿は、DataBrewで原本を保ちながら派生データから直接識別子を除く問題へ差し替えた。
+
+65問・130分、分野配分22・17・14・12問のフル模試を、互いに設問が重複しない2回分として128組生成した。フル模試の生成512回、カスタム全65件数、採点2,320通り、出典128件を確認した。分野ごとの5倍まで残り66・51・42・36問。
+
+- [Firehoseの変換結果コード](https://docs.aws.amazon.com/firehose/latest/dev/data-transformation-status-model.html)
+- [DMSのレプリケーション監視](https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Monitoring.html)
+- [Redshiftのステップ別クエリ情報](https://docs.aws.amazon.com/redshift/latest/dg/SYS_QUERY_DETAIL.html)
+- [DataBrewでの個人識別情報の取り扱い](https://docs.aws.amazon.com/databrew/latest/dg/personal-information-protection.html)
+
+## DEA-C01の重複しないフル模試3回分
+
+新規65問を追加し、既存131レコードを維持した。類似グループで数えた独立195問の分野別内訳は66・51・42・36問。単一選択174問、複数選択22問で、単一選択の正答位置はAから順に44・44・43・43問。
+
+複数のAirflow DAGで共有するAPIの同時接続制限、Redshift Data APIでの完了確認とページ取得、Glueのパーティションメタデータを取得前に絞る条件を追加した。既出のRedshiftクライアントとのTLS接続に近い草稿は、OpenSearchノード間の通信を保護する設定へ差し替えた。Lake FormationではテーブルのSELECT付与と、Athenaがデータアクセス用の資格情報を得るためのIAM許可を別の判断として扱った。
+
+65問・130分、分野配分22・17・14・12問のフル模試を、互いに設問が重複しない3回分として128組生成した。フル模試の生成512回、カスタム全65件数、採点3,488通り、出典185件を確認した。分野ごとの5倍まで残り44・34・28・24問。
+
+- [Airflowのプール](https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/pools.html)
+- [Redshift Data API](https://docs.aws.amazon.com/redshift/latest/mgmt/data-api.html)
+- [Glueでのパーティション条件](https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-pushdown.html)
+- [OpenSearchのノード間暗号化](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ntn.html)
+
+## DEA-C01の重複しないフル模試4回分
+
+新規65問を追加し、既存196レコードを維持した。類似グループで数えた独立260問の分野別内訳は88・68・56・48問。単一選択229問、複数選択32問で、単一選択の正答位置はAから順に58・57・57・57問。
+
+DocumentDBの複合索引、Neptuneの多段探索、CQL互換のKeyspaces、MemoryDBの永続ストア、Aurora PostgreSQLのHNSWを追加した。運用では、DynamoDBのGSI作成進捗と主表へのスロットリングの影響を別のメトリクスで評価する。再試行を選ばせる草稿の一つは、EventBridge Pipesの処理段階を記録し、実行データはログに含めない設定に差し替えた。
+
+65問・130分、分野配分22・17・14・12問のフル模試を、互いに設問が重複しない4回分として128組生成した。フル模試の生成512回、カスタム全65件数、採点4,688通り、出典249件を確認した。分野ごとの5倍まで残り22・17・14・12問。
+
+- [Amazon DocumentDBの複合索引](https://docs.aws.amazon.com/documentdb/latest/devguide/indexes-compound.html)
+- [pgvectorのHNSW](https://github.com/pgvector/pgvector#hnsw)
+- [DynamoDBのオンラインGSI管理](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.OnlineOps.html)
+- [EventBridge Pipesのロギング](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-logs.html)
+
+## DEA-C01の重複しないフル模試5回分
+
+新規65問を追加し、既存261レコードを維持した。独立325問の分野別内訳は、データの取り込みと変換110問、データストア管理85問、データ運用とサポート70問、データセキュリティとガバナンス60問。単一選択288問の正答位置はA〜D各72問で、複数選択は38問。
+
+同一キーの明細を維持するSparkの左アンチ結合、SageMaker Unified StudioへのOpenLineageイベント登録、Glue Data Qualityでの合否判定を伴わない統計収集、AWS KMSでのリージョン内復号を追加した。CloudTrail Lakeを扱う設問では、対象の組織が既存利用者でイベントを取り込み済みと明記した。Iceberg MERGEの既存2問は同じ類似グループに属し、保存済み模試から参照できるよう両方の設問IDを保持した。
+
+65問・130分のフル模試を分野別に22・17・14・12問で構成する。フル模試512回、互いに重複しないフル模試5回分を128組、カスタム全65件数、採点5,824通り、出典URL311件を検証した。
+
+- [AWS認定 データエンジニア アソシエイト試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01.html)
+- [Spark SQLの結合](https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-join.html)
+- [SageMaker Unified Studioのデータリネージ](https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/datazone-data-lineage.html)
+- [Glue Data Qualityのアナライザー](https://docs.aws.amazon.com/glue/latest/dg/dqdl.html#dqdl-analyzers)
+- [AWS KMSのマルチリージョンキー](https://docs.aws.amazon.com/kms/latest/developerguide/multi-region-keys-overview.html)

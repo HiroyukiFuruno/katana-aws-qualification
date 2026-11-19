@@ -2,7 +2,6 @@ import type { Certification, Course } from './certificationTypes';
 
 const starterCourseIds = new Set([
   'clf-c02',
-  'dea-c01',
   'mla-c01',
   'sap-c03',
   'dop-c02',
@@ -52,6 +51,25 @@ export const cloudOpsCourse: Course = {
   reviewedMock: true,
 };
 
+const dataEngineerMock = 'courses/dea-c01/full-mock-2026-11.json';
+
+const dataEngineerCourse: Course = {
+  practice: [{ path: dataEngineerMock, label: 'saaFull' }],
+  mock: dataEngineerMock,
+  archives: ['courses/dea-c01/questions.json'],
+  exam: {
+    minutes: 130,
+    distribution: {
+      データの取り込みと変換: 22,
+      データストア管理: 17,
+      データ運用とサポート: 14,
+      データセキュリティとガバナンス: 12,
+    },
+  },
+  fixedExamFromBlueprint: true,
+  reviewedMock: true,
+};
+
 const uniqueCounts: Record<string, number> = {
   'aif-c01': 9,
   'aip-c01': 9,
@@ -90,9 +108,12 @@ function starterCourse(certification: Certification): Course {
 }
 
 export function withAvailableCourses(catalog: Certification[]): Certification[] {
-  return catalog.map((certification) =>
-    certification.course || !starterCourseIds.has(certification.id)
-      ? certification
-      : { ...certification, course: starterCourse(certification) },
-  );
+  return catalog.map((certification) => {
+    if (certification.course) return certification;
+    if (certification.id === 'dea-c01') return { ...certification, course: dataEngineerCourse };
+    if (starterCourseIds.has(certification.id)) {
+      return { ...certification, course: starterCourse(certification) };
+    }
+    return certification;
+  });
 }

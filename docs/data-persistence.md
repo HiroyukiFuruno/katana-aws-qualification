@@ -6,8 +6,8 @@
 
 - `initialize_learning_state()`は、初回だけ本人の`generation`を作成して返す。`learning_state`は本人だけが読めるRLSテーブルである。
 - 全ての書込みRPCは`p_expected_generation`を必須にする。`append_learning_event`はさらに`event_id`と正規化済みJSONのSHA-256で再送を冪等にし、同じIDで異なるpayloadを`23505`で拒否する。
-- `start_exam_session(...)`は固定された`question_order`、サーバー時刻で計算する`deadline_at`、初期`revision`を返す。同一入力の再送だけが同じ試験を返す。`save_exam_response(..., p_expected_generation, p_expected_revision, ...)`と`finalize_exam_session(p_exam_id, p_expected_generation, p_expected_revision, p_events)`は世代と楽観ロックを使う。締切後の保存、固定順序以外の提出、異なるpayloadでの再提出は拒否する。提出済みへの同一payload再送だけは同じ`submitted_at`を返す。
-- `replace_roadmap_profile(..., p_expected_generation, p_expected_revision)`も同じ二重ロックを使い、取得資格と査定回答を置換する。移行RPCも世代を必須にする。
+- `start_exam_session(...)`は固定された`question_order`、サーバー時刻で計算する`deadline_at`、初期`revision`を返す。同一入力の再送だけが同じ試験を返す。`save_exam_response(..., p_expected_generation, p_expected_revision, ...)`と`finalize_exam_session(p_exam_id, p_expected_generation, p_expected_revision, p_events)`は世代と楽観ロックを使う。締切後の保存、固定順序以外の提出、異なるpayloadでの再提出は拒否する。締切後の自動採点は、締切前に保存された選択・選択時刻・所要時間・flagと完全一致するpayloadだけを確定する。responseがない設問、および選択時刻なしでflagだけを保存した未回答設問は、空選択・不正解・報酬0のときだけ許可し、クライアント時刻を使わず有効終了時刻を回答時刻に固定する。`submitted_at`は採点上の有効終了時刻（受信時刻と締切の早い方）、`submitted_received_at`はサーバーが確定要求を受信した実時刻である。提出済みへの同一payload再送だけは同じ`submitted_at`を返す。
+- `replace_roadmap_profile(..., p_expected_generation, p_expected_revision)`も同じ二重ロックを使い、取得資格と査定回答を置換する。JSON `null`は置換対象ではなく不正入力として拒否し、保存済みprofileを消さない。移行RPCも世代を必須にする。
 - `reset_my_learning_data(p_expected_generation)`は呼出し本人のデータだけを削除し、同じトランザクションでgenerationを増やす。reset前のタブや遅延再送は`PT409`で拒否され、履歴を復活させられない。
 - generation不一致はPostgREST HTTP 409になる専用SQLSTATE `PT409`、試験・profile revisionの競合は`40001`である。前者ではキューを破棄してstateを再読込し、後者では最新の対象だけを再読込して利用者に競合を示す。
 
@@ -22,7 +22,9 @@
 | `exam-draft-local-storage` | `saa-study.exam.v1` と`katana.certification-exam.v1.*` | 固定順序・期限を検証できる場合だけ移行し、そうでない下書きは理由付きで拒否する |
 | `profile-local-storage` | `katana.certification-profile.v1` | profile置換と行記録を同一移行処理で行う |
 
-旧試験は`import_exam_session`でmanifestの1行に束縛して取り込む。入力には元の`started_at`、`deadline_at`、固定`question_order`、draft response、提出済みなら全exam eventを含める。DBは元の期限をそのまま格納し、期限切れdraftの再開や新しい開始時刻による延長を拒否する。試験行・回答イベント・manifest行は1トランザクションで確定する。
+旧試験は`import_exam_session`でmanifestの1行に束縛して取り込む。入力には元の`started_at`、`deadline_at`、固定`question_order`、draft response、提出済みなら全exam eventを含める。DBは元の期限をそのまま格納し、期限切れdraftの再開や新しい開始時刻による延長を拒否する。manifest行は取り込んだexam IDと全入力のSHA-256を記録し、同一payloadの再送だけを許可する。取り込み済み提出の`submitted_at`は検証済みの元時刻、`submitted_received_at`はこのサーバーへの取込受信時刻として区別する。時刻が欠ける旧形式は`legacy_import`として明示し、`submitted_received_at`を捏造せずnullのままにし、再開可能なdraftにはしない。試験行・回答イベント・manifest行は1トランザクションで確定する。
+
+profile移行は`import_roadmap_profile(...)`がprofile置換とmanifest行の記録を同一トランザクションで行う。manifest行にはprofile payloadのSHA-256を記録し、同一payloadの再送は現在のrevisionを返すだけで、他端末・他タブの後続更新を上書きしない。異なるpayload、または新規行でのrevision競合は拒否してprofileとmanifest行を変更しない。
 
 ## 集計
 

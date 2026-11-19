@@ -44,6 +44,66 @@ begin
   raise exception 'stale profile unexpectedly permitted';
 exception when serialization_failure then null;
 end $$;
+do $$
+begin
+  begin
+    perform public.replace_roadmap_profile(null, jsonb_build_object('assessment-1', 1), 0, 1);
+    raise exception 'null earned profile unexpectedly permitted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform public.replace_roadmap_profile(jsonb_build_array('saa-c03'), null, 0, 1);
+    raise exception 'null answers profile unexpectedly permitted';
+  exception when invalid_parameter_value then null;
+  end;
+  if not exists (select 1 from public.earned_certifications where certification_id = 'saa-c03')
+    or not exists (select 1 from public.assessment_answers where assessment_id = 'assessment-1' and answer = 1)
+    or (select revision from public.roadmap_profiles) <> 1 then
+    raise exception 'null profile input changed saved profile';
+  end if;
+end $$;
+
+select public.begin_migration(0, '30000000-0000-0000-0000-000000000003', 'profile-local-storage', 1, repeat('d', 64), 1);
+do $$
+declare imported_revision bigint; retried_revision bigint;
+begin
+  select public.import_roadmap_profile(0, '30000000-0000-0000-0000-000000000003', 'profile-import', 1,
+    jsonb_build_array('imported-cert'), jsonb_build_object('imported-assessment', 2)) into imported_revision;
+  if imported_revision <> 2 then raise exception 'profile import did not advance revision'; end if;
+  perform public.replace_roadmap_profile(jsonb_build_array('realtime-cert'), jsonb_build_object('realtime-assessment', 3), 0, 2);
+  select public.import_roadmap_profile(0, '30000000-0000-0000-0000-000000000003', 'profile-import', 1,
+    jsonb_build_array('imported-cert'), jsonb_build_object('imported-assessment', 2)) into retried_revision;
+  if retried_revision <> 3 then raise exception 'same-revision profile retry changed state'; end if;
+  select public.import_roadmap_profile(0, '30000000-0000-0000-0000-000000000003', 'profile-import', 3,
+    jsonb_build_array('imported-cert'), jsonb_build_object('imported-assessment', 2)) into retried_revision;
+  if retried_revision <> 3 or not exists (
+    select 1 from public.earned_certifications where certification_id = 'realtime-cert'
+  ) or exists (select 1 from public.earned_certifications where certification_id = 'imported-cert') then
+    raise exception 'profile import retry overwrote a realtime update';
+  end if;
+  begin
+    perform public.import_roadmap_profile(0, '30000000-0000-0000-0000-000000000003', 'profile-import', 1,
+      jsonb_build_array('different-cert'), jsonb_build_object('different-assessment', 4));
+    raise exception 'profile migration row accepted a different payload';
+  exception when unique_violation then null;
+  end;
+end $$;
+select public.begin_migration(0, '30000000-0000-0000-0000-000000000004', 'profile-local-storage', 1, repeat('e', 64), 1);
+do $$
+begin
+  begin
+    perform public.import_roadmap_profile(0, '30000000-0000-0000-0000-000000000004', 'profile-failure', 0,
+      jsonb_build_array('failed-cert'), jsonb_build_object('failed-assessment', 5));
+    raise exception 'stale profile import unexpectedly permitted';
+  exception when serialization_failure then null;
+  end;
+  if exists (
+    select 1 from public.migration_items
+    where manifest_id = '30000000-0000-0000-0000-000000000004' and source_row_id = 'profile-failure'
+  ) or exists (select 1 from public.earned_certifications where certification_id = 'failed-cert') then
+    raise exception 'failed profile import did not roll back';
+  end if;
+end $$;
 
 select public.start_exam_session('20000000-0000-0000-0000-000000000001', 'saa-c03', '2026-11',
   jsonb_build_array(jsonb_build_object('question_id', 'exam-1', 'question_revision', 1)), 60000, 0);
@@ -71,14 +131,16 @@ begin
 exception when serialization_failure then null;
 end $$;
 do $$
-declare submission jsonb := jsonb_build_array(jsonb_build_object(
-  'event_id', '10000000-0000-0000-0000-000000000002', 'schema_version', 1,
-  'certification_id', 'saa-c03', 'question_id', 'exam-1', 'question_revision', 1, 'source_version', 'question-2026-10',
-  'category', 'security', 'mode', 'exam', 'exam_id', '20000000-0000-0000-0000-000000000002',
-  'answered_at', clock_timestamp(), 'selected', jsonb_build_array('A'), 'correct', jsonb_build_array('A'),
-  'is_correct', true, 'duration_ms', 10, 'attempt_number', 1, 'prior_incorrect_count', 0, 'reward', 1
-)); first_submission timestamptz; retry_submission timestamptz;
+declare submission jsonb; first_submission timestamptz; retry_submission timestamptz;
 begin
+  select jsonb_build_array(jsonb_build_object(
+    'event_id', '10000000-0000-0000-0000-000000000002', 'schema_version', 1,
+    'certification_id', 'saa-c03', 'question_id', 'exam-1', 'question_revision', 1, 'source_version', 'question-2026-10',
+    'category', 'security', 'mode', 'exam', 'exam_id', '20000000-0000-0000-0000-000000000002',
+    'answered_at', response.selected_at, 'selected_at', response.selected_at, 'selected', response.selected, 'flagged', response.flagged, 'correct', jsonb_build_array('A'),
+    'is_correct', true, 'duration_ms', response.duration_ms, 'attempt_number', 1, 'prior_incorrect_count', 0, 'reward', 1
+  )) into submission from public.exam_responses response
+    where response.exam_id = '20000000-0000-0000-0000-000000000002';
   begin
     perform public.finalize_exam_session('20000000-0000-0000-0000-000000000002', 0, null, submission);
     raise exception 'null expected finalization revision unexpectedly permitted';
@@ -94,27 +156,152 @@ begin
   end;
 end $$;
 
+select public.start_exam_session('20000000-0000-0000-0000-000000000004', 'saa-c03', '2026-11',
+  jsonb_build_array(
+    jsonb_build_object('question_id', 'expired-finalize', 'question_revision', 1),
+    jsonb_build_object('question_id', 'expired-flagged', 'question_revision', 1),
+    jsonb_build_object('question_id', 'expired-unanswered', 'question_revision', 1)
+  ), 60000, 0);
+select public.save_exam_response('20000000-0000-0000-0000-000000000004', 0, 0, 0,
+  jsonb_build_object('question_id', 'expired-finalize', 'question_revision', 1), jsonb_build_array('A'), true, 10, clock_timestamp());
+select public.save_exam_response('20000000-0000-0000-0000-000000000004', 0, 1, 1,
+  jsonb_build_object('question_id', 'expired-flagged', 'question_revision', 1), jsonb_build_array(), true, 0, null);
+reset role;
+update public.exam_sessions set started_at = clock_timestamp() - interval '2 seconds', deadline_at = clock_timestamp() - interval '1 second'
+  where exam_id = '20000000-0000-0000-0000-000000000004';
+update public.exam_responses response set selected_at = case when response.selected_at is null then null else session.deadline_at - interval '1 second' end,
+  updated_at = session.deadline_at - interval '1 second'
+  from public.exam_sessions session
+  where response.exam_id = session.exam_id and session.exam_id = '20000000-0000-0000-0000-000000000004';
+set local role authenticated;
+do $$
+declare submission jsonb; effective_submission timestamptz;
+begin
+  select jsonb_build_array(
+    jsonb_build_object(
+      'event_id', '10000000-0000-0000-0000-000000000004', 'schema_version', 1,
+      'certification_id', 'saa-c03', 'question_id', 'expired-finalize', 'question_revision', 1, 'source_version', 'question-2026-10',
+      'category', 'security', 'mode', 'exam', 'exam_id', '20000000-0000-0000-0000-000000000004',
+      'answered_at', response.selected_at, 'selected_at', response.selected_at, 'selected', response.selected, 'flagged', response.flagged,
+      'correct', jsonb_build_array('A'), 'is_correct', true, 'duration_ms', response.duration_ms,
+      'attempt_number', 1, 'prior_incorrect_count', 0, 'reward', 1
+    ), jsonb_build_object(
+      'event_id', '10000000-0000-0000-0000-000000000005', 'schema_version', 1,
+      'certification_id', 'saa-c03', 'question_id', 'expired-flagged', 'question_revision', 1, 'source_version', 'question-2026-10',
+      'category', 'security', 'mode', 'exam', 'exam_id', '20000000-0000-0000-0000-000000000004',
+      'answered_at', clock_timestamp(), 'selected_at', null, 'selected', jsonb_build_array(), 'flagged', true,
+      'correct', jsonb_build_array('A'), 'is_correct', false, 'duration_ms', 0,
+      'attempt_number', 1, 'prior_incorrect_count', 0, 'reward', 0
+    ), jsonb_build_object(
+      'event_id', '10000000-0000-0000-0000-000000000006', 'schema_version', 1,
+      'certification_id', 'saa-c03', 'question_id', 'expired-unanswered', 'question_revision', 1, 'source_version', 'question-2026-10',
+      'category', 'security', 'mode', 'exam', 'exam_id', '20000000-0000-0000-0000-000000000004',
+      'answered_at', clock_timestamp(), 'selected_at', null, 'selected', jsonb_build_array(), 'flagged', false,
+      'correct', jsonb_build_array('A'), 'is_correct', false, 'duration_ms', 0,
+      'attempt_number', 1, 'prior_incorrect_count', 0, 'reward', 0
+    )
+  ) into submission from public.exam_responses response join public.exam_sessions session using (exam_id)
+    where response.exam_id = '20000000-0000-0000-0000-000000000004';
+  begin
+    perform public.finalize_exam_session('20000000-0000-0000-0000-000000000004', 0, 2,
+      jsonb_set(submission, '{0,selected}', jsonb_build_array('B')));
+    raise exception 'expired exam accepted an unstored selection';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform public.finalize_exam_session('20000000-0000-0000-0000-000000000004', 0, 2,
+      jsonb_set(submission, '{0,flagged}', 'false'));
+    raise exception 'expired exam accepted an unstored flag';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform public.finalize_exam_session('20000000-0000-0000-0000-000000000004', 0, 2,
+      jsonb_set(submission, '{0,selected_at}', to_jsonb(clock_timestamp()::text)));
+    raise exception 'expired exam accepted an unstored selection time';
+  exception when invalid_parameter_value then null;
+  end;
+  select public.finalize_exam_session('20000000-0000-0000-0000-000000000004', 0, 2, submission) into effective_submission;
+  if not exists (
+    select 1 from public.exam_sessions
+    where exam_id = '20000000-0000-0000-0000-000000000004' and submitted_at = deadline_at
+      and submitted_at = effective_submission and submitted_received_at > deadline_at
+      and 2 = (select count(*) from public.learning_events event
+        where event.event_id in ('10000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000006')
+          and event.answered_at = deadline_at)
+  ) then raise exception 'expired exam did not preserve its effective deadline and received time'; end if;
+end $$;
+
 select public.begin_migration(0, '30000000-0000-0000-0000-000000000001', 'profile-local-storage', 1, repeat('a', 64), 2);
 select public.accept_migration_row(0, '30000000-0000-0000-0000-000000000001', 'profile');
 select public.reject_migration_row(0, '30000000-0000-0000-0000-000000000001', 'corrupt', 'invalid-json');
+do $$
+begin
+  begin
+    perform public.append_learning_event(jsonb_build_object(
+      'event_id', '10000000-0000-0000-0000-000000000030', 'schema_version', 1,
+      'certification_id', 'saa-c03', 'question_id', 'profile-row-bypass', 'question_revision', 1,
+      'source_version', '2026-11', 'category', 'security', 'mode', 'study',
+      'answered_at', '2026-01-01T15:00:00Z', 'selected', jsonb_build_array(), 'correct', jsonb_build_array(),
+      'is_correct', false, 'duration_ms', 0, 'attempt_number', 1, 'prior_incorrect_count', 0, 'reward', 0
+    ), 0, '30000000-0000-0000-0000-000000000001', 'profile');
+    raise exception 'profile migration row accepted an event';
+  exception when unique_violation then null;
+  end;
+  if exists (select 1 from public.learning_events where event_id = '10000000-0000-0000-0000-000000000030') then
+    raise exception 'profile migration row did not roll back the event';
+  end if;
+end $$;
 select public.complete_migration(0, '30000000-0000-0000-0000-000000000001');
 select public.complete_migration(0, '30000000-0000-0000-0000-000000000001');
 
 select public.begin_migration(0, '30000000-0000-0000-0000-000000000002', 'exam-draft-local-storage', 1, repeat('b', 64), 1);
-select public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'draft-1', jsonb_build_object(
-  'exam_id', '20000000-0000-0000-0000-000000000003', 'certification_id', 'saa-c03', 'source_version', '2026-11',
-  'question_order', jsonb_build_array(jsonb_build_object('question_id', 'draft-1', 'question_revision', 1)),
-  'started_at', clock_timestamp() - interval '10 minutes', 'deadline_at', clock_timestamp() + interval '10 minutes',
-  'position', 0, 'state', 'draft'
-), jsonb_build_array(jsonb_build_object(
-  'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
-  'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10
-)), '[]');
 do $$
+declare original_deadline timestamptz := clock_timestamp() + interval '10 minutes'; imported_exam jsonb;
 begin
-  if (select deadline_at <= clock_timestamp() from public.exam_sessions where exam_id = '20000000-0000-0000-0000-000000000003') then
-    raise exception 'valid imported draft deadline was not preserved';
+  imported_exam := jsonb_build_object(
+    'exam_id', '20000000-0000-0000-0000-000000000003', 'certification_id', 'saa-c03', 'source_version', '2026-11',
+    'question_order', jsonb_build_array(jsonb_build_object('question_id', 'draft-1', 'question_revision', 1)),
+    'started_at', clock_timestamp() - interval '10 minutes', 'deadline_at', original_deadline,
+    'position', 0, 'state', 'draft'
+  );
+  perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'draft-1', imported_exam, jsonb_build_array(jsonb_build_object(
+    'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
+    'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10
+  )), '[]');
+  perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'draft-1', imported_exam, jsonb_build_array(jsonb_build_object(
+    'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
+    'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10
+  )), '[]');
+  begin
+    perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'draft-1',
+      jsonb_set(imported_exam, '{exam_id}', '"20000000-0000-0000-0000-000000000005"'), jsonb_build_array(jsonb_build_object(
+        'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
+        'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10
+      )), '[]');
+    raise exception 'migration row accepted a different exam';
+  exception when unique_violation then null;
+  end;
+  if (select deadline_at from public.exam_sessions where exam_id = '20000000-0000-0000-0000-000000000003')
+      is distinct from original_deadline then raise exception 'imported draft deadline was changed'; end if;
+  if exists (select 1 from public.exam_sessions where exam_id = '20000000-0000-0000-0000-000000000005') then
+    raise exception 'migration row created a second exam';
   end if;
+  begin
+    perform public.append_learning_event(jsonb_build_object(
+      'event_id', '10000000-0000-0000-0000-000000000031', 'schema_version', 1,
+      'certification_id', 'saa-c03', 'question_id', 'exam-row-bypass', 'question_revision', 1,
+      'source_version', '2026-11', 'category', 'security', 'mode', 'study',
+      'answered_at', '2026-01-01T15:00:00Z', 'selected', jsonb_build_array(), 'correct', jsonb_build_array(),
+      'is_correct', false, 'duration_ms', 0, 'attempt_number', 1, 'prior_incorrect_count', 0, 'reward', 0
+    ), 0, '30000000-0000-0000-0000-000000000002', 'draft-1');
+    raise exception 'exam migration row accepted an event';
+  exception when unique_violation then null;
+  end;
+  if exists (select 1 from public.learning_events where event_id = '10000000-0000-0000-0000-000000000031') then
+    raise exception 'exam migration row did not roll back the event';
+  end if;
+  perform public.save_exam_response('20000000-0000-0000-0000-000000000003', 0, 0, 0,
+    jsonb_build_object('question_id', 'draft-1', 'question_revision', 1), jsonb_build_array('B'), true, 20, clock_timestamp());
 end $$;
 
 select public.append_learning_event(jsonb_build_object(

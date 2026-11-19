@@ -52,16 +52,20 @@ create table public.exam_sessions (
   certification_id text not null check (length(certification_id) between 1 and 80),
   source_version text not null check (length(source_version) between 1 and 80),
   question_order jsonb not null check (jsonb_typeof(question_order) = 'array'),
-  started_at timestamptz not null default clock_timestamp(),
-  deadline_at timestamptz not null,
+  legacy_import boolean not null default false,
+  started_at timestamptz default clock_timestamp(),
+  deadline_at timestamptz,
   position integer not null default 0 check (position >= 0),
   revision bigint not null default 0,
   state text not null default 'draft' check (state in ('draft', 'submitted')),
   submitted_at timestamptz,
+  submitted_received_at timestamptz,
   submission_hash bytea,
   unique (user_id, exam_id),
-  check (deadline_at > started_at),
-  check ((state = 'submitted') = (submitted_at is not null)),
+  check (legacy_import or (started_at is not null and deadline_at is not null)),
+  check (legacy_import or deadline_at > started_at),
+  check (legacy_import or (state = 'submitted') = (submitted_at is not null)),
+  check (legacy_import or (state = 'submitted') = (submitted_received_at is not null)),
   check ((state = 'submitted') = (submission_hash is not null))
 );
 
@@ -118,10 +122,19 @@ create table public.migration_items (
   manifest_id uuid not null,
   source_row_id text not null check (length(source_row_id) between 1 and 200),
   event_id uuid,
+  exam_id uuid,
+  import_kind text check (import_kind in ('exam-session', 'roadmap-profile')),
+  payload_hash bytea check (octet_length(payload_hash) = 32),
   outcome text not null check (outcome in ('accepted', 'rejected')),
   reason_code text,
   primary key (user_id, manifest_id, source_row_id),
-  foreign key (user_id, manifest_id) references public.migration_manifests(user_id, manifest_id) on delete cascade
+  foreign key (user_id, manifest_id) references public.migration_manifests(user_id, manifest_id) on delete cascade,
+  foreign key (user_id, exam_id) references public.exam_sessions(user_id, exam_id) on delete cascade,
+  check (
+    (import_kind is null and exam_id is null and payload_hash is null)
+    or (import_kind = 'exam-session' and exam_id is not null and payload_hash is not null)
+    or (import_kind = 'roadmap-profile' and exam_id is null and payload_hash is not null)
+  )
 );
 
 alter table public.learning_events enable row level security;

@@ -51,6 +51,22 @@ const catalog: Certification[] = [
     level: '基礎',
     skills: ['fundamentals'],
     focus: '責任共有、料金、基本サービス',
+    course: {
+      practice: [{ path: 'courses/clf-c02/mock-2026-11.json', label: 'saaFull' }],
+      mock: 'courses/clf-c02/mock-2026-11.json',
+      archives: ['courses/clf-c02/questions.json'],
+      exam: {
+        minutes: 90,
+        distribution: {
+          クラウドの概念: 16,
+          セキュリティとコンプライアンス: 19,
+          クラウド技術とサービス: 22,
+          請求と料金とサポート: 8,
+        },
+      },
+      fixedExamFromBlueprint: true,
+      reviewedMock: true,
+    },
   },
   {
     id: 'aif-c01',
@@ -181,7 +197,6 @@ export const certifications: Certification[] = catalog.map((certification) => {
   const uniqueCounts: Record<string, number> = {
     'aif-c01': 9,
     'aip-c01': 9,
-    'clf-c02': 9,
     'dop-c02': 9,
     'mla-c01': 9,
     'scs-c03': 9,

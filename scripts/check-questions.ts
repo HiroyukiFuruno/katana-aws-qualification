@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { certifications } from '../src/certifications.ts';
-import type { Question } from '../src/questions.ts';
+import { examDomainOf, type Question } from '../src/questions.ts';
 
 const banks = new Map<string, Question[]>();
 async function load(path: string) {
@@ -15,6 +15,8 @@ async function load(path: string) {
     assert(question.id && !ids.has(question.id), context);
     ids.add(question.id);
     assert(Number.isSafeInteger(question.revision) && question.revision >= 1, context);
+    if (question.examDomain !== undefined)
+      assert(typeof question.examDomain === 'string' && question.examDomain.trim(), context);
     assert(
       [
         question.category,
@@ -57,14 +59,15 @@ for (const { course } of certifications) {
     if (!question.similarityGroup) continue;
     assert.match(question.similarityGroup, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     const category = groups.get(question.similarityGroup);
-    assert(!category || category === question.category, `${course.mock}: group crosses exam categories`);
-    groups.set(question.similarityGroup, question.category);
+    const domain = examDomainOf(question);
+    assert(!category || category === domain, `${course.mock}: group crosses exam categories`);
+    groups.set(question.similarityGroup, domain);
   }
   for (const [category, count] of Object.entries(course.exam.distribution)) {
     const required = count * (course.reviewedMock ? 5 : 1);
     const available = new Set(
       bank
-        .filter((question) => question.category === category)
+        .filter((question) => examDomainOf(question) === category)
         .map((question) =>
           question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`,
         ),

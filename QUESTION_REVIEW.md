@@ -444,3 +444,76 @@ Secrets Managerの候補は、既出のクロスアカウント暗号化権限�
 - [NLBの不健全ターゲットのドレイン](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/edit-target-group-attributes.html)
 - [LambdaのKinesisストリーム処理](https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html)
 - [CloudWatchのパーセンタイル用データ](https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricData.html)
+
+## CLF-C02で65問・90分の模試1回分を構成
+
+AWSの試験案内とCLF-C02の試験ガイドを確認した。4分野を16・19・22・8問に配分し、既存の10問に新規の56問を追加した。既存の責任共有の2問は同じ類似グループとして引き続き扱う。登録は66問、模試候補は65グループで、追加はクラウドの概念15問、セキュリティとコンプライアンス17問、クラウド技術とサービス20問、請求と料金とサポート4問。
+
+クラウドの概念では、伸縮性とアジリティ、変動費と規模の経済、移行の依存関係、CAFとWell-Architected、復旧目標と復元テスト、不要データの削除を扱った。セキュリティでは、IAMの認証と認可、Organizationsの権限制御、通信中と保存後の暗号化、AWSの監査文書と自社環境の構成評価、GuardDuty・Inspector・Macieの役割などを比較した。技術とサービスの設問は、用途別のDB、ブロック・共有ファイル・アーカイブの選択、VPC・DNS・CDN、キューと通知、計算基盤、分析とAIの使い分けを扱った。請求の設問では費用の実績分析、計算サービスを横断する割引、請求タグの有効化、見直し候補の取得を扱った。
+
+追加分は単一選択53問、複数選択3問。AWSの一次資料56件と全227選択肢を照合し、採点の組み合わせ944通りを確認した。実際の模試生成を512回試し、毎回65問・90分、分野配分16・19・22・8、類似グループ内の重複なしを確認した。5回分の条件にはあと260グループが必要で、内訳は64・76・88・32問。
+
+- [AWS Certified Cloud Practitionerの試験案内](https://aws.amazon.com/certification/certified-cloud-practitioner/)
+- [CLF-C02試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02.html)
+- [CLF-C02の範囲に含まれるAWSサービス](https://docs.aws.amazon.com/aws-certification/latest/cloud-practitioner-02/clf-02-in-scope-services.html)
+
+## CLF-C02で重複のない模試2回分を構成
+
+既存66問と固定の第1回を保持し、クラウドの概念16問、セキュリティとコンプライアンス19問、クラウド技術とサービス22問、請求と料金とサポート8問を追加した。登録は131問、類似グループで数えた独立候補は130問。各分野の独立候補は32・38・44・16問で、5回分の条件まであと48・57・66・24問。
+
+概念では障害の影響範囲、耐久性と可用性、移行方式、サービス成果あたりの資源利用を扱った。セキュリティでは、IAM権限の変更前評価と外部共有の検出、実際のIP通信ログとAWS APIのログ、証明書の自動更新、CSPMの標準別チェックを区別した。技術とサービスでは、AWS Backupによる実行頻度と保持の設定、既存ファイル共有からの定期転送とS3を使うファイル共有、EKSの運用責任、ストリームの再読み込みを比較した。請求と料金では、予算しきい値と利用傾向からの逸脱、ゾーンのリザーブドインスタンス、データ転送と保存容量の費用を確認した。
+
+単一選択60問、複数選択5問の全265選択肢をレビューし、採点の組み合わせ1,120通りを確認した。本番と同じ65問・90分の模試を2回分組み、どちらも分野配分が16・19・22・8問で、2回間で類似グループが重複しないことを確認した。通常の抽選も512回試し、既存分を含む131問すべてが出題された。
+
+- [AWSの障害分離と影響範囲](https://docs.aws.amazon.com/wellarchitected/latest/framework/rel10-bp03.html)
+- [DNS検証によるACM証明書の自動更新](https://docs.aws.amazon.com/acm/latest/userguide/dns-renewal-validation.html)
+- [Security Hub CSPMのセキュリティ標準](https://docs.aws.amazon.com/securityhub/latest/userguide/standards-view-manage.html)
+- [AWS Backupのバックアッププラン](https://docs.aws.amazon.com/aws-backup/latest/devguide/about-backup-plans.html)
+- [AWS DataSync](https://docs.aws.amazon.com/datasync/latest/userguide/what-is-datasync.html)
+- [Amazon S3 File Gateway](https://docs.aws.amazon.com/filegateway/latest/files3/what-is-file-s3.html)
+- [Amazon EBSの料金](https://aws.amazon.com/ebs/pricing/)
+
+## CLF-C02で重複のない模試3回分を構成
+
+既存131問と固定の第1回を保持した。クラウドの概念16問、セキュリティとコンプライアンス19問、クラウド技術とサービス22問、請求と料金とサポート8問を追加した。登録196問に対し、独立候補は195問。分野別では48・57・66・24問となり、5回分の条件まで残り32・38・44・16問。
+
+既存設問と判断が重なる草稿は差し替えた。今回は、移行の判断と切り戻し条件、CAFの段階、コードとしての運用、複数AZにまたがるAuroraのストレージ、分析と可視化、リリース工程の管理を追加した。セキュリティではIAMの明示拒否とネットワークACLの番号順評価、S3の読み書きに関する監査、鍵の所有形態とローテーションを区別した。請求とサポートでは、短期の容量確保と使用額割引、ストレージの保持期間と取り出し料金、保守の影響を受けるリソースの確認を扱った。
+
+単一選択61問、複数選択4問の計264選択肢をレビューし、65問に記載したAWS一次資料に到達できることと、採点1,104通りを確認した。65問・90分の模試を分野配分16・19・22・8問で3回分組み、累計195の類似グループが回をまたいで重複しないことを確認した。通常の抽選512回では、既存分を含む196問すべてが出題された。
+
+- [AWS CAFの変革段階](https://docs.aws.amazon.com/prescriptive-guidance/latest/strategy-cloud-operating-model/com-journey.html)
+- [移行の切り替え段階](https://docs.aws.amazon.com/prescriptive-guidance/latest/best-practices-migration-cutover/cutover-stage.html)
+- [AWS KMSのキーローテーション](https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html)
+- [Auroraの高可用性](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Concepts.AuroraHighAvailability.html)
+- [AWS CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome.html)
+- [EC2オンデマンドキャパシティ予約](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html)
+
+## CLF-C02で重複のない模試4回分を構成
+
+既存196問と固定の第1回を保持し、クラウドの概念16問、セキュリティとコンプライアンス19問、クラウド技術とサービス22問、請求と料金とサポート8問を追加した。登録261問に対し、独立候補は260問。分野別の候補は64・76・88・32問で、5回分まで残り16・19・22・8問。
+
+既存問と判断が重なった草稿は差し替えた。概念では業務の成功率、復旧先のクォータ、フェイルバック時のデータ同期、作業手順と障害調査を扱った。セキュリティでは付与済み未使用アクセス、KMSキーポリシー、バックアップの保持条件、CloudTrailのログ整合性、Shield Advancedの支援と料金保護を区別した。技術ではEFSの初回再アクセスによる保管クラス移行、SQSの処理猶予と失敗の隔離、ECSのタスク定義、分散トレースを扱った。請求では予算超過後の承認、物理ソケット単位のライセンス、部門別の承認済み製品の調達を確認した。
+
+単一選択60問、複数選択5問の全265選択肢をレビューした。追加65問の一次資料への到達と採点1,120通りを確認した。分野配分16・19・22・8問の65問・90分の模試を4回分組み、全260グループに重複がないことを検証した。通常の抽選512回では、既存分を含む261問すべてが出題された。
+
+- [復旧先のクォータの余裕](https://docs.aws.amazon.com/wellarchitected/latest/framework/rel01-bp06.html)
+- [AWS Backup Vault Lock](https://docs.aws.amazon.com/aws-backup/latest/devguide/vault-lock.html)
+- [CloudTrailのログファイル整合性検証](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html)
+- [SQSの可視性タイムアウト](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
+- [EFSのライフサイクル管理](https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html)
+- [AWS Budgetsアクションの承認](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-action-review.html)
+
+## CLF-C02の独立325問を確認
+
+既存261問と固定の第1回を保持し、クラウドの概念16問、セキュリティとコンプライアンス19問、クラウド技術とサービス22問、請求と料金とサポート8問を追加した。登録326問、類似グループを除いた独立候補は325問。各分野は80・95・110・40問で、全分野が本試験の分野配分の5倍を満たす。
+
+今回は、再試行の上限、合成監視、データ分類、組織全体の監査、KMSなどの権限と資源側の上限、S3ゲートウェイ型エンドポイント、EC2ハイバネーションで保持する状態、CloudWatchの複数アラームやログの扱い、RIのサイズ柔軟性、予算額に対する予測通知、タグのバックフィルなどを扱った。既存と同じ判断の草稿は、疎結合、PaaS、API操作履歴からのIAMポリシー案の生成など、独立した題材に入れ替えた。
+
+追加分の単一選択60問、複数選択5問について、計265選択肢とAWS一次資料65件を確認した。採点の組み合わせ1,120通りを検証した。65問・90分の模試を各回16・19・22・8問の配分で5回分組み、計325グループが回をまたいで重複しないことを確認した。通常の抽選512回では既存分を含む326問すべてが出題された。
+
+- [AWS CLF-C02試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02.html)
+- [合成監視](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Synthetics_Canaries.html)
+- [IAM Access Analyzerのポリシー生成](https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-policy-generation.html)
+- [S3のVPCエンドポイント](https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-s3.html)
+- [EC2のハイバネーション](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html)
+- [コスト配分タグのバックフィル](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-allocation-backfill.html)

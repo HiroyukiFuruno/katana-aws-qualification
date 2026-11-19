@@ -2841,5 +2841,2854 @@
       "reason": "より長く一致する/24宛てだけが破棄され、その他の/16宛てには既存の伝播が適用される。",
       "concept": "TGWでより長く一致するブラックホールルートを指定して対象宛てを破棄できる。"
     }
+  },
+  {
+    "id": "ans-c01-d1-017",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cf-origin-shield-cache-miss-collapse",
+    "title": "複数地域で同時に起こるオリジンへの要求集中",
+    "prompt": "CloudFrontで動画セグメントを配信する。以前からキャッシュキーとTTLは適切だが、新しく公開したセグメントは北米・欧州・アジアのエッジで同時にキャッシュミスし、オリジンが同じオブジェクトの取得要求を複数回処理している。セグメントの公開前にプリロードはできない。どの設計でオリジンへの取得をまとめられるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "オリジングループを構成して特定の5xx時だけセカンダリを利用する。",
+        "explanation": "異常時の切替であり、正常なオリジンへ向かう同じオブジェクトの初回取得をまとめない。"
+      },
+      {
+        "id": "B",
+        "text": "オリジンリクエストポリシーを変更し、すべての閲覧者ヘッダーをオリジンへ送る。",
+        "explanation": "付帯情報は増えるが、各地域の取得要求を共通キャッシュに集約する設定にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "最小TTLを延長し、既存のキャッシュ階層を維持する。",
+        "explanation": "オブジェクトを取得済みのキャッシュでは効果があるが、未公開だったセグメントの最初の地域横断ミスは集約しない。"
+      },
+      {
+        "id": "D",
+        "text": "オリジンに近いリージョンでOrigin Shieldを有効にする。",
+        "explanation": "複数のキャッシュ拠点で同じキャッシュキーがミスしても、共通層でオリジンへの取得を集約できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "複数のキャッシュ拠点で同じキャッシュキーがミスしても、共通層でオリジンへの取得を集約できる。",
+      "concept": "CloudFront Origin Shieldはオリジン手前の共通キャッシュ層として同一オブジェクト取得を集約する。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-018",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cf-geo-scope-independent-distributions",
+    "title": "契約上の配信制限と共通カタログを分ける",
+    "prompt": "販売ページは全世界で提供する。動画本編だけを日本と韓国から閲覧できるようにし、元オリジンへの直接アクセスはすでに制限済みである。本編を別ホスト名へ分離でき、閲覧者コードや外部の位置情報サービスを導入しない。どう設計するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "動画本編専用のディストリビューションを作り、日本と韓国を許可リストに登録する。",
+        "explanation": "国単位の制限が本編用の配信全体に作用し、従来のカタログ配信は独立して維持できる。"
+      },
+      {
+        "id": "B",
+        "text": "同じディストリビューションの動画用キャッシュビヘイビアだけにCloudFrontの地理的制限を設定する。",
+        "explanation": "標準の設定はキャッシュビヘイビア単位で分けられず、配信全体が対象になる。"
+      },
+      {
+        "id": "C",
+        "text": "Route 53のジオロケーションを使い、対象国だけに動画のCloudFrontアドレスを返す。",
+        "explanation": "DNSの選択は既知の配信URLへのHTTPアクセスを拒否する仕組みにならない。"
+      },
+      {
+        "id": "D",
+        "text": "本編のキャッシュキーにCloudFront-Viewer-Countryを含め、オリジンのアクセス判定は追加しない。",
+        "explanation": "キャッシュを国別に分けても、許可されていない国に対する応答はそれだけでは拒否されない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/georestrictions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "国単位の制限が本編用の配信全体に作用し、従来のカタログ配信は独立して維持できる。",
+      "concept": "CloudFrontのネイティブな地理的制限は国単位でディストリビューション全体に適用される。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-019",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-route53-geoproximity-negative-bias",
+    "title": "隣接地域の一部を別拠点へ移す",
+    "prompt": "二つの拠点で公開APIを運用し、Route 53のジオプロキシミティルーティングで近い方へ誘導している。片方の容量を縮小するので、国境で一律に振り分けず、低容量の拠点へ向かう地域の面積だけ縮小したい。両拠点は引き続き利用する。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "容量を縮小する拠点のジオプロキシミティレコードに正のバイアスを設定する。",
+        "explanation": "対象拠点の担当範囲が広がり、意図した方向と逆に要求を引き受ける。"
+      },
+      {
+        "id": "B",
+        "text": "容量を縮小する拠点のジオプロキシミティレコードに負のバイアスを設定する。",
+        "explanation": "近接による振り分けを維持しながら対象の担当範囲を狭め、隣接拠点の担当範囲を広げる。"
+      },
+      {
+        "id": "C",
+        "text": "対象拠点をセカンダリに指定したフェイルオーバーレコードに替える。",
+        "explanation": "プライマリが正常な間の両拠点への近接配分が失われる。"
+      },
+      {
+        "id": "D",
+        "text": "二つの加重レコードで低容量拠点の重みを減らす。",
+        "explanation": "応答の比率を調整できても、拠点間の地理的な境界を移動する設定にはならない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy-geoproximity.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "近接による振り分けを維持しながら対象の担当範囲を狭め、隣接拠点の担当範囲を広げる。",
+      "concept": "ジオプロキシミティの負のバイアスは対象拠点の地理的な担当範囲を縮小する。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-020",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-route53-geolocation-default-unmapped",
+    "title": "国別経路の対象外に共通入口を返す",
+    "prompt": "Route 53で日本とオーストラリアからの利用者に専用サイトを返す。その他の国に加え、問い合わせ元のIPから位置を割り出せない利用者にも共通サイトを返したい。既存の国別レコードは維持する。何を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同じ名前と型で、共通サイトを指すジオロケーションのデフォルトレコードを追加する。",
+        "explanation": "専用の国別判定が成立する場合を維持しつつ、位置不明や該当国なしの問い合わせにも答えられる。"
+      },
+      {
+        "id": "B",
+        "text": "同じ名前にアジアとオセアニアの大陸別レコードを追加する。",
+        "explanation": "大陸が判別できる範囲は広がるが、位置不明や他大陸の問い合わせを網羅できない。"
+      },
+      {
+        "id": "C",
+        "text": "国別レコードを維持し、同じ名前と型に共通サイトのレイテンシーレコードを追加する。",
+        "explanation": "同じ名前と型のルーティンググループでは、ジオロケーションの対象外を別のポリシーで補う構成にならない。"
+      },
+      {
+        "id": "D",
+        "text": "すべての大陸に共通サイトを指すレコードを追加すれば、デフォルトなしで位置不明もカバーできる。",
+        "explanation": "全大陸を定義しても、位置を特定できないIPは大陸別の条件に一致しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy-geo.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "専用の国別判定が成立する場合を維持しつつ、位置不明や該当国なしの問い合わせにも答えられる。",
+      "concept": "ジオロケーションのデフォルトレコードは、対応する地域がない問い合わせと位置不明の問い合わせを扱う。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-021",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cf-brotli-policy-on-legacy-cache",
+    "title": "同一URLで圧縮形式を正しく出し分ける",
+    "prompt": "HTTPSのCloudFront配信で、オリジンは非圧縮のJavaScriptを返す。現行ビヘイビアはレガシーキャッシュ設定であり、利用者がBrotliに対応するときはBrotli、Gzipだけに対応するときはGzipをCloudFrontに生成させたい。アプリのURLを変えずに行う操作はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ビヘイビアのオブジェクト自動圧縮を有効にする。",
+        "explanation": "CloudFrontがオリジンから取得する適格なオブジェクトを圧縮できるようにする。"
+      },
+      {
+        "id": "B",
+        "text": "閲覧者のAccept-Encodingをオリジンへ転送する設定だけを加える。",
+        "explanation": "非圧縮で固定されたオリジン応答に対して、CloudFrontの自動圧縮と形式の設定を行っていない。"
+      },
+      {
+        "id": "C",
+        "text": "レスポンスヘッダーポリシーにContent-Encoding: brを設定する。",
+        "explanation": "ヘッダーを付けても実体は圧縮されず、非対応クライアントにも誤った情報を返す。"
+      },
+      {
+        "id": "D",
+        "text": "レガシーキャッシュ設定でAccept-Encodingの元の値だけをキャッシュキーへ手動追加する。",
+        "explanation": "値を区別してキャッシュしても、レガシー設定はBrotliの機能を提供しない。"
+      },
+      {
+        "id": "E",
+        "text": "GzipとBrotliを有効にしたキャッシュポリシーへ切り替える。",
+        "explanation": "2形式の対応をキャッシュの設定に反映し、適した表現を出し分けられる。"
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ServingCompressedFiles.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudFrontがオリジンから取得する適格なオブジェクトを圧縮できるようにする。 2形式の対応をキャッシュの設定に反映し、適した表現を出し分けられる。",
+      "concept": "CloudFrontの自動圧縮はビヘイビアの圧縮設定とGzip・Brotli対応のキャッシュポリシーを使う。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-022",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-global-accelerator-specific-game-session",
+    "title": "対戦者全員を割り当てられたセッションへ送る",
+    "prompt": "ゲームのマッチングサービスは、起動済みの各対戦をEC2のプライベートIPとUDPポートに割り当てる。各クライアントへインターネット向けの固定入口と対戦専用のポートを渡し、地域や経路が異なる対戦者も同じインスタンスのポートへ着地させる。どの方式を選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "単一NLBのターゲットグループに全対戦サーバーを登録し、同一のUDPリスナーポートを全対戦に配る。",
+        "explanation": "フローごとのバランシングであり、対戦アプリが選んだサーバーを外部ポートで指定できない。"
+      },
+      {
+        "id": "B",
+        "text": "カスタムルーティングアクセラレーターに対象VPCサブネットを登録し、マッチングで割り当てた宛先に対応する外部ポートを配布する。",
+        "explanation": "サブネット内の特定EC2とポートへの対応が決まっているため、同じ対戦の各クライアントを同じ宛先へ誘導できる。"
+      },
+      {
+        "id": "C",
+        "text": "標準アクセラレーターと複数のNLBを使い、クライアントの近接性に応じて振り分ける。",
+        "explanation": "地域や健全性を使う方式であり、マッチング済みの特定インスタンスとポートへ利用者全員を固定しない。"
+      },
+      {
+        "id": "D",
+        "text": "Route 53のマルチバリュー回答で全サーバーの共通名を作り、対戦者のDNS解決に任せる。",
+        "explanation": "複数サーバーの回答は返せても、同じ対戦に対して割り当てられた宛先を共通名で指定しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/global-accelerator/latest/dg/about-custom-routing-accelerators.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "サブネット内の特定EC2とポートへの対応が決まっているため、同じ対戦の各クライアントを同じ宛先へ誘導できる。",
+      "concept": "Global Acceleratorのカスタムルーティングは公開リスナーポートとEC2の宛先IP・ポートを対応付ける。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-023",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-weighted-forward-no-group-failover",
+    "title": "段階リリース先が全滅したときの復旧設計",
+    "prompt": "ALBの重み付きforwardアクションで、安定版のターゲットグループに95、カナリアに5を設定している。カナリアの全ターゲットが異常になったら、新しいリクエストをすべて安定版へ寄せる運用を設計する。ターゲットグループのスティッキネスは無効である。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "カナリア側のヘルスチェックだけを短くして、異常後の全量自動移行を任せる。",
+        "explanation": "異常判定は早くなるが、グループ間の重みの挙動は変わらない。"
+      },
+      {
+        "id": "B",
+        "text": "ALBのDNSエイリアスでEvaluate Target Healthを有効にする。",
+        "explanation": "エイリアスの健全性はDNSによるロードバランサー単位の選択に作用し、ALB内部のカナリアの重みは書き換えない。"
+      },
+      {
+        "id": "C",
+        "text": "カナリア側のターゲットグループで登録解除の遅延を短くする。",
+        "explanation": "解除中の通信を待つ時間の設定であり、リスナールールがカナリアを選択する割合は変えない。"
+      },
+      {
+        "id": "D",
+        "text": "カナリアの全台異常を検知したら、リスナールールのカナリアへの重みを0にする処理を用意する。",
+        "explanation": "重み付きグループ間の自動切替は発生しないため、ルール側の比率を障害時に変更する。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/rule-action-types.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "重み付きグループ間の自動切替は発生しないため、ルール側の比率を障害時に変更する。",
+      "concept": "ALBの重み付きforwardは一方のグループが空または全異常でも、重みを健全なグループへ自動移行しない。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-024",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-slow-start-ramp-new-targets",
+    "title": "ヘルスチェック成功直後の負荷を徐々に増やす",
+    "prompt": "コンテナのCPUキャッシュが温まるまで120秒かかるものの、ヘルスチェックは起動直後に成功する。既存の正常ターゲットが入ったALBターゲットグループにローリングで個別登録し、新しいターゲットの配分を正常判定後の120秒で徐々に引き上げたい。現在はRound Robinである。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象グループに120秒のSlow startを設定し、Round Robinを維持する。",
+        "explanation": "正常な既存ターゲットを稼働させながら、追加したターゲットの配分が徐々に増加する。"
+      },
+      {
+        "id": "B",
+        "text": "新ターゲットを含むグループの登録解除遅延を120秒にする。",
+        "explanation": "登録解除中の末尾の通信を保護するための設定で、追加時の負荷は段階制御しない。"
+      },
+      {
+        "id": "C",
+        "text": "ALBルールのターゲットグループスティッキネスを120秒にする。",
+        "explanation": "利用者をグループへ固定する仕組みであり、個々の追加ターゲットのウォームアップを制御しない。"
+      },
+      {
+        "id": "D",
+        "text": "Least outstanding requestsへ変更し、TCP接続数が少ない新しいターゲットへ任せる。",
+        "explanation": "処理中の要求数に基づく分散で、正常判定から指定時間の段階的な配分を定義しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正常な既存ターゲットを稼働させながら、追加したターゲットの配分が徐々に増加する。",
+      "concept": "ALBのSlow startはターゲットの正常判定後に受けるリクエストの割当を線形に増やす。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-025",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-dx-lag-minimum-active-links",
+    "title": "束ねた専用線の帯域不足を障害として扱う",
+    "prompt": "同じDirect Connect機器で10 Gbpsの専用回線4本を組み合わせる。稼働本数が2本以下なら帯域不足とみなし、論理リンクを停止して別系統へ経路を切り替えたい。障害扱いにはBGPの個別フィルターを使わない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "4本を異なるDirect Connect機器に分け、一つのLAGに登録する。",
+        "explanation": "単一LAGのメンバー回線には同じAWS側機器へ終端する条件がある。"
+      },
+      {
+        "id": "B",
+        "text": "4本をLAGに入れ、稼働に必要な最低接続数を3に設定する。",
+        "explanation": "稼働本数が3未満になるとLAG全体が非稼働になり、設定済みの別経路へ切替可能になる。"
+      },
+      {
+        "id": "C",
+        "text": "1本ずつVIFを作り、使用帯域のCloudWatchアラームだけを設定する。",
+        "explanation": "負荷や異常を通知できても、稼働本数の閾値でリンク状態を自動的に変える構成ではない。"
+      },
+      {
+        "id": "D",
+        "text": "4本をLAGに入れ、稼働に必要な最低接続数を2に設定する。",
+        "explanation": "2本残っている間はLAGが稼働し続けるので、2本以下で切り替える条件を満たさない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/lags.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "稼働本数が3未満になるとLAG全体が非稼働になり、設定済みの別経路へ切替可能になる。",
+      "concept": "Direct Connect LAGには稼働に必要なメンバー接続の最低本数を設定できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-026",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-client-vpn-split-tunnel-corporate-only",
+    "title": "VPN経由にする宛先を業務VPCだけに分ける",
+    "prompt": "在宅利用者はAWS Client VPNで2つの業務VPCへ到達する。動画会議などインターネットサービスと利用者のローカルネットワークは、既存の端末側の出口を使いたい。端末に個別ルートを配らず、重複しない2つのVPC CIDRだけをVPNへ送る設計はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "分割トンネルを有効にし、Client VPNのルートテーブルに業務VPCの経路を登録して既定経路は追加しない。",
+        "explanation": "2つの業務VPCの経路を接続端末へ渡し、他の宛先は通常の端末側ルートへ送れる。"
+      },
+      {
+        "id": "B",
+        "text": "分割トンネルを有効にし、Client VPNに0.0.0.0/0を登録して業務VPC宛ての認可ルールだけを残す。",
+        "explanation": "既定ルートの配布は非業務トラフィックの経路にも影響する。アクセス認可の範囲では経路を選び分けられない。"
+      },
+      {
+        "id": "C",
+        "text": "VPC側の負荷分散サブネットにNATゲートウェイ向け既定ルートを設定する。",
+        "explanation": "VPNへ入った後の出口は設定できるが、利用者端末から直接出す条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "フルトンネルを使い、Client VPNの認可ルールに業務VPCの宛先CIDRだけを登録する。",
+        "explanation": "認可を絞っても端末の通常のインターネット通信をフルトンネルのルート設定から除外できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/split-tunnel-vpn.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "2つの業務VPCの経路を接続端末へ渡し、他の宛先は通常の端末側ルートへ送れる。",
+      "concept": "Client VPNの分割トンネルではエンドポイントのルートテーブルの宛先を接続端末に配布する。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-027",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-eks-auto-mode-internal-nlb-service",
+    "title": "社内限定TCPサービスのNLBを自動作成",
+    "prompt": "EKS Auto ModeのプライベートクラスターにTCPアプリを配備する。社内VPCと接続済みの拠点にだけ入口を提供し、バックエンドのPodに入れ替わりがあってもKubernetesが公開先を更新する。既定のNLBクラスが利用でき、コントローラーを別途インストールしない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "EC2コンソールでNLBを作成し、現在のPod IPだけを手動で登録する。",
+        "explanation": "初期の転送は可能でも、Podの入れ替わりをKubernetesのServiceに基づいて継続反映できない。"
+      },
+      {
+        "id": "B",
+        "text": "LoadBalancer型のServiceでクラスをeks.amazonaws.com/nlbにし、NLBのスキームをinternalに指定する。",
+        "explanation": "クラスタがプライベートなNLBとターゲットの構成を管理し、サービスの利用先を接続済みネットワークに制限できる。"
+      },
+      {
+        "id": "C",
+        "text": "LoadBalancer型のServiceを作り、NLBのスキームをinternet-facingに指定して内部向けDNS名を登録する。",
+        "explanation": "内部で別名を使っても、作成されるNLBは内部スキームにはならない。"
+      },
+      {
+        "id": "D",
+        "text": "ClusterIP型のServiceだけを作り、拠点のルートテーブルへClusterIPを通知する。",
+        "explanation": "ClusterIPはクラスタ内のサービス用で、拠点に管理されたNLBの入口を提供しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eks/latest/userguide/auto-configure-nlb.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "クラスタがプライベートなNLBとターゲットの構成を管理し、サービスの利用先を接続済みネットワークに制限できる。",
+      "concept": "EKS Auto ModeはLoadBalancer型のServiceに設定されたNLBクラスとschemeで公開方法を決める。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-028",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpc-secondary-cidr-existing-remote-route",
+    "title": "既存の拠点経路を残してVPCを拡張",
+    "prompt": "VPCのプライマリCIDRは10.2.0.0/16である。VPC内のルートテーブルの一つには10.0.8.0/24への既存ルートがあり、VPN先の拠点で引き続き利用する。IPAMから、10.0.0.0/16、10.0.8.0/24、10.3.0.0/16を候補として提示された。既存ルートを維持したまま有効な案はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "10.0.0.0/16を追加し、最長プレフィックス一致で既存の拠点用/24を優先する。",
+        "explanation": "転送時の最長一致を適用する前に、既存ルートを内包するCIDRの追加が拒否される。"
+      },
+      {
+        "id": "B",
+        "text": "10.3.0.0/16をセカンダリCIDRにし、追加されたローカル経路と既存の拠点用経路を使う。",
+        "explanation": "既存のプライマリ範囲と拠点宛先の両方と重複せず、VPCの内部範囲として関連付けられる。"
+      },
+      {
+        "id": "C",
+        "text": "既存ルートと同じ10.0.8.0/24を追加し、関連付け後にVPNを優先する。",
+        "explanation": "既存ルートの宛先と同じCIDRは、設定された優先順にかかわらず追加できない。"
+      },
+      {
+        "id": "D",
+        "text": "拠点用ルートを含まない新しいルートテーブルを作り、10.0.0.0/16をそこにだけ関連付ける。",
+        "explanation": "セカンダリCIDRはVPC単位で関連付ける。新しいルートテーブルを作っても既存のテーブルの制約は残る。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "既存のプライマリ範囲と拠点宛先の両方と重複せず、VPCの内部範囲として関連付けられる。",
+      "concept": "VPCへのCIDR関連付けでは既存経路の宛先と同じ範囲や、既存宛先を内包する範囲を追加できない。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-029",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-peering-ip-target-type",
+    "title": "ロードバランサーを移設せず別VPCのサービスへ転送",
+    "prompt": "公共向けの既存ALBと、新しいアプリのEC2インスタンスが別VPCにある。VPCピアリングで相互経路は確立済みで、承認されたプライベートIPv4でバックエンドへ転送できる。別のロードバランサーを追加せず現在のALBを使う設計はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "instanceタイプのターゲットグループにピアVPCにあるインスタンスのIDを登録する。",
+        "explanation": "インスタンスIDによる登録はターゲットグループが関連するVPCのインスタンスを対象にする。"
+      },
+      {
+        "id": "B",
+        "text": "ipタイプに変え、アプリ側インスタンスのパブリックIPv4を登録してピアリングへ送る。",
+        "explanation": "ターゲットとしてパブリックにルーティングできるIPは使用できない。"
+      },
+      {
+        "id": "C",
+        "text": "ALBのリスナールールにピアVPCのプライベートDNS名を登録し、HTTPリダイレクトを返す。",
+        "explanation": "リダイレクトは利用者に直接の再接続を求めるため、外部利用者がALB経由で到達する要件と一致しない。"
+      },
+      {
+        "id": "D",
+        "text": "VPC内の既存ALBにipタイプのターゲットグループを作り、ピアVPCのEC2のプライベートIPv4を登録する。",
+        "explanation": "IPで登録すれば、経路で到達できる別VPCの対象へ転送とヘルスチェックを行える。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "IPで登録すれば、経路で到達できる別VPCの対象へ転送とヘルスチェックを行える。",
+      "concept": "ALBのipタイプのターゲットグループは到達可能なピアVPCのインスタンスのプライベートIPを登録できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-030",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-r53-resolver-rule-share-existing-egress",
+    "title": "中央のDNS転送をアプリVPCへ追加",
+    "prompt": "接続アカウントのVPCにRoute 53 Resolverアウトバウンドエンドポイントと拠点のcorp.exampleを転送するルールがある。新しいアプリアカウントでも同じ条件転送を使う。拠点DNSの許可リストや送信元ネットワークを増やさず、新VPCでも名前解決させるにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "アプリを接続アカウントのインバウンドエンドポイントへ向ける設定だけで、VPCのResolverの対象名を切り替える。",
+        "explanation": "エンドポイントの存在だけで、新VPC内のResolverにドメインを判定する条件転送は適用されない。"
+      },
+      {
+        "id": "B",
+        "text": "アプリVPCで新しいアウトバウンドエンドポイントを作り、同じ拠点DNSを転送先にする。",
+        "explanation": "各VPCの新規エンドポイントからの到達経路と送信元の許可が必要になり、中央の送信元を再利用する条件を満たさない。"
+      },
+      {
+        "id": "C",
+        "text": "接続アカウントの転送ルールをAWS RAMで共有し、アプリアカウントが自分のVPCに関連付ける。",
+        "explanation": "名前がルールに一致すると指定済みの中央アウトバウンドエンドポイントへ転送されるため、転送元を増やさなくてよい。"
+      },
+      {
+        "id": "D",
+        "text": "接続VPCからプライベートホストゾーンだけを共有し、corp.exampleの問い合わせをすべてゾーンへ向ける。",
+        "explanation": "ホストゾーンがあるだけでは、拠点の権威DNSへ条件付きで問い合わせを転送しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-rules-managing.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "名前がルールに一致すると指定済みの中央アウトバウンドエンドポイントへ転送されるため、転送元を増やさなくてよい。",
+      "concept": "AWS RAMでResolverルールを共有すると、対象側VPCは同ルールにひも付くアウトバウンド経路を使える。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-031",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cloudmap-backend-port-srv",
+    "title": "個々のバックエンドの接続先ポートをDNSで返す",
+    "prompt": "プライベートVPCにあるバックエンドは同じサービス名で登録するが、各実行環境でTCP待受ポートが動的に変わる。クライアントは標準のDNSで接続先とポートを得る。SDKを導入せず、AWS Cloud Mapでどのレコードを使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DNSで検出するCloud MapサービスをSRVレコードで定義し、インスタンス登録時にポートを渡す。",
+        "explanation": "SRV応答はサービスホスト名と、各登録先のポートを直接返す。"
+      },
+      {
+        "id": "B",
+        "text": "AレコードのCloud Mapサービスを使い、IPv4アドレスにポートを含めて登録する。",
+        "explanation": "DNSのAレコードはIPv4のアドレス情報であり、接続先ポートは表現しない。"
+      },
+      {
+        "id": "C",
+        "text": "CNAMEで共通サービス名から各ホストの名前を返す。",
+        "explanation": "CNAMEは別の名前を指す。登録先の待受ポートを表す項目はない。"
+      },
+      {
+        "id": "D",
+        "text": "Cloud MapのHTTP名前空間に各ポートを登録し、VPCのクライアントからDNSで問い合わせる。",
+        "explanation": "HTTP名前空間の検出にはAPIが必要で、DNSクエリのみの統合条件に合わない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/cloud-map/latest/dg/services-route53.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SRV応答はサービスホスト名と、各登録先のポートを直接返す。",
+      "concept": "Cloud Mapでは登録時のAWS_INSTANCE_PORTをサービス用のSRVレコードに含めることができる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-032",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-resolver-inbound-doh-encrypted-dns",
+    "title": "拠点からの名前解決を暗号化する",
+    "prompt": "拠点はVPN経由でAWSのプライベートホストゾーンを参照する。拠点リゾルバーはDNS over HTTPSに対応する。監査の条件としてDNSセッション自体をHTTPSで暗号化し、拠点からAWS向けの新規問い合わせは平文DNSでは受け付けない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ResolverインバウンドエンドポイントをDo53のみにし、TCP 53だけを許可する。",
+        "explanation": "DNSのTCP使用とDNS over HTTPSは別のプロトコルであり、TCP 53自体はHTTPSで暗号化しない。"
+      },
+      {
+        "id": "B",
+        "text": "VPCのアウトバウンドエンドポイントでDoHを設定し、拠点からApp VPCへ問い合わせる。",
+        "explanation": "アウトバウンドはVPCから外部DNSへ送る方向で、拠点からの問い合わせの宛先にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "ResolverインバウンドエンドポイントのプロトコルをDoHのみとし、拠点からのHTTPS接続を許可する。",
+        "explanation": "拠点からの問い合わせはVPC内に用意したHTTPSの入口で受け付け、Do53を有効にしなくてよい。"
+      },
+      {
+        "id": "D",
+        "text": "Route 53の公開ゾーンでDNSSECを有効にし、拠点の平文DNSを維持する。",
+        "explanation": "DNSSECはDNSレコードの真正性を検証する仕組みで、拠点とAWS間のDNSセッションをHTTPSにしない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-inbound-queries-values.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "拠点からの問い合わせはVPC内に用意したHTTPSの入口で受け付け、Do53を有効にしなくてよい。",
+      "concept": "Route 53 ResolverのインバウンドエンドポイントはProtocolの選択によりDoHで問い合わせを受け付ける。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-033",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-tgw-multicast-igmpv2-dynamic-members",
+    "title": "横断配信の受信者を参加・離脱で管理",
+    "prompt": "同じリージョン内の複数VPCで、配信元EC2からUDPマルチキャストを受け取る。送信側と受信側はTGW対応の構成で、受信機はIGMPv2を使える。受信者が起動と停止を繰り返すため、メンバーを固定登録せず自動で参加・離脱させるにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "マルチキャストをサポートするTGWでIGMPv2を有効にしたドメインへ該当サブネットを関連付け、受信機からグループに参加させる。",
+        "explanation": "メンバーシップを受信機のIGMPv2から学習し、個別の静的メンバー登録を省ける。"
+      },
+      {
+        "id": "B",
+        "text": "各VPCをピアリングで接続し、マルチキャストグループアドレス宛てのピア向けルートを作る。",
+        "explanation": "VPCピアリングはマルチキャスト転送をサポートしない。"
+      },
+      {
+        "id": "C",
+        "text": "TGWの静的なマルチキャスト設定で全受信者のENIを登録し、アプリの参加・離脱に任せる。",
+        "explanation": "静的なメンバーは制御プレーンで管理するので、IGMPでの動的管理の条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "UDPリスナーを持つNLBへ全受信者を登録し、送信側にNLBの名前を配布する。",
+        "explanation": "負荷分散は一つのフローを選択したターゲットへ送る方式で、加入した複数の受信者へのマルチキャストにはならない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/tgw/tgw-multicast-overview.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "メンバーシップを受信機のIGMPv2から学習し、個別の静的メンバー登録を省ける。",
+      "concept": "Transit GatewayはIGMPv2のマルチキャストドメインでグループのメンバーシップを扱う。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-034",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cloudfront-vpc-origin-internal-only",
+    "title": "エッジ配信を前段に内部ALBを公開せず使う",
+    "prompt": "CloudFrontの背後にプライベートサブネットの内部ALBがある。利用者はCloudFrontからだけHTTPでアクセスする。VPCにインターネットゲートウェイはアタッチ済みで、サブネットに空きIPv4がある。ALBを公開スキームへ変更せず、追加のプロキシも置かない構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "公開ALBへ移行してインターネット用の入口を作り、オリジンへのカスタムヘッダーで制限する。",
+        "explanation": "アプリ層で判定を絞れても、公開スキームへ変更しない条件を満たさない。"
+      },
+      {
+        "id": "B",
+        "text": "内部ALBのDNS名だけを従来のカスタムオリジンとして指定する。",
+        "explanation": "内部ALBのDNS名を指定するだけでは、CloudFrontにプライベートネットワークの到達性は追加されない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudFrontのOACを内部ALBに関連付け、VPCへの接続は設定しない。",
+        "explanation": "オリジンへの認可の設定だけでは内部ALBへのプライベートな経路を提供できない。"
+      },
+      {
+        "id": "D",
+        "text": "内部ALBをCloudFrontのVPCオリジンに設定し、オリジンでCloudFrontからの通信を許可する。",
+        "explanation": "CloudFrontがサービス管理のENIを利用して内部リソースに接続し、ALBにインターネットの入口を作らない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudFrontがサービス管理のENIを利用して内部リソースに接続し、ALBにインターネットの入口を作らない。",
+      "concept": "CloudFrontのVPCオリジンはプライベートサブネットの内部ALBへサービス管理のネットワーク経由で接続できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-035",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpc-endpoint-zonal-dns-local-az",
+    "title": "分類用クライアントから同じAZのエンドポイントを選ぶ",
+    "prompt": "同じVPCの2 AZにあるインターフェイスエンドポイントをアプリが利用する。障害切替はアプリで管理し、通常時はアプリインスタンスごとに同じ物理AZのエンドポイントENIを必ず選ぶ。リージョンの共通サービス名を透過的に使う要件はない。どの名前を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "すべてのアプリに同じリージョン別のエンドポイントDNS名を指定する。",
+        "explanation": "リージョン別名は特定のAZを固定する構成項目ではなく、複数AZのエンドポイントが候補になる。"
+      },
+      {
+        "id": "B",
+        "text": "エンドポイントのすべてのENIアドレスを1つの静的名前に登録して、AZに関係なく全端末から同じレコードを使う。",
+        "explanation": "候補に複数AZを含めて同じ回答を返す構成なので、同じAZの選択を保証しない。"
+      },
+      {
+        "id": "C",
+        "text": "各アプリに同じサービスのプライベートDNS名を指定し、DNSのキャッシュを無効にする。",
+        "explanation": "キャッシュ無効は毎回の名前解決を促すが、エンドポイントのAZをエンドポイント固有名で明示しない。"
+      },
+      {
+        "id": "D",
+        "text": "各アプリのAZに対応するエンドポイント固有のゾーンDNS名を設定する。",
+        "explanation": "AZごとに公開される名前を使って、指定したAZのエンドポイントENIを選べる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "AZごとに公開される名前を使って、指定したAZのエンドポイントENIを選べる。",
+      "concept": "インターフェイスエンドポイントにはリージョン別名に加え、AZを選択するゾーン固有のDNS名がある。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-015",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-dx-bfd-detect-forwarding-failure",
+    "title": "物理信号が消えない回線障害の検出を早める",
+    "prompt": "2本のDirect Connectで冗長化した。片系の中継網が転送できなくなっても両端の物理リンクはUPのままになり、BGP Hold Timerの満了まで切り替わらない。拠点ルーターもサポートする仕組みを使い、VIFで障害を早期検出するにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VIFの送信側の光パワーに短い間隔でアラームをかける。",
+        "explanation": "光パワーが正常なままの中継網での転送断を観測できない。"
+      },
+      {
+        "id": "B",
+        "text": "予備系のAS_PATHを短くして両経路の広告を維持する。",
+        "explanation": "到達可能な経路間の優先度を変える操作で、現用系の転送断を早く検出しない。"
+      },
+      {
+        "id": "C",
+        "text": "拠点ルーターで該当BGPピアに非同期BFDを設定し、双方でセッションが確立したことを確認する。",
+        "explanation": "BFDがIPパスを監視し、物理状態が維持された障害でもBGPの既存タイマーだけに依存しない。"
+      },
+      {
+        "id": "D",
+        "text": "障害時のConnectionStateがDOWNになるまで待ち、そのメトリクスを唯一の切替条件にする。",
+        "explanation": "転送が止まっても物理リンクがUPのままという故障では、切替条件を満たせない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/Welcome.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "BFDがIPパスを監視し、物理状態が維持された障害でもBGPの既存タイマーだけに依存しない。",
+      "concept": "AWS側が対応する非同期BFDは、顧客側ピアでも有効にするとBGP隣接の到達障害を早く検知できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-016",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-dx-hosted-vif-recipient-acceptance",
+    "title": "他アカウントに作られたプライベートVIFを接続する",
+    "prompt": "接続事業者は自社が管理するDirect Connectのポートに、顧客のAWSアカウントを所有者とするホスト型プライベートVIFを作成した。VIFは顧客に保留状態で見え、接続先の仮想プライベートゲートウェイは顧客アカウントにある。顧客側の次の作業はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "顧客がゲートウェイへAmazon側のBGP ASNを設定すれば、保留中のVIFの状態も自動で遷移する。",
+        "explanation": "ASNは経路交換の設定であり、アカウントへの割当の受諾にはならない。"
+      },
+      {
+        "id": "B",
+        "text": "接続事業者側で既存のVIFを削除し、顧客のVPCを事業者のアカウントに共有する。",
+        "explanation": "VPCの共有は割り当て済みVIFの受諾の代わりにならず、顧客側の接続先選択も満たさない。"
+      },
+      {
+        "id": "C",
+        "text": "顧客アカウントでホスト型VIFを受諾し、接続先として自社の仮想プライベートゲートウェイを選択する。",
+        "explanation": "物理接続の所有アカウントを移さずに、顧客のVIFとしてゲートウェイとの接続を確立できる。"
+      },
+      {
+        "id": "D",
+        "text": "顧客が事業者の物理接続IDを指定して、同じタグでVIFを自分のアカウントに再作成する。",
+        "explanation": "顧客は事業者の物理接続の所有者ではない。顧客に割り当てられたVIFを受諾する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/accepthostedvirtualinterface.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "物理接続の所有アカウントを移さずに、顧客のVIFとしてゲートウェイとの接続を確立できる。",
+      "concept": "ホスト型VIFは割当先アカウントから受諾して利用する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-017",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpn-dual-tunnel-ikev2-only",
+    "title": "冗長構成の片方だけが旧方式を許可する状態を解消",
+    "prompt": "Site-to-Site VPNには2本のトンネルがある。監査により両方でIKEv2のみを許可し、拠点機器とAWSの設定を一致させる。変更中はもう一方のトンネルを利用できる運用にする。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "BGPの認証鍵を両側で更新し、IKEバージョンは既定値を維持する。",
+        "explanation": "BGPの認証はVPN確立後の経路交換に関係し、IKEで交渉できるバージョンは制限しない。"
+      },
+      {
+        "id": "B",
+        "text": "AWSで一方のトンネルにだけIKEv2を指定し、もう一方はトンネル間で設定が複製されるまで待つ。",
+        "explanation": "IKEの許可バージョンは各トンネルで設定されるため、一方の変更だけでは他方の許可方式を制限しない。"
+      },
+      {
+        "id": "C",
+        "text": "AWS側でIKEv1とIKEv2の両方を許可したまま、フェーズ1の暗号アルゴリズムを限定する。",
+        "explanation": "暗号アルゴリズムを限定しても、許可するIKEバージョンの一覧は変わらない。"
+      },
+      {
+        "id": "D",
+        "text": "保守手順でトンネルを片方ずつ切り替え、各トンネルでAWS側の許可IKEバージョンをIKEv2のみにして拠点機器も合わせる。",
+        "explanation": "両端の交渉条件をトンネルごとに一致させ、待機側の稼働を確認しながら設定できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "両端の交渉条件をトンネルごとに一致させ、待機側の稼働を確認しながら設定できる。",
+      "concept": "IKEの許可バージョンは、AWS Site-to-Site VPNのトンネルごとのオプションとして構成する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-018",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cfn-interface-endpoint-private-dns-vpc-attributes",
+    "title": "テンプレートでPrivateLinkの標準サービス名を使う",
+    "prompt": "スタックで隔離VPCとSecrets Managerのインターフェイスエンドポイントを作る。アプリのSDKは標準のリージョン別サービス名にアクセスし、パブリックな名前からVPC内のENIのプライベートIPを得たい。サブネットとSGは準備済みである。指定する内容はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS::EC2::VPCEndpointをInterface型にし、PrivateDnsEnabledをtrueにする。",
+        "explanation": "対応するサービスの標準名で接続するためのプライベートDNSが有効になる。"
+      },
+      {
+        "id": "B",
+        "text": "エンドポイントの種類をGatewayにし、SDKの名前解決を経路表に任せる。",
+        "explanation": "Secrets Managerはインターフェイス型を使い、Gateway型は同じプライベートDNS構成を提供しない。"
+      },
+      {
+        "id": "C",
+        "text": "エンドポイントのPrivateDnsEnabledをfalseにし、サブネットIDを設定して自動で標準名に反映させる。",
+        "explanation": "サブネットからエンドポイントENIは作成されるが、標準名の解決は自動で置換されない。"
+      },
+      {
+        "id": "D",
+        "text": "対象VPCでEnableDnsSupportとEnableDnsHostnamesの両方をtrueにする。",
+        "explanation": "プライベートDNSによる名前解決の前提となるVPCのDNS属性が揃う。"
+      },
+      {
+        "id": "E",
+        "text": "EnableDnsSupportだけをfalseにして、すべての問い合わせをインターネットのDNSへ送る。",
+        "explanation": "VPC Resolverを用いたエンドポイント向けの標準名のプライベート解決を使えなくなる。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応するサービスの標準名で接続するためのプライベートDNSが有効になる。 プライベートDNSによる名前解決の前提となるVPCのDNS属性が揃う。",
+      "concept": "インターフェイス型のPrivateDnsEnabledとVPCのDNS属性が、標準サービス名のプライベート解決を可能にする。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-019",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-shared-vpc-owner-route-participant-sg",
+    "title": "共有サブネットの戻り経路と通信許可の変更者",
+    "prompt": "アプリチームは参加者として共有サブネット内にEC2と自分のSGを作った。オンプレミスとの疎通に、共有サブネットのルートテーブルへ宛先を追加することと、そのEC2のSGで許可CIDRを追加することが必要である。既存の所有関係を維持するなら役割分担はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "参加者がサブネットのルートテーブルと自身のSGを両方変更する。",
+        "explanation": "参加者は共有サブネットのルートテーブルを参照できても、関連付けや管理はできない。"
+      },
+      {
+        "id": "B",
+        "text": "参加者が自分のルートテーブルを共有サブネットのメインテーブルとして関連付ける。",
+        "explanation": "共有サブネットのルートテーブルの関連付けは参加者が行える操作に含まれない。"
+      },
+      {
+        "id": "C",
+        "text": "VPC所有者がサブネットのルートテーブルを変更し、参加者が自身のSGの規則を変更する。",
+        "explanation": "共有ネットワークと参加者のリソースで、それぞれの所有アカウントが変更する。"
+      },
+      {
+        "id": "D",
+        "text": "VPC所有者が共有サブネットを管理していることを理由に、参加者のSGも直接変更する。",
+        "explanation": "SGの所有関係はサブネットとは別である。参加者が作ったSGをVPC所有者の資源とは扱えない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-share-limitations.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "共有ネットワークと参加者のリソースで、それぞれの所有アカウントが変更する。",
+      "concept": "共有VPCのルートテーブルは所有者が管理し、参加者は自分で所有するSGを管理できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-020",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-resolver-most-specific-forwarding-rule",
+    "title": "子ドメインだけを別拠点の権威DNSへ送る",
+    "prompt": "VPCのResolverにcorp.exampleの転送ルールがあり、旧拠点のリゾルバーを指定している。買収先のlab.corp.exampleだけを新拠点の権威DNSに送り、corp.exampleの他のサブドメインは従来の転送先を維持したい。両拠点はアウトバウンドエンドポイントから到達できる。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "既存のcorp.exampleのルールに新拠点の宛先IPも追加し、Resolverに応答のないときだけ試させる。",
+        "explanation": "親ルールの宛先を追加しても、子ドメインだけが常に新拠点を選ぶ条件は設定されない。"
+      },
+      {
+        "id": "B",
+        "text": "既存の親ドメインのルールを削除し、子ドメインのルールだけを関連付ける。",
+        "explanation": "対象の子には転送できても、親配下のほかの社内問い合わせを旧拠点へ送る条件がなくなる。"
+      },
+      {
+        "id": "C",
+        "text": "新拠点DNSを指定したlab.corp.exampleの転送ルールを追加し、同じVPCに関連付ける。",
+        "explanation": "子の問い合わせには具体的なルールが選ばれ、他の問い合わせは親ルールを引き続き利用する。"
+      },
+      {
+        "id": "D",
+        "text": "lab.corp.exampleの空のプライベートホストゾーンを関連付け、転送は従来の親ルールだけにする。",
+        "explanation": "空のゾーンは新拠点の権威DNSへの転送設定にならず、必要なレコードを提供しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-overview-forward-vpc-to-network-using-rules.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "子の問い合わせには具体的なルールが選ばれ、他の問い合わせは親ルールを引き続き利用する。",
+      "concept": "名前に複数の転送ルールが一致する場合は、より具体的なドメインが優先される。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-021",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-route53-zone-apex-alb-alias-a",
+    "title": "ゾーン頂点をIPが変動するALBへ向ける",
+    "prompt": "公開ホストゾーンexample.comの頂点を、IPv4のインターネット向けALBに割り当てる。ALBのノードIPが変わっても利用者のURLを変えず、既存のSOAとNSも維持したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ALBのDNS名を最初に引いた結果のIPv4を、example.comの通常のAレコードへ登録する。",
+        "explanation": "現在のIPは接続できることがあっても、ALBのノードアドレスの変更に追従しない。"
+      },
+      {
+        "id": "B",
+        "text": "example.comにALBのDNS名を参照するCNAMEレコードを作る。",
+        "explanation": "ゾーン頂点には同名のSOAとNSがあり、その場所でCNAMEは作成できない。"
+      },
+      {
+        "id": "C",
+        "text": "example.comのNSをALBのDNS名へ置き換えて委任する。",
+        "explanation": "ALBは権威DNSサーバーではないため、ゾーンの名前解決を委任する対象にならない。"
+      },
+      {
+        "id": "D",
+        "text": "example.comにALBを参照するエイリアスAレコードを作る。",
+        "explanation": "ゾーン頂点で既存の必須レコードと共存しながら、ALBのアドレスをAWS側で追従できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ゾーン頂点で既存の必須レコードと共存しながら、ALBのアドレスをAWS側で追従できる。",
+      "concept": "Route 53のエイリアスはゾーン頂点でALBを参照できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-022",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-resolver-inbound-delegation-glue",
+    "title": "オンプレミスの権威DNSからAWSへ子ゾーンを委任",
+    "prompt": "社内の権威DNSがexample.internalを管理する。AWS側のプライベートホストゾーンcloud.example.internalに対しては、拠点のリゾルバーごとの条件付き転送を導入せず、親ゾーンからDNSの委任として処理したい。AWSと拠点の間はプライベートIPで到達できる。何を構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "アウトバウンドエンドポイントのIPを親ゾーンの子ドメイン向けグルーレコードへ登録する。",
+        "explanation": "アウトバウンド側はVPCから外部へ送る用途で、拠点からAWSへ委任された問い合わせの受け側ではない。"
+      },
+      {
+        "id": "B",
+        "text": "Default型のインバウンドエンドポイントを作り、すべての拠点リゾルバーに子名の条件付き転送を追加する。",
+        "explanation": "通常の条件付き転送としては動くが、社内の親ゾーンの委任を用いる要件を満たさない。"
+      },
+      {
+        "id": "C",
+        "text": "Delegation型のインバウンドエンドポイントを作り、親ゾーンの委任先NSをそのエンドポイントのIPへグルーで関連付ける。",
+        "explanation": "拠点からは子ゾーンの委任に沿って、プライベートなDelegationエンドポイントへ問い合わせる。"
+      },
+      {
+        "id": "D",
+        "text": "プライベートホストゾーンを複製して公開ホストゾーンとし、親ゾーンはインターネット上の権威DNSに委任する。",
+        "explanation": "内部向けサービスのDNSデータを公開するため、プライベートな委任範囲を維持できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-inbound-queries-values.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "拠点からは子ゾーンの委任に沿って、プライベートなDelegationエンドポイントへ問い合わせる。",
+      "concept": "インバウンドResolverエンドポイントのDelegation型を公開せずに、親ゾーンの委任とグルーレコードで参照できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-023",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-apigw-private-domain-vpce-association",
+    "title": "プライベートAPIのカスタム名を許可済みエンドポイントで使う",
+    "prompt": "API GatewayのプライベートREST APIにカスタムドメインを割り当てた。APIとドメインのリソースポリシーは対象VPCエンドポイントを許可し、プライベートDNSも設定済みである。同じエンドポイントからAPI固有の名前には到達できる。カスタムドメインを使うために追加する関連付けはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "REST APIからエンドポイントのIDを削除し、リージョン公開のカスタムドメインへ同じマッピングを複製する。",
+        "explanation": "プライベートな名前とアクセス境界を維持できない。"
+      },
+      {
+        "id": "B",
+        "text": "APIのステージ変数にエンドポイントのプライベートIPを設定する。",
+        "explanation": "ステージ変数は統合設定などで利用できるが、カスタムドメインに対するネットワーク側のアクセス関連付けにはならない。"
+      },
+      {
+        "id": "C",
+        "text": "カスタムドメインのAレコードだけを別のプライベートホストゾーンに複製する。",
+        "explanation": "名前解決の結果が同じでも、API Gatewayに必要なドメインとエンドポイントの関連付けは作成されない。"
+      },
+      {
+        "id": "D",
+        "text": "対象のexecute-apiインターフェイスエンドポイントとプライベートカスタムドメインのドメイン名アクセス関連付けを作成する。",
+        "explanation": "カスタムドメインをそのエンドポイントから使えるよう、消費側のアクセス経路を登録する。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-private-custom-domains.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "カスタムドメインをそのエンドポイントから使えるよう、消費側のアクセス経路を登録する。",
+      "concept": "プライベートカスタムドメインの利用には、消費側のVPCエンドポイントとのドメイン名アクセス関連付けを作る。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-024",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nlb-dualstack-udp-ipv6-source-prefix",
+    "title": "IPv6を含むクライアントからUDPの受信を追加",
+    "prompt": "対応リージョンで、IPv6 CIDR付きのVPCに新しいデュアルスタックNLBを作る。UDPリスナーのターゲットグループはIPv6タイプで、ターゲットもIPv6で登録する。IPv6 UDPリスナーで送信元IP保存をサポートするため、NLB側で指定する項目はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "UDPをQUICリスナーに替えて、IPv6ソースNATの設定を省略する。",
+        "explanation": "既存のアプリUDPを別のプロトコルのリスナーに替える案で、デュアルスタックの前提も維持できない。"
+      },
+      {
+        "id": "B",
+        "text": "各サブネットのマッピングでIPv6ソースNATプレフィックスを指定するか、AWSに割り当てさせる。",
+        "explanation": "デュアルスタックNLBがUDPを扱うために、サブネットごとのIPv6ソースNAT範囲を利用できるようにする。"
+      },
+      {
+        "id": "C",
+        "text": "クライアントIPv6を保護するためにIPv4タイプのUDPターゲットグループへ切り替える。",
+        "explanation": "デュアルスタックNLBのUDP構成ではIPv6ターゲットグループの要件を満たす必要がある。"
+      },
+      {
+        "id": "D",
+        "text": "IPv6ソースNATを無効にし、NLBのリスナーのDNS名だけをAAAAレコードに登録する。",
+        "explanation": "名前解決をIPv6にしても、UDPのデュアルスタック要件で必要なNLB内部のプレフィックスは用意されない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/network-load-balancers.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "デュアルスタックNLBがUDPを扱うために、サブネットごとのIPv6ソースNAT範囲を利用できるようにする。",
+      "concept": "IPv6のUDPリスナーで送信元IP保存をサポートするにはIPv6ソースNATプレフィックスを有効にする。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-025",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-eks-cni-custom-networking-eniconfig",
+    "title": "EKSのPod IPをノードとは別CIDRへ移す",
+    "prompt": "EKSのLinux EC2ノードは今のサブネットに置いたまま、通常のPodのIPだけを新しいセカンダリCIDRから割り当てたい。VPC CNIを使い、各AZの新しいPod用サブネットとPod向けのSGは用意済みである。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "KubernetesのNetworkPolicyにセカンダリCIDRを追加し、既存のVPC CNI設定は維持する。",
+        "explanation": "NetworkPolicyは通信の許可を制御する。Pod IPに使うサブネットは変更しない。"
+      },
+      {
+        "id": "B",
+        "text": "Kubernetes ServiceのClusterIPレンジを指定し、PodへのセカンダリENIは作らない。",
+        "explanation": "Serviceの仮想IPの範囲と、Podに割り当てるVPCのIPは異なる。"
+      },
+      {
+        "id": "C",
+        "text": "カスタムネットワーキングを有効にし、各AZのPod用サブネットとSGを指定したENIConfigをノードへ対応付ける。",
+        "explanation": "VPC CNIがノードのプライマリENIとは異なるサブネットにセカンダリENIを作ってPodへIPを割り当てられる。"
+      },
+      {
+        "id": "D",
+        "text": "VPC CNIでIPv4プレフィックス委任だけを有効にし、現在のノードサブネットのままにする。",
+        "explanation": "IP割り当て効率は改善しても、別サブネットを選ぶための設定を与えていない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eks/latest/userguide/cni-custom-network.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "VPC CNIがノードのプライマリENIとは異なるサブネットにセカンダリENIを作ってPodへIPを割り当てられる。",
+      "concept": "VPC CNIのカスタムネットワーキングはENIConfigで別サブネットとSGを指定する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-026",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpce-private-dns-existing-hosted-zone-conflict",
+    "title": "既存の同名ゾーンを維持してエンドポイントを追加",
+    "prompt": "VPCには、AWSサービスの標準名と同じ名前のプライベートホストゾーンが既に関連付けられている。既存アプリはそのゾーンのレコードを使うためゾーンを外せない。インターフェイスエンドポイントを追加したところ、サービス名のプライベートDNSを有効にできない。新しいアプリは接続先名を変更できる。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "エンドポイントのENIのサブネットを入れ替え、同名ゾーンが見えないようにする。",
+        "explanation": "プライベートゾーンの関連付けはVPC単位なので、同じVPCの別サブネットに移しても競合は残る。"
+      },
+      {
+        "id": "B",
+        "text": "エンドポイントのPrivate DNSを無効のまま作成し、新しいアプリでエンドポイントの固有DNS名を使う。",
+        "explanation": "エンドポイント固有名でENIに到達でき、既存の同名プライベートゾーンを維持できる。"
+      },
+      {
+        "id": "C",
+        "text": "同名ゾーンのレコードを削除し、関連付け自体は維持したまま再度有効にする。",
+        "explanation": "競合は同じVPCに関連付けられたゾーン名で起きる。レコードを消すと既存アプリにも影響する。"
+      },
+      {
+        "id": "D",
+        "text": "VPCのDNSサポートを無効にした状態でエンドポイントのPrivate DNSを強制する。",
+        "explanation": "無効化するとそもそも透過的なプライベートDNSの前提を満たせない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "エンドポイント固有名でENIに到達でき、既存の同名プライベートゾーンを維持できる。",
+      "concept": "エンドポイントの固有DNS名を使う経路と、Private DNSで標準名を透過的に変更する経路は別である。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-027",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpc-route-static-precedence-same-prefix",
+    "title": "同一CIDRを持つ静的経路と伝播経路を比較",
+    "prompt": "VPCのルートテーブルに、10.42.0.0/16を中継ENIに送る静的ルートがある。仮想プライベートゲートウェイからの伝播を有効にすると、同じ範囲が動的に広告される。ENIは稼働中で、変更ウィンドウまでは従来経路を維持したい。10.42.1.20宛ての現在の転送をどう判断するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "両方のルートは同じ長さなのでVPC内でフロー単位のECMPが始まる。",
+        "explanation": "静的経路と伝播経路をその状態で等コストには扱わない。"
+      },
+      {
+        "id": "B",
+        "text": "BGPで受信したルートがより最近なので、仮想プライベートゲートウェイが選ばれる。",
+        "explanation": "同じ宛先で種類が違う場合は新着順ではなく、ルートの優先順位で判断する。"
+      },
+      {
+        "id": "C",
+        "text": "同じ長さなら中継ENIを対象にする既存の静的ルートが選ばれる。",
+        "explanation": "動的伝播を有効にしても、同一宛先の有効な静的ルートが優先される。"
+      },
+      {
+        "id": "D",
+        "text": "静的経路の宛先を10.42.0.0/15へ集約しない限り、両方ともルートテーブルで利用できない。",
+        "explanation": "同じ宛先でも有効な静的ルートを利用できる。/15では逆に/16の伝播が最長一致になる。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/route-tables-priority.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "動的伝播を有効にしても、同一宛先の有効な静的ルートが優先される。",
+      "concept": "VPCルートテーブルで同じ宛先の静的ルートと伝播ルートが競合すると、対象の静的ルートが優先される。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-028",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cloudformation-route-depends-igw-attachment",
+    "title": "同一スタックで経路作成の先行条件を表す",
+    "prompt": "CloudFormationの1スタックでVPC、IGW、VPCGatewayAttachment、パブリックサブネットの既定ルートを作る。既定ルートはIGWとルートテーブルにRefを持つが、初回作成時にゲートウェイがまだVPCへアタッチされておらず失敗することがある。テンプレート内でどう直すか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IGWの論理IDをDependsOnに追加し、ゲートウェイに対する既存のRefも維持する。",
+        "explanation": "IGW自体の作成は待てるが、別リソースであるVPCへのアタッチ完了を表せない。"
+      },
+      {
+        "id": "B",
+        "text": "AWS::EC2::Routeに対し、VPCGatewayAttachmentの論理IDをDependsOnに指定する。",
+        "explanation": "リソース本体への参照だけでは表せないアタッチ完了を待ってから既定ルートを作成する。"
+      },
+      {
+        "id": "C",
+        "text": "VPCGatewayAttachmentに既定ルートのDependsOnを設定する。",
+        "explanation": "アタッチを経路作成の後に行う逆の依存関係になり、経路の作成時点の問題を解決しない。"
+      },
+      {
+        "id": "D",
+        "text": "AWS::EC2::RouteにDeletionPolicy Retainを設定する。",
+        "explanation": "削除時の取り扱いを指定する属性であり、初回作成時の順序は指定しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-dependson.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "リソース本体への参照だけでは表せないアタッチ完了を待ってから既定ルートを作成する。",
+      "concept": "IGWを使うパブリックルートは、IGW資源の作成に加えてVPCへのアタッチ完了を先行条件にする。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-029",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-client-vpn-route-same-destination-per-target-subnet",
+    "title": "接続先AZによって拠点への到達性が変わる",
+    "prompt": "AWS Client VPNは同じVPCの2 AZのサブネットに関連付けられている。両サブネットのVPCルートテーブルから拠点へ到達でき、Client VPNの認可ルールも拠点CIDRを許可する。Client VPNのエンドポイントルートには拠点CIDRが片方の関連付けサブネット向けにだけ登録されている。どう直すか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "拠点CIDRのClient VPNルートを、もう片方の関連付けサブネット向けにも追加する。",
+        "explanation": "接続がどの関連付けを使っても、Client VPNの経路選択で同じ宛先に到達できる。"
+      },
+      {
+        "id": "B",
+        "text": "Client VPNの認可ルールを同じ拠点CIDRで再作成し、エンドポイントルートは片系のみを維持する。",
+        "explanation": "認可は経路を追加しないため、経路のない関連付け側では到達できない。"
+      },
+      {
+        "id": "C",
+        "text": "2 AZのVPCルートテーブルに同じCIDRを再登録して、Client VPNルートに自動複製させる。",
+        "explanation": "VPC側のルートが正しくても、独立したClient VPNの経路は各関連付けに必要である。"
+      },
+      {
+        "id": "D",
+        "text": "片方のサブネットとの関連付けを削除する。",
+        "explanation": "利用可能な一方に接続を固定できるが、2 AZの関連付けによる冗長性を失う。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-routes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "接続がどの関連付けを使っても、Client VPNの経路選択で同じ宛先に到達できる。",
+      "concept": "複数の関連付けサブネットを持つClient VPNでは、到達させる宛先について各関連付けの経路を揃える。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-030",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-ecs-service-connect-client-alias-proxy",
+    "title": "タスクのIP変更をサービス名の契約から切り離す",
+    "prompt": "同じリージョンのECSクライアントサービスは、頻繁に入れ替わるECSバックエンドタスクへプロトコル対応のプロキシ経由で接続したい。クライアントにAWS APIを追加せず、業務コードは固定の名前とポートを使う。ECSのマネージド機構を使うにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "内部NLBのターゲットを手動登録して、Service Connectを設定せず共通のDNS名だけを使う。",
+        "explanation": "TCPの入口は提供できるが、ECSのService Connectプロキシを使うサービス間通信ではない。"
+      },
+      {
+        "id": "B",
+        "text": "VPCのプライベートDNSを無効にし、各タスクに同じ固定IPを割り当てる。",
+        "explanation": "タスクの同時稼働や交換とIPの一意性が衝突し、サービス名を維持する管理機能にもならない。"
+      },
+      {
+        "id": "C",
+        "text": "ECSタスク起動直後のIPを共有パラメータへ書き、クライアントが起動時にだけ取得する。",
+        "explanation": "初期接続先は得られるが、タスク交換時の追従やECSの管理するプロキシは提供しない。"
+      },
+      {
+        "id": "D",
+        "text": "関係するECSサービスで同じService Connect名前空間を使い、バックエンドの名前付きポートにクライアントエイリアスを設定する。",
+        "explanation": "固定の論理名をECSプロキシ経由の接続に対応付け、タスクの交替をサービスの設定で処理できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "固定の論理名をECSプロキシ経由の接続に対応付け、タスクの交替をサービスの設定で処理できる。",
+      "concept": "ECS Service Connectはサービス間の名前とポートの設定に基づき、ECSが管理するプロキシを利用する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-031",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-gwlb-endpoint-allowed-principal-acceptance",
+    "title": "許可した取引先にだけ検査サービスを公開",
+    "prompt": "検査側アカウントはGateway Load Balancerのエンドポイントサービスをすでに作成した。取引先の特定IAMロールだけにエンドポイント作成を認め、各接続は検査側が個別に承認する。提供側で行う設定はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "接続要求を自動受諾する設定にする。",
+        "explanation": "許可済みプリンシパルが作る接続も提供側の個別承認なしで確定する。"
+      },
+      {
+        "id": "B",
+        "text": "エンドポイントサービスで接続要求の受諾を必須にする。",
+        "explanation": "許可したプリンシパルからの接続でも、提供側が個別に確認して受諾する。"
+      },
+      {
+        "id": "C",
+        "text": "検査装置のセキュリティグループで取引先のCIDRを許可し、サービスの許可項目は設定しない。",
+        "explanation": "パケットの許可ルールは、PrivateLinkの接続要求を発行できる主体の制御にはならない。"
+      },
+      {
+        "id": "D",
+        "text": "その取引先ロールのARNをエンドポイントサービスの許可プリンシパルに追加する。",
+        "explanation": "接続要求を発行できる主体を指定の取引先ロールに限定できる。"
+      },
+      {
+        "id": "E",
+        "text": "許可プリンシパルとして取引先アカウント全体を登録する。",
+        "explanation": "取引先の指定ロール以外の主体からの要求も許可の対象に含まれてしまう。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "接続要求を発行できる主体を指定の取引先ロールに限定できる。 許可したプリンシパルからの接続でも、提供側が個別に確認して受諾する。",
+      "concept": "PrivateLinkの許可プリンシパルとエンドポイント接続の受諾要否は独立した設定である。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-013",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nlb-port-allocation-error-capacity",
+    "title": "TCPの新規接続失敗をバックエンドの配置で減らす",
+    "prompt": "NLBのTCPターゲットグループではクライアントIP保存を無効にしている。ピーク時だけPortAllocationErrorCountが増え、既存接続とバックエンドの健全性は正常である。リクエストレートを減らさず、同じNLBを使って接続あたりの変換ポート割り当てを改善するにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同じターゲットグループに、異なるIPアドレスまたはポートの処理先を増やす。",
+        "explanation": "NLBはターゲットのIPとポートの組み合わせごとに変換接続を割り当てるため、接続の集中を分散できる。"
+      },
+      {
+        "id": "B",
+        "text": "NLBへIPv6のAAAAレコードだけを追加し、TCPターゲットの資源は維持する。",
+        "explanation": "接続が集中している対象を増やさない。DNSのレコード種別だけではエラーが起きた経路の割り当て容量を改善できない。"
+      },
+      {
+        "id": "C",
+        "text": "ターゲットグループのヘルスチェック間隔を短くしてすべてのターゲットを早く正常と判定させる。",
+        "explanation": "ターゲットはすでに正常であり、ヘルスチェックでは接続変換ポートの容量を増やせない。"
+      },
+      {
+        "id": "D",
+        "text": "DNSエイリアスのキャッシュ時間だけを短くする。",
+        "explanation": "名前解決の更新頻度を変えても、同じNLB・ターゲットの接続割り当て容量は増えない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-cloudwatch-metrics.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "NLBはターゲットのIPとポートの組み合わせごとに変換接続を割り当てるため、接続の集中を分散できる。",
+      "concept": "NLBはクライアントIP保存が無効な構成でポート割り当てエラーが増えると、ターゲットを増やすことで利用可能な組み合わせを広げられる。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-014",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-dx-health-maintenance-to-operations",
+    "title": "専用線の保守通知を作業票に取り込む",
+    "prompt": "接続を所有するAWSアカウントで、Direct Connectの予定保守を障害発生より前に既存の運用チケットへ連携したい。対象接続と予定時刻を含む提供元のイベントを使い、光レベルやBGPの状態変化では起票しない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ConnectionStateのCloudWatchアラームを作り、DOWNが観測されたら起票する。",
+        "explanation": "障害後の通知であり、AWSが予定している保守や影響資源を事前に取得できない。"
+      },
+      {
+        "id": "B",
+        "text": "AWS HealthのDirect Connect保守イベントをEventBridgeで購読し、既存チケットシステムへ渡す。",
+        "explanation": "予定時刻と影響資源を持つサービス通知なので、イベントを接続の物理切断より前に受け取れる。"
+      },
+      {
+        "id": "C",
+        "text": "VIFのトラフィックが一定量を下回ったら保守予定時刻として記録する。",
+        "explanation": "観測した通信量の変化で判断するため、計画された保守の確定時刻を受け取れない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailからModifyConnectionを監視し、AWSのすべての保守変更が同じイベント名で出ると見なす。",
+        "explanation": "アカウントのAPI操作記録を、サービスからの予定保守通知の代替にはできない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/dx-maintenance.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "予定時刻と影響資源を持つサービス通知なので、イベントを接続の物理切断より前に受け取れる。",
+      "concept": "Direct Connectの予定保守は所有者アカウントのAWS Healthに通知され、EventBridge経由で運用システムへ連携できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-015",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-tgw-flow-log-no-route-vs-blackhole",
+    "title": "TGWで失われた理由をフローレコードから分ける",
+    "prompt": "Transit Gatewayのフローログを収集している。障害時間帯にいくつかの宛先へパケットが届かず、ルート未設定と意図的なブラックホールによる破棄を同じアタッチメントごとに分類したい。どのフィールドを照合するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "TGWのbytesだけを集計し、バイト数の少ない宛先を必ず経路なしとみなす。",
+        "explanation": "通信量の大小には理由が記録されず、二つの破棄要因を区別できない。"
+      },
+      {
+        "id": "B",
+        "text": "TGWのフローログでsrcaddrとdstaddrだけを見て、宛先IPの範囲から破棄理由を推定する。",
+        "explanation": "アドレスから宛先は分かるが、TGWが適用したルーティング上の結果までは分からない。"
+      },
+      {
+        "id": "C",
+        "text": "包含するVPC Flow LogsのactionがREJECTの行を、すべてTGWのブラックホールとして集計する。",
+        "explanation": "VPCのフィルターの拒否はTGWルーティングの破棄理由と同義ではなく、経路なしとの区別もできない。"
+      },
+      {
+        "id": "D",
+        "text": "packets-lost-no-routeとpackets-lost-blackholeをアタッチメント識別子と宛先で集計する。",
+        "explanation": "到達しなかった原因別の計数を、対象のフローやアタッチメントへ関連付けられる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/tgw/tgw-flow-logs.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "到達しなかった原因別の計数を、対象のフローやアタッチメントへ関連付けられる。",
+      "concept": "TGWのフローログは経路なしとブラックホールによるパケット損失を別々に計数する。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-016",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-ipam-subnet-ip-usage-cloudwatch",
+    "title": "自動配備が失敗する前にサブネットの枯渇を監視",
+    "prompt": "IPAMが監視しているIPv4サブネットの一部で、スケールアウト時に新しいENIを作れない障害が起きた。VPC全体には余裕がある。消費されたサブネット内IPv4の割合が75%を超えたとき、対象サブネットごとに通知したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudWatchでIPAMのSubnetIPUsageを選び、対象サブネットの使用率にアラームを設定する。",
+        "explanation": "各サブネットの総IPv4数に対してアクティブなIPが占める割合を監視できる。"
+      },
+      {
+        "id": "B",
+        "text": "Transit Gatewayの接続ごとのパケット数を監視する。",
+        "explanation": "ルーティングの利用量から各サブネットのENI用アドレス残量は算出できない。"
+      },
+      {
+        "id": "C",
+        "text": "IPAMのVpcIPUsageで、VPCに割り当てたアドレスのうちサブネットの範囲が占める割合だけを監視する。",
+        "explanation": "VPCのCIDR計画には使えるが、特定サブネット内で消費されたアドレスの比率は分からない。"
+      },
+      {
+        "id": "D",
+        "text": "EC2 NetworkInをENIごとに集計し、通信量をIPv4割り当て率に換算する。",
+        "explanation": "通信が少なくてもIPを使用中のENIは存在するため、予約状況を測定できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/ipam/cloudwatch-ipam-res-util.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "各サブネットの総IPv4数に対してアクティブなIPが占める割合を監視できる。",
+      "concept": "AWS/IPAMのSubnetIPUsageはサブネットIPv4のアクティブIP使用率を示す。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-017",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpc-flow-logs-skipdata-export-diagnostic",
+    "title": "フローログの収集状況を監査所見に対応付ける",
+    "prompt": "VPC Flow Logsで、対象ENIの複数の集約期間に異なるlog-statusが出力された。各観測結果に最も適したlog-statusを1つずつ対応付ける。候補は1回ずつ使用する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "SKIPDATA",
+        "explanation": "内部制約やエラーで集約期間中の一部レコードが省略された可能性があるため、無通信を証明できない。"
+      },
+      {
+        "id": "B",
+        "text": "OK",
+        "explanation": "フローログは通常どおりにデータを記録している。"
+      },
+      {
+        "id": "C",
+        "text": "NODATA",
+        "explanation": "該当する集約期間に対象ENIで記録対象となるネットワークトラフィックがなかった。"
+      }
+    ],
+    "correct": [
+      "B",
+      "C",
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "フローログは通常どおりにデータを記録している。 該当する集約期間に対象ENIで記録対象となるネットワークトラフィックがなかった。 内部制約やエラーで集約期間中の一部レコードが省略された可能性があるため、無通信を証明できない。",
+      "concept": "VPC Flow Logsのlog-statusは収集の状態を示し、actionは通信の許可・拒否を示す。"
+    },
+    "format": "matching",
+    "prompts": [
+      {
+        "id": "item-1",
+        "text": "対象の通信フローが観測され、集約期間のレコードを通常どおり受領した。"
+      },
+      {
+        "id": "item-2",
+        "text": "記録対象のトラフィックが観測されず、集約期間を通じて記録するフローがなかった。"
+      },
+      {
+        "id": "item-3",
+        "text": "集約期間の一部でフローレコードが省略され、収集が完全ではなかった。"
+      }
+    ]
+  },
+  {
+    "id": "ans-c01-d3-018",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nlb-hairpin-disable-client-ip-preservation",
+    "title": "同じNLBを使うバックエンド自身の接続を回復する",
+    "prompt": "内部NLBのTCPターゲットは、自身が登録されている同じNLBへ別ジョブから接続することがある。その接続が自分へ振り分けられたときだけ失敗する。ターゲットグループではクライアントIP保存が有効だが、アプリは送信元IPを参照する必要がない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ターゲットの登録解除遅延だけを延ばす。",
+        "explanation": "稼働中ターゲットのhairpin問題であり、登録解除の通信終了猶予では解決しない。"
+      },
+      {
+        "id": "B",
+        "text": "クロスゾーン負荷分散を有効にし、保存設定は維持する。",
+        "explanation": "振り分け先の範囲を広げても、自分自身へ振り分けられる経路に対する制約は変わらない。"
+      },
+      {
+        "id": "C",
+        "text": "対象TCPターゲットグループのクライアントIP保存を無効にする。",
+        "explanation": "NLBからの変換後アドレスで接続するため、送信元と振り分け先が同じになるhairpinの問題を避けられる。"
+      },
+      {
+        "id": "D",
+        "text": "クライアントIP保存を維持し、Proxy Protocol v2だけを有効にする。",
+        "explanation": "ヘッダーによる接続元情報の伝達を追加しても、元のIPを保存する構成にあるhairpin制約は変わらない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/edit-target-group-attributes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "NLBからの変換後アドレスで接続するため、送信元と振り分け先が同じになるhairpinの問題を避けられる。",
+      "concept": "内部NLBのNATループバックはクライアントIP保存が有効な構成でサポートされない。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-019",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpc-peering-private-dns-peer-ec2-hostnames",
+    "title": "VPC間でEC2の公開DNS名を私設IPに解決",
+    "prompt": "ピアリング済みVPC AのEC2から、VPC BのEC2に割り当てられたパブリックIPv4 DNS名を引くと、公開IPv4が返る。両VPCのDNSサポートとホスト名は有効で、プライベートIPでの疎通は確認済みである。同じ名前のまま、AからはBのプライベートIPv4を得るにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ピアリングのVPCルートにBのパブリックIPv4向けプレフィックスを追加する。",
+        "explanation": "到達経路の設定は名前解決の結果を変更せず、プライベートIPに解決する要件を満たさない。"
+      },
+      {
+        "id": "B",
+        "text": "VPC AのDHCPオプションにパブリックDNSサーバーだけを指定する。",
+        "explanation": "外部DNSを使うと、ピア側のプライベートDNS変換は有効にならない。"
+      },
+      {
+        "id": "C",
+        "text": "AとBで同じネットワークACLを使えば、DNSの回答もプライベートIPになる。",
+        "explanation": "パケットの許可・拒否はDNSのどのアドレスを返すかの切り替えにはならない。"
+      },
+      {
+        "id": "D",
+        "text": "ピアリングのDNS解決設定で、AからBの公開ホスト名をBのプライベートIPへ解決する方向を有効にする。",
+        "explanation": "既存の名前を使用しながら、対象のピア側でプライベートな名前解決結果を返せる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-dns.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "既存の名前を使用しながら、対象のピア側でプライベートな名前解決結果を返せる。",
+      "concept": "VPCピアリングのDNS解決オプションで、ピアから問われたEC2の公開IPv4 DNS名をプライベートIPv4へ解決できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-020",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpn-tunnel-lifecycle-accept-maintenance-window",
+    "title": "VPNトンネルの更新を前倒しで受け入れる",
+    "prompt": "冗長なSite-to-Site VPNについて、AWSによるエンドポイント更新の保留状態を記録し、利用が少ない時間帯に対象トンネルだけ先にアップデートしたい。この時間帯はAWSで示された自動適用時刻より前である。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象トンネルでIKEの鍵のライフタイムを短くし、AWSのエンドポイント更新が同時に始まるのを待つ。",
+        "explanation": "鍵の再交渉とサービスのエンドポイント交換は別であり、保留中の更新を受け入れる操作にはならない。"
+      },
+      {
+        "id": "B",
+        "text": "ライフサイクル制御を有効にしたまま期限を過ぎるまで待ち、AWSが更新しないことを前提に保守窓を設定する。",
+        "explanation": "期限後はAWSが定期保守の過程で自動更新するため、確実に時間帯を選ぶ条件に合わない。"
+      },
+      {
+        "id": "C",
+        "text": "対象トンネルでライフサイクル制御を有効にし、保留中の保守を確認して自動適用期限前のウィンドウで更新を受け入れる。",
+        "explanation": "保留状態と期限を参照し、待機トンネルの稼働を確認したうえで対象側の更新を開始できる。"
+      },
+      {
+        "id": "D",
+        "text": "BGPの広告を対象トンネルから一時的に撤回すれば、保守が実行されたと判断する。",
+        "explanation": "経路を切り替えても、AWSの更新が保留か完了かは変わらない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/s2svpn/tunnel-endpoint-lifecycle.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "保留状態と期限を参照し、待機トンネルの稼働を確認したうえで対象側の更新を開始できる。",
+      "concept": "トンネルエンドポイントのライフサイクル制御は、保守の可視化と期限前の任意時刻での受け入れを提供する。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-021",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-r53-insync-resolver-old-ttl",
+    "title": "権威DNS更新済みでも旧レコードが返る理由を特定",
+    "prompt": "Route 53のレコードを新しい宛先に変更した。変更状態はINSYNCで、権威ネームサーバーへの直接問い合わせは新しいアドレスを返す。一部のオフィスの再帰リゾルバーだけが、変更の直前に取得したTTL 3,600秒の旧回答を返す。最初にどう解釈するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "権威側の配信は更新済みで、再帰リゾルバーが旧回答の残りTTLに従って応答している。",
+        "explanation": "再帰キャッシュは更新前に取得したTTLに従う。権威側の更新で古いキャッシュが一斉に消えることはない。"
+      },
+      {
+        "id": "B",
+        "text": "INSYNCなら再帰リゾルバーも更新済みなので、権威DNSの変更が失敗したと考える。",
+        "explanation": "INSYNCは指定変更の権威DNSへの反映を示す。下流の再帰キャッシュの状態までは表さない。"
+      },
+      {
+        "id": "C",
+        "text": "新しいレコードのTTLを直ちに0にすれば、すでに保存された旧回答も同時に消える。",
+        "explanation": "新規に得る回答のTTLを変更しても、以前の回答がすでに持つ期限は変更されない。"
+      },
+      {
+        "id": "D",
+        "text": "Route 53 Resolverのクエリログを有効にすれば、社内リゾルバーのキャッシュを消せる。",
+        "explanation": "ログ記録の有効化は外部の再帰キャッシュを操作しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/troubleshooting-new-dns-settings-not-in-effect.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "再帰キャッシュは更新前に取得したTTLに従う。権威側の更新で古いキャッシュが一斉に消えることはない。",
+      "concept": "権威側の更新状態とクライアント側の再帰キャッシュの有効期限は別々に管理される。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-022",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-deregistration-delay-deploy-drain",
+    "title": "デプロイ時に新規の振り分けを止めながら接続を維持する",
+    "prompt": "ALBの旧版ターゲットは、処理中のエクスポート要求に最長120秒かかる。更新時には旧版への新規振り分けを終了し、処理中の要求が完了してから停止する。旧版を最大180秒待機させられる。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ALBのアイドルタイムアウトを180秒にしてから旧版プロセスをすぐ停止する。",
+        "explanation": "ALBの接続タイムアウトを延ばしても、停止したプロセスが処理中の要求を完了できない。"
+      },
+      {
+        "id": "B",
+        "text": "旧版でAWSヘルスチェックをすぐに失敗させ、本番プロセスを同時に停止する。",
+        "explanation": "異常判定の間に旧版へ新規要求が向かうことがあり、プロセス停止時点で処理中の要求も維持できない。"
+      },
+      {
+        "id": "C",
+        "text": "Slow startを180秒に設定し、旧版を登録したままプロセスを終了する。",
+        "explanation": "Slow startは正常になったターゲットへ負荷を段階配分するための設定で、停止する旧版で処理中の要求が完了する猶予を与えない。"
+      },
+      {
+        "id": "D",
+        "text": "登録解除遅延を180秒に設定し、旧版をターゲットグループから登録解除して処理が終わるまで停止しない。",
+        "explanation": "新規要求を旧版から外しながら、期限まで既存要求が完了できるようにする。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "新規要求を旧版から外しながら、期限まで既存要求が完了できるようにする。",
+      "concept": "ALBは登録解除されたターゲットへの新規振り分けを停止し、deregistration delayで処理中の要求に猶予を与える。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-023",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cloudfront-error-cache-minimum-ttl-recovery",
+    "title": "一時的な404がオリジン復旧後に残る期間を短くする",
+    "prompt": "CloudFrontで動的に公開するドキュメントは、オリジン側の同期途中に短時間だけ404になる。オリジンが200を返し始めても、一部の利用者はしばらく404を受け取る。404応答にはキャッシュ時間を変更するヘッダーがない。手動の無効化を公開のたびに行わず、この種類のエラーの保持期間だけを短くするにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Route 53でCloudFrontを指すレコードのTTLを短くする。",
+        "explanation": "DNS結果の更新頻度を変えても、CloudFrontが保持するHTTPエラーのキャッシュ時間は変更されない。"
+      },
+      {
+        "id": "B",
+        "text": "404のカスタムエラー設定でError Caching Minimum TTLを短くする。",
+        "explanation": "オリジン応答にキャッシュ時間の上書きがないので、より早く再取得を試みる。"
+      },
+      {
+        "id": "C",
+        "text": "404をビューアー向けに200へ変換するが、エラーのキャッシュ時間を維持する。",
+        "explanation": "応答コードだけを変えても、古いエラー時の応答内容を保持する問題は残る。"
+      },
+      {
+        "id": "D",
+        "text": "CloudFrontの通常オブジェクトのDefault TTLだけを短くする。",
+        "explanation": "成功した通常応答のキャッシュ方針を広く変える一方、404専用のエラーキャッシュ時間を直接設定しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/custom-error-pages-expiration.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "オリジン応答にキャッシュ時間の上書きがないので、より早く再取得を試みる。",
+      "concept": "CloudFrontのError Caching Minimum TTLは指定したHTTPエラー応答を再取得するまでの最小キャッシュ時間を制御する。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-024",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-traffic-mirror-vxlan-mtu-ipv4-truncation",
+    "title": "VXLANのオーバーヘッドによるミラー切り詰めを防ぐ",
+    "prompt": "IPv4のVPC Traffic Mirroringで、送信元ENIのMTUは1,500、ターゲットENIとミラー経路が受けられるMTUも1,500である。分析側では大きいミラーパケットの末尾だけが欠ける。業務側のMTUを変えずにミラーを完全に受信したい。ミラー経路のMTUは変更できる。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "送信元のミラーフィルターでTCPだけ選び、パケットの大きさの扱いは維持する。",
+        "explanation": "対象をTCPに絞っても、選択済みの大きいパケットに対するカプセル化は必要である。"
+      },
+      {
+        "id": "B",
+        "text": "ターゲットENIとミラー経路全体が少なくとも1,554バイトを受けられるようにする。",
+        "explanation": "元のパケットとIPv4のミラー用カプセル化を一緒に格納するための余裕ができる。"
+      },
+      {
+        "id": "C",
+        "text": "ミラー送信元だけジャンボフレームへ切り替え、ターゲットと経路を変更しない。",
+        "explanation": "さらに大きい元パケットが許可されるため、受信側MTUの余裕は不足したままである。"
+      },
+      {
+        "id": "D",
+        "text": "VXLANに対応するUDPポートを増やし、ターゲット側MTUは1,500に維持する。",
+        "explanation": "許可するUDPポートとフレームの大きさは独立しており、末尾の切り詰めは解消しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/mirroring/traffic-mirroring-network-limitations.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "元のパケットとIPv4のミラー用カプセル化を一緒に格納するための余裕ができる。",
+      "concept": "IPv4のTraffic Mirroringではカプセル化を含めてターゲット側のMTUに54バイトの余裕が必要になる。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-025",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cloudwatch-network-monitor-nhi-boundary",
+    "title": "プローブの損失とAWSネットワークの観測を区別",
+    "prompt": "CloudWatch Network Synthetic MonitorのVPCから拠点へのプローブでパケット損失が増えた。同じ時間のNetwork Health IndicatorはHealthyである。拠点ネットワークと専用接続には別の監視もある。この観測をどう扱うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Healthyなら拠点ルーターの故障と確定できるため、専用接続側の調査をせず全機器を交換する。",
+        "explanation": "単独の指標からAWS外の障害箇所までは特定できず、別の監視結果と照合が必要である。"
+      },
+      {
+        "id": "B",
+        "text": "AWS側の観測で問題が検出されていないことと、プローブ全体で実際に損失を観測したことを分けて扱い、専用接続や拠点側の証拠と照合する。",
+        "explanation": "HealthyはAWSネットワークの観測結果であり、プローブで測った損失やエンドツーエンドの問題を否定しない。"
+      },
+      {
+        "id": "C",
+        "text": "Healthyは経路全体に損失がないと保証するので、プローブ結果を破棄する。",
+        "explanation": "NHIはAWSネットワークに限った指標で、エンドツーエンドの損失と同じ意味ではない。"
+      },
+      {
+        "id": "D",
+        "text": "損失が観測された時点でNHIも必ずDegradedになるため、表示の遅れだけを調べる。",
+        "explanation": "AWS側の調査結果とプローブの結果は別の情報であり、両者は常に一致しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/nw-monitor-db.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "HealthyはAWSネットワークの観測結果であり、プローブで測った損失やエンドツーエンドの問題を否定しない。",
+      "concept": "Network Health IndicatorはAWSネットワークの観測所見を示し、プローブ全経路の正常性を示すものではない。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-015",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-dx-macsec-must-encrypt-no-fallback",
+    "title": "専用線で暗号化なしの転送へ戻るのを防ぐ",
+    "prompt": "対応ロケーションの専用Direct Connect接続でMACsecを使用し、両端に対応機器と同じMACsec鍵が設定され、鍵の登録は維持する。監査要件により、MACsecの確立に失敗したとき暗号化されていないフレームを通してはならない。Direct Connect側の暗号化モードはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "暗号化モードをshould_encryptにして、ネゴシエーション失敗時にも接続を維持する。",
+        "explanation": "MACsecを試みるが、暗号化を確立できないときに平文で継続できるため要件と一致しない。"
+      },
+      {
+        "id": "B",
+        "text": "HTTPSを利用するアプリだけにTLSを強制し、Direct Connectの暗号化モードは変更しない。",
+        "explanation": "アプリケーションのTLSは、専用線全体で平文のフレームを許容しないという要件を満たさない。"
+      },
+      {
+        "id": "C",
+        "text": "仮想インターフェイスのBGP認証を設定して、MACsecでは平文転送を許可する。",
+        "explanation": "BGPの認証は経路交換の隣接関係を保護する。回線上のデータフレームの暗号化は強制しない。"
+      },
+      {
+        "id": "D",
+        "text": "Direct Connectの暗号化モードをmust_encryptにする。",
+        "explanation": "MACsecで接続を保護できない場合は平文で継続せず、暗号化が必須という要件を満たす。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/updateconnection.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "MACsecで接続を保護できない場合は平文で継続せず、暗号化が必須という要件を満たす。",
+      "concept": "MACsecのmust_encryptモードはリンクの暗号化が確立しなければ平文転送へ切り替えない。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-016",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-mtls-verify-trust-store",
+    "title": "信頼された取引先証明書だけをALBで受け入れる",
+    "prompt": "外部取引先はALBのHTTPSリスナーへクライアント証明書を提示する。指定のCAで署名された証明書だけをALBで検証し、検証に通らない通信をバックエンドへ届けない。アプリに証明書の検証コードを追加しない。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "リスナーを相互TLSのverifyモードにし、取引先のCAを含むトラストストアを関連付ける。",
+        "explanation": "ALBがクライアント証明書の信頼性を確認し、検証を通った要求をアプリへ転送する。"
+      },
+      {
+        "id": "B",
+        "text": "リスナーにALBのサーバー証明書を追加し、HTTPSに切り替えるだけにする。",
+        "explanation": "サーバーの識別と通信の暗号化は行えるが、取引先の証明書でクライアントを検証する設定にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "ALBのヘルスチェックをHTTPSにして、業務アプリのCAに接続する。",
+        "explanation": "ターゲットを監視する接続の設定で、クライアントとリスナーの相互認証は構成されない。"
+      },
+      {
+        "id": "D",
+        "text": "リスナーを相互TLSのpassthroughモードにして、アプリ側での検証は追加しない。",
+        "explanation": "ALBから証明書情報を渡せても、verifyモードと同じクライアントの信頼性検証は行われない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/mutual-authentication.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ALBがクライアント証明書の信頼性を確認し、検証を通った要求をアプリへ転送する。",
+      "concept": "ALBの相互TLSのverifyモードは関連付けたトラストストアでクライアント証明書を検証する。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-017",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cf-signed-cookies-hls-multiple-files",
+    "title": "動画配信の認可設定を役割に対応付ける",
+    "prompt": "契約済みの利用者にだけHLSのマニフェストと断片をCloudFrontから配信する。プレーヤーはCookieを送信でき、配信先のURLを個々に変えない。各目的に使う構成要素を1つずつ対応付ける。候補は1回ずつ使用する。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "署名付きCookie",
+        "explanation": "プレーヤーが共有の認可情報を送るので、個々の動画のURLを変えずに取得を制御できる。"
+      },
+      {
+        "id": "B",
+        "text": "リソースのパターンと有効期限を含むカスタムポリシー",
+        "explanation": "同じパスにある複数ファイルへの権限を、期限付きの条件として表現できる。"
+      },
+      {
+        "id": "C",
+        "text": "信頼されたキーグループ",
+        "explanation": "CloudFrontがビヘイビアで受け入れる署名を検証するための公開鍵をまとめる。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C",
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-setting-signed-cookie-custom-policy.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "プレーヤーが共有の認可情報を送るので、個々の動画のURLを変えずに取得を制御できる。 CloudFrontがビヘイビアで受け入れる署名を検証するための公開鍵をまとめる。 同じパスにある複数ファイルへの権限を、期限付きの条件として表現できる。",
+      "concept": "CloudFrontの署名付きCookieは鍵による署名とカスタムポリシーを使い、URLを書き換えず複数ファイルを認可できる。"
+    },
+    "format": "matching",
+    "prompts": [
+      {
+        "id": "item-1",
+        "text": "複数の動画断片に対し、プレーヤーが各リクエストで共通の認可情報を送る。"
+      },
+      {
+        "id": "item-2",
+        "text": "対象ビヘイビアで、CloudFrontが信頼できる署名検証用の公開鍵を決める。"
+      },
+      {
+        "id": "item-3",
+        "text": "署名された認可内容が適用されるパスの範囲と、利用できる最終時刻を指定する。"
+      }
+    ]
+  },
+  {
+    "id": "ans-c01-d4-018",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-shield-proactive-health-check-contacts",
+    "title": "障害を伴うDDoS検知時にAWSから運用担当へ連絡",
+    "prompt": "Shield Advancedで保護された公開ALBがある。24時間の連絡先は用意済みで、サービスの可用性低下を伴う対象イベントではShield Response Teamから先回りして連絡を受けたい。監視に必要な設定はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ALB用WAFのすべてのマネージドルールをCountにする。",
+        "explanation": "WAFの検出を観測できても、SRTの自動連絡の有効化や連絡先の設定にはならない。"
+      },
+      {
+        "id": "B",
+        "text": "ALBのVPC Flow LogsをS3に配信し、そのログの作成だけをSRTへの連絡条件にする。",
+        "explanation": "ネットワークの観測ログだけでは、Shield Advancedのヘルスチェックとプロアクティブ対応の条件を満たさない。"
+      },
+      {
+        "id": "C",
+        "text": "プロアクティブ対応を有効にして、SRTが連絡する担当者と連絡方法を登録する。",
+        "explanation": "対象イベントを検出したときに、SRTから適切な担当者へ連絡する経路を用意できる。"
+      },
+      {
+        "id": "D",
+        "text": "アプリの健全性を正しく表すRoute 53ヘルスチェックを作り、Shield AdvancedのALB保護に関連付ける。",
+        "explanation": "警告時のアプリの状態をSRTが評価でき、プロアクティブ対応の対象か判断できる。"
+      },
+      {
+        "id": "E",
+        "text": "AWS Shield Standardへ変更し、同じプロアクティブ設定を維持する。",
+        "explanation": "SRTのプロアクティブ対応はShield Advancedの保護資源を対象とする。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/ddos-srt-proactive-engagement.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "警告時のアプリの状態をSRTが評価でき、プロアクティブ対応の対象か判断できる。 対象イベントを検出したときに、SRTから適切な担当者へ連絡する経路を用意できる。",
+      "concept": "Shield Advancedのプロアクティブ対応は保護資源に関連付けたRoute 53ヘルスチェックと連絡先設定を使う。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-019",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-waf-managed-subrule-count-only",
+    "title": "誤検知したマネージドルールだけを監視に切り替え",
+    "prompt": "Web ACLがAWS Managed Rulesのルールグループを使う。1つの既知のサブルールだけが正常なAPIリクエストを誤検知するため、一時的にそのルールの一致を記録する。ほかのサブルールでは現在のBlockを維持する。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "誤検知したパスに対するAllowルールを、ルールグループよりも前に設定する。",
+        "explanation": "パスへの要求がグループで評価されなくなるため、そのサブルールの一致の記録と他ルールの保護を維持できない。"
+      },
+      {
+        "id": "B",
+        "text": "ルールグループ全体のOverrideActionをCountにする。",
+        "explanation": "評価結果がグループ全体でCountに上書きされ、他のサブルールによる遮断を維持できない。"
+      },
+      {
+        "id": "C",
+        "text": "Web ACLのデフォルトアクションをAllowに替え、サブルールは変更しない。",
+        "explanation": "正常なリクエストがサブルールのBlockに一致すると先に評価が終了するため、デフォルトAllowでは回避できない。"
+      },
+      {
+        "id": "D",
+        "text": "対象サブルール名を指定したRuleActionOverridesで、アクションをCountへ変更する。",
+        "explanation": "対象のルールだけが計測になり、同じルールグループの他のルールのアクションを維持できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/web-acl-rule-group-override-options.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対象のルールだけが計測になり、同じルールグループの他のルールのアクションを維持できる。",
+      "concept": "RuleActionOverridesはルールグループ内の各ルールのアクションを個別変更できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-020",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nfw-suricata-strict-rule-sequence",
+    "title": "状態追跡ルールのアクション順を運用ポリシーに合わせる",
+    "prompt": "AWS Network FirewallのSuricata互換ルールで、複数アクションのルールが同じ検査対象に一致し得る。担当者は、既定のアクション種別順ではなく、監査済みのルールグループの順とグループ内で記載した順に評価したい。どう設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "既定のアクション順で各ルールのSuricata priority値だけを設定する。",
+        "explanation": "同じアクションのルール間では優先順位を付けられるが、異なるアクション種別の既定順は維持される。"
+      },
+      {
+        "id": "B",
+        "text": "ファイアウォールポリシーと対応するステートフルルールグループをStrict orderで構成し、グループ優先度と内部の並びを指定する。",
+        "explanation": "アクション種別による固定順から切り替え、指定したルールの評価順を表現できる。"
+      },
+      {
+        "id": "C",
+        "text": "各ルールのsidを希望する順に並ぶ整数にし、既定のアクション順は維持する。",
+        "explanation": "sidはシグネチャーを識別する値で、異なるアクションの既定評価順を上書きしない。"
+      },
+      {
+        "id": "D",
+        "text": "ステートレスのデフォルト処理でパケットをすべて許可し、ステートフルの設定は維持する。",
+        "explanation": "ステートフル検査へ転送する設定を代替せず、ルールグループの評価順も定義しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-rule-evaluation-order.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "アクション種別による固定順から切り替え、指定したルールの評価順を表現できる。",
+      "concept": "Strict orderではポリシーのルールグループ優先度とグループ内の記述順が使われる。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-021",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nfw-quic-tls-inspection-policy",
+    "title": "未検査のUDPベース通信を許容しない",
+    "prompt": "社内端末の外向きHTTPSは、AWS Network FirewallのTLS検査対象である。ブラウザーがHTTP/3を使うとUDPベースのQUICへ切り替わることがある。社内規定では、検査できないHTTPS通信は許可しない。どの設計にするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "TLS検査のスコープへUDP 443を追加するだけで、QUICの検査を行う。",
+        "explanation": "対象にポートを記載しても、サポートされていないトランスポートのデータはTLS検査できない。"
+      },
+      {
+        "id": "B",
+        "text": "アプリとネットワークポリシーでQUICを許可せず、対応するHTTPS over TCPだけをTLS検査の範囲にする。",
+        "explanation": "サポートされるトランスポートに通信を限定し、未検査の方式は通さない。"
+      },
+      {
+        "id": "C",
+        "text": "Network Firewallのフローログを有効にし、QUICの暗号化されたデータをそのまま許可する。",
+        "explanation": "接続のログを保存できても、未検査通信を許可しないという要件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "ネットワークACLでUDP 443を許可し、DNSのRoute 53のログで復号結果を代用する。",
+        "explanation": "DNSログは問い合わせを記録する。QUICで送信されるアプリの内容は検査しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/network-firewall/latest/developerguide/tls-inspection-considerations.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "サポートされるトランスポートに通信を限定し、未検査の方式は通さない。",
+      "concept": "AWS Network FirewallのTLS検査は、UDPベースのQUICを検査できない。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-022",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpc-flowlogs-cross-account-s3-source-conditions",
+    "title": "組織のログ専用バケットへ送信元を限定して配信",
+    "prompt": "ワークロードアカウントのVPC Flow Logsを監査アカウントのS3バケットへ送る。バケットを公開せず、VPCを所有する所定のアカウントからのログ配信に限定する。ワークロードにバケットの書き込み権限を直接許可しない。バケット側の構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ログ配信サービスにs3:GetBucketAclと指定プレフィックスのs3:PutObjectを許可し、ログ所有アカウントとログサービスの送信元ARNで制限する。",
+        "explanation": "サービス間配信を許可しながら、許可していない送信元リソースから同じ権限を利用されるリスクを下げる。"
+      },
+      {
+        "id": "B",
+        "text": "バケットでAmazon VPCサービス自体をプリンシパルにし、任意の送信元アカウントに無条件で許可する。",
+        "explanation": "実際のログ配信主体に対する必要な許可を誤っており、送信元の制限もない。"
+      },
+      {
+        "id": "C",
+        "text": "ワークロードのすべてのEC2のインスタンスロールに、送信先バケットへのPutObjectを付ける。",
+        "explanation": "フローログを配信するサービス主体へのバケット側の許可にならず、業務ロールへ直接書き込みを与えてしまう。"
+      },
+      {
+        "id": "D",
+        "text": "S3ゲートウェイエンドポイントに送信先バケットを追加すれば、バケットポリシーは不要とする。",
+        "explanation": "ワークロードVPCのサービス経路を定義しても、クロスアカウントの配信サービスに書き込み権限は付与されない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-s3-permissions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "サービス間配信を許可しながら、許可していない送信元リソースから同じ権限を利用されるリスクを下げる。",
+      "concept": "S3のフローログ配信はログ配信サービスに許可し、aws:SourceAccountとaws:SourceArnの条件で送信元を絞る。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-023",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-control-tower-deny-regions-ou",
+    "title": "対象OUだけに共通のリージョン利用境界を適用",
+    "prompt": "AWS Control Towerで管理する組織に、規制対象のOUと通常業務のOUがある。規制対象では管理者権限を持つメンバーアカウントの利用者にも承認済みリージョン以外での対象操作を制限するが、通常業務OUのリージョンは制限しない。必要なグローバルサービスの例外は管理できる。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ランディングゾーン全体のリージョン拒否を有効にし、通常業務OUにも同じコントロールを適用する。",
+        "explanation": "制限する範囲が広く、通常業務OUも従来どおり運用する目的と一致しない。"
+      },
+      {
+        "id": "B",
+        "text": "AWS Configアグリゲーターでリージョン別の資源を読み取り、検知した時点で作成済みの操作を拒否する。",
+        "explanation": "状態の集約は事後監視であり、AWS APIの実行を事前には拒否できない。"
+      },
+      {
+        "id": "C",
+        "text": "規制対象OUにOU単位のリージョン拒否コントロールを適用し、許可リージョンと必要なグローバルサービスの例外を定義する。",
+        "explanation": "組織レベルで該当OUに予防的な制限を適用し、範囲外の業務OUに同じ制限を課さずに済む。"
+      },
+      {
+        "id": "D",
+        "text": "規制対象アカウントのIAM管理者ロール一つの許可だけを変更し、ほかの権限経路は維持する。",
+        "explanation": "一つのロールの設定では、同じアカウント内の他の権限主体を含む共通の境界にならない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/controltower/latest/controlreference/ou-region-deny.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "組織レベルで該当OUに予防的な制限を適用し、範囲外の業務OUに同じ制限を課さずに済む。",
+      "concept": "Control TowerのOU単位リージョン拒否コントロールで、対象OUにリージョンの境界を設定できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-024",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-tgw-security-group-reference-inbound",
+    "title": "接続済みVPC間でCIDRに依存しない受信規則を使う",
+    "prompt": "同じリージョンの2 VPCは同一のTransit Gatewayに直接接続されている。APIを開始するアプリのSGは既に送信を許可している。データベース側の着信を、固定CIDRの代わりにアプリのSGで限定したい。必要な対応を2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "データベース側のアタッチメントでSG参照を有効にするが、TGW本体の設定は無効のままにする。",
+        "explanation": "機能を使うにはTGWの設定も必要で、アタッチメントだけの有効化では使えない。"
+      },
+      {
+        "id": "B",
+        "text": "両VPCに同じ名前のSGを作り、データベース側では自分のVPCにある同名のSGを参照する。",
+        "explanation": "SG名が同じでも別のSGであり、アプリが使うSGへは参照が向かない。"
+      },
+      {
+        "id": "C",
+        "text": "データベースSGの受信で、許可するポートに対してアプリのSGを参照する。",
+        "explanation": "固定CIDRの指定をせず、アプリが所属するSGに基づいて必要な着信を許可できる。"
+      },
+      {
+        "id": "D",
+        "text": "アプリSGの送信規則にデータベースSGを参照し、データベース側の受信は許可しない。",
+        "explanation": "TGW経由のSG参照は送信規則ではサポートされず、受信規則も必要である。"
+      },
+      {
+        "id": "E",
+        "text": "TGWと該当する両VPCアタッチメントでSG参照を有効にする。",
+        "explanation": "経由するTGWの両端で、VPC間のセキュリティグループ参照の機能を利用できる。"
+      }
+    ],
+    "correct": [
+      "C",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/tgw/tgw-vpc-attachments.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "経由するTGWの両端で、VPC間のセキュリティグループ参照の機能を利用できる。 固定CIDRの指定をせず、アプリが所属するSGに基づいて必要な着信を許可できる。",
+      "concept": "同じTransit Gateway経由でのSG参照はTGWと関連するVPCアタッチメントで有効化し、受信規則で使う。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-025",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-ssm-session-manager-ssmmessages-endpoint",
+    "title": "管理対象として見えるEC2のセッション確立だけを回復",
+    "prompt": "NATのないVPCに、現在のSSM Agentを使うEC2がある。インスタンスはSystems Managerの管理対象として表示され、セッション開始者のIAM権限も確認済みである。リージョンのssm用エンドポイントはあるが、セッションデータ用のエンドポイントがない。EC2の受信ポートは開けずに管理するにはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ssmmessagesのインターフェイスエンドポイントを作り、プライベートDNSとEC2からのHTTPS接続を許可する。",
+        "explanation": "SSM AgentがVPC内からSession Managerのメッセージ用エンドポイントへ接続できる。"
+      },
+      {
+        "id": "B",
+        "text": "ssmの既存エンドポイントのSGでEC2へのTCP 22を許可する。",
+        "explanation": "Session Managerのチャネルに必要なssmmessagesとのHTTPS通信は追加されない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatch LogsのVPCエンドポイントだけを作る。",
+        "explanation": "ログの配信先へ到達できても、対話的なセッションの制御とデータチャネルは開設できない。"
+      },
+      {
+        "id": "D",
+        "text": "ec2のVPCエンドポイントを作り、セッションデータもEC2 APIに転送させる。",
+        "explanation": "EC2 API用エンドポイントとSSM Agentが開くSession Managerの通信チャネルは異なる。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-privatelink.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SSM AgentがVPC内からSession Managerのメッセージ用エンドポイントへ接続できる。",
+      "concept": "SSM AgentはSession Managerの通信チャネルにssmmessagesを使用する。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-026",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-client-vpn-auth-more-specific-group",
+    "title": "同じホストに2つのグループを明示的に許可",
+    "prompt": "Client VPNの認可ルールで、運用グループは10.71.16.0/20、監査グループはその範囲内の10.71.18.34/32へのアクセスを許可されている。運用グループは監査グループに所属せず、当該ホストだけに接続できなくなった。ルートは正常で、監査グループの権限は維持する。変更するルールはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "運用グループの/20ルールを作成し直し、認可ルール一覧で先に表示させる。",
+        "explanation": "ルールの作成順より宛先プレフィックスの具体性が優先される。"
+      },
+      {
+        "id": "B",
+        "text": "監査グループの/32ルールを削除し、運用グループの/20だけを維持する。",
+        "explanation": "運用グループの広い許可を適用できても、必要な監査グループのアクセスを維持できない。"
+      },
+      {
+        "id": "C",
+        "text": "運用グループにも10.71.18.34/32を許可する認可ルールを追加する。",
+        "explanation": "同じ最長プレフィックスで両グループを許可でき、/20のその他の範囲は従来どおり運用グループが利用できる。"
+      },
+      {
+        "id": "D",
+        "text": "全ユーザーに10.71.18.34/32を許可し、追加グループの設定は省く。",
+        "explanation": "当該ホストへの許可を意図した2グループより広い範囲に与えてしまう。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-rules.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じ最長プレフィックスで両グループを許可でき、/20のその他の範囲は従来どおり運用グループが利用できる。",
+      "concept": "Client VPNは最も具体的な宛先ルールで許可されるグループを評価する。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-027",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-iam-vpc-source-ip-bound-to-vpc",
+    "title": "重複する私設CIDRをVPC識別子とともに評価",
+    "prompt": "S3へのリクエストはVPCエンドポイントを経由する。承認済みVPCの特定サブネットのIP範囲だけをバケットポリシーで許可したい。別VPCでも同じ私設CIDRを利用しており、ポリシーではサブネットのアドレス範囲とVPCを両方確認する。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "aws:VpcSourceIpで許可CIDRを指定し、aws:SourceVpcで承認済みVPCのIDも条件にする。",
+        "explanation": "両条件がそろうときに許可するため、別VPC内の同じIP範囲からの要求と区別できる。"
+      },
+      {
+        "id": "B",
+        "text": "aws:VpcSourceIpで許可CIDRだけを指定する。",
+        "explanation": "別VPCで再利用された同じプライベートIP範囲も同じ条件に一致する可能性がある。"
+      },
+      {
+        "id": "C",
+        "text": "aws:SourceVpcで承認済みVPCを指定し、送信元IPアドレスの条件を省く。",
+        "explanation": "VPC内の別サブネットからのリクエストを区別できず、CIDR限定がない。"
+      },
+      {
+        "id": "D",
+        "text": "aws:SourceIpで指定の私設CIDRを評価し、aws:PrincipalAccountだけで送信元のVPCを選ぶ。",
+        "explanation": "VPCエンドポイント経由の送信元IPにはaws:VpcSourceIpが必要で、呼び出し主体のアカウントは通信が通るVPCを特定しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "両条件がそろうときに許可するため、別VPC内の同じIP範囲からの要求と区別できる。",
+      "concept": "aws:VpcSourceIpはVPC由来の送信元IPを検査する。範囲の重複に備えてVPCの識別条件を併用する。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-028",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-route53-resolver-dnssec-validation-vpc",
+    "title": "VPC内の再帰解決で公開DNSの署名を検証する",
+    "prompt": "VPC内アプリはAmazonProvidedDNSで署名済みの公開ドメインを解決する。外部の独自リゾルバーを運用せず、対象VPCのResolverでDNSSEC検証を行いたい。自社公開ゾーンの署名設定を変更する要件はない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudFrontのサーバー証明書に権威DNSの鍵を含める。",
+        "explanation": "HTTPSでサイトの身元を確認する証明書は、再帰DNS解決の署名検証には使われない。"
+      },
+      {
+        "id": "B",
+        "text": "自社のパブリックホストゾーンにDNSSEC署名を設定する。",
+        "explanation": "自社が公開するゾーンデータは署名できるが、他ドメインを問い合わせるVPCのリゾルバーが検証する設定にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "対象VPCのRoute 53 ResolverでDNSSEC検証を有効にする。",
+        "explanation": "該当VPCの再帰解決で、署名した外部の公開DNSレコードの検証を実行できる。"
+      },
+      {
+        "id": "D",
+        "text": "Route 53 Resolverのクエリログを有効にし、ログへの記録時に署名を検証させる。",
+        "explanation": "クエリログは観測情報の保存に使う。DNSの信頼チェーンを検証して回答する機能とは別である。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-dnssec-validation.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "該当VPCの再帰解決で、署名した外部の公開DNSレコードの検証を実行できる。",
+      "concept": "Route 53 VPC ResolverはVPC単位でDNSSEC検証を有効化できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-029",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-config-organization-aggregator-read-only",
+    "title": "各アカウントのネットワーク監査結果を中央で照会",
+    "prompt": "組織の対象アカウントとリージョンではAWS Configが記録と評価を実施済みである。監査チームはConfigの委任管理者に登録済みの監査アカウントから、SGやVPNの構成と非準拠結果を横断照会する。既存のレコーダーとルールの実行先は維持し、中央閲覧から個別の資源を変更しない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "監査アカウントにAWS OrganizationsをソースとするConfigアグリゲーターを作り、対象リージョンの情報を集約する。",
+        "explanation": "各アカウントが記録と評価を続けながら、中央で現在の構成と評価の結果を照会できる。"
+      },
+      {
+        "id": "B",
+        "text": "すべてのメンバーのConfigレコーダーを停止して監査アカウントのレコーダーだけを使う。",
+        "explanation": "監査アカウントのレコーダーだけでは、各ソースアカウントで記録される資源と評価結果を維持できない。"
+      },
+      {
+        "id": "C",
+        "text": "全対象リージョンにCloudTrailの組織証跡を作り、Configの評価結果は取得しない。",
+        "explanation": "APIイベントは記録できても、構成スナップショットとConfigの非準拠結果を照会する要件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "OrganizationsのSCPにSGのDescribe操作を追加し、SCP自体に各アカウントの評価結果を蓄積させる。",
+        "explanation": "SCPは権限の境界を定義するものであり、資源状態とConfigの評価を格納しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/config/latest/developerguide/aggregate-data.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "各アカウントが記録と評価を続けながら、中央で現在の構成と評価の結果を照会できる。",
+      "concept": "Configの組織アグリゲーターは複数アカウント・リージョンの構成・評価情報を読み取り用に集約する。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-030",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cloudfront-field-level-encryption-selected-form-fields",
+    "title": "TLS終端後も特定フォーム項目の平文を守る",
+    "prompt": "HTTPSのフォームをCloudFrontで受け取り、オリジンの複数サービスへ振り分ける。URLエンコードされたPOSTのうち決済識別子の項目だけは後段の指定サービスだけが読めて、ほかの項目は既存サービスが処理できるようにする。指定サービスには秘密鍵を保管できる。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "フォーム全体をオリジンのログ保存先でサーバー側暗号化する。",
+        "explanation": "保存後の保護であり、保存前の各サービスから特定項目を隠す要件に対応しない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudFrontとオリジン間をHTTPSにして、TLS終端後はすべての項目を平文で処理する。",
+        "explanation": "転送中は保護されるが、途中のオリジン処理から対象項目を読み取れてしまう。"
+      },
+      {
+        "id": "C",
+        "text": "署名付きCookieを発行して、フォームの項目値はすべて既存の平文形式で渡す。",
+        "explanation": "閲覧者の権限を制御しても、後段のサービス間で対象のフォーム値が読める条件は変わらない。"
+      },
+      {
+        "id": "D",
+        "text": "対象フィールドと公開鍵を設定したフィールドレベル暗号化をビヘイビアに適用し、指定サービスだけで秘密鍵を使う。",
+        "explanation": "TLSが終端した後も指定フィールドは暗号化されたままで、ほかのフォーム値は従来どおり処理できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/field-level-encryption.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "TLSが終端した後も指定フィールドは暗号化されたままで、ほかのフォーム値は従来どおり処理できる。",
+      "concept": "CloudFrontのフィールドレベル暗号化はPOSTの指定フィールドを公開鍵で暗号化し、対応する秘密鍵を持つ側に復号を限定できる。"
+    }
   }
 ]

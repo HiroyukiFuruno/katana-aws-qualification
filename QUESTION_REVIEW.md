@@ -952,3 +952,16 @@ AWSの試験案内は65問・170分、試験ガイドは採点対象50問の4分
 - [ANS-C01試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01.html)
 - [複数リージョンでのPrivateLinkサービス公開](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-share-your-services.html)
 - [Route 53のプライベートヘルスチェック](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-private-endpoints.html)
+
+## ANS-C01の重複しないフル模試2回分
+
+65問を追加し、既存65問は内容と順序を維持した。独立130問を4分野に38・34・26・32問ずつ収録した。内訳は単一選択117問、複数選択9問、組み合わせ4問。単一選択の正答位置はA〜Dの順に30・29・29・29問。
+
+AWSの出典で正答の条件と誤答の根拠を確認し、追加問を含む6,305組の表記を比較した。近い候補は正答に必要な判断を照合した。たとえばPrivateLinkを使う設問では、拠点からのS3とVPC内のS3で経路を分けるDNS設定と、SSM Agentのセッション用エンドポイントを特定する判断をそれぞれ扱う。Direct Connectでは、転送断の検知に使うBFD、束ねた回線の最低稼働本数、暗号化を強制するMACsecを個別に問う。
+
+512回の模試生成で65問・170分、4分野の配分、類似グループの一意性、全130問の抽選を検証した。互いに重複しないフル模試2回分を128組生成し、全65カスタム件数、採点2,184通り、旧版16レコードの復元も確認した。公開条件の独立325問まで195問が残る。
+
+- [Direct ConnectのBFD](https://docs.aws.amazon.com/directconnect/latest/UserGuide/Welcome.html)
+- [Direct Connectの暗号化モード](https://docs.aws.amazon.com/directconnect/latest/UserGuide/updateconnection.html)
+- [Client VPNの認可ルール](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-rules.html)
+- [Network Synthetic Monitorの健全性指標](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/nw-monitor-db.html)

@@ -259,7 +259,8 @@ select public.complete_migration(0, '30000000-0000-0000-0000-000000000001');
 select public.begin_migration(0, '30000000-0000-0000-0000-000000000002', 'exam-draft-local-storage', 1, repeat('b', 64), 1);
 do $$
 declare original_deadline timestamptz := clock_timestamp() + interval '10 minutes'; imported_exam jsonb;
-  original_selection timestamptz := clock_timestamp() - interval '1 minute';
+  original_selection timestamptz := clock_timestamp() - interval '1 minute'; v_ref jsonb; v_bad_exam text;
+  v_submission jsonb; v_finalized timestamptz;
 begin
   imported_exam := jsonb_build_object(
     'exam_id', '20000000-0000-0000-0000-000000000003', 'certification_id', 'saa-c03', 'source_version', '2026-11',
@@ -267,6 +268,34 @@ begin
     'started_at', clock_timestamp() - interval '10 minutes', 'deadline_at', original_deadline,
     'position', 0, 'state', 'draft'
   );
+  for v_ref, v_bad_exam in
+    select value, case ordinal
+      when 1 then '20000000-0000-0000-0000-000000000007'
+      when 2 then '20000000-0000-0000-0000-000000000008'
+      else '20000000-0000-0000-0000-000000000009'
+    end
+    from jsonb_array_elements(jsonb_build_array(
+      jsonb_build_object('question_id', 'draft-1'),
+      jsonb_build_object('question_id', 'draft-1', 'question_revision', 2),
+      jsonb_build_object('question_id', 'draft-1', 'question_revision', 1, 'extra', true)
+    )) with ordinality as invalid_ref(value, ordinal)
+  loop
+    begin
+      perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'invalid-ref-' || v_bad_exam,
+        jsonb_set(imported_exam, '{exam_id}', to_jsonb(v_bad_exam)), jsonb_build_array(jsonb_build_object(
+          'question_ref', v_ref, 'selected', jsonb_build_array(), 'flagged', false, 'duration_ms', 0
+        )), '[]');
+      raise exception 'partial imported question ref unexpectedly permitted';
+    exception when invalid_parameter_value then null;
+    end;
+  end loop;
+  if exists (select 1 from public.exam_sessions where exam_id in (
+    '20000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000009'
+  )) or exists (select 1 from public.exam_responses where exam_id in (
+    '20000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000009'
+  )) or exists (select 1 from public.migration_items where source_row_id like 'invalid-ref-%') then
+    raise exception 'invalid imported question ref did not roll back';
+  end if;
   begin
     perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'bad-draft',
       jsonb_set(imported_exam, '{exam_id}', '"20000000-0000-0000-0000-000000000006"'), jsonb_build_array(jsonb_build_object(
@@ -316,20 +345,24 @@ begin
   if exists (select 1 from public.learning_events where event_id = '10000000-0000-0000-0000-000000000031') then
     raise exception 'exam migration row did not roll back the event';
   end if;
-  perform public.save_exam_response('20000000-0000-0000-0000-000000000003', 0, 0, 0,
-    jsonb_build_object('question_id', 'draft-1', 'question_revision', 1), jsonb_build_array('B'), true, 20, clock_timestamp());
-end $$;
-
-select public.finalize_exam_session('20000000-0000-0000-0000-000000000003', 0, 1,
-  jsonb_build_array(jsonb_build_object(
+  select jsonb_build_array(jsonb_build_object(
     'event_id', '10000000-0000-0000-0000-000000000032', 'schema_version', 1,
     'certification_id', 'saa-c03', 'question_id', 'draft-1', 'question_revision', 1, 'source_version', '2026-11',
     'category', 'security', 'mode', 'exam', 'exam_id', response.exam_id,
     'answered_at', response.selected_at, 'selected_at', response.selected_at,
     'selected', response.selected, 'flagged', response.flagged, 'duration_ms', response.duration_ms,
-    'correct', jsonb_build_array('A'), 'is_correct', false, 'attempt_number', 1,
-    'prior_incorrect_count', 0, 'reward', 0
-  ))) from public.exam_responses response where exam_id = '20000000-0000-0000-0000-000000000003';
+    'correct', jsonb_build_array('A'), 'is_correct', true, 'attempt_number', 1,
+    'prior_incorrect_count', 0, 'reward', 1
+  )) into v_submission from public.exam_responses response where exam_id = '20000000-0000-0000-0000-000000000003';
+  select public.finalize_exam_session('20000000-0000-0000-0000-000000000003', 0, 0, v_submission) into v_finalized;
+  if v_finalized is null or not exists (
+    select 1 from public.exam_sessions
+    where exam_id = '20000000-0000-0000-0000-000000000003' and state = 'submitted' and deadline_at = original_deadline
+  ) or not exists (
+    select 1 from public.learning_events
+    where event_id = '10000000-0000-0000-0000-000000000032' and answered_at = original_selection
+  ) then raise exception 'imported complete draft did not finalize with its original timing'; end if;
+end $$;
 
 select public.append_learning_event(jsonb_build_object(
   'event_id', '10000000-0000-0000-0000-000000000020', 'schema_version', 1,

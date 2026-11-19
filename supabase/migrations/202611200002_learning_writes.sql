@@ -295,6 +295,7 @@ begin
     select 1 from jsonb_array_elements(v_question_order) as question(value)
     where jsonb_typeof(question.value) <> 'object' or nullif(question.value->>'question_id', '') is null
       or coalesce((question.value->>'question_revision')::integer, 0) < 1
+      or question.value - 'question_id' - 'question_revision' <> '{}'::jsonb
   ) or exists (
     select 1 from jsonb_array_elements(v_question_order) as question(value)
     group by question.value->>'question_id', (question.value->>'question_revision')::integer having count(*) > 1
@@ -329,7 +330,10 @@ begin
   end if;
   for v_response in select value from jsonb_array_elements(p_draft_responses) loop
     if v_state <> 'draft' or jsonb_typeof(v_response) <> 'object' or jsonb_typeof(v_response->'question_ref') <> 'object'
-      or jsonb_typeof(v_response->'selected') <> 'array' or not (v_question_order @> jsonb_build_array(v_response->'question_ref'))
+      or jsonb_typeof(v_response->'selected') <> 'array' or not exists (
+        select 1 from jsonb_array_elements(v_question_order) as question(value)
+        where question.value = v_response->'question_ref'
+      )
       or coalesce((v_response->>'duration_ms')::integer, -1) not between 0 and 86400000 then
       raise exception 'invalid imported exam response' using errcode = '22023';
     end if;

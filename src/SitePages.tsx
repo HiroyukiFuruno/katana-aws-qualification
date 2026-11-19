@@ -80,7 +80,9 @@ export function StudyPaths() {
         <a className="entry-card" href={localePath(locale, 'study/fundamentals')}>
           <h2>{t('learnFundamentals')}</h2>
           <p>{t('fundamentalsEntry')}</p>
-          <small>{t('coursePending')}</small>
+          <span className="entry-action">
+            {t('learnFundamentals')} <span aria-hidden="true">→</span>
+          </span>
         </a>
         <a className="entry-card" href={localePath(locale, 'study/questions')}>
           <h2>{t('learnFromQuestions')}</h2>
@@ -89,36 +91,6 @@ export function StudyPaths() {
             {t('browseCourses')} <span aria-hidden="true">→</span>
           </span>
         </a>
-      </div>
-    </main>
-  );
-}
-
-const fundamentals = [
-  ['fundamentalsAws', 'fundamentalsAwsDescription'],
-  ['fundamentalsNetworking', 'fundamentalsNetworkingDescription'],
-  ['fundamentalsDomains', 'fundamentalsDomainsDescription'],
-  ['DNS', 'fundamentalsDnsDescription'],
-  ['fundamentalsCidr', 'fundamentalsCidrDescription'],
-  ['CI/CD', 'fundamentalsCicdDescription'],
-] as const;
-
-export function FundamentalsPage() {
-  const { t } = usePreferences();
-  return (
-    <main id="main" className="shell">
-      <div className="intro">
-        <h1>{t('learnFundamentals')}</h1>
-        <p>{t('fundamentalsEntry')}</p>
-        <p className="eyebrow">{t('coursePending')}</p>
-      </div>
-      <div className="entry-grid study-paths">
-        {fundamentals.map(([title, description]) => (
-          <article className="entry-card" key={title}>
-            <h2>{title === 'DNS' || title === 'CI/CD' ? title : t(title)}</h2>
-            <p>{t(description)}</p>
-          </article>
-        ))}
       </div>
     </main>
   );

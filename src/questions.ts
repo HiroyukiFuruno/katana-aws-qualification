@@ -10,6 +10,7 @@ type QuestionDetails = {
   choices: { id: string; text: string; explanation: string }[];
   correct: string[];
   source: { url: string; label: string };
+  references?: { url: string; label: string }[];
   learning?: {
     reason: string;
     concept: string;
@@ -70,11 +71,9 @@ export function isCorrectAnswer(question: Question, selected: readonly string[])
     : question.correct.every((id) => selected.includes(id));
 }
 
-export async function loadQuestions(filename: string): Promise<Question[]> {
-  const response = await fetch(`/${filename}`, { cache: 'no-cache' });
-  if (!response.ok) throw new Error('loadQuestionError');
-  const questions: Question[] = await response.json();
-  if (!Array.isArray(questions) || !questions.length) throw new Error('問題データが空です。');
+export function parseQuestions(value: unknown): Question[] {
+  if (!Array.isArray(value) || !value.length) throw new Error('問題データが空です。');
+  const questions = value as Question[];
   const ids = new Set<string>();
   for (const question of questions) {
     if (
@@ -95,6 +94,14 @@ export async function loadQuestions(filename: string): Promise<Question[]> {
       ].every(text) ||
       !text(question.source?.url) ||
       !question.source.url.startsWith('https://') ||
+      (question.references !== undefined &&
+        (!Array.isArray(question.references) ||
+          !question.references.every(
+            (reference) =>
+              reference &&
+              [reference.url, reference.label].every(text) &&
+              reference.url.startsWith('https://'),
+          ))) ||
       (question.learning !== undefined &&
         ![question.learning?.reason, question.learning?.concept].every(text)) ||
       (question.learning?.check !== undefined &&
@@ -116,4 +123,10 @@ export async function loadQuestions(filename: string): Promise<Question[]> {
     ids.add(question.id);
   }
   return questions;
+}
+
+export async function loadQuestions(filename: string): Promise<Question[]> {
+  const response = await fetch(`/${filename}`, { cache: 'no-cache' });
+  if (!response.ok) throw new Error('loadQuestionError');
+  return parseQuestions(await response.json());
 }

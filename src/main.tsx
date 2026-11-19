@@ -9,6 +9,7 @@ import { dashboardPath } from './auth/navigation';
 import { CertificationPages } from './CertificationPages';
 import { CourseApp } from './CourseApp';
 import { certifications } from './certifications';
+import { FundamentalsPage } from './fundamentals/FundamentalsPage';
 import { GlossaryPage } from './GlossaryPage';
 import { localePath } from './locales';
 import { PreferencesProvider, usePreferences } from './preferences';
@@ -16,7 +17,7 @@ import { Roadmap } from './Roadmap';
 import { accountPages, routeAt } from './routes';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
-import { FundamentalsPage, Home, NotFound, StudyDirectory, StudyPaths } from './SitePages';
+import { Home, NotFound, StudyDirectory, StudyPaths } from './SitePages';
 import './style.css';
 
 function App() {

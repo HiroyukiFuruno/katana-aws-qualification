@@ -1,5 +1,5 @@
 import type { ExamBlueprint } from './certifications';
-import { questionKey, type Question } from './questions';
+import { examDomainOf, questionKey, type Question } from './questions';
 
 export type ExamResponse = {
   selected: string[];
@@ -60,7 +60,7 @@ export function selectExamQuestions(
     quota.count++;
   }
   const result = quotas.flatMap(({ category, count }) =>
-    distinct.filter((question) => question.category === category).slice(0, count),
+    distinct.filter((question) => examDomainOf(question) === category).slice(0, count),
   );
   return result.length === count ? result : [];
 }

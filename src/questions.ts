@@ -2,6 +2,7 @@ export type Question = {
   id: string;
   revision: number;
   category: string;
+  examDomain?: string;
   similarityGroup?: string;
   version: string;
   title: string;
@@ -19,6 +20,8 @@ export type Question = {
 export const questionKey = (question: Pick<Question, 'id' | 'revision'>) =>
   JSON.stringify([question.id, question.revision]);
 
+export const examDomainOf = (question: Question) => question.examDomain ?? question.category;
+
 export async function loadQuestions(filename: string): Promise<Question[]> {
   const response = await fetch(`/${filename}`, { cache: 'no-cache' });
   if (!response.ok) throw new Error('loadQuestionError');
@@ -31,6 +34,7 @@ export async function loadQuestions(filename: string): Promise<Question[]> {
       !question ||
       !text(question.id) ||
       ids.has(question.id) ||
+      (question.examDomain !== undefined && !text(question.examDomain)) ||
       (question.similarityGroup !== undefined &&
         !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(question.similarityGroup)) ||
       !Number.isSafeInteger(question.revision) ||

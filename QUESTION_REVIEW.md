@@ -753,3 +753,16 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 - [DEA-C01の試験概要](https://aws.amazon.com/certification/certified-data-engineer-associate/)
 - [DEA-C01の公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01.html)
 - [AthenaのIcebergテーブルへのMERGE](https://docs.aws.amazon.com/athena/latest/ug/merge-into-statement.html)
+
+## DEA-C01の重複しないフル模試2回分
+
+新規65問を追加し、既存66レコードを維持した。類似グループで数えた独立130問の分野別内訳は44・34・28・24問。単一選択117問、複数選択14問で、単一選択の正答位置はAから順に30・29・29・29問。
+
+取り込みでは、Firehoseが意図的な破棄を認識する応答と、配信時にParquetへ変換する設定を別の判断として扱った。監視ではDMSの取得と適用の遅延を分け、Redshiftでは結果の処理がディスクへ退避した実行ステップを特定する。TLSの完全検証を別サービスで再び選ばせる草稿は、DataBrewで原本を保ちながら派生データから直接識別子を除く問題へ差し替えた。
+
+65問・130分、分野配分22・17・14・12問のフル模試を、互いに設問が重複しない2回分として128組生成した。フル模試の生成512回、カスタム全65件数、採点2,320通り、出典128件を確認した。分野ごとの5倍まで残り66・51・42・36問。
+
+- [Firehoseの変換結果コード](https://docs.aws.amazon.com/firehose/latest/dev/data-transformation-status-model.html)
+- [DMSのレプリケーション監視](https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Monitoring.html)
+- [Redshiftのステップ別クエリ情報](https://docs.aws.amazon.com/redshift/latest/dg/SYS_QUERY_DETAIL.html)
+- [DataBrewでの個人識別情報の取り扱い](https://docs.aws.amazon.com/databrew/latest/dg/personal-information-protection.html)

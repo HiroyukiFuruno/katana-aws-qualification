@@ -1,3 +1,4 @@
+import { developerCourse } from './certificationCourses.ts';
 import type { Certification } from './certificationTypes';
 
 export const catalog: Certification[] = [
@@ -70,11 +71,12 @@ export const catalog: Certification[] = [
     },
   },
   {
-    id: 'dva-c02',
+    id: 'dva-c03',
     name: 'Developer',
     level: 'アソシエイト',
     skills: ['development', 'security'],
     focus: 'アプリ開発、デプロイ、デバッグ',
+    course: developerCourse,
   },
   {
     id: 'soa-c03',
@@ -111,7 +113,7 @@ export const catalog: Certification[] = [
     level: 'プロフェッショナル',
     skills: ['operations', 'development', 'security'],
     focus: 'CI/CD、自動化、耐障害性',
-    buildsOn: ['dva-c02', 'soa-c03'],
+    buildsOn: ['dva-c03', 'soa-c03'],
   },
   {
     id: 'aip-c01',
@@ -119,7 +121,7 @@ export const catalog: Certification[] = [
     level: 'プロフェッショナル',
     skills: ['ai', 'development', 'data'],
     focus: 'RAG、エージェント、生成AIアプリの運用',
-    buildsOn: ['aif-c01', 'dva-c02'],
+    buildsOn: ['aif-c01', 'dva-c03'],
   },
   {
     id: 'scs-c03',

@@ -67,6 +67,41 @@ test('AIF-C01 full mocks use the published length and all five domains', () => {
   );
 });
 
+test('DVA-C03 provides five distinct full mocks and keeps DVA-C02 saved question versions', () => {
+  const developer = certifications.find(({ id }) => id === 'dva-c03')?.course;
+  if (!developer) throw new Error('DVA-C03 course missing');
+  const load = (path: string) => JSON.parse(readFileSync(`public/${path}`, 'utf8')) as Question[];
+  const questions = load(developer.mock);
+  const archived = developer.archives.flatMap(load);
+  const group = (question: Question) => question.similarityGroup ?? question.id;
+  expect(developer.reviewedMock).toBe(true);
+  expect(developer.examStorageId).toBe('dva-c02');
+  expect(examPresetCounts(developer.exam)).toEqual({ short: 15, medium: 30, full: 65 });
+  expect(newExam(questions, developer.exam, 0).deadline).toBe(130 * 60_000);
+  expect(Object.values(developer.exam.distribution)).toEqual([20, 17, 14, 14]);
+  expect(new Set(archived.map(questionKey)).size).toBe(16);
+  expect(certifications.some(({ id }) => id === 'dva-c02')).toBe(false);
+  for (const previous of archived) {
+    const current = questions.find((question) => questionKey(question) === questionKey(previous));
+    if (current) {
+      expect(current.prompt).toBe(previous.prompt);
+      expect(current.choices).toEqual(previous.choices);
+      expect(current.correct).toEqual(previous.correct);
+    }
+  }
+  let available = questions;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const selected = selectExamQuestions(available, developer.exam);
+    const selectedGroups = new Set(selected.map(group));
+    expect(selectedGroups.size).toBe(65);
+    for (const [domain, quota] of Object.entries(developer.exam.distribution)) {
+      expect(selected.filter((question) => examDomainOf(question) === domain)).toHaveLength(quota);
+    }
+    available = available.filter((question) => !selectedGroups.has(group(question)));
+  }
+  expect(available).toHaveLength(0);
+});
+
 test('each custom count starts with unique questions and the displayed deadline', () => {
   const byKey = new Map(bank.map((question) => [questionKey(question), question]));
   const now = 1_000;

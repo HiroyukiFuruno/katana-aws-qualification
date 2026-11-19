@@ -678,6 +678,8 @@ AWSサービスでの開発20問、セキュリティ17問、テストとデプ�
 
 出典308件の取得、全5,680通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、分野配分20・17・14・14問を満たす、相互に重複のない模試5回分を128組生成した。AWSの4分野の配分は採点対象50問に適用される。教材では練習結果を解説に反映するため全65問を採点する。
 
+DVA-C02の公開ページで保存した未提出の模試と提出済み履歴を新版のビルドで開き、保存時の選択肢・制限時間を保って提出できることを確認した。新版のフル模試は日本語で開始し、英語ページで再開した。単一・複数選択を採点し、結果の分野別の合計が出題時の4分野と一致することを確認した。旧版で登録した取得済み資格は新版の査定に引き継ぐ。旧版の学習・資格詳細へのリンクは、同じ言語の新版へ転送する。
+
 - [DVA-C03公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/developer-associate-03.html)
 - [AppSyncのLambdaバッチリゾルバー](https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-lambda-js.html)
 - [S3バケットキーと暗号化コンテキスト](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html)

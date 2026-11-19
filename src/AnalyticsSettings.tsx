@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { clearAnalyticsCookies, cookiesAllowed, useCookieConsent } from './CookieConsent';
+import {
+  clearAnalyticsCookies,
+  cookiesAllowed,
+  openCookieSettings,
+  useCookieConsent,
+} from './CookieConsent';
 import { usePreferences } from './preferences';
 
 const analyticsId = 'G-XS97G1267H';
@@ -59,6 +64,10 @@ export function AnalyticsSettings() {
           checked={consent}
           onChange={(event) => {
             const granted = event.currentTarget.checked;
+            if (granted && !cookiesAllowed()) {
+              openCookieSettings();
+              return;
+            }
             try {
               localStorage.setItem(preferenceKey, granted ? 'granted' : 'denied');
             } catch {

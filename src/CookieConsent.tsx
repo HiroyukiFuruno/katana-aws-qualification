@@ -11,8 +11,23 @@ try {
   // 保存できない環境でも現在のページには選択を反映する。
 }
 function subscribe(callback: () => void) {
+  function synchronize(change: StorageEvent) {
+    if (change.storageArea !== localStorage || (change.key !== key && change.key !== null)) return;
+    const revoke = cookiesAllowed() && change.newValue !== 'granted';
+    current = change.newValue;
+    callback();
+    // 別タブで撤回された場合も読み込み済みタグを停止する。
+    if (revoke) {
+      clearAnalyticsCookies();
+      location.reload();
+    }
+  }
   window.addEventListener(event, callback);
-  return () => window.removeEventListener(event, callback);
+  window.addEventListener('storage', synchronize);
+  return () => {
+    window.removeEventListener(event, callback);
+    window.removeEventListener('storage', synchronize);
+  };
 }
 export function useCookieConsent() {
   return useSyncExternalStore(subscribe, () => current);

@@ -17,9 +17,9 @@ scopeは`openid profile email`だけで、Microsoft Graph、メールボック�
 
 ## 組織の同意と安全な失敗表示
 
-- `AADSTS900941`（管理者承認が必要）と`AADSTS65004`（同意が拒否された）は、組織の管理者へ確認する案内を表示する。
-- それ以外の`access_denied`は通常の取消しとして扱う。raw error、説明文、メールアドレス、tenant IDは表示しない。
-- 他組織のtenant設定や同意をKAQ側で代行しない。本人のMFA/CAPTCHAも自動化しない。
+- Microsoftを有効にしたログイン画面には、職場・学校アカウントで組織管理者の承認が必要になる場合があることを条件付きで案内する。個人アカウントや失敗結果を組織の拒否と断定しない。
+- callbackはOAuthの`error`とSupabaseの既存`error_code`だけで安全な取消し・期限切れ等を分類する。Microsoftの`error_description`や`AADSTS`文字列は分類にも描画にも使用しない。Microsoftの一次資料で`AADSTS65004`は`UserDeclinedConsent`であり、個人アカウントにも起こり得る。
+- raw error、説明文、メールアドレス、tenant IDは表示しない。他組織のtenant設定や同意をKAQ側で代行しない。本人のMFA/CAPTCHAも自動化しない。
 
 ## 自動検証
 

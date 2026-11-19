@@ -8,9 +8,10 @@ import { dashboardPath } from './navigation';
 import { ProviderButtons } from './ProviderButtons';
 
 export function AccountPages({ page }: { page: string }) {
-  const { state } = useAccount();
+  const { state, service } = useAccount();
   const { locale, t } = usePreferences();
   const loggedIn = state.status === 'ready' && state.account !== null;
+  const microsoftEnabled = service?.providers.some((provider) => provider.id === 'microsoft') === true;
 
   useEffect(() => {
     if (page === 'login' && loggedIn) location.replace(dashboardPath(locale));
@@ -33,6 +34,7 @@ export function AccountPages({ page }: { page: string }) {
             <h2>{t('accountLoginTitle')}</h2>
             <p>{t('accountSsoOnly')}</p>
             <ProviderButtons />
+            {microsoftEnabled && <p>{t('accountOrganizationApproval')}</p>}
             <a href={localePath(locale, 'study')}>{t('accountGuestStudy')}</a>
           </section>
           <AccountBenefits />

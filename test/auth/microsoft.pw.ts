@@ -27,6 +27,9 @@ test('Microsoft enrollment shares the PKCE callback and uses the common tenant',
 }) => {
   await page.goto('/ja/login/');
   await expect(page.getByRole('button', { name: 'Microsoftでログイン' })).toBeVisible();
+  await expect(
+    page.getByText('職場・学校アカウントでは、組織管理者の承認が必要になる場合があります。'),
+  ).toBeVisible();
   const url = await page.evaluate(async () => {
     const module = '/src/auth/runtime.ts';
     const { createAccountAuth } = await import(module);

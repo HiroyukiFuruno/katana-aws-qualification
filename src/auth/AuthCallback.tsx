@@ -35,11 +35,9 @@ export function AuthCallback() {
             {t(
               failure === 'browser'
                 ? 'accountBrowserChanged'
-                : failure === 'organization'
-                  ? 'accountOrganizationApproval'
-                  : failure === 'unknown'
-                    ? 'accountActionFailed'
-                    : 'accountCallbackFailed',
+                : failure === 'unknown'
+                  ? 'accountActionFailed'
+                  : 'accountCallbackFailed',
             )}
           </p>
           {failure === 'browser' && <ProviderButtons />}

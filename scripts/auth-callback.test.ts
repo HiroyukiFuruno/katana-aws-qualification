@@ -13,14 +13,15 @@ test('provider cancellation, expiration and unknown failures are distinct safe c
   expect(callbackFailureKind(new Error('sensitive provider response'), '')).toBe('unknown');
 });
 
-test('confirmed Microsoft organization consent outcomes do not expose provider details', () => {
+test('Microsoft diagnostic descriptions never alter safe callback categories', () => {
   expect(
     callbackFailureKind(null, '?error=access_denied&error_description=AADSTS900941%3A+secret'),
-  ).toBe('organization');
+  ).toBe('cancelled');
   expect(callbackFailureKind(null, '?error=access_denied&error_description=AADSTS65004%3A+secret')).toBe(
-    'organization',
-  );
-  expect(callbackFailureKind(null, '?error=access_denied&error_description=untrusted')).toBe(
     'cancelled',
   );
+  expect(callbackFailureKind(null, '?error=server_error&error_description=AADSTS900941')).toBe(
+    'unknown',
+  );
+  expect(callbackFailureKind(null, '?error=server_error&error_description=AADSTS65004')).toBe('unknown');
 });

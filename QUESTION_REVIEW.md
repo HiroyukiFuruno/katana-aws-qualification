@@ -939,3 +939,72 @@ GuardDutyの実行時監視の確認、稼働中の複数EBSからの証拠保�
 - [Direct ConnectのMACsec](https://docs.aws.amazon.com/directconnect/latest/UserGuide/MACsec.html)
 - [Athenaと信頼されたID伝播](https://docs.aws.amazon.com/singlesignon/latest/userguide/tip-usecase-ate.html)
 - [AWS Backup Audit Managerのコントロール](https://docs.aws.amazon.com/aws-backup/latest/devguide/choosing-controls.html)
+
+## ANS-C01のフル模試1回分
+
+AWSの試験案内は65問・170分、試験ガイドは採点対象50問の4分野を30%・26%・20%・24%としている。模試では全65問を19・17・13・16問に配分した。新規56問と既存9問の改訂を収録し、旧版2ファイルの計16レコードはそのまま保管する。旧版で分かれていたResolverの問い合わせ方向は、新版では1つの組み合わせ問題で扱う。
+
+内訳は単一選択59問、複数選択4問、組み合わせ2問。正答に必要な判断で重複を確認した。たとえばPrivateLinkのリージョン間接続はサービス提供側のリージョン許可を問い、同一リージョンでのCIDR重複はVPC間の経路交換を必要としない接続方式を問う。Route 53のプライベートヘルスチェックはVPC内のチェック元を構成する手順まで解説する。
+
+512回の模試生成で65問・170分、分野配分、各回の類似グループの一意性を検証した。全65カスタム件数、採点1,084通り、AWS公式出典64件、旧版16レコードの復元と採点も確認した。公開条件の独立325問まで260問が残る。
+
+- [ANS-C01試験案内](https://aws.amazon.com/certification/certified-advanced-networking-specialty/)
+- [ANS-C01試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01.html)
+- [複数リージョンでのPrivateLinkサービス公開](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-share-your-services.html)
+- [Route 53のプライベートヘルスチェック](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-private-endpoints.html)
+
+## ANS-C01の重複しないフル模試2回分
+
+65問を追加し、既存65問は内容と順序を維持した。独立130問を4分野に38・34・26・32問ずつ収録した。内訳は単一選択117問、複数選択9問、組み合わせ4問。単一選択の正答位置はA〜Dの順に30・29・29・29問。
+
+AWSの出典で正答の条件と誤答の根拠を確認し、追加問を含む6,305組の表記を比較した。近い候補は正答に必要な判断を照合した。たとえばPrivateLinkを使う設問では、拠点からのS3とVPC内のS3で経路を分けるDNS設定と、SSM Agentのセッション用エンドポイントを特定する判断をそれぞれ扱う。Direct Connectでは、転送断の検知に使うBFD、束ねた回線の最低稼働本数、暗号化を強制するMACsecを個別に問う。
+
+512回の模試生成で65問・170分、4分野の配分、類似グループの一意性、全130問の抽選を検証した。互いに重複しないフル模試2回分を128組生成し、全65カスタム件数、採点2,184通り、旧版16レコードの復元も確認した。公開条件の独立325問まで195問が残る。
+
+- [Direct ConnectのBFD](https://docs.aws.amazon.com/directconnect/latest/UserGuide/Welcome.html)
+- [Direct Connectの暗号化モード](https://docs.aws.amazon.com/directconnect/latest/UserGuide/updateconnection.html)
+- [Client VPNの認可ルール](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-rules.html)
+- [Network Synthetic Monitorの健全性指標](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/nw-monitor-db.html)
+
+## ANS-C01の重複しないフル模試3回分
+
+65問を追加し、既存130問の内容と順序を維持した。独立195問は4分野に57・51・39・48問。単一選択169問、複数選択20問、組み合わせ6問を収録し、単一選択の正答位置はA〜Dで43・42・42・42問。
+
+各分野の原稿を統合し、追加問を含む10,530組の表記を比較した。AZ IDの照合やPrivateLinkの接続承認など既存問と同じ判断を求める候補は差し替えた。アドレス族を扱う候補では、PrivateLinkは単一ENIに両方のIPを割り当てるサブネットの条件を問う。Client VPNは接続の入口とトンネル内の宛先で、アドレス族を独立に決める判断を問う。
+
+65問・170分の模試を512回生成し、4分野の配分、類似グループの重複排除、全195問の抽選を確認した。互いに重複しない3回分を128組生成し、全65カスタム件数、採点3,380通りと旧版16レコードの復元も検証した。公開条件の独立325問まで130問が残る。
+
+- [Client VPNエンドポイントのアドレス族](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-endpoints.html)
+- [PrivateLinkのIPv4・IPv6対応](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html)
+- [EKSのIPv4プレフィックス割り当て](https://docs.aws.amazon.com/eks/latest/userguide/cni-increase-ip-addresses.html)
+- [ALBのTLSセキュリティポリシー](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html)
+
+## ANS-C01の重複しないフル模試4回分
+
+独立65問を追加し、既存195問の内容と順序を維持した。4分野は76・68・52・64問。内訳は単一選択228問、複数選択24問、組み合わせ8問で、単一選択の正答位置はA〜Dで各57問。
+
+追加問を含む14,755組の表記を比較した。CloudFormationの設問では入力値の形式検証と、スタックが使う実行ロールの指定を別の判断として確認した。新しいNLBの設問は、PrivateLinkを利用する通信のエンドポイントIDを記録する設計と、AZごとの状態を監視する方法を個別に扱う。
+
+フル模試512回で65問・170分、4分野の配分、類似グループの重複排除と全260問の抽選を確認した。重複しないフル模試4回分を128組生成し、全65カスタム件数、採点4,464通り、公式出典222件と旧版16レコードも検証した。公開条件まで残り65問。
+
+- [CloudFormationのサービスロール](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html)
+- [NLBターゲットグループの属性](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/edit-target-group-attributes.html)
+- [Direct ConnectのBGPコミュニティ](https://docs.aws.amazon.com/directconnect/latest/UserGuide/routing-and-bgp.html)
+
+## ANS-C01の重複しないフル模試5回分
+
+最後の65問を追加し、既存260問の内容と順序を維持した。独立325問を4分野に95・85・65・80問ずつ収録した。単一選択288問、複数選択27問、組み合わせ10問。単一選択の正答位置はA〜Dで各72問。
+
+追加問を含む18,980組の表記を比較し、候補を正答に必要な判断で照合した。既出のTLSネゴシエーションの測定、CloudFrontのHTTPSのみを要求する設定、ResolverエンドポイントのENI別集計に近い候補は差し替えた。新しい設問にはVPC Flow Logsの配信失敗と通信の有無の切り分け、公開ALBを指定のCloudFront配信に限定する構成、公開DNSの親側の委任といった判断を含めた。
+
+フル模試512回で、各回65問・170分、4分野の配分、類似グループの重複排除、全325問の抽選を確認した。重複しないフル模試5回分を128組生成した。全65カスタム件数、採点5,532通り、公式出典269件、旧版16レコードの復元も検証した。
+
+- [ANS-C01の試験案内](https://aws.amazon.com/certification/certified-advanced-networking-specialty/)
+- [VPC Flow Logsの配信エラー](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-troubleshooting.html)
+- [CloudFrontからALBへのアクセス制限](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html)
+- [CloudFrontのオリジン待機時間](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistValuesOrigin.html)
+
+公開前のレビューで、ECSのENIトランキングを有効化後に対応インスタンスを新規起動する手順へ修正した。IAMの設問はFASによるS3アクセスと分析ロールによる直接のS3アクセスの切り分けに限定した。
+
+- [ECSのENIトランキング要件](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-eni.html#container-instance-eni-considerations)
+- [IAMのaws:ViaAWSService条件キー](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-viaawsservice)

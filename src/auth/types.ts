@@ -2,7 +2,13 @@ import type { Locale } from '../locales';
 
 export type AuthProvider = { id: string; backend: string; name: string; scopes: string };
 export type AccountIdentity = { id: string; provider: string };
-export type Account = { id: string; email: string; identities: AccountIdentity[] };
+export type Account = {
+  id: string;
+  email: string;
+  displayName?: string;
+  avatarUrl?: string;
+  identities: AccountIdentity[];
+};
 export type AuthState =
   | { status: 'loading' | 'unavailable' | 'error'; account: null }
   | { status: 'ready'; account: Account | null };

@@ -1,10 +1,11 @@
-import { ExamFormatPicker } from './ExamFormatPicker';
-import { LearningNotes } from './LearningNotes';
+import { AccountBenefits } from './auth/AccountBenefits';
 import type { ExamBlueprint } from './certifications';
+import { ExamFormatPicker } from './ExamFormatPicker';
 import type { Attempt } from './history';
-import { examDomainOf, isAnswerComplete, questionKey, type Question } from './questions';
-import type { usePreferences } from './preferences';
+import { LearningNotes } from './LearningNotes';
 import type { Message } from './messages';
+import type { usePreferences } from './preferences';
+import { examDomainOf, isAnswerComplete, type Question, questionKey } from './questions';
 import { StructuredAnswerReview } from './StructuredAnswer';
 
 type Translate = ReturnType<typeof usePreferences>['t'];
@@ -52,6 +53,7 @@ export function ExamResults({
         })}
       </p>
       <p>{t('examGrading')}</p>
+      <AccountBenefits context="exam" showAction />
       <dl className="domain-scores">
         {[...scores]
           .sort(([first], [second]) => first.localeCompare(second, 'ja'))

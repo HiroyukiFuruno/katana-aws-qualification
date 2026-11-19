@@ -24,11 +24,12 @@ export function authConfiguration(input: { url?: string; key?: string }) {
 }
 
 export function configuredProviders(
-  enabled: Partial<Record<'github' | 'google', boolean>>,
+  enabled: Partial<Record<'github' | 'google' | 'microsoft', boolean>>,
 ): readonly AuthProvider[] {
   const providers = [
     { id: 'github', backend: 'github', name: 'GitHub', scopes: 'read:user user:email' },
     { id: 'google', backend: 'google', name: 'Google', scopes: 'openid profile email' },
+    { id: 'microsoft', backend: 'azure', name: 'Microsoft', scopes: 'openid profile email' },
   ] as const satisfies readonly AuthProvider[];
   return providers.filter((provider) => enabled[provider.id] === true);
 }

@@ -8,24 +8,27 @@ function tokens(value: string) {
   return [...value.matchAll(/\{(\w+)\}/g)].map(([, name]) => name).sort();
 }
 
-for (const [key, row] of Object.entries(messages)) {
-  assert(row.en.trim() && row.ja.trim(), `${key} must have Japanese and English messages`);
-  for (const [locale, value] of Object.entries(row)) {
-    assert(
-      locales.some((supported) => supported === locale),
-      `${key} has unexpected locale ${locale}`,
-    );
-    assert(value.trim(), `${key} is empty in ${locale}`);
-    assert.deepEqual(tokens(value), tokens(row.en), `${key} placeholders differ in ${locale}`);
-  }
+const keys = Object.keys(messages.ja).sort();
+assert.deepEqual(
+  (await readdir('src/locales')).filter((file) => file.endsWith('.json')).sort(),
+  locales.map((locale) => `${locale}.json`).sort(),
+  'Each supported locale must have exactly one JSON file',
+);
 
-  assert.deepEqual(Object.keys(row).sort(), [...locales].sort(), `${key} is missing a locale`);
+for (const locale of locales) {
+  const dictionary = messages[locale];
+  assert.deepEqual(Object.keys(dictionary).sort(), keys, `${locale} keys differ from ja`);
+  for (const key of Object.keys(messages.ja) as (keyof typeof messages.ja)[]) {
+    const value = dictionary[key];
+    assert(typeof value === 'string' && value.trim(), `${key} is empty or invalid in ${locale}`);
+    assert.deepEqual(tokens(value), tokens(messages.ja[key]), `${key} placeholders differ in ${locale}`);
+  }
 }
 
 for (const file of (await readdir('src')).filter((name) => name.endsWith('.tsx'))) {
   const content = await readFile(`src/${file}`, 'utf8');
   for (const [, key] of content.matchAll(/\bt\(['"]([a-zA-Z]+)['"]/g)) {
-    assert(Object.hasOwn(messages, key), `${file} references missing message ${key}`);
+    assert(Object.hasOwn(messages.ja, key), `${file} references missing message ${key}`);
   }
 }
 
@@ -46,4 +49,4 @@ for (const missing of [
 ]) {
   assert.equal(routeAt(missing), undefined, missing);
 }
-console.log(`Validated ${Object.keys(messages).length} messages and ${locales.length} locale routes`);
+console.log(`Validated ${keys.length} messages and ${locales.length} locale routes`);

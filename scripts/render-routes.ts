@@ -2,21 +2,21 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { certifications } from '../src/certifications.ts';
 import { localePath, locales } from '../src/locales.ts';
-import { messages } from '../src/messages.ts';
+import { messages, type Message } from '../src/messages.ts';
 import { publishedPages } from '../src/routes.ts';
 
 const origin = 'https://kaq.katana-projects.org';
 const template = await readFile('dist/index.html', 'utf8');
 const indexTitles = {
-  '': messages.landingTitle,
-  study: messages.study,
-  'study/fundamentals': messages.learnFundamentals,
-  'study/questions': messages.learnFromQuestions,
-  assessment: messages.skillsAssessment,
-  certifications: messages.certGuides,
-  glossary: messages.glossary,
-  privacy: messages.privacy,
-};
+  '': 'landingTitle',
+  study: 'study',
+  'study/fundamentals': 'learnFundamentals',
+  'study/questions': 'learnFromQuestions',
+  assessment: 'skillsAssessment',
+  certifications: 'certGuides',
+  glossary: 'glossary',
+  privacy: 'privacy',
+} satisfies Record<string, Message>;
 const published: string[] = [];
 
 function escapeHtml(value: string) {
@@ -28,11 +28,12 @@ function escapeHtml(value: string) {
 }
 
 for (const locale of locales) {
+  const dictionary = messages[locale];
   for (const entry of publishedPages) {
     const path = localePath(locale, entry);
     const certification = certifications.find((cert) => cert.id === entry.split('/')[1]);
     const baseTitle = Object.hasOwn(indexTitles, entry)
-      ? indexTitles[entry as keyof typeof indexTitles][locale]
+      ? dictionary[indexTitles[entry as keyof typeof indexTitles]]
       : certification && `${certification.name} (${certification.id.toUpperCase()})`;
     if (!baseTitle) throw new Error(`Missing title for ${entry}`);
     const alternateLinks = [...locales, 'x-default']
@@ -42,7 +43,7 @@ for (const locale of locales) {
       )
       .join('\n');
     const description = escapeHtml(
-      (entry === 'glossary' ? messages.glossaryIntro : messages.landingIntro)[locale],
+      entry === 'glossary' ? dictionary.glossaryIntro : dictionary.landingIntro,
     );
     const html = template
       .replace('lang="en"', `lang="${locale}"`)

@@ -72,8 +72,29 @@ services:
       - ./gateway.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - auth
+      - delete-account
     healthcheck:
       test: [CMD-SHELL, "wget -q -O - http://127.0.0.1/auth/v1/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  delete-account:
+    image: oven/bun:1.4.4-alpine
+    working_dir: /workspace
+    command: [bun, test/auth/delete-account-server.ts]
+    environment:
+      SUPABASE_URL: http://gateway
+      KAQ_APP_ORIGIN: http://127.0.0.1:5173
+    volumes:
+      - ../..:/workspace:ro
+    healthcheck:
+      test:
+        [
+          CMD,
+          bun,
+          -e,
+          "fetch('http://127.0.0.1:54332',{method:'OPTIONS',headers:{Origin:'http://127.0.0.1:5173'}}).then((result)=>{if(result.status!==204)process.exit(1)})",
+        ]
       interval: 2s
       timeout: 2s
       retries: 30

@@ -1,4 +1,7 @@
 import type { Locale } from '../locales';
+import type { AccountDeletionBackend } from './deletion';
+
+export type { AccountDeletionBackend };
 
 export type AuthProvider = { id: string; backend: string; name: string; scopes: string };
 export type AccountIdentity = { id: string; provider: string };
@@ -21,6 +24,7 @@ export interface AccountAuth {
   completeCallback(search: string): Promise<Account>;
   refresh(): Promise<Account | null>;
   signOut(): Promise<void>;
+  deleteAccount(expectedAccountId: string): Promise<void>;
   linkIdentity(providerId: string, locale: Locale): Promise<string>;
   unlinkIdentity(identityId: string): Promise<void>;
 }

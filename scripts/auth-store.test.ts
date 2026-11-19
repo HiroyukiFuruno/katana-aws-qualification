@@ -27,6 +27,7 @@ function fixture() {
     completeCallback: unsupported,
     refresh: unsupported,
     signOut: unsupported,
+    deleteAccount: unsupported,
     linkIdentity: unsupported,
     unlinkIdentity: unsupported,
   };

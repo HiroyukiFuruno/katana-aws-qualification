@@ -7,14 +7,14 @@
 ## 実装範囲
 
 - ホームのentry gridとアカウント案内の間に24px以上、画面幅に応じて最大40pxの余白を置く。
-- 案内は読み幅を68chに制限し、登録CTAと既存の具体的な価値を維持する。
+- メリットとFAQのセクション外枠は、上の学習・査定カード群と左右端・横幅を一致させる。読み幅は外枠でなくメリットの本文・リストを68ch、FAQの回答本文を62chに制限し、登録CTAと既存の具体的な価値を維持する。
 - FAQはnative `details` / `summary` の6項目とし、通勤、ゲストとアカウントの違い、料金とSSO登録を全10言語で示す。
 - 同期・分析は準備中であることを明記し、未提供機能を利用可能と誤認させない。
 - CSSでQマーク、chevron、hover、focus-visible、light/dark、reduced-motionを扱う。
 
 ## 検証
 
-- 実Auth環境のPlaywrightで320/390/768/1280px、light/darkについてカード間隔、重なり、横overflowをboundsで検査する。
+- 実Auth環境のPlaywrightで全10言語・320/390/768/1280px・light/darkについて、メリット・FAQとカード群の左右端・横幅の一致、カード間隔、重なり、横overflowをboundsで検査する。FAQ各項目もセクション幅に一致させる。
 - FAQのEnter/Space開閉、focus-visible、reduced-motionを検査する。
 - `bun run lint`、`bun run typecheck`、`bun run i18n:check`を対象変更後に実行する。統合環境の起動は統括担当が一度だけ実施する。
 

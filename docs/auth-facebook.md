@@ -14,9 +14,9 @@
 4. Supabase providerとVercel Productionの両方が確認できるまで`VITE_AUTH_FACEBOOK_ENABLED=false`を維持する。未設定環境ではボタンを表示しない。
 5. MetaアプリがDevelopment modeの間はroleを持つテスターだけが認証できる。一般公開の前に必要なApp Review、プライバシーポリシー、アプリアイコンなどのMeta要件を確認する。
 
-## アカウント削除案内（次の差分で公開）
+## アカウント削除案内
 
-この差分はSSO registryと認可開始・連携の契約を先行して公開する。削除UI・Edge Function・案内ページは次の小さな差分として公開し、その確認まで本番Facebook flagをfalseに保つ。
+SSO registryに加え、削除UI・本人確認するEdge Function・案内ページを提供する。本番Facebook flagはMetaの公開設定とSupabaseへのcredential反映を確認するまでfalseに保つ。退会の契約と配備手順は[auth-deletion.md](auth-deletion.md)に記載する。
 
 公開する削除案内URLは`https://kaq.katana-projects.org/privacy/#account-deletion`である。外部providerで連携を解除してもKAQアカウントは消えない。利用者はログイン後にダッシュボードの「アカウントを削除」で、取り消せない操作を明示確認してから本人のアカウントを削除する。
 

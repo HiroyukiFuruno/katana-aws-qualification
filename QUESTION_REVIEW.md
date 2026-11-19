@@ -564,3 +564,15 @@ AI・MLの基礎5問、生成AIの基礎7問、基盤モデルの応用9問、�
 - [Amazon Bedrockのストリーミング出力の検査](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-streaming.html)
 - [AWS Responsible AI Lensの合成データ品質検証](https://docs.aws.amazon.com/wellarchitected/latest/responsible-ai-lens/raidp02-bp04.html)
 - [SageMaker Clarifyの学習後バイアス指標](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-post-training-bias.html)
+
+## AIF-C01に42問を追加し、模試3回分を検証
+
+AI・MLの基礎8問、生成AIの基礎11問、基盤モデルの応用12問、責任あるAI5問、セキュリティとガバナンス6問。独立候補は51・48・54・34・33問、計220問。複数選択、順序、組み合わせを含めて、新規の採点222通りと37出典を確認した。
+
+題材は、遅れて確定する実績と予測の照合、トークン枠と同時実行、生成結果を順次表示する方法、学習する重みを絞るLoRA、モデルの評価用入力とタスク、独立評価、カタログでのデータ利用承認、集計結果の最小人数制約など。新規利用の受付を終了したSageMaker ClarifyとGround Truthの機能を問う既存の作業ブランチ内の設問には、既存利用者の前提を明記した。公開済みの旧10問には変更を加えていない。
+
+- [Bedrockのトークン割当管理](https://docs.aws.amazon.com/bedrock/latest/userguide/quotas-token-burndown.html)
+- [Bedrockのモデル評価タスク](https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-tasks.html)
+- [SageMaker Clarifyの機能と提供条件](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-post-training-bias-metric-ft.html)
+- [SageMaker Ground Truthのラベル検証と調整](https://docs.aws.amazon.com/sagemaker/latest/dg/sms-verification-data.html)
+- [AWS Clean Roomsの集計分析ルール](https://docs.aws.amazon.com/clean-rooms/latest/userguide/analysis-rules-aggregation.html)

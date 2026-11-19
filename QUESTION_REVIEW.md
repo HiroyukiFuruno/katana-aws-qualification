@@ -552,3 +552,15 @@ AI・MLの基礎、生成AIの基礎、基盤モデルの応用、セキュリ�
 - [Bedrock Knowledge Basesの取得設定](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-test-config.html)
 - [Bedrockの独立したガードレール評価](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-independent-api.html)
 - [Bedrockのデータ保持モード](https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html)
+
+## AIF-C01の5分野に32問を追加
+
+AI・MLの基礎5問、生成AIの基礎7問、基盤モデルの応用9問、責任あるAI6問、セキュリティとガバナンス5問。独立候補は43・37・42・29・27問、計178問になった。
+
+今回は、確率の校正とA/B評価、画像の部分編集と動画の生成、検索と引用の異なる評価指標、プロンプトの移植、ストリーミング前の出力検査、実データでの合成データの検証、識別情報を出さない共同分析を扱った。承認フロー、データの系譜、構造化結果の検査、取得フィルターの使い方は、同じ判断を問う既存の設問があるため追加しなかった。新規問題の採点162通りと29出典の到達を確認した。既存10問の設問・版・回答を保持。
+
+- [Amazon Bedrockの検索・引用の評価指標](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-evaluation-metrics.html)
+- [Amazon Nova 2 Sonicの発話割り込み](https://docs.aws.amazon.com/nova/latest/nova2-userguide/sonic-barge-in.html)
+- [Amazon Bedrockのストリーミング出力の検査](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-streaming.html)
+- [AWS Responsible AI Lensの合成データ品質検証](https://docs.aws.amazon.com/wellarchitected/latest/responsible-ai-lens/raidp02-bp04.html)
+- [SageMaker Clarifyの学習後バイアス指標](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-post-training-bias.html)

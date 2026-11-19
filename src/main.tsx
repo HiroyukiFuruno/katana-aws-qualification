@@ -321,16 +321,7 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
             </p>
           ) : mockBank.length && questions.length ? (
             <ExamMode
-              sets={
-                course.fixedExamFromBlueprint
-                  ? [
-                      {
-                        label: t('numberedSet', { label: t('shortExam'), number: 1 }),
-                        questions: selectExamQuestions(mockBank, course.exam),
-                      },
-                    ]
-                  : questionSets
-              }
+              practiceQuestions={questions}
               examKey={examKeyFor(course.examStorageId ?? id)}
               blueprint={course.exam}
               bank={mockBank}
@@ -416,7 +407,7 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
                 course.fixedExamFromBlueprint
                   ? [
                       {
-                        label: t('numberedSet', { label: t('shortExam'), number: 1 }),
+                        label: t('saaFull'),
                         questions: selectExamQuestions(mockBank, course.exam),
                       },
                     ]

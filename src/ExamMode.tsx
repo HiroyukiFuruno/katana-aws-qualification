@@ -1,15 +1,13 @@
 import type { Message } from './messages';
 import { usePreferences } from './preferences';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { QuestionSetPicker, type QuestionSet } from './QuestionSetPicker';
+import { ExamFormatPicker } from './ExamFormatPicker';
 import { LearningNotes } from './LearningNotes';
 import type { ExamBlueprint } from './certifications';
 import { saveExam, type Attempt } from './history';
 import { questionKey, type Question } from './questions';
 import {
   canStartExam,
-  examLength,
-  uniqueExamQuestions,
   getResponse,
   isAnswered,
   newExam,
@@ -29,10 +27,10 @@ export function ExamMode({
   onSaved,
   blueprint,
   examKey,
-  sets,
+  practiceQuestions,
 }: {
   bank: Question[];
-  sets: QuestionSet[];
+  practiceQuestions: Question[];
   archivedBank: Question[];
   blueprint: ExamBlueprint;
   examKey: string;
@@ -52,7 +50,7 @@ export function ExamMode({
   const pending = useRef(false);
   const failedAuto = useRef(false);
   const byKey = new Map(
-    [...archivedBank, ...sets.flatMap((set) => set.questions), ...bank].map((question) => [
+    [...archivedBank, ...practiceQuestions, ...bank].map((question) => [
       questionKey(question),
       question,
     ]),
@@ -66,10 +64,6 @@ export function ExamMode({
   const completed = attempts.length > 0;
   const expired = !!draft && now >= draft.deadline;
   const available = canStartExam(bank, blueprint);
-  const fixedSets = sets
-    .map((set) => ({ ...set, questions: uniqueExamQuestions(set.questions) }))
-    .filter((set) => set.questions.length);
-  const maxCount = available ? examLength(blueprint) : 0;
   const unanswered = draft ? questions.filter((question) => !isAnswered(draft, question)).length : 0;
 
   useEffect(() => {
@@ -146,8 +140,8 @@ export function ExamMode({
     if (expired && correctRevision && !completed && !failedAuto.current) void submit();
   }, [expired, correctRevision, completed, submit]);
 
-  function start(count: number, fixed?: QuestionSet) {
-    if (!available && !fixed) return;
+  function start(count: number) {
+    if (!available) return;
     try {
       const current = readExam(examKey);
       const currentCompleted = current && history.some((attempt) => attempt.examId === current.id);
@@ -155,7 +149,7 @@ export function ExamMode({
         setDraft(current);
         return;
       }
-      const next = newExam(bank, blueprint, Date.now(), count, fixed?.questions);
+      const next = newExam(bank, blueprint, Date.now(), count);
       storeExam(examKey, next);
       setDraft(next);
       setNow(Date.now());
@@ -224,9 +218,9 @@ export function ExamMode({
             );
           })}
         </dl>
-        <QuestionSetPicker
-          maxCount={maxCount}
-          sets={fixedSets}
+        <ExamFormatPicker
+          blueprint={blueprint}
+          available={available}
           onStart={start}
           buttonLabel={t('nextExam')}
         />
@@ -287,18 +281,12 @@ export function ExamMode({
     return (
       <section className="card">
         <h2>{t('examSetup')}</h2>
-        <p className="exam-score">
-          {t('examLength', {
-            count: examLength(blueprint),
-            minutes: blueprint.minutes,
-          })}
-        </p>
         <p>{t('examTiming')}</p>
         <p>{t('examTimerWarning')}</p>
         {!available && <p role="alert">{t('tooFew')}</p>}
-        <QuestionSetPicker
-          maxCount={maxCount}
-          sets={fixedSets}
+        <ExamFormatPicker
+          blueprint={blueprint}
+          available={available}
           onStart={start}
           buttonLabel={t('startExam')}
         />

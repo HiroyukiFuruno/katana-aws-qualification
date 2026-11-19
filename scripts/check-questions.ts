@@ -60,16 +60,18 @@ for (const { course } of certifications) {
     assert(!category || category === question.category, `${course.mock}: group crosses exam categories`);
     groups.set(question.similarityGroup, question.category);
   }
-  for (const [category, required] of Object.entries(course.exam.distribution)) {
+  for (const [category, count] of Object.entries(course.exam.distribution)) {
+    const required = count * (course.reviewedMock ? 5 : 1);
+    const available = new Set(
+      bank
+        .filter((question) => question.category === category)
+        .map((question) =>
+          question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`,
+        ),
+    ).size;
     assert(
-      new Set(
-        bank
-          .filter((question) => question.category === category)
-          .map((question) =>
-            question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`,
-          ),
-      ).size >= required,
-      `${course.mock}: ${category}`,
+      available >= required,
+      `${course.mock}: ${category} has ${available} distinct questions, expected at least ${required}`,
     );
   }
   for (const path of [...course.practice.map((entry) => entry.path), ...course.archives])

@@ -1,5 +1,5 @@
 import type { ExamBlueprint } from './certifications';
-import { examDomainOf, questionKey, type Question } from './questions';
+import { examDomainOf, isAnswerComplete, questionKey, type Question } from './questions';
 
 export type ExamResponse = {
   selected: string[];
@@ -117,5 +117,5 @@ export function getResponse(draft: ExamDraft, key: string): ExamResponse {
 }
 
 export function isAnswered(draft: ExamDraft, question: Question) {
-  return getResponse(draft, questionKey(question)).selected.length === question.correct.length;
+  return isAnswerComplete(question, getResponse(draft, questionKey(question)).selected);
 }

@@ -2,9 +2,10 @@ import { ExamFormatPicker } from './ExamFormatPicker';
 import { LearningNotes } from './LearningNotes';
 import type { ExamBlueprint } from './certifications';
 import type { Attempt } from './history';
-import { questionKey, type Question } from './questions';
+import { isAnswerComplete, questionKey, type Question } from './questions';
 import type { usePreferences } from './preferences';
 import type { Message } from './messages';
+import { StructuredAnswerReview } from './StructuredAnswer';
 
 type Translate = ReturnType<typeof usePreferences>['t'];
 
@@ -75,7 +76,9 @@ export function ExamResults({
           const item = byKey.get(
             questionKey({ id: attempt.questionId, revision: attempt.questionRevision }),
           );
-          const answered = attempt.selected.length === attempt.correct.length;
+          const answered = item
+            ? isAnswerComplete(item, attempt.selected)
+            : attempt.selected.filter(Boolean).length === attempt.correct.length;
           return (
             <details key={attempt.questionId}>
               <summary>
@@ -84,12 +87,16 @@ export function ExamResults({
                 {item?.title ?? attempt.questionId}
               </summary>
               <p>{item?.prompt}</p>
-              <p>
-                {t('selected')} {attempt.selected.join('・') || t('none')} ／ {t('correct')}{' '}
-                {attempt.correct.join('・')}
-              </p>
+              {item?.format ? (
+                <StructuredAnswerReview question={item} selected={attempt.selected} />
+              ) : (
+                <p>
+                  {t('selected')} {attempt.selected.join('・') || t('none')} ／ {t('correct')}{' '}
+                  {attempt.correct.join('・')}
+                </p>
+              )}
               {item && <LearningNotes question={item} selected={attempt.selected} />}
-              {item && (
+              {item && !item.format && (
                 <ul>
                   {item.choices.map((choice) => (
                     <li key={choice.id}>

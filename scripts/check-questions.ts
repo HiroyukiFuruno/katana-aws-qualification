@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { certifications } from '../src/certifications.ts';
-import { examDomainOf, type Question } from '../src/questions.ts';
+import { examDomainOf, type Question, validQuestionFormat } from '../src/questions.ts';
 
 const banks = new Map<string, Question[]>();
 async function load(path: string) {
@@ -42,8 +42,9 @@ async function load(path: string) {
       question.correct.every((answer) => options.has(answer)),
       context,
     );
+    assert(validQuestionFormat(question), context);
     if (path.endsWith('mock-2026-11.json') || path.endsWith('extra-questions.json')) {
-      assert.equal(options.size, question.correct.length === 1 ? 4 : 5, context);
+      if (!question.format) assert.equal(options.size, question.correct.length === 1 ? 4 : 5, context);
       assert(question.learning?.reason.trim() && question.learning.concept.trim(), context);
     }
   }

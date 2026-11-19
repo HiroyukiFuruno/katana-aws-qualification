@@ -517,3 +517,99 @@ AWSの試験案内とCLF-C02の試験ガイドを確認した。4分野を16・1
 - [S3のVPCエンドポイント](https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-s3.html)
 - [EC2のハイバネーション](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html)
 - [コスト配分タグのバックフィル](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-allocation-backfill.html)
+
+## AIF-C01の回答形式と初回の追加問題
+
+公式ガイドの並べ替え・組み合わせを各3問追加し、位置を持つ回答を採点・保存・再開時に扱えるようにした。既存10問のID、改訂、設問、選択肢を保持し、通常の複数選択は順不同で採点する。
+
+AI・MLの基礎、生成AIの基礎、基盤モデルの応用、セキュリティとガバナンスの初回分として32問を追加した。モデルの対応形式を同じ判断で問う草稿、既出の更新情報に関する草稿、独立性または一次資料を再確認する推論・分類の草稿は採用していない。類似グループとIDの一意性、全選択肢の説明、採点データ、採用分のAWS一次資料への到達を確認した。
+
+- [AIF-C01公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
+- [Amazon Bedrock Knowledge Basesの検索設定](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-test-config.html)
+- [Amazon Bedrockの評価指標](https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-metrics.html)
+
+## AIF-C01の5分野に62問を追加
+
+今の問題とは異なる判断を問う候補を追加した。AI・MLの基礎14問、生成AIの基礎10問、基盤モデルの応用13問、責任あるAI12問、セキュリティとガバナンス13問。合計は110レコード、類似グループを除いた独立候補は109問。全5分野の独立候補は29・26・22・15・17問になった。
+
+類似した用途選定、同一の指標判断、既出のデータ分割の草稿は採用しなかった。誤答には別用途に使える機能や、条件を一部しか満たさない構成を置いた。新規62問について、採点の組み合わせ316通りと出典URL54件の到達を確認した。旧10問の内容と版を維持した。A2IとSageMaker Model Monitorについては、既に利用中の環境に前提を限定した。
+
+- [AIF-C01公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
+- [SageMaker Canvasでの特徴量変換](https://docs.aws.amazon.com/sagemaker/latest/dg/canvas-transform.html)
+- [Amazon Bedrockのリージョン別モデル提供](https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html)
+- [Bedrock Knowledge Basesのチャンク分割](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking.html)
+- [Amazon A2IとTextractの確認条件](https://docs.aws.amazon.com/sagemaker/latest/dg/a2i-json-humantaskactivationconditions-textract-example.html)
+- [Amazon S3のタグ条件付きアクセス](https://docs.aws.amazon.com/AmazonS3/latest/userguide/tagging-and-policies.html)
+
+## AIF-C01を65問・90分に拡張する検証
+
+5分野に37問を追加した。主な題材は、SageMakerの推論方式とデータ型、生成AIと業務システムの役割分担、RAGのクエリ分解と文書解析、既存のモデル成果物の取り込み、構造化された評価、人による判断、ガードレールの動作、データの系譜と監査。既出の検索、翻訳、データレジデンシー、モデルの提供終了と同じ判断を繰り返す草稿は除いた。新規設問の出典33 URLと採点150通りを検証した。
+
+実際の配点は採点対象50問の比率として公開されているため、採点対象外を含む全65問へその比率を按分し、5分野を13・16・18・9・9問とした。旧版の設問には模試分野だけを追加し、ID・版・従来の学習カテゴリ・回答データを維持した。模試の公開条件は引き続き各分野5回分、合計325問。現在は146問なので作業ブランチで検証する。
+
+- [AWS AI Practitionerの試験概要](https://aws.amazon.com/certification/certified-ai-practitioner/)
+- [AWS AIF-C01の公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
+- [Bedrock Knowledge Basesの取得設定](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-test-config.html)
+- [Bedrockの独立したガードレール評価](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-independent-api.html)
+- [Bedrockのデータ保持モード](https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html)
+
+## AIF-C01の5分野に32問を追加
+
+AI・MLの基礎5問、生成AIの基礎7問、基盤モデルの応用9問、責任あるAI6問、セキュリティとガバナンス5問。独立候補は43・37・42・29・27問、計178問になった。
+
+今回は、確率の校正とA/B評価、画像の部分編集と動画の生成、検索と引用の異なる評価指標、プロンプトの移植、ストリーミング前の出力検査、実データでの合成データの検証、識別情報を出さない共同分析を扱った。承認フロー、データの系譜、構造化結果の検査、取得フィルターの使い方は、同じ判断を問う既存の設問があるため追加しなかった。新規問題の採点162通りと29出典の到達を確認した。既存10問の設問・版・回答を保持。
+
+- [Amazon Bedrockの検索・引用の評価指標](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-evaluation-metrics.html)
+- [Amazon Nova 2 Sonicの発話割り込み](https://docs.aws.amazon.com/nova/latest/nova2-userguide/sonic-barge-in.html)
+- [Amazon Bedrockのストリーミング出力の検査](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-streaming.html)
+- [AWS Responsible AI Lensの合成データ品質検証](https://docs.aws.amazon.com/wellarchitected/latest/responsible-ai-lens/raidp02-bp04.html)
+- [SageMaker Clarifyの学習後バイアス指標](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-post-training-bias.html)
+
+## AIF-C01に42問を追加し、模試3回分を検証
+
+AI・MLの基礎8問、生成AIの基礎11問、基盤モデルの応用12問、責任あるAI5問、セキュリティとガバナンス6問。独立候補は51・48・54・34・33問、計220問。複数選択、順序、組み合わせを含めて、新規の採点222通りと37出典を確認した。
+
+題材は、遅れて確定する実績と予測の照合、トークン枠と同時実行、生成結果を順次表示する方法、学習する重みを絞るLoRA、モデルの評価用入力とタスク、独立評価、カタログでのデータ利用承認、集計結果の最小人数制約など。新規利用の受付を終了したSageMaker ClarifyとGround Truthの機能を問う既存の作業ブランチ内の設問には、既存利用者の前提を明記した。公開済みの旧10問には変更を加えていない。
+
+- [Bedrockのトークン割当管理](https://docs.aws.amazon.com/bedrock/latest/userguide/quotas-token-burndown.html)
+- [Bedrockのモデル評価タスク](https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-tasks.html)
+- [SageMaker Clarifyの機能と提供条件](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-post-training-bias-metric-ft.html)
+- [SageMaker Ground Truthのラベル検証と調整](https://docs.aws.amazon.com/sagemaker/latest/dg/sms-verification-data.html)
+- [AWS Clean Roomsの集計分析ルール](https://docs.aws.amazon.com/clean-rooms/latest/userguide/analysis-rules-aggregation.html)
+
+## AIF-C01の5分野に30問を追加
+
+AI・MLの基礎4問、生成AIの基礎6問、基盤モデルの応用9問、責任あるAI6問、セキュリティとガバナンス5問。分野別の独立候補は55・54・63・40・38問となり、計250問。新規152通りの採点と28件の一次資料の直接到達を確認した。
+
+今回の題材は、希少故障の教師データと故障ごとの評価、発注に使う需要の上側、トークン枠の事前確認、完了した応答当たりの費用、既存検索索引とグラフの活用、文書の直接取込、利用者と運用担当者への透明性、画像付き入力の検査、学習コンテナの分離とコンテナの実行中の検知。モデル統合、バッチ推論、プロンプトキャッシュなど、既出の判断と重なる候補は追加しなかった。旧10問の内容・版を維持した。
+
+- [Bedrock CountTokensの事前計測](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_CountTokens.html)
+- [BedrockとNeptune Analyticsのグラフ検索](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-build-graphs.html)
+- [Bedrockのナレッジベースへの直接取り込み](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-direct-ingestion-add.html)
+- [Responsible AI Lensの透明性戦略](https://docs.aws.amazon.com/wellarchitected/latest/responsible-ai-lens/raigt01-bp01.html)
+- [ECRでのAmazon Inspectorの継続スキャン](https://docs.aws.amazon.com/inspector/latest/user/scanning-ecr.html)
+
+## AIF-C01に29問を追加し、模試4回分を検証
+
+AI・MLの基礎3問、生成AIの基礎11問、基盤モデルの応用11問、セキュリティとガバナンス4問。分野別の独立候補は58・65・74・40・42問、合計279問。残りは分野別に7・15・16・5・3問。既存10問の内容と版は保持した。
+
+追加分では、成約ラベルの定義と予測時点で使える情報、MCP経由の既存API利用、エージェントのセッション分離と長期メモリ、字幕の正確さを求める動画制作、検証損失による早期停止、自動採点の偏り、用語とデータ資産の対応付けを扱った。既出の教師あり調整や、情報不足時の応答に判断が重なる候補は今回の追加から外した。
+
+新規118通りの採点、累計200件の参照先への直接到達、既存の自動検査を確認した。本番条件の65問・90分を512回実行し、分野別の配分を保った重複なしの4回を128組組めること、カスタムの全65件数、問題バンクの全280レコードが抽選対象になることを確認した。
+
+- [AIF-C01の生成AI分野](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01-domain2.html)
+- [AgentCoreの長期メモリ戦略](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-configuring-built-in-strategies.html)
+- [Bedrockのモデル調整時の早期停止](https://docs.aws.amazon.com/bedrock/latest/userguide/custom-models-hp.html)
+- [Bedrock自動評価で応答が不足した場合の確認](https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-report-programmatic.html)
+
+## AIF-C01の独立325問と重複なしの模試5回分
+
+AI・MLの基礎7問、生成AIの基礎15問、基盤モデルの応用16問、責任あるAI5問、セキュリティとガバナンス3問を追加した。既存の本番公開済み10問は、模試で使う分野情報を追加したほかは内容とリビジョンを保持した。生成AIの画像・動画関連の8問は、提供終了モデルに依存しない判断や、利用可能な画像機能を問う形に更新した。提供終了したモデルの技術資料を使う場合は、方式を説明する過去の例であることを示した。
+
+本番試験は65問・90分で、50問が採点対象、15問が採点対象外。模試は65問すべてを学習用に採点する。公開されている採点対象の分野比率20・24・28・14・14%を65問に按分し、1回分を13・16・18・9・9問とした。分野別の独立候補は65・80・90・45・45問で、ビルド時の5倍検査を有効にした。単一選択、複数選択、並べ替え、組み合わせを収録している。
+
+新規184通りの採点、累計234件の出典への直接到達、自動検査13件を確認した。65問・90分を512回、カスタム全65件数、出題判断が重複しない5回を128組組んで検証し、全326レコードが抽選対象になることも確認した。公開前レビューに基づき、公平性の再現率差に関する設問へ重複候補を差し替え、照会用と追加質問用のアクショングループ、蒸留ログの教師モデル一致、PDFのページ番号が取得できる条件を明示した。
+
+- [AWS Certified AI Practitionerの試験条件](https://aws.amazon.com/certification/certified-ai-practitioner/)
+- [AWS Certified AI Practitionerの試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
+- [Amazon Bedrockモデルの提供状況](https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html)

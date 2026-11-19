@@ -2,7 +2,6 @@ import type { Certification, Course } from './certificationTypes';
 
 const starterCourseIds = new Set([
   'clf-c02',
-  'aif-c01',
   'dva-c02',
   'soa-c03',
   'dea-c01',

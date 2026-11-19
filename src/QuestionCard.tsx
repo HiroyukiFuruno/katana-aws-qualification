@@ -1,7 +1,8 @@
 import { usePreferences } from './preferences';
 import { useEffect, useState, useRef } from 'react';
 import { LearningNotes } from './LearningNotes';
-import type { Question } from './questions';
+import { StructuredAnswerFields, StructuredAnswerReview } from './StructuredAnswer';
+import { isAnswerComplete, type Question } from './questions';
 import type { Attempt } from './history';
 
 type Props = {
@@ -21,13 +22,14 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
   const [error, setError] = useState(false);
   const [started] = useState(() => performance.now());
   const count = question.correct.length;
+  const complete = isAnswerComplete(question, selected);
 
   useEffect(() => {
     if (result) resultSummary.current?.focus();
   }, [result]);
 
   async function submit() {
-    if (pending.current || result || selected.length !== count) return;
+    if (pending.current || result || !complete) return;
     pending.current = true;
     setBusy(true);
     setError(false);
@@ -45,7 +47,13 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
     <section className="card" aria-labelledby="question-title">
       <div className="question-meta">
         <span>{question.category}</span>
-        <span>{t('choose', { count })}</span>
+        <span>
+          {question.format === 'ordering'
+            ? t('orderSteps')
+            : question.format === 'matching'
+              ? t('matchPairs')
+              : t('choose', { count })}
+        </span>
       </div>
       <h2 id="question-title">{result ? question.title : t('question')}</h2>
       <p className="prompt" lang="ja">
@@ -65,51 +73,62 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
             className={result.isCorrect ? 'good-text' : 'bad-text'}
           >
             <strong>
-              {result.isCorrect ? t('correct') : t('incorrect')} · {t('correct')}{' '}
-              {result.correct.join('・')}
+              {result.isCorrect ? t('correct') : t('incorrect')}
+              {!question.format && ` · ${t('correct')} ${result.correct.join('・')}`}
             </strong>
           </p>
         )}
         {result && <LearningNotes question={question} selected={result.selected} />}
-        <fieldset disabled={busy || !!result}>
-          <legend className={result ? 'choice-legend' : 'sr-only'}>
-            {result ? t('optionExplanations') : t('choices')}
-          </legend>
-          {question.choices.map((choice) => {
-            const checked = selected.includes(choice.id);
-            const correct = result?.correct.includes(choice.id);
-            return (
-              <div key={choice.id} className="choice-wrap">
-                <label
-                  className={`choice ${result ? (correct ? 'right' : checked ? 'wrong' : '') : checked ? 'picked' : ''}`}
-                >
-                  <input
-                    type={count === 1 ? 'radio' : 'checkbox'}
-                    name="answer"
-                    checked={checked}
-                    disabled={!result && count > 1 && !checked && selected.length === count}
-                    onChange={() =>
-                      setSelected(
-                        count === 1
-                          ? [choice.id]
-                          : checked
-                            ? selected.filter((id) => id !== choice.id)
-                            : [...selected, choice.id],
-                      )
-                    }
-                  />
-                  <span className="letter">{choice.id}</span>
-                  <span lang="ja">{choice.text}</span>
-                </label>
-                {result && (
-                  <p className="explanation">
-                    <strong>{correct ? t('correct') : t('incorrect')}</strong> {choice.explanation}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </fieldset>
+        {question.format ? (
+          result ? (
+            <StructuredAnswerReview question={question} selected={result.selected} />
+          ) : (
+            <fieldset disabled={busy}>
+              <legend className="sr-only">{t('choices')}</legend>
+              <StructuredAnswerFields question={question} selected={selected} onChange={setSelected} />
+            </fieldset>
+          )
+        ) : (
+          <fieldset disabled={busy || !!result}>
+            <legend className={result ? 'choice-legend' : 'sr-only'}>
+              {result ? t('optionExplanations') : t('choices')}
+            </legend>
+            {question.choices.map((choice) => {
+              const checked = selected.includes(choice.id);
+              const correct = result?.correct.includes(choice.id);
+              return (
+                <div key={choice.id} className="choice-wrap">
+                  <label
+                    className={`choice ${result ? (correct ? 'right' : checked ? 'wrong' : '') : checked ? 'picked' : ''}`}
+                  >
+                    <input
+                      type={count === 1 ? 'radio' : 'checkbox'}
+                      name="answer"
+                      checked={checked}
+                      disabled={!result && count > 1 && !checked && selected.length === count}
+                      onChange={() =>
+                        setSelected(
+                          count === 1
+                            ? [choice.id]
+                            : checked
+                              ? selected.filter((id) => id !== choice.id)
+                              : [...selected, choice.id],
+                        )
+                      }
+                    />
+                    <span className="letter">{choice.id}</span>
+                    <span lang="ja">{choice.text}</span>
+                  </label>
+                  {result && (
+                    <p className="explanation">
+                      <strong>{correct ? t('correct') : t('incorrect')}</strong> {choice.explanation}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </fieldset>
+        )}
         {error && <p role="alert">{t('studySaveFailed')}</p>}
         {result ? (
           <div className="answer-footer">
@@ -119,8 +138,8 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
           </div>
         ) : (
           <div className="answer-footer">
-            <span>{t('selectedCount', { selected: selected.length, count })}</span>
-            <button type="submit" className="primary" disabled={selected.length !== count || busy}>
+            <span>{t('selectedCount', { selected: selected.filter(Boolean).length, count })}</span>
+            <button type="submit" className="primary" disabled={!complete || busy}>
               {t('grade')}
             </button>
           </div>

@@ -1034,3 +1034,16 @@ AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・
 - [Bedrock FlowsのInvokeFlow](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeFlow.html)
 - [AgentCore Memoryの保持期間](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-create-a-memory-store.html)
 - [SageMaker Inference Recommender](https://docs.aws.amazon.com/sagemaker/latest/dg/inference-recommender.html)
+
+## AIP-C01の重複しないフル模試3回分
+
+75問を追加し、先行150問の本文と順序、旧版16レコードを保持した。独立225問の分野別配分は69・60・45・27・24問。内訳は単一選択193問と複数選択32問。
+
+現行問同士25,200組と旧版との3,600組を比較した。同期ExpressとAPI Gatewayの組み合わせを再び問う候補は、REST API経由でLambdaの応答をストリーミングする設問に差し替えた。独立処理の並列化を繰り返し問う候補は、子ワークフローの完了を待ってJSONの結果を受け取る設問に変更した。呼び出しログは対象APIのAWSアカウントとリージョンに適用されるため、記録範囲の異なる用途をアカウントで分離する設問にした。個別ページへ到達するAWS公式出典185件を確認した。
+
+75問・180分のフル模試を重複なしで3回生成する検査を128組行い、全225問の出題、カスタム1〜75問、4,112通りの採点を確認した。独立375問の確認後に画面の出題先を切り替える。
+
+- [API GatewayとLambdaの応答ストリーミング](https://docs.aws.amazon.com/apigateway/latest/developerguide/response-transfer-mode-lambda.html)
+- [Step Functionsの子ワークフローの出力形式](https://docs.aws.amazon.com/step-functions/latest/dg/connect-stepfunctions.html)
+- [Bedrockモデル呼び出しログの適用範囲](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)
+- [S3 Vectorsでのメタデータの絞り込み](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-metadata-filtering.html)

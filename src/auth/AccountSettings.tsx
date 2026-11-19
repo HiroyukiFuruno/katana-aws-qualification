@@ -32,15 +32,17 @@ export function AccountSettings() {
   }
 
   return (
-    <section className="card">
+    <section className="card layout-stack">
       <h2>{t('accountSettings')}</h2>
       {account.email && <p>{account.email}</p>}
       <h3>{t('accountLinkedProviders')}</h3>
-      <ul>
+      <ul className="action-list">
         {account.identities.map((identity) => (
           <li key={identity.id}>
-            {service.providers.find((provider) => provider.backend === identity.provider)?.name ??
-              identity.provider}
+            <span>
+              {service.providers.find((provider) => provider.backend === identity.provider)?.name ??
+                identity.provider}
+            </span>
             <button
               type="button"
               disabled={busy || account.identities.length < 2}

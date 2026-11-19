@@ -21,9 +21,25 @@ test('real OIDC sign-in, verified session, reload, refresh, home and sign-out', 
 test('the last identity cannot be removed and a different user never inherits the previous session', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
   await signIn(page);
   expect(await runAdapter<boolean>(page, 'unlinkLast')).toBe(true);
-  await expect(page.getByRole('button', { name: '連携解除', exact: true })).toBeDisabled();
+  const unlink = page.getByRole('button', { name: '連携解除', exact: true });
+  await expect(unlink).toBeDisabled();
+  const identityRow = page.locator('.action-list > li');
+  await expect(identityRow).toHaveCount(1);
+  const layout = await identityRow.evaluate((row) => {
+    const name = row.querySelector('span')?.getBoundingClientRect();
+    const button = row.querySelector('button')?.getBoundingClientRect();
+    if (!name || !button) throw new Error('連携行に名前または解除ボタンがありません');
+    const bounds = row.getBoundingClientRect();
+    return {
+      separated: button.left - name.right >= 8,
+      inside: button.right <= bounds.right && name.left >= bounds.left,
+      touchTarget: button.height >= 44,
+    };
+  });
+  expect(layout).toEqual({ separated: true, inside: true, touchTarget: true });
   await page.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await expect(page).toHaveURL(/\/ja\/$/);
   await page.context().clearCookies();

@@ -832,3 +832,16 @@ AWS公開の採点対象の比重を比例配分し、65問の採点対象と10�
 - [CloudFormationのAWS::LanguageExtensions](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/transform-aws-languageextensions.html)
 - [S3のレプリケーション対象](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-what-is-isnot-replicated.html)
 - [S3イベントのsequencer](https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html)
+
+## DOP-C02の重複しないフル模試3回分
+
+新規75問を追加し、既存151レコードを維持した。独立225問の分野別内訳は51・39・33・33・30・39問。単一選択200問の正答位置はA〜D各50問で、複数選択は26問。
+
+実行中の変更を待つパイプライン停止、物理資源を維持するスタックの分割、同期レプリケーションでの復旧時点の設計、版単位のLambda指標、修復失敗後の補償処理、CloudFrontから非公開オリジンへのアクセスなどを追加した。近い題材の候補は、必要な判断と制約を比較して調整した。
+
+75問・180分の模試を512回生成し、分野別配分17・13・11・11・10・13問を確認した。互いに重複しないフル模試3回分を128組生成し、カスタム全75件数、採点4,032通り、出典URL215件を検証した。
+
+- [CloudFormationのスタックリファクタリング](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stack-refactoring.html)
+- [DynamoDBグローバルテーブルの整合性モード](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html)
+- [Systems Manager Automationの失敗時の制御](https://docs.aws.amazon.com/systems-manager/latest/userguide/automation-actions.html)
+- [CloudFrontからS3オリジンへのアクセス制限](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)

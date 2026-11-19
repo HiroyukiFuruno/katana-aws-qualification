@@ -845,3 +845,16 @@ AWS公開の採点対象の比重を比例配分し、65問の採点対象と10�
 - [DynamoDBグローバルテーブルの整合性モード](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html)
 - [Systems Manager Automationの失敗時の制御](https://docs.aws.amazon.com/systems-manager/latest/userguide/automation-actions.html)
 - [CloudFrontからS3オリジンへのアクセス制限](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)
+
+## DOP-C02の重複しないフル模試4回分
+
+新規75問を追加し、既存226レコードを維持した。類似グループで数えた独立300問の分野別内訳は68・52・44・44・40・52問。単一選択265問の正答位置はA〜Dの順に67・66・66・66問で、複数選択は36問。
+
+Elastic Beanstalkの配布方式、CloudFormationの別リージョン出力参照、Kinesisのコンシューマー単位の読取り容量、CloudWatch Logsの定期照会、DynamoDBのTTL削除を識別できるリージョン、Organizationsのリソース制御ポリシーなどを追加した。同じサービスを扱う既存問とは、選択に使う制約と操作結果を比較した。
+
+75問・180分の模試を512回生成し、配分17・13・11・11・10・13問を確認した。互いに設問が重複しない4回分を128組生成し、カスタム全75件数、採点5,392通り、出典URL285件を検証した。
+
+- [CloudFormationのFn::GetStackOutput](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-getstackoutput.html)
+- [Kinesisの拡張ファンアウト](https://docs.aws.amazon.com/streams/latest/dev/enhanced-consumers.html)
+- [DynamoDB StreamsでのTTL削除の識別](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ttl-expired-items.html)
+- [Organizationsのリソース制御ポリシー](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html)

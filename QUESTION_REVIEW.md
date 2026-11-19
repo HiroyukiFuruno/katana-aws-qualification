@@ -898,3 +898,16 @@ AWSの試験ガイドの分野比率16・14・18・20・18・14%に合わせ、6
 - [AWSのインシデント対応ガイド](https://docs.aws.amazon.com/pdfs/whitepapers/latest/aws-security-incident-response-guide/aws-security-incident-response-guide.pdf)
 - [KMSのエンクレーブ証明条件](https://docs.aws.amazon.com/kms/latest/developerguide/conditions-attestation.html)
 - [Organizationsのバックアップポリシー](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_backup.html)
+
+## SCS-C03の重複しないフル模試3回分
+
+65問を追加し、既存130問を維持した。独立195問を6分野に30・27・36・39・36・27問ずつ収録する。単一選択171問、複数選択20問、並べ替え3問、組み合わせ1問。単一選択の正答位置はA〜Dの順に43・43・43・42問。
+
+ネットワークアクティビティイベントで認可の拒否を調べる設問、事故調査中にAuto Scalingの稼働台数を保つ設問、利用者と端末の信頼を評価する設問、予定削除を取り消したKMSキーの復旧順序などを追加した。既存問の解説が正答の手がかりになる候補は別の題材に差し替えた。例えばIAMポリシーの検証と観測履歴に基づくポリシー生成は、後者を収録し、前者の候補をNLBのTLS監査に差し替えた。
+
+フル模試を512回生成し、65問・170分と分野配分を検証した。互いに重複しないフル模試3回分を128組生成し、カスタム全65件数、採点3,454通り、出典URL189件、旧版16レコードの参照を確認した。
+
+- [CloudTrailのネットワークアクティビティイベント](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-network-events-with-cloudtrail.html)
+- [Auto ScalingのStandby状態](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-enter-exit-standby.html)
+- [Verified Accessの信頼プロバイダー](https://docs.aws.amazon.com/verified-access/latest/ug/trust-providers.html)
+- [KMSキーの削除の取り消し](https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys-cancelling-key-deletion.html)

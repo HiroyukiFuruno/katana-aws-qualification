@@ -73,6 +73,18 @@ test('deletion rejects a foreign origin and every request body before contacting
   );
   expect(foreign.status).toBe(403);
   expect(target.status).toBe(400);
+  for (const body of [' ', '\n', '\t']) {
+    const whitespace = await deleteAccount(
+      new Request('https://functions.example/delete-account', {
+        method: 'POST',
+        headers: { Origin: environment.allowedOrigin, Authorization: 'Bearer user-token' },
+        body,
+      }),
+      environment,
+      fetcher,
+    );
+    expect(whitespace.status).toBe(400);
+  }
   expect(preflight.status).toBe(204);
   expect(preflight.headers.get('Access-Control-Allow-Origin')).toBe(environment.allowedOrigin);
   expect(calls).toBe(0);

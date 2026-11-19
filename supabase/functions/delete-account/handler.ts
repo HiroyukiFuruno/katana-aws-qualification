@@ -58,7 +58,7 @@ export async function deleteAccount(
   if (!origin || origin !== environment.allowedOrigin) return new Response(null, { status: 403 });
   if (request.method === 'OPTIONS') return response(204, origin);
   if (request.method !== 'POST') return response(405, origin, { error: 'method_not_allowed' });
-  if ((await request.text()).trim()) return response(400, origin, { error: 'invalid_request' });
+  if ((await request.text()).length !== 0) return response(400, origin, { error: 'invalid_request' });
   const token = bearer(request);
   if (!token) return response(401, origin, { error: 'unauthorized' });
   const verified = await verifiedUserId(token, environment, fetcher);

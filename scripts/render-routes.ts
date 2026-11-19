@@ -2,8 +2,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { certifications } from '../src/certifications.ts';
 import { localePath, locales } from '../src/locales.ts';
-import { messages, type Message } from '../src/messages.ts';
-import { publishedPages } from '../src/routes.ts';
+import { type Message, messages } from '../src/messages.ts';
+import { accountPages, publishedPages } from '../src/routes.ts';
 
 const origin = 'https://kaq.katana-projects.org';
 const template = await readFile('dist/index.html', 'utf8');
@@ -63,6 +63,22 @@ for (const locale of locales) {
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'index.html'), html);
     published.push(origin + path);
+  }
+}
+
+for (const locale of locales) {
+  for (const entry of accountPages) {
+    const path = localePath(locale, entry);
+    const html = template
+      .replace('lang="en"', `lang="${locale}"`)
+      .replace(/<link rel="canonical" href="[^"]*">/, '')
+      .replace(
+        '</head>',
+        '<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer"></head>',
+      );
+    const directory = join('dist', path);
+    await mkdir(directory, { recursive: true });
+    await writeFile(join(directory, 'index.html'), html);
   }
 }
 

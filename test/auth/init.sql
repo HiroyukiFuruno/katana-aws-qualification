@@ -1,0 +1,2 @@
+CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION supabase_auth_admin;
+CREATE ROLE postgres NOLOGIN;

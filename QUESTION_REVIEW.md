@@ -792,3 +792,17 @@ DocumentDBの複合索引、Neptuneの多段探索、CQL互換のKeyspaces、Mem
 - [pgvectorのHNSW](https://github.com/pgvector/pgvector#hnsw)
 - [DynamoDBのオンラインGSI管理](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.OnlineOps.html)
 - [EventBridge Pipesのロギング](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-logs.html)
+
+## DEA-C01の重複しないフル模試5回分
+
+新規65問を追加し、既存261レコードを維持した。独立325問の分野別内訳は、データの取り込みと変換110問、データストア管理85問、データ運用とサポート70問、データセキュリティとガバナンス60問。単一選択288問の正答位置はA〜D各72問で、複数選択は38問。
+
+同一キーの明細を維持するSparkの左アンチ結合、SageMaker Unified StudioへのOpenLineageイベント登録、Glue Data Qualityでの合否判定を伴わない統計収集、AWS KMSでのリージョン内復号を追加した。CloudTrail Lakeを扱う設問では、対象の組織が既存利用者でイベントを取り込み済みと明記した。Iceberg MERGEの既存2問は同じ類似グループに属し、保存済み模試から参照できるよう両方の設問IDを保持した。
+
+65問・130分のフル模試を分野別に22・17・14・12問で構成する。フル模試512回、互いに重複しないフル模試5回分を128組、カスタム全65件数、採点5,824通り、出典URL311件を検証した。
+
+- [AWS認定 データエンジニア アソシエイト試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01.html)
+- [Spark SQLの結合](https://spark.apache.org/docs/latest/sql-ref-syntax-qry-select-join.html)
+- [SageMaker Unified Studioのデータリネージ](https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/datazone-data-lineage.html)
+- [Glue Data Qualityのアナライザー](https://docs.aws.amazon.com/glue/latest/dg/dqdl.html#dqdl-analyzers)
+- [AWS KMSのマルチリージョンキー](https://docs.aws.amazon.com/kms/latest/developerguide/multi-region-keys-overview.html)

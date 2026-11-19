@@ -641,3 +641,17 @@ AWSサービスでの開発20問、セキュリティ17問、テストとデプ�
 - [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
 - [CodePipelineのCloudFormationアクション](https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-CloudFormation.html)
 - [SQSの可視性と処理中メッセージ上限](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
+
+## DVA-C03の独立195問と重複なしの模試3回分
+
+開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問を追加した。既存131レコードを保持し、累計196レコードのうち独立195問、分野順に60・51・42・42問。単一選択182問、複数選択14問を収録している。
+
+開発ではSQSでフィルター対象外のメッセージが削除される条件、S3通知の同一キー内の順序、ステップの実行結果を既存入力へ追加する設定を扱った。セキュリティではKMSグラントを発行直後から利用する場合、関数URLを別アカウントへ許可する場合、推論でガードレール指定を必須にする場合を追加した。テストとデプロイではECRの既存イメージをバックフィルする手順、極力稼働数を維持するECS更新、構成に対するCDKの共通検証を扱った。障害切り分けでは、SQS標準DLQの期限の起点、ECSのコンテナ別CPU指標、CloudFrontのメソッド別フェイルオーバーを確認した。
+
+文章が近い設問について判定条件と正答を照合した。Secrets Managerの候補の昇格と、昇格後のアプリ側の再取得、DynamoDBのテナント認可と月次のキー条件、CloudFormationでの置換禁止と承認後の変更セット実行では、別の操作や条件を問う。
+
+出典191件の到達、全3,360通りの採点、フル生成512回、カスタム全65件数を確認した。65問・130分で分野配分20・17・14・14問のフル模試を、互いに重複しない3回分として128組生成した。公開条件の各分野5回分まで、残り40・34・28・28問。
+
+- [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
+- [ECRレプリケーションバックフィル](https://docs.aws.amazon.com/AmazonECR/latest/userguide/replication-backfill.html)
+- [Lambda関数URLの認可](https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html)

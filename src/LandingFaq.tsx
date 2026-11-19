@@ -29,7 +29,9 @@ export function LandingFaq() {
           key={item.question}
           open={item.question === 'freeStudyQuestion'}
         >
-          <summary>{t(item.question)}</summary>
+          <summary>
+            <span>{t(item.question)}</span>
+          </summary>
           <div className="layout-stack disclosure-content landing-faq-answer">
             <p>{t(item.answer)}</p>
             {'link' in item && <a href={localePath(locale, item.link.page)}>{t(item.link.label)}</a>}

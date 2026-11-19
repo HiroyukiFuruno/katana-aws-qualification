@@ -32,6 +32,12 @@ test('landing cards retain hierarchy and viewport bounds in light and dark theme
           expect((card?.x ?? 0) + (card?.width ?? 0)).toBeLessThanOrEqual(viewport.width);
         }
       }
+      for (const summary of await page.locator('.landing-faq-item summary').all()) {
+        const parent = await summary.boundingBox();
+        const label = await summary.locator('span').boundingBox();
+        expect((label?.x ?? 0) - (parent?.x ?? 0)).toBeGreaterThanOrEqual(40);
+        expect((label?.x ?? 0) + (label?.width ?? 0)).toBeLessThan(viewport.width - 30);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         viewport.width,
       );

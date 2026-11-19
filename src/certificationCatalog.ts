@@ -45,6 +45,7 @@ export const catalog: Certification[] = [
         },
       },
       fixedExamFromBlueprint: true,
+      reviewedMock: true,
     },
   },
   {

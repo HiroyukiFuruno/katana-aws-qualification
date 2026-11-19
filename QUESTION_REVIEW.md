@@ -601,3 +601,15 @@ AI・MLの基礎3問、生成AIの基礎11問、基盤モデルの応用11問、
 - [AgentCoreの長期メモリ戦略](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-configuring-built-in-strategies.html)
 - [Bedrockのモデル調整時の早期停止](https://docs.aws.amazon.com/bedrock/latest/userguide/custom-models-hp.html)
 - [Bedrock自動評価で応答が不足した場合の確認](https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-report-programmatic.html)
+
+## AIF-C01の独立325問と重複なしの模試5回分
+
+AI・MLの基礎7問、生成AIの基礎15問、基盤モデルの応用16問、責任あるAI5問、セキュリティとガバナンス3問を追加した。既存の本番公開済み10問は、模試で使う分野情報を追加したほかは内容とリビジョンを保持した。生成AIの画像・動画関連の8問は、提供終了モデルに依存しない判断や、利用可能な画像機能を問う形に更新した。提供終了したモデルの技術資料を使う場合は、方式を説明する過去の例であることを示した。
+
+本番試験は65問・90分で、50問が採点対象、15問が採点対象外。模試は65問すべてを学習用に採点する。公開されている採点対象の分野比率20・24・28・14・14%を65問に按分し、1回分を13・16・18・9・9問とした。分野別の独立候補は65・80・90・45・45問で、ビルド時の5倍検査を有効にした。単一選択、複数選択、並べ替え、組み合わせを収録している。
+
+新規184通りの採点、累計235件の出典への直接到達、自動検査13件を確認した。65問・90分を512回、カスタム全65件数、出題判断が重複しない5回を128組組んで検証し、全326レコードが抽選対象になることも確認した。
+
+- [AWS Certified AI Practitionerの試験条件](https://aws.amazon.com/certification/certified-ai-practitioner/)
+- [AWS Certified AI Practitionerの試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
+- [Amazon Bedrockモデルの提供状況](https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html)

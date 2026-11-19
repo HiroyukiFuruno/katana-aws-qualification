@@ -17,13 +17,13 @@ GitHubのOpen Issue #17, #19〜#25の本文を要件・DoDの一次情報とす�
 - 本人手続きは独立フォローアップへ記録。実行可能な未対応を除外せず、未有効化providerを一般利用可能とは報告しない。
 
 ## タスク
-- [ ] #19 Google: registry/設定/固有パラメータ・取消し・連携/回帰/公開証跡。
-- [ ] #20 Microsoft: 個人＋組織common tenant、最小scope、管理者同意案内/検査/公開証跡。
+- [x] #19 Google: registry/設定/固有パラメータ・取消し・連携/回帰/公開証跡。
+- [x] #20 Microsoft: 個人＋組織common tenant、最小scope、管理者同意案内/検査/公開証跡。
 - [ ] #21 Amazon: hosted custom OAuthの実互換性、安定ID/属性、最小scope、Prime判定なし、検査/公開証跡。
 - [ ] #22 Facebook: 公開条件/最小権限、メール不足/取消し、連携/回帰/公開証跡。
 - [ ] #23 永続化: 全保存データ/RLS/冪等性/明示移行/同期失敗/切替/削除/JSONL/集計契約と実DB検証。
 - [ ] #24 ダッシュボード: 契約数値/フィルタ/空・失敗の区別/学習導線/全言語・アクセシビリティ/公開検証。
-- [ ] #25 基礎学習: 棚卸し→分類・到達目標・前提・順序・対象固定→教材と4設問形式→内容照合/検証/公開。
+- [x] #25 基礎学習: 棚卸し→分類・到達目標・前提・順序・対象固定→教材と4設問形式→内容照合/検証/公開。
 - [ ] #17 親: 全子Issueの担当範囲・公開証跡と要件対応を照合しClose。
 
 ## 作業分担と現状
@@ -51,3 +51,9 @@ GitHubのOpen Issue #17, #19〜#25の本文を要件・DoDの一次情報とす�
 GitHubはManagement APIからKeychain内の実credential再設定後、本人Chromeで実ログイン→dashboard→identity1件とアバター表示まで確認済み。GoogleはPR32/main d074b9a・本番有効化済み、本人の基本情報共有同意だけ独立フォローアップ。#33はPR34/main0c44321を公開し、本番8条件のカード余白/横overflow/FAQ開閉を検査済み。
 
 - [/] 追加フィードバック: ログインボタンをベンダーごとの公式ロゴ/カラーへ変更（20261120_provider_buttons.md）。
+
+## 2026-11-20 継続時点の担当と証跡
+
+#20はPR37/main75298dac、#22のprovider部分はPR43/mainedc0b2dで小分けに公開済み。両デプロイ後の本番6条件検査をaccount-planningのmicrosoft/facebook-incremental-validationへ保存。MicrosoftはAADSTS16000で本人の管理組織確認を親#17へ独立記録し、#20の実装・検証・公開範囲をCloseした。一般向け有効化は未完了でボタン非表示。Facebookも外部設定まで非表示。
+
+#22退会はaccount-remainingのrelease/account-deletionで、実handler+実GoTrue1件成功後、確認取消し/アカウント切替/不正HTTPの回帰を拡充中。#23のSQLは本worktree release/account-dataで、frontend repositoryはaccount-remainingで準備し、退会差分と分離して取り込む。既存ゲート・公開証拠が揃うまでCloseしない。

@@ -41,6 +41,32 @@ test('CLF-C02 full mocks count legacy questions in their exam domains', () => {
   expect(newExam(questions, clf.exam, 0).deadline).toBe(90 * 60_000);
 });
 
+test('AIF-C01 full mocks use the published length and all five domains', () => {
+  const aif = certifications.find(({ id }) => id === 'aif-c01')?.course;
+  if (!aif) throw new Error('AIF-C01 course missing');
+  const questions = JSON.parse(readFileSync(`public/${aif.mock}`, 'utf8')) as Question[];
+  const byKey = new Map(questions.map((question) => [questionKey(question), question]));
+  const draft = newExam(questions, aif.exam, 0);
+  const selected = draft.order.map((key) => {
+    const question = byKey.get(key);
+    if (!question) throw new Error(`Missing selected question ${key}`);
+    return question;
+  });
+  expect(selected).toHaveLength(65);
+  expect(draft.deadline).toBe(90 * 60_000);
+  expect(Object.values(aif.exam.distribution)).toEqual([13, 16, 18, 9, 9]);
+  for (const [domain, count] of Object.entries(aif.exam.distribution)) {
+    expect(selected.filter((question) => examDomainOf(question) === domain)).toHaveLength(count);
+  }
+  expect(
+    new Set(selected.map((q) => (q.similarityGroup ? `group:${q.similarityGroup}` : `id:${q.id}`))).size,
+  ).toBe(65);
+  expect(examPresetCounts(aif.exam)).toEqual({ short: 15, medium: 30, full: 65 });
+  expect(new Set(questions.map((question) => question.format))).toEqual(
+    new Set([undefined, 'ordering', 'matching']),
+  );
+});
+
 test('each custom count starts with unique questions and the displayed deadline', () => {
   const byKey = new Map(bank.map((question) => [questionKey(question), question]));
   const now = 1_000;

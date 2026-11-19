@@ -540,3 +540,15 @@ AI・MLの基礎、生成AIの基礎、基盤モデルの応用、セキュリ�
 - [Bedrock Knowledge Basesのチャンク分割](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking.html)
 - [Amazon A2IとTextractの確認条件](https://docs.aws.amazon.com/sagemaker/latest/dg/a2i-json-humantaskactivationconditions-textract-example.html)
 - [Amazon S3のタグ条件付きアクセス](https://docs.aws.amazon.com/AmazonS3/latest/userguide/tagging-and-policies.html)
+
+## AIF-C01を65問・90分に拡張する検証
+
+5分野に37問を追加した。主な題材は、SageMakerの推論方式とデータ型、生成AIと業務システムの役割分担、RAGのクエリ分解と文書解析、既存のモデル成果物の取り込み、構造化された評価、人による判断、ガードレールの動作、データの系譜と監査。既出の検索、翻訳、データレジデンシー、モデルの提供終了と同じ判断を繰り返す草稿は除いた。新規設問の出典33 URLと採点150通りを検証した。
+
+実際の配点は採点対象50問の比率として公開されているため、採点対象外を含む全65問へその比率を按分し、5分野を13・16・18・9・9問とした。旧版の設問には模試分野だけを追加し、ID・版・従来の学習カテゴリ・回答データを維持した。模試の公開条件は引き続き各分野5回分、合計325問。現在は146問なので作業ブランチで検証する。
+
+- [AWS AI Practitionerの試験概要](https://aws.amazon.com/certification/certified-ai-practitioner/)
+- [AWS AIF-C01の公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
+- [Bedrock Knowledge Basesの取得設定](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-test-config.html)
+- [Bedrockの独立したガードレール評価](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-independent-api.html)
+- [Bedrockのデータ保持モード](https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html)

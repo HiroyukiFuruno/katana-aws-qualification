@@ -74,6 +74,22 @@ const catalog: Certification[] = [
     level: '基礎',
     skills: ['ai'],
     focus: 'AIと生成AIの基礎、責任ある利用',
+    course: {
+      practice: [{ path: 'courses/aif-c01/mock-2026-11.json', label: 'saaFull' }],
+      mock: 'courses/aif-c01/mock-2026-11.json',
+      archives: ['courses/aif-c01/questions.json'],
+      exam: {
+        minutes: 90,
+        distribution: {
+          'AI・MLの基礎': 13,
+          生成AIの基礎: 16,
+          基盤モデルの応用: 18,
+          責任あるAI: 9,
+          AIのセキュリティとガバナンス: 9,
+        },
+      },
+      fixedExamFromBlueprint: true,
+    },
   },
   {
     id: 'saa-c03',
@@ -176,7 +192,6 @@ const catalog: Certification[] = [
 
 const starterCourseIds = new Set([
   'clf-c02',
-  'aif-c01',
   'dva-c02',
   'soa-c03',
   'dea-c01',
@@ -195,7 +210,6 @@ export const certifications: Certification[] = catalog.map((certification) => {
   const bank = `courses/${certification.id}/mock-2026-11.json`;
   const professional = certification.id === 'sap-c03';
   const uniqueCounts: Record<string, number> = {
-    'aif-c01': 9,
     'aip-c01': 9,
     'dop-c02': 9,
     'mla-c01': 9,

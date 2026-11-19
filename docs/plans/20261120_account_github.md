@@ -24,6 +24,7 @@
 - [ ] 自己レビュー、Draft PR、レビュー回収・指摘修正/resolve、Ready、required checks、main統合、公開物を確認する。
 
 ## 検証と記録
+- [/] 可逆的な登録・設定変更は追加承認なしで進める。確認は不可逆・破壊的な操作と本人のみ実行できる認証に限る。一任済みのアプリ登録やsecret保存ごとに再承認を求めない（`reversible no reapproval`）。
 - ユーザー指示「mock活用してね」を反映する。単体テストはBunのmock/spyOnでSDKの失敗・遅延・session競合・identity制約を再現する。反対例は全ケースを外部ログインへ依存させること。実Auth/OIDCの結合検査は必要な正常系と設定検証へ絞る。
 - 認証情報の準備はユーザーから一任済み。Supabase登録・無料プロジェクト・GitHubOAuth設定を進め、秘密はmacOSキーチェーンへ保存し、コード・Issue・ログへ出さない。
 - 既存の150行制限・重複検査・依存方向・教材検査を維持する。
@@ -34,4 +35,5 @@
 - RED確認後に実装。`bun run check` は全品質ゲート、単体33件、型検査、production build、非公開routeシェル30件を通過。
 - `bun run auth:integration` は実Auth/Postgres/Keycloakで21件成功、失敗0。ログは `test-results/auth/check.log` と `test-results/auth/results.json`。
 - 独立した認証・セキュリティ再レビューで未対応P0/P1なし。GitHub上のDraftレビューと公開確認は継続中。
+- Draft PR #26の最新コードレビュー（d62a57e）は指摘0、未解決thread 0。Linux CI run 44581323835も単体33件・実認証21件を含め成功。初回CIで判明したテストTLS鍵のUID差は、生成fixtureだけの読み取り権限修正で解消した。
 - Supabase Free専用プロジェクトを東京に作成し、SSO限定設定と10言語callbackを設定済み。GitHubアプリ登録の確定と本番接続は準備中。

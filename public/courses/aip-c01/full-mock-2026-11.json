@@ -4407,41 +4407,41 @@
     "category": "実装と統合",
     "examDomain": "実装と統合",
     "version": "AIP-C01 オリジナル問題 2026-11",
-    "similarityGroup": "flow-multiturn-input-node",
-    "title": "Flowで利用者の次の回答を待つ",
-    "prompt": "申請Flowは不足している部署コードを利用者に質問し、回答を受けてから後段の照合を続ける。単発入力だけで失敗させず会話的に実装するにはどれか。",
+    "similarityGroup": "flow-multiturn-resume-agent-input",
+    "title": "エージェントが求めた追加入力で同じフロー実行を再開する",
+    "prompt": "Bedrock FlowのAgentノードが申請の不足情報として部署コードを要求した。アプリはユーザーの回答を受け取り、保留中のフローを同じ文脈で続けたい。2回目のInvokeFlowをどう呼び出すか。",
     "choices": [
       {
         "id": "A",
-        "text": "不足値をランダムに補う",
-        "explanation": "業務入力の正確性を失う。"
+        "text": "同じexecutionIdを渡し、回答を開始時のFlow Inputノードに送る。",
+        "explanation": "複数ターンの再開時は、入力を要求したAgentノードのagentInputTextが宛先である。"
       },
       {
         "id": "B",
-        "text": "Knowledge Baseへ質問を書き込む",
-        "explanation": "利用者の応答待ちを実装しない。"
+        "text": "executionIdを省略し、Flow Inputノードへ部署コードだけを渡す。",
+        "explanation": "現在の実行を特定できず、元の申請に対する追加入力として処理されない。"
       },
       {
         "id": "C",
-        "text": "Guardrailだけで部署コードを生成する",
-        "explanation": "入力収集の仕組みではない。"
+        "text": "Agentノード名を指定せず、部署コードを呼び出し先のエイリアス名に設定する。",
+        "explanation": "エイリアスは呼び出すフローを指定する値であり、Agentノードへの実行時入力にはならない。"
       },
       {
         "id": "D",
-        "text": "FlowのInputノードを用いて利用者入力を次ターンのFlow実行へ渡す",
-        "explanation": "Inputノードは実行時の外部入力を受け取れる。"
+        "text": "同じexecutionIdを渡し、要求元AgentノードのnodeNameとnodeInputName=agentInputTextを指定して、回答をcontent.documentに入れる。",
+        "explanation": "保留中の実行を識別し、要求したAgentの追加入力として回答を届けられる。"
       }
     ],
     "correct": [
       "D"
     ],
     "source": {
-      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/flows-multi-turn-invocation.html",
       "label": "AWS公式ドキュメント"
     },
     "learning": {
-      "reason": "Inputノードでマルチターンの外部入力をFlowへ渡す。",
-      "concept": "Flows multi-turn input"
+      "reason": "部署コードを受け取ったら同じexecutionIdと、追加入力を要求したAgentノードの入口を指定する。最初のフロー入力をやり直さず、多ターンの実行が継続する。",
+      "concept": "Bedrock FlowsのAgentノードが要求した複数ターンの入力"
     }
   },
   {
@@ -4450,29 +4450,29 @@
     "category": "実装と統合",
     "examDomain": "実装と統合",
     "version": "AIP-C01 オリジナル問題 2026-11",
-    "similarityGroup": "flow-document-node-format",
-    "title": "Flowで文書本文を抽出して後段へ渡す",
-    "prompt": "利用者がアップロードしたPDFから本文を取り出し、後段のPromptノードで要約するBedrock Flowを作る。アプリが独自のPDF抽出サービスを実装せず、Flow内の対応ノードを使うにはどれか。",
+    "similarityGroup": "flow-lambda-pdf-extraction-contract",
+    "title": "既存のPDF抽出処理の結果をFlowの要約へ渡す",
+    "prompt": "PDFをS3へアップロードするアプリに、文書のS3キーから抽出済み本文を返すLambda関数がある。Bedrock Flowは同じ抽出契約を再利用し、本文だけを後段のPromptノードへ渡したい。どう構成するか。",
     "choices": [
       {
         "id": "A",
-        "text": "PDFバイト列をmodelIdへ指定する",
-        "explanation": "modelIdは文書入力の送信先ではない。"
+        "text": "S3のRetrievalノードで元PDFのキーを読み、返るオブジェクトを構造化された抽出済みテキストとして扱う。",
+        "explanation": "S3オブジェクトを取得する処理だけでは、PDFから本文を取り出す既存関数の役割を果たさない。"
       },
       {
         "id": "B",
-        "text": "Document nodeでPDFを処理し、抽出出力をPrompt nodeへ接続する",
-        "explanation": "Document nodeは文書を入力として後段ノードへ渡せる。"
+        "text": "Lambda functionノードに抽出関数のARNを設定し、S3キーを関数入力へ渡す。functionResponseをPromptノードの本文変数へ接続する。",
+        "explanation": "既存の抽出コードをサービス統合で呼び出し、その関数出力を後続ノードで使用できる。"
       },
       {
         "id": "C",
-        "text": "CloudTrailからPDF本文を取得する",
-        "explanation": "CloudTrailは文書解析を行わない。"
+        "text": "PromptノードのモデルIDとして抽出関数のARNを設定する。",
+        "explanation": "モデルIDとLambda関数の識別子は異なる種類の設定であり、Promptノードはこの指定でLambdaを呼ばない。"
       },
       {
         "id": "D",
-        "text": "Step FunctionsのChoiceだけでPDFを要約する",
-        "explanation": "Choice stateは文書内容を抽出しない。"
+        "text": "FlowのInputノードでS3キーの文字列を本文変数へ直接接続する。",
+        "explanation": "S3キーは抽出済み本文への参照であり、参照先を読み取った本文ではない。"
       }
     ],
     "correct": [
@@ -4483,8 +4483,8 @@
       "label": "AWS公式ドキュメント"
     },
     "learning": {
-      "reason": "Document nodeが文書入力をFlow内の後段処理へ渡す。",
-      "concept": "Bedrock Flows Document node"
+      "reason": "既存の抽出関数をFlowのLambda functionノードで呼ぶ。Flowの入力から渡すS3キーと、Promptへ接続する関数の出力を明示する。",
+      "concept": "Bedrock FlowsのLambda functionノードの入力と出力の接続"
     }
   },
   {
@@ -13292,41 +13292,41 @@
     "category": "基盤モデルの統合・データ管理・コンプライアンス",
     "examDomain": "基盤モデルの統合・データ管理・コンプライアンス",
     "version": "AIP-C01 オリジナル問題 2026-11",
-    "similarityGroup": "model-converse-provider-specific-top-k",
-    "title": "共通の対話APIからモデル固有のサンプリング設定を渡す",
-    "prompt": "用語の生成アプリは複数の基盤モデルをConverseで呼び出している。検証対象のClaudeモデルはtop_kをサポートするが、他モデルにも使う共通のinferenceConfigにはこの項目がない。呼び出し方を変えず、対応モデルの検証時だけ設定するにはどれか。",
+    "similarityGroup": "transcribe-batch-word-confidence-preprocessing",
+    "title": "文字起こし全体を捨てず要修正の発話区間を特定する",
+    "prompt": "Amazon Transcribeで会議録音をバッチ文字起こしし、RAG用に発話を整形する。低信頼度の語は元音声の対応区間だけを人に確認してもらい、句読点の項目と文字起こしの残りは維持したい。どの処理が適切か。",
     "choices": [
       {
         "id": "A",
-        "text": "対応モデルを選んだ場合に、additionalModelRequestFieldsにtop_kを追加する。",
-        "explanation": "Converseのモデル固有パラメーター欄を使うと、共通項目とは別に対応モデルへ値を渡せる。"
+        "text": "出力のitemsのうちpronunciation項目の候補のconfidenceを数値で比較し、基準未満の語のstart_timeとend_timeをレビュー対象にする。",
+        "explanation": "個別の発音候補の信頼度と録音の時刻区間を対応付けられる。"
       },
       {
         "id": "B",
-        "text": "inferenceConfigにtop_kを追加し、すべてのモデルと同じ入力で送る。",
-        "explanation": "共通のモデル設定にtop_kは含まれず、全モデルがこの設定を受け付けるわけでもない。"
+        "text": "話者ラベルで会議の話者を割り出し、同じ話者のすべての単語に一律の信頼度を付ける。",
+        "explanation": "話者の区別は各語の認識信頼度を示さず、修正対象の語を絞らない。"
       },
       {
         "id": "C",
-        "text": "additionalModelResponseFieldPathsに/top_kを追加する。",
-        "explanation": "この欄は応答から取り出すモデル固有フィールドを指定する。入力側のサンプリング設定は変わらない。"
+        "text": "全文文字列から句読点の数を数え、句読点を含む文をすべて低信頼度とする。",
+        "explanation": "句読点の出現は語の認識信頼度と対応せず、録音区間も特定できない。"
       },
       {
         "id": "D",
-        "text": "ユーザーメッセージにtop_kの値を自然言語で含める。",
-        "explanation": "生成の指示として解釈されても、APIが扱うサンプリングパラメーターとしては設定されない。"
+        "text": "録音中の時刻は参照せず、低信頼度を示す値が一件でもあれば会議全体を再処理対象にする。",
+        "explanation": "低信頼度の語の時刻を確認して部分的にレビューする条件を満たさない。"
       }
     ],
     "correct": [
       "A"
     ],
     "source": {
-      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html",
+      "url": "https://docs.aws.amazon.com/transcribe/latest/dg/diarization-output-batch.html",
       "label": "AWS公式ドキュメント"
     },
     "learning": {
-      "reason": "モデルが対応する固有項目をConverseへ渡す場合は、リクエスト用の追加フィールドを使用する。",
-      "concept": "Converseの共通設定とadditionalModelRequestFieldsの分離"
+      "reason": "発音の項目には開始・終了時刻と候補の信頼度がある。句読点を別扱いに保つと、録音を確認すべき区間を絞って残りを利用できる。",
+      "concept": "Amazon Transcribeの発音項目・信頼度・音声時刻による前処理"
     }
   },
   {

@@ -1063,9 +1063,9 @@ AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・
 
 ## AIP-C01のフル模試5回分と旧版互換性
 
-75問を追加し、先行300問の内容と順序を維持した。新しい模試の問題バンクは独立した375問で、分野別の内訳は115・100・75・45・40問。75問・180分のフル模試1回あたり23・20・15・9・8問を抽出する。フル模試全体の内訳は択一322問と複数選択53問で、カスタムでは1〜75問を選択できる。
+75問を追加した。公開前レビューで先行300問のうち2問のBedrock Flowsの説明を修正し、順序を維持した。新しい模試の問題バンクは独立した375問で、分野別の内訳は115・100・75・45・40問。75問・180分のフル模試1回あたり23・20・15・9・8問を抽出する。問題バンク全体の内訳は択一322問と複数選択53問で、カスタムでは1〜75問を選択できる。
 
-現行問同士70,125組と旧版との6,000組を照合し、問題文が異なっても正答に求める判断が同じものを差し替えた。分散処理の結果保存や失敗地点からの再開の重複は、WebSocketへの非同期配送と検索索引の状態調査などの設問に変更した。AWS公式出典321ページへ個別に到達することを確認した。
+現行問同士70,125組と旧版との6,000組を照合し、問題文が異なっても正答に求める判断が同じものを差し替えた。分散処理の結果保存や失敗地点からの再開の重複は、WebSocketへの非同期配送と検索索引の状態調査などの設問に変更した。レビューで重複が見つかったConverseの設定は、文字起こしで低信頼度の語の録音区間を特定する設問に差し替えた。AWS公式出典323ページへ個別に到達することを確認した。
 
 重複のないフル模試5回分を128組生成して分野別の件数を確認した。全375問が抽出され、6,848通りの回答で採点を確認した。公開済みの問題データ16レコードと模試の保存キーは維持し、旧版の途中保存と採点履歴は引き続き旧版の問題を参照する。
 
@@ -1073,3 +1073,5 @@ AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・
 - [API Gateway WebSocketの接続管理](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-how-to-call-websocket-api-connections.html)
 - [OpenSearch ServiceのIndex State Management](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ism.html)
 - [Bedrockの蒸留用データ](https://docs.aws.amazon.com/bedrock/latest/userguide/distillation-prepare-datasets.html)
+- [Bedrock Flowsの複数ターンの再開](https://docs.aws.amazon.com/bedrock/latest/userguide/flows-multi-turn-invocation.html)
+- [Bedrock FlowsのLambda functionノード](https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html)

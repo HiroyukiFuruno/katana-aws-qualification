@@ -3301,5 +3301,3284 @@
       "reason": "S3リソースの所有アカウントが属する組織をaws:ResourceOrgIDで比較できる。エンドポイントポリシーで通過範囲を絞る。",
       "concept": "プリンシパルと宛先リソースで所属する組織を別々に評価する。"
     }
+  },
+  {
+    "id": "dop-c02-d1-015",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-git-trigger-path-filter-monorepo",
+    "title": "モノレポで無関係な変更をビルドしない",
+    "prompt": "GitHubのmainからCodePipeline V2を起動する。APIのパイプラインはservices/api/またはlibs/shared/に変更があるpushだけ処理する。docs/のみの修正に実行履歴を作らない構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "mainへのすべてのpushで構成し、デプロイステージに実行時間の制約を設定する。",
+        "explanation": "変更ファイルは判定されず、起動後に時間が検査される。"
+      },
+      {
+        "id": "B",
+        "text": "docs/だけを対象にするpushトリガーを定義し、ビルド内で判定を反転する。",
+        "explanation": "API用パスの変更しかないpushから起動できない。"
+      },
+      {
+        "id": "C",
+        "text": "接続ソースのpushトリガーでmainと二つの対象パスを含める。",
+        "explanation": "トリガーが対象のブランチとファイルパスを評価する。"
+      },
+      {
+        "id": "D",
+        "text": "ソースで常に起動し、最初のCodeBuildで対象パスの差分を調べて処理を終了する。",
+        "explanation": "ビルドを短縮できても、不要なパイプライン実行は発生する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipeline-requirements.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "トリガーが対象のブランチとファイルパスを評価する。",
+      "concept": "対象のイベントを先に選別すると、不要な実行の発生を防げる。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-016",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-retry-failed-actions-same-execution",
+    "title": "成功済みのビルドを繰り返さず失敗地点から進める",
+    "prompt": "デプロイステージの複数のアクションのうち1件が、一時的な依存先の停止で失敗した。同じ実行と入力成果物を使い、同ステージで成功したアクションをやり直さずに復旧するにはどの操作か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "最新のソースからパイプラインを再起動する。",
+        "explanation": "別実行になり、ソースの内容が変わる可能性もある。"
+      },
+      {
+        "id": "B",
+        "text": "前回成功時点へのステージロールバックを実行し、新しいデプロイを別の実行として始める。",
+        "explanation": "復旧したい実行の失敗アクションを同じ入力で再開しない。"
+      },
+      {
+        "id": "C",
+        "text": "その実行の失敗ステージで失敗したアクションだけを再試行する。",
+        "explanation": "実行に紐付いた入力を使い、ステージの成功済みアクションを温存する。"
+      },
+      {
+        "id": "D",
+        "text": "同じ実行のステージ内全アクションを再試行する。",
+        "explanation": "成功したアクションも再実行する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-retry.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "実行に紐付いた入力を使い、ステージの成功済みアクションを温存する。",
+      "concept": "再試行の単位を選ぶと、完了した副作用の再実行を避けられる。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-017",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-source-revision-commit-id-override-hotfix",
+    "title": "過去に承認したコミットを指定して実行する",
+    "prompt": "接続を使うCodePipeline V2でmainの先端は次リリースの準備に進んだ。本番障害の再現には、そのソースと互換性のある過去のコミットを一度だけ使う。トリガーやmainを変えずに開始するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "過去の実行のステージが成功した状態なら、失敗アクションの再試行を選ぶ。",
+        "explanation": "単発の新しい実行を指定コミットで開始できない。"
+      },
+      {
+        "id": "B",
+        "text": "ソースアクションにCOMMIT_IDのリビジョン上書きを指定して開始する。",
+        "explanation": "実行単位で対象のコミットを選べる。"
+      },
+      {
+        "id": "C",
+        "text": "CodeBuildの環境変数に古いSHAを書き、ソースアクションは最新を取得させる。",
+        "explanation": "変数を使う実装なしに、ソース成果物のリビジョンは変わらない。"
+      },
+      {
+        "id": "D",
+        "text": "ソースのブランチを以前のコミットに強制更新し、パイプライン開始後に戻す。",
+        "explanation": "先端の変更を避ける要件に反し、その間のトリガーにも影響する。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts-how-it-works.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "実行単位で対象のコミットを選べる。",
+      "concept": "パイプライン定義の恒久変更と、一度の実行でソースを明示する操作を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-018",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-codebuild-output-exported-variable-later-action",
+    "title": "ビルドで決まった値を後続アクションへ渡す",
+    "prompt": "CodeBuildのビルド中にパッケージの識別子が確定する。後続のアクション設定でこの識別子を参照したいが、新しい成果物ファイルの作成やスクリプトでの読取りを加えない。何を指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ソースアクションの変数名を識別子と同名にして、変更前の値を参照する。",
+        "explanation": "ビルド中に決まった値は前段のソース変数に反映されない。"
+      },
+      {
+        "id": "B",
+        "text": "ビルドログに値を書き、後続のアクションに同じ変数名を直接記述する。",
+        "explanation": "ログへの記録はアクション設定への値の受け渡しにならない。"
+      },
+      {
+        "id": "C",
+        "text": "buildspecでexported-variablesを指定し、後続から名前空間で参照する。",
+        "explanation": "ビルドで確定した値がCodePipelineの後続アクションに公開される。"
+      },
+      {
+        "id": "D",
+        "text": "CodeBuildのシェルでexportした変数を、後続アクションから名前空間を経由せず同じ環境変数名のまま読み取る。",
+        "explanation": "アクションごとに実行環境が異なり、シェル変数はプロセスを越えて伝わらない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-variables.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ビルドで確定した値がCodePipelineの後続アクションに公開される。",
+      "concept": "実行時に得た値を後続へ渡す場合、ビルドのローカル環境とパイプラインの名前空間を分けて考える。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-019",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codebuild-buildspec-finally-cleanup-on-failed-test",
+    "title": "試験が失敗しても一時環境を片づける",
+    "prompt": "CodeBuildで一時コンテナを起動して統合試験する。試験コマンドが途中で失敗しても同じフェーズでログを回収し、コンテナを停止する。失敗時のビルドは失敗のままにする。どの記述が適切か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "試験はcommands、ログ回収と停止は同じフェーズのfinallyに置く。",
+        "explanation": "commands中の失敗で残りのcommandsが止まってもfinallyが実行される。"
+      },
+      {
+        "id": "B",
+        "text": "全処理をcommandsに順に記述し、途中で失敗したら以降を実行する前に同じフェーズを終了させる。",
+        "explanation": "ログ回収と停止の前にフェーズが終わる。"
+      },
+      {
+        "id": "C",
+        "text": "成功したビルド成果物を受け取る後続ステージのアクションに、コンテナ停止とログ回収を書く。",
+        "explanation": "失敗時にはそのステージに進まず、一時コンテナの環境も別である。"
+      },
+      {
+        "id": "D",
+        "text": "試験コマンドの失敗ステータスを成功に変換し、次のcommandsでログを回収する。",
+        "explanation": "後処理は進むが、元の試験失敗がビルド結果に残らない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "commands中の失敗で残りのcommandsが止まってもfinallyが実行される。",
+      "concept": "本体の結果を保持する制御と、必ず行う後処理を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-020",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codebuild-secondary-artifacts-multiple-pipeline-outputs",
+    "title": "一度のビルドで配布物を用途別に切り分ける",
+    "prompt": "CodePipelineに一つのCodeBuildアクションがある。そこからLinux向け配布物とLambda ZIPを別々の出力として後続の二つのデプロイアクションへ渡したい。二度のビルドをせずどう設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "secondary-artifactsの各識別子をパイプラインの出力名と一致させる。",
+        "explanation": "同じビルドから独立した出力をバインドできる。"
+      },
+      {
+        "id": "B",
+        "text": "両方を同じファイル名でS3に順に書き込み、後続アクションが同じキーを参照する。",
+        "explanation": "書き込みでオブジェクトが上書きされ、二つの配布物を識別できない。"
+      },
+      {
+        "id": "C",
+        "text": "環境変数へ二つの出力名を指定し、artifactsでは生成されたファイルを一つの既定のZIPにまとめる。",
+        "explanation": "ビルド後、配布ファイルを別々の出力で受け渡せない。"
+      },
+      {
+        "id": "D",
+        "text": "両方を一つのZIPに格納し、各デプロイアクションの入力に同じZIPを設定する。",
+        "explanation": "個別の成果物を直接受け取る要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じビルドから独立した出力をバインドできる。",
+      "concept": "パイプラインの出力名とbuildspecの成果物識別子を結び付けると、入力を用途別に渡せる。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-021",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codebuild-reserved-capacity-fleet-fast-start-frequency",
+    "title": "頻繁な短時間ビルドの起動待ちを減らす",
+    "prompt": "チームは対応するLinux環境で、営業時間に数分おきの短いCodeBuildを行う。各ビルドのコマンド時間は安定しているが、起動待ちが目標を超える。常時確保にかかる費用は許容できる。どの変更が待ち時間に直接効くか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ビルドログの保存期間を短縮し、イメージの準備を高速化する。",
+        "explanation": "ログ保持期間は実行環境の事前確保と無関係である。"
+      },
+      {
+        "id": "B",
+        "text": "オンデマンドのビルドのCPUを倍にして、同じイメージを毎回起動する。",
+        "explanation": "処理中の性能には効くが、事前確保の起動経路にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "プロジェクトを事前確保済みのCodeBuild容量フリートに関連付ける。",
+        "explanation": "利用できるウォーム容量を確保し、毎回の新規環境準備を減らせる。"
+      },
+      {
+        "id": "D",
+        "text": "タイムアウトを長くし、待ち時間が長くてもビルドが失敗しないようにする。",
+        "explanation": "失敗しにくくしても起動時間を短縮しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/fleets.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "利用できるウォーム容量を確保し、毎回の新規環境準備を減らせる。",
+      "concept": "実行中の計算資源の速さと、実行環境を準備するまでの待ち時間は別に計測する。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-022",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codebuild-badge-unauthenticated-state-avoid-sensitive-project",
+    "title": "公開ステータスに含める情報を最小化する",
+    "prompt": "公開SDKに最近のビルド状態だけを表示したい。ビルドプロジェクト名や最新の状態を公開できる別プロジェクトを用意できるが、社内のビルドログや成果物はアクセス制御を維持する。どの設定が目的に合うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "公開対象のプロジェクトでビルドバッジを有効にし、バッジのURLを表示する。",
+        "explanation": "バッジはビルド状態を表示し、詳細ログや成果物の権限を付与しない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatch Logsを公開し、READMEで読者に最新の終了行を検索してもらう。",
+        "explanation": "状態のために社内のビルドログを公開してしまう。"
+      },
+      {
+        "id": "C",
+        "text": "成果物用バケットを公開し、更新されたファイルを状態の代替として表示する。",
+        "explanation": "成果物が公開され、成功・失敗の状態も直接は分からない。"
+      },
+      {
+        "id": "D",
+        "text": "社内プロジェクトをパブリックビルドにし、公開されたビルド詳細へのリンクをREADMEに貼る。",
+        "explanation": "公開する範囲が状態だけに限定されない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/sample-build-badges.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "バッジはビルド状態を表示し、詳細ログや成果物の権限を付与しない。",
+      "concept": "ステータスの公開と、ログ・結果への権限は独立して制御する。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-023",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codedeploy-ec2-custom-minimum-healthy-fleet-percent",
+    "title": "インプレース更新中も必要な台数を維持する",
+    "prompt": "20台のEC2でCodeDeployのインプレース更新を行う。AZを問わず更新中に少なくとも16台を健全に保ち、維持できる範囲で複数台を更新したい。固定少数台ではなく、将来の台数変更にも同じ割合を適用する。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "カスタムデプロイ設定で最小正常ホストの台数を16にする。",
+        "explanation": "現在の規模では合うが、将来も80%とする要件を満たさない。"
+      },
+      {
+        "id": "B",
+        "text": "CodeDeployDefault.HalfAtATimeを使用し、Auto Scalingの最小台数を16にする。",
+        "explanation": "グループの最小台数は更新中の健全なホストの割合を制御しない。"
+      },
+      {
+        "id": "C",
+        "text": "カスタムデプロイ設定で最小正常ホストをフリートの80%にする。",
+        "explanation": "台数変更後も同じ割合が適用される。"
+      },
+      {
+        "id": "D",
+        "text": "CodeDeployDefault.AllAtOnceで更新し、ロードバランサー側のヘルスチェック間隔だけを短縮する。",
+        "explanation": "更新で同時に停止できるホストの数を制限しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/instances-health.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "台数変更後も同じ割合が適用される。",
+      "concept": "インプレース更新の並行性は、配信中に必要な健全なホストの下限から決める。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-024",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-s3-source-object-versioning-source-action",
+    "title": "上書きされるS3入力を実行単位で識別する",
+    "prompt": "S3の同じキーにビルド用アーカイブが繰り返し届く。CodePipelineのS3ソースにする際、同じキーのどの更新を取り込んだかをオブジェクトのバージョンで識別したい。ソースバケットに何が必要か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3の保持クラスを変え、キーは版管理せずにファイル名を実行IDとして使う。",
+        "explanation": "同じキーの複数の内容を一意に識別できない。"
+      },
+      {
+        "id": "B",
+        "text": "同じパスへ上書きしつつ、S3 Inventoryの前日分の一覧だけで実行の入力を確定する。",
+        "explanation": "日次の資源一覧ではS3ソースのバージョンを指定できない。"
+      },
+      {
+        "id": "C",
+        "text": "ソースバケットでS3 Versioningを有効にし、アーカイブのキーをソースアクションに指定する。",
+        "explanation": "CodePipelineのS3ソースに必要な設定で、同じキーの入力をバージョンで区別できる。"
+      },
+      {
+        "id": "D",
+        "text": "ソースを暗号化し、SSE-KMSキーIDをアップロードのバージョン番号に使う。",
+        "explanation": "暗号化キーIDはアップロードされた世代の識別子ではない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-S3.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CodePipelineのS3ソースに必要な設定で、同じキーの入力をバージョンで区別できる。",
+      "concept": "同じキーへ上書きされる場合、キー名だけではリリース入力の内容を識別できない。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-025",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "sam-autopublishalias-publish-version-stable-integration",
+    "title": "関数の公開バージョンを自動化する",
+    "prompt": "LambdaはSAMのパッケージから更新する。API側には固定のliveエイリアスARNを設定し、アプリの公開は関数コードを変更するテンプレート更新のたびに新しいバージョンを発行してエイリアスを進めたい。段階配信は今回不要である。何を指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "APIを番号付きのバージョンARNに固定し、リリースごとにAPI設定を手動で更新する。",
+        "explanation": "固定のliveエイリアスを使う運用にならない。"
+      },
+      {
+        "id": "B",
+        "text": "SAM関数のAutoPublishAliasをliveにし、APIをそのエイリアスへ結び付ける。",
+        "explanation": "SAMがバージョンとエイリアスの管理を行う。"
+      },
+      {
+        "id": "C",
+        "text": "関数の予約済み同時実行数を設定し、各変更で新しい公開バージョンが生成されるようにする。",
+        "explanation": "同時実行数の設定はバージョンを発行しない。"
+      },
+      {
+        "id": "D",
+        "text": "APIを未修飾の関数ARNに接続し、公開バージョンとエイリアスの定義は置かない。",
+        "explanation": "呼出し経路が固定名でも、公開バージョンを経由しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SAMがバージョンとエイリアスの管理を行う。",
+      "concept": "変更されるバージョンと、呼び出し元に見せる固定名を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-026",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ecr-multi-architecture-manifest-list-single-tag",
+    "title": "アーキテクチャ別のイメージを一つのタグで利用する",
+    "prompt": "同じアプリをx86_64とARM64のホストへ配布する。それぞれの実行形式をビルド済みで、デプロイ側では同じリポジトリとリリースタグを指定したい。ECRにどう保存するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各イメージをpushし、両方を参照するマニフェストリストにリリースタグを付ける。",
+        "explanation": "同じ参照から実行環境に対応するイメージを選べる。"
+      },
+      {
+        "id": "B",
+        "text": "ARMのイメージだけを保存し、ECRがpushの際にx86向けのバイナリも生成する設定にする。",
+        "explanation": "レジストリはバイナリの再コンパイルを行わない。"
+      },
+      {
+        "id": "C",
+        "text": "各プラットフォームのイメージを同じタグへ順番に上書きする。",
+        "explanation": "最後にpushしたイメージだけがタグから参照される。"
+      },
+      {
+        "id": "D",
+        "text": "両方のタグを個別に払い出し、デプロイのたびに手動でプラットフォームを選ぶ。",
+        "explanation": "単一のタグを指定する要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-multi-architecture-image.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じ参照から実行環境に対応するイメージを選べる。",
+      "concept": "リリースのタグと、そのプラットフォームごとの実体を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-027",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ecr-cross-region-replication-existing-images-backfill",
+    "title": "過去のリリースも別リージョンから取得可能にする",
+    "prompt": "ECRのリージョン間レプリケーションを今日有効にする。本番の復旧先では今後のイメージと、設定前から存在する過去2版を取得できなければならない。何を行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "設定後に新しいリリースだけをpushし、古いイメージがバックグラウンドですべて複製されるまで待つ。",
+        "explanation": "既存のイメージは設定だけでは移行されない。"
+      },
+      {
+        "id": "B",
+        "text": "復旧先に同じ名前のリポジトリだけを作り、過去版のタグ名をリリース手順に記載する。",
+        "explanation": "リポジトリ名とタグ名をそろえてもイメージデータが存在しない。"
+      },
+      {
+        "id": "C",
+        "text": "ソースの保持期間を延長し、復旧先で取得すると自動的に同じイメージが置かれる想定にする。",
+        "explanation": "ライフサイクル設定はリージョン間コピーの契機ではない。"
+      },
+      {
+        "id": "D",
+        "text": "複製設定後の新規pushは自動複製し、既存の過去2版は別途コピーして両側のダイジェストを確認する。",
+        "explanation": "設定前に存在していたイメージは自動で遡及複製されない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonECR/latest/userguide/replication.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "設定前に存在していたイメージは自動で遡及複製されない。",
+      "concept": "複製設定の有効化後に対象となる変更と、過去のデータの移行を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-028",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codeartifact-get-auth-token-duration-zero-assumed-role",
+    "title": "パッケージの認証をロールセッションに合わせる",
+    "prompt": "CIの一時ロールには30分の有効期限がある。CodeArtifactの認証トークンがロールセッション終了後も使える設計を避け、発行操作時の残りセッション時間に一致させたい。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "最長の期限を設定し、CodeBuildの環境変数から値を消す。",
+        "explanation": "手元から消すだけでは発行済みトークンの有効期間を短くできない。"
+      },
+      {
+        "id": "B",
+        "text": "CodeArtifactトークンを既定の期間で発行し、ロールセッションが終了した時点で同じ期限として扱う。",
+        "explanation": "既定のCodeArtifactトークン期間はセッション継続時間に連動しない。"
+      },
+      {
+        "id": "C",
+        "text": "引き受けたロールで取得時のduration-secondsを0とする。",
+        "explanation": "有効期限がロールセッションの残り時間に合う。"
+      },
+      {
+        "id": "D",
+        "text": "トークンの期限を常に30分に固定し、セッションの残り時間は参照しない。",
+        "explanation": "セッション途中に発行すると、セッション終了後にも残りうる。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codeartifact/latest/ug/tokens-authentication.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "有効期限がロールセッションの残り時間に合う。",
+      "concept": "一時資格情報で発行したトークンにも独立した期限がある場合、両方を設定する。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-029",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-using-full-clone-ref-for-git-history",
+    "title": "ビルドでコミット履歴とタグを参照する",
+    "prompt": "接続ソースからCodePipelineに取り込んだ成果物をCodeBuildで検査する。リリース番号の生成にコミット履歴とタグが必要だが、既定のZIPにはGitの履歴がない。認証情報をパイプライン外に追加せず何を変えるか。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ソースのブランチ名を環境変数へ追加し、ZIPのファイル名から履歴を推定する。",
+        "explanation": "コミット履歴とタグという元情報が含まれない。"
+      },
+      {
+        "id": "B",
+        "text": "接続の出力をZIPのままにして、展開後にgit initで初期化する。",
+        "explanation": "新しいリポジトリを初期化しても元の履歴は戻らない。"
+      },
+      {
+        "id": "C",
+        "text": "CodeBuildの出力をS3アーティファクトにし、入力を変更せずログの保存期間を延長する。",
+        "explanation": "出力先を変えても、入力にGitメタデータは追加されない。"
+      },
+      {
+        "id": "D",
+        "text": "接続ソースの出力形式をFull cloneにする。",
+        "explanation": "ZIPではなくGit情報を取得できる接続の参照を出力する。"
+      },
+      {
+        "id": "E",
+        "text": "CodeBuildのロールに接続を利用する権限を追加する。",
+        "explanation": "ビルドが渡された参照を使い、リポジトリを取得できる。"
+      }
+    ],
+    "correct": [
+      "D",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-CodestarConnectionSource.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ZIPではなくGit情報を取得できる接続の参照を出力する。 ビルドが渡された参照を使い、リポジトリを取得できる。",
+      "concept": "ファイルのスナップショットと、その履歴を取得できるソースの参照は別の出力形式である。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-030",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codebuild-queued-timeout-vs-build-timeout",
+    "title": "待機と実行の時間制限を分ける",
+    "prompt": "CodeBuildへの多数の同時要求で一部のビルドが15分待ってから起動する。開始を10分待っても空きがなければ失敗にしたいが、実行を開始した後は40分のテストが必要である。どの時間制御か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "実行上限を40分にして、起動後にスクリプトでキューの待ち時間をチェックする。",
+        "explanation": "10分の時点で待機を打ち切ることができない。"
+      },
+      {
+        "id": "B",
+        "text": "実行の上限だけを10分にし、キュー上限は既定値のままにする。",
+        "explanation": "必要な40分のテストが中断され、待機の10分上限も設定されない。"
+      },
+      {
+        "id": "C",
+        "text": "キューの上限を10分、ビルド実行の上限を40分以上にする。",
+        "explanation": "開始までと開始後を個別に制限できる。"
+      },
+      {
+        "id": "D",
+        "text": "キューの上限を40分にし、同時実行数を減らして待機を制御する。",
+        "explanation": "待機時間を10分に制限せず、並行数の低下は混雑を悪化させうる。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codebuild/latest/APIReference/API_CreateProject.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "開始までと開始後を個別に制限できる。",
+      "concept": "キュー滞留時間と、開始後の実行時間は独立した上限で管理する。"
+    }
+  },
+  {
+    "id": "dop-c02-d1-031",
+    "revision": 1,
+    "category": "SDLCの自動化",
+    "examDomain": "SDLCの自動化",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "codepipeline-disable-inbound-transition-keep-upstream-active",
+    "title": "上流検査を止めず次のステージへの入口を閉じる",
+    "prompt": "本番障害の調査中はCodePipelineの本番ステージへの新たな進入を止める。新規コミットからのビルドとテスト、検証環境へのデプロイは継続する。すでに本番ステージ内の実行は別手段で対応済みである。どの操作か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "現在表示されている一つの実行だけを停止し、入口の設定は変えない。",
+        "explanation": "次のコミットから到達する別の実行を止めない。"
+      },
+      {
+        "id": "B",
+        "text": "本番ステージのインバウンドトランジションを無効にする。",
+        "explanation": "上流の処理を維持し、本番への新規進入を止める。"
+      },
+      {
+        "id": "C",
+        "text": "本番の後のステージのインバウンドトランジションを無効にする。",
+        "explanation": "本番ステージへの進入は防げない。"
+      },
+      {
+        "id": "D",
+        "text": "ソースの変更検知を無効にして、すべての新規パイプライン実行を止める。",
+        "explanation": "ビルドと検証環境への反映も止まる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/transitions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "上流の処理を維持し、本番への新規進入を止める。",
+      "concept": "ステージの入口を閉じる操作と、実行中のものを停止する操作を使い分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-012",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-continue-update-rollback-fix-cause-first",
+    "title": "更新のロールバックを再開する",
+    "prompt": "IAMロールの許可不足でCloudFormationのロールバックが止まり、UPDATE_ROLLBACK_FAILEDになった。必要な許可は復元できる。変更前の整合した状態に戻ってから改めてリリースしたい。どの操作順か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "失敗したスタックに対し、新版のテンプレートでUpdateStackを再試行する。",
+        "explanation": "ロールバック失敗状態の解消にはならない。"
+      },
+      {
+        "id": "B",
+        "text": "スタック機能を使わず外部で資源だけを以前の名前に変更する。",
+        "explanation": "CloudFormationのロールバック状態が解消しない。"
+      },
+      {
+        "id": "C",
+        "text": "原因を直さず失敗した資源をすべてスキップし、続けて新版を適用する。",
+        "explanation": "スキップで実物とテンプレートの差異が残り、次の更新前に是正が必要。"
+      },
+      {
+        "id": "D",
+        "text": "ロールの許可を直し、ContinueUpdateRollbackで元のロールバックを完了する。",
+        "explanation": "原因の解消後に失敗したロールバックを続行できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-continueupdaterollback.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "原因の解消後に失敗したロールバックを続行できる。",
+      "concept": "ロールバックを止めた原因を直せる場合は、資源のスキップによる差異を残さず回復する。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-013",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-creationpolicy-cfn-signal-app-bootstrap-readiness",
+    "title": "EC2の作成成功をアプリ初期化後に判定する",
+    "prompt": "新しいEC2の作成後にUserDataで設定と依存関係を準備する。EC2がrunningになった時点では前提が揃わないため、CloudFormationが後続資源へ進む前に初期化の成功確認を待ちたい。どの方法か。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "UserDataの初期化結果をcfn-signalでCloudFormationへ送る。",
+        "explanation": "起動済みかだけでなく、初期化が成功したかを伝える。"
+      },
+      {
+        "id": "B",
+        "text": "インスタンスにCreationPolicyのResourceSignalを設定する。",
+        "explanation": "CloudFormationにシグナルの数とタイムアウトを指定できる。"
+      },
+      {
+        "id": "C",
+        "text": "起動後の固定時間を台帳に記載し、その間に作成が終わったと推定する。",
+        "explanation": "失敗した構成と成功した構成をスタックが区別できない。"
+      },
+      {
+        "id": "D",
+        "text": "後続資源にDependsOnだけを指定し、UserDataの完了を通知しない。",
+        "explanation": "作成順は指定できるがUserDataの成否をCloudFormationに伝えない。"
+      },
+      {
+        "id": "E",
+        "text": "UpdateReplacePolicyをRetainにして初期化の応答を待つ。",
+        "explanation": "置換時の旧資源の扱いを決める属性で、初期化待ちを設定しない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudFormationにシグナルの数とタイムアウトを指定できる。 起動済みかだけでなく、初期化が成功したかを伝える。",
+      "concept": "インスタンスの状態と、アプリケーションの初期化結果を別の信号にする。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-014",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-module-private-registry-reusable-platform-pattern",
+    "title": "同じ構成をテンプレートの再利用部品として配る",
+    "prompt": "チームごとに独立したCloudFormationスタックを使う。運用側は共通のロググループと保持・暗号化の定義をひとまとまりにして、組織で承認した版を一つの論理名で各テンプレートに記述させたい。コンポーネント専用の子スタックは作りたくない。どうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "StackSetsで全チームへ同じスタックを一括配備し、各チームの独立した構成を廃止する。",
+        "explanation": "既存の各テンプレートから部品として採用する方式ではない。"
+      },
+      {
+        "id": "B",
+        "text": "共通定義をCloudFormationモジュールとして登録し、利用側でモジュールタイプを参照する。",
+        "explanation": "承認したパターンを各スタック内の定義として再利用できる。"
+      },
+      {
+        "id": "C",
+        "text": "Nested StackのURLをコピーし、すべてのスタックから専用の子スタックを作る。",
+        "explanation": "再利用はできるが子スタックを作らない条件に反する。"
+      },
+      {
+        "id": "D",
+        "text": "各チームへ完全なテンプレートを配り、同じ資源定義を毎回コピーさせる。",
+        "explanation": "共通部品を版管理して参照する運用にならない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/modules.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "承認したパターンを各スタック内の定義として再利用できる。",
+      "concept": "複数資源を組み合わせたテンプレート部品の版と、作成されるスタックの境界を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-015",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-service-role-independent-deployer-only-pipeline",
+    "title": "パイプラインの操作権限と資源作成権限を分ける",
+    "prompt": "アプリ担当のパイプラインには特定のスタックの更新を許す。対象のIAMやVPC資源を作成する権限はCloudFormationの実行に限定し、パイプラインから直接個々のAPIを実行させない。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "パイプラインロールにIAMやVPC資源の操作を許し、CloudFormationはそのロールの権限を利用する。",
+        "explanation": "パイプラインからも対象APIを直接呼べてしまう。"
+      },
+      {
+        "id": "B",
+        "text": "スタックの終了保護を有効にしてから、担当者に共通の管理者ロールを渡す。",
+        "explanation": "終了保護では直接の資源APIを制限できない。"
+      },
+      {
+        "id": "C",
+        "text": "パイプラインのリソースポリシーに、各資源の物理名だけを書く。",
+        "explanation": "CloudFormationが使うサービスロールを指定していない。"
+      },
+      {
+        "id": "D",
+        "text": "スタックに専用のサービスロールを使い、パイプラインの権限をスタック操作と必要な引渡しに絞る。",
+        "explanation": "CloudFormationが対象資源のAPIを実行する。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudFormationが対象資源のAPIを実行する。",
+      "concept": "スタックを操作する主体と、スタックに代わって資源へアクセスする主体を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-016",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-cloudformationhooks-warn-mode-inventory",
+    "title": "フックを強制する前に影響を測る",
+    "prompt": "CloudFormationのカスタムフックで資源の作成・更新時に社内基準を検査する。初週は違反を可視化したいが、既存チームの更新を拒否したくない。翌週から拒否へ変更できることも必要である。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "フックを無効にしたまま、スタック作成の成功件数だけを調べる。",
+        "explanation": "フックが検出する違反は記録されない。"
+      },
+      {
+        "id": "B",
+        "text": "初週からFAILとし、違反があるチームには同じ更新を再実行させる。",
+        "explanation": "原因が残る限り初週の更新も失敗する。"
+      },
+      {
+        "id": "C",
+        "text": "ドリフト検出に置き換え、作成・更新時のフックは将来も登録しない。",
+        "explanation": "宣言内容をプロビジョニング前に検査する運用にならない。"
+      },
+      {
+        "id": "D",
+        "text": "フックをWARNで導入し、警告を確認してからFAILへ切り替える。",
+        "explanation": "同じ検査を段階的に適用し、初週は違反で更新を止めない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/cloudformation-cli/latest/hooks-userguide/hooks-concepts.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じ検査を段階的に適用し、初週は違反で更新を止めない。",
+      "concept": "フックの検査結果と、その結果がプロビジョニングを止めるかを分けて設定できる。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-017",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cdk-context-commit-lookups-reproducible-ci-synth",
+    "title": "合成時の環境検索を開発とCIで揃える",
+    "prompt": "CDKがVPCをlookupして合成する。アカウントの状態が変わった直後、ローカルとCIで異なるVPCが選ばれた。検索結果を版管理し、意図したときだけ更新してレビューするにはどの方法か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "合成済みテンプレートをバケットに置くが、開発とCIでそれぞれ毎回検索し続ける。",
+        "explanation": "検索結果の更新をレビューの対象にしていない。"
+      },
+      {
+        "id": "B",
+        "text": "CIの起動時に常にコンテキストを消し、その都度アカウントを検索する。",
+        "explanation": "CIとローカルで異なる状態を取り込む原因が残る。"
+      },
+      {
+        "id": "C",
+        "text": "cdk.context.jsonをソースに含め、明示的に該当コンテキストを更新する。",
+        "explanation": "合成時の検索結果が固定され、変更を差分として確認できる。"
+      },
+      {
+        "id": "D",
+        "text": "VPC名をローカル環境変数へ記録し、CIの環境からは削除しておく。",
+        "explanation": "合成の入力を共用できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/cdk/v2/guide/context.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "合成時の検索結果が固定され、変更を差分として確認できる。",
+      "concept": "合成時の環境情報もテンプレート生成への入力として扱う。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-018",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cdk-aspects-apply-organization-tags-construct-tree",
+    "title": "既存の構成部品へ横断的な検査を適用する",
+    "prompt": "CDKアプリは多数の内部コンストラクトを使う。スタック配下で作るS3バケットの暗号化設定を合成処理で検査したいが、各コンストラクトの製品コードへ同じ検査を繰り返し書きたくない。何を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "スタックのOutputsに各バケット名を手動で登録してから、実行時にだけ一覧を調べる。",
+        "explanation": "合成前の適用を省き、資源ごとの登録も必要になる。"
+      },
+      {
+        "id": "B",
+        "text": "各バケットの製品コードに同じチェックを書き、追加時もコピーさせる。",
+        "explanation": "再利用できる横断的な検査の要件に反する。"
+      },
+      {
+        "id": "C",
+        "text": "CDKブートストラップスタックにタグを追加して、すべてのバケットを暗号化済みと判定する。",
+        "explanation": "別のスタックのタグは対象資源の設定を検査しない。"
+      },
+      {
+        "id": "D",
+        "text": "ルートとなるスタックにAspectを追加し、対象ノードの設定を検査する。",
+        "explanation": "指定範囲のコンストラクトを巡回して共通の検査を適用できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/cdk/v2/guide/aspects.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "指定範囲のコンストラクトを巡回して共通の検査を適用できる。",
+      "concept": "横断的なポリシーをコンストラクトの木に適用すると、資源の定義と一貫性の検査を分けられる。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-019",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ssm-parameter-ram-share-advanced-config-arn",
+    "title": "中央設定を複製せず別アカウントから読む",
+    "prompt": "一つのアカウントで管理する非機密のアプリ設定を、別アカウントのアプリがParameter Store APIで取得する。設定値のコピーを維持せず、取得側のIAMも適切に管理したい。どの構成か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "中央アカウントの全パラメーター一覧を公開し、コンシューマーはキー名だけで選ぶ。",
+        "explanation": "共有対象を絞れず、別アカウントからのAPI参照に必要な識別もない。"
+      },
+      {
+        "id": "B",
+        "text": "AdvancedパラメーターをAWS RAMで共有し、取得側は完全なパラメーターARNで取得する。",
+        "explanation": "所有側で一つの値を維持し、利用側が共有された設定を参照できる。"
+      },
+      {
+        "id": "C",
+        "text": "対象パラメーターと同名のキーを別アカウントに作り、中央側が変更されると自動で同期するとみなす。",
+        "explanation": "異なるアカウントの同名パラメーターが自動同期することはない。"
+      },
+      {
+        "id": "D",
+        "text": "StandardパラメーターをS3へ出力し、別アカウントのParameter Storeへ毎日コピーする。",
+        "explanation": "コピーの運用が発生し、中央を直接参照しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/parameter-store-shared-parameters.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "所有側で一つの値を維持し、利用側が共有された設定を参照できる。",
+      "concept": "設定の所有者と利用者が異なる場合は、共有の方式と読取り認可を確認する。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-020",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ssm-patch-baseline-snapshot-id-consistent-batches",
+    "title": "複数バッチのパッチ選定を同じ時点に固定する",
+    "prompt": "メンテナンスウィンドウ外でSSMのAWS-RunPatchBaselineを複数のRun Commandに分けて使う。途中で新しいパッチが承認条件を満たしても、同じベースラインを使う今回のノード群には同じパッチ一覧を適用したい。何を指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ウィンドウ外の各コマンドに同じSnapshot IDを指定し、スナップショットが有効な間に適用する。",
+        "explanation": "同じベースラインの承認済みパッチのスナップショットを使用できる。"
+      },
+      {
+        "id": "B",
+        "text": "パッチ対象のタグだけを共通化し、各コマンドでパッチ一覧の生成時刻を揃えない。",
+        "explanation": "対象ノードを絞る設定は、承認済みパッチ一覧を固定しない。"
+      },
+      {
+        "id": "C",
+        "text": "コマンドごとに異なるSnapshot IDを生成し、同じベースライン名だけを指定する。",
+        "explanation": "コマンド間で同じ時点の承認済みパッチ一覧を保証しない。"
+      },
+      {
+        "id": "D",
+        "text": "配布前にノードを同じAMIに統一し、各ノードが個別に最新パッチを取得する。",
+        "explanation": "開始イメージは揃うが、適用するパッチの評価時点を固定しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-aws-runpatchbaseline.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じベースラインの承認済みパッチのスナップショットを使用できる。",
+      "concept": "ベースラインの規則が同じでも、評価の時点によって選ばれるパッチは変わりうる。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-021",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-languageextensions-update-original-template-reevaluate-params",
+    "title": "展開済みテンプレートの古い値を引き継がない",
+    "prompt": "CloudFormationはAWS::LanguageExtensionsを使う。リストパラメーターを更新したが、既存テンプレートを利用するオプションでは以前の一覧が残った。マクロで現在の入力から資源定義を生成し直すにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ドリフト検出だけを起動し、現在の入力から新規リソース定義を追加する。",
+        "explanation": "ドリフト検出はテンプレートの変換や更新を実施しない。"
+      },
+      {
+        "id": "B",
+        "text": "元のテンプレートを再提出し、新しいパラメーターを指定して更新する。",
+        "explanation": "変換が新しい入力から式を評価し直せる。"
+      },
+      {
+        "id": "C",
+        "text": "変換済みの既存テンプレートを指定し、変更前のリテラルは自動で書き換わるとみなす。",
+        "explanation": "以前のリテラル値が含まれたテンプレートを再利用している。"
+      },
+      {
+        "id": "D",
+        "text": "前回の変更セットを再実行し、パラメーター変更を反映させる。",
+        "explanation": "前回既に処理された内容は新しい入力に基づき再生成されない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/transform-aws-languageextensions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "変換が新しい入力から式を評価し直せる。",
+      "concept": "変換前のテンプレートと、式をリテラルへ置き換えた変換結果を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-022",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "appconfig-linear-growth-duration-final-bake-time-rollback",
+    "title": "段階完了後の観測時間も確保する",
+    "prompt": "AWS AppConfigで新設定を20分かけて段階展開する。全対象に到達した後も既存のCloudWatchアラームを10分間確認し、異常時は旧設定へ自動復帰したい。どの構成か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "環境のアラームをSNS通知だけに使い、全対象に到達した時点でデプロイを終了する。",
+        "explanation": "通知だけでは最終観測と自動ロールバックを設定しない。"
+      },
+      {
+        "id": "B",
+        "text": "展開期間を30分にして段階配布の終点を遅らせ、ベイクは0にする。",
+        "explanation": "全対象に達した後の10分間の観測がない。"
+      },
+      {
+        "id": "C",
+        "text": "バリデーターで設定の構文を確認し、環境へのアラーム関連付けを行わない。",
+        "explanation": "構文が正しくても、適用後の影響を自動復帰の条件にできない。"
+      },
+      {
+        "id": "D",
+        "text": "展開期間を20分、最終ベイク時間を10分に設定し、環境に監視アラームを関連付ける。",
+        "explanation": "段階展開中と最終確認中の異常をロールバックに結び付けられる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-creating-deployment-strategy.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "段階展開中と最終確認中の異常をロールバックに結び付けられる。",
+      "concept": "増加させる時間と、全対象に適用してから安定を確認する時間を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-023",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "aws-config-custom-policy-guard-declarative-without-lambda",
+    "title": "構成変更の規則を宣言的に評価する",
+    "prompt": "AWS Configのマネージドルールにない構成条件を評価する。対象資源の構成項目だけで判定でき、定期Lambdaや独自実行ロールを保守したくない。どの選択か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudFormationの終了保護で資源の作成を制限し、既存資源の準拠判定はしない。",
+        "explanation": "運用中の構成変更の評価を実現しない。"
+      },
+      {
+        "id": "B",
+        "text": "アグリゲーターだけに条件式を設定し、各ソースでの評価を停止する。",
+        "explanation": "アグリゲーターは構成・準拠データを集約し、対象ルール自体を実行しない。"
+      },
+      {
+        "id": "C",
+        "text": "Guardで条件を記述したAWS Configのカスタムポリシールールを作る。",
+        "explanation": "構成変更に対応する宣言的な判定をConfig内で実施できる。"
+      },
+      {
+        "id": "D",
+        "text": "AWS ConfigのカスタムLambdaルールを作り、同じ処理とロールを各アカウントで運用する。",
+        "explanation": "独自の関数・権限を維持しない条件に合わない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/config/latest/developerguide/evaluate-config_develop-rules.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "構成変更に対応する宣言的な判定をConfig内で実施できる。",
+      "concept": "取得済みの構成項目で完結する判定なら、外部の評価プログラムを維持せずに実装できる。"
+    }
+  },
+  {
+    "id": "dop-c02-d2-024",
+    "revision": 1,
+    "category": "構成管理とIaC",
+    "examDomain": "構成管理とIaC",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudformation-stacksets-parameter-overrides-new-accounts-default",
+    "title": "新規加入アカウントの既定値を見落とさない",
+    "prompt": "StackSetsの自動デプロイを使うOUで、既存の一つのアカウントの保持日数だけを90日に上書きした。その後同じOUに入った別アカウントではテンプレート既定の30日が設定された。原因はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "自動デプロイでは既存アカウント毎の上書きを平均し、30日が加重平均として設定された。",
+        "explanation": "そのような上書き値の集計処理はない。"
+      },
+      {
+        "id": "B",
+        "text": "リージョンの順番を入れ替えると既存アカウントの上書き値が新規にも継承される。",
+        "explanation": "リージョン順とアカウント別のパラメーター上書きは別である。"
+      },
+      {
+        "id": "C",
+        "text": "OUへの加入時にはCloudFormationが保持日数設定を削除し、各サービス既定だけを使わせる。",
+        "explanation": "新規のスタックインスタンスにはStackSetの既定が適用される。"
+      },
+      {
+        "id": "D",
+        "text": "既存インスタンスへのパラメーター上書きは後で加入するアカウントへ継承されない。",
+        "explanation": "新規インスタンスはStackSetの既定値を使って作成される。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-orgs-manage-auto-deployment.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "新規インスタンスはStackSetの既定値を使って作成される。",
+      "concept": "StackSetの既定値と、特定のスタックインスタンスで上書きした値を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-011",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "rds-multi-az-db-cluster-read-traffic-reader-endpoint",
+    "title": "書込み系を圧迫せず読み取りを分散する",
+    "prompt": "RDSのMulti-AZ DBクラスターにライターと二つの読み取り可能なDBインスタンスがある。書込み経路は現在のままにし、ダッシュボードの新しい接続を読み取り側へ分散したい。接続先をどう分けるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "書込みも読取りもリーダーエンドポイントに切り替える。",
+        "explanation": "リーダーエンドポイントの通常の接続先は読み取り専用のインスタンスである。"
+      },
+      {
+        "id": "B",
+        "text": "書込みはライターエンドポイント、ダッシュボードはリーダーエンドポイントを使う。",
+        "explanation": "新しい読み取り接続を読み取りインスタンスへ分散できる。"
+      },
+      {
+        "id": "C",
+        "text": "全接続をライターエンドポイントのままにし、ダッシュボードからSELECTだけを送る。",
+        "explanation": "SQLが読取りでも、その接続先はライターのままである。"
+      },
+      {
+        "id": "D",
+        "text": "ダッシュボードを一つのインスタンスエンドポイントに固定し、分散をRDSに任せる。",
+        "explanation": "特定インスタンスへの固定であり、複数のリーダーに接続を割り振らない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/multi-az-db-clusters-concepts-connection-management.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "新しい読み取り接続を読み取りインスタンスへ分散できる。",
+      "concept": "DBクラスターの接続先で、実行する処理と可用性の役割を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-012",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "s3-replication-delete-marker-vs-permanent-version-delete",
+    "title": "削除時に複製先で何が残るかを見分ける",
+    "prompt": "バージョニング済みS3のプレフィックスを別リージョンへ複製している。利用者による削除マーカーの複製をルールで有効にした。次に利用者がソースの特定のVersionIdを指定して削除した。複製先への影響はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VersionIdを指定した削除は転送されず、複製先に作成済みの対応バージョンは残る。",
+        "explanation": "削除マーカー複製は特定バージョンの永久削除を複製しない。"
+      },
+      {
+        "id": "B",
+        "text": "特定バージョンの削除は複製先にも反映され、同じキーの全バージョンを消す。",
+        "explanation": "削除バージョンIDを含む操作はそのように複製されない。"
+      },
+      {
+        "id": "C",
+        "text": "複製済みオブジェクトの全バージョンについて、先に複製先だけへ削除マーカーが付く。",
+        "explanation": "当該の操作はマーカーを追加する通常のDELETEとは異なる。"
+      },
+      {
+        "id": "D",
+        "text": "VersionId指定の削除は、複製先のバージョニングがEnabledであれば反映される。",
+        "explanation": "バージョニングが有効でもこの削除操作はレプリケーション対象外である。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-what-is-isnot-replicated.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "削除マーカー複製は特定バージョンの永久削除を複製しない。",
+      "concept": "論理的な削除マーカーと、物理的に特定バージョンを削除する操作は異なる。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-013",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "efs-regional-mount-target-each-used-az",
+    "title": "ゾーンをまたがず共有ファイルへ接続する",
+    "prompt": "EC2アプリが三つのAZから同じ共有ファイルシステムを読み書きする。ゾーン障害で一つの接続先が使えなくても、残りのAZのEC2はそれぞれローカルな接続先から同じデータを使いたい。どう構成するか。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ストレージクラスの前提としてRegional EFSファイルシステムを用意する。",
+        "explanation": "同じファイルシステムのデータを複数AZにわたり利用できる。"
+      },
+      {
+        "id": "B",
+        "text": "EFS One Zoneを一つのAZに作り、他AZの各EC2もそこにマウントする。",
+        "explanation": "元のAZに障害が起きた場合に共有データへの依存が残る。"
+      },
+      {
+        "id": "C",
+        "text": "Regional EFSは作るが、一つのAZだけにマウントターゲットを置く。",
+        "explanation": "他のAZで独立したローカル接続先を利用できない。"
+      },
+      {
+        "id": "D",
+        "text": "アプリが稼働する各AZに、そのファイルシステムのマウントターゲットを配置する。",
+        "explanation": "各稼働AZに独立したローカル接続先を作れる。"
+      },
+      {
+        "id": "E",
+        "text": "各AZに別々のEBSボリュームを作り、すべてを同じ名前でマウントする。",
+        "explanation": "同じファイルシステムとして書込みを共有できない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/efs/latest/ug/accessing-fs.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じファイルシステムのデータを複数AZにわたり利用できる。 各稼働AZに独立したローカル接続先を作れる。",
+      "concept": "データのリージョン内可用性と、各AZに置く接続インターフェイスをどちらも設計する。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-014",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "eks-topology-spread-zone-avoid-co-located-pods",
+    "title": "同じアプリのレプリカを複数AZへ配置する",
+    "prompt": "EKSのノードは三つのAZにあるが、デプロイ直後に同じワークロードのPodが一つのAZに偏る。利用可能なノードのあるAZ間でPod数の差を1以内にして配置できない場合は待機させたい。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ノードセレクターで一つのAZを指定し、Deploymentのレプリカを増やして最大1個ずつ均等に配置する。",
+        "explanation": "指定ゾーンへの集中を解消できない。"
+      },
+      {
+        "id": "B",
+        "text": "ゾーンで分散するtopologySpreadConstraintsにmaxSkew 1とDoNotScheduleを設定する。",
+        "explanation": "同一ワークロードの分散を制約として適用できる。"
+      },
+      {
+        "id": "C",
+        "text": "PodDisruptionBudgetだけを指定し、Podの配置は規定しない。",
+        "explanation": "自発的な中断を制御しても、ゾーンごとの初期配置は決めない。"
+      },
+      {
+        "id": "D",
+        "text": "DeploymentのmaxUnavailableだけを設定し、ゾーンキーは設定しない。",
+        "explanation": "ローリング更新の停止可能数は決まるが、AZに均す配置にはならない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/",
+      "label": "Kubernetes公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同一ワークロードの分散を制約として適用できる。",
+      "concept": "ノードグループの配置と、Podのスケジューリング制約を別々に構成する。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-015",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "eks-managed-node-update-pdb-no-force-recover",
+    "title": "ノード更新で自発的な中断予算を守る",
+    "prompt": "EKSマネージドノードグループの更新がPodEvictionFailureで止まった。対象のDeploymentは正常な3レプリカで、PDBのminAvailableも3である。追加レプリカは別のノードで起動できる。どの復旧が適切か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "配置余力とレプリカ数を増やして許容される退避数を確保し、通常の更新を再試行する。",
+        "explanation": "PDBの制約を満たした状態でPodを移動できる。"
+      },
+      {
+        "id": "B",
+        "text": "forceで更新し、EKSがPDBで指定した退避可能数の範囲に調整すると見込む。",
+        "explanation": "強制更新はPDBの制約を無視して終了させる場合がある。"
+      },
+      {
+        "id": "C",
+        "text": "ノードで稼働中のPodを直接削除し、EKSの更新は再試行しない。",
+        "explanation": "PDBを守った退避とノードグループ更新を完了できない。"
+      },
+      {
+        "id": "D",
+        "text": "PDBを削除してノード更新が終わるまでサービスの停止許容数を定義しない。",
+        "explanation": "更新中も契約を守る必要がある。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eks/latest/userguide/managed-node-update-behavior.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "PDBの制約を満たした状態でPodを移動できる。",
+      "concept": "更新の並行度と、アプリから見た停止許容数を別々に確認する。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-016",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "elasticache-replication-group-multi-az-automatic-failover",
+    "title": "障害時にキャッシュの書込み先を昇格させる",
+    "prompt": "ElastiCacheのノードベースのValkeyで、非クラスターのレプリケーショングループを運用する。プライマリのAZが停止した場合に、アプリが運用者による昇格を待たず書込みを再開したい。何を組み合わせるか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "書込み先に元のノードのIPを固定する。",
+        "explanation": "昇格しても元の宛先へ接続し続ける。"
+      },
+      {
+        "id": "B",
+        "text": "別AZのレプリカを持つMulti-AZで自動フェイルオーバーを有効にする。",
+        "explanation": "プライマリ障害時に利用可能なレプリカの昇格が行われる。"
+      },
+      {
+        "id": "C",
+        "text": "読取り用のエンドポイントをすべての書込みに使う。",
+        "explanation": "読取り用の接続先は書込み先の役割を表さない。"
+      },
+      {
+        "id": "D",
+        "text": "アプリはプライマリエンドポイントを使い、切替後に再解決・再接続する。",
+        "explanation": "昇格した書込み先へ接続を移せる。"
+      },
+      {
+        "id": "E",
+        "text": "同じAZにだけレプリカを配置し、AZ全体の停止時もそのレプリカを昇格させる。",
+        "explanation": "提示された故障範囲にプライマリとレプリカの両方が含まれる。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/AutoFailover.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "プライマリ障害時に利用可能なレプリカの昇格が行われる。 昇格した書込み先へ接続を移せる。",
+      "concept": "AZをまたぐ複製、昇格の制御、アプリの接続名を確認する。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-017",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "rds-restore-pitr-new-instance-cutover-after-validation",
+    "title": "データを壊した変更の直前へ戻す",
+    "prompt": "RDS for PostgreSQLの本番データを誤操作で更新した。自動バックアップの保持期間内で、変更直前の状態を別インスタンスで検証し、既存DBを維持したまま切替を判断したい。何を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "現在のDBのインスタンスタイプを変えて、変更前のデータを復元する。",
+        "explanation": "計算容量の変更は過去のデータ状態への復元にならない。"
+      },
+      {
+        "id": "B",
+        "text": "最も古い手動スナップショットだけを復元し、差分の確認をせず即時切替する。",
+        "explanation": "対象の時点を選ばず、切替前の検証も行わない。"
+      },
+      {
+        "id": "C",
+        "text": "Multi-AZのフェイルオーバーを実行し、同期先は誤操作直前のままとみなす。",
+        "explanation": "高可用性のレプリケーションは誤変更から任意時点に戻す仕組みではない。"
+      },
+      {
+        "id": "D",
+        "text": "変更前の時点へPITRで新規DBインスタンスを復元し、内容を検証してから接続先を変更する。",
+        "explanation": "元のDBをその場で上書きせず、指定時点のコピーで確認できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIT.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "元のDBをその場で上書きせず、指定時点のコピーで確認できる。",
+      "concept": "復元したデータの検証と、本番の接続先の切替を別の操作にする。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-018",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "lambda-event-source-sqs-max-concurrency-protect-downstream-db",
+    "title": "一つのキューの処理で共有資源を使い切らない",
+    "prompt": "同じLambda関数を、優先度の異なる二つの標準SQSキューから実行する。低優先度キューは障害の際に急増する。高優先度側のイベントソースマッピングは変更せず、低優先度側の関数同時呼出しだけを制限したい。どう設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "低優先度SQSのバッチサイズだけを1に変更する。",
+        "explanation": "一呼出しのメッセージ数は減るが、同時呼出し数の上限にはならない。"
+      },
+      {
+        "id": "B",
+        "text": "関数の予約済み同時実行数を低優先度用に下げ、優先度の高いキューは従来のイベントソース設定のままにする。",
+        "explanation": "関数に来るすべての呼出しを制限し、高優先度側にも影響する。"
+      },
+      {
+        "id": "C",
+        "text": "低優先度のイベントソースだけにMaximumConcurrencyを設定する。",
+        "explanation": "選択したSQSの並行呼出しだけに上限を適用できる。"
+      },
+      {
+        "id": "D",
+        "text": "高優先度SQSのメッセージ保持期間を長くする。",
+        "explanation": "データが残る期間を変更しても低優先度の同時実行は抑えられない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "選択したSQSの並行呼出しだけに上限を適用できる。",
+      "concept": "関数全体の容量配分と、個々のイベントソースから許す並行数は別に設定できる。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-019",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "route53-alias-health-alb-failover-records",
+    "title": "ロードバランサーの健全性からDNS応答を切り替える",
+    "prompt": "二つのリージョンのALBをRoute 53の同じアプリ名で公開する。通常は主系だけに応答し、主系のALBの配下が不健全になったら副系を返したい。別途インターネット向けのヘルスチェックは作らず、ALBの状態を参照する。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "両方のALBを等しい重みのエイリアスレコードとして登録し、ターゲットグループの健全性は評価しない。",
+        "explanation": "主系平時優先と不健全時の切替を定義しない。"
+      },
+      {
+        "id": "B",
+        "text": "フェイルオーバーエイリアスでEvaluate Target Healthを有効にする。",
+        "explanation": "ALBの状態を参照して健全な主系を優先する。"
+      },
+      {
+        "id": "C",
+        "text": "レイテンシーレコードで近いリージョンを返し、ヘルス評価を無効にする。",
+        "explanation": "距離を基に選び、障害を判定する構成ではない。"
+      },
+      {
+        "id": "D",
+        "text": "主系のみに名前を割り当て、TTLを短くしてヘルス評価と見なす。",
+        "explanation": "応答のキャッシュ時間は短くなるが副系を選べない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover-determining-health-of-endpoints.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ALBの状態を参照して健全な主系を優先する。",
+      "concept": "DNSルーティングの優先規則と、エイリアス先の状態の参照を組み合わせる。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-020",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "asg-instance-refresh-checkpoints-scheduled-verification-pause",
+    "title": "新AMIの更新を中間地点で一時停止する",
+    "prompt": "同じAuto Scalingグループのインスタンスを新AMIへ置き換える。更新した割合が20%と50%に到達した時点で、毎回10分の観測を行う。健全性判定後の個々のウォームアップ設定は既にある。何を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "すべてのインスタンスで初期化後のウォームアップだけを一律10分延長し、進捗率に応じた停止設定は作らない。",
+        "explanation": "個々の起動ごとに待つだけで20%と50%の検査時点を指定しない。"
+      },
+      {
+        "id": "B",
+        "text": "最小健全率を20%にして最大健全率を50%にする。",
+        "explanation": "健全率は置換の進行率と別であり、この値では求める進捗停止を設定できない。"
+      },
+      {
+        "id": "C",
+        "text": "Auto Scalingの新規起動を停止し、人が置換割合を計算した後に更新を開始する。",
+        "explanation": "自動置換の途中で観測する時点を定義しない。"
+      },
+      {
+        "id": "D",
+        "text": "Instance Refreshのチェックポイントを20%・50%、遅延を10分にする。",
+        "explanation": "指定した進捗の時点で追加の置換を一時停止できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/autoscaling/ec2/userguide/asg-adding-checkpoints-instance-refresh.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "指定した進捗の時点で追加の置換を一時停止できる。",
+      "concept": "各インスタンスの準備時間と、置換全体の進捗で行うチェックを区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d3-021",
+    "revision": 1,
+    "category": "レジリエントなクラウドソリューション",
+    "examDomain": "レジリエントなクラウドソリューション",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "step-functions-standard-distributed-map-tolerated-failure-percentage",
+    "title": "小数の不良入力でバッチ全体を失敗させない",
+    "prompt": "StandardのStep FunctionsがS3から20万件をDistributed Mapで処理する。一部の不良レコードは子実行の失敗として残し、失敗率が1%を超えた場合に親ワークフローでバッチを不成功にしたい。どの指定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "MapのMaxConcurrencyを適切な並列数に制限し、超過する失敗数の判定にも同じフィールドを使う。",
+        "explanation": "並行数の設定であり、失敗率を評価しない。"
+      },
+      {
+        "id": "B",
+        "text": "すべての子を回数無制限で再実行し、親では全件成功だけを許す。",
+        "explanation": "少数の不良入力を失敗として残しながら完了する要件に反する。"
+      },
+      {
+        "id": "C",
+        "text": "ToleratedFailurePercentageを1にし、超過エラーを扱う。",
+        "explanation": "項目単位の失敗を保持し、失敗率を親の判断に使える。"
+      },
+      {
+        "id": "D",
+        "text": "各子のエラーを成功へ置き換え、親が失敗件数を使わず終了する。",
+        "explanation": "親が子の失敗率を正しく評価できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-map-distributed.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "項目単位の失敗を保持し、失敗率を親の判断に使える。",
+      "concept": "項目の実行結果と、バッチ全体として許容する失敗率を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-011",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-logs-field-index-equality-correlation-id",
+    "title": "相関IDを大量のログから効率よく探す",
+    "prompt": "標準ログクラスのJSONログで、同じtransactionIdを指定して事後調査することが多い。保持期間は変更せず、今後取り込むログに対する等値検索の走査量を減らしたい。どう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ログの取り込み時にtransactionIdを削除し、発生時刻だけで調査する。",
+        "explanation": "照会の結合キーが失われ、同じ処理を正確に追えない。"
+      },
+      {
+        "id": "B",
+        "text": "毎回のクエリでsortを先に適用し、transactionIdを後から絞る。",
+        "explanation": "表示順を指定しても、元のログを読む必要は残る。"
+      },
+      {
+        "id": "C",
+        "text": "メトリクスフィルターでtransactionIdごとの件数を書き、Logs Insightsは全文検索のままにする。",
+        "explanation": "件数を集計してもログ照会で走査する範囲は限定されない。"
+      },
+      {
+        "id": "D",
+        "text": "transactionIdのフィールドインデックスを作り、その値の等値条件で検索する。",
+        "explanation": "索引から関係のないログイベントの走査を抑えられる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatchLogs-Field-Indexing.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "索引から関係のないログイベントの走査を抑えられる。",
+      "concept": "等値検索に使うフィールドをあらかじめ索引化すると、毎回すべてのログを読む必要を減らせる。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-012",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-metric-filter-default-zero-distinguish-no-matches",
+    "title": "エラーがない分にゼロを記録する",
+    "prompt": "各分にアプリのログが入り、ERRORのときにだけ一致するメトリクスフィルターがある。ディメンションは使用していない。通常ログだけの分はエラー件数0のデータ点を報告したい。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "一致した場合の値を1、フィルターの既定値を0にする。",
+        "explanation": "ログを取り込んで一致がない間隔にもゼロを記録できる。"
+      },
+      {
+        "id": "B",
+        "text": "フィルターの既定値は設定せず、アラームの欠落データをnotBreachingにする。",
+        "explanation": "アラーム判定は変わるが、ゼロのデータ点は発行されない。"
+      },
+      {
+        "id": "C",
+        "text": "ERRORの一致値を0にして、ERRORのないログの値を1にする。",
+        "explanation": "発生したエラーを1ずつ数える要件と逆になる。"
+      },
+      {
+        "id": "D",
+        "text": "保持日数を短縮し、消去されたログの時間帯の件数をゼロにする。",
+        "explanation": "保存期間の設定からフィルターはゼロを発行しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntaxForMetricFilters.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ログを取り込んで一致がない間隔にもゼロを記録できる。",
+      "concept": "入力が届いたうえで一致がない場合と、ログの入力自体がない場合を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-013",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-metric-math-percentage-alb-request-error",
+    "title": "アクセス量の変動を考慮してエラー割合を監視する",
+    "prompt": "ALBがターゲットを選べたリクエストのRequestCountと、ターゲットの5xx件数を表す系列がある。ここで計測する期間はRequestCountが正である。絶対エラー件数ではなく、同じ期間のリクエストに対する5xxの割合でアラームを作る。何を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "期間と集計をそろえた5xx件数とリクエスト件数からMetric Mathで割合を求める。",
+        "explanation": "総リクエストが増減しても、同じ尺度で品質を評価できる。"
+      },
+      {
+        "id": "B",
+        "text": "二つのしきい値アラームを複合アラームのANDで組み合わせる。",
+        "explanation": "アラーム状態の論理演算では、二つの測定値の比を計算できない。"
+      },
+      {
+        "id": "C",
+        "text": "リクエスト件数の最大値と5xx件数の平均値を別の期間で取得して比を求める。",
+        "explanation": "分母と分子が同じ観測窓の件数を表さない。"
+      },
+      {
+        "id": "D",
+        "text": "5xx件数のアラームだけとし、平日の平均トラフィックから固定閾値を決める。",
+        "explanation": "評価期間ごとの実際のリクエスト数を使っていない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/using-metric-math.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "総リクエストが増減しても、同じ尺度で品質を評価できる。",
+      "concept": "独立したカウンターを割合にする際は、同じ時間窓の集計を使う。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-014",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-log-class-standard-feature-retention-new-group",
+    "title": "検索機能を変えずにログクラスを見直す",
+    "prompt": "低頻度でしか見ないログをEssentials（旧Infrequent Access）のロググループに取り込んでいる。既存グループは保持しつつ、今後のログにはCloudWatch Logs Live Tailで受信中のログを調べる必要ができた。どの変更か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Live Tail対応のStandardの新しいロググループを作り、今後の出力をそこに向ける。",
+        "explanation": "既存ログを維持しながら新規ログにLive Tailを使える。"
+      },
+      {
+        "id": "B",
+        "text": "ログをS3へ出力し、新着オブジェクトをCloudWatch LogsのLive Tailで直接開く。",
+        "explanation": "Live Tailは対応するCloudWatchロググループで使う機能で、S3を直接開かない。"
+      },
+      {
+        "id": "C",
+        "text": "現在のグループに保存されたログの一部だけにStandardのクラスを付ける。",
+        "explanation": "クラスは個々のイベントに付け替える設定ではない。"
+      },
+      {
+        "id": "D",
+        "text": "現在のロググループの保持期間を変え、クラスも同時にStandardに更新する。",
+        "explanation": "作成済みグループのクラスは変更できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch_Logs_Log_Classes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "既存ログを維持しながら新規ログにLive Tailを使える。",
+      "concept": "ログクラスは作成後に変更できず、クラスごとに対応機能が異なる。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-015",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-logs-data-protection-mask-query-restrict-unmask",
+    "title": "インシデント調査でも個人情報の閲覧を限定する",
+    "prompt": "CloudWatch Logs Standardに取り込む新しいログにメールアドレスが混ざる。通常の調査者にはマスクした状態を見せ、指定した調査ロールだけに必要時の原本閲覧を許したい。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ロググループをKMS暗号化し、Logs Insights利用者は同じ閲覧権限のままにする。",
+        "explanation": "保管時暗号化だけでは問い合わせ結果の一部をマスクしない。"
+      },
+      {
+        "id": "B",
+        "text": "クエリの標準テンプレートでメール列を非表示にし、利用者の生ログ閲覧権限を維持する。",
+        "explanation": "テンプレートを使わない照会で原文を見られる。"
+      },
+      {
+        "id": "C",
+        "text": "データ保護ポリシーでマスキングし、必要な調査ロールだけにlogs:Unmaskを許す。",
+        "explanation": "通常の閲覧でマスクし、例外の権限を個別に制御できる。"
+      },
+      {
+        "id": "D",
+        "text": "メールをアプリで完全に削除し、必要時は調査ロールでマスク解除する。",
+        "explanation": "そもそも値を保存しないため、後から解除して閲覧できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "通常の閲覧でマスクし、例外の権限を個別に制御できる。",
+      "concept": "ログ送信の権限と、取り込んだ機微データを復元表示する権限を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-016",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-log-subscription-central-firehose-near-real-time",
+    "title": "ログをまとめて日次出力せず継続配送する",
+    "prompt": "CloudWatch Logs Standardに入る各アプリログを中央S3の長期保管へ数分程度で送りたい。配送前にFirehoseのバッファリングも利用する。日次エクスポートを置き換えるには何を構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudWatch Metric Streamでロググループ名を名前空間として選ぶ。",
+        "explanation": "Metric Streamはメトリクスを配送するもので、ログ本文を送らない。"
+      },
+      {
+        "id": "B",
+        "text": "ロググループのサブスクリプションフィルターでFirehoseへ配送し、S3に保存する。",
+        "explanation": "取り込んだログを継続転送し、Firehoseがバッファして保管できる。"
+      },
+      {
+        "id": "C",
+        "text": "Logs Insightsから集計結果のCSVだけを毎時ダウンロードする。",
+        "explanation": "全ログの継続配送と原文保管にならない。"
+      },
+      {
+        "id": "D",
+        "text": "同じグループのExport taskを日次から週次にし、S3側の保持期間を延ばす。",
+        "explanation": "配送間隔がさらに長く、取り込み後数分の要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/SubscriptionFilters.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "取り込んだログを継続転送し、Firehoseがバッファして保管できる。",
+      "concept": "保持済みログをまとめる出力と、新しく取り込むログを流す経路は異なる。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-017",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-container-insights-eks-enhanced-observability-add-on",
+    "title": "クラスター全体の健全性とPodの状態を結び付ける",
+    "prompt": "EKSの障害時、標準のEC2指標からPodの再起動やコンテナ単位のCPU・メモリを特定できない。対応するクラスターで必要な権限を設定し、CloudWatchから系統的に把握したい。どうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "すべてのワークロードのログを一つのS3キーへ上書きし、更新頻度をPodのリソースとして扱う。",
+        "explanation": "ログの保存方式だけではコンテナ内の消費量を得られない。"
+      },
+      {
+        "id": "B",
+        "text": "EC2の詳細モニタリングを有効にし、インスタンスのCPUだけで各Podを割り当てる。",
+        "explanation": "EC2の測定値はPod別のリソース消費を含まない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatch Observability EKSアドオンでContainer Insightsを使う。",
+        "explanation": "EKSの階層とコンテナ単位の詳細な観測値をCloudWatchへ送る。"
+      },
+      {
+        "id": "D",
+        "text": "EKSのCloudTrail管理イベントの収集を有効にし、管理APIの呼出し履歴をコンテナ別の使用量として集計する。",
+        "explanation": "管理APIの監査はコンテナの実行状態を観測しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Observability-EKS-addon.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "EKSの階層とコンテナ単位の詳細な観測値をCloudWatchへ送る。",
+      "concept": "基盤インスタンスの指標と、オーケストレーターやコンテナの指標は粒度が異なる。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-018",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-unified-agent-collect-ec2-memory-and-disk-used",
+    "title": "EC2のメモリとOSの使用率を測る",
+    "prompt": "EC2のCloudWatch標準指標にはCPUやネットワークがある。今回必要なのは各Linuxサーバーのメモリ使用率と、作業ファイルシステムの使用率である。OSの値を追加する最も直接的な方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ALBのアクティブ接続数をメモリとディスクの両アラームの代用にする。",
+        "explanation": "接続数から個々のOSの資源使用率を測れない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatch Agentでゲストのメモリとディスク使用率を収集する。",
+        "explanation": "ゲストOSの測定値をCloudWatchへ発行できる。"
+      },
+      {
+        "id": "C",
+        "text": "EBSのボリュームIOPSから、使用済みのファイルシステム領域を推測する。",
+        "explanation": "I/O操作数はファイルシステムの使用率ではない。"
+      },
+      {
+        "id": "D",
+        "text": "EC2の標準指標の詳細モニタリングを有効にし、CPUとネットワークの値を取得する頻度を増やす。",
+        "explanation": "測定頻度を変えてもゲストのメモリ使用率は追加されない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ゲストOSの測定値をCloudWatchへ発行できる。",
+      "concept": "ハイパーバイザーの観測値とゲストOSの資源情報を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-019",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-log-group-retention-vs-s3-object-lifecycle",
+    "title": "短期検索と長期保管に別々の保持期間を設定する",
+    "prompt": "CloudWatch Logsでは最近30日だけ直接検索できればよい。既に継続配送しているS3コピーは監査のため365日必要である。費用を抑えつつ両方の期限を自動で適用するにはどうするか。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3の監査プレフィックスに、365日後に期限切れにするライフサイクルルールを設定する。",
+        "explanation": "CloudWatch Logsとは別に監査用コピーの有効期限を管理する。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatch LogsとS3の両方を30日で削除し、古いデータは必要時に再取得する。",
+        "explanation": "監査に必要な長期保管分を失う。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatch Logsのグループに30日の保持を設定する。",
+        "explanation": "検索用ログを必要な期間保管する。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatch Logsの保持を30日にするだけで、S3のデータも365日後に自動で消えると見込む。",
+        "explanation": "保存先が独立しており、元の保持設定はS3へ継承されない。"
+      },
+      {
+        "id": "E",
+        "text": "両方を期限なしで保存し、年末に担当者が日付を確認して削除する。",
+        "explanation": "自動化された検索層の30日制御も365日の保管制御も実現しない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "検索用ログを必要な期間保管する。 CloudWatch Logsとは別に監査用コピーの有効期限を管理する。",
+      "concept": "観測の検索層と保管層では、データの保持を別々に設定する。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-020",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "s3-cloudtrail-data-events-object-read-write-scope",
+    "title": "特定のデータの読取り操作を監査する",
+    "prompt": "CloudTrailは管理イベントを記録しているが、顧客データ用のS3バケットで誰がオブジェクトを取得したか確認できない。今後、特定プレフィックスの読取りだけをAPIレベルで収集する要件である。何を構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3 Inventoryを日次で出力し、存在する各オブジェクトの一覧から読取り履歴を復元する。",
+        "explanation": "在庫一覧は過去のGetObjectリクエストを記録しない。"
+      },
+      {
+        "id": "B",
+        "text": "対象のS3オブジェクトに対し、プレフィックスと読取り条件でCloudTrailデータイベントを有効にする。",
+        "explanation": "GetObjectなどのオブジェクト操作を範囲を絞って記録する。"
+      },
+      {
+        "id": "C",
+        "text": "管理イベントの書込みを追加し、オブジェクトの読取りも含まれるようにする。",
+        "explanation": "管理イベントはオブジェクトレベルの操作を自動では含まない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatchのBytesDownloadedだけを保存し、API呼出しの主体として集計する。",
+        "explanation": "転送量のメトリクスでは個々の主体とオブジェクトの操作を特定できない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "GetObjectなどのオブジェクト操作を範囲を絞って記録する。",
+      "concept": "バケットの設定を変えるAPIと、オブジェクトそのものを扱うAPIの監査を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d4-021",
+    "revision": 1,
+    "category": "モニタリングとログ記録",
+    "examDomain": "モニタリングとログ記録",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-alarm-m-of-n-error-samples-tolerate-gaps",
+    "title": "連続とは限らない違反を同じ窓で評価する",
+    "prompt": "1分ごとのエラー率メトリクスを監視したい。直近5分で3回しきい値を超えたらアラームにする。3分連続である必要はない。欠落データの扱いは別途設定済みである。どう指定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Periodを1分、EvaluationPeriodsとDatapointsToAlarmをともに3にする。",
+        "explanation": "直近3点すべてで違反が必要となり、5分の範囲を使わない。"
+      },
+      {
+        "id": "B",
+        "text": "Periodを1分、EvaluationPeriodsを5、DatapointsToAlarmを5にする。",
+        "explanation": "5点すべての違反を要求するため、求める3点の条件にならない。"
+      },
+      {
+        "id": "C",
+        "text": "Periodを1分、EvaluationPeriodsを5、DatapointsToAlarmを3にする。",
+        "explanation": "直近5点のうち3点の違反を評価する。"
+      },
+      {
+        "id": "D",
+        "text": "Periodを5分にし、5分間の平均値1点をしきい値と比較する。",
+        "explanation": "各1分点の違反を数える条件ではない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Alarms.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "直近5点のうち3点の違反を評価する。",
+      "concept": "評価対象の個数と、その中で違反が必要な個数を独立して管理する。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-009",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ssm-opscenter-opsitem-cloudwatch-with-resource-context",
+    "title": "アラームを運用作業として追跡する",
+    "prompt": "当番はCloudWatchアラームで見つかった一連の事象について、担当状況と関連AWS資源を同じ運用画面で管理したい。単発のSNS通知では引継ぎ状態が残らない。何を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "アラームをOpsCenterのOpsItem作成に関連付ける。",
+        "explanation": "担当者は対象資源と関連情報を持つ運用項目として追跡できる。"
+      },
+      {
+        "id": "B",
+        "text": "SNSで当番のメール送信先を登録し、各事象の対応完了時に既存の購読状態を編集して記録する。",
+        "explanation": "購読状態と個々のインシデント対応状況は異なる。"
+      },
+      {
+        "id": "C",
+        "text": "メトリクスの保持期間を延長し、データ点の値を対応担当の記録として扱う。",
+        "explanation": "測定値は作業の状態や関連資源を表す記録ではない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrailでアラーム設定の変更だけを記録し、障害は記録しない。",
+        "explanation": "アラームの設定監査は対応対象の起票にならない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/OpsCenter.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "担当者は対象資源と関連情報を持つ運用項目として追跡できる。",
+      "concept": "通知の配送と、対応の状態を維持する作業記録を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-010",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-putevents-partial-retry-known-failed-entries",
+    "title": "一部だけ失敗したイベント送信を再試行する",
+    "prompt": "実在するバスへEventBridge PutEventsで複数イベントを送った。HTTP 200だが、エントリー単位で再試行可能なエラーが返った。成功済み分を意図的に再送せず、失敗分を再送するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "HTTP 200なら全入力が成功とみなし、失敗したエントリーも処理済みとする。",
+        "explanation": "バッチ応答に含まれる個別のエラーを無視している。"
+      },
+      {
+        "id": "B",
+        "text": "一件でも失敗があれば元バッチ全体を常に再送する。",
+        "explanation": "成功済み入力も再送され、重複を避けられない。"
+      },
+      {
+        "id": "C",
+        "text": "ターゲットのDLQを調べれば失敗した各送信の再試行は不要と判断する。",
+        "explanation": "発行段階で失敗した入力はターゲットまで到達していない。"
+      },
+      {
+        "id": "D",
+        "text": "応答の各エントリーを元の入力と順序で突き合わせ、再試行可能な失敗分だけ送る。",
+        "explanation": "成功したエントリーを除いて再試行できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-putevents.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "成功したエントリーを除いて再試行できる。",
+      "concept": "バッチAPIの応答コードと、個々の入力の成否を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-011",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "sqs-start-message-move-task-custom-redrive-rate",
+    "title": "修復後にDLQから処理能力の範囲で戻す",
+    "prompt": "標準SQSのコンシューマーの不具合を直した。DLQにたまった多数のメッセージを、修復済みのソースキューに少しずつ戻し、現在の入力を圧迫しないか確認したい。どの復旧方法か。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ソースキューの保持期間を延長し、DLQにある過去メッセージも自動で戻るようにする。",
+        "explanation": "保持の変更はDLQからの移動を開始しない。"
+      },
+      {
+        "id": "B",
+        "text": "DLQを削除し、ソースキューが元メッセージを読み直すのを待つ。",
+        "explanation": "DLQ内の入力を失う。"
+      },
+      {
+        "id": "C",
+        "text": "ソースキューの可視性タイムアウトを長くして、DLQを元の入力として接続する。",
+        "explanation": "可視性変更は既存のDLQメッセージの再投入と速度を制御しない。"
+      },
+      {
+        "id": "D",
+        "text": "カスタムのメッセージ速度に処理余力に応じた上限を設定する。",
+        "explanation": "既存の通常入力と並行して処理できる速度で再投入する。"
+      },
+      {
+        "id": "E",
+        "text": "DLQのredriveタスクを開始し、復旧したソースキューを宛先にする。",
+        "explanation": "失敗時の元入力を同じ処理系へ戻す。"
+      }
+    ],
+    "correct": [
+      "D",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-dead-letter-queue-redrive.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "失敗時の元入力を同じ処理系へ戻す。 既存の通常入力と並行して処理できる速度で再投入する。",
+      "concept": "回復させる宛先と、再投入が与える負荷を別々に制御する。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-012",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-scheduler-once-disable-flexible-window-cleanup",
+    "title": "承認済みのフォローアップを一度だけ実行する",
+    "prompt": "障害対応後、担当者が決めた日時に一回だけステートマシンを起動する。常設の定期ルールを増やさず、15分などの柔軟な時間枠で遅らせず、完了したスケジュールは自動整理したい。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "毎日同時刻のcronルールを永久に置き、ステートマシン内で不要な日を判断する。",
+        "explanation": "余計な実行を継続させ、単発のスケジュールと自動整理にならない。"
+      },
+      {
+        "id": "B",
+        "text": "SQSの保持期間を実行予定までに設定し、メッセージの削除を実行の合図にする。",
+        "explanation": "メッセージ失効からステートマシンを起動する経路を定義していない。"
+      },
+      {
+        "id": "C",
+        "text": "at式と15分のFlexibleTimeWindowを指定し、同じ分に起動したと仮定して完了したスケジュールを担当者が削除する。",
+        "explanation": "その時間枠内で起動時刻が分散されうる。"
+      },
+      {
+        "id": "D",
+        "text": "at式、FlexibleTimeWindow OFF、ActionAfterCompletion DELETEを指定する。",
+        "explanation": "単発起動に合い、予約の終了後に不要な設定を残さない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-schedule-delete.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "単発起動に合い、予約の終了後に不要な設定を残さない。",
+      "concept": "一度きりの予約、実行時間の柔軟性、完了後の資源の整理はそれぞれ指定できる。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-013",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "step-functions-callback-task-token-external-async-resolution",
+    "title": "外部の復旧完了通知まで状態を保留する",
+    "prompt": "StandardのStep Functionsが社内の復旧チケットを作り、その完了は数時間後に同一アカウントの連携Lambdaが通知する。問い合わせのポーリングを避け、完了時に元の実行を再開したい。何を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "waitForTaskTokenで待機し、完了時にSendTaskSuccessを呼ぶ。",
+        "explanation": "トークンが待機中のタスクと外部の完了を対応付ける。"
+      },
+      {
+        "id": "B",
+        "text": "ステートマシンを毎分新しく開始し、前の実行を自動的に置換する。",
+        "explanation": "完了通知で元の実行を再開しない。"
+      },
+      {
+        "id": "C",
+        "text": "Request Response統合を使い、チケットを作成したHTTP 200を、既に復旧した報告として次のステップへ渡す。",
+        "explanation": "チケットの受付と実際の復旧は異なる。"
+      },
+      {
+        "id": "D",
+        "text": "チケット起票後に毎回同じ1時間のWaitだけを置く。",
+        "explanation": "実作業の完了時刻と再開が結び付かない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "トークンが待機中のタスクと外部の完了を対応付ける。",
+      "concept": "処理を始めた応答、外部作業の完了、ワークフローの再開を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-014",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ec2-auto-recovery-system-status-check-host-failure",
+    "title": "物理ホスト側の障害に対してインスタンスを復旧する",
+    "prompt": "EC2でOS内のプロセス監視は正常だったが、StatusCheckFailed_Systemで基盤の障害を検知した。インスタンスタイプはアクションベースの復旧をサポートしている。インスタンスID等を保持して復旧するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CPUUtilizationで通知し、アラームになったらアプリログだけを保存する。",
+        "explanation": "該当の状態チェックを契機とするインスタンス復旧を設定していない。"
+      },
+      {
+        "id": "B",
+        "text": "StatusCheckFailed_SystemのアラームにEC2の復旧アクションを設定する。",
+        "explanation": "対応するインスタンスを別のハードウェアへ移し、インスタンスIDなどの属性を維持できる。"
+      },
+      {
+        "id": "C",
+        "text": "StatusCheckFailed_InstanceからOSプロセスを再起動し、基盤のチェック失敗にも同じ回復を使う。",
+        "explanation": "ゲスト側の処理だけでは基盤ホストを回復しない。"
+      },
+      {
+        "id": "D",
+        "text": "元のEC2を終了してAMIから別インスタンスを作り、同じインスタンスIDになると見込む。",
+        "explanation": "再作成するとインスタンスIDは変わる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/cloudwatch-recovery.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応するインスタンスを別のハードウェアへ移し、インスタンスIDなどの属性を維持できる。",
+      "concept": "ゲストOSの不調と基盤ホストの失敗では、対応する状態チェックや復旧操作が異なる。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-015",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "s3-event-sequencer-same-key-out-of-order-index-update",
+    "title": "遅れて届いたS3通知で索引を巻き戻さない",
+    "prompt": "S3のPUT・DELETE通知をSQS経由で受け、キー単位の検索用索引を更新する。同じキーの通知が順不同で届く。新しい操作を反映した後に古い通知で索引を巻き戻さない方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "キューから受信した時刻を索引に記録し、常に最後に受信した通知の操作を採用する。",
+        "explanation": "受信順とS3での操作順が一致しないため、古い操作を後から適用しうる。"
+      },
+      {
+        "id": "B",
+        "text": "S3のVersionIdを文字列で順序付けし、最大の値を最後の操作として索引へ反映する。",
+        "explanation": "VersionIdは版の識別子であり、操作の時系列を比較する値ではない。"
+      },
+      {
+        "id": "C",
+        "text": "キーごとに最後のsequencerを保持し、より大きい値だけ索引に反映する。",
+        "explanation": "同じキーのsequencerを16進数として比較し、更新時に前回値も条件にすれば古い通知による巻き戻しを防げる。"
+      },
+      {
+        "id": "D",
+        "text": "全バケットを一つのsequencerで比較し、異なるキーも含め最大値だけを処理する。",
+        "explanation": "sequencerで順序を比較できる範囲は同じオブジェクトキーに限られる。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じキーのsequencerを16進数として比較し、更新時に前回値も条件にすれば古い通知による巻き戻しを防げる。",
+      "concept": "同じキーに対する操作順と、キューからの通知の受信順を区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-016",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ssm-automation-cross-account-execution-role-delegation",
+    "title": "一つの指揮系統から指定アカウントで修復する",
+    "prompt": "中央アカウントのSystems Manager Automationから特定OUのアカウントで同じ承認済みランブックを実行する。全アカウントへ中央の長期資格情報を配布せず、実行先ごとに実際の操作の権限を絞る。何を準備するか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各アカウントの管理者のアクセスキーを中央のランブックに格納する。",
+        "explanation": "長期資格情報を配布しない要件に反する。"
+      },
+      {
+        "id": "B",
+        "text": "全アカウントのメンバーに中央のランブック編集権限を渡す。",
+        "explanation": "遠隔実行に必要な委任と実行先の権限を定義しない。"
+      },
+      {
+        "id": "C",
+        "text": "中央にAutomationの管理ロールを作り、対象のアカウントとリージョンを指定する。",
+        "explanation": "中央の実行が対象範囲のAutomationを調整できる。"
+      },
+      {
+        "id": "D",
+        "text": "対象アカウントに、中央の管理ロールから利用できる必要最小限の実行ロールを用意する。",
+        "explanation": "処理を対象アカウントの権限に限定できる。"
+      },
+      {
+        "id": "E",
+        "text": "中央の管理ロールだけを作り、対象側の信頼関係や実行ロールは設定しない。",
+        "explanation": "対象アカウントでランブックの操作権限を用意しない。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/running-automations-multiple-accounts-regions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "中央の実行が対象範囲のAutomationを調整できる。 処理を対象アカウントの権限に限定できる。",
+      "concept": "指揮する側の委任と、各実行先で実際に資源を操作する役割を分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-017",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-pipes-sqs-filter-nonmatching-message-deletion",
+    "title": "フィルター後のメッセージを失わずに振り分ける",
+    "prompt": "複数種類のメッセージを入れるSQSをEventBridge Pipesが読み、一種類だけを処理する。別チームの処理で使う種類が、ターゲットへ届かず元のキューからも消えた。今後すべての種類を処理できる設計はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ターゲットの失敗用DLQだけを有効にし、不一致の全入力が入るものとして処理する。",
+        "explanation": "フィルターの不一致はターゲットの配送失敗ではない。"
+      },
+      {
+        "id": "B",
+        "text": "同じSQSを読む別のパイプを作り、両方が自分の条件に合うまで不一致の入力を残すと想定する。",
+        "explanation": "どちらが先に受け取っても、不一致のメッセージが削除されうる。"
+      },
+      {
+        "id": "C",
+        "text": "元のキューの可視性タイムアウトを長くし、不一致のメッセージがいずれ再表示されるのを待つ。",
+        "explanation": "不一致は非表示のままではなく削除される。"
+      },
+      {
+        "id": "D",
+        "text": "発行側で種類別のキューへ配信し、各パイプは自分用のキューを読む。",
+        "explanation": "SQSソースのフィルター不一致はメッセージを削除するため、消費前に分離して別用途への入力を残す。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-event-filtering.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SQSソースのフィルター不一致はメッセージを削除するため、消費前に分離して別用途への入力を残す。",
+      "concept": "キューからの消費時に行うフィルターと、消費前に用途別に配信する構成を使い分ける。"
+    }
+  },
+  {
+    "id": "dop-c02-d5-018",
+    "revision": 1,
+    "category": "インシデントとイベントへの対応",
+    "examDomain": "インシデントとイベントへの対応",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "aws-config-remediation-exceptions-time-bounded-resource",
+    "title": "承認済みの例外だけ自動修復を一時停止する",
+    "prompt": "Configルールの評価を全バケットで継続する。レガシー連携が使う一つのバケットについて承認期限付きで自動修復を止めるが、非準拠として記録し、他バケットでは従来どおり修復する。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象ルールとバケットの組に期限付きの修復例外を登録する。",
+        "explanation": "評価を残し、そのリソースの修復だけを例外にできる。"
+      },
+      {
+        "id": "B",
+        "text": "ルールの評価から対象バケットを除外し、修復も起動しないようにする。",
+        "explanation": "非準拠という評価結果まで残せなくなる。"
+      },
+      {
+        "id": "C",
+        "text": "ルール全体の自動修復を無効化し、承認期限まで他バケットも手動対応する。",
+        "explanation": "例外の及ぶ範囲が要件より広い。"
+      },
+      {
+        "id": "D",
+        "text": "バケットを一時的にConfigの履歴から消し、期限に達したら再記録する。",
+        "explanation": "評価の連続性と対象の既存記録を損なう。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/config/latest/APIReference/API_PutRemediationExceptions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "評価を残し、そのリソースの修復だけを例外にできる。",
+      "concept": "準拠判定を除外することと、非準拠に対する修復だけを例外にすることは異なる。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-014",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "iam-access-analyzer-external-organization-zone-trust",
+    "title": "組織外に開いた資源の権限を検出する",
+    "prompt": "二つのリージョンでS3やKMSの資源ポリシーを運用している。同じOrganizations内の共有は承認済みなので、組織の外に対する意図しない共有だけを検出したい。どう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象リージョンごとに組織を信頼ゾーンとする外部アクセスアナライザーを作成する。",
+        "explanation": "組織の境界を越える対応資源のポリシー許可を所見として扱う。"
+      },
+      {
+        "id": "B",
+        "text": "各アカウントを個々の信頼ゾーンとし、他の組織メンバーへの共有も外部としてすべて記録する。",
+        "explanation": "組織内共有まで対象となり、指定された信頼境界と異なる。"
+      },
+      {
+        "id": "C",
+        "text": "組織内で使われなかった権限だけのアナライザーを構成する。",
+        "explanation": "未使用のアイデンティティ権限の検出と資源の外部許可の検出は別である。"
+      },
+      {
+        "id": "D",
+        "text": "片方のリージョンだけでアカウントのポリシー検証APIを一度呼ぶ。",
+        "explanation": "両リージョンで資源共有を継続監視する構成ではない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-create-external.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "組織の境界を越える対応資源のポリシー許可を所見として扱う。",
+      "concept": "外部と見なす範囲は、分析対象の信頼ゾーンによって決まる。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-015",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "iam-access-analyzer-policy-validation-before-deploy",
+    "title": "IAMポリシーを反映前にチェックする",
+    "prompt": "CIはプルリクエストでIAMアイデンティティポリシーのJSONを受け取る。構文だけではなく、AWSのポリシー文法や実践上の指摘をデプロイ前に返したい。権限を実資源に付与せず何を実行するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IAM Access AnalyzerのValidatePolicyでアイデンティティポリシーとして検証する。",
+        "explanation": "AWSの文法と推奨事項に基づく所見を反映前に取得できる。"
+      },
+      {
+        "id": "B",
+        "text": "Policy Simulatorで一つのAPI呼出しだけ評価し、ポリシー全体の文法と推奨事項の検査として採用する。",
+        "explanation": "個々の認可の試行と、文書全体を検証する所見は目的が異なる。"
+      },
+      {
+        "id": "C",
+        "text": "ポリシーを本番ロールに反映し、CloudTrailに拒否が発生するまで待つ。",
+        "explanation": "付与前に検出する要件に反する。"
+      },
+      {
+        "id": "D",
+        "text": "JSONのパーサーだけで検査し、読み込めるポリシーは全て有効なIAMアクションを含むとみなす。",
+        "explanation": "JSONに誤ったIAMアクション名が書かれていても構文上は読める。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-policy-validation.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "AWSの文法と推奨事項に基づく所見を反映前に取得できる。",
+      "concept": "JSONとしての構文、IAMのポリシー文法、利用中のアクセス分析は異なる検査である。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-016",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "s3-object-lock-compliance-version-retention-root",
+    "title": "監査用の版を保持期限まで削除不能にする",
+    "prompt": "S3の監査ログを7年間保管する。バケット管理者やアカウントのルートユーザーにも、保護されたオブジェクトバージョンの保持期限を短縮させない。ログごとに保存時点から期限を付ける必要がある。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バージョニングとS3 Object Lockを使い、Complianceモードで7年間の保持を設定する。",
+        "explanation": "保護対象の版は通常のAWSアカウント管理権限でも期限前に削除・短縮できない。"
+      },
+      {
+        "id": "B",
+        "text": "バージョニングのみを有効にし、管理者へVersionId指定の削除を許す。",
+        "explanation": "保護する版を直接削除できる。"
+      },
+      {
+        "id": "C",
+        "text": "Governanceモードを使い、バイパス権限を持つ管理者にも保持期限短縮をできるようにする。",
+        "explanation": "特権主体にも短縮を許さない要件に反する。"
+      },
+      {
+        "id": "D",
+        "text": "バケットポリシーの削除拒否だけを定義し、そのポリシーはルートが自由に更新できるようにする。",
+        "explanation": "保持設定より上位で拒否を解除でき、要求される期限付きの強制力がない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "保護対象の版は通常のAWSアカウント管理権限でも期限前に削除・短縮できない。",
+      "concept": "削除を許す権限を減らす方法と、期限までバージョンを保護する保持モードを区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-017",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "cloudtrail-log-file-integrity-validate-digest-chain",
+    "title": "監査ログの変更や消失を検証する",
+    "prompt": "CloudTrailの証跡からS3へ配信した監査ログについて、配信以降に変更・削除されていないことを後日検証したい。暗号化とアクセス制御は既にある。検証に使う仕組みは何か。 2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "監査時は配信済みダイジェストに対するログ整合性検証を実行する。",
+        "explanation": "保存したログが配信時から変わっていないか、削除されていないかを調べる。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatchに取り込んだイベントの件数だけとS3のファイル件数を比較する。",
+        "explanation": "件数が同じでもファイル内容が変わったかどうかは判定できない。"
+      },
+      {
+        "id": "C",
+        "text": "対象のCloudTrail証跡でログファイルの整合性検証を有効にする。",
+        "explanation": "対象期間のログと関連する署名付きダイジェストが配信される。"
+      },
+      {
+        "id": "D",
+        "text": "S3に同じ名称のバックアップを保管し、値の照合に使う署名は発行しない。",
+        "explanation": "名前の一致だけでは配信ログの完全性を検証できない。"
+      },
+      {
+        "id": "E",
+        "text": "SSE-KMSで保存して、復号できるログは必ず配信時のままと判断する。",
+        "explanation": "復号できても配信時と同じ内容であることは別の検証が必要。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対象期間のログと関連する署名付きダイジェストが配信される。 保存したログが配信時から変わっていないか、削除されていないかを調べる。",
+      "concept": "保管時の暗号化は機密性を扱い、ログの完全性検証は配信後の改変の証拠を扱う。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-018",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "guardduty-runtime-monitoring-eks-data-collection",
+    "title": "EKSの構成監査とは別に実行中の挙動を観測する",
+    "prompt": "EKSの管理APIは監査済みだが、運用チームは対応するノード上のプロセスやファイル操作など、実行時の挙動をAWSの脅威検知で観測したい。どの設定を加えるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ECRのプッシュ時スキャンを有効にし、稼働済みコンテナの実行時のプロセスを分析する。",
+        "explanation": "イメージのスキャンと稼働環境の挙動監視は異なる。"
+      },
+      {
+        "id": "B",
+        "text": "既存のCloudTrail管理イベントだけを増やし、コンテナの各システム操作も含まれるとみなす。",
+        "explanation": "管理イベントはノード上の全実行時活動を記録しない。"
+      },
+      {
+        "id": "C",
+        "text": "VPC Flow Logsだけでプロセスやローカルファイル操作の情報を得る。",
+        "explanation": "ネットワークフローは求めるホスト上の操作を記録しない。"
+      },
+      {
+        "id": "D",
+        "text": "GuardDuty Runtime Monitoringを有効にし、該当EKSノード向けのエージェントを配置する。",
+        "explanation": "対応するワークロードの実行時イベントをGuardDutyへ届ける。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応するワークロードの実行時イベントをGuardDutyへ届ける。",
+      "concept": "管理APIの操作記録と、実行中のノードの動作を検知する信号は別である。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-019",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "organizations-tag-policy-enforce-supported-tag-values",
+    "title": "属性値の表記揺れを組織で防ぐ",
+    "prompt": "チームごとにcost-centerタグの値が揺れている。複数アカウントの対応リソースタイプで、このタグが設定されるときには承認された値だけを受け入れる。タグ付与自体を必須にする仕組みは別にある。どれを適用するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS Configのタグ違反をSNSに通知するだけで、設定時の値の拒否を実現する。",
+        "explanation": "事後通知はその場の入力制御ではない。"
+      },
+      {
+        "id": "B",
+        "text": "OUにタグポリシーを適用し、承認値と対象の対応リソースタイプへの強制を定義する。",
+        "explanation": "タグ付与時に統一した値の規約を適用できる。"
+      },
+      {
+        "id": "C",
+        "text": "コスト配分タグを請求画面で有効化し、集計されない値は設定APIで拒否されると考える。",
+        "explanation": "請求の分類設定はタグ付与時の許容値を強制しない。"
+      },
+      {
+        "id": "D",
+        "text": "タグエディターで既存の資源だけを一括変更し、新しいタグには規約を適用しない。",
+        "explanation": "既存値は修正できるが将来の設定の強制がない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_tag-policies.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "タグ付与時に統一した値の規約を適用できる。",
+      "concept": "タグが存在するかという条件と、存在するタグの値が規約に合うかを区別する。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-020",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ssm-session-manager-shell-audit-avoid-unsupported-ssh-forward",
+    "title": "監査可能な対話操作だけを許可する",
+    "prompt": "EC2への保守アクセスにSession Managerを使う。管理上、対話シェルの内容をCloudWatch Logsで監査する必要があり、記録に対応しないSSHトンネルやポート転送セッションを許可できない。どう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "SSHをトンネル経由で使い、開始終了時刻がCloudTrailにあるのでシェル内容も保存されたと判断する。",
+        "explanation": "API監査には対話コマンドの本文が含まれない。"
+      },
+      {
+        "id": "B",
+        "text": "ポート転送だけを許し、Session Managerのログ設定でトンネル内の内容も記録できるとみなす。",
+        "explanation": "転送した通信内容はSession Managerのログ記録対象でない。"
+      },
+      {
+        "id": "C",
+        "text": "記録対応の標準シェルセッションだけを許可し、Session Managerのログ出力を有効にする。",
+        "explanation": "許可したシェルの対話内容を保管できる。"
+      },
+      {
+        "id": "D",
+        "text": "インスタンスのCloudWatch Logs Agentを無効にし、すべてのセッションを開始時刻だけで監査する。",
+        "explanation": "要求された操作内容は記録されない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "許可したシェルの対話内容を保管できる。",
+      "concept": "セッションの監査可否は、認証の方式だけでなく、そのセッションから内容を記録できるかで判断する。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-021",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "waf-managed-rule-action-override-count-measure-false-positives",
+    "title": "遮断前に誤検知の影響を確認する",
+    "prompt": "公開アプリのWeb ACLへ新しいAWS Managed Rulesの検査を加える。本番トラフィックに対し、選んだ新ルールの一致を測定してから遮断へ切り替えたい。他の有効な保護は引き続き評価する。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "新ルールにAllowを指定し、一致するリクエストは後続の既存ルールで引き続き検査する。",
+        "explanation": "Allowは終端アクションであり、後続の保護評価を止める。"
+      },
+      {
+        "id": "B",
+        "text": "対象ルールのアクションを一時的にCountへ上書きし、所見の検証後に設定を戻す。",
+        "explanation": "一致を計測し、その新ルールでは通信を遮断せず後続評価を続ける。"
+      },
+      {
+        "id": "C",
+        "text": "対象ルールを追加せず、ALBの全リクエスト件数を新ルールの一致件数と見なす。",
+        "explanation": "ルール判定を実行しないので一致したリクエストを把握できない。"
+      },
+      {
+        "id": "D",
+        "text": "Web ACL全体を解除して、アプリが受け付ける通信だけを先に観察する。",
+        "explanation": "新ルールの一致を観測せず、既存の保護も止める。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/web-acl-rule-group-override-options.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "一致を計測し、その新ルールでは通信を遮断せず後続評価を続ける。",
+      "concept": "一致を観測する非終端のアクションで、既存の保護を評価し続けられる。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-022",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "iam-session-tags-abac-team-environment-mfa-context",
+    "title": "セッション属性で共有ロールの操作対象を決める",
+    "prompt": "社内のIDプロバイダーからエンジニアが共有の運用ロールを引き受ける。チームが増えるたびにロールを増やさず、本人が変更できないチーム属性と資源のTeamタグが一致する範囲だけへ操作を許可したい。どう設計するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "誰でも任意のTeamタグを自己申告してロールを引き受けられるようにする。",
+        "explanation": "自分の所属を変更して権限の対象を広げられる。"
+      },
+      {
+        "id": "B",
+        "text": "IdPからTeamのセッションタグを渡し、PrincipalTagとResourceTagを比較する。",
+        "explanation": "管理された属性を、許可する資源のタグと結び付けられる。"
+      },
+      {
+        "id": "C",
+        "text": "共有ロールにはチームを問わず資源を操作する権限を与え、チームとの対応は運用メニュー側で判定する。",
+        "explanation": "IAM上で許可する資源を制限しない。"
+      },
+      {
+        "id": "D",
+        "text": "チームごとに固有のロールとポリシーを作り、チーム追加時は新規ロールを払い出す。",
+        "explanation": "権限分離は可能だが共有ロールと属性を使う要件に反する。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_session-tags.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "管理された属性を、許可する資源のタグと結び付けられる。",
+      "concept": "トークンで信頼する属性と、セッションが資源を操作する条件を両方制御する。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-023",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "secretsmanager-blockpublicpolicy-guard-resource-policy",
+    "title": "意図しない広範なシークレット共有を予防する",
+    "prompt": "デプロイがSecrets Managerの資源ポリシーを更新する。特定のパートナー実行ロールへの許可は必要だが、生成したポリシーが広範な主体へアクセスを公開する場合は適用自体を拒否したい。毎回どの安全策を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象のシークレットのローテーション頻度を上げる。",
+        "explanation": "値の入れ替えは、その値へアクセスできる主体の範囲を制限しない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudTrail通知のみを追加し、公開アクセスは適用後に作業者がレビューする。",
+        "explanation": "設定の適用前に公開を阻止しない。"
+      },
+      {
+        "id": "C",
+        "text": "シークレットのデフォルト暗号化を有効にし、資源ポリシーの公開範囲は検証しない。",
+        "explanation": "暗号化は広範な資源ポリシーの更新を拒否する検査ではない。"
+      },
+      {
+        "id": "D",
+        "text": "資源ポリシーを設定するときにBlockPublicPolicyを有効にする。",
+        "explanation": "Secrets Managerが広範な公開を許すポリシーの適用を拒否する。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_resource-policies.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Secrets Managerが広範な公開を許すポリシーの適用を拒否する。",
+      "concept": "必要な個別共有を保ちながら、資源ポリシーの公開範囲を事前に検証する。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-024",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "s3-bucket-policy-deny-insecure-transport-tls",
+    "title": "非TLS通信だけを資源側で拒否する",
+    "prompt": "複数の正規クライアントが同じS3バケットへ接続する。既存の認可は保ちつつ、権限があるクライアントからでもHTTP経由の要求は拒否する。バケットにどう設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "aws:SecureTransportがtrueの要求を許可する文を追加するが、既存のHTTP許可は残す。",
+        "explanation": "追加の許可は、別途許可されたHTTPを拒否しない。"
+      },
+      {
+        "id": "B",
+        "text": "S3のオブジェクトロックを使い、変更できないオブジェクトにはTLSが必須になると想定する。",
+        "explanation": "保持の強制は接続の方式を制限しない。"
+      },
+      {
+        "id": "C",
+        "text": "SSE-KMSを既定にして、通信のHTTP要求も暗号化済みとみなす。",
+        "explanation": "サーバー側暗号化は保管時の制御である。"
+      },
+      {
+        "id": "D",
+        "text": "aws:SecureTransportがfalseの場合に対象の要求を明示的に拒否するバケットポリシーを加える。",
+        "explanation": "その経路だけを拒否し、TLS上の既存の許可の評価は残る。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "その経路だけを拒否し、TLS上の既存の許可の評価は残る。",
+      "concept": "通信路の保護と、オブジェクトを操作できる主体の認可は異なる制御である。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-025",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "kms-key-policy-encryption-context-tenant-specific-decrypt",
+    "title": "同じ鍵の利用をデータの用途で絞る",
+    "prompt": "アプリは同じ対称KMSキーで複数部門のデータキーを扱い、暗号化時には部門名のEncryption Contextを付けている。監査ロールには一部門の復号だけを許す。既存の暗号化方式を保つなら何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "キーのローテーションを有効化し、部門ごとにローテーションの時期でデータを区別する。",
+        "explanation": "ローテーションで部門ごとの復号条件を設定しない。"
+      },
+      {
+        "id": "B",
+        "text": "kms:Decryptの許可に対象部門のEncryption Context条件を付ける。",
+        "explanation": "同じ鍵でも条件の異なる要求にその復号許可は適用されない。"
+      },
+      {
+        "id": "C",
+        "text": "監査ロールにkms:Decryptを無条件で許可し、部門名はアプリのログで確認する。",
+        "explanation": "ログの事後確認ではアクセス時に範囲を絞れない。"
+      },
+      {
+        "id": "D",
+        "text": "部門ごとに異なるエイリアスを作って同じ鍵を指し、エイリアスの名前を基に暗号文の復号を分離する。",
+        "explanation": "エイリアスは条件別の暗号文につける認可境界ではない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/encrypt_context.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じ鍵でも条件の異なる要求にその復号許可は適用されない。",
+      "concept": "認証済みの暗号化コンテキストを復号の認可条件にも用いられる。"
+    }
+  },
+  {
+    "id": "dop-c02-d6-026",
+    "revision": 1,
+    "category": "セキュリティとコンプライアンス",
+    "examDomain": "セキュリティとコンプライアンス",
+    "version": "DOP-C02 オリジナル問題 2026-11",
+    "similarityGroup": "ec2-imdsv2-http-tokens-required-after-metric-inventory",
+    "title": "互換性を確認してからメタデータ要求を強制する",
+    "prompt": "稼働中のEC2フリートでIMDSv2を必須にする。古いエージェントがIMDSv1を使っていないことを先に観測し、更新後はトークン付きの方式だけを許可したい。何を組み合わせるか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "HopLimitだけを変更し、IMDSv1かv2かの判定に使う。",
+        "explanation": "ネットワーク応答のホップ制限と、トークン必須の条件は別である。"
+      },
+      {
+        "id": "B",
+        "text": "HttpTokensをoptionalのままにし、IMDSv1が禁止されたと判断する。",
+        "explanation": "optionalはトークンなしの要求を許す。"
+      },
+      {
+        "id": "C",
+        "text": "CloudTrailの管理APIの履歴だけを見て、インスタンス内のメタデータアクセスを完全に確認する。",
+        "explanation": "OS内からの個々のメタデータ要求の観測にならない。"
+      },
+      {
+        "id": "D",
+        "text": "インスタンスのメタデータ設定でHttpTokensをrequiredにし、今後の起動テンプレートにも設定する。",
+        "explanation": "稼働中と今後のインスタンスにトークン必須を反映できる。"
+      },
+      {
+        "id": "E",
+        "text": "MetadataNoTokenなどでトークンなしのアクセスを観測し、必要な呼出し元を更新する。",
+        "explanation": "IMDSv2を必須にしたときに失敗する既存の呼出しを先に把握できる。"
+      }
+    ],
+    "correct": [
+      "D",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-metadata-transition-to-version-2.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "IMDSv2を必須にしたときに失敗する既存の呼出しを先に把握できる。 稼働中と今後のインスタンスにトークン必須を反映できる。",
+      "concept": "互換性の測定と、更新後のインスタンスの強制設定を別々に行う。"
+    }
   }
 ]

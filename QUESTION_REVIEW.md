@@ -819,3 +819,16 @@ AWS公開の採点対象の比重を比例配分し、65問の採点対象と10�
 - [CodePipelineのステージ条件](https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-conditions.html)
 - [Aurora Global Databaseのスイッチオーバーとフェイルオーバー](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database-disaster-recovery.html)
 - [LambdaでのSQS部分バッチ応答](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html)
+
+## DOP-C02の重複しないフル模試2回分
+
+新規75問を追加し、既存76レコードを維持した。類似グループで数えた独立150問の分野別内訳は34・26・22・22・20・26問。単一選択135問の正答位置はA〜Dの順に34・34・34・33問で、複数選択は16問。
+
+失敗アクションだけの再試行、展開済みCloudFormationテンプレートの再評価、S3の特定バージョン削除と複製、EKS更新時の中断予算、ログの等値検索と走査量、通知が順不同に届く場合の索引更新、CloudTrailのログ整合性検証を追加した。既存の成果物承認に関する2問は両IDを維持し、同一模試内では片方まで出題する。
+
+75問・180分の模試を512回生成し、分野配分17・13・11・11・10・13問を確認した。互いに設問が重複しないフル模試2回分を128組生成したほか、カスタム全75件数、採点2,672通り、出典URL144件を検証した。
+
+- [CodePipelineの失敗したアクションの再試行](https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-retry.html)
+- [CloudFormationのAWS::LanguageExtensions](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/transform-aws-languageextensions.html)
+- [S3のレプリケーション対象](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-what-is-isnot-replicated.html)
+- [S3イベントのsequencer](https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html)

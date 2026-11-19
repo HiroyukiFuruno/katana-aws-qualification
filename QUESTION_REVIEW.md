@@ -766,3 +766,16 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 - [DMSのレプリケーション監視](https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Monitoring.html)
 - [Redshiftのステップ別クエリ情報](https://docs.aws.amazon.com/redshift/latest/dg/SYS_QUERY_DETAIL.html)
 - [DataBrewでの個人識別情報の取り扱い](https://docs.aws.amazon.com/databrew/latest/dg/personal-information-protection.html)
+
+## DEA-C01の重複しないフル模試3回分
+
+新規65問を追加し、既存131レコードを維持した。類似グループで数えた独立195問の分野別内訳は66・51・42・36問。単一選択174問、複数選択22問で、単一選択の正答位置はAから順に44・44・43・43問。
+
+複数のAirflow DAGで共有するAPIの同時接続制限、Redshift Data APIでの完了確認とページ取得、Glueのパーティションメタデータを取得前に絞る条件を追加した。既出のRedshiftクライアントとのTLS接続に近い草稿は、OpenSearchノード間の通信を保護する設定へ差し替えた。Lake FormationではテーブルのSELECT付与と、Athenaがデータアクセス用の資格情報を得るためのIAM許可を別の判断として扱った。
+
+65問・130分、分野配分22・17・14・12問のフル模試を、互いに設問が重複しない3回分として128組生成した。フル模試の生成512回、カスタム全65件数、採点3,488通り、出典185件を確認した。分野ごとの5倍まで残り44・34・28・24問。
+
+- [Airflowのプール](https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/pools.html)
+- [Redshift Data API](https://docs.aws.amazon.com/redshift/latest/mgmt/data-api.html)
+- [Glueでのパーティション条件](https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-pushdown.html)
+- [OpenSearchのノード間暗号化](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ntn.html)

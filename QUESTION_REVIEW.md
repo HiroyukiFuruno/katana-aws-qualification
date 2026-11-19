@@ -806,3 +806,69 @@ DocumentDBの複合索引、Neptuneの多段探索、CQL互換のKeyspaces、Mem
 - [SageMaker Unified Studioのデータリネージ](https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/datazone-data-lineage.html)
 - [Glue Data Qualityのアナライザー](https://docs.aws.amazon.com/glue/latest/dg/dqdl.html#dqdl-analyzers)
 - [AWS KMSのマルチリージョンキー](https://docs.aws.amazon.com/kms/latest/developerguide/multi-region-keys-overview.html)
+
+## DOP-C02のフル模試1回分
+
+既存10レコードの設問ID・リビジョン・採点内容を維持し、新規66問を追加した。既存の成果物ダイジェストと承認に関する2問は同じ類似グループとし、同一模試への同時出題を防ぐ。合計76レコードで独立75問。単一選択69問の正答位置はA〜Dの順に18・17・17・17問で、複数選択は7問。
+
+AWS公開の採点対象の比重を比例配分し、65問の採点対象と10問の採点対象外を含む本試験と同じ75問・180分の練習用構成にした。6分野の配分は17・13・11・11・10・13問。最終的に各分野を85・65・55・55・50・65問へ拡充する。
+
+デプロイ前後のゲート、スタック置換時の保持設定、Aurora Global Databaseの計画切替、アラームの評価条件、FIFO入力の部分失敗、短期資格情報によるCIの認証などを扱う。正答の長さが手がかりになりやすい選択肢28問を調整した。フル模試512回の出題、カスタム全75件数、採点1,328通り、出典URL74件を確認した。
+
+- [AWS認定 DevOps Engineer – Professional 試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02.html)
+- [CodePipelineのステージ条件](https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-conditions.html)
+- [Aurora Global Databaseのスイッチオーバーとフェイルオーバー](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database-disaster-recovery.html)
+- [LambdaでのSQS部分バッチ応答](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html)
+
+## DOP-C02の重複しないフル模試2回分
+
+新規75問を追加し、既存76レコードを維持した。類似グループで数えた独立150問の分野別内訳は34・26・22・22・20・26問。単一選択135問の正答位置はA〜Dの順に34・34・34・33問で、複数選択は16問。
+
+失敗アクションだけの再試行、展開済みCloudFormationテンプレートの再評価、S3の特定バージョン削除と複製、EKS更新時の中断予算、ログの等値検索と走査量、通知が順不同に届く場合の索引更新、CloudTrailのログ整合性検証を追加した。既存の成果物承認に関する2問は両IDを維持し、同一模試内では片方まで出題する。
+
+75問・180分の模試を512回生成し、分野配分17・13・11・11・10・13問を確認した。互いに設問が重複しないフル模試2回分を128組生成したほか、カスタム全75件数、採点2,672通り、出典URL144件を検証した。
+
+- [CodePipelineの失敗したアクションの再試行](https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-retry.html)
+- [CloudFormationのAWS::LanguageExtensions](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/transform-aws-languageextensions.html)
+- [S3のレプリケーション対象](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-what-is-isnot-replicated.html)
+- [S3イベントのsequencer](https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html)
+
+## DOP-C02の重複しないフル模試3回分
+
+新規75問を追加し、既存151レコードを維持した。独立225問の分野別内訳は51・39・33・33・30・39問。単一選択200問の正答位置はA〜D各50問で、複数選択は26問。
+
+実行中の変更を待つパイプライン停止、物理資源を維持するスタックの分割、同期レプリケーションでの復旧時点の設計、版単位のLambda指標、修復失敗後の補償処理、CloudFrontから非公開オリジンへのアクセスなどを追加した。近い題材の候補は、必要な判断と制約を比較して調整した。
+
+75問・180分の模試を512回生成し、分野別配分17・13・11・11・10・13問を確認した。互いに重複しないフル模試3回分を128組生成し、カスタム全75件数、採点4,032通り、出典URL215件を検証した。
+
+- [CloudFormationのスタックリファクタリング](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stack-refactoring.html)
+- [DynamoDBグローバルテーブルの整合性モード](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html)
+- [Systems Manager Automationの失敗時の制御](https://docs.aws.amazon.com/systems-manager/latest/userguide/automation-actions.html)
+- [CloudFrontからS3オリジンへのアクセス制限](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)
+
+## DOP-C02の重複しないフル模試4回分
+
+新規75問を追加し、既存226レコードを維持した。類似グループで数えた独立300問の分野別内訳は68・52・44・44・40・52問。単一選択265問の正答位置はA〜Dの順に67・66・66・66問で、複数選択は36問。
+
+Elastic Beanstalkの配布方式、CloudFormationの別リージョン出力参照、Kinesisのコンシューマー単位の読取り容量、CloudWatch Logsの定期照会、DynamoDBのTTL削除を識別できるリージョン、Organizationsのリソース制御ポリシーなどを追加した。同じサービスを扱う既存問とは、選択に使う制約と操作結果を比較した。
+
+75問・180分の模試を512回生成し、配分17・13・11・11・10・13問を確認した。互いに設問が重複しない4回分を128組生成し、カスタム全75件数、採点5,392通り、出典URL285件を検証した。
+
+- [CloudFormationのFn::GetStackOutput](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-getstackoutput.html)
+- [Kinesisの拡張ファンアウト](https://docs.aws.amazon.com/streams/latest/dev/enhanced-consumers.html)
+- [DynamoDB StreamsでのTTL削除の識別](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ttl-expired-items.html)
+- [Organizationsのリソース制御ポリシー](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html)
+
+## DOP-C02の重複しないフル模試5回分
+
+6分野に新規75問を追加し、既存301レコードを維持した。類似グループで数えた独立375問の分野別内訳は85・65・55・55・50・65問。単一選択333問の正答位置はA〜Dの順に84・83・83・83問で、複数選択は43問。新規の単一選択68問は正答の位置に加え、選択肢の長さだけで正答を推測しにくいよう文量も調整した。
+
+CloudFormationの成果物から実行時パラメータを取得する問題、閉域内での待機条件の応答、Global Acceleratorでの既存接続の維持、EBSの帯域制限の切り分け、AWS Healthの経路冗長化、バックアップの複数者承認などを扱う。既存問と同じ判断を問うCodePipelineの並列実行、ALBの登録解除、CloudWatchの学習期間除外は草稿から差し替えた。近似候補も選択肢の根拠まで比較し、例えばStep Functionsから次のアクションへ渡す出力ファイル、CodeBuildのエクスポート変数、CloudFormationの成果物内の値はそれぞれ異なる制約と操作を問うようにした。
+
+75問・180分の模試を512回生成し、分野配分17・13・11・11・10・13問を確認した。互いに設問が重複しないフル模試5回分を128組生成し、カスタム全75件数、採点6,704通り、出典URL357件を検証した。従来の10レコードと過去版6レコードの配信データを維持する。本試験では採点対象外の問題が含まれるが、このアプリは全75問を採点する。
+
+- [DOP-C02試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02.html)
+- [CloudFormationのパラメータ上書き関数](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/continuous-delivery-codepipeline-parameter-override-functions.html)
+- [Global Acceleratorのトラフィックダイヤル](https://docs.aws.amazon.com/global-accelerator/latest/dg/about-endpoint-groups-traffic-dial.html)
+- [AWS Healthのリージョン別配信と重複排除](https://docs.aws.amazon.com/health/latest/ug/choosing-a-region.html)
+- [AWS Backupボールトの複数者承認](https://docs.aws.amazon.com/aws-backup/latest/devguide/multipartyapproval.html)

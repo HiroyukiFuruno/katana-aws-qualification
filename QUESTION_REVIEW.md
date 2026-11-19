@@ -806,3 +806,16 @@ DocumentDBの複合索引、Neptuneの多段探索、CQL互換のKeyspaces、Mem
 - [SageMaker Unified Studioのデータリネージ](https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/datazone-data-lineage.html)
 - [Glue Data Qualityのアナライザー](https://docs.aws.amazon.com/glue/latest/dg/dqdl.html#dqdl-analyzers)
 - [AWS KMSのマルチリージョンキー](https://docs.aws.amazon.com/kms/latest/developerguide/multi-region-keys-overview.html)
+
+## DOP-C02のフル模試1回分
+
+既存10レコードの設問ID・リビジョン・採点内容を維持し、新規66問を追加した。既存の成果物ダイジェストと承認に関する2問は同じ類似グループとし、同一模試への同時出題を防ぐ。合計76レコードで独立75問。単一選択69問の正答位置はA〜Dの順に18・17・17・17問で、複数選択は7問。
+
+AWS公開の採点対象の比重を比例配分し、65問の採点対象と10問の採点対象外を含む本試験と同じ75問・180分の練習用構成にした。6分野の配分は17・13・11・11・10・13問。最終的に各分野を85・65・55・55・50・65問へ拡充する。
+
+デプロイ前後のゲート、スタック置換時の保持設定、Aurora Global Databaseの計画切替、アラームの評価条件、FIFO入力の部分失敗、短期資格情報によるCIの認証などを扱う。正答の長さが手がかりになりやすい選択肢28問を調整した。フル模試512回の出題、カスタム全75件数、採点1,328通り、出典URL74件を確認した。
+
+- [AWS認定 DevOps Engineer – Professional 試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02.html)
+- [CodePipelineのステージ条件](https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-conditions.html)
+- [Aurora Global Databaseのスイッチオーバーとフェイルオーバー](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database-disaster-recovery.html)
+- [LambdaでのSQS部分バッチ応答](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html)

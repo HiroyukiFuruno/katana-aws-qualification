@@ -1,6 +1,5 @@
-import { developerCourse } from './certificationCourses.ts';
+import { cloudOpsCourse, developerCourse } from './certificationCourses.ts';
 import type { Certification } from './certificationTypes';
-
 export const catalog: Certification[] = [
   {
     id: 'clf-c02',
@@ -84,6 +83,7 @@ export const catalog: Certification[] = [
     level: 'アソシエイト',
     skills: ['operations', 'networking', 'architecture'],
     focus: '監視、障害対応、運用自動化',
+    course: cloudOpsCourse,
   },
   {
     id: 'dea-c01',

@@ -683,3 +683,61 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 - [DVA-C03公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/developer-associate-03.html)
 - [AppSyncのLambdaバッチリゾルバー](https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-lambda-js.html)
 - [S3バケットキーと暗号化コンテキスト](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html)
+
+## SOA-C03のフル模試1回分
+
+新規55問と既存10問を、監視・分析・修復と性能最適化14問、信頼性と事業継続14問、デプロイ・プロビジョニングと自動化14問、セキュリティとコンプライアンス11問、ネットワークとコンテンツ配信12問の独立65問にまとめた。AWS公式試験の配分22・22・22・16・18％は採点対象50問に適用される。教材では合計65問・130分の練習用配分に換算し、全65問の結果を確認できる形とした。
+
+既存10問の設問ID、改訂番号、本文、選択肢、正答を維持し、出題分野と類似グループを付けた。既存設問の参照先は、それぞれのAWS仕様を説明する資料に更新した。EventBridgeのルール選択を繰り返す草稿は、状態収集後に承認者が判断するSystems Manager Automationの設問へ差し替えた。ALBのヘルスチェックを軽くする設問と、Route 53の主副リージョン切替を設定する設問は、制御点と運用判断が異なる。
+
+単一選択59問、複数選択6問。フル模試の生成512回、カスタム全65件数、全1,136通りの採点を検証した。分野ごとの5倍に達するには、順に56・56・56・44・48問を追加する。
+
+- [SOA-C03公式試験の概要](https://aws.amazon.com/certification/certified-cloudops-engineer-associate/)
+- [SOA-C03の公式試験ガイド](https://docs.aws.amazon.com/pdfs/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.pdf)
+
+## SOA-C03の重複しないフル模試2回分
+
+新規65問を追加し、既存65問を維持した。監視・分析・修復と性能最適化28問、信頼性と事業継続28問、デプロイ・プロビジョニングと自動化28問、セキュリティとコンプライアンス22問、ネットワークとコンテンツ配信24問で、独立130問となった。単一選択117問、複数選択13問。単一選択の正答位置はAから順に29・29・29・30問。
+
+設問と正答文の近い組を運用上の判断まで比較した。S3の複製設定を再び選ばせる草稿をEFSの項目レベル復元へ変更し、IPv4のNAT経路に似た草稿を組織内のCIDR重複を探すIPAMの問題へ変更した。DNSはVPCから社内DNSへの転送と、重複するプライベートゾーンでの優先順位を扱う。Systems Managerで承認を設定する既存問題があるため、新規の自動化では利用中のCloudFormationエクスポートを段階的に移行する判断を扱った。
+
+出典128件、全2,288通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、分野配分14・14・14・11・12のフル模試を、互いに問題が重複しない2回分として128組生成した。分野ごとの5倍に達するには、順に42・42・42・33・36問を追加する。
+
+- [EFSの項目レベル復元](https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-efs.html)
+- [VPC IPAMのCIDR使用状況と重複](https://docs.aws.amazon.com/vpc/latest/ipam/monitor-cidr-compliance-ipam.html)
+
+## SOA-C03の重複しないフル模試3回分
+
+新規65問を追加し、既存130問を維持した。独立195問の分野別内訳は順に42・42・42・33・36問。単一選択174問、複数選択21問で、単一選択の正答位置はAから順に44・44・43・43問。
+
+正答の決め手が近い草稿を照合した。タグによるバックアップ選択の繰り返しはEBS Multi-Attachの条件へ、既出のゾーンシフトに近い草稿はS3の削除マーカーからの復旧へ差し替えた。複製速度の設定が既出のため、新たにDataSyncでは差分の転送後に既存コピーを含めて検証する判断を扱った。AWS DevOps Agentの調査レビューでは、対応を承認する前に結論の根拠を評価する手順を問う。
+
+出典192件、全3,456通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、配分14・14・14・11・12問のフル模試を、互いに問題が重複しない3回分として128組生成した。分野ごとの5倍まで、順に28・28・28・22・24問を追加する。
+
+- [AWS DataSyncの検証設定](https://docs.aws.amazon.com/datasync/latest/userguide/configure-data-verification-options.html)
+- [AWS DevOps Agentの調査レビュー](https://docs.aws.amazon.com/devopsagent/latest/userguide/working-with-devops-agent-reviewing-investigations.html)
+
+## SOA-C03の重複しないフル模試4回分
+
+新規65問を追加し、既存195問を維持した。独立260問の分野別内訳は順に56・56・56・44・48問。単一選択231問、複数選択29問で、単一選択の正答位置はAから順に58・58・58・57問。
+
+既存設問と草稿の正答の決め手を照合した。同じスケーリング設定を選ばせる草稿は、ECS Execの有効化状態とEKSのKubernetes監査ログを確認する問題に差し替えた。KMSではEBS経由の要求に絞るポリシー条件と、CloudWatch Logsのロググループを暗号化コンテキストで絞る条件を扱う。災害対策ではS3の複製状況を前提として、Multi-Region Access Pointの二つのリージョンでルーティング状態を切り替える手順を問う。
+
+新規65問の出典を含む254件のURL、全4,624通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、分野配分14・14・14・11・12問のフル模試を、互いに問題が重複しない4回分として128組生成した。分野ごとの5倍まで残り65問。
+
+- [SOA-C03の監視・分析・修復と性能最適化](https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain1.html)
+- [S3 Multi-Region Access Pointのフェイルオーバー制御](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingFailover.html)
+- [CloudWatch LogsのロググループとKMS暗号化コンテキスト](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html)
+
+## SOA-C03の独立325問と重複なしの模試5回分
+
+65問を追加し、独立325問を学習・模擬試験の出題元に登録した。分野ごとの母数は70・70・70・55・60問。フル模試は65問・130分で、各回の分野配分を14・14・14・11・12問とした。単一選択289問、複数選択36問で、単一選択の正答位置はAから順に73・72・72・72問。
+
+既出のVPC Reachability Analyzerによる静的経路診断を繰り返す草稿は、AWS Site-to-Site VPNのIKEログで障害を調査する問題に差し替えた。KMSの復号権限に近い草稿は、AWS Secrets Managerの交互ユーザー方式に変更した。CloudFrontのキャッシュ制御やRoute 53のルーティングとは別に、AWS Shield Advancedがサービスのヘルス状態を踏まえてプロアクティブに連絡するための設定を扱う。
+
+出典317件、全5,776通りの採点、フル模試の生成512回、カスタム全65件数、互いに重複しないフル模試5回分の生成128組を確認した。既存の公開10問はID・改訂番号・本文・選択肢・正答を維持し、さらに旧6問を履歴から参照できる。
+
+- [SOA-C03の試験概要](https://aws.amazon.com/certification/certified-cloudops-engineer-associate/)
+- [Site-to-Site VPNのトンネルログ](https://docs.aws.amazon.com/vpn/latest/s2svpn/monitoring-logs.html)
+- [Secrets Managerのローテーション方式](https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotation-strategy.html)
+- [Shield Advancedのプロアクティブエンゲージメント](https://docs.aws.amazon.com/waf/latest/developerguide/ddos-srt-proactive-engagement.html)

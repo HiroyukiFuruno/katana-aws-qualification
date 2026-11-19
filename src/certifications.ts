@@ -14,7 +14,7 @@ export const skills = {
 export type Skill = keyof typeof skills;
 export type ExamBlueprint = { minutes: number; distribution: Record<string, number> };
 export type Course = {
-  practice: { path: string; label: Message }[];
+  practice: { path: string; label: Message; fixedCount?: number }[];
   mock: string;
   archives: string[];
   exam: ExamBlueprint;
@@ -67,7 +67,7 @@ const catalog: Certification[] = [
     focus: '可用性・性能・コストを満たす構成設計',
     course: {
       practice: [
-        { path: 'courses/saa-c03/mock-questions.json', label: 'saaFull' },
+        { path: 'courses/saa-c03/mock-questions.json', label: 'saaFull', fixedCount: 65 },
         { path: 'courses/saa-c03/questions.json', label: 'awsSample' },
         { path: 'courses/saa-c03/extra-questions.json', label: 'saaShort' },
       ],
@@ -77,6 +77,7 @@ const catalog: Certification[] = [
         minutes: 130,
         distribution: { セキュリティ: 19, レジリエンス: 17, パフォーマンス: 16, コスト最適化: 13 },
       },
+      reviewedMock: true,
     },
   },
   {

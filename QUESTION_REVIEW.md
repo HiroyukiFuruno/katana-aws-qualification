@@ -576,3 +576,15 @@ AI・MLの基礎8問、生成AIの基礎11問、基盤モデルの応用12問、
 - [SageMaker Clarifyの機能と提供条件](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-post-training-bias-metric-ft.html)
 - [SageMaker Ground Truthのラベル検証と調整](https://docs.aws.amazon.com/sagemaker/latest/dg/sms-verification-data.html)
 - [AWS Clean Roomsの集計分析ルール](https://docs.aws.amazon.com/clean-rooms/latest/userguide/analysis-rules-aggregation.html)
+
+## AIF-C01の5分野に30問を追加
+
+AI・MLの基礎4問、生成AIの基礎6問、基盤モデルの応用9問、責任あるAI6問、セキュリティとガバナンス5問。分野別の独立候補は55・54・63・40・38問となり、計250問。新規152通りの採点と28件の一次資料の直接到達を確認した。
+
+今回の題材は、希少故障の教師データと故障ごとの評価、発注に使う需要の上側、トークン枠の事前確認、完了した応答当たりの費用、既存検索索引とグラフの活用、文書の直接取込、利用者と運用担当者への透明性、画像付き入力の検査、学習コンテナの分離とコンテナの実行中の検知。モデル統合、バッチ推論、プロンプトキャッシュなど、既出の判断と重なる候補は追加しなかった。旧10問の内容・版を維持した。
+
+- [Bedrock CountTokensの事前計測](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_CountTokens.html)
+- [BedrockとNeptune Analyticsのグラフ検索](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-build-graphs.html)
+- [Bedrockのナレッジベースへの直接取り込み](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-direct-ingestion-add.html)
+- [Responsible AI Lensの透明性戦略](https://docs.aws.amazon.com/wellarchitected/latest/responsible-ai-lens/raigt01-bp01.html)
+- [ECRでのAmazon Inspectorの継続スキャン](https://docs.aws.amazon.com/inspector/latest/user/scanning-ecr.html)

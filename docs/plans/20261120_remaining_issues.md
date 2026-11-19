@@ -8,7 +8,7 @@ GitHubのOpen Issue #17, #19〜#25の本文を要件・DoDの一次情報とす�
 ## 固定する制約
 - 利用者無料、無料のKAQ専用Supabase、SSOのみ。GitHub導入済みを維持する。
 - 追加SSOは個別Issue/短命releaseブランチで導入し、共通認証フローを複製しない。
-- 5provider導入後に#23の永続化、続いて#24の分析を実装する。#25の分類・教材は独立して進める。
+- 対象4providerの担当範囲導入後に#23の永続化、続いて#24の分析を実装する。#25の分類・教材は独立して進める。
 - 可逆的な登録・設定・秘密保存は再承認不要。課金・破壊的変更・本人MFA等だけ必要時に具体化する。
 - 秘密はMacキーチェーン/専用サービス設定へ保存し、値をコード・ログ・Issueへ出さない。
 - Mockは単体検証へ活用。IT/E2Eは実Auth/Postgres/OIDC、固定待機なし。
@@ -19,11 +19,11 @@ GitHubのOpen Issue #17, #19〜#25の本文を要件・DoDの一次情報とす�
 ## タスク
 - [x] #19 Google: registry/設定/固有パラメータ・取消し・連携/回帰/公開証跡。
 - [x] #20 Microsoft: 個人＋組織common tenant、最小scope、管理者同意案内/検査/公開証跡。
-- [ ] #21 Amazon: hosted custom OAuthの実互換性、安定ID/属性、最小scope、Prime判定なし、検査/公開証跡。
+- [x] #21 Amazon: 本人の明示指示でスコープアウトしnot plannedとしてClose。実装しない。
 - [ ] #22 Facebook: 公開条件/最小権限、メール不足/取消し、連携/回帰/公開証跡。
 - [ ] #23 永続化: 全保存データ/RLS/冪等性/明示移行/同期失敗/切替/削除/JSONL/集計契約と実DB検証。
 - [ ] #24 ダッシュボード: 契約数値/フィルタ/空・失敗の区別/学習導線/全言語・アクセシビリティ/公開検証。
-- [x] #25 基礎学習: 棚卸し→分類・到達目標・前提・順序・対象固定→教材と4設問形式→内容照合/検証/公開。
+- [ ] #25 基礎学習: 棚卸し→分類・到達目標・前提・順序・対象固定→教材と4設問形式→内容照合/検証/公開。
 - [ ] #17 親: 全子Issueの担当範囲・公開証跡と要件対応を照合しClose。
 
 ## 作業分担と現状
@@ -50,7 +50,7 @@ GitHubのOpen Issue #17, #19〜#25の本文を要件・DoDの一次情報とす�
 
 ## 更新された着手順序と公開状況
 
-2026-11-20本人承認「Amazonを保留して先へ進める」により、#21のGoTrue v2.198.0 subject mapping非互換は上流待ちとして分離。#23の依存を#18/#19/#20/#22へ更新済みで、他SSO・永続化・ダッシュボードを先行する。#21はOpenで未対応として維持する。
+2026-11-20、当初のAmazon保留から本人の最新指示「Amazonのssoはスコープアウトで良いです。」へ更新。#21は対象外としてnot plannedでCloseし、今回の対象はGitHub/Google/Microsoft/Facebookの4種類とする。#23/#24と親#17の完了をAmazonで止めない。
 
 GitHubはManagement APIからKeychain内の実credential再設定後、本人Chromeで実ログイン→dashboard→identity1件とアバター表示まで確認済み。GoogleはPR32/main d074b9a・本番有効化済み、本人の基本情報共有同意だけ独立フォローアップ。#33はPR34/main0c44321を公開し、本番8条件のカード余白/横overflow/FAQ開閉を検査済み。
 
@@ -61,3 +61,23 @@ GitHubはManagement APIからKeychain内の実credential再設定後、本人Chr
 #20はPR37/main75298dac、#22のprovider部分はPR43/mainedc0b2dで小分けに公開済み。両デプロイ後の本番6条件検査をaccount-planningのmicrosoft/facebook-incremental-validationへ保存。MicrosoftはAADSTS16000で本人の管理組織確認を親#17へ独立記録し、#20の実装・検証・公開範囲をCloseした。一般向け有効化は未完了でボタン非表示。Facebookも外部設定まで非表示。
 
 #22退会はaccount-remainingのrelease/account-deletionで、実handler+実GoTrue1件成功後、確認取消し/アカウント切替/不正HTTPの回帰を拡充中。#23のSQLは本worktree release/account-dataで、frontend repositoryはaccount-remainingで準備し、退会差分と分離して取り込む。既存ゲート・公開証拠が揃うまでCloseしない。
+
+## Amazonのスコープアウト（最新指示）
+
+本人の明示指示により#21は今回の対象外。保留・上流待ちではなくnot plannedでCloseする。残る4種類のSSO、学習保存・移行、ダッシュボードの要件と品質条件は維持する。
+
+## 最新の是正事項（2026-11-20）
+
+- [/] #20: コード公開だけでCloseした判断を撤回し再Openした後、アプリ登録、callback/scope/credential、Supabase、本番有効化と実ログインまで完了した。
+- [ ] #22: コード公開だけでCloseした判断を撤回し再Open。外部アプリの公開条件、本番有効化と実ログインまで担当範囲とし、未実施を単なる本人確認へ言い換えない。
+- [ ] #25: 6単元未公開・公開単元2問と短文だけの状態は未完。全12単元に初心者が読んで理解できる本文・段階的な具体例・誤解の説明を備え、読む→確認問題→解説→本文へ戻る学習フローへ修正する。通常入口は読む段階とし、いきなり問題を出さない。4設問形式を学習目標に対応させ、件数やテスト成功だけで教材品質の証拠としない。
+
+過去のClose/完了記載は履歴であり、上記再Openが現在の判断である。SSO外部設定未完の間も独立した教材・永続化・分析の作業を進める。
+
+
+## 現在の公開状況（2026-11-20 更新）
+
+- [/] #20: 外部設定を完了し、本番で個人Microsoftアカウントの認可→日本語dashboard→verified identity→reload→logout→再ログインを確認した。common tenant/個人+任意組織、email/xms_edov、最小scopeを保存。Issue20は公開証跡を記録してClose。詳細はdocs/auth-microsoft.md。
+- [ ] #22: app/callback/email/icon/credentialの設定は済みだが、Metaの既存アカウント制限でビジネスポートフォリオ作成が拒否され、一般公開のbusiness verification/App Review/実ログインは未完。providerと本番ボタンを無効に保つ。詳細はdocs/auth-facebook.md。
+- 本人の最新指示により、Microsoftと基礎学習を先行して公開し、Facebookはその後に取り組む。#22を完了扱いにせず、#23/#24の独立した実装・検証も続ける。
+- #25再実装はDraft PR55でレビュー/CI中。最新main統合後の全check73件/1,152assert、実Auth/OIDC/browser123件成功。公開確認まではIssue25をOpenに保つ。

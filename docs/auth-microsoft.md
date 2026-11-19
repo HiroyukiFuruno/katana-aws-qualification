@@ -32,3 +32,10 @@ scopeは`openid profile email`だけで、Microsoft Graph、メールボック�
 - https://supabase.com/docs/guides/auth/social-sign-in/auth-azure
 - https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes
 - https://learn.microsoft.com/en-us/troubleshoot/entra/entra-id/app-integration/troubleshoot-consent-issues
+
+
+## 外部設定の実施記録（2026-11-20）
+
+Entra ID Freeの専用アプリを登録し、個人用・組織用の両方を対象に本番Supabase callbackを設定した。ID tokenにemail/xms_edov、access tokenにxms_edovを保存し、Supabaseのcommon tenant接続を有効化した。認証情報はMacキーチェーンへ保存し、値は本書へ記録しない。クライアントシークレットの実期限は2028-11-19であり、Supabase管理トークンのNever設定とは異なる。
+
+本番のMicrosoftボタン表示後、本人の情報共有同意を得て個人用Microsoftアカウントで実ログイン成功を確認した。日本語のcallback→dashboard、オンライン検証済みアカウントとMicrosoft identity、再読込後のsession維持、logout後の公開ホーム、再ログインまで確認済み。scopeは基本プロフィールとメールだけであり、メールボックスやOneDriveの権限は要求していない。組織用アカウントは各組織の同意ポリシーにより管理者承認が必要になる。発行元の検証バッジは未取得。

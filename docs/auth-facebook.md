@@ -33,3 +33,12 @@ SSO registryに加え、削除UI・本人確認するEdge Function・案内ペ�
 
 - https://supabase.com/docs/guides/auth/social-sign-in/auth-facebook
 - https://developers.facebook.com/docs/facebook-login/
+
+
+## 外部設定の実施記録（2026-11-20）
+
+KAQ専用Metaアプリの作成、email/public_profile、ドメイン、privacy/deletion URL、教育カテゴリ、公開サイトと同じアイコンの保存を確認した。Supabase callbackはMetaのURI検証に合格し、App ID/SecretをMacキーチェーンとSupabaseへ保存済み。Facebook providerと本番ボタンは無効のままにする。
+
+実際の「公開」画面はビジネス認証を必須とし、公開ボタンは無効。本人承認済みの運営名・管理者名・連絡メールでポートフォリオ作成を試みたが、Metaが「広告の利用が制限されています」と表示し、新規ビジネスポートフォリオの作成を拒否した。アプリ自体の「必要なアクション」は0件であり、これを一般公開済みの意味には扱わない。
+
+公式のアカウント品質/Business Support Homeも確認したが、現画面に制限の再審査を送信するボタンは提示されていない。運営者によるMeta側の制限確認・解除後に、ビジネス認証、App Review、本番有効化、実ログインを再開する。別アカウントや別ポートフォリオを使った制限回避は行わない。#22は未完としてOpenを維持する。

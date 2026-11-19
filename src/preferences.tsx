@@ -42,7 +42,7 @@ const Preferences = createContext<{
   changeLocale: (locale: Locale) => void;
 }>({
   locale: 'en',
-  t: (key) => messages[key].en,
+  t: (key) => messages.en[key],
   changeLocale() {},
 });
 
@@ -66,7 +66,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }
 
   const t: Translation = (key, values = {}) => {
-    return messages[key][locale].replace(/\{(\w+)\}/g, (match, name: string) =>
+    return messages[locale][key].replace(/\{(\w+)\}/g, (match, name: string) =>
       Object.hasOwn(values, name) ? String(values[name]) : match,
     );
   };

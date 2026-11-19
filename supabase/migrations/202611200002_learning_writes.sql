@@ -280,9 +280,9 @@ declare
   v_recorded_exam_id uuid; v_recorded_payload_hash bytea; v_recorded_outcome text;
 begin
   if nullif(p_source_row_id, '') is null or length(p_source_row_id) > 200
-    or jsonb_typeof(p_exam) <> 'object' or jsonb_typeof(v_question_order) <> 'array'
-    or jsonb_array_length(v_question_order) = 0 or jsonb_typeof(p_draft_responses) <> 'array'
-    or jsonb_typeof(p_events) <> 'array' or v_exam_id is null
+    or jsonb_typeof(p_exam) is distinct from 'object' or jsonb_typeof(v_question_order) is distinct from 'array'
+    or jsonb_array_length(v_question_order) = 0 or jsonb_typeof(p_draft_responses) is distinct from 'array'
+    or jsonb_typeof(p_events) is distinct from 'array' or v_exam_id is null
     or v_state not in ('draft', 'submitted') or (not v_legacy and (v_started_at is null or v_deadline_at <= v_started_at))
     or coalesce((p_exam->>'position')::integer, -1) not between 0 and jsonb_array_length(v_question_order) - 1
     or nullif(p_exam->>'certification_id', '') is null or nullif(p_exam->>'source_version', '') is null then
@@ -300,6 +300,10 @@ begin
     select 1 from jsonb_array_elements(v_question_order) as question(value)
     group by question.value->>'question_id', (question.value->>'question_revision')::integer having count(*) > 1
   ) then raise exception 'invalid imported exam order' using errcode = '22023'; end if;
+  if exists (
+    select 1 from jsonb_array_elements(p_draft_responses) as response(value)
+    group by response.value->'question_ref' having count(*) > 1
+  ) then raise exception 'duplicate imported exam response' using errcode = '22023'; end if;
   if (v_state = 'draft' and (v_deadline_at is null or v_deadline_at <= clock_timestamp() or jsonb_array_length(p_events) <> 0 or v_submitted_at is not null))
     or (v_state = 'submitted' and ((not v_legacy and (v_submitted_at is null or v_submitted_at < v_started_at or v_submitted_at > v_deadline_at))
       or jsonb_array_length(p_events) <> jsonb_array_length(v_question_order))) then

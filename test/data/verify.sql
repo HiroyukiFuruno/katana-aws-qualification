@@ -309,6 +309,29 @@ begin
     or exists (select 1 from public.migration_items where source_row_id = 'bad-draft') then
     raise exception 'invalid draft import did not roll back';
   end if;
+  for v_ref in select jsonb_build_object(
+    'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
+    'selected', selection.value, 'flagged', false, 'duration_ms', 10, 'selected_at', original_selection
+  ) from jsonb_array_elements('[["A"],["B"]]'::jsonb) as selection(value) loop
+    begin
+      perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'duplicate-response',
+        jsonb_set(imported_exam, '{exam_id}', '"20000000-0000-0000-0000-000000000010"'),
+        jsonb_build_array(jsonb_set(v_ref, '{selected}', '["A"]'::jsonb), v_ref), '[]');
+      raise exception 'duplicate imported response accepted';
+    exception when invalid_parameter_value then null;
+    end;
+  end loop;
+  begin
+    perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'null-responses',
+      jsonb_set(imported_exam, '{exam_id}', '"20000000-0000-0000-0000-000000000010"'), null, '[]');
+    raise exception 'SQL NULL imported responses accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  if exists (select 1 from public.exam_sessions where exam_id = '20000000-0000-0000-0000-000000000010')
+    or exists (select 1 from public.exam_responses where exam_id = '20000000-0000-0000-0000-000000000010')
+    or exists (select 1 from public.migration_items where source_row_id in ('duplicate-response', 'null-responses')) then
+    raise exception 'duplicate or NULL response import did not roll back';
+  end if;
   perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'draft-1', imported_exam, jsonb_build_array(jsonb_build_object(
     'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
     'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10, 'selected_at', original_selection

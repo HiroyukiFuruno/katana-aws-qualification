@@ -627,3 +627,17 @@ AWSのDVA-C03は65問・130分。採点対象50問の分野比率30・26・22・
 - [AWS Certified Developer – Associate試験概要](https://aws.amazon.com/certification/certified-developer-associate/)
 - [DVA-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/developer-associate-03.html)
 - [DVA-C02とDVA-C03の比較](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-comparison.html)
+
+## DVA-C03の独立130問と重複なしの模試2回分
+
+AWSサービスでの開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問を追加した。第1弾の66レコードを保持し、独立候補は分野順に40・34・28・28問。累計131レコードのうち単一選択120問、複数選択11問を収録している。
+
+開発ではイベント通知のキー復号、S3の部分読み取り、Bedrockのツール結果、Kinesisの専用読み取り枠を確認した。セキュリティではRDSのIAMトークンが新規接続の認証にだけ使われる点や、CodeArtifactの二次トークンの期限、HTTP APIを相互TLS付きのカスタムドメインに限定する設定を扱った。テストとデプロイでは、変更セットの実行ごとの識別、マトリックスビルド、ECRの期限切れプレビューを追加した。障害切り分けでは、処理中上限に達したSQSの長いポーリング、RDS Proxyの貸し出し待ち、CloudFrontの言語別キャッシュを扱った。
+
+同じサービスが登場する候補は、判断に使う条件と正答を確認した。SQSの可視性の延長と上限到達の診断、API Gatewayの入力検証と入力マッピング、ECSのロールバック成立条件と失敗イベント通知にはそれぞれ異なる判断が必要になる。
+
+出典127件への到達と、全2,272通りの回答の採点を確認した。フルの生成512回、カスタム全65件数、互いに重複しないフル2回分を128組生成した。各回は65問・130分、分野配分20・17・14・14問。公開に必要な各分野5回分まで、残り60・51・42・42問。
+
+- [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
+- [CodePipelineのCloudFormationアクション](https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-CloudFormation.html)
+- [SQSの可視性と処理中メッセージ上限](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)

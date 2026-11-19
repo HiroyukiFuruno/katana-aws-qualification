@@ -14,9 +14,9 @@ test('auth configuration fails closed and accepts only public HTTPS service URLs
   );
 });
 
-test('only the configured GitHub entry is enabled; later providers share the registry', () => {
-  expect(configuredProviders(false)).toEqual([]);
-  const providers = configuredProviders(true);
+test('unconfigured providers are excluded while GitHub keeps the shared registry', () => {
+  expect(configuredProviders({})).toEqual([]);
+  const providers = configuredProviders({ github: true });
   expect(providers.map((provider) => provider.id)).toEqual(['github']);
   expect(providers[0].backend).toBe('github');
 });

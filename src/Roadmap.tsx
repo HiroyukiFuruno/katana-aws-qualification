@@ -1,8 +1,9 @@
-import { usePreferences } from './preferences';
 import { useState } from 'react';
-import { assessmentItems, profileKey, remainingCertifications } from './assessment';
-import { CertificationDirectory } from './CertificationDirectory';
 import { AssessmentQuestion } from './AssessmentQuestion';
+import { assessmentItems, profileKey, remainingCertifications } from './assessment';
+import { AccountBenefits } from './auth/AccountBenefits';
+import { CertificationDirectory } from './CertificationDirectory';
+import { usePreferences } from './preferences';
 import { RoadmapResults } from './RoadmapResults';
 
 import { loadProfile, type Profile } from './roadmapProfile';
@@ -67,6 +68,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
 
   return (
     <>
+      {phase !== 'questions' && <AccountBenefits context="assessment" showAction />}
       {saveError && (
         <p className="notice" role="alert">
           {t('assessmentSaveFailed')}

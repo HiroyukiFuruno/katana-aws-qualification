@@ -23,10 +23,14 @@ for (const locale of locales) {
       for (const viewport of viewports) {
         await page.setViewportSize(viewport);
         await page.goto(localePath(locale));
-        const entry = await bounds(page, '.landing-content > .entry-grid');
-        const benefits = await bounds(page, '.landing-content > .account-benefits');
+        const entry = await bounds(page, '.landing-paths > .entry-grid');
+        const benefits = await bounds(page, '.landing-content > .landing-account');
         const faq = await bounds(page, '.landing-faq');
-        for (const section of [benefits, faq]) {
+        const concept = await bounds(page, '.landing-concept');
+        const values = await bounds(page, '.landing-values');
+        expect(entry.y).toBeGreaterThan(values.y + values.height);
+        expect(values.y).toBeGreaterThan(concept.y + concept.height);
+        for (const section of [concept, values, benefits, faq]) {
           expect(Math.abs(section.x - entry.x)).toBeLessThan(1);
           expect(Math.abs(section.width - entry.width)).toBeLessThan(1);
         }
@@ -38,7 +42,7 @@ for (const locale of locales) {
         }
         expect(benefits.y - (entry.y + entry.height)).toBeGreaterThanOrEqual(24);
         expect(faq.y - (benefits.y + benefits.height)).toBeGreaterThanOrEqual(24);
-        for (const selector of ['.entry-card', '.account-benefits', '.landing-faq-item']) {
+        for (const selector of ['.entry-card', '.landing-account', '.landing-faq-item']) {
           for (const box of await page.locator(selector).all()) {
             const card = await box.boundingBox();
             expect(card).not.toBeNull();

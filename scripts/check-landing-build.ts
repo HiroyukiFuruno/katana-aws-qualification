@@ -15,7 +15,8 @@ function escapeHtml(value: string) {
 for (const locale of locales) {
   const path = localePath(locale);
   const html = await readFile(join('dist', path, 'index.html'), 'utf8');
-  const { landingTitle, landingIntro, landingDescription } = messages[locale];
+  const { landingTitle, landingTitleEmphasis, landingIntro, landingDescription } = messages[locale];
+  assert(landingTitle.includes(landingTitleEmphasis), `${locale}: highlight a word in the title`);
   assert(landingIntro.includes('KAQ'), `${locale}: introduce the KAQ brand`);
   assert.notEqual(landingDescription, landingIntro, `${locale}: explain uses separately from the hero`);
   assert(

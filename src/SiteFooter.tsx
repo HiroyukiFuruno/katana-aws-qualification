@@ -19,7 +19,11 @@ export function SiteFooter() {
           <button type="button" onClick={openCookieSettings}>
             {t('cookieTitle')}
           </button>
-          <a href="https://katana-series.katana-projects.org/" target="_blank" rel="noopener">
+          <a
+            href={`https://katana-series.katana-projects.org${localePath(locale)}`}
+            target="_blank"
+            rel="noopener"
+          >
             KatanA Website
           </a>
         </nav>

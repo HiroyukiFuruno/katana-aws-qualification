@@ -1003,3 +1003,8 @@ AWSの出典で正答の条件と誤答の根拠を確認し、追加問を含�
 - [VPC Flow Logsの配信エラー](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-troubleshooting.html)
 - [CloudFrontからALBへのアクセス制限](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html)
 - [CloudFrontのオリジン待機時間](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistValuesOrigin.html)
+
+公開前のレビューで、ECSのENIトランキングを有効化後に対応インスタンスを新規起動する手順へ修正した。IAMの設問はFASによるS3アクセスと分析ロールによる直接のS3アクセスの切り分けに限定した。
+
+- [ECSのENIトランキング要件](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-eni.html#container-instance-eni-considerations)
+- [IAMのaws:ViaAWSService条件キー](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-viaawsservice)

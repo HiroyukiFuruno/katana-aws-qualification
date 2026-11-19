@@ -9732,7 +9732,7 @@
     "version": "ANS-C01 オリジナル問題 2026-11",
     "similarityGroup": "ans4-ecs-awsvpc-trunking",
     "title": "EC2 ECSでENI不足を緩和する",
-    "prompt": "EC2起動タイプのECSクラスターでawsvpcタスクを高密度に配置する。インスタンス種別のENI上限がボトルネックで、対応するNitroインスタンスを使用できる。どれか。",
+    "prompt": "EC2起動タイプのECSクラスターで、インスタンスのENI上限によりawsvpcタスクを追加できない。タスクごとのセキュリティグループは維持し、ENIトランキングの要件を満たすLinuxインスタンスを起動できる。どの対応で1台あたりのタスク数を増やせるか。",
     "choices": [
       {
         "id": "A",
@@ -9751,8 +9751,8 @@
       },
       {
         "id": "D",
-        "text": "アカウントでawsvpcTrunkingを有効にし、対応するNitroインスタンスを再登録する。",
-        "explanation": "trunk ENIによりタスクENIの利用可能数を増やせる。"
+        "text": "awsvpcTrunkingを有効にしてから、対応するEC2インスタンスを新規起動し、既存インスタンスを順次置き換える。",
+        "explanation": "有効化後に起動した対応インスタンスにはtrunk ENIが付与され、タスクENIの上限が増える。"
       }
     ],
     "correct": [
@@ -9763,8 +9763,8 @@
       "label": "AWS公式ドキュメント"
     },
     "learning": {
-      "reason": "trunk ENIによりタスクENIの利用可能数を増やせる。",
-      "concept": "awsvpcTrunkingは対応EC2でタスクENI密度を高める。"
+      "reason": "ECSが有効化後の新規インスタンスへtrunk ENIを付与する。既存インスタンスの再登録ではタスクENIの上限は増えない。",
+      "concept": "awsvpcTrunkingを有効化した後に、対応インスタンスを新規起動する。"
     }
   },
   {
@@ -14220,28 +14220,28 @@
     "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
     "version": "ANS-C01 オリジナル問題 2026-11",
     "similarityGroup": "iam-via-aws-service",
-    "title": "AWSサービス経由のデータアクセスだけを許可する",
-    "prompt": "S3ログバケットで、指定AWSサービスによる配信は許可するが、同じロールの直接API呼び出しは拒否したい。",
+    "title": "FASとロールによる直接のS3操作を区別する",
+    "prompt": "分析用IAMロールでAmazon Athenaにクエリを送る。AthenaはForward Access Session（FAS）を使って呼び出し元の権限でS3のデータを読み取る。同じロールが直接実行するs3:GetObjectを拒否し、FASによる読み取りは既存の許可で評価したい。サービスの種類は条件に含めない。どの条件を明示的な拒否に適用するか。",
     "choices": [
       {
         "id": "A",
-        "text": "SourceVpceだけを条件にする",
-        "explanation": "サービス経由か直接かを区別しない。"
+        "text": "aws:SourceVpceが指定したS3 VPCエンドポイントと一致する場合。",
+        "explanation": "このキーはVPCエンドポイントを識別し、FASかどうかは判定しない。"
       },
       {
         "id": "B",
-        "text": "NATを追加する",
-        "explanation": "IAM認可条件ではない。"
+        "text": "aws:PrincipalIsAWSServiceがfalseの場合。",
+        "explanation": "FASは呼び出し元ロールの権限を使うため、この条件ではロールによる直接要求と一緒に拒否される。"
       },
       {
         "id": "C",
-        "text": "aws:ViaAWSService条件でサービス経由の要求だけを許可する",
-        "explanation": "サービスの委任呼び出しと直接呼び出しを区別できる。"
+        "text": "aws:ViaAWSServiceがfalseの場合。",
+        "explanation": "FASではこのキーがtrueになり、ロールから直接送られた要求ではfalseになる。"
       },
       {
         "id": "D",
-        "text": "role名を変更する",
-        "explanation": "要求経路を評価しない。"
+        "text": "aws:PrincipalArnが分析用IAMロールのARNと一致する場合。",
+        "explanation": "同じロールの権限を使う直接要求とFAS要求の両方に一致する。"
       }
     ],
     "correct": [
@@ -14252,8 +14252,8 @@
       "label": "AWS公式ドキュメント"
     },
     "learning": {
-      "reason": "サービスの委任呼び出しと直接呼び出しを区別できる。",
-      "concept": "aws:ViaAWSService"
+      "reason": "明示的な拒否をaws:ViaAWSServiceがfalseの場合に限定すると、直接要求を拒否する。FASの要求はこの拒否に該当せず、既存の許可で評価される。",
+      "concept": "aws:ViaAWSServiceはFASを判定する真偽値。経由したサービスの識別にはaws:CalledViaなどを使う。"
     }
   }
 ]

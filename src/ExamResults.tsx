@@ -2,7 +2,7 @@ import { ExamFormatPicker } from './ExamFormatPicker';
 import { LearningNotes } from './LearningNotes';
 import type { ExamBlueprint } from './certifications';
 import type { Attempt } from './history';
-import { isAnswerComplete, questionKey, type Question } from './questions';
+import { examDomainOf, isAnswerComplete, questionKey, type Question } from './questions';
 import type { usePreferences } from './preferences';
 import type { Message } from './messages';
 import { StructuredAnswerReview } from './StructuredAnswer';
@@ -30,6 +30,18 @@ export function ExamResults({
   onStart: (count: number) => void;
   t: Translate;
 }) {
+  const reviewed = attempts.map((attempt) => ({
+    attempt,
+    item: byKey.get(questionKey({ id: attempt.questionId, revision: attempt.questionRevision })),
+  }));
+  const scores = new Map<string, { correct: number; total: number }>();
+  for (const { attempt, item } of reviewed) {
+    const domain = item ? examDomainOf(item) : attempt.category;
+    const score = scores.get(domain) ?? { correct: 0, total: 0 };
+    score.total += 1;
+    if (attempt.isCorrect) score.correct += 1;
+    scores.set(domain, score);
+  }
   return (
     <section className="card">
       <h2>{t('examResults')}</h2>
@@ -41,17 +53,16 @@ export function ExamResults({
       </p>
       <p>{t('examGrading')}</p>
       <dl className="domain-scores">
-        {[...new Set(attempts.map((attempt) => attempt.category))].sort().map((category) => {
-          const items = attempts.filter((attempt) => attempt.category === category);
-          return (
-            <div key={category}>
-              <dt>{category}</dt>
+        {[...scores]
+          .sort(([first], [second]) => first.localeCompare(second, 'ja'))
+          .map(([domain, score]) => (
+            <div key={domain}>
+              <dt>{domain}</dt>
               <dd>
-                {items.filter((item) => item.isCorrect).length} / {items.length}
+                {score.correct} / {score.total}
               </dd>
             </div>
-          );
-        })}
+          ))}
       </dl>
       <ExamFormatPicker
         blueprint={blueprint}
@@ -71,11 +82,8 @@ export function ExamResults({
       </div>
       {error && <p role="alert">{t(error)}</p>}
       <div className="exam-solutions">
-        {attempts.map((attempt, index) => {
+        {reviewed.map(({ attempt, item }, index) => {
           if (!showAll && attempt.isCorrect) return null;
-          const item = byKey.get(
-            questionKey({ id: attempt.questionId, revision: attempt.questionRevision }),
-          );
           const answered = item
             ? isAnswerComplete(item, attempt.selected)
             : attempt.selected.filter(Boolean).length === attempt.correct.length;

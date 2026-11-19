@@ -613,3 +613,73 @@ AI・MLの基礎7問、生成AIの基礎15問、基盤モデルの応用16問、
 - [AWS Certified AI Practitionerの試験条件](https://aws.amazon.com/certification/certified-ai-practitioner/)
 - [AWS Certified AI Practitionerの試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
 - [Amazon Bedrockモデルの提供状況](https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html)
+
+## DVA-C03の独立65問とフル模試の構成
+
+AWSのDVA-C03は65問・130分。採点対象50問の分野比率30・26・22・22%を全65問に按分し、AWSサービスでの開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問とした。公開に必要な独立候補は分野別に100・85・70・70問、合計325問。
+
+旧DVA-C02の10問は設問・選択肢・正答・改訂番号を保持し、分野、類似グループ、個別の出典を追加した。SQSとKinesisの部分バッチ応答は異なる挙動を学べるが、どちらも同じ設定を正答とするため、模試では片方だけを選ぶ。新版の出題範囲に沿って56問を加え、計66レコード、独立65問になった。単一選択61問・複数選択5問を収録している。
+
+開発では空のDynamoDBページから読み進める条件や、同期ワークフローのHTTP応答と実行結果の違いを確認した。セキュリティではBedrockをプライベートに呼ぶための接続設定と、モデル出力を表示前に検査する方法を扱った。テストとデプロイではECRのタグ上書きルール、AppConfigの配布前検証と配布後のロールバック、CloudFormationの置換前後を分けた。トラブルシューティングではLambdaの同時実行枠、DAXの整合性、RDS Proxyのセッション状態を扱った。
+
+設問を読み込み、全1,136通りの選択肢の組み合わせを採点して確認した。模試生成処理でフル256回、カスタムの全65件数を実行し、分野配分、所要時間、各回の類似グループ重複排除、全66レコードが抽選に入ることを確認した。公開前に残り80・68・56・56問を追加し、実データで重複のないフル模試5回分、旧版の履歴・途中の模試の互換、資格別レビューを確認する。
+
+- [AWS Certified Developer – Associate試験概要](https://aws.amazon.com/certification/certified-developer-associate/)
+- [DVA-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/developer-associate-03.html)
+- [DVA-C02とDVA-C03の比較](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-comparison.html)
+
+## DVA-C03の独立130問と重複なしの模試2回分
+
+AWSサービスでの開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問を追加した。第1弾の66レコードを保持し、独立候補は分野順に40・34・28・28問。累計131レコードのうち単一選択120問、複数選択11問を収録している。
+
+開発ではイベント通知のキー復号、S3の部分読み取り、Bedrockのツール結果、Kinesisの専用読み取り枠を確認した。セキュリティではRDSのIAMトークンが新規接続の認証にだけ使われる点や、CodeArtifactの二次トークンの期限、HTTP APIを相互TLS付きのカスタムドメインに限定する設定を扱った。テストとデプロイでは、変更セットの実行ごとの識別、マトリックスビルド、ECRの期限切れプレビューを追加した。障害切り分けでは、処理中上限に達したSQSの長いポーリング、RDS Proxyの貸し出し待ち、CloudFrontの言語別キャッシュを扱った。
+
+同じサービスが登場する候補は、判断に使う条件と正答を確認した。SQSの可視性の延長と上限到達の診断、API Gatewayの入力検証と入力マッピング、ECSのロールバック成立条件と失敗イベント通知にはそれぞれ異なる判断が必要になる。
+
+出典127件への到達と、全2,272通りの回答の採点を確認した。フルの生成512回、カスタム全65件数、互いに重複しないフル2回分を128組生成した。各回は65問・130分、分野配分20・17・14・14問。公開に必要な各分野5回分まで、残り60・51・42・42問。
+
+- [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
+- [CodePipelineのCloudFormationアクション](https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-CloudFormation.html)
+- [SQSの可視性と処理中メッセージ上限](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
+
+## DVA-C03の独立195問と重複なしの模試3回分
+
+開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問を追加した。既存131レコードを保持し、累計196レコードのうち独立195問、分野順に60・51・42・42問。単一選択182問、複数選択14問を収録している。
+
+開発ではSQSでフィルター対象外のメッセージが削除される条件、S3通知の同一キー内の順序、ステップの実行結果を既存入力へ追加する設定を扱った。セキュリティではKMSグラントを発行直後から利用する場合、関数URLを別アカウントへ許可する場合、推論でガードレール指定を必須にする場合を追加した。テストとデプロイではECRの既存イメージをバックフィルする手順、極力稼働数を維持するECS更新、構成に対するCDKの共通検証を扱った。障害切り分けでは、SQS標準DLQの期限の起点、ECSのコンテナ別CPU指標、CloudFrontのメソッド別フェイルオーバーを確認した。
+
+文章が近い設問について判定条件と正答を照合した。Secrets Managerの候補の昇格と、昇格後のアプリ側の再取得、DynamoDBのテナント認可と月次のキー条件、CloudFormationでの置換禁止と承認後の変更セット実行では、別の操作や条件を問う。
+
+出典191件の到達、全3,360通りの採点、フル生成512回、カスタム全65件数を確認した。65問・130分で分野配分20・17・14・14問のフル模試を、互いに重複しない3回分として128組生成した。公開条件の各分野5回分まで、残り40・34・28・28問。
+
+- [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
+- [ECRレプリケーションバックフィル](https://docs.aws.amazon.com/AmazonECR/latest/userguide/replication-backfill.html)
+- [Lambda関数URLの認可](https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html)
+
+## DVA-C03の独立260問と重複なしの模試4回分
+
+開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問を追加した。既存196レコードを維持し、累計261レコードのうち独立260問。分野順に80・68・56・56問で、単一選択239問、複数選択22問を収録した。新規の選択肢順を調整し、単一選択の正答位置はAから順に60・59・60・60問になった。
+
+開発ではAurora Data APIのトランザクション、Lambdaのストリーミング応答、BedrockのJSON構造化出力を扱った。セキュリティではGitHub OIDCで配備するブランチの限定、JWT署名鍵の移行、Cognitoの認証失敗の統一を確認した。テストとデプロイではLambdaの環境変数の競合防止、CDKの合成結果の再現、CodePipelineの本番進入条件を問う。障害切り分けではCloudFrontで応答送信中の切断を見分ける方法、DynamoDBの書き込み制限の観測単位、Database Insightsの待機とSQLを扱った。
+
+文章と正答の決め手を既存候補と照合し、イベントの途中で識別子を保持する候補と、資格情報の交互ローテーションの候補を差し替えた。Kinesisのチェックポイント直後から再開する判断と、Cognitoで利用者の存在を示さず認証失敗を返す判断を追加した。
+
+出典249件の到達と全4,528通りの採点を確認した。フル生成512回、カスタム全65件数に加え、65問・130分で分野配分20・17・14・14問を満たす互いに重複しない模試4回分を128組生成した。公開条件の各分野5回分まで、残り20・17・14・14問。
+
+- [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
+- [Aurora Data APIの操作](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.calling.cli.html)
+- [Cognitoのユーザー存在エラー制御](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pool-managing-errors.html)
+
+## DVA-C03の独立325問と重複なしの模試5回分
+
+開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問を追加した。既存261レコードを保持し、累計326レコードのうち独立325問。各分野に100・85・70・70問を揃えた。単一選択297問、複数選択29問で、単一選択の正答位置はAから順に74・74・74・75問。
+
+新規設問では、一括発行結果の個別処理、GraphQLのバッチ結果の対応順、S3バケットキーを有効にした際の暗号化コンテキスト、配備時の初期化シグナル、検索シャードのスローログなどを扱う。一次資料へ照合し、既存のDAXの設問と同じ強い整合性を問う草稿はAppSyncのバッチリゾルバーへ差し替えた。SQSのグループIDで並び順を決める問題と、重複排除IDで同じ本文の別操作を区別する問題は、それぞれ別の設計判断を問う。
+
+出典308件の取得、全5,680通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、分野配分20・17・14・14問を満たす、相互に重複のない模試5回分を128組生成した。AWSの4分野の配分は採点対象50問に適用される。教材では練習結果を解説に反映するため全65問を採点する。
+
+DVA-C02の公開ページで保存した未提出の模試と提出済み履歴を新版のビルドで開き、保存時の選択肢・制限時間を保って提出できることを確認した。新版のフル模試は日本語で開始し、英語ページで再開した。単一・複数選択を採点し、結果の分野別の合計が出題時の4分野と一致することを確認した。旧版で登録した取得済み資格は新版の査定に引き継ぐ。旧版の学習・資格詳細へのリンクは、同じ言語の新版へ転送する。
+
+- [DVA-C03公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/developer-associate-03.html)
+- [AppSyncのLambdaバッチリゾルバー](https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-lambda-js.html)
+- [S3バケットキーと暗号化コンテキスト](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html)

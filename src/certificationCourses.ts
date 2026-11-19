@@ -2,7 +2,6 @@ import type { Certification, Course } from './certificationTypes';
 
 const starterCourseIds = new Set([
   'clf-c02',
-  'dva-c02',
   'soa-c03',
   'dea-c01',
   'mla-c01',
@@ -13,6 +12,26 @@ const starterCourseIds = new Set([
   'ans-c01',
   'ai-business-strategist',
 ]);
+
+const developerMock = 'courses/dva-c03/mock-2026-11.json';
+
+export const developerCourse: Course = {
+  practice: [{ path: developerMock, label: 'saaFull' }],
+  mock: developerMock,
+  archives: ['courses/dva-c02/questions.json', 'courses/dva-c02/mock-2026-11.json'],
+  examStorageId: 'dva-c02',
+  exam: {
+    minutes: 130,
+    distribution: {
+      AWSサービスでの開発: 20,
+      セキュリティ: 17,
+      テストとデプロイ: 14,
+      トラブルシューティングと最適化: 14,
+    },
+  },
+  fixedExamFromBlueprint: true,
+  reviewedMock: true,
+};
 
 const uniqueCounts: Record<string, number> = {
   'aif-c01': 9,

@@ -31,12 +31,12 @@ export const certificationGuides: Record<string, CertificationGuide> = {
     audience: 'AWSの設計を体系的に学びたいインフラエンジニア、SRE、アプリ開発者。',
     path: 'solutions-architect-associate-03',
   },
-  'dva-c02': {
-    scope: 'AWS上のアプリケーション開発、認証と権限、デプロイ、障害調査を扱います。',
+  'dva-c03': {
+    scope: 'AWS上のアプリ開発、AI支援開発、認証と権限、テスト、デプロイ、障害調査を扱います。',
     difficulty: 3,
     why: 'Lambdaの再試行やDynamoDBの条件付き更新など、実装時の挙動まで問われます。',
     audience: 'AWSのマネージドサービスでバックエンドやサーバーレスアプリを作る開発者。',
-    path: 'developer-associate-02',
+    path: 'developer-associate-03',
   },
   'soa-c03': {
     scope: 'AWS環境の監視、信頼性、障害対応、ネットワーク、運用自動化を扱います。',
@@ -111,7 +111,7 @@ const guideLocales: Readonly<Record<string, readonly Locale[]>> = {
   'cloud-practitioner-02': ['ja', 'zh-CN', 'zh-TW', 'ko', 'pt', 'fr', 'de', 'es', 'it'],
   'ai-practitioner-01': ['ja', 'zh-CN', 'zh-TW', 'ko', 'pt', 'fr', 'de', 'es', 'it'],
   'solutions-architect-associate-03': ['ja', 'zh-CN', 'zh-TW', 'ko', 'pt', 'fr', 'es', 'it'],
-  'developer-associate-02': ['ja', 'zh-CN', 'ko', 'pt', 'es'],
+  'developer-associate-03': ['ja', 'zh-CN', 'ko', 'pt', 'es'],
   'data-engineer-associate-01': ['ja', 'zh-CN', 'ko'],
   'machine-learning-engineer-associate-01': ['ja', 'zh-CN', 'ko'],
   'solutions-architect-professional-03': ['zh-CN'],

@@ -30,7 +30,8 @@ for (const locale of locales) {
         const values = await bounds(page, '.landing-values');
         expect(entry.y).toBeGreaterThan(values.y + values.height);
         expect(values.y).toBeGreaterThan(concept.y + concept.height);
-        for (const section of [concept, values, benefits, faq]) {
+        const pitch = await bounds(page, '.landing-account-pitch');
+        for (const section of [concept, values, pitch, benefits, faq]) {
           expect(Math.abs(section.x - entry.x)).toBeLessThan(1);
           expect(Math.abs(section.width - entry.width)).toBeLessThan(1);
         }

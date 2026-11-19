@@ -8,7 +8,7 @@ import { accountPages, publishedPages } from '../src/routes.ts';
 const origin = 'https://kaq.katana-projects.org';
 const template = await readFile('dist/index.html', 'utf8');
 const indexTitles = {
-  '': 'landingTitle',
+  '': 'landingSearchTitle',
   study: 'study',
   'study/fundamentals': 'learnFundamentals',
   'study/questions': 'learnFromQuestions',

@@ -1,4 +1,5 @@
 import { AccountBenefits } from './auth/AccountBenefits';
+import { LandingAccount } from './LandingAccount';
 import { LandingFaq } from './LandingFaq';
 import { LandingPaths, LandingValues } from './LandingJourney';
 import { LandingConcept, LandingHero } from './LandingStory';
@@ -13,9 +14,10 @@ export function LandingPage() {
       <div className="shell layout-stack landing-content">
         <LandingConcept />
         <LandingValues />
+        <LandingAccount />
         <LandingPaths />
         <details className="landing-account disclosure">
-          <summary>{t('accountBenefitsEyebrow')}</summary>
+          <summary>{t('accountPrivacyTitle')}</summary>
           <AccountBenefits context="home" />
         </details>
         <LandingFaq />

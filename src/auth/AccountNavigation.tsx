@@ -65,7 +65,9 @@ export function AccountNavigation() {
             </svg>
           )}
         </span>
-        <span className="account-avatar-label">{account ? label : t('accountSignIn')}</span>
+        <span className="account-avatar-label" title={account ? label : t('accountSignIn')}>
+          {account ? label : t('accountSignIn')}
+        </span>
       </button>
       <div className="account-menu-links" id="account-menu-links" hidden={!open}>
         {account ? (

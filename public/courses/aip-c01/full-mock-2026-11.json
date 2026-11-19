@@ -2630,7 +2630,7 @@
       {
         "id": "D",
         "text": "Batch inferenceでツール呼び出しを有効にし、各レコードを複数ターンで処理する。",
-        "explanation": "Batch inferenceはツール呼び出しや複数ターンの対話をサポートしない。"
+        "explanation": "InvokeModel形式では対応モデルのツール呼び出しを利用できるが、各レコードは独立して処理される。複数ターンの対話をジョブに任せることはできず、この要約にツールも不要である。"
       }
     ],
     "correct": [
@@ -2641,7 +2641,7 @@
       "label": "AWS公式ドキュメント"
     },
     "learning": {
-      "reason": "Batch inferenceはS3を使う非同期の大量処理向けで、ツール呼び出し・構造化出力・複数ターン対話は対象外である。",
+      "reason": "Batch inferenceはS3を使う非同期の大量処理向けである。対応モデルの構造化出力はInvokeModel形式とConverse形式の両方で利用できる。ツール呼び出しはInvokeModel形式に限られ、Converse形式でtoolConfigを含めたレコードはエラーになる。",
       "concept": "オンライン推論とオフラインのBatch inferenceの使い分け"
     }
   },
@@ -15220,41 +15220,41 @@
     "category": "AIの安全性・セキュリティ・ガバナンス",
     "examDomain": "AIの安全性・セキュリティ・ガバナンス",
     "version": "AIP-C01 オリジナル問題 2026-11",
-    "similarityGroup": "bedrock-batch-data-retention",
-    "title": "バッチ推論入出力の保管先を管理する",
-    "prompt": "大量の非緊急推論を実行し、入出力を組織管理S3へ保存したい。最も適切なBedrock機能はどれか。",
+    "similarityGroup": "bedrock-batch-job-vpc-s3-endpoint",
+    "title": "BedrockのバッチジョブからS3への経路を制限する",
+    "prompt": "審査書類を要約するBedrockバッチ推論を構築する。保管先のS3バケットポリシーは、承認済みのS3 VPCエンドポイントを通るデータアクセスだけを許可する。ジョブを送信するクライアントからBedrockへの接続と、ジョブ用サービスロールの権限は設定済みである。ジョブ自身のS3読み書きを可能にする変更はどれか。",
     "choices": [
       {
         "id": "A",
-        "text": "Converseだけを使う",
-        "explanation": "バッチ処理でない。"
+        "text": "ジョブ送信用クライアントが使うBedrock API用のインターフェイスエンドポイントを追加する。",
+        "explanation": "クライアントからBedrock APIへの経路を設定する。ジョブのS3アクセス経路には影響しない。"
       },
       {
         "id": "B",
-        "text": "CloudTrailだけを使う",
-        "explanation": "推論結果保管でない。"
+        "text": "ジョブ用サービスロールに対するS3の許可を拡張し、ジョブのネットワーク構成は変更しない。",
+        "explanation": "ロールの許可を拡張しても、バケットポリシーのエンドポイント条件を満たさない。"
       },
       {
         "id": "C",
-        "text": "Model invocation batch jobのS3入出力を指定する",
-        "explanation": "バッチ推論の入力と結果をS3で管理できる。"
+        "text": "CreateModelInvocationJobのvpcConfigに、承認済みのS3 VPCエンドポイントへ到達できるサブネットとセキュリティグループを指定する。",
+        "explanation": "Bedrockは指定したVPCにネットワークインターフェイスを作成する。ジョブが承認済みエンドポイントを経由してS3へ到達できる。"
       },
       {
         "id": "D",
-        "text": "temperatureを変える",
-        "explanation": "保管先を指定しない。"
+        "text": "入出力のS3 URIに加えてSSE-KMS用のキーを指定し、ジョブのネットワーク構成は変更しない。",
+        "explanation": "SSE-KMSは保存時の暗号化を制御する。S3リクエストが通るエンドポイントは変わらない。"
       }
     ],
     "correct": [
       "C"
     ],
     "source": {
-      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/batch-inference.html",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/batch-vpc.html",
       "label": "AWS公式ドキュメント"
     },
     "learning": {
-      "reason": "非同期推論のデータ保管を統制する。",
-      "concept": "Batch inference S3"
+      "reason": "Bedrock APIへのジョブ送信と、ジョブ実行時のS3入出力には、それぞれのネットワーク経路がある。S3のアクセス条件は、ジョブのvpcConfigと承認済みエンドポイントを組み合わせて満たす。",
+      "concept": "BedrockバッチジョブのVPC設定とS3エンドポイント制限"
     }
   },
   {

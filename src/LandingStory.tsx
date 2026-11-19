@@ -32,7 +32,7 @@ export function LandingHero() {
         </div>
         <div className="landing-identity" aria-hidden="true">
           <span>KAQ</span>
-          <strong>学</strong>
+          <span className="landing-identity-mark" />
           <span>LEARN AT YOUR PACE</span>
         </div>
       </div>
@@ -58,7 +58,10 @@ export function LandingConcept() {
         </span>
         <p>{t('landingConceptIntro')}</p>
       </div>
-      <p className="landing-concept-uses">{t('landingConceptUses')}</p>
+      <div className="landing-concept-uses">
+        <h3>{t('landingUsesTitle')}</h3>
+        <p>{t('landingConceptUses')}</p>
+      </div>
     </section>
   );
 }

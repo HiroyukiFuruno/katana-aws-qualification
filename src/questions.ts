@@ -29,6 +29,9 @@ export type Question = (QuestionDetails & { format?: undefined; prompts?: never 
 export const questionKey = (question: Pick<Question, 'id' | 'revision'>) =>
   JSON.stringify([question.id, question.revision]);
 
+export const questionGroupKey = (question: Pick<Question, 'id' | 'similarityGroup'>) =>
+  question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`;
+
 export const examDomainOf = (question: Question) => question.examDomain ?? question.category;
 
 const text = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;

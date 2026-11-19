@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { certifications } from '../src/certifications.ts';
-import { examDomainOf, type Question, validQuestionFormat } from '../src/questions.ts';
+import { examDomainOf, type Question, questionGroupKey, validQuestionFormat } from '../src/questions.ts';
 
 const banks = new Map<string, Question[]>();
 async function load(path: string) {
@@ -67,11 +67,7 @@ for (const { course } of certifications) {
   for (const [category, count] of Object.entries(course.exam.distribution)) {
     const required = count * (course.reviewedMock ? 5 : 1);
     const available = new Set(
-      bank
-        .filter((question) => examDomainOf(question) === category)
-        .map((question) =>
-          question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`,
-        ),
+      bank.filter((question) => examDomainOf(question) === category).map(questionGroupKey),
     ).size;
     assert(
       available >= required,

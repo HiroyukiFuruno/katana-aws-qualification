@@ -34,4 +34,3 @@
 - Network: [RFC 4632 CIDR](https://www.rfc-editor.org/rfc/rfc4632)、[RFC 9293 TCP](https://www.rfc-editor.org/rfc/rfc9293)、[RFC 768 UDP](https://www.rfc-editor.org/rfc/rfc768)、[VPC subnet route tables](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html)
 - DNS: [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034)、[RFC 1035](https://www.rfc-editor.org/rfc/rfc1035)、[Route 53 record values and TTL](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-shared.html)
 - Delivery: [CodePipeline stages and actions](https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines.html)
-

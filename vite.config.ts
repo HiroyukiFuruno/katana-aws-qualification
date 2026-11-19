@@ -1,9 +1,17 @@
-import { defineConfig, loadEnv, type HtmlTagDescriptor } from 'vite';
+import { readFileSync } from 'node:fs';
+import { defineConfig, type HtmlTagDescriptor, loadEnv } from 'vite';
+import { catalogStats } from './scripts/catalog-stats.ts';
+import { certifications } from './src/certifications.ts';
 
 export default defineConfig(({ command, isPreview, mode }) => {
   const env = loadEnv(mode, process.cwd());
   return {
     appType: command === 'serve' && !isPreview ? 'spa' : 'mpa',
+    define: {
+      __KAQ_CATALOG_STATS__: JSON.stringify(
+        catalogStats(certifications, (path) => JSON.parse(readFileSync(`public/${path}`, 'utf8'))),
+      ),
+    },
     plugins: [
       {
         name: 'google-site-integrations',

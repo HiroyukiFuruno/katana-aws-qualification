@@ -41,6 +41,9 @@ test('all four question formats are answerable and progress survives reload', as
       await answer(page, question.correct, index === unit.questions.length - 1);
     }
     await expect(page.locator('#fundamentals-results')).toBeVisible();
+    if (!units.some((candidate) => candidate.id === unit.next)) {
+      await expect(page.getByRole('button', { name: '次の単元へ' })).toHaveCount(0);
+    }
   }
   expect([...seen].sort()).toEqual(['correct:1', 'correct:2', 'incorrect:1', 'incorrect:2']);
   await page.goto('/ja/study/fundamentals/');

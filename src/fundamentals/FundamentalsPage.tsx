@@ -82,6 +82,7 @@ export function FundamentalsPage() {
       />
     );
 
+  const nextUnit = content.units.find((candidate) => candidate.id === unit.next);
   const reviewAvailable = createSession(unit, attempts, true).questions.length > 0;
   const unanswered = hasUnansweredQuestions(unit, attempts);
   return (
@@ -107,7 +108,7 @@ export function FundamentalsPage() {
           hasReview={reviewAvailable}
           hasUnanswered={unanswered}
           onCatalog={() => openUnit('')}
-          onNext={unanswered || !unit.next ? undefined : () => openUnit(unit.next ?? '')}
+          onNext={unanswered || !nextUnit ? undefined : () => openUnit(nextUnit.id)}
           onReview={() => openUnit(unit.id, true)}
           onStudy={() => openUnit(unit.id)}
           unit={unit}

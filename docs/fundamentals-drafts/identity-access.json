@@ -1,0 +1,743 @@
+{
+  "id": "fundamentals.identity-access",
+  "order": 3,
+  "title": "認証と認可",
+  "summary": "本人確認、許可、ロール、最小権限を分けて考えます。",
+  "prerequisites": [
+    "fundamentals.cloud-concepts"
+  ],
+  "objective": "認証、認可、IAMロールと最小権限を区別して設定を判断できる。",
+  "explanation": [
+    "アクセス制御では、誰かを確認する認証と、何を許可する認可を分けます。"
+  ],
+  "example": "人にはサインインを、アプリケーションにはロールによる一時的な権限を与えます。",
+  "next": "fundamentals.data-protection",
+  "learningObjectives": [
+    {
+      "id": "authn-authz",
+      "text": "認証と認可を区別し、失敗した段階を説明できる。",
+      "sectionIds": [
+        "authn-authz"
+      ]
+    },
+    {
+      "id": "principal-role",
+      "text": "IAMのprincipalとロールが一時的な権限を得る流れを説明できる。",
+      "sectionIds": [
+        "principal-role"
+      ]
+    },
+    {
+      "id": "policy-deny",
+      "text": "ポリシーの許可と明示的拒否を区別して判断できる。",
+      "sectionIds": [
+        "policy-deny"
+      ]
+    },
+    {
+      "id": "least-privilege",
+      "text": "最小権限と一時的な認証情報でアクセスを設計できる。",
+      "sectionIds": [
+        "least-privilege"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "authn-authz",
+      "title": "認証と認可は別の問い",
+      "paragraphs": [
+        "認証は、アクセスしようとする主体が誰かを確認することです。パスワード、多要素認証、フェデレーションなどは本人や主体を確かめるための手段です。",
+        "認可は、確認済みの主体に何の操作を許可するかを決めることです。サインインできてもS3のオブジェクトを読めないなら、認証後の認可で止まっています。",
+        "障害を切り分けるときは、最初に認証が成功しているか、次に対象リソースと操作への許可があるかを順に確認します。『ログインできない』と『アクセス拒否』を同じ問題として扱いません。"
+      ],
+      "example": {
+        "scenario": "利用者はコンソールにサインインできるが、請求バケットを開けない。",
+        "steps": [
+          "サインイン成功を認証成功として確認する。",
+          "要求したS3操作と対象バケットを確認する。",
+          "その操作を許可するポリシーまたは拒否を確認する。"
+        ],
+        "outcome": "本人確認は済んでいるため、認可の問題として調べるべきです。"
+      },
+      "misconception": {
+        "claim": "サインイン成功なら、すべてのAWSリソースを操作できる。",
+        "correction": "サインインは認証です。実際の操作は別途ポリシーで認可されます。"
+      },
+      "takeaways": [
+        "認証は主体の確認です。",
+        "認可は操作への許可です。",
+        "失敗した段階を順に分けます。"
+      ],
+      "source": {
+        "label": "IAM authentication and access control",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+      }
+    },
+    {
+      "id": "principal-role",
+      "title": "principalとロール: 誰が一時的に何者になるか",
+      "paragraphs": [
+        "principalはAWSでアクションを実行できる主体です。IAMユーザー、ロール、AWSサービス、フェデレーティッドユーザーなどがprincipalになり得ます。",
+        "IAMロールは、権限ポリシーを持つIDです。ロールを引き受ける主体は、ロールに定義された権限を一時的な認証情報として使います。ロール自身に長期パスワードや長期アクセスキーはありません。",
+        "アプリケーションへ権限を渡すときは、アクセスキーをファイルへ埋め込む前に、どのprincipalがどのロールを引き受けるかを設計します。役割に応じたロールにすると、必要な期間と範囲に絞れます。"
+      ],
+      "example": {
+        "scenario": "EC2上のアプリケーションが特定バケットへ出力を保存する。",
+        "steps": [
+          "アプリケーションに必要なS3操作だけを列挙する。",
+          "その権限を持つIAMロールを作る。",
+          "EC2にロールを関連付け、アプリケーションは一時的な認証情報を使う。"
+        ],
+        "outcome": "長期アクセスキーをアプリケーション設定へ置かず、実行環境の役割に権限を結び付けられます。"
+      },
+      "misconception": {
+        "claim": "ロールは人のログイン用パスワードを保存する入れ物である。",
+        "correction": "ロールは引き受けられる権限IDです。長期パスワードやアクセスキーを持ちません。"
+      },
+      "takeaways": [
+        "principalは操作する主体です。",
+        "ロールは引き受けて使う権限IDです。",
+        "ロールは一時的な認証情報を使います。"
+      ],
+      "source": {
+        "label": "IAM roles",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+      }
+    },
+    {
+      "id": "policy-deny",
+      "title": "ポリシー: 許可だけでなく拒否を見る",
+      "paragraphs": [
+        "IAMポリシーは、principalがリソースへ行えるアクションを定義します。調査では、誰に、どのアクションを、どのリソースへ許可しているかを具体的に読みます。",
+        "許可が一つ見つかっても結論にしません。IAMの評価では明示的なDenyがAllowより優先します。したがって、境界ポリシー、組織のポリシー、リソースベースポリシーなど、適用される拒否を確認します。",
+        "AccessDeniedを調べる手順は、要求principal、action、resourceを固定し、該当Allowを確認してから、明示的Denyと条件を探すことです。表示されたサービス名だけから推測しません。"
+      ],
+      "example": {
+        "scenario": "読み取りAllowを付けたのに、特定のバケットだけAccessDeniedになる。",
+        "steps": [
+          "principal、s3:GetObject、対象バケットのキーを特定する。",
+          "Allowポリシーが対象resourceを含むか確認する。",
+          "バケットポリシーなどの明示的Denyと条件を確認する。"
+        ],
+        "outcome": "Allowの有無だけではなく、適用されるDenyを確認するので、拒否の理由を誤りません。"
+      },
+      "misconception": {
+        "claim": "Allowが一つあれば、ほかのポリシーを見なくてよい。",
+        "correction": "明示的DenyはAllowより優先します。条件と拒否も評価対象です。"
+      },
+      "takeaways": [
+        "ポリシーは主体、操作、対象を結びます。",
+        "明示的DenyはAllowより優先します。",
+        "調査は要求を具体化して行います。"
+      ],
+      "source": {
+        "label": "Policy evaluation logic",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+      }
+    },
+    {
+      "id": "least-privilege",
+      "title": "最小権限と一時的な認証情報",
+      "paragraphs": [
+        "最小権限は、仕事に必要なアクション、リソース、条件だけを許可する考え方です。最初から全リソースへの管理者権限を渡して動かすのではなく、必要な操作を観測して範囲を絞ります。",
+        "一時的な認証情報は動的に作られ、有効期限を持ちます。ロールやフェデレーションで使えるため、長期アクセスキーを配布・保管するリスクを減らす設計につながります。",
+        "実装では、人、CI、実行中アプリケーションを同じ認証情報で共有しません。主体ごとにロールを分け、期限、対象リソース、必要なアクションを確認してから許可します。"
+      ],
+      "example": {
+        "scenario": "日次CSV取込だけを行うジョブへ権限を与える。",
+        "steps": [
+          "読み取る入力バケット、書き込む出力バケット、必要な操作を列挙する。",
+          "その操作とパスに限定したロールポリシーを作る。",
+          "ジョブへロールを関連付け、定期的に実際の利用を見直す。"
+        ],
+        "outcome": "不要な削除権限や他バケットへの権限を渡さず、漏えい時の影響範囲も限定できます。"
+      },
+      "misconception": {
+        "claim": "最小権限とは、利用者を一人だけにすることである。",
+        "correction": "主体の人数ではなく、各主体に必要な操作と対象だけを与えることです。"
+      },
+      "takeaways": [
+        "必要な操作と対象を具体化します。",
+        "ロールで一時的な認証情報を使えます。",
+        "主体ごとに権限を分けます。"
+      ],
+      "source": {
+        "label": "Temporary security credentials",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-101",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "認証",
+      "prompt": "認証について正しいものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "authn-authz",
+      "sectionId": "authn-authz",
+      "application": "recall",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "アクセスする主体が誰かを確認する。",
+          "explanation": "認証は本人または主体の確認です。"
+        },
+        {
+          "id": "B",
+          "text": "S3オブジェクトへの操作を許可する。",
+          "explanation": "これは認可の判断です。"
+        },
+        {
+          "id": "C",
+          "text": "データを暗号化する。",
+          "explanation": "暗号化はデータ保護の手段です。"
+        }
+      ],
+      "source": {
+        "label": "IAM identity management",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+      },
+      "learning": {
+        "reason": "二つの段階を分けます。",
+        "concept": "認証は主体確認です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-102",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "認可の失敗",
+      "prompt": "サインイン後に特定バケットでAccessDeniedになった。最初に調べる段階として正しいものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "authn-authz",
+      "sectionId": "authn-authz",
+      "application": "apply",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "パスワード入力画面だけを調べる。",
+          "explanation": "既にサインイン済みなので、認証だけの問題とは限りません。"
+        },
+        {
+          "id": "B",
+          "text": "要求した操作、対象バケット、許可ポリシーを確認する。",
+          "explanation": "認可で必要なactionとresourceを調べます。"
+        },
+        {
+          "id": "C",
+          "text": "S3をEBSへ変更する。",
+          "explanation": "保存サービスの変更は拒否原因の確認ではありません。"
+        }
+      ],
+      "source": {
+        "label": "IAM identity management",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+      },
+      "learning": {
+        "reason": "認証後は認可を確認します。",
+        "concept": "認可は操作ごとです。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-103",
+      "revision": 2,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "段階の区別",
+      "prompt": "ログイン時に多要素認証を必須にしました。認証と認可を合わせた判断として正しいものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "authn-authz",
+      "sectionId": "authn-authz",
+      "application": "integrate",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "主体の確認は強化されますが、S3操作への許可は引き続きポリシーで管理します。",
+          "explanation": "多要素認証は主体の確認を強化します。確認済み主体に何を許すかは認可です。"
+        },
+        {
+          "id": "B",
+          "text": "多要素認証を通れば、すべてのバケットを読み書きできるようになります。",
+          "explanation": "本人確認の強化は、リソースへの操作権限を自動で追加することではありません。"
+        },
+        {
+          "id": "C",
+          "text": "認証を強化したので、対象リソースのポリシーは不要になります。",
+          "explanation": "認証と認可は別の問いなので、操作と対象への許可の管理は残ります。"
+        }
+      ],
+      "source": {
+        "label": "IAM identity management",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+      },
+      "learning": {
+        "reason": "多要素認証で誰かを確かめることと、その主体に何を許すかを分けて判断します。",
+        "concept": "認証を強化してもリソースへの認可は別に必要です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-104",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "ロール",
+      "prompt": "IAMロールについて誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "principal-role",
+      "sectionId": "principal-role",
+      "application": "recall",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "引き受けた主体に権限を与えるIDである。",
+          "explanation": "ロールには権限ポリシーを関連付けます。"
+        },
+        {
+          "id": "B",
+          "text": "長期パスワードと長期アクセスキーを必ず持つ。",
+          "explanation": "これは誤りです。ロールは長期の認証情報を持ちません。"
+        },
+        {
+          "id": "C",
+          "text": "AWSサービスが引き受けることができる。",
+          "explanation": "EC2などのサービスもロールを使えます。"
+        }
+      ],
+      "source": {
+        "label": "IAM roles",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+      },
+      "learning": {
+        "reason": "ロールの性質を押さえます。",
+        "concept": "ロールは引き受けるIDです。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-105",
+      "revision": 2,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "EC2の権限",
+      "prompt": "EC2上のアプリが特定S3バケットへ出力します。権限の渡し方として誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "principal-role",
+      "sectionId": "principal-role",
+      "application": "apply",
+      "correct": [
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "必要なS3操作だけを持つロールをEC2へ関連付ける。",
+          "explanation": "実行環境の役割へ必要最小限の権限を与えます。"
+        },
+        {
+          "id": "B",
+          "text": "アプリケーションはロールから一時的な認証情報を使う。",
+          "explanation": "長期キーを埋め込まずに実行できます。"
+        },
+        {
+          "id": "C",
+          "text": "長期アクセスキーをソースコードへ直接書く。",
+          "explanation": "これは避けるべき方法です。ロールと一時的な認証情報を使う設計に反します。"
+        }
+      ],
+      "source": {
+        "label": "IAM roles",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+      },
+      "learning": {
+        "reason": "実行環境の権限をロールで渡します。",
+        "concept": "アプリへ長期キーを埋め込みません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-106",
+      "revision": 3,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "principalの判断",
+      "prompt": "principalとロールの扱いとして誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "principal-role",
+      "sectionId": "principal-role",
+      "application": "integrate",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "人のコンソール操作にだけprincipalが存在し、EC2上のアプリには操作主体が存在しない。",
+          "explanation": "誤りです。principalは操作する主体であり、人に限りません。EC2上のアプリがロールの一時認証情報を使う要求でも、どの主体かを確認して認可します。"
+        },
+        {
+          "id": "B",
+          "text": "どの主体が操作するかを明らかにしてから権限を与える。",
+          "explanation": "principalを特定することが出発点です。"
+        },
+        {
+          "id": "C",
+          "text": "人と実行中アプリケーションを同じ長期キーで共有しない。",
+          "explanation": "主体ごとに役割を分け、一時的な認証情報を使えます。"
+        }
+      ],
+      "source": {
+        "label": "IAM roles",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+      },
+      "learning": {
+        "reason": "人と実行中アプリケーションのどちらにも操作主体があり、適切な認証情報と権限を対応させます。",
+        "concept": "principalは人だけに限定されません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-107",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "明示的Deny",
+      "prompt": "IAMポリシー評価として正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "policy-deny",
+      "sectionId": "policy-deny",
+      "application": "recall",
+      "correct": [
+        "A",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "明示的なDenyはAllowより優先する。",
+          "explanation": "評価では明示的拒否が優先されます。"
+        },
+        {
+          "id": "B",
+          "text": "Allowを一つ見つけたら他のポリシーは不要である。",
+          "explanation": "Denyや条件も確認します。"
+        },
+        {
+          "id": "C",
+          "text": "ポリシーはリソースと無関係である。",
+          "explanation": "actionとresourceを指定して評価します。"
+        },
+        {
+          "id": "D",
+          "text": "調査ではprincipal、action、resourceを具体化する。",
+          "explanation": "要求を固定して評価します。"
+        },
+        {
+          "id": "E",
+          "text": "Denyは暗号化だけに適用される。",
+          "explanation": "Denyはアクセス許可の評価に関わります。"
+        }
+      ],
+      "source": {
+        "label": "Policy evaluation logic",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+      },
+      "learning": {
+        "reason": "評価順序を理解します。",
+        "concept": "明示的Denyが優先です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-108",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "AccessDenied調査",
+      "prompt": "Allowがあるのに読み取りが拒否される。正しい調査を2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "policy-deny",
+      "sectionId": "policy-deny",
+      "application": "apply",
+      "correct": [
+        "B",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "エラーの対象を確認せず管理者権限を付ける。",
+          "explanation": "最小権限を壊し、原因も分かりません。"
+        },
+        {
+          "id": "B",
+          "text": "要求したactionとresourceがAllowに一致するか確認する。",
+          "explanation": "対象不一致を確認します。"
+        },
+        {
+          "id": "C",
+          "text": "S3を削除して作り直す。",
+          "explanation": "ポリシー評価の調査ではありません。"
+        },
+        {
+          "id": "D",
+          "text": "認証済みならDenyは無視する。",
+          "explanation": "明示的Denyは優先されます。"
+        },
+        {
+          "id": "E",
+          "text": "バケットポリシーなどの明示的Denyと条件を確認する。",
+          "explanation": "Allowがあっても拒否理由になり得ます。"
+        }
+      ],
+      "source": {
+        "label": "Policy evaluation logic",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+      },
+      "learning": {
+        "reason": "許可と拒否を両方見ます。",
+        "concept": "対象を具体化して調査します。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-109",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "許可の結論",
+      "prompt": "S3:GetObjectのAllowと、同じ対象への明示的Denyが両方ある。正しい判断を2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "policy-deny",
+      "sectionId": "policy-deny",
+      "application": "integrate",
+      "correct": [
+        "A",
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "その操作は拒否される。",
+          "explanation": "明示的DenyがAllowより優先します。"
+        },
+        {
+          "id": "B",
+          "text": "Allowがあるため必ず成功する。",
+          "explanation": "Denyを無視しており誤りです。"
+        },
+        {
+          "id": "C",
+          "text": "Denyを生むポリシーと条件を調べる。",
+          "explanation": "原因を絞る次の手順です。"
+        },
+        {
+          "id": "D",
+          "text": "認証をやり直せばDenyは消える。",
+          "explanation": "認証の再実行はポリシーのDenyを消しません。"
+        },
+        {
+          "id": "E",
+          "text": "S3はポリシー評価をしない。",
+          "explanation": "アクセスはIAMとリソースポリシー等で評価されます。"
+        }
+      ],
+      "source": {
+        "label": "Policy evaluation logic",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+      },
+      "learning": {
+        "reason": "衝突時の優先順位を適用します。",
+        "concept": "Denyが優先です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-110",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "最小権限",
+      "prompt": "最小権限について誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "least-privilege",
+      "sectionId": "least-privilege",
+      "application": "recall",
+      "correct": [
+        "B",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "必要なactionとresourceを具体化する。",
+          "explanation": "必要範囲を絞る出発点です。"
+        },
+        {
+          "id": "B",
+          "text": "動かすため、最初から全リソースへの管理者権限を渡す。",
+          "explanation": "これは誤りです。必要範囲を確認します。"
+        },
+        {
+          "id": "C",
+          "text": "主体ごとに必要な役割を分ける。",
+          "explanation": "人、CI、アプリを分けられます。"
+        },
+        {
+          "id": "D",
+          "text": "一つの長期アクセスキーを全員と全アプリで共有する。",
+          "explanation": "これは誤りです。主体の分離と追跡を損ねます。"
+        },
+        {
+          "id": "E",
+          "text": "実際の利用を見て権限を見直す。",
+          "explanation": "過剰な権限を減らす判断になります。"
+        }
+      ],
+      "source": {
+        "label": "IAM best practices",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+      },
+      "learning": {
+        "reason": "広い権限を避けます。",
+        "concept": "最小権限は必要範囲の限定です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-111",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "日次ジョブ",
+      "prompt": "日次CSV取込ジョブへ権限を与える。誤っている方法を2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "least-privilege",
+      "sectionId": "least-privilege",
+      "application": "apply",
+      "correct": [
+        "A",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "全バケットへの削除を常に許可する。",
+          "explanation": "これは誤りです。必要な読み書きに限定します。"
+        },
+        {
+          "id": "B",
+          "text": "入力と出力のバケット・パスを列挙する。",
+          "explanation": "resourceを具体化できます。"
+        },
+        {
+          "id": "C",
+          "text": "ジョブ用ロールに必要な操作だけを与える。",
+          "explanation": "主体に合わせた最小権限です。"
+        },
+        {
+          "id": "D",
+          "text": "一時的な認証情報を使えるロールを検討する。",
+          "explanation": "長期キーの配布を減らせます。"
+        },
+        {
+          "id": "E",
+          "text": "開発者個人のアクセスキーをジョブ設定へコピーする。",
+          "explanation": "これは誤りです。個人と実行環境を分けます。"
+        }
+      ],
+      "source": {
+        "label": "Temporary security credentials",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html"
+      },
+      "learning": {
+        "reason": "ジョブ固有の範囲へ絞ります。",
+        "concept": "ロールと一時的認証情報を使います。"
+      }
+    },
+    {
+      "unitId": "fundamentals.identity-access",
+      "id": "fund-iam-112",
+      "revision": 1,
+      "category": "認証と認可",
+      "version": "2026-11-learning",
+      "title": "権限設計の順序",
+      "prompt": "新しい処理の権限設計として誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "least-privilege",
+      "sectionId": "least-privilege",
+      "application": "integrate",
+      "correct": [
+        "C",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "処理が行う操作と対象を洗い出す。",
+          "explanation": "最小権限の前提です。"
+        },
+        {
+          "id": "B",
+          "text": "実行主体ごとにロールを分ける。",
+          "explanation": "権限の境界を明確にします。"
+        },
+        {
+          "id": "C",
+          "text": "障害調査を避けるため全操作を許可する。",
+          "explanation": "これは誤りです。影響範囲を広げます。"
+        },
+        {
+          "id": "D",
+          "text": "期限のない長期キーを共通設定に置く。",
+          "explanation": "これは誤りです。一時的な認証情報を検討します。"
+        },
+        {
+          "id": "E",
+          "text": "拒否や条件を含めて実際のアクセスを検証する。",
+          "explanation": "期待した範囲だけが可能か確認します。"
+        }
+      ],
+      "source": {
+        "label": "IAM best practices",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+      },
+      "learning": {
+        "reason": "権限を要件から設計します。",
+        "concept": "必要な範囲だけを許可します。"
+      }
+    }
+  ]
+}

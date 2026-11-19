@@ -1,0 +1,753 @@
+{
+  "id": "fundamentals.networking-basics",
+  "order": 5,
+  "title": "通信の基礎",
+  "summary": "IP、port、TCP/UDP、HTTP/TLSを通信段階として判断します。",
+  "prerequisites": [
+    "fundamentals.cloud-concepts"
+  ],
+  "objective": "通信の宛先、接続方式、アプリケーション、暗号化の失敗段階を説明できる。",
+  "explanation": [
+    "通信は名前解決、IP経路、port、接続方式、アプリケーションの順に切り分けます。"
+  ],
+  "example": "HTTPSに接続できない時は、DNS、IP経路、443番port、TLS、HTTPを順に確認します。",
+  "next": "fundamentals.domain-dns",
+  "learningObjectives": [
+    {
+      "id": "ip-port",
+      "text": "IPアドレスとportの役割を区別できる。",
+      "sectionIds": [
+        "ip-port"
+      ]
+    },
+    {
+      "id": "transport",
+      "text": "TCPとUDPを接続・信頼性の観点で比較できる。",
+      "sectionIds": [
+        "transport"
+      ]
+    },
+    {
+      "id": "http-tls",
+      "text": "HTTPとTLSの役割を区別できる。",
+      "sectionIds": [
+        "http-tls"
+      ]
+    },
+    {
+      "id": "diagnosis",
+      "text": "通信失敗を段階ごとに切り分けられる。",
+      "sectionIds": [
+        "diagnosis"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "ip-port",
+      "title": "IPとport: 機械とサービスを指定する",
+      "paragraphs": [
+        "IPアドレスはネットワーク上で届け先の機械またはネットワークインターフェースを識別するための宛先です。IPだけでは、その機械のどのサービスへ渡すかは決まりません。",
+        "portは同じIP上の通信先サービスを区別する番号です。WebサーバーがHTTPSを受ける443番portのように、クライアントはIPとportの組み合わせへ接続します。",
+        "到達できないときは、名前からIPを得られるか、IPへの経路があるか、目的portへの許可と待受があるかを分けます。IPを知っているだけでアプリケーションへ届くとは限りません。"
+      ],
+      "example": {
+        "scenario": "社内からWebアプリへ接続できない。",
+        "steps": [
+          "名前解決結果のIPを確認する。",
+          "そのIPまでの経路を確認する。",
+          "443番portへの許可とサービス待受を確認する。"
+        ],
+        "outcome": "宛先、経路、サービスのどこで止まるかを混同せずに調べられます。"
+      },
+      "misconception": {
+        "claim": "IPアドレスが分かれば、どのアプリケーションにも接続できる。",
+        "correction": "portがサービスを区別します。IPとportの両方を確認します。"
+      },
+      "takeaways": [
+        "IPは届け先を示します。",
+        "portは同一IP上のサービスを区別します。",
+        "経路とport許可を別に確認します。"
+      ],
+      "source": {
+        "label": "IANA service names and port numbers",
+        "url": "https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml"
+      }
+    },
+    {
+      "id": "transport",
+      "title": "TCPとUDP: 接続と配送の性質",
+      "paragraphs": [
+        "TCPは接続を確立し、順序と到達を扱うトランスポートプロトコルです。Web通信のように、失われたデータを検出し順序どおりに扱いたい場合に使われます。",
+        "UDPはデータグラムを送る方式で、TCPのような接続確立や再送・順序制御をプロトコルとして提供しません。低遅延を優先する用途では、必要な制御をアプリケーション側で考えます。",
+        "選択では『TCPは速くない、UDPは速い』だけで決めません。順序、再送、接続管理をどこで担うかと、用途が必要とする性質を確認します。"
+      ],
+      "example": {
+        "scenario": "動画会議の音声で一部のパケットが遅れて届く。",
+        "steps": [
+          "遅延した古い音声が価値を持つかを考える。",
+          "順序・再送を通信方式が担う必要を確認する。",
+          "用途の遅延許容度から方式を選ぶ。"
+        ],
+        "outcome": "すべてを完全に再送するより現在の音声を優先する用途では、UDPの性質を比較できます。"
+      },
+      "misconception": {
+        "claim": "UDPは必ずデータを順序どおりに届ける。",
+        "correction": "UDPはTCPのような順序・再送保証を提供しません。"
+      },
+      "takeaways": [
+        "TCPは接続と信頼性を扱います。",
+        "UDPは接続確立と再送を提供しません。",
+        "必要な配送性質から選びます。"
+      ],
+      "source": {
+        "label": "RFC 9293: Transmission Control Protocol",
+        "url": "https://www.rfc-editor.org/rfc/rfc9293"
+      }
+    },
+    {
+      "id": "http-tls",
+      "title": "HTTPとTLS: 要求の意味と通信路の保護",
+      "paragraphs": [
+        "HTTPはクライアントとサーバーが要求と応答を交換するためのアプリケーションプロトコルです。GETやPOST、状態コードはHTTPの意味です。",
+        "TLSは通信する相手の認証、機密性、完全性を提供するプロトコルです。HTTPSはHTTPをTLSで保護した通信で、HTTPのURLや応答の意味そのものを定義するものではありません。",
+        "障害時は、TCP接続が成立するか、TLSハンドシェイクが成立するか、HTTP応答が返るかを順に確認します。証明書の問題をHTTPの404と同じ段階で扱いません。"
+      ],
+      "example": {
+        "scenario": "https URLへ接続すると証明書エラーになる。",
+        "steps": [
+          "名前とIP、443番portへの接続を確認する。",
+          "TLSの証明書とホスト名を確認する。",
+          "TLS成立後にHTTP応答を確認する。"
+        ],
+        "outcome": "HTTPアプリケーションのエラーではなくTLS段階の問題として切り分けられます。"
+      },
+      "misconception": {
+        "claim": "TLSはHTTPの404を直すプロトコルである。",
+        "correction": "TLSは通信路を保護します。404はHTTPでリソースが見つからないという応答です。"
+      },
+      "takeaways": [
+        "HTTPは要求と応答の意味を定めます。",
+        "TLSは通信路を保護します。",
+        "TLSとHTTPの失敗を分けます。"
+      ],
+      "source": {
+        "label": "RFC 8446: TLS 1.3",
+        "url": "https://www.rfc-editor.org/rfc/rfc8446"
+      }
+    },
+    {
+      "id": "diagnosis",
+      "title": "切り分け: 外側から内側へ段階を固定する",
+      "paragraphs": [
+        "通信不良を一度に『ネットワーク障害』と呼ぶと、原因を絞れません。利用者が使った名前、DNSの結果、IP経路、security groupなどのport許可、TCP/UDP、TLS、HTTP応答を順に分けます。",
+        "各段階で観測する事実を固定します。DNSが名前をIPへ解決できないなら、まだportやHTTPを調べる段階ではありません。TCP接続が拒否されるなら、HTTPアプリケーションの処理まで到達していません。",
+        "変更は原因の仮説に対応させます。port許可を広げる前に、必要な宛先とportか、サービスが待ち受けているかを確認し、修正後に同じ段階の観測を再実行します。"
+      ],
+      "example": {
+        "scenario": "利用者がhttps://app.exampleへ接続できない。",
+        "steps": [
+          "DNSで名前が期待するIPへ解決されるか確認する。",
+          "IPと443番portへ接続できるか確認する。",
+          "TLS、次にHTTP応答を確認する。"
+        ],
+        "outcome": "最初に失敗する段階を特定するため、不必要なアプリ改修や広いネットワーク許可を避けられます。"
+      },
+      "misconception": {
+        "claim": "HTTP応答がない時は最初にアプリケーションを再デプロイすべきである。",
+        "correction": "DNSや経路、port、TLSを順に確認してから、到達した段階を調べます。"
+      },
+      "takeaways": [
+        "名前からHTTPまで段階を分けます。",
+        "最初の失敗地点を特定します。",
+        "変更後も同じ観測で確認します。"
+      ],
+      "source": {
+        "label": "RFC 9110: HTTP Semantics",
+        "url": "https://www.rfc-editor.org/rfc/rfc9110"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-001",
+      "revision": 2,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "IP",
+      "prompt": "IPアドレスの役割として正しいものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "ip-port",
+      "sectionId": "ip-port",
+      "application": "recall",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "通信の届け先を識別する。",
+          "explanation": "IPはネットワーク上の宛先です。"
+        },
+        {
+          "id": "B",
+          "text": "同一機械のサービスを区別する。",
+          "explanation": "これはportの役割です。"
+        },
+        {
+          "id": "C",
+          "text": "HTTP応答を暗号化する。",
+          "explanation": "これはTLSの役割です。"
+        }
+      ],
+      "source": {
+        "label": "RFC 8200: IPv6",
+        "url": "https://www.rfc-editor.org/rfc/rfc8200"
+      },
+      "learning": {
+        "reason": "宛先とサービスを分けます。",
+        "concept": "IPは宛先です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-002",
+      "revision": 2,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "port",
+      "prompt": "同じIP上のHTTPSサービスへ接続するために確認するものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "ip-port",
+      "sectionId": "ip-port",
+      "application": "apply",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "バケット名だけ",
+          "explanation": "保存先の名前は接続portを示しません。"
+        },
+        {
+          "id": "B",
+          "text": "443番portへの許可と待受",
+          "explanation": "HTTPSで一般的に使うサービスportと待受を確認します。"
+        },
+        {
+          "id": "C",
+          "text": "KMS鍵だけ",
+          "explanation": "鍵は暗号化キー管理であり接続先ではありません。"
+        }
+      ],
+      "source": {
+        "label": "IANA service names and port numbers",
+        "url": "https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml"
+      },
+      "learning": {
+        "reason": "サービスはportで区別します。",
+        "concept": "IPだけでは不十分です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-101",
+      "revision": 1,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "宛先とport",
+      "prompt": "IPとportの説明として誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "ip-port",
+      "sectionId": "ip-port",
+      "application": "integrate",
+      "correct": [
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "IP到達とport許可を別に確認する。",
+          "explanation": "失敗地点を分けられます。"
+        },
+        {
+          "id": "B",
+          "text": "同一IP上でもportでサービスを分けられる。",
+          "explanation": "portはサービスを区別します。"
+        },
+        {
+          "id": "C",
+          "text": "IPが分かればportの許可や待受は不要である。",
+          "explanation": "これは誤りです。サービスへの接続にはportも必要です。"
+        }
+      ],
+      "source": {
+        "label": "IANA service names and port numbers",
+        "url": "https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml"
+      },
+      "learning": {
+        "reason": "二つの要素を混同しません。",
+        "concept": "IPとportで接続先を定めます。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-102",
+      "revision": 1,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "TCP",
+      "prompt": "TCPについて誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "transport",
+      "sectionId": "transport",
+      "application": "recall",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "接続を確立してデータを扱う。",
+          "explanation": "TCPは接続指向です。"
+        },
+        {
+          "id": "B",
+          "text": "順序や再送をまったく扱わない。",
+          "explanation": "これは誤りです。TCPは信頼性と順序を扱います。"
+        },
+        {
+          "id": "C",
+          "text": "Web通信で使われることがある。",
+          "explanation": "HTTP通信の下位で使われます。"
+        }
+      ],
+      "source": {
+        "label": "RFC 9293: Transmission Control Protocol",
+        "url": "https://www.rfc-editor.org/rfc/rfc9293"
+      },
+      "learning": {
+        "reason": "TCPの性質を確認します。",
+        "concept": "TCPは接続と信頼性を扱います。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-103",
+      "revision": 2,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "UDPの判断",
+      "prompt": "低遅延の音声で遅れた古いパケットの価値が低いとき、通信方式の判断として誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "transport",
+      "sectionId": "transport",
+      "application": "apply",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "UDPは必ず順序と再送を提供するため最適である。",
+          "explanation": "これは誤りです。UDPはそれらをプロトコルとして提供しません。"
+        },
+        {
+          "id": "B",
+          "text": "遅延許容度と必要な配送性質を確認する。",
+          "explanation": "用途の性質から方式を選びます。"
+        },
+        {
+          "id": "C",
+          "text": "必要な制御をどこで担うか考える。",
+          "explanation": "UDPではアプリ側の設計も関わります。"
+        }
+      ],
+      "source": {
+        "label": "RFC 768: User Datagram Protocol",
+        "url": "https://www.rfc-editor.org/rfc/rfc768"
+      },
+      "learning": {
+        "reason": "UDPを単純な高速版と扱いません。",
+        "concept": "UDPは接続・再送を提供しません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-104",
+      "revision": 2,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "配送性質",
+      "prompt": "TCPとUDPのどちらを検討するかを決める出発点として、最も適切なものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "transport",
+      "sectionId": "transport",
+      "application": "integrate",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "順序、到達、再送を通信方式で扱う必要があるかを確認する。",
+          "explanation": "TCP/UDPの違いは配送性質にあるため、必要な保証を先に確認します。"
+        },
+        {
+          "id": "B",
+          "text": "UDPはTCPより常に正しい選択である。",
+          "explanation": "誤りです。用途ごとに必要な配送性質が異なります。"
+        },
+        {
+          "id": "C",
+          "text": "TCPはportを使わない。",
+          "explanation": "誤りです。TCPもportを使ってサービスを区別します。"
+        },
+        {
+          "id": "D",
+          "text": "遅延したデータの価値は方式選択に関係しない。",
+          "explanation": "誤りです。音声のように古いデータの価値が低い用途では重要な判断材料です。"
+        },
+        {
+          "id": "E",
+          "text": "方式を選べばアプリケーションの要件は不要になる。",
+          "explanation": "誤りです。方式は用途の要件から選びます。"
+        }
+      ],
+      "source": {
+        "label": "RFC 9293: Transmission Control Protocol",
+        "url": "https://www.rfc-editor.org/rfc/rfc9293"
+      },
+      "learning": {
+        "reason": "性質から選びます。",
+        "concept": "TCPとUDPは用途で比較します。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-105",
+      "revision": 1,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "HTTPとTLS",
+      "prompt": "HTTPとTLSについて正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "http-tls",
+      "sectionId": "http-tls",
+      "application": "recall",
+      "correct": [
+        "B",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "TLSはHTTPの404を定義する。",
+          "explanation": "404はHTTP応答です。"
+        },
+        {
+          "id": "B",
+          "text": "HTTPは要求と応答の意味を定める。",
+          "explanation": "メソッドや状態コードはHTTPです。"
+        },
+        {
+          "id": "C",
+          "text": "TLSはIPアドレスを割り当てる。",
+          "explanation": "IP割当の役割ではありません。"
+        },
+        {
+          "id": "D",
+          "text": "HTTPは必ず通信路を暗号化する。",
+          "explanation": "暗号化はTLSで行います。"
+        },
+        {
+          "id": "E",
+          "text": "TLSは通信路の機密性と完全性を提供する。",
+          "explanation": "HTTPSでHTTPを保護します。"
+        }
+      ],
+      "source": {
+        "label": "RFC 8446: TLS 1.3",
+        "url": "https://www.rfc-editor.org/rfc/rfc8446"
+      },
+      "learning": {
+        "reason": "層の役割を分けます。",
+        "concept": "HTTPの意味とTLSの保護です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-106",
+      "revision": 1,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "証明書エラー",
+      "prompt": "https接続時の証明書エラーで正しい確認を2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "http-tls",
+      "sectionId": "http-tls",
+      "application": "apply",
+      "correct": [
+        "A",
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "TLSの証明書とホスト名を確認する。",
+          "explanation": "TLS段階の確認です。"
+        },
+        {
+          "id": "B",
+          "text": "HTTP 404だけを確認する。",
+          "explanation": "TLS成立前はHTTP応答まで到達していないことがあります。"
+        },
+        {
+          "id": "C",
+          "text": "IPと443番portへの接続も確認する。",
+          "explanation": "TLSの前段も確認します。"
+        },
+        {
+          "id": "D",
+          "text": "S3オブジェクトのキーを変更する。",
+          "explanation": "証明書の問題とは無関係です。"
+        },
+        {
+          "id": "E",
+          "text": "KMS鍵を削除する。",
+          "explanation": "TLS証明書の診断ではありません。"
+        }
+      ],
+      "source": {
+        "label": "RFC 8446: TLS 1.3",
+        "url": "https://www.rfc-editor.org/rfc/rfc8446"
+      },
+      "learning": {
+        "reason": "TLS段階を切り分けます。",
+        "concept": "証明書はHTTPとは別です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-107",
+      "revision": 1,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "HTTPSの層",
+      "prompt": "HTTPS障害の判断として正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "http-tls",
+      "sectionId": "http-tls",
+      "application": "integrate",
+      "correct": [
+        "B",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "TLS失敗をHTTPのアプリ処理として扱う。",
+          "explanation": "層を混同しています。"
+        },
+        {
+          "id": "B",
+          "text": "TCP接続、TLS、HTTP応答を順に確認する。",
+          "explanation": "到達段階を分けます。"
+        },
+        {
+          "id": "C",
+          "text": "TLSが成功すれば必ずHTTP 200になる。",
+          "explanation": "HTTPのリソース処理は別です。"
+        },
+        {
+          "id": "D",
+          "text": "404はHTTP応答として原因を調べる。",
+          "explanation": "TLSではなくHTTP段階です。"
+        },
+        {
+          "id": "E",
+          "text": "DNSはTLS証明書を発行する。",
+          "explanation": "DNSの役割ではありません。"
+        }
+      ],
+      "source": {
+        "label": "RFC 9110: HTTP Semantics",
+        "url": "https://www.rfc-editor.org/rfc/rfc9110"
+      },
+      "learning": {
+        "reason": "層ごとに観測します。",
+        "concept": "HTTPSは複数段階です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-108",
+      "revision": 1,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "切り分け順",
+      "prompt": "通信不良の切り分けとして誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "diagnosis",
+      "sectionId": "diagnosis",
+      "application": "recall",
+      "correct": [
+        "A",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "DNS失敗でも直ちにHTTPアプリを再デプロイする。",
+          "explanation": "これは誤りです。最初の失敗段階を確認します。"
+        },
+        {
+          "id": "B",
+          "text": "名前解決、経路、port、TLS、HTTPを分ける。",
+          "explanation": "段階ごとに切り分けます。"
+        },
+        {
+          "id": "C",
+          "text": "要求した名前と期待IPを確認する。",
+          "explanation": "DNS段階の観測です。"
+        },
+        {
+          "id": "D",
+          "text": "TCP拒否ならport許可と待受を確認する。",
+          "explanation": "接続段階の調査です。"
+        },
+        {
+          "id": "E",
+          "text": "原因不明ならすべてのportを開放する。",
+          "explanation": "これは誤りです。必要な宛先とportを確認します。"
+        }
+      ],
+      "source": {
+        "label": "RFC 9110: HTTP Semantics",
+        "url": "https://www.rfc-editor.org/rfc/rfc9110"
+      },
+      "learning": {
+        "reason": "広い変更を避けます。",
+        "concept": "最初の失敗地点を特定します。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-109",
+      "revision": 3,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "DNS失敗",
+      "prompt": "名前がIPへ解決できません。調査の進め方として誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "diagnosis",
+      "sectionId": "diagnosis",
+      "application": "apply",
+      "correct": [
+        "A",
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "まずHTTP 404を調べる。",
+          "explanation": "HTTP到達前にDNSで止まっています。"
+        },
+        {
+          "id": "B",
+          "text": "問い合わせた名前とDNS結果を確認する。",
+          "explanation": "名前解決段階を調べます。"
+        },
+        {
+          "id": "C",
+          "text": "TLS証明書を再発行すればDNSが直る。",
+          "explanation": "TLSはDNSの解決を行いません。"
+        },
+        {
+          "id": "D",
+          "text": "DNS設定を直した後に同じ名前解決を再確認する。",
+          "explanation": "修正した段階を再観測します。"
+        },
+        {
+          "id": "E",
+          "text": "問い合わせ先のDNSサーバーと返されたエラーを確認する。",
+          "explanation": "名前解決の問い合わせ先と応答を確認し、失敗している段階を絞り込みます。"
+        }
+      ],
+      "source": {
+        "label": "RFC 1034: Domain names",
+        "url": "https://www.rfc-editor.org/rfc/rfc1034"
+      },
+      "learning": {
+        "reason": "最初の段階から直します。",
+        "concept": "DNS失敗時はHTTPを調べません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.networking-basics",
+      "id": "fund-network-110",
+      "revision": 1,
+      "category": "通信",
+      "version": "2026-11-learning",
+      "title": "再現可能な診断",
+      "prompt": "修正後の通信確認として誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "diagnosis",
+      "sectionId": "diagnosis",
+      "application": "integrate",
+      "correct": [
+        "C",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "同じ名前、port、要求で再確認する。",
+          "explanation": "変更前後を比較できます。"
+        },
+        {
+          "id": "B",
+          "text": "最初の失敗段階が解消したか確認する。",
+          "explanation": "原因仮説を検証できます。"
+        },
+        {
+          "id": "C",
+          "text": "偶然一度成功したら段階を記録しない。",
+          "explanation": "これは誤りです。観測を残します。"
+        },
+        {
+          "id": "D",
+          "text": "必要な許可だけを変更したか確認する。",
+          "explanation": "過剰な公開を避けます。"
+        },
+        {
+          "id": "E",
+          "text": "失敗が怖いので診断なしに設定を全開放する。",
+          "explanation": "これは誤りです。影響範囲を広げます。"
+        }
+      ],
+      "source": {
+        "label": "RFC 9110: HTTP Semantics",
+        "url": "https://www.rfc-editor.org/rfc/rfc9110"
+      },
+      "learning": {
+        "reason": "仮説を観測で確かめます。",
+        "concept": "同じ段階を再テストします。"
+      }
+    }
+  ]
+}

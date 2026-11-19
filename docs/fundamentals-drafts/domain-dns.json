@@ -1,0 +1,753 @@
+{
+  "id": "fundamentals.domain-dns",
+  "order": 6,
+  "title": "ドメインとDNS",
+  "summary": "名前解決、レコード、TTL、HTTP/TLSとの境界を判断します。",
+  "prerequisites": [
+    "fundamentals.networking-basics"
+  ],
+  "objective": "DNSの名前解決とレコード、TTLの影響を説明し、HTTP/TLSと切り分けできる。",
+  "explanation": [
+    "DNSは名前を情報へ対応付ける仕組みで、Web応答や証明書そのものではありません。"
+  ],
+  "example": "IP変更前にTTLを下げ、変更後はキャッシュ期限を考慮してDNS結果を確認します。",
+  "next": "fundamentals.cidr-subnets",
+  "learningObjectives": [
+    {
+      "id": "resolution",
+      "text": "名前解決の問い合わせと権威DNSの役割を説明できる。",
+      "sectionIds": [
+        "resolution"
+      ]
+    },
+    {
+      "id": "records",
+      "text": "A、AAAA、CNAME、NSの用途を区別できる。",
+      "sectionIds": [
+        "records"
+      ]
+    },
+    {
+      "id": "ttl",
+      "text": "TTLとキャッシュの反映時間の関係を判断できる。",
+      "sectionIds": [
+        "ttl"
+      ]
+    },
+    {
+      "id": "boundary",
+      "text": "DNS、IP接続、TLS、HTTPの失敗を分けられる。",
+      "sectionIds": [
+        "boundary"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "resolution",
+      "title": "名前解決: 名前から次の問いへ進む",
+      "paragraphs": [
+        "DNSは人が使う名前を、IPアドレスや他のDNS情報に対応付ける分散した仕組みです。クライアントは通常、リゾルバへ名前を問い合わせ、必要に応じて権威サーバーの情報を参照します。",
+        "権威DNSは、そのゾーンのレコードを管理する情報源です。名前解決が失敗したときは、問い合わせた名前、委任、NSレコード、権威側のレコードを順に確認します。",
+        "DNSがIPを返しても、Webアプリケーションが正常とは限りません。名前解決は接続の前段であり、次にIP経路、port、TLS、HTTPを確認します。"
+      ],
+      "example": {
+        "scenario": "app.example.comが解決できない。",
+        "steps": [
+          "問い合わせた完全な名前を確認する。",
+          "ゾーンのNS委任と権威側レコードを確認する。",
+          "期待した応答になった後にIP接続を確認する。"
+        ],
+        "outcome": "名前の管理問題とWebアプリ問題を分離できます。"
+      },
+      "misconception": {
+        "claim": "DNSがIPを返せばWebページは必ず表示される。",
+        "correction": "DNSは名前解決だけです。経路、TLS、HTTPは別に成功する必要があります。"
+      },
+      "takeaways": [
+        "DNSは名前を情報へ対応付けます。",
+        "権威DNSはゾーンの情報源です。",
+        "解決後も通信段階があります。"
+      ],
+      "source": {
+        "label": "RFC 1034: Domain names",
+        "url": "https://www.rfc-editor.org/rfc/rfc1034"
+      }
+    },
+    {
+      "id": "records",
+      "title": "レコード: 何を対応付けるか",
+      "paragraphs": [
+        "Aレコードは名前をIPv4アドレスへ、AAAAレコードはIPv6アドレスへ対応付けます。クライアントがIP宛先を得るために使います。",
+        "CNAMEレコードは名前を別の名前の別名として扱います。最終的な宛先のIPは、その別名先の名前解決で得ます。CNAME自体がIPアドレスを直接持つものではありません。",
+        "NSレコードはゾーンを扱うネームサーバーを示します。IPをWebサービスへ向けるA/AAAA、名前の別名を作るCNAME、委任先を示すNSを目的で区別します。"
+      ],
+      "example": {
+        "scenario": "www.example.comを新しいホスト名へ向けたい。",
+        "steps": [
+          "接続先が固定IPか別の名前かを確認する。",
+          "別の名前へ向ける要件ならCNAMEを検討する。",
+          "ゾーンの委任先を変える必要がある場合だけNSを扱う。"
+        ],
+        "outcome": "レコード名ではなく対応付けたい情報から選べます。"
+      },
+      "misconception": {
+        "claim": "NSレコードはWebサーバーのIPv4アドレスを示す。",
+        "correction": "NSはゾーンを扱うネームサーバーを示します。IPv4アドレスはAレコードです。"
+      },
+      "takeaways": [
+        "AはIPv4、AAAAはIPv6です。",
+        "CNAMEは別名です。",
+        "NSは委任先を示します。"
+      ],
+      "source": {
+        "label": "Route 53 DNS concepts",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html"
+      }
+    },
+    {
+      "id": "ttl",
+      "title": "TTL: キャッシュが情報を使い続ける時間",
+      "paragraphs": [
+        "TTLはDNSリゾルバがレコードをキャッシュし、再問い合わせせず使える秒数です。レコードを変更しても、すでにキャッシュした利用者が直ちに新しい値を見るとは限りません。",
+        "短いTTLは変更を早く反映させやすい一方、問い合わせ数を増やします。長いTTLはキャッシュ応答を使いやすい一方、変更の反映を待つ時間が長くなります。",
+        "IP変更を計画するなら、変更直前ではなく前もってTTLを下げ、旧TTLの期限を考慮します。変更後は期待値を権威側とリゾルバ側で確認してからTTLを戻します。"
+      ],
+      "example": {
+        "scenario": "翌日にWebのIPを変更する。",
+        "steps": [
+          "現在のTTLと変更可能な待ち時間を確認する。",
+          "事前にTTLを短くし、旧TTLが切れるまで待つ。",
+          "IP変更後に名前解決結果を確認し、安定後にTTLを再設定する。"
+        ],
+        "outcome": "キャッシュが残る期間を予定へ入れるため、反映遅延を障害と誤認しにくくなります。"
+      },
+      "misconception": {
+        "claim": "DNSレコードを保存した瞬間、世界中の利用者のキャッシュが消える。",
+        "correction": "既存キャッシュはTTLまで有効です。変更計画に待ち時間を含めます。"
+      },
+      "takeaways": [
+        "TTLはキャッシュ可能時間です。",
+        "短いTTLと長いTTLにはトレードオフがあります。",
+        "変更前に旧TTLを考慮します。"
+      ],
+      "source": {
+        "label": "Route 53 DNS TTL best practices",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/best-practices-dns.html"
+      }
+    },
+    {
+      "id": "boundary",
+      "title": "DNSは入口: HTTPとTLSは別の責務",
+      "paragraphs": [
+        "DNSは名前をIPなどの情報へ解決します。TCP接続、TLS証明書の検証、HTTP応答はDNSの後の段階であり、それぞれ別の原因で失敗します。",
+        "名前解決が失敗するなら、HTTPの404やアプリログを最初に調べても原因へ届きません。逆にDNSが正しくても、443番portが閉じていればHTTPS接続はできません。",
+        "調査では、名前解決の応答、IP/port接続、TLS、HTTP応答を観測として分けます。変更も原因の段階にだけ加え、DNSの問題を広いネットワーク許可で隠しません。"
+      ],
+      "example": {
+        "scenario": "DNSは期待IPを返すが、ブラウザで証明書エラーになる。",
+        "steps": [
+          "DNS成功を記録する。",
+          "443番portへの接続とTLS証明書のホスト名を確認する。",
+          "TLS成立後にHTTP応答を確認する。"
+        ],
+        "outcome": "DNS設定を繰り返し変更せず、TLS段階を調査できます。"
+      },
+      "misconception": {
+        "claim": "証明書エラーはDNSレコードを変えれば必ず直る。",
+        "correction": "証明書はTLSの問題です。DNS成功後の段階として確認します。"
+      },
+      "takeaways": [
+        "DNS、接続、TLS、HTTPは別です。",
+        "最初の失敗段階を特定します。",
+        "原因に対応した変更だけを行います。"
+      ],
+      "source": {
+        "label": "RFC 8446: TLS 1.3",
+        "url": "https://www.rfc-editor.org/rfc/rfc8446"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-001",
+      "revision": 2,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "DNS",
+      "prompt": "DNSの役割として正しいものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "resolution",
+      "sectionId": "resolution",
+      "application": "recall",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "名前をIPなどの情報へ対応付ける。",
+          "explanation": "DNSは名前解決を行います。"
+        },
+        {
+          "id": "B",
+          "text": "HTTP本文を返す。",
+          "explanation": "HTTPは別のプロトコルです。"
+        },
+        {
+          "id": "C",
+          "text": "TLS証明書を検証する。",
+          "explanation": "TLSの役割です。"
+        }
+      ],
+      "source": {
+        "label": "RFC 1034",
+        "url": "https://www.rfc-editor.org/rfc/rfc1034"
+      },
+      "learning": {
+        "reason": "DNSの境界を知ります。",
+        "concept": "DNSは名前解決です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-002",
+      "revision": 2,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "解決失敗",
+      "prompt": "名前が解決できない時に最初に確認するものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "resolution",
+      "sectionId": "resolution",
+      "application": "apply",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "HTTP 404",
+          "explanation": "HTTPへ到達前にDNSで止まっています。"
+        },
+        {
+          "id": "B",
+          "text": "問い合わせた名前とNS委任",
+          "explanation": "名前解決の構成を確認します。"
+        },
+        {
+          "id": "C",
+          "text": "KMS鍵",
+          "explanation": "暗号化キーはDNSの要因ではありません。"
+        }
+      ],
+      "source": {
+        "label": "RFC 1034",
+        "url": "https://www.rfc-editor.org/rfc/rfc1034"
+      },
+      "learning": {
+        "reason": "前段から調べます。",
+        "concept": "DNS失敗時は名前と委任です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-101",
+      "revision": 1,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "解決の範囲",
+      "prompt": "DNSについて誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "resolution",
+      "sectionId": "resolution",
+      "application": "integrate",
+      "correct": [
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "権威DNSはゾーンのレコード情報源である。",
+          "explanation": "ゾーン情報を提供します。"
+        },
+        {
+          "id": "B",
+          "text": "解決後もIP接続を確認する。",
+          "explanation": "通信の次段階です。"
+        },
+        {
+          "id": "C",
+          "text": "DNSがIPを返せばHTTPは必ず成功する。",
+          "explanation": "これは誤りです。接続、TLS、HTTPは別です。"
+        }
+      ],
+      "source": {
+        "label": "RFC 1034",
+        "url": "https://www.rfc-editor.org/rfc/rfc1034"
+      },
+      "learning": {
+        "reason": "解決の後を意識します。",
+        "concept": "DNS成功はWeb成功ではありません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-102",
+      "revision": 1,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "AとAAAA",
+      "prompt": "DNSレコードについて誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "records",
+      "sectionId": "records",
+      "application": "recall",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "Aは名前をIPv4へ対応付ける。",
+          "explanation": "AはIPv4です。"
+        },
+        {
+          "id": "B",
+          "text": "AAAAはIPv4アドレスを示す。",
+          "explanation": "これは誤りです。AAAAはIPv6です。"
+        },
+        {
+          "id": "C",
+          "text": "CNAMEは別の名前への別名である。",
+          "explanation": "CNAMEは別名を表します。"
+        }
+      ],
+      "source": {
+        "label": "Route 53 DNS concepts",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html"
+      },
+      "learning": {
+        "reason": "対応先を区別します。",
+        "concept": "A/AAAAはIPの世代が異なります。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-103",
+      "revision": 2,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "別名",
+      "prompt": "wwwを別のホスト名へ向けたいとき、レコードの選び方として誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "records",
+      "sectionId": "records",
+      "application": "apply",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "NSでWebサーバーのIPv4を設定する。",
+          "explanation": "これは誤りです。NSは委任先でありIPv4はAです。"
+        },
+        {
+          "id": "B",
+          "text": "別の名前へ向けるならCNAMEを検討する。",
+          "explanation": "CNAMEは別名です。"
+        },
+        {
+          "id": "C",
+          "text": "固定IPv4ならAを検討する。",
+          "explanation": "AはIPv4への対応です。"
+        }
+      ],
+      "source": {
+        "label": "Route 53 DNS concepts",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html"
+      },
+      "learning": {
+        "reason": "用途からレコードを選びます。",
+        "concept": "NSはIPレコードではありません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-104",
+      "revision": 2,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "レコードの選択",
+      "prompt": "IPv6アドレスへ名前を対応付けたい。最も適切なレコードを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "records",
+      "sectionId": "records",
+      "application": "integrate",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "AAAAレコードを検討する。",
+          "explanation": "AAAAレコードは名前をIPv6アドレスへ対応付けます。"
+        },
+        {
+          "id": "B",
+          "text": "CNAMEレコードを使えばIPv6アドレスを直接記録できる。",
+          "explanation": "誤りです。CNAMEは別の名前への別名で、IPアドレスを直接記録しません。"
+        },
+        {
+          "id": "C",
+          "text": "NSレコードでTLS証明書を示す。",
+          "explanation": "誤りです。NSはゾーンを扱うネームサーバーを示します。"
+        },
+        {
+          "id": "D",
+          "text": "NSレコードでWebサーバーのIPv6アドレスを指定する。",
+          "explanation": "誤りです。NSは委任先のネームサーバーであり、宛先IPv6はAAAAで扱います。"
+        },
+        {
+          "id": "E",
+          "text": "Aレコードを使えばIPv6アドレスを直接記録できる。",
+          "explanation": "誤りです。AレコードはIPv4アドレスを扱います。"
+        }
+      ],
+      "source": {
+        "label": "Route 53 DNS concepts",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html"
+      },
+      "learning": {
+        "reason": "情報の種類で選びます。",
+        "concept": "A/AAAA/CNAME/NSは目的が違います。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-105",
+      "revision": 1,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "TTL",
+      "prompt": "TTLについて正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "ttl",
+      "sectionId": "ttl",
+      "application": "recall",
+      "correct": [
+        "B",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "変更時に既存キャッシュを即時削除する。",
+          "explanation": "既存キャッシュはTTLまで有効です。"
+        },
+        {
+          "id": "B",
+          "text": "リゾルバがレコードをキャッシュできる秒数である。",
+          "explanation": "TTLはキャッシュ時間です。"
+        },
+        {
+          "id": "C",
+          "text": "TLS証明書の有効期間である。",
+          "explanation": "TTLはDNSの設定です。"
+        },
+        {
+          "id": "D",
+          "text": "長いほど変更は早く反映する。",
+          "explanation": "長いTTLは反映待ちを長くします。"
+        },
+        {
+          "id": "E",
+          "text": "短いTTLは再問い合わせを増やす。",
+          "explanation": "キャッシュが早く切れます。"
+        }
+      ],
+      "source": {
+        "label": "Route 53 DNS TTL best practices",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/best-practices-dns.html"
+      },
+      "learning": {
+        "reason": "反映時間を計画します。",
+        "concept": "TTLはキャッシュの時間です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-106",
+      "revision": 1,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "IP変更",
+      "prompt": "翌日のIP変更で正しい手順を2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "ttl",
+      "sectionId": "ttl",
+      "application": "apply",
+      "correct": [
+        "A",
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "変更前にTTLを短くし旧TTLの期限を考慮する。",
+          "explanation": "古いキャッシュの影響を減らします。"
+        },
+        {
+          "id": "B",
+          "text": "変更と同時にTTLを下げれば既存キャッシュは消える。",
+          "explanation": "既存キャッシュには旧TTLが適用されます。"
+        },
+        {
+          "id": "C",
+          "text": "変更後に期待する解決結果を確認する。",
+          "explanation": "反映を観測します。"
+        },
+        {
+          "id": "D",
+          "text": "TTLは常に最小に固定する。",
+          "explanation": "問い合わせ量とのトレードオフがあります。"
+        },
+        {
+          "id": "E",
+          "text": "HTTP 404をDNS反映確認に使う。",
+          "explanation": "名前解決の結果を確認します。"
+        }
+      ],
+      "source": {
+        "label": "Route 53 DNS TTL best practices",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/best-practices-dns.html"
+      },
+      "learning": {
+        "reason": "キャッシュを予定に入れます。",
+        "concept": "変更前のTTLが残ります。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-107",
+      "revision": 1,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "反映遅延",
+      "prompt": "DNS変更後に一部利用者だけ旧IPを見る。正しい判断を2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "ttl",
+      "sectionId": "ttl",
+      "application": "integrate",
+      "correct": [
+        "B",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "必ずDNS設定が誤っている。",
+          "explanation": "TTL内のキャッシュが原因になり得ます。"
+        },
+        {
+          "id": "B",
+          "text": "利用者側のキャッシュTTLを確認する。",
+          "explanation": "旧値が残る理由を確認します。"
+        },
+        {
+          "id": "C",
+          "text": "直ちにTLS証明書を削除する。",
+          "explanation": "TTL問題の対応ではありません。"
+        },
+        {
+          "id": "D",
+          "text": "権威側とリゾルバ側の結果を分けて確認する。",
+          "explanation": "どこで旧値が残るかを調べます。"
+        },
+        {
+          "id": "E",
+          "text": "全portを開放する。",
+          "explanation": "名前解決の反映に関係しません。"
+        }
+      ],
+      "source": {
+        "label": "Route 53 DNS troubleshooting",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/troubleshooting-new-dns-settings-not-in-effect.html"
+      },
+      "learning": {
+        "reason": "キャッシュを原因候補にします。",
+        "concept": "TTL内の旧値はあり得ます。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-108",
+      "revision": 1,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "層の分離",
+      "prompt": "DNSとHTTP/TLSについて誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "boundary",
+      "sectionId": "boundary",
+      "application": "recall",
+      "correct": [
+        "A",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "DNSが成功すればTLS証明書も必ず正しい。",
+          "explanation": "これは誤りです。TLSは別の段階です。"
+        },
+        {
+          "id": "B",
+          "text": "DNSはIPを返してもHTTP本文を返さない。",
+          "explanation": "HTTPは別のプロトコルです。"
+        },
+        {
+          "id": "C",
+          "text": "443番portが閉じればDNS成功でもHTTPS接続できない。",
+          "explanation": "接続の後段で失敗します。"
+        },
+        {
+          "id": "D",
+          "text": "404を直すにはNSレコードだけを変える。",
+          "explanation": "これは誤りです。404はHTTP応答です。"
+        },
+        {
+          "id": "E",
+          "text": "証明書エラーはTLS段階で確認する。",
+          "explanation": "DNSの後段です。"
+        }
+      ],
+      "source": {
+        "label": "RFC 8446",
+        "url": "https://www.rfc-editor.org/rfc/rfc8446"
+      },
+      "learning": {
+        "reason": "段階を混ぜません。",
+        "concept": "DNSは入口です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-109",
+      "revision": 1,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "証明書エラー",
+      "prompt": "DNSは正しいIPを返すが証明書エラーになる。誤った対応を2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "boundary",
+      "sectionId": "boundary",
+      "application": "apply",
+      "correct": [
+        "B",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "443番portと証明書のホスト名を確認する。",
+          "explanation": "TLS段階の確認です。"
+        },
+        {
+          "id": "B",
+          "text": "DNSレコードを何度も変えれば必ず直る。",
+          "explanation": "これは誤りです。DNS成功後の問題です。"
+        },
+        {
+          "id": "C",
+          "text": "TLS成立後にHTTP応答を確認する。",
+          "explanation": "段階順に確認します。"
+        },
+        {
+          "id": "D",
+          "text": "DNS成功を記録して次段階を調べる。",
+          "explanation": "DNSとTLSを分けます。"
+        },
+        {
+          "id": "E",
+          "text": "HTTP 404を待てば証明書が有効になる。",
+          "explanation": "これは誤りです。404は証明書問題を直しません。"
+        }
+      ],
+      "source": {
+        "label": "RFC 8446",
+        "url": "https://www.rfc-editor.org/rfc/rfc8446"
+      },
+      "learning": {
+        "reason": "原因の段階へ進みます。",
+        "concept": "証明書はTLSです。"
+      }
+    },
+    {
+      "unitId": "fundamentals.domain-dns",
+      "id": "fund-dns-110",
+      "revision": 1,
+      "category": "DNS",
+      "version": "2026-11-learning",
+      "title": "Web到達の診断",
+      "prompt": "Web到達を診断する順序として誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "boundary",
+      "sectionId": "boundary",
+      "application": "integrate",
+      "correct": [
+        "C",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "名前解決を確認する。",
+          "explanation": "最初の段階です。"
+        },
+        {
+          "id": "B",
+          "text": "IPとportへの接続を確認する。",
+          "explanation": "DNSの次に確認します。"
+        },
+        {
+          "id": "C",
+          "text": "DNS失敗時でもアプリの404から調べる。",
+          "explanation": "これは誤りです。HTTPへ未到達です。"
+        },
+        {
+          "id": "D",
+          "text": "TLS、次にHTTP応答を確認する。",
+          "explanation": "段階を分けます。"
+        },
+        {
+          "id": "E",
+          "text": "原因不明なら全DNSレコードを削除する。",
+          "explanation": "これは誤りです。観測に基づき変更します。"
+        }
+      ],
+      "source": {
+        "label": "RFC 9110",
+        "url": "https://www.rfc-editor.org/rfc/rfc9110"
+      },
+      "learning": {
+        "reason": "順序を固定します。",
+        "concept": "DNSからHTTPへ進みます。"
+      }
+    }
+  ]
+}

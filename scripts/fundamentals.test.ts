@@ -10,11 +10,11 @@ const content = JSON.parse(
   await readFile('public/fundamentals/content.json', 'utf8'),
 ) as FundamentalsContent;
 
-test('基礎教材は12単元catalogと6公開単元を持つ', () => {
+test('基礎教材は12単元すべてに読解と確認問題を持つ', () => {
   expect(validFundamentalsContent(content)).toBe(true);
   expect(content.catalog).toHaveLength(12);
-  expect(content.units).toHaveLength(6);
-  expect(content.catalog.filter((unit) => unit.state === 'planned')).toHaveLength(6);
+  expect(content.units).toHaveLength(12);
+  expect(content.catalog.filter((unit) => unit.state === 'planned')).toHaveLength(0);
 });
 
 test('4形式を設問データで使い、否定設問のcorrectは選択対象を表す', () => {

@@ -1,0 +1,753 @@
+{
+  "id": "fundamentals.cidr-subnets",
+  "order": 7,
+  "title": "CIDRとサブネット",
+  "summary": "prefix、範囲、重複、AWS予約IPと公開条件を判断します。",
+  "prerequisites": [
+    "fundamentals.networking-basics"
+  ],
+  "objective": "CIDR範囲を読み、重複を避け、サブネットの到達性を判断できる。",
+  "explanation": [
+    "CIDRはネットワーク範囲をprefix長で表し、AWSのサブネットには予約IPと経路の条件があります。"
+  ],
+  "example": "10.0.0.0/24を、重複しない/26のサブネットへ分割し、公開にはIGWへの経路も確認します。",
+  "next": "fundamentals.cicd",
+  "learningObjectives": [
+    {
+      "id": "cidr",
+      "text": "IPv4 CIDRとprefix長から範囲の大きさを説明できる。",
+      "sectionIds": [
+        "cidr"
+      ]
+    },
+    {
+      "id": "planning",
+      "text": "包含と重複を判断してサブネットを分割できる。",
+      "sectionIds": [
+        "planning"
+      ]
+    },
+    {
+      "id": "reserved",
+      "text": "AWSサブネットの予約IPを考慮できる。",
+      "sectionIds": [
+        "reserved"
+      ]
+    },
+    {
+      "id": "public",
+      "text": "public/privateをIP名ではなく経路で判断できる。",
+      "sectionIds": [
+        "public"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "cidr",
+      "title": "CIDR: prefixはネットワーク部分の長さ",
+      "paragraphs": [
+        "CIDRはIPv4アドレス範囲を10.0.0.0/24のように表します。/24は先頭24ビットがネットワーク部分であり、残りがホスト部分です。prefixが大きいほど範囲は小さくなります。",
+        "/24には256個のIPv4アドレス、/26には64個のアドレスがあります。範囲を暗記だけで扱わず、prefixが二つ増えるとアドレス数が4分の1になることを使って確認します。",
+        "設計ではVPC全体の範囲を先に決め、必要なサブネット数と将来の拡張を考えてprefixを選びます。利用可能数はAWS予約IPも後で差し引きます。"
+      ],
+      "example": {
+        "scenario": "10.0.0.0/24を4つに分ける。",
+        "steps": [
+          "/24の256個を4等分する。",
+          "各範囲を/26、64個として並べる。",
+          "10.0.0.0/26、10.0.0.64/26のように境界を確認する。"
+        ],
+        "outcome": "prefixと範囲の関係から、重複しない分割を説明できます。"
+      },
+      "misconception": {
+        "claim": "/26は/24より大きな範囲を表す。",
+        "correction": "prefixが大きい/26の方がホスト部が少なく、範囲は小さくなります。"
+      },
+      "takeaways": [
+        "prefixが大きいほど範囲は小さいです。",
+        "/24は256、/26は64個です。",
+        "設計時は将来の余地も考えます。"
+      ],
+      "source": {
+        "label": "RFC 4632: CIDR",
+        "url": "https://www.rfc-editor.org/rfc/rfc4632"
+      }
+    },
+    {
+      "id": "planning",
+      "title": "分割: 包含と重複を先に確認する",
+      "paragraphs": [
+        "サブネットはVPC CIDRの内部にあり、互いに重複してはいけません。10.0.0.0/24内なら10.0.0.0/25と10.0.0.128/25は隣接し重複しません。",
+        "10.0.0.0/25と10.0.0.64/26は重複します。後者は前者の中に含まれるため、別のサブネットとして同時に割り当てられません。",
+        "作成前に開始アドレスと終了アドレスを書き出し、VPC内に収まるか、既存範囲と交わらないかを確認します。名前やAZが異なってもIP範囲の重複は解消されません。"
+      ],
+      "example": {
+        "scenario": "既存10.0.0.0/25に新しいサブネットを追加する。",
+        "steps": [
+          "既存範囲の終了を10.0.0.127と確認する。",
+          "新候補を10.0.0.128/25にする。",
+          "VPC CIDRに包含されることも確認する。"
+        ],
+        "outcome": "隣接範囲を使うため既存サブネットと重複しません。"
+      },
+      "misconception": {
+        "claim": "AZが違えば同じCIDRを二つのサブネットに使える。",
+        "correction": "AZにかかわらずVPC内のサブネットCIDRは重複できません。"
+      },
+      "takeaways": [
+        "サブネットはVPC内に包含されます。",
+        "開始・終了で重複を確認します。",
+        "AZ名はCIDR重複を解決しません。"
+      ],
+      "source": {
+        "label": "VPC subnet CIDR blocks",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html"
+      }
+    },
+    {
+      "id": "reserved",
+      "title": "AWS予約IP: 全アドレスを使えるわけではない",
+      "paragraphs": [
+        "AWSのIPv4サブネットでは、先頭4個と最後の1個のIPアドレスをリソースへ割り当てられません。/24なら256個のうち5個が予約されます。",
+        "たとえば10.0.0.0/24では、.0はネットワーク、.1はVPCルーター、.2はDNS、.3は将来用、.255はネットワークブロードキャストとしてAWSが予約します。",
+        "必要なEC2数だけを数えて最小範囲を選ぶと不足します。必要台数に予約5個と拡張余地を足してから、許されるCIDR範囲を選びます。"
+      ],
+      "example": {
+        "scenario": "50台のリソースを1サブネットへ置く。",
+        "steps": [
+          "必要な50に予約5を加える。",
+          "/27の32個では不足と判断する。",
+          "/26の64個から予約5を引き、59個を使えることを確認する。"
+        ],
+        "outcome": "/26なら50台と予約IPを収められます。"
+      },
+      "misconception": {
+        "claim": "/24の256個はすべてEC2へ割り当てられる。",
+        "correction": "AWSは先頭4個と最後の1個を予約します。"
+      },
+      "takeaways": [
+        "各IPv4サブネットで5個を予約します。",
+        "必要数には予約を加えます。",
+        "最小prefixを機械的に選びません。"
+      ],
+      "source": {
+        "label": "Subnet sizing for IPv4",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+      }
+    },
+    {
+      "id": "public",
+      "title": "public/private: 経路で決まる",
+      "paragraphs": [
+        "AWSでは、インターネットゲートウェイへの経路を持つルートテーブルに関連付けられたサブネットをpublic subnetと呼びます。サブネット名やCIDRの数字だけでは公開性は決まりません。",
+        "インターネットからIPv4で到達するには、IGWへの経路だけでなく、対象インスタンスにpublic IPv4またはElastic IPなども必要です。経路だけを作ってもすべてのインスタンスが外部公開されるとは限りません。",
+        "設計では、必要な入口だけをpublic subnetに置き、アプリやデータ層はprivate subnetに置く理由を確認します。route tableの関連付け、0.0.0.0/0の向き、インスタンス側のアドレスを順に調べます。"
+      ],
+      "example": {
+        "scenario": "publicと名前付けたサブネットのEC2に外部から接続できない。",
+        "steps": [
+          "サブネットのroute tableにIGW向け経路があるか確認する。",
+          "EC2にpublic IPv4またはElastic IPがあるか確認する。",
+          "必要なportの許可とサービス待受を確認する。"
+        ],
+        "outcome": "名前ではなく経路とアドレスから到達性を診断できます。"
+      },
+      "misconception": {
+        "claim": "CIDRが10.0.0.0/24なら自動的にpublic subnetである。",
+        "correction": "publicかどうかはIGWへの経路を持つroute tableとの関連で決まります。"
+      },
+      "takeaways": [
+        "public/privateはroute tableで判断します。",
+        "外部IPv4到達には経路とpublic IPが必要です。",
+        "名前やCIDRだけで判断しません。"
+      ],
+      "source": {
+        "label": "Internet gateway basics",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-001",
+      "revision": 2,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "prefix",
+      "prompt": "CIDR prefixについて正しいものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "cidr",
+      "sectionId": "cidr",
+      "application": "recall",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "/26は/24より小さい範囲である。",
+          "explanation": "prefixが大きいほど範囲は小さいです。"
+        },
+        {
+          "id": "B",
+          "text": "/26は/24より大きい範囲である。",
+          "explanation": "逆です。"
+        },
+        {
+          "id": "C",
+          "text": "prefixはport番号である。",
+          "explanation": "prefixはネットワーク部の長さです。"
+        }
+      ],
+      "source": {
+        "label": "RFC 4632",
+        "url": "https://www.rfc-editor.org/rfc/rfc4632"
+      },
+      "learning": {
+        "reason": "範囲の大小を読みます。",
+        "concept": "大きいprefixは小さい範囲です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-002",
+      "revision": 2,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "分割",
+      "prompt": "10.0.0.0/24を4等分するprefixを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "cidr",
+      "sectionId": "cidr",
+      "application": "apply",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "/25",
+          "explanation": "2等分です。"
+        },
+        {
+          "id": "B",
+          "text": "/26",
+          "explanation": "64個ずつの4等分です。"
+        },
+        {
+          "id": "C",
+          "text": "/24",
+          "explanation": "分割していません。"
+        }
+      ],
+      "source": {
+        "label": "RFC 4632",
+        "url": "https://www.rfc-editor.org/rfc/rfc4632"
+      },
+      "learning": {
+        "reason": "prefixから分割数を求めます。",
+        "concept": "/24→/26は4分割です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-101",
+      "revision": 2,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "CIDR範囲",
+      "prompt": "CIDRの説明で誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "cidr",
+      "sectionId": "cidr",
+      "application": "integrate",
+      "correct": [
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "/24には256個のIPv4アドレスがある。",
+          "explanation": "2の8乗です。"
+        },
+        {
+          "id": "B",
+          "text": "/26には64個のIPv4アドレスがある。",
+          "explanation": "2の6乗です。"
+        },
+        {
+          "id": "C",
+          "text": "/26を二つ集めると/24になる。",
+          "explanation": "二つの/26のアドレス数は計128個で、256個の/24には足りません。10.0.0.0/26と10.0.0.64/26のように連続し、/25の境界に揃う場合は一つの/25にまとめられます。"
+        }
+      ],
+      "source": {
+        "label": "RFC 4632",
+        "url": "https://www.rfc-editor.org/rfc/rfc4632"
+      },
+      "learning": {
+        "reason": "範囲の関係を適用します。",
+        "concept": "/24は四つの/26です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-102",
+      "revision": 1,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "重複",
+      "prompt": "サブネット設計で誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "planning",
+      "sectionId": "planning",
+      "application": "recall",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "サブネットはVPC CIDR内に含める。",
+          "explanation": "包含を確認します。"
+        },
+        {
+          "id": "B",
+          "text": "AZが違えば同じCIDRを使える。",
+          "explanation": "これは誤りです。VPC内で重複できません。"
+        },
+        {
+          "id": "C",
+          "text": "開始・終了アドレスで重複を確認する。",
+          "explanation": "範囲を比較できます。"
+        }
+      ],
+      "source": {
+        "label": "VPC subnet CIDR blocks",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html"
+      },
+      "learning": {
+        "reason": "重複を防ぎます。",
+        "concept": "AZは重複を許しません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-103",
+      "revision": 2,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "隣接範囲",
+      "prompt": "既存10.0.0.0/25があるとき、新しいサブネット候補として誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "planning",
+      "sectionId": "planning",
+      "application": "apply",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "10.0.0.64/26",
+          "explanation": "10.0.0.64から10.0.0.127は既存/25の範囲内にあり、重複するので追加できません。"
+        },
+        {
+          "id": "B",
+          "text": "10.0.0.128/26",
+          "explanation": "10.0.0.128から10.0.0.191は既存/25の範囲外で、重複しません。"
+        },
+        {
+          "id": "C",
+          "text": "10.0.0.192/26",
+          "explanation": "10.0.0.192から10.0.0.255は既存/25の範囲外で、重複しません。"
+        }
+      ],
+      "source": {
+        "label": "VPC subnet CIDR blocks",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html"
+      },
+      "learning": {
+        "reason": "既存10.0.0.0/25は10.0.0.0から10.0.0.127までです。候補の開始と終了を両方比較します。",
+        "concept": "別サブネットには既存範囲と重ならないCIDRを割り当てます。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-104",
+      "revision": 2,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "設計確認",
+      "prompt": "既存サブネットへ新しいCIDRを追加する前に、最初に満たすべき判断を1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "planning",
+      "sectionId": "planning",
+      "application": "integrate",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "候補範囲がVPC CIDR内にあり、既存範囲と重ならないことを確認する。",
+          "explanation": "サブネットはVPC内に含まれ、VPC内の既存サブネットと重複してはいけません。"
+        },
+        {
+          "id": "B",
+          "text": "AZ名が違えばCIDR範囲確認は不要である。",
+          "explanation": "誤りです。AZにかかわらずVPC内のCIDRは重複できません。"
+        },
+        {
+          "id": "C",
+          "text": "開始アドレスだけ見れば、終了アドレスは確認しなくてよい。",
+          "explanation": "誤りです。範囲の交差を判定するため開始と終了の両方を確認します。"
+        },
+        {
+          "id": "D",
+          "text": "既存範囲に含まれていても、サブネット名が違えば追加できる。",
+          "explanation": "誤りです。名前ではCIDR重複を解消できません。"
+        },
+        {
+          "id": "E",
+          "text": "route tableを分ければ、CIDR重複を許容できる。",
+          "explanation": "誤りです。経路設定は重複CIDRを解消しません。"
+        }
+      ],
+      "source": {
+        "label": "VPC subnet CIDR blocks",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html"
+      },
+      "learning": {
+        "reason": "包含と非重複を先に確認します。",
+        "concept": "サブネットはVPC内かつ非重複です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-105",
+      "revision": 1,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "予約IP",
+      "prompt": "AWSのIPv4サブネットについて正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "reserved",
+      "sectionId": "reserved",
+      "application": "recall",
+      "correct": [
+        "B",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "すべてのIPをEC2へ割り当てられる。",
+          "explanation": "5個が予約されます。"
+        },
+        {
+          "id": "B",
+          "text": "先頭4個と最後の1個が予約される。",
+          "explanation": "AWSの予約IPです。"
+        },
+        {
+          "id": "C",
+          "text": "予約数はport番号で決まる。",
+          "explanation": "CIDR内の予約です。"
+        },
+        {
+          "id": "D",
+          "text": "/24では.255を割り当てられる。",
+          "explanation": "最後のIPは予約です。"
+        },
+        {
+          "id": "E",
+          "text": "必要台数には予約IPも加えて見積もる。",
+          "explanation": "利用可能数を正しく計算します。"
+        }
+      ],
+      "source": {
+        "label": "Subnet sizing for IPv4",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+      },
+      "learning": {
+        "reason": "利用可能数を誤りません。",
+        "concept": "各サブネットで5個予約です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-106",
+      "revision": 1,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "50台",
+      "prompt": "50台を置くサブネットの考え方として正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "reserved",
+      "sectionId": "reserved",
+      "application": "apply",
+      "correct": [
+        "A",
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "/27は32個なので不足と判断する。",
+          "explanation": "予約前でも50台に足りません。"
+        },
+        {
+          "id": "B",
+          "text": "/26の64個をすべて割当可能と考える。",
+          "explanation": "5個予約されます。"
+        },
+        {
+          "id": "C",
+          "text": "/26は59個使えるため50台を収められる。",
+          "explanation": "64-5で59個です。"
+        },
+        {
+          "id": "D",
+          "text": "予約IPは通信時だけ必要なので計画不要である。",
+          "explanation": "割り当てできないため計画へ入れます。"
+        },
+        {
+          "id": "E",
+          "text": "CIDRを考えず台数だけで決める。",
+          "explanation": "範囲と予約を確認します。"
+        }
+      ],
+      "source": {
+        "label": "Subnet sizing for IPv4",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+      },
+      "learning": {
+        "reason": "予約を含めて計算します。",
+        "concept": "/26の利用可能は59です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-107",
+      "revision": 1,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "予約の影響",
+      "prompt": "予約IPの扱いとして正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "reserved",
+      "sectionId": "reserved",
+      "application": "integrate",
+      "correct": [
+        "B",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "不足時は予約IPをEC2へ使う。",
+          "explanation": "予約IPは割当できません。"
+        },
+        {
+          "id": "B",
+          "text": "将来の増加余地も含めて範囲を選ぶ。",
+          "explanation": "不足を避けられます。"
+        },
+        {
+          "id": "C",
+          "text": "予約IPはS3にだけ関係する。",
+          "explanation": "VPCサブネットのIPです。"
+        },
+        {
+          "id": "D",
+          "text": "必要台数と予約数を合算して見積もる。",
+          "explanation": "利用可能数を正しく見ます。"
+        },
+        {
+          "id": "E",
+          "text": "prefixが同じなら予約を無視できる。",
+          "explanation": "常に予約を差し引きます。"
+        }
+      ],
+      "source": {
+        "label": "Subnet sizing for IPv4",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+      },
+      "learning": {
+        "reason": "計画に予約を入れます。",
+        "concept": "使える数は総数より少ないです。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-108",
+      "revision": 1,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "public subnet",
+      "prompt": "public subnetについて誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "public",
+      "sectionId": "public",
+      "application": "recall",
+      "correct": [
+        "A",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "CIDRが10.0.0.0/24なら自動でpublicである。",
+          "explanation": "これは誤りです。経路で決まります。"
+        },
+        {
+          "id": "B",
+          "text": "IGWへの経路を持つroute tableとの関連を確認する。",
+          "explanation": "public判定の基準です。"
+        },
+        {
+          "id": "C",
+          "text": "外部IPv4到達にはpublic IPも確認する。",
+          "explanation": "経路だけで十分ではありません。"
+        },
+        {
+          "id": "D",
+          "text": "サブネット名だけでなくroute tableを見る。",
+          "explanation": "名前は判定材料ではありません。"
+        },
+        {
+          "id": "E",
+          "text": "privateという名前ならIGW経路があってもprivateである。",
+          "explanation": "これは誤りです。経路で判断します。"
+        }
+      ],
+      "source": {
+        "label": "Internet gateway basics",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html"
+      },
+      "learning": {
+        "reason": "名前で判断しません。",
+        "concept": "publicはIGW経路です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-109",
+      "revision": 1,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "外部接続",
+      "prompt": "外部からEC2へ到達できない。誤った調査を2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "public",
+      "sectionId": "public",
+      "application": "apply",
+      "correct": [
+        "B",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "route tableのIGW経路を確認する。",
+          "explanation": "経路条件です。"
+        },
+        {
+          "id": "B",
+          "text": "サブネット名がpublicなので経路を見ない。",
+          "explanation": "これは誤りです。名前では判断しません。"
+        },
+        {
+          "id": "C",
+          "text": "EC2のpublic IPv4またはElastic IPを確認する。",
+          "explanation": "IPv4到達条件です。"
+        },
+        {
+          "id": "D",
+          "text": "CIDRだけ見てport許可と待受を調べない。",
+          "explanation": "これは誤りです。通信の後段も必要です。"
+        },
+        {
+          "id": "E",
+          "text": "必要なportへの許可を確認する。",
+          "explanation": "接続条件です。"
+        }
+      ],
+      "source": {
+        "label": "Internet gateway basics",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html"
+      },
+      "learning": {
+        "reason": "複数の到達条件を確認します。",
+        "concept": "経路、IP、portが必要です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cidr-subnets",
+      "id": "fund-cidr-110",
+      "revision": 1,
+      "category": "CIDR",
+      "version": "2026-11-learning",
+      "title": "公開性の設計",
+      "prompt": "公開性を判断する設計として誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "public",
+      "sectionId": "public",
+      "application": "integrate",
+      "correct": [
+        "C",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "必要な入口だけをpublicに置く理由を確認する。",
+          "explanation": "公開範囲を絞ります。"
+        },
+        {
+          "id": "B",
+          "text": "route table関連付けを確認する。",
+          "explanation": "経路を判断します。"
+        },
+        {
+          "id": "C",
+          "text": "CIDRの数字だけで到達性を確定する。",
+          "explanation": "これは誤りです。経路とアドレスが必要です。"
+        },
+        {
+          "id": "D",
+          "text": "private層の外部接続要件を別に設計する。",
+          "explanation": "IGW直結以外の要件を検討します。"
+        },
+        {
+          "id": "E",
+          "text": "IGW経路があればsecurity groupは不要である。",
+          "explanation": "これは誤りです。port許可も必要です。"
+        }
+      ],
+      "source": {
+        "label": "Internet gateway basics",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html"
+      },
+      "learning": {
+        "reason": "経路だけで終えません。",
+        "concept": "公開性は複数条件です。"
+      }
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { AuthCallback } from './auth/AuthCallback';
 import { AuthProvider, useAccount } from './auth/AuthContext';
 import { dashboardPath } from './auth/navigation';
 import { CertificationPages } from './CertificationPages';
+import { CookieConsent, useCookieConsent } from './CookieConsent';
 import { CourseApp } from './CourseApp';
 import { certifications } from './certifications';
 import { FundamentalsPage } from './fundamentals/FundamentalsPage';
@@ -22,12 +23,13 @@ import './style.css';
 
 function App() {
   const { t, locale } = usePreferences();
+  const consent = useCookieConsent();
   const route = routeAt(location.pathname);
   const { state } = useAccount();
   useEffect(() => {
     if (!route || accountPages.includes(route.page)) return;
-    initializeAnalytics();
-  }, [route]);
+    initializeAnalytics(consent === 'granted');
+  }, [route, consent]);
   useEffect(() => {
     if (route?.page === '' && state.status === 'ready' && state.account) {
       location.replace(dashboardPath(locale));
@@ -68,6 +70,7 @@ function App() {
         <Home />
       )}
       <SiteFooter />
+      <CookieConsent />
     </>
   );
 }

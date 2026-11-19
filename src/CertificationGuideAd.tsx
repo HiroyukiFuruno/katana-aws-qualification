@@ -1,13 +1,17 @@
 import { useEffect, useRef } from 'react';
 
+import { useCookieConsent } from './CookieConsent';
+
 const publisher = 'ca-pub-6906125453421012';
 const slot = '1732021005';
 const enabled = import.meta.env.PROD && import.meta.env.VITE_ADSENSE_SERVING === '1';
 
 export function CertificationGuideAd() {
+  const consent = useCookieConsent();
+  const allowed = enabled && consent === 'granted';
   const requested = useRef(false);
   useEffect(() => {
-    if (!enabled || requested.current) return;
+    if (!allowed || requested.current) return;
     requested.current = true;
 
     const browser = window as Window & { adsbygoogle?: object[] };
@@ -21,9 +25,9 @@ export function CertificationGuideAd() {
     script.crossOrigin = 'anonymous';
     script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${publisher}`;
     document.head.appendChild(script);
-  }, []);
+  }, [allowed]);
 
-  return enabled ? (
+  return allowed ? (
     <ins
       className="adsbygoogle"
       style={{ display: 'block', marginBlockStart: '1rem' }}

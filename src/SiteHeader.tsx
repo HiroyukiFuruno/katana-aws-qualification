@@ -33,7 +33,6 @@ function StudyNavigation({ active, subpage }: { active: boolean; subpage?: strin
             onClick={() => setOpen(false)}
           >
             {t('learnFundamentals')}
-            <small>{t('coursePending')}</small>
           </a>
         </li>
         <li>

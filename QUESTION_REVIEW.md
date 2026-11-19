@@ -728,3 +728,16 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 - [SOA-C03の監視・分析・修復と性能最適化](https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain1.html)
 - [S3 Multi-Region Access Pointのフェイルオーバー制御](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingFailover.html)
 - [CloudWatch LogsのロググループとKMS暗号化コンテキスト](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html)
+
+## SOA-C03の独立325問と重複なしの模試5回分
+
+65問を追加し、独立325問を学習・模擬試験の出題元に登録した。分野ごとの母数は70・70・70・55・60問。フル模試は65問・130分で、各回の分野配分を14・14・14・11・12問とした。単一選択289問、複数選択36問で、単一選択の正答位置はAから順に73・72・72・72問。
+
+既出のVPC Reachability Analyzerによる静的経路診断を繰り返す草稿は、AWS Site-to-Site VPNのIKEログで障害を調査する問題に差し替えた。KMSの復号権限に近い草稿は、AWS Secrets Managerの交互ユーザー方式に変更した。CloudFrontのキャッシュ制御やRoute 53のルーティングとは別に、AWS Shield Advancedがサービスのヘルス状態を踏まえてプロアクティブに連絡するための設定を扱う。
+
+出典317件、全5,776通りの採点、フル模試の生成512回、カスタム全65件数、互いに重複しないフル模試5回分の生成128組を確認した。既存の公開10問はID・改訂番号・本文・選択肢・正答を維持し、さらに旧6問を履歴から参照できる。
+
+- [SOA-C03の試験概要](https://aws.amazon.com/certification/certified-cloudops-engineer-associate/)
+- [Site-to-Site VPNのトンネルログ](https://docs.aws.amazon.com/vpn/latest/s2svpn/monitoring-logs.html)
+- [Secrets Managerのローテーション方式](https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotation-strategy.html)
+- [Shield Advancedのプロアクティブエンゲージメント](https://docs.aws.amazon.com/waf/latest/developerguide/ddos-srt-proactive-engagement.html)

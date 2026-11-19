@@ -103,11 +103,14 @@ function Settings({
 
 function CourseApp({ id, name, course }: { id: string; name: string; course: Course }) {
   const { t, locale } = usePreferences();
-  const [practiceSets, setPracticeSets] = useState<{ label: Message; questions: Question[] }[]>([]);
+  const [practiceSets, setPracticeSets] = useState<
+    (Omit<Course['practice'][number], 'path'> & { questions: Question[] })[]
+  >([]);
   const questions = practiceSets.flatMap((set) => set.questions);
   const questionSets: QuestionSet[] = practiceSets.flatMap((set) => {
     const label = t(set.label);
     const size = course.setSize;
+    if (set.fixedCount) return [{ label, questions: set.questions.slice(0, set.fixedCount) }];
     if (!size) return [{ ...set, label }];
     return Array.from({ length: Math.ceil(set.questions.length / size) }, (_, index) => ({
       label: t('numberedSet', { label, number: index + 1 }),
@@ -153,7 +156,9 @@ function CourseApp({ id, name, course }: { id: string; name: string; course: Cou
       banks.set(path, request);
       return request;
     }
-    Promise.all(course.practice.map(async ({ path, label }) => ({ label, questions: await load(path) })))
+    Promise.all(
+      course.practice.map(async ({ path, ...set }) => ({ ...set, questions: await load(path) })),
+    )
       .then(setPracticeSets)
       .catch((error) =>
         setLoadingError(

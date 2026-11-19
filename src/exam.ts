@@ -15,7 +15,7 @@ export type ExamDraft = {
   responses: Record<string, ExamResponse>;
 };
 
-export function uniqueExamQuestions(questions: readonly Question[]) {
+function uniqueExamQuestions(questions: readonly Question[]) {
   const seen = new Set<string>();
   return questions.filter((question) => {
     const key = question.similarityGroup ? `group:${question.similarityGroup}` : `id:${question.id}`;
@@ -27,6 +27,19 @@ export function uniqueExamQuestions(questions: readonly Question[]) {
 
 export function examLength(blueprint: ExamBlueprint) {
   return Object.values(blueprint.distribution).reduce((sum, count) => sum + count, 0);
+}
+
+export function examPresetCounts(blueprint: ExamBlueprint) {
+  const full = examLength(blueprint);
+  return {
+    short: Math.min(15, Math.max(1, Math.floor(full / 3))),
+    medium: Math.min(30, Math.ceil(full / 2)),
+    full,
+  };
+}
+
+export function examDurationMinutes(blueprint: ExamBlueprint, count: number) {
+  return Math.ceil((blueprint.minutes * count) / examLength(blueprint));
 }
 
 export function selectExamQuestions(
@@ -70,18 +83,13 @@ export function newExam(
   blueprint: ExamBlueprint,
   now = Date.now(),
   count?: number,
-  fixed?: Question[],
 ): ExamDraft {
-  const selected = fixed
-    ? uniqueExamQuestions(fixed)
-    : shuffle(selectExamQuestions(shuffle(questions), blueprint, count));
+  const selected = shuffle(selectExamQuestions(shuffle(questions), blueprint, count));
   if (!selected.length) throw new Error('模擬試験に必要な分野別の問題数を満たしていません。');
   const order = selected.map(questionKey);
-  const fullLength = examLength(blueprint);
-  const duration = (blueprint.minutes * order.length) / fullLength;
   return {
     id: crypto.randomUUID(),
-    deadline: now + Math.round(duration * 60_000),
+    deadline: now + examDurationMinutes(blueprint, order.length) * 60_000,
     order,
     position: 0,
     responses: {},

@@ -20,6 +20,7 @@ export type Course = {
   exam: ExamBlueprint;
   setSize?: number;
   fixedExamFromBlueprint?: boolean;
+  reviewedMock?: true;
   examStorageId?: string;
 };
 
@@ -188,23 +189,24 @@ export const certifications: Certification[] = catalog.map((certification) => {
   return {
     ...certification,
     course: {
-      practice: [{ path: bank, label: 'shortExam' }],
+      practice: [{ path: bank, label: professional ? 'saaFull' : 'shortExam' }],
       mock: bank,
       archives: [`courses/${legacyId}/questions.json`],
       examStorageId: legacyId,
       exam: professional
         ? {
-            minutes: 48,
+            minutes: 180,
             distribution: {
-              クラウドアーキテクチャ: 5,
-              'セキュリティ・コンプライアンス・ガバナンス': 5,
-              コスト最適化: 3,
-              'レジリエンス・移行・事業継続': 3,
-              '運用上の優秀性・自動化': 4,
+              クラウドアーキテクチャ: 19,
+              'セキュリティ・コンプライアンス・ガバナンス': 19,
+              コスト最適化: 11,
+              'レジリエンス・移行・事業継続': 11,
+              '運用上の優秀性・自動化': 15,
             },
           }
         : { minutes: count * 2, distribution: { [certification.focus]: count } },
       fixedExamFromBlueprint: professional,
+      reviewedMock: professional ? true : undefined,
       setSize: 4,
     },
   };

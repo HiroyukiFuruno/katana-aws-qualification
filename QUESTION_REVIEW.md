@@ -118,3 +118,210 @@ SAP-C03は26問の問題プールから、5分野を5・5・3・3・4問に配�
 - [AWS公式 SAP-C02／SAP-C03の出題配分比較](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-professional-03/sap-03-comparison.html)
 - [AWS Cost Categoriesの分割配賦](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/splitcharge-cost-categories.html)
 - [S3アーカイブの取得時間](https://docs.aws.amazon.com/AmazonS3/latest/userguide/restoring-objects-retrieval-options.html)
+
+## SAP-C03 本試験形式への拡張
+
+本試験は75問・180分。AWS公式ガイドの採点対象は65問で、10問は採点対象外。KAQの模試では解説・誤答復習のため全75問を採点する。出題配分はクラウドアーキテクチャ19問、セキュリティ・コンプライアンス・ガバナンス19問、コスト最適化11問、レジリエンス・移行・事業継続11問、運用上の優秀性・自動化15問。
+
+既存26問のIDと改訂を維持して、新規70問を追加した。選択肢別の根拠とAWS公式資料を収録し、似た判断の候補に同じ `similarityGroup` を付けた。96問のうち独立した出題候補は90件。内訳は20・23・15・16・16件。公開時の必要数は分野順に95・95・55・55・75件で、Vercelの公開ビルドで各分野を検査する。
+
+レビューでは既存の重複CIDRとPrivateLinkの判断を重ねる案、同一のバックアップ不変化を別分野で問う案、既存の長時間承認と同じ判断を問う案を採用候補から除いた。S3の既存オブジェクトはBatch Replication、DRの切替はAmazon ARCのゾーン退避とリージョン制御で前提を区別した。
+
+- [AWS公式 SAP-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-professional-03.html)
+- [AWS公式 SAP-C03実施情報](https://aws.amazon.com/blogs/training-and-certification/september-2026-new-offerings/)
+
+### 追加レビューで採用した10問
+
+106問のうち独立した候補は100件。分野順に23・27・15・19・16件で、公開に必要な残りは72・68・40・36・59件。既存96問のデータは維持した。
+
+- 共有VPCに同一組織の前提を加え、IPAMのホームリージョンとプールのロケールを分けた。EventBridgeは発行側でエンドポイントIDを設定する前提を明記した。
+- DynamoDBは、MRECのローカルな条件評価とMRSCの同期複製を区別する。Direct Connectの最大レジリエンスは装置とロケーションの冗長化を問う。ARCの復旧計画には新規利用可能なRegion switchの計画評価を用いる。
+- IAMの複数選択では別々の操作の結果を問う。KMSグラントは失効の伝播時間と終了時の取り消しを明記した。Bedrockは呼び出しエンドポイント、対象の入力・出力、S3配信先の制約を問う。タグポリシーは強制に対応するリソースタイプと値を対象にした。
+
+- [DynamoDB グローバルテーブルの仕組み](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html)
+- [Direct Connect Resiliency Toolkit](https://docs.aws.amazon.com/directconnect/latest/UserGuide/resiliency_toolkit.html)
+- [ARC Region switchの計画評価](https://docs.aws.amazon.com/r53recovery/latest/dg/working-with-rs-plan-evaluation.html)
+- [AWS KMS グラント](https://docs.aws.amazon.com/kms/latest/developerguide/grants.html)
+
+### 移行・復旧と運用の追加5問
+
+S3へのファイル転送の再開、EBSの代替AZでの復元、Step Functionsの元の定義での再開、Service Catalogの製品別起動権限、夏時間を反映するEC2運用を追加した。誤答は同じサービスや同じ運用を使う別設計を中心とし、満たせない制約を説明した。
+
+111問のうち独立した候補は105件。分野順に23・27・15・22・18件で、公開に必要な残りは72・68・40・33・57件。75問・180分の試行を128回実行し、各回の分野別配分と類似グループの一意性、母集団の全111 IDが抽選対象になることを確認した。
+
+- [S3マルチパートアップロード](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html)
+- [EBS Fast Snapshot Restore](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-fast-snapshot-restore.html)
+- [Step FunctionsのRedrive](https://docs.aws.amazon.com/step-functions/latest/dg/redrive-executions.html)
+- [Service Catalogの起動制約](https://docs.aws.amazon.com/servicecatalog/latest/adminguide/constraints-launch.html)
+- [EventBridge Schedulerのスケジュール種別と夏時間](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html)
+
+### コスト・クラウド設計・セキュリティ・運用の追加28問
+
+コスト14問、クラウド設計7問、セキュリティ4問、運用3問を追加した。単一選択21問、複数選択7問。追加した28件は設問ごとに一次資料の該当節、正答の成立条件、誤答が満たさない制約を確認した。前版111問の内容・識別子・改訂番号を維持した。
+
+- RDSの一括投入では自動容量拡張の連続実行を前提にしない。料金計算ではAuroraの読み書きI/O、LambdaのGB秒、MSK Serverlessのクラスター時間とパーティション時間を分けた。ECRの複合タグ、EKSの配分明細、S3の小容量オブジェクトも請求条件まで確認した。
+- Aurora Limitlessの外部キーはコロケーションとシャードキーを確認する。CloudFrontでは下流キャッシュを考慮して素材を別URLで配布する。Glueの再計算は既存のブックマークと出力データに影響させない。EventBridge Pipesの補完は同期実行できるExpressワークフローに限定した。
+- WAFの個別ルールの計測、Firewall ManagerのOU・例外スコープ、DNSの拒否と監査、Fargate上のIRSAを独立した判断にした。CloudFormationの条件付き置換とLambdaの非同期処理では、変更・失敗をどの段階で観測できるかを明記した。
+
+139問のうち独立した候補は133問。分野順に30・31・29・22・21問で、必要な残りは65・64・26・33・54問。
+
+- [AWS Database Savings Plans](https://aws.amazon.com/savingsplans/database-pricing/)
+- [AWS Data Exportsの分割コスト配分](https://docs.aws.amazon.com/cur/latest/userguide/enabling-split-cost-allocation-data.html)
+- [AWS Glueのジョブブックマーク](https://docs.aws.amazon.com/glue/latest/dg/monitor-continuations.html)
+- [AWS WAFのルールアクション上書き](https://docs.aws.amazon.com/waf/latest/developerguide/web-acl-rule-group-override-options.html)
+
+### レジリエンス・移行の追加7問
+
+AS2受信時の署名と受領通知、仮想テープの再取得、Spotの中断前の代替起動、EC2基盤障害時の識別子維持、Valkeyのリージョン昇格、PostgreSQLの論理複製とDDL、SQSの再投入先と速度を確認した。SpotとEC2の復旧については代替の成功を保証しない。Valkeyのリージョン昇格は利用者の操作、RDSの劣化した検証環境は正本をもとに再作成という条件にした。
+
+146問のうち独立した候補は140問。分野順に30・31・29・29・21問で、必要な残りは65・64・26・26・54問。
+
+- [EC2 Auto ScalingのCapacity Rebalancing](https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-capacity-rebalancing.html)
+- [ElastiCache Global Datastoreの制約](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Redis-Global-Datastores-Getting-Started.html)
+- [RDS Blue/Greenの制約](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments-considerations.html)
+- [SQSのデッドレターキューのリドライブ](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-dead-letter-queue-redrive.html)
+
+### 分散アプリ設計・セキュリティ・運用の追加15問
+
+クラウド設計7問、セキュリティ4問、運用4問を追加した。ECS Service Connectのプロキシと単純なサービス検出、EKSの独自AMI、Distributed Mapの並列度と失敗比率、WebSocketの失効済み接続の扱いを確認した。DynamoDBの書き込み分散は点読みの要件から解く。GSIの別問はプロビジョンド容量不足の診断に絞り、キー再設計を問う問題と分けた。PrivateLinkではリージョン間アクセスの提供側と利用側の条件を明記した。
+
+セキュリティ・運用では、経路外のパケット観測、Detectiveのリージョン単位、シークレットの削除猶予、KMSの同一素材再取り込み、CloudFormationの置換拒否と旧リソース保持、ECSの異なる失敗条件、Automationの2段階同時実行制限、Lambdaの加重エイリアスを扱った。既出と同じVPC Latticeの選択やFIS停止条件は採用しなかった。
+
+161問のうち独立した候補は155問。分野順に37・35・29・29・25問で、必要な残りは58・60・26・26・50問。新しい15問すべてについて、一次資料の該当箇所、正答の成立条件、各誤答が外れる条件を確認した。既存146問の内容を保持した。
+
+- [Amazon ECS Service Connectの構成](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-connect-concepts.html)
+- [DynamoDBのGSI書き込み制限](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/gsi-throttling.html)
+- [PrivateLinkのリージョン間アクセス](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-share-your-services.html)
+- [Systems Manager Automationの複数アカウント・リージョン設定](https://docs.aws.amazon.com/systems-manager/latest/userguide/running-automations-multiple-accounts-regions.html)
+
+### データ設計・アクセス制御・復旧の追加18問
+
+クラウド設計5問、セキュリティ5問、コスト1問、レジリエンス7問を追加した。データ設計ではKinesisのシャード単位の専用帯域、Firehoseの動的パーティショニングの移行条件、Icebergの行更新、Glueの互換性確認の起点、Redshiftの共有許可と関連付けを検証した。コストではAthenaの結果再利用で許容する鮮度を設問に明記した。
+
+アクセス制御ではOIDCロールの対象、S3バケットポリシーのAWSサービス例外、EFSアクセスポイントの限定、同一アカウントでのKMS権限委任、Security Lakeのカスタムソース形式を確認した。復旧ではRDSの時点復元と被害行だけの取り込み、AWS Backupのコピー先での復元方式、S3の複製遅延イベント、DMSの遅延の切り分け、DataSyncの全件検証、EFSの逆方向複製と書き込み再開、Amazon MQのフェイルオーバーを扱った。
+
+179問のうち独立した候補は173問。分野順に42・40・30・36・25問で、必要な残りは53・55・25・19・50問。全18問で一次資料、正答の成立条件、各誤答が満たさない条件を確認し、既存161問を保持した。
+
+- [Kinesisの拡張ファンアウト](https://docs.aws.amazon.com/streams/latest/dev/enhanced-consumers.html)
+- [Glue Schema Registryの互換性モード](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html)
+- [S3バケットポリシーの条件キー](https://docs.aws.amazon.com/AmazonS3/latest/userguide/amazon-s3-policy-keys.html)
+- [AWS Backupによるバックアップのコピー](https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-copy.html)
+
+### ネットワーク・権限・運用の追加29問
+
+クラウド設計6問、セキュリティ4問、コスト1問、レジリエンス3問、運用15問を追加した。接続と権限を別々に検証し、Transit Gatewayの静的経路、Client VPNの経路配布と認可、PrivateLinkのプライベートDNS、HTTP APIの固定キュー宛先を設問に反映した。Aurora Serverlessのリーダーは昇格順位とスケーリングを併せて問う。
+
+IAMの最終アクセスに拒否された試行も入ること、Access Analyzerの参照ポリシー比較、既存S3 ACLの移行、組織バックアップポリシーを適用する側の前提、S3バケットキー移行時に新旧の暗号化コンテキストが必要なことを確認した。復旧問題ではRoute 53が評価できるアラームの種類、DynamoDB復元先のストリーム再構成、MySQLの計画昇格で複製を外す順序を確認した。
+
+運用では、CodePipelineのステージ単位のキュー、CodeBuildのレポートとキャッシュ、Systems Managerの設定起点とカットオフ、SLOの分母、ECSの停止イベント、CloudWatchのメトリクスストリームとログ検索、AWS Batchのインデックス依存、DynamoDB Streamsの部分再試行、Database Insightsのロックツリー、AWS Healthのリージョン間重複処理、EMRの並行ステップ制約、CloudFormationの置換後のロールバック監視を採用した。
+
+既出のMRAP設計と同じ選択になる草稿、リージョン間EFS複製を選ぶだけの草稿、現在のCloudTrail Lakeの新規利用を前提とする草稿は採用しなかった。既存179問を保持し、新規29問の正答条件・誤答根拠・出典29件を確認した。208問のうち独立した候補は202問。分野順48・44・31・39・40問、公開に必要な残りは47・51・24・16・35問。
+
+- [Transit Gatewayのピアリング](https://docs.aws.amazon.com/vpc/latest/tgw/tgw-peering.html)
+- [IAM Access Analyzerのカスタムポリシーチェック](https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-custom-policy-checks.html)
+- [Route 53のヘルスチェックの設定値](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-creating-values.html)
+- [CodePipelineの実行モード](https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts-how-it-works.html)
+- [CloudWatch Logsのフィールドインデックス](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatchLogs-Field-Indexing.html)
+- [AWS CloudTrail Lakeの提供状況](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-lake-service-availability-change.html)
+
+## SAP-C03のコンテナ・データ設計とセキュリティを14問追加
+
+クラウド設計5問、セキュリティ9問を追加した。Fargateの画像変換領域はイメージ使用量を加算し、EKSは追加配置を妨げないAZ分散を問う。DynamoDBの同一項目に対する条件付きトランザクションとTTL削除の発生元、Auroraの同一リージョンでのコピーオンライトを確認した。
+
+Cognitoの監査からの強制移行、CloudHSMキーストアとKMS操作の関係、S3 VPCアクセスポイントの権限委任、Configの監査集約とルール配布を区別した。CloudTrail Insightsでは書き込み管理APIとエラー頻度の違い、Security Hub CSPMでは検出更新と通知、Security Lakeではテーブル共有とデータ配信の違いを明記した。RDSのIAM認証は対象DBユーザーまで権限を絞り、Verified Permissionsは企業ごとに方針の管理単位を分けた。
+
+既出のECS自動復帰・Fargate Spotの最小容量・Aurora I/O料金と同じ判断になる草稿は採用しなかった。既存208問を保持し、公開候補14問はAWS一次資料の該当箇所、正答の成立条件、各誤答が外れる理由を確認した。222問のうち独立した候補は216問。分野順53・53・31・39・40問で、公開に必要な残りは42・42・24・16・35問。
+
+- [Amazon EKSのAZ分散](https://docs.aws.amazon.com/prescriptive-guidance/latest/ha-resiliency-amazon-eks-apps/spread-workloads.html)
+- [DynamoDB StreamsとTTL](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/time-to-live-ttl-streams.html)
+- [AWS CloudTrail Insights](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-insights-events-with-cloudtrail.html)
+- [AWS Configの組織コンフォーマンスパック](https://docs.aws.amazon.com/config/latest/developerguide/conformance-pack-organization-apis.html)
+
+## SAP-C03の設計・セキュリティ・コスト・復旧・運用を28問追加
+
+クラウド設計6問、セキュリティ5問、コスト7問、レジリエンス3問、運用7問を追加した。API Gatewayの本文モデルとパラメータ、SNSのイベントIDと注文ID、EventBridgeのリプレイ対象、RDSの読み取り可能な待機系、Auroraの静的メンバーシップ、Direct Connectの許可プレフィックスを別々の判断として扱った。
+
+セキュリティではECRのスキャンルールの優先、Lambda更新時の署名検証、CloudFrontとSSE-KMSの許可、IAM認証情報レポートに含まれない資格情報、バックアップ先で許可する操作を明記した。コストでは償却割引、推奨の参照期間、S3の取得料金と保存料金、Origin Shieldの費用差、EC2容量予約の空き枠、相互に排他的な削減、Lambdaのアーキテクチャ変更を確認した。
+
+復旧ではOpenSearchフォロワーの書き込み切り替え、独立組織の承認経由でのバックアップ復元、FSxのエイリアスとKerberosを独立レビューした。運用では別リージョンのCodePipeline成果物、シークレット参照の取得時点、変更セットのドリフト復元、実利用者の計測、パッチのスキャンと適用、新着ログの集約と履歴移行、新規・既存アカウントのクォータを扱った。
+
+既出のプライベートAPIのVPCE制限、RDSのIAM認証、送信元の境界設定と判断が重なる候補を見送った。既存229問の内容とID・改訂を保持し、新規28問の正答・誤答説明とAWS一次資料を確認した。257問のうち独立した候補は251問。分野順63・61・38・42・47問で、公開に必要な残りは32・34・17・13・28問。
+
+- [Amazon Auroraのカスタムエンドポイント](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Endpoints.Custom.Considerations.html)
+- [Amazon ECRのスキャンフィルター](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-filters.html)
+- [EC2の容量予約の請求](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/capacity-reservations-pricing-billing.html)
+- [AWS Backupの復元に対する複数承認](https://docs.aws.amazon.com/aws-backup/latest/devguide/multipartyapproval.html)
+- [AWS CloudFormationのドリフト考慮変更セット](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/drift-aware-change-sets.html)
+
+## SAP-C03の設計・セキュリティ・コスト・復旧・運用を22問追加
+
+設計6問では、EKSのクラスターAPIとサービスAPI、NLBのIPターゲット、同一AZのWindows共有ボリューム、S3のゾーン内作業領域、EFSの弾力的なスループット、Auroraの読み取り接続を扱った。セキュリティ3問ではSecrets Managerのポリシー保存時の検証、サービスとリージョンごとのFIPS対応、企業PKIの信頼アンカーを取り上げた。
+
+コスト3問はRDS予約割引の正規化単位、S3アップロードの経路別加速、Regional NAT GatewayのAZ別料金とS3の経路を比較した。復旧3問はEBSの削除されたボリューム、Aurora MySQLのその場での巻き戻し、RDSのネイティブな別リージョン時点復元を区別した。運用7問では予測スケーリング、リリースのリビジョン、単発実行の整理と配信失敗、StackSetsからの離脱、起動前待機、配布前の構成検証、インスタンスごとのアラームを扱った。
+
+既出と判断が重なる移行切り替え、OAC、ログマスキング、PrivateLinkの利用許可を除外した。Access Analyzerのカスタムポリシーチェックでは組織の構成員かどうかを確認できないため、その前提の案も除外した。S3 Object Lambdaについては新規利用の制限を確認し、新規導入の案を見送った。既存257問のID・改訂・内容を保持した。追加後は279問、独立した候補273問。分野順69・64・41・45・54問で、必要な残りは26・31・14・10・21問。
+
+- [EKSのKubernetes APIエンドポイント](https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html)
+- [IAM Roles Anywhereの信頼モデル](https://docs.aws.amazon.com/rolesanywhere/latest/userguide/trust-model.html)
+- [Regional NAT Gatewayの料金](https://aws.amazon.com/vpc/pricing/)
+- [RDSの複製バックアップから時刻を指定した復元](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/AutomatedBackups.PiTR.html)
+- [CloudWatchの複数時系列アラーム](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/multi-time-series-alarm.html)
+- [EventBridge Schedulerの配信失敗キュー](https://docs.aws.amazon.com/scheduler/latest/UserGuide/configuring-schedule-dlq.html)
+
+## SAP-C03の設計・セキュリティ・コスト・復旧・運用を26問追加
+
+設計7問ではGlobal Acceleratorのリージョン配分、ポート変換とヘルスチェック、接続アフィニティ、Route 53 Profilesの関連付け優先度、ALBの複合条件とHost保持、PostgreSQLのRDS Proxy初期化を区別した。セキュリティ6問は、エージェントレスの評価範囲、AWS Configの記録と定期評価、IAMの組織パス、EKSの監視対象選択、Macieの解析範囲と既存統計、OU異動後の継承ドリフトを扱った。
+
+コスト5問はSavings Plansの時間別購入試算、短命T3の余剰クレジット、Kinesisのアカウント単位の最低利用量、予算の承認とSCP適用、Redshiftの計算とストレージの分離を比較した。復旧2問はRDSの切り替え後の旧インスタンスとDRSのオンプレミスへのフェイルバックを確認した。運用6問はCloudFormationの初回ロールバック、ECSの試験リスナー、Glueの再処理範囲、暗号化AMIの所有権、Step Functionsの進捗と総時間、SNS FIFOの購読単位の追いつきを取り上げた。
+
+Route 53 Profilesの優先度は100〜9900、AWS Configの定期評価は最長24時間間隔であり、範囲外の草稿を修正した。アフィニティの設問では、エッジロケーションの切り替えで別リージョンが選ばれる場合の例外を明記した。既出のARCの安全なルーティング切り替えとS3 RTCの遅延通知を再採用しなかった。既存279問のID・改訂・内容を保持した。追加後は305問、独立した候補299問。分野順76・70・46・47・60問で、必要な残りは19・25・9・8・15問。
+
+- [Route 53 Profilesの優先順位](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/profiles.html)
+- [Control Towerのコントロール継承ドリフト](https://docs.aws.amazon.com/controltower/latest/userguide/governance-drift.html)
+- [Savings Plansの購入分析](https://docs.aws.amazon.com/savingsplans/latest/userguide/sp-purchase-analysis.html)
+- [オンプレミスへのフェイルバック](https://docs.aws.amazon.com/drs/latest/userguide/failback-performing.html)
+- [AWS Glueのジョブブックマーク](https://docs.aws.amazon.com/glue/latest/dg/monitor-continuations.html)
+
+## SAP-C03の設計・セキュリティ・コスト・復旧・運用を26問追加
+
+設計4問は、同じキーに集中するKinesisの書き込みと注文内の順序、S3アクセスポイントのSDK用エイリアスとIAM用ARN、SQS FIFOの順序と並列性、VPC Latticeのサービスネットワークと個別サービスの認証境界を扱った。セキュリティ7問は、外部キーストア切断とデータキー再利用、証明書の全対象名のDNS検証、AWS ConfigのグローバルIAM記録、CSPM検出結果の集約と既存データの扱い、Cognito V1_0でアクセストークンのグループだけを上書きできる境界、グラントのコンテキストの部分集合、既存CloudTrail Lake顧客の追加アカウントを確認した。
+
+コスト5問は、配分タグの過去の有効化、DynamoDBのインデックスの読み取り上限、GlueのDPU計測と履歴ファイルの保持、CodeBuildの予約フリートの余剰処理を取り上げた。復旧3問は、復元結果を記録する検証時間、AMIの更新失敗からの自動ロールバック、DMSで事前ロードしたPostgreSQLの変更取得を比較した。運用7問はスタック再編、パラメータの版ラベル、失敗したロールバックの続行、CodeBuildの依存関係、Resource Explorerの集約ビュー、変換後のログの転送、CloudWatchの非連続な超過判定を扱った。
+
+S3所有権、EKSのAZ分散、Auroraの昇格優先順位をもう一度問う案は見送った。既存305問のID・改訂・内容を保持した。追加後は331問、独立した候補325問。分野順80・77・51・50・67問で、必要な残りは15・18・4・5・8問。
+
+- [VPC Latticeの認証と認可](https://docs.aws.amazon.com/vpc-lattice/latest/ug/auth-policies.html)
+- [グラントの暗号化コンテキスト制約](https://docs.aws.amazon.com/kms/latest/developerguide/create-grant-overview.html)
+- [CloudTrail Lakeの提供範囲](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-lake-service-availability-change.html)
+- [DynamoDBのオンデマンド最大スループット](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/on-demand-capacity-mode-max-throughput.html)
+- [AWS Backupの復元テスト検証](https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing-validation.html)
+- [CloudFormationスタックリファクタリング](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stack-refactoring.html)
+
+## SAP-C03の設計・セキュリティ・コスト・復旧・運用を31問追加
+
+設計6問では、単発ECSタスクのブロックデータ保持、EKS Fargateの静的EFS、API Gatewayのゾーン頂点と外部JWT、Greengrassでの切断時の保全、重複するプライベートDNSを扱った。セキュリティ8問は、組織証跡の所有と委任、引き受け先のSTSリージョン、有効なSAMLメタデータ、Private CAの発行制限、外部証明書の再インポート、RCPによるリソース側の上限、KMSのリージョン別認可、記録できる管理セッションの制限を確認した。
+
+コスト4問は、S3の未完了パート、Lambdaの事前容量、Fargateの課金時間と追加ストレージ、RDSの一時停止を比較した。復旧5問では、DNS切り替え後の既存接続、OpenZFSのクローン、Valkeyのシャード単位の試験、S3の一時復元と復元完了通知、他リージョンにコピーしたAWS Backupからの復元を区別した。運用8問は、CodePipelineの対象実行、Map出力の保存、メトリクス学習の除外、指定版のS3オブジェクトの監査、アラームアクションの抑止、キューの配信時フィルター、Systems Managerの管理権限、ステートマシンのバージョン追跡を取り上げた。
+
+既出のECS Service Connectによるサービス発見をもう一度問う案と、EFSを複数タスクへ共有するだけの案は採用しなかった。既存331件のID・改訂・内容を保持した。追加後は362問、独立した候補356問。分野順86・85・55・55・75問で、必要な残りは設計9問とセキュリティ10問。
+
+- [ECSタスク用EBSボリューム](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ebs-volumes.html)
+- [CloudTrail組織証跡の委任管理](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-delegated-administrator.html)
+- [AWS Fargateの課金](https://aws.amazon.com/fargate/pricing/)
+- [AWS BackupのS3復元](https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-s3.html)
+- [CloudWatchアラームアクションの抑止](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/alarm-suppression.html)
+
+## SAP-C03の設計・セキュリティを19問追加
+
+設計9問では、索引を複製しないOpenSearchの横断検索、PrivateLinkの接続元識別、公開と非公開のREST APIの名前解決、FSxの内容解放、LatticeのTCPリソース、API Gatewayの応答変換、S3 Expressの並行追記、Auroraの書き込み転送、DynamoDBのスパースインデックスを扱った。
+
+セキュリティ10問では、EKSのAPIデータ暗号化、S3 Object Lockのリーガルホールド、CloudFrontの条件付き署名CookieとオリジンのTLS、Verified Accessの共通方針と追加条件、RDSのCA移行、S3の検知と監査、CloudWatch Logsのキー切り替え、DNSSECの親ゾーンへの登録、Identity CenterのSCIMとSAMLを扱った。
+
+既出のSecurity Lakeの購読者設定と、WAFのCountを中心とする試験案は採用しなかった。Latticeのゲートウェイとリソース設定は両方を選ぶ5択にした。公開APIの名前解決、CloudFront署名CookieのIPv4条件、RDSの対象エンジンは設問内で前提を明記した。既存362件のID・改訂・内容を保持した。追加後は381問で、類似グループごとに数えた独立候補は375問。分野別に95・95・55・55・75問あり、75問ずつ重複のない模試5回分を構成できる。
+
+- [VPC Latticeのリソース設定](https://docs.aws.amazon.com/vpc-lattice/latest/ug/resource-configuration.html)
+- [PrivateLinkの接続元情報とProxy Protocol v2](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/edit-target-group-attributes.html)
+- [Aurora MySQLのグローバル書き込み転送](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-global-database-write-forwarding-ams.html)
+- [CloudWatch LogsのKMS暗号化とキーの関連付け](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html)
+- [DNSSECの署名と親ゾーンとの信頼関係](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-enable-signing.html)
+- [IAM Identity CenterのSCIMプロビジョニング](https://docs.aws.amazon.com/singlesignon/latest/userguide/provision-automatically.html)

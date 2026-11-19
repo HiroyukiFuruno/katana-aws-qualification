@@ -885,3 +885,16 @@ AWSの試験ガイドの分野比率16・14・18・20・18・14%に合わせ、6
 - [CloudTrailの詳細イベントセレクタ](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/filtering-data-events.html)
 - [AWSのフォレンジック用アカウント](https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-cyber-forensics/forensics-account.html)
 - [IAMロールの一時認証情報の取り消し](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_revoke-sessions.html)
+
+## SCS-C03の重複しないフル模試2回分
+
+65問を追加し、既存65問を維持した。独立130問を6分野に20・18・24・26・24・18問ずつ収録する。単一選択114問、複数選択13問、並べ替え2問、組み合わせ1問。単一選択の正答位置はA〜Dの順に29・29・28・28問。
+
+脅威検出の再発通知、証拠の保全と複製、VPCの受信制限、ECSの実行ロールとタスクロール、エンクレーブのアテステーション、組織のバックアップポリシーの継承などを追加した。同じサービスを扱う設問は、問題文、制約、正答に必要な判断を照合した。例えばCertificate Managerの証明書をCloudFrontへ関連付けるリージョン選択と、ALBで参照している同一ARNへの更新は異なる判断を扱う。
+
+フル模試を512回生成し、65問・170分と分野配分を検証した。互いに重複しないフル模試2回分を128組生成し、カスタム全65件数、採点2,294通り、出典URL127件、旧版16レコードの参照を確認した。
+
+- [GuardDuty所見のEventBridge配信](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings_eventbridge.html)
+- [AWSのインシデント対応ガイド](https://docs.aws.amazon.com/pdfs/whitepapers/latest/aws-security-incident-response-guide/aws-security-incident-response-guide.pdf)
+- [KMSのエンクレーブ証明条件](https://docs.aws.amazon.com/kms/latest/developerguide/conditions-attestation.html)
+- [Organizationsのバックアップポリシー](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_backup.html)

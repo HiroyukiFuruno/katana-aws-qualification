@@ -527,3 +527,16 @@ AI・MLの基礎、生成AIの基礎、基盤モデルの応用、セキュリ�
 - [AIF-C01公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
 - [Amazon Bedrock Knowledge Basesの検索設定](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-test-config.html)
 - [Amazon Bedrockの評価指標](https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-metrics.html)
+
+## AIF-C01の5分野に62問を追加
+
+今の問題とは異なる判断を問う候補を追加した。AI・MLの基礎14問、生成AIの基礎10問、基盤モデルの応用13問、責任あるAI12問、セキュリティとガバナンス13問。合計は110レコード、類似グループを除いた独立候補は109問。全5分野の独立候補は29・26・22・15・17問になった。
+
+類似した用途選定、同一の指標判断、既出のデータ分割の草稿は採用しなかった。誤答には別用途に使える機能や、条件を一部しか満たさない構成を置いた。新規62問について、採点の組み合わせ316通りと出典URL54件の到達を確認した。旧10問の内容と版を維持した。A2IとSageMaker Model Monitorについては、既に利用中の環境に前提を限定した。
+
+- [AIF-C01公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
+- [SageMaker Canvasでの特徴量変換](https://docs.aws.amazon.com/sagemaker/latest/dg/canvas-transform.html)
+- [Amazon Bedrockのリージョン別モデル提供](https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html)
+- [Bedrock Knowledge Basesのチャンク分割](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking.html)
+- [Amazon A2IとTextractの確認条件](https://docs.aws.amazon.com/sagemaker/latest/dg/a2i-json-humantaskactivationconditions-textract-example.html)
+- [Amazon S3のタグ条件付きアクセス](https://docs.aws.amazon.com/AmazonS3/latest/userguide/tagging-and-policies.html)

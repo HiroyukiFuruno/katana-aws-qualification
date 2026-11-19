@@ -939,3 +939,16 @@ GuardDutyの実行時監視の確認、稼働中の複数EBSからの証拠保�
 - [Direct ConnectのMACsec](https://docs.aws.amazon.com/directconnect/latest/UserGuide/MACsec.html)
 - [Athenaと信頼されたID伝播](https://docs.aws.amazon.com/singlesignon/latest/userguide/tip-usecase-ate.html)
 - [AWS Backup Audit Managerのコントロール](https://docs.aws.amazon.com/aws-backup/latest/devguide/choosing-controls.html)
+
+## ANS-C01のフル模試1回分
+
+AWSの試験案内は65問・170分、試験ガイドは採点対象50問の4分野を30%・26%・20%・24%としている。模試では全65問を19・17・13・16問に配分した。新規56問と既存9問の改訂を収録し、旧版2ファイルの計16レコードはそのまま保管する。旧版で分かれていたResolverの問い合わせ方向は、新版では1つの組み合わせ問題で扱う。
+
+内訳は単一選択59問、複数選択4問、組み合わせ2問。正答に必要な判断で重複を確認した。たとえばPrivateLinkのリージョン間接続はサービス提供側のリージョン許可を問い、同一リージョンでのCIDR重複はVPC間の経路交換を必要としない接続方式を問う。Route 53のプライベートヘルスチェックはVPC内のチェック元を構成する手順まで解説する。
+
+512回の模試生成で65問・170分、分野配分、各回の類似グループの一意性を検証した。全65カスタム件数、採点1,084通り、AWS公式出典64件、旧版16レコードの復元と採点も確認した。公開条件の独立325問まで260問が残る。
+
+- [ANS-C01試験案内](https://aws.amazon.com/certification/certified-advanced-networking-specialty/)
+- [ANS-C01試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01.html)
+- [複数リージョンでのPrivateLinkサービス公開](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-share-your-services.html)
+- [Route 53のプライベートヘルスチェック](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-private-endpoints.html)

@@ -1,9 +1,11 @@
 import { AccountBenefits } from './auth/AccountBenefits';
 import { AccountEntryCta } from './auth/AccountEntryCta';
 import { CertificationDirectory } from './CertificationDirectory';
+import { Faq } from './Faq';
 import { LandingCatalogStats } from './LandingCatalogStats';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
+import './landing.css';
 
 export function NotFound() {
   return (
@@ -54,17 +56,10 @@ export function Home() {
           </span>
         </a>
       </div>
-      <div className="shell">
+      <div className="shell landing-account-benefits">
         <AccountBenefits context="home" showAction />
       </div>
-      <section className="shell landing-faq" aria-labelledby="landing-faq-title">
-        <h2 id="landing-faq-title">{t('landingFaq')}</h2>
-        <div className="card">
-          <h3>{t('commuteStudyQuestion')}</h3>
-          <p>{t('commuteStudyAnswer')}</p>
-          <a href={localePath(locale, 'study/questions')}>{t('learnFromQuestions')}</a>
-        </div>
-      </section>
+      <Faq />
     </main>
   );
 }

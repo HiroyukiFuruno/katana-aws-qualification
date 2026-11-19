@@ -588,3 +588,16 @@ AI・MLの基礎4問、生成AIの基礎6問、基盤モデルの応用9問、�
 - [Bedrockのナレッジベースへの直接取り込み](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-direct-ingestion-add.html)
 - [Responsible AI Lensの透明性戦略](https://docs.aws.amazon.com/wellarchitected/latest/responsible-ai-lens/raigt01-bp01.html)
 - [ECRでのAmazon Inspectorの継続スキャン](https://docs.aws.amazon.com/inspector/latest/user/scanning-ecr.html)
+
+## AIF-C01に29問を追加し、模試4回分を検証
+
+AI・MLの基礎3問、生成AIの基礎11問、基盤モデルの応用11問、セキュリティとガバナンス4問。分野別の独立候補は58・65・74・40・42問、合計279問。残りは分野別に7・15・16・5・3問。既存10問の内容と版は保持した。
+
+追加分では、成約ラベルの定義と予測時点で使える情報、MCP経由の既存API利用、エージェントのセッション分離と長期メモリ、字幕の正確さを求める動画制作、検証損失による早期停止、自動採点の偏り、用語とデータ資産の対応付けを扱った。既出の教師あり調整や、情報不足時の応答に判断が重なる候補は今回の追加から外した。
+
+新規118通りの採点、累計200件の参照先への直接到達、既存の自動検査を確認した。本番条件の65問・90分を512回実行し、分野別の配分を保った重複なしの4回を128組組めること、カスタムの全65件数、問題バンクの全280レコードが抽選対象になることを確認した。
+
+- [AIF-C01の生成AI分野](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01-domain2.html)
+- [AgentCoreの長期メモリ戦略](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/long-term-configuring-built-in-strategies.html)
+- [Bedrockのモデル調整時の早期停止](https://docs.aws.amazon.com/bedrock/latest/userguide/custom-models-hp.html)
+- [Bedrock自動評価で応答が不足した場合の確認](https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-report-programmatic.html)

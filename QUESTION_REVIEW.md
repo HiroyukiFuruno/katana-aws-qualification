@@ -683,3 +683,14 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 - [DVA-C03公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/developer-associate-03.html)
 - [AppSyncのLambdaバッチリゾルバー](https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-lambda-js.html)
 - [S3バケットキーと暗号化コンテキスト](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-key.html)
+
+## SOA-C03のフル模試1回分
+
+新規55問と既存10問を、監視・分析・修復と性能最適化14問、信頼性と事業継続14問、デプロイ・プロビジョニングと自動化14問、セキュリティとコンプライアンス11問、ネットワークとコンテンツ配信12問の独立65問にまとめた。AWS公式試験の配分22・22・22・16・18％は採点対象50問に適用される。教材では合計65問・130分の練習用配分に換算し、全65問の結果を確認できる形とした。
+
+既存10問の設問ID、改訂番号、本文、選択肢、正答を維持し、出題分野と類似グループを付けた。既存設問の参照先は、それぞれのAWS仕様を説明する資料に更新した。EventBridgeのルール選択を繰り返す草稿は、状態収集後に承認者が判断するSystems Manager Automationの設問へ差し替えた。ALBのヘルスチェックを軽くする設問と、Route 53の主副リージョン切替を設定する設問は、制御点と運用判断が異なる。
+
+単一選択59問、複数選択6問。フル模試の生成512回、カスタム全65件数、全1,136通りの採点を検証した。分野ごとの5倍に達するには、順に56・56・56・44・48問を追加する。
+
+- [SOA-C03公式試験の概要](https://aws.amazon.com/certification/certified-cloudops-engineer-associate/)
+- [SOA-C03の公式試験ガイド](https://docs.aws.amazon.com/pdfs/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.pdf)

@@ -1,0 +1,58 @@
+name: kaq-data-integration
+services:
+  database:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: supabase_auth_admin
+      POSTGRES_PASSWORD: integration-only
+      POSTGRES_DB: kaq_data
+    tmpfs:
+      - /var/lib/postgresql
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+      - ../../supabase/migrations:/migrations:ro
+      - ./:/verification:ro
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U supabase_auth_admin -d kaq_data]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  auth:
+    image: supabase/gotrue:v2.198.0
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://127.0.0.1:54430
+      GOTRUE_SITE_URL: http://127.0.0.1:5173
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:integration-only@database:5432/kaq_data?search_path=auth
+      GOTRUE_JWT_SECRET: kaq-data-integration-jwt-secret-not-for-production
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_LOG_LEVEL: warn
+    ports:
+      - "127.0.0.1:54430:9999"
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O - http://127.0.0.1:9999/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  rest:
+    image: postgrest/postgrest:v14.1
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:integration-only@database:5432/kaq_data
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: kaq-data-integration-jwt-secret-not-for-production
+      PGRST_SERVER_PORT: 3000
+    ports:
+      - "127.0.0.1:54431:3000"

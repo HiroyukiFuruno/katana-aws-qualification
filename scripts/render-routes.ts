@@ -43,7 +43,7 @@ for (const locale of locales) {
       )
       .join('\n');
     const description = escapeHtml(
-      entry === 'glossary' ? dictionary.glossaryIntro : dictionary.landingIntro,
+      entry === 'glossary' ? dictionary.glossaryIntro : dictionary.landingDescription,
     );
     const html = template
       .replace('lang="en"', `lang="${locale}"`)

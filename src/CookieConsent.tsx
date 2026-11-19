@@ -10,11 +10,13 @@ try {
 } catch {
   // 保存できない環境でも現在のページには選択を反映する。
 }
+let snapshot = { value: current };
 function subscribe(callback: () => void) {
   function synchronize(change: StorageEvent) {
     if (change.storageArea !== localStorage || (change.key !== key && change.key !== null)) return;
     const revoke = cookiesAllowed() && change.newValue !== 'granted';
     current = change.newValue;
+    snapshot = { value: current };
     callback();
     // 別タブで撤回された場合も読み込み済みタグを停止する。
     if (revoke) {
@@ -30,7 +32,7 @@ function subscribe(callback: () => void) {
   };
 }
 export function useCookieConsent() {
-  return useSyncExternalStore(subscribe, () => current);
+  return useSyncExternalStore(subscribe, () => snapshot);
 }
 export function cookiesAllowed() {
   return current === 'granted';
@@ -49,6 +51,7 @@ export function clearAnalyticsCookies() {
 function saveChoice(value: string) {
   const revoke = cookiesAllowed() && value !== 'granted';
   current = value;
+  snapshot = { value };
   try {
     localStorage.setItem(key, value);
     localStorage.setItem('katana-aws:analytics-consent', value);
@@ -69,7 +72,7 @@ export function CookieConsent() {
     window.addEventListener('katana-cookie-settings', show);
     return () => window.removeEventListener('katana-cookie-settings', show);
   }, []);
-  if (!open && (consent === 'granted' || consent === 'denied')) return null;
+  if (!open && (consent.value === 'granted' || consent.value === 'denied')) return null;
   function choose(value: string) {
     saveChoice(value);
     setOpen(false);

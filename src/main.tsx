@@ -28,7 +28,7 @@ function App() {
   const { state } = useAccount();
   useEffect(() => {
     if (!route || accountPages.includes(route.page)) return;
-    initializeAnalytics(consent === 'granted');
+    initializeAnalytics(consent.value === 'granted');
   }, [route, consent]);
   useEffect(() => {
     if (route?.page === '' && state.status === 'ready' && state.account) {

@@ -57,3 +57,16 @@ test('analytics choice opens global consent instead of showing an ineffective ch
   await page.getByRole('button', { name: 'すべて許可', exact: true }).click();
   await expect(analytics).toBeChecked();
 });
+
+test('accept all reapplies analytics after a separate analytics opt-out', async ({ page }) => {
+  await page.goto('/ja/privacy/');
+  await page.getByRole('button', { name: 'すべて許可', exact: true }).click();
+  const analytics = page.locator('main input[type=checkbox]');
+  await analytics.uncheck();
+  await page.getByRole('button', { name: 'Cookie設定', exact: true }).click();
+  await page.getByRole('button', { name: 'すべて許可', exact: true }).click();
+  await expect(analytics).toBeChecked();
+  await expect
+    .poll(() => page.evaluate(() => window['ga-disable-G-XS97G1267H' as keyof Window]))
+    .toBe(false);
+});

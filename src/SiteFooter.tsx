@@ -2,6 +2,7 @@ import { useHomePath } from './auth/AccountNavigation';
 import { openCookieSettings } from './CookieConsent';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
+import { SiteAd } from './SiteAd';
 
 export function SiteFooter() {
   const { t, locale } = usePreferences();
@@ -25,6 +26,9 @@ export function SiteFooter() {
         <a className="brand" href={homePath}>
           KatanA<span> AWS Qualification</span>
         </a>
+      </div>
+      <div className="shell">
+        <SiteAd />
       </div>
     </footer>
   );

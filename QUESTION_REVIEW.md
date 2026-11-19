@@ -613,3 +613,17 @@ AI・MLの基礎7問、生成AIの基礎15問、基盤モデルの応用16問、
 - [AWS Certified AI Practitionerの試験条件](https://aws.amazon.com/certification/certified-ai-practitioner/)
 - [AWS Certified AI Practitionerの試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
 - [Amazon Bedrockモデルの提供状況](https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html)
+
+## DVA-C03の独立65問とフル模試の構成
+
+AWSのDVA-C03は65問・130分。採点対象50問の分野比率30・26・22・22%を全65問に按分し、AWSサービスでの開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問とした。公開に必要な独立候補は分野別に100・85・70・70問、合計325問。
+
+旧DVA-C02の10問は設問・選択肢・正答・改訂番号を保持し、分野、類似グループ、個別の出典を追加した。SQSとKinesisの部分バッチ応答は異なる挙動を学べるが、どちらも同じ設定を正答とするため、模試では片方だけを選ぶ。新版の出題範囲に沿って56問を加え、計66レコード、独立65問になった。単一選択61問・複数選択5問を収録している。
+
+開発では空のDynamoDBページから読み進める条件や、同期ワークフローのHTTP応答と実行結果の違いを確認した。セキュリティではBedrockをプライベートに呼ぶための接続設定と、モデル出力を表示前に検査する方法を扱った。テストとデプロイではECRのタグ上書きルール、AppConfigの配布前検証と配布後のロールバック、CloudFormationの置換前後を分けた。トラブルシューティングではLambdaの同時実行枠、DAXの整合性、RDS Proxyのセッション状態を扱った。
+
+設問を読み込み、全1,136通りの選択肢の組み合わせを採点して確認した。模試生成処理でフル256回、カスタムの全65件数を実行し、分野配分、所要時間、各回の類似グループ重複排除、全66レコードが抽選に入ることを確認した。公開前に残り80・68・56・56問を追加し、実データで重複のないフル模試5回分、旧版の履歴・途中の模試の互換、資格別レビューを確認する。
+
+- [AWS Certified Developer – Associate試験概要](https://aws.amazon.com/certification/certified-developer-associate/)
+- [DVA-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/developer-associate-03.html)
+- [DVA-C02とDVA-C03の比較](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-comparison.html)

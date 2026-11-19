@@ -35,6 +35,7 @@ export default defineConfig({
       VITE_SUPABASE_URL: authOrigin,
       VITE_SUPABASE_PUBLISHABLE_KEY: testKey('anon'),
       VITE_AUTH_GITHUB_ENABLED: 'true',
+      VITE_AUTH_GOOGLE_ENABLED: 'true',
     },
   },
 });

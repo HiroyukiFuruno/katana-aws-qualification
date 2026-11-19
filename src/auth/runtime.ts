@@ -12,7 +12,10 @@ export function createAccountAuth(): AccountAuth | null {
   const client = createAuthClient(configuration);
   return new SupabaseAuth(
     client,
-    configuredProviders(import.meta.env.VITE_AUTH_GITHUB_ENABLED === 'true'),
+    configuredProviders({
+      github: import.meta.env.VITE_AUTH_GITHUB_ENABLED === 'true',
+      google: import.meta.env.VITE_AUTH_GOOGLE_ENABLED === 'true',
+    }),
     location.origin,
   );
 }

@@ -694,3 +694,14 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 
 - [SOA-C03公式試験の概要](https://aws.amazon.com/certification/certified-cloudops-engineer-associate/)
 - [SOA-C03の公式試験ガイド](https://docs.aws.amazon.com/pdfs/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.pdf)
+
+## SOA-C03の重複しないフル模試2回分
+
+新規65問を追加し、既存65問を維持した。監視・分析・修復と性能最適化28問、信頼性と事業継続28問、デプロイ・プロビジョニングと自動化28問、セキュリティとコンプライアンス22問、ネットワークとコンテンツ配信24問で、独立130問となった。単一選択117問、複数選択13問。単一選択の正答位置はAから順に29・29・29・30問。
+
+設問と正答文の近い組を運用上の判断まで比較した。S3の複製設定を再び選ばせる草稿をEFSの項目レベル復元へ変更し、IPv4のNAT経路に似た草稿を組織内のCIDR重複を探すIPAMの問題へ変更した。DNSはVPCから社内DNSへの転送と、重複するプライベートゾーンでの優先順位を扱う。Systems Managerで承認を設定する既存問題があるため、新規の自動化では利用中のCloudFormationエクスポートを段階的に移行する判断を扱った。
+
+出典128件、全2,288通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、分野配分14・14・14・11・12のフル模試を、互いに問題が重複しない2回分として128組生成した。分野ごとの5倍に達するには、順に42・42・42・33・36問を追加する。
+
+- [EFSの項目レベル復元](https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-efs.html)
+- [VPC IPAMのCIDR使用状況と重複](https://docs.aws.amazon.com/vpc/latest/ipam/monitor-cidr-compliance-ipam.html)

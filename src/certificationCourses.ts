@@ -2,7 +2,6 @@ import type { Certification, Course } from './certificationTypes';
 
 const starterCourseIds = new Set([
   'clf-c02',
-  'soa-c03',
   'dea-c01',
   'mla-c01',
   'sap-c03',
@@ -27,6 +26,26 @@ export const developerCourse: Course = {
       セキュリティ: 17,
       テストとデプロイ: 14,
       トラブルシューティングと最適化: 14,
+    },
+  },
+  fixedExamFromBlueprint: true,
+  reviewedMock: true,
+};
+
+const cloudOpsMock = 'courses/soa-c03/full-mock-2026-11.json';
+
+export const cloudOpsCourse: Course = {
+  practice: [{ path: cloudOpsMock, label: 'saaFull' }],
+  mock: cloudOpsMock,
+  archives: ['courses/soa-c03/questions.json'],
+  exam: {
+    minutes: 130,
+    distribution: {
+      '監視・分析・修復と性能最適化': 14,
+      信頼性と事業継続: 14,
+      'デプロイ・プロビジョニングと自動化': 14,
+      セキュリティとコンプライアンス: 11,
+      ネットワークとコンテンツ配信: 12,
     },
   },
   fixedExamFromBlueprint: true,

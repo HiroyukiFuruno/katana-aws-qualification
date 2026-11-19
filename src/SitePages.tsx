@@ -1,3 +1,5 @@
+import { AccountBenefits } from './auth/AccountBenefits';
+import { AccountEntryCta } from './auth/AccountEntryCta';
 import { CertificationDirectory } from './CertificationDirectory';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
@@ -31,6 +33,7 @@ export function Home() {
         <div className="shell">
           <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja')}</h1>
           <p>{wrapJapanesePhrase(t('landingIntro'), locale === 'ja')}</p>
+          <AccountEntryCta />
         </div>
       </section>
       <div className="shell entry-grid">
@@ -48,6 +51,9 @@ export function Home() {
             {t('assessmentSetup')} <span aria-hidden="true">→</span>
           </span>
         </a>
+      </div>
+      <div className="shell">
+        <AccountBenefits context="home" showAction />
       </div>
       <section className="shell landing-faq" aria-labelledby="landing-faq-title">
         <h2 id="landing-faq-title">{t('landingFaq')}</h2>
@@ -69,6 +75,7 @@ export function StudyPaths() {
         <h1>{t('study')}</h1>
         <p>{t('studyPathsIntro')}</p>
       </div>
+      <AccountBenefits context="study" showAction />
       <div className="entry-grid study-paths">
         <a className="entry-card" href={localePath(locale, 'study/fundamentals')}>
           <h2>{t('learnFundamentals')}</h2>

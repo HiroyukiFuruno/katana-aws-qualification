@@ -38,7 +38,7 @@ test('callback rejection cleans code and never loads analytics even with prior c
   await page.goto('/ja/login/');
   await page.evaluate(() => localStorage.setItem('katana-aws:analytics-consent', 'granted'));
   await page.goto('/ja/auth/callback/?code=invalid&next=https://example.org');
-  await expect(page.getByRole('alert')).toContainText('もう一度ログイン');
+  await expect(page.locator('[data-auth-failure="browser"]')).toBeVisible();
   await expect(page).toHaveURL(/\/ja\/auth\/callback\/$/);
   await expect(page.locator('#katana-analytics')).toHaveCount(0);
   await page.goto('/ja/auth/callback/?error=access_denied');

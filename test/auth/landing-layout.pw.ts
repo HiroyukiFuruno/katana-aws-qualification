@@ -19,8 +19,8 @@ test('landing cards retain hierarchy and viewport bounds in light and dark theme
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
       await page.goto('/ja/');
-      const entry = await bounds(page, '.landing > .entry-grid');
-      const benefits = await bounds(page, '.landing-account-benefits');
+      const entry = await bounds(page, '.landing-content > .entry-grid');
+      const benefits = await bounds(page, '.landing-content > .account-benefits');
       const faq = await bounds(page, '.landing-faq');
       expect(benefits.y - (entry.y + entry.height)).toBeGreaterThanOrEqual(24);
       expect(faq.y - (benefits.y + benefits.height)).toBeGreaterThanOrEqual(24);
@@ -42,7 +42,7 @@ test('landing cards retain hierarchy and viewport bounds in light and dark theme
 test('FAQ toggles by keyboard, keeps focus visible and respects reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/ja/');
-  const item = page.locator('.landing-faq-item').first();
+  const item = page.locator('.landing-faq-item').nth(1);
   const summary = item.locator('summary');
   await summary.focus();
   await expect(summary).toBeFocused();

@@ -1,8 +1,9 @@
+import { assessmentDate, assessmentEstimate, assessmentItems } from './assessment';
 import { AccountBenefits } from './auth/AccountBenefits';
 import { AccountEntryCta } from './auth/AccountEntryCta';
 import { CertificationDirectory } from './CertificationDirectory';
-import { Faq } from './Faq';
 import { LandingCatalogStats } from './LandingCatalogStats';
+import { LandingFaq } from './LandingFaq';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
 import './landing.css';
@@ -16,9 +17,9 @@ export function NotFound() {
   );
 }
 
-function wrapJapanesePhrase(text: string, japanese: boolean) {
-  const boundary = japanese ? text.indexOf('、') + 1 : 0;
-  if (!boundary) return text;
+function wrapJapanesePhrase(text: string, japanese: boolean, nextPhrase: string) {
+  const boundary = japanese ? text.indexOf(nextPhrase) : -1;
+  if (boundary < 1) return text;
   return (
     <>
       {text.slice(0, boundary)}
@@ -30,36 +31,38 @@ function wrapJapanesePhrase(text: string, japanese: boolean) {
 
 export function Home() {
   const { locale, t } = usePreferences();
+  const estimate = assessmentEstimate(assessmentItems([], assessmentDate()).length);
   return (
     <main id="main" className="landing">
       <section className="landing-hero">
-        <div className="shell">
-          <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja')}</h1>
-          <p>{wrapJapanesePhrase(t('landingIntro'), locale === 'ja')}</p>
+        <div className="shell layout-stack">
+          <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja', '試験対策')}</h1>
+          <p>{wrapJapanesePhrase(t('landingIntro'), locale === 'ja', 'KAQ')}</p>
           <LandingCatalogStats />
           <AccountEntryCta />
         </div>
       </section>
-      <div className="shell entry-grid">
-        <a className="entry-card" href={localePath(locale, 'study')}>
-          <h2>{t('study')}</h2>
-          <p>{t('studyPathsIntro')}</p>
-          <span className="entry-action" aria-hidden="true">
-            →
-          </span>
-        </a>
-        <a className="entry-card" href={localePath(locale, 'assessment')}>
-          <h2>{t('skillsAssessment')}</h2>
-          <p>{t('assessmentEntry')}</p>
-          <span className="entry-action">
-            {t('assessmentSetup')} <span aria-hidden="true">→</span>
-          </span>
-        </a>
-      </div>
-      <div className="shell landing-account-benefits">
+      <div className="shell layout-stack landing-content">
+        <div className="entry-grid">
+          <a className="entry-card" href={localePath(locale, 'study')}>
+            <h2>{t('study')}</h2>
+            <p>{t('studyPathsIntro')}</p>
+            <span className="entry-action" aria-hidden="true">
+              →
+            </span>
+          </a>
+          <a className="entry-card" href={localePath(locale, 'assessment')}>
+            <h2>{t('skillsAssessment')}</h2>
+            <p>{t('assessmentEntry')}</p>
+            {estimate.count > 0 && <small>{t('assessmentLength', estimate)}</small>}
+            <span className="entry-action">
+              {t('assessmentSetup')} <span aria-hidden="true">→</span>
+            </span>
+          </a>
+        </div>
         <AccountBenefits context="home" showAction />
+        <LandingFaq />
       </div>
-      <Faq />
     </main>
   );
 }

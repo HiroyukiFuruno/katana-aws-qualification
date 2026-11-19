@@ -5,6 +5,14 @@ import { certifications, type Skill } from './certifications';
 export const profileKey = 'katana.certification-profile.v1';
 export const assessment = [...assessmentData, ...assessmentExtra];
 
+export function assessmentDate() {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+}
+
+export function assessmentEstimate(count: number) {
+  return { count, minutes: Math.ceil((count * 45) / 60) };
+}
+
 export function remainingCertifications(earned: string[], today: string) {
   return certifications.filter(
     (cert) => !earned.includes(cert.id) && (!cert.retireOn || cert.retireOn >= today),

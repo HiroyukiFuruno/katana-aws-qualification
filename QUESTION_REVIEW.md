@@ -978,3 +978,15 @@ AWSの出典で正答の条件と誤答の根拠を確認し、追加問を含�
 - [PrivateLinkのIPv4・IPv6対応](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html)
 - [EKSのIPv4プレフィックス割り当て](https://docs.aws.amazon.com/eks/latest/userguide/cni-increase-ip-addresses.html)
 - [ALBのTLSセキュリティポリシー](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html)
+
+## ANS-C01の重複しないフル模試4回分
+
+独立65問を追加し、既存195問の内容と順序を維持した。4分野は76・68・52・64問。内訳は単一選択228問、複数選択24問、組み合わせ8問で、単一選択の正答位置はA〜Dで各57問。
+
+追加問を含む14,755組の表記を比較した。CloudFormationの設問では入力値の形式検証と、スタックが使う実行ロールの指定を別の判断として確認した。新しいNLBの設問は、PrivateLinkを利用する通信のエンドポイントIDを記録する設計と、AZごとの状態を監視する方法を個別に扱う。
+
+フル模試512回で65問・170分、4分野の配分、類似グループの重複排除と全260問の抽選を確認した。重複しないフル模試4回分を128組生成し、全65カスタム件数、採点4,464通り、公式出典222件と旧版16レコードも検証した。公開条件まで残り65問。
+
+- [CloudFormationのサービスロール](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html)
+- [NLBターゲットグループの属性](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/edit-target-group-attributes.html)
+- [Direct ConnectのBGPコミュニティ](https://docs.aws.amazon.com/directconnect/latest/UserGuide/routing-and-bgp.html)

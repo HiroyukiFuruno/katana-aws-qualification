@@ -8575,5 +8575,2848 @@
       "reason": "Network Firewallはログ種別ごとに出力先を設定できる。",
       "concept": "Network Firewall logging configuration"
     }
+  },
+  {
+    "id": "ans-c01-d1-055",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-arc-routing-control-at-least-one-on",
+    "title": "リージョン切替で両方の入口が停止する状態を防ぐ",
+    "prompt": "2リージョンの公開入口をAmazon ARCのルーティングコントロールで切り替える。操作中に両方をオフにする変更をサービス側で拒否し、操作者への通知だけに頼らない。どう設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DNSのキャッシュ時間を短くして、両方がオフなら再解決を早く行わせる。",
+        "explanation": "再解決を早めても、両方をオフにする更新自体は拒否できない。"
+      },
+      {
+        "id": "B",
+        "text": "両方のルーティングコントロールに同じクラスターのデータプレーンエンドポイントを使う。",
+        "explanation": "変更先のエンドポイントを揃えても、許容する状態の組み合わせは制限されない。"
+      },
+      {
+        "id": "C",
+        "text": "オフ状態を検知するCloudWatchアラームだけを作成する。",
+        "explanation": "異常な変更後に通知できるが、変更操作を事前に拒否しない。"
+      },
+      {
+        "id": "D",
+        "text": "2つのルーティングコントロールを対象に、オンが最低1つ必要なアサーションのセーフティルールを設定する。",
+        "explanation": "両方がオフになる状態変更を拒否する条件をARCで定義できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/r53recovery/latest/dg/routing-control.safety-rules.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "両方がオフになる状態変更を拒否する条件をARCで定義できる。",
+      "concept": "アサーションのセーフティルールは、ルーティングコントロールの状態が満たすべき条件を指定する。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-056",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-dx-gateway-multiregion-vgw-no-transit",
+    "title": "専用線を共有してリージョンをまたぐVPCへ個別に接続",
+    "prompt": "オンプレミスに1本のDirect Connect接続がある。複数リージョンのVPCはそれぞれ既存VGWを使い、拠点とは通信するがVPC間の直接中継は不要である。追加のTGWを作らず接続を集約する案はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "1つのVPCだけをDirect Connectに接続し、そのVPCを他のVPCとピアリングする。",
+        "explanation": "VPCピアリングのエッジツーエッジ制約により、中継VPCのDirect Connectを共有できない。"
+      },
+      {
+        "id": "B",
+        "text": "パブリックVIFで各VPCのプライベートCIDRをインターネット向けに広告させる。",
+        "explanation": "公開サービス用VIFはVPCの私設経路をこの構成で提供しない。"
+      },
+      {
+        "id": "C",
+        "text": "1つのVGWへVIFを直接接続し、他リージョンのVGWとの関連付けをそのVGWに追加する。",
+        "explanation": "VPNゲートウェイ自体は他のVPCのVGWへ接続を広げる集約点ではない。"
+      },
+      {
+        "id": "D",
+        "text": "プライベートVIFをDirect Connectゲートウェイに接続し、対象のVGWをそれぞれ関連付ける。",
+        "explanation": "ひとつのVIFから関連付けられたVPC側へ到達できる。VGW同士の中継経路は提供しない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/virtualgateways.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ひとつのVIFから関連付けられたVPC側へ到達できる。VGW同士の中継経路は提供しない。",
+      "concept": "Direct ConnectゲートウェイはプライベートVIFを通じて複数のVGWに接続できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-057",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-ec2-secondary-private-ip-reassign-standby",
+    "title": "同一サブネットの待機系へ私設IPを移す",
+    "prompt": "利用者はVPC内の固定IPv4で状態同期済みEC2サービスに到達する。現用と待機のENIは同じサブネットにあり、切替時にDNSを変更しない。サービス用のIPv4をどのように割り当てるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同じプライベートIPv4を両ENIへ同時に割り当て、待機側の応答だけを抑える。",
+        "explanation": "同じサブネットの重複するアドレスを2つのENIに通常割り当てする構成ではない。"
+      },
+      {
+        "id": "B",
+        "text": "現用サブネットと同じIPv4範囲を持つ別サブネットを作り、同じVPCで重複を許容する。",
+        "explanation": "サブネットのCIDRを重複させる方法では同じ宛先を移せない。"
+      },
+      {
+        "id": "C",
+        "text": "現用ENIのプライマリIPv4を、現用ENIを残したまま待機ENIへ再割り当てする。",
+        "explanation": "プライマリIPv4にはセカンダリと同じ再割り当ての操作を使えない。"
+      },
+      {
+        "id": "D",
+        "text": "サービス用IPを現用ENIのセカンダリIPv4として使い、切替時に待機系ENIへ再割り当てする。",
+        "explanation": "待機系へ同じ私設IPを移してクライアント側の宛先を維持できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "待機系へ同じ私設IPを移してクライアント側の宛先を維持できる。",
+      "concept": "セカンダリプライベートIPv4は同じサブネット内の別のネットワークインターフェイスへ再割り当てできる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-058",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nlb-public-subnet-eip-mapping-single-region",
+    "title": "公開TCPの許可リストに登録済みのIPを維持",
+    "prompt": "許可リストへ登録済みの2個のElastic IPを使い、単一リージョンの2 AZで公開TCPサービスを受ける。各AZの入口に指定済みのIPを対応付け、既存の接続元設定を維持する。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "内部NLBのサブネットマッピングに私設IPを指定し、そのままインターネットへ広告する。",
+        "explanation": "内部NLBの私設IPを利用者が許可リストに登録済みの公開IPとして使えない。"
+      },
+      {
+        "id": "B",
+        "text": "インターネット向けNLBを作り、各AZのサブネットマッピングで対応するElastic IPを指定する。",
+        "explanation": "各ゾーンのNLB入口に指定済みの公開IPを割り当てられる。"
+      },
+      {
+        "id": "C",
+        "text": "インターネット向けALBのターゲットへ2つのElastic IPを付け、ALBの入口も同じIPになると見なす。",
+        "explanation": "バックエンドのIPを固定してもALBの外部アドレスと任意のTCP待ち受け条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "NLBの自動IPを使い、登録済みElastic IPをターゲットに割り当てる。",
+        "explanation": "クライアントが接続するのはNLB側の入口であり、ターゲットに付けたIPは入口にならない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "各ゾーンのNLB入口に指定済みの公開IPを割り当てられる。",
+      "concept": "公開NLBはサブネットマッピングごとに指定したElastic IPを使用できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-059",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-listener-conditions-combine-host-and-path",
+    "title": "指定ホストとパスの両方に一致する要求だけを別サービスへ送る",
+    "prompt": "同じALBのHTTPS入口で、admin.example.comかつ/manage配下の要求だけを管理用ターゲットグループへ送る。一方だけに一致する要求は既存の既定転送に残す。どう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "HTTPSの証明書リストに管理用ホスト名を追加し、転送の既定アクションだけを使う。",
+        "explanation": "TLS接続の証明書選択とHTTPのホスト・パス条件は別の処理である。"
+      },
+      {
+        "id": "B",
+        "text": "一つのリスナールールに対象のhost-headerとpath-patternの両条件を設定し、管理用ターゲットグループへ転送する。",
+        "explanation": "両条件を満たす要求だけが既定より前に管理用ルールへ一致する。"
+      },
+      {
+        "id": "C",
+        "text": "Route 53に/manageを含むDNSレコードを作り、そこでターゲットグループを選択する。",
+        "explanation": "DNSはHTTPリクエストのパスを扱わず、ALB内の転送ルールを選べない。"
+      },
+      {
+        "id": "D",
+        "text": "ホスト用とパス用の2ルールを別々に作り、両方で管理用グループへ送る。",
+        "explanation": "片方だけ一致した要求も別々のルールで管理用グループへ転送される。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/rule-condition-types.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "両条件を満たす要求だけが既定より前に管理用ルールへ一致する。",
+      "concept": "ALBリスナールールにはhost-header条件とpath-pattern条件を同じルールに設定できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-060",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nlb-proxy-v2-privatelink-endpoint-id",
+    "title": "複数のPrivateLink利用者を接続単位で監査する",
+    "prompt": "同じPrivateLinkサービスを使う取引先について、バックエンドは接続元のVPCエンドポイントIDを監査ログに含めたい。アプリはProxy Protocol v2を解釈でき、通信の認証は別途行う。NLB側の設計はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "NLBのDNS名を利用者ごとに変えて、ターゲットの接続ログから開始元を特定する。",
+        "explanation": "名前の別名を増やしてもTCP接続のメタデータに利用側のエンドポイントIDは追加されない。"
+      },
+      {
+        "id": "B",
+        "text": "NLBのTCPリスナーが挿入するX-Forwarded-Forだけを解釈する。",
+        "explanation": "NLBのTCP転送はHTTPヘッダーを挿入する処理ではない。"
+      },
+      {
+        "id": "C",
+        "text": "TCPターゲットグループでProxy Protocol v2を有効にし、バックエンドでエンドポイントIDを記録する。",
+        "explanation": "接続に添付されるバイナリヘッダーのAWS固有情報からエンドポイントIDを読み取れる。"
+      },
+      {
+        "id": "D",
+        "text": "クライアントIP保存だけを有効にし、ソケットの送信元IPをVPCエンドポイントIDとして記録する。",
+        "explanation": "IPアドレスとエンドポイントIDは異なる情報で、PrivateLink経由では同じ識別子にならない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/edit-target-group-attributes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "接続に添付されるバイナリヘッダーのAWS固有情報からエンドポイントIDを読み取れる。",
+      "concept": "PrivateLink経由の通信ではNLBのProxy Protocol v2にVPCエンドポイントIDを示す情報が含まれる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-061",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-ipam-private-gua-ipv6-nonpublic",
+    "title": "管理済みのIPv6範囲をインターネットへ広告せず相互接続",
+    "prompt": "企業はオンプレミスで使用するGUAの一部をAWSのプライベートIPv6用途に割り当てる。AWS内のVPCでも同じ管理下の範囲を使い、AWSからその範囲をパブリックインターネットへ広告しない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VPCをIPv4専用にして、オンプレミスのIPv6だけをVPCルートへ登録する。",
+        "explanation": "VPCの資源が同じ管理下のIPv6を使う要件を満たさない。"
+      },
+      {
+        "id": "B",
+        "text": "IPv6をパブリック用としてオンボードし、AWSで広告を始めた後にSGで受信だけを閉じる。",
+        "explanation": "受信フィルターは公開経路の広告を停止する制御ではない。"
+      },
+      {
+        "id": "C",
+        "text": "IPAMでプライベートGUAを有効にし、非公開用途のプールから対象VPCへ割り当てる。",
+        "explanation": "企業が管理するIPv6範囲をプライベート用途として割り当て、AWSの公開広告を前提にしない。"
+      },
+      {
+        "id": "D",
+        "text": "Amazon提供の公開IPv6 CIDRを各VPCで使い、GUAの範囲をDNSの別名で表現する。",
+        "explanation": "DNS名を変えても業務で使用するIPv6プレフィックスを維持できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/ipam/enable-prov-ipv6-gua.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "企業が管理するIPv6範囲をプライベート用途として割り当て、AWSの公開広告を前提にしない。",
+      "concept": "IPAMではプライベートGUA範囲のプロビジョニングを有効化できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-062",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cf-continuous-deployment-selected-header-staging",
+    "title": "QAのリクエストだけを配信の検証設定へ送る",
+    "prompt": "既存のCloudFrontドメインを使ったまま、新しいキャッシュビヘイビアを検証したい。テスト端末は専用ヘッダーを付けられるが、通常利用者のリクエストには検証設定を適用しない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "本番配信のヘッダーをオリジンへ追加し、CloudFrontの設定は一つだけ維持する。",
+        "explanation": "オリジンで観測できる情報は増えるが、異なるキャッシュビヘイビアを持つステージング配信へ切り替えない。"
+      },
+      {
+        "id": "B",
+        "text": "本番と検証の配信へDNSで同じ重みを与える。",
+        "explanation": "利用者の専用リクエストヘッダーをDNSは評価しないので、通常利用者も検証先を使い得る。"
+      },
+      {
+        "id": "C",
+        "text": "ステージングディストリビューションを作り、専用のaws-cf-cd-ヘッダーで振り分ける継続的デプロイポリシーを設定する。",
+        "explanation": "ポリシーの条件に合うテスト要求だけがステージングの設定を使う。"
+      },
+      {
+        "id": "D",
+        "text": "新しいビヘイビアを最初から本番配信へ公開し、障害が起こったら無効化する。",
+        "explanation": "検証条件に一致しない利用者にも最初から影響が及ぶ。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/continuous-deployment.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ポリシーの条件に合うテスト要求だけがステージングの設定を使う。",
+      "concept": "CloudFrontの継続的デプロイでは、ヘッダーベースの条件でステージング配信へリクエストを振り分けられる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-063",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cf-price-class100-edge-cost-coverage",
+    "title": "配信の費用と地域要件を価格クラスに対応付ける",
+    "prompt": "CloudFrontで利用可能なエッジの範囲を、配信ごとの要件に合わせる。各要件に応じる価格クラスを一つ選ぶ。候補は一回ずつ使う。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Price Class 200",
+        "explanation": "Price Class 100より広くアジアなどを含み、特定の高コスト地域を対象から外す。"
+      },
+      {
+        "id": "B",
+        "text": "すべてのエッジを使うPrice Class",
+        "explanation": "CloudFrontのすべてのエッジロケーションを価格クラスの対象に含める。"
+      },
+      {
+        "id": "C",
+        "text": "Price Class 100",
+        "explanation": "米国、カナダ、欧州を含む低コスト側の範囲を利用できる。"
+      }
+    ],
+    "correct": [
+      "C",
+      "A",
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistValuesGeneral.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "米国、カナダ、欧州を含む低コスト側の範囲を利用できる。 Price Class 100より広くアジアなどを含み、特定の高コスト地域を対象から外す。 CloudFrontのすべてのエッジロケーションを価格クラスの対象に含める。",
+      "concept": "CloudFrontのPrice Classは利用可能なエッジ範囲を選び、特定国からのアクセス自体を禁止する機能とは異なる。"
+    },
+    "format": "matching",
+    "prompts": [
+      {
+        "id": "item-1",
+        "text": "主な利用者が米国、カナダ、欧州に集中しており、利用可能なエッジ範囲を最も絞って費用を抑える。"
+      },
+      {
+        "id": "item-2",
+        "text": "アジアのエッジを利用できる範囲に広げ、南米のエッジを対象に含める必要はない。"
+      },
+      {
+        "id": "item-3",
+        "text": "費用より全地域のエッジを利用できることを優先する。"
+      }
+    ]
+  },
+  {
+    "id": "ans-c01-d1-064",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cf-alternate-domain-most-specific-match",
+    "title": "ワイルドカード設定と個別ホストの優先関係",
+    "prompt": "一つのCloudFront配信は*.example.com、別の配信はshop.example.comを代替ドメインとして登録している。両方の証明書はそれぞれの名前を適切にカバーする。段階移行中、shop.example.comのDNSはワイルドカード側の配信ドメインを指している。このホスト名の既存リクエストはどちらが処理するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ワイルドカードと具体名の両方に合うため、両方の配信へ交互に転送する。",
+        "explanation": "最も具体的な登録を選ぶ処理であり、負荷分散の条件にはならない。"
+      },
+      {
+        "id": "B",
+        "text": "DNSの参照先がワイルドカード配信であるため、常にワイルドカード側で処理する。",
+        "explanation": "DNSの参照先だけではCloudFront内の代替ドメインの優先順位は変わらない。"
+      },
+      {
+        "id": "C",
+        "text": "上位ドメインと個別ホストの名前が重なるため、CloudFrontはすべて拒否する。",
+        "explanation": "ワイルドカードとより具体的な登録の重なりは許容され、具体名が選ばれる。"
+      },
+      {
+        "id": "D",
+        "text": "shop.example.comを明示的に登録した配信が処理する。",
+        "explanation": "CloudFrontはDNSで使われた配信ドメインと別に、要求のホスト名に対する最も具体的な登録を選ぶ。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudFrontはDNSで使われた配信ドメインと別に、要求のホスト名に対する最も具体的な登録を選ぶ。",
+      "concept": "異なる配信にワイルドカード名と具体的な代替ドメイン名が存在すると、より具体的な名前が優先される。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-065",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-ec2-eip-local-zone-network-border-group",
+    "title": "Local ZoneのENIへ関連付けられる公開IPを取得",
+    "prompt": "既存の地域ハブと同じAWSリージョンのLocal Zoneへ、変わらない公開入口を持つEC2を配置する。Local Zoneのネットワークボーダーグループは地域ハブと異なる。Elastic IPはどの範囲で割り当てるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "他リージョンで利用していたElastic IPを指定し、Route 53でLocal Zone向けに変更する。",
+        "explanation": "DNSはElastic IPの割り当て範囲と関連付けの制約を変更しない。"
+      },
+      {
+        "id": "B",
+        "text": "Local Zoneのネットワークボーダーグループを指定してElastic IPを割り当てる。",
+        "explanation": "Local ZoneのENIとボーダーグループが一致するので、関連付けて利用できる。"
+      },
+      {
+        "id": "C",
+        "text": "既存のプライベートIPv4をパブリックサブネットに置くだけで、同じアドレスをElastic IPとして取得する。",
+        "explanation": "私設アドレスと公開インターネット向けのElastic IPは異なる割り当てである。"
+      },
+      {
+        "id": "D",
+        "text": "親リージョンの既定グループからElastic IPを取得し、同じリージョンならどのLocal Zoneにも関連付けられるとする。",
+        "explanation": "リージョンが同じでもネットワークボーダーグループが異なると関連付けられない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-eips.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Local ZoneのENIとボーダーグループが一致するので、関連付けて利用できる。",
+      "concept": "Elastic IPはインスタンスと同じネットワークボーダーグループにある必要がある。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-066",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-dualstack-without-public-ipv4-front",
+    "title": "公開入口をIPv6だけにしバックエンドのIPv4を維持",
+    "prompt": "アプリの公開クライアントはすべてIPv6を利用でき、公開IPv4は使わない方針になった。既存バックエンドはプライベートIPv4のままで、ALBのHTTP転送を維持する。ALBリスナーで外部IdPによる認証は行わない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "公開ALBのアドレスタイプをdualstack-without-public-ipv4にし、IPv4のターゲットグループを使う。",
+        "explanation": "利用者側の公開IPv4を付与せず、ターゲットグループへのIPv4転送を維持できる。"
+      },
+      {
+        "id": "B",
+        "text": "公開ALBをdualstackにし、AAAAレコードだけを案内して公開IPv4の割り当ては残す。",
+        "explanation": "DNSで案内しないことと、ALBに公開IPv4が割り当てられないことは異なる。"
+      },
+      {
+        "id": "C",
+        "text": "内部ALBをdualstackにし、インターネットのクライアントに内部名を案内する。",
+        "explanation": "内部ALBの名前を知らせても、公開クライアントからの入口が成立しない。"
+      },
+      {
+        "id": "D",
+        "text": "公開ALBをipv4にし、プライベートサブネットのNATで公開IPv6の入口を用意する。",
+        "explanation": "NATだけではクライアントが利用する公開IPv6のALB入口を提供しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-ip-address-type.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "利用者側の公開IPv4を付与せず、ターゲットグループへのIPv4転送を維持できる。",
+      "concept": "ALBのdualstack-without-public-ipv4は公開IPv6を提供し、ターゲット向けのプライベートIPv4を使用できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-067",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-atw-weighted-random-mitigate-anomalous-target",
+    "title": "ヘルスチェックを通る異常なターゲットへの配分を抑える",
+    "prompt": "ALBのターゲットグループには常時4台以上の正常判定のインスタンスがある。一部のインスタンスは断続的に接続エラーを返すが、ヘルスチェックは通る。アプリを変更せず、他のターゲットに比べて異常なターゲットにALBが送る交通を自動で減らす。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "HTTP 5xxのCloudWatchアラームを作成し、ALBの振り分け属性は維持する。",
+        "explanation": "通知されても、異常なターゲットの配分は自動で変わらない。"
+      },
+      {
+        "id": "B",
+        "text": "Weighted Randomのルーティングを選び、Automatic Target Weightsの異常緩和を有効にする。",
+        "explanation": "ほかに比べてエラー率の高い対象を識別し、その対象への配分を自動で減らす。"
+      },
+      {
+        "id": "C",
+        "text": "ターゲットのSlow Startを延長し、すでに正常判定の全インスタンスを再登録しない。",
+        "explanation": "主に追加されたターゲットをウォームアップする仕組みであり、既存の異常率に応じた配分制御ではない。"
+      },
+      {
+        "id": "D",
+        "text": "Round Robinを維持し、ターゲットグループのスティッキネスだけを有効にする。",
+        "explanation": "既存のセッションを対象にとどめる設定で、異常率を用いて量を制御しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-target-group-attributes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ほかに比べてエラー率の高い対象を識別し、その対象への配分を自動で減らす。",
+      "concept": "ALBのAutomatic Target Weightsの異常緩和はWeighted Randomと組み合わせて異常なターゲットへの量を減らせる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-068",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpc-traffic-mirror-nlb-udp-fleet",
+    "title": "複数のミラー元を交換可能な分析装置群へ収容",
+    "prompt": "移行検証中の複数のVPC ENIからミラートラフィックを集める。新しいミラー元ごとに分析EC2の固定IPを決めず、対応する複数の分析装置を入れ替えられる入口を使う。どの構成を選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "HTTPリスナーのALBをミラーターゲットにし、URLごとに装置を選ぶ。",
+        "explanation": "ミラートラフィックはHTTPのリクエストではなく、ALBは対応するターゲットにならない。"
+      },
+      {
+        "id": "B",
+        "text": "ミラー元のサブネットルートを分析用NATへ向ける。",
+        "explanation": "ルートは元の通信に作用する。ミラーコピーの取得と装置群への分散を構成しない。"
+      },
+      {
+        "id": "C",
+        "text": "UDP 4789のリスナーと分析装置のターゲットグループを持つNLBをミラーターゲットにする。",
+        "explanation": "ミラーのVXLANを受ける共通入口を使いながら、分析装置の構成を独立に管理できる。"
+      },
+      {
+        "id": "D",
+        "text": "分析用EC2 1台のENIを各ミラーセッションで直接指定する。",
+        "explanation": "直接指定は可能だが、装置の入れ替えに依存しない共通の装置群を提供しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/mirroring/traffic-mirroring-targets.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ミラーのVXLANを受ける共通入口を使いながら、分析装置の構成を独立に管理できる。",
+      "concept": "Traffic Mirroringのターゲットには、VXLANを受けるUDP 4789で設定したNLBを使用できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-069",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpc-flowlogs-nitro-aggregation-granularity",
+    "title": "10分集計設定でもレコードが細かくなる理由を設計に反映",
+    "prompt": "VPC Flow Logsの保存・分析コストを推定する。監視対象はNitroシステム上のEC2のENIだけである。フローログの最大集約間隔は10分に設定した。取り込みのレコード数を設計するときに適切な前提はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象ENIのフローは1分以内で集約され得るので、10分ごとに必ずまとめられる前提を置かない。",
+        "explanation": "NitroのENIでは、10分を指定してもより細かい集約でレコードが生成される。"
+      },
+      {
+        "id": "B",
+        "text": "NitroのENIでも必ず10分間隔で一つのフローを記録する。",
+        "explanation": "設定は一般の最大間隔を表し、Nitroの場合はより短い上限が適用される。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatch Logsの保持期間を10分にすれば、Nitroの集約も10分になる。",
+        "explanation": "保存の保持期間と送信側がまとめる時間の単位は異なる。"
+      },
+      {
+        "id": "D",
+        "text": "ログをS3へ送れば、送信先サービスで必ず10分単位のレコードに変わる。",
+        "explanation": "宛先を変えても送信元のフロー集約間隔はそのようには変更されない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "NitroのENIでは、10分を指定してもより細かい集約でレコードが生成される。",
+      "concept": "NitroインスタンスのENIでは設定した最大集約間隔にかかわらず、集約間隔は1分以内になる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-070",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-apigw-http-api-private-integration-tls-server-name",
+    "title": "プライベート統合のバックエンド証明書を検証する",
+    "prompt": "API GatewayのHTTP APIがVPC Link経由で、service.internalの証明書を使う内部ALBを呼ぶ。クライアント側は既にHTTPSである。統合側でもHTTPSを使い、接続する証明書に期待する名前の検証を設定する。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VPC Linkのサブネットを証明書の発行リージョンに合わせれば、HTTPSの設定が自動で付くとみなす。",
+        "explanation": "リンクの配置からバックエンドTLSと検証名は自動設定されない。"
+      },
+      {
+        "id": "B",
+        "text": "統合のTlsConfigにServerNameToVerifyとしてservice.internalを設定する。",
+        "explanation": "オリジンとの接続をHTTPSにし、期待する認証名でサーバー証明書を検証する。"
+      },
+      {
+        "id": "C",
+        "text": "パブリックAPIのカスタムドメインに証明書を設定するだけで、統合側の設定は変えない。",
+        "explanation": "利用者とAPIの間のHTTPSを管理するもので、VPC Linkの転送で名前検証を指定しない。"
+      },
+      {
+        "id": "D",
+        "text": "統合先をHTTPのままにし、送信するHostヘッダーだけをservice.internalへ上書きする。",
+        "explanation": "HTTPヘッダーを変えても統合リクエストにTLSは確立しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-private.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "オリジンとの接続をHTTPSにし、期待する認証名でサーバー証明書を検証する。",
+      "concept": "HTTP APIのプライベート統合には、HTTPSで接続するためのTlsConfigを指定できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-071",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-route53-resolver-reverse-conditional-forward-ptr",
+    "title": "社内アドレス帯の逆引きを拠点の権威DNSへ委ねる",
+    "prompt": "AWSの監査アプリはオンプレミスの10.8.16.0/24のPTRを取得する。拠点DNSがその範囲の逆引きゾーンを管理し、既存のアウトバウンドResolverから到達できる。通常の正引きと他の逆引きは維持する。どの名前のルールを追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "16.8.10.in-addr.arpaの転送ルールを作り、AWS側アプリのVPCに関連付ける。",
+        "explanation": "対象IPv4範囲の逆引き名だけを、既存のアウトバウンド経由で拠点DNSへ送れる。"
+      },
+      {
+        "id": "B",
+        "text": "拠点の通常の正引きドメインだけに転送ルールを作り、同じIPのPTRも自動的に選ばせる。",
+        "explanation": "PTRの問い合わせ名はin-addr.arpaにあり、通常の正引きのドメインには一致しない。"
+      },
+      {
+        "id": "C",
+        "text": "8.10.in-addr.arpa全体を拠点DNSへ転送する。",
+        "explanation": "対象の/24以外の10.8.0.0/16内の逆引きも変わるため、既存の他範囲へ影響する。"
+      },
+      {
+        "id": "D",
+        "text": "10.8.16.0/24をDNSのルール名にし、CIDRの最長一致でPTRを送る。",
+        "explanation": "Resolverの転送ルールはDNSのドメイン名を対象に評価する。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-rules-managing.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対象IPv4範囲の逆引き名だけを、既存のアウトバウンド経由で拠点DNSへ送れる。",
+      "concept": "逆引きの問い合わせは対象のin-addr.arpaゾーンを指定した転送ルールで制御できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-072",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-client-vpn-mutual-client-certs-no-directory",
+    "title": "利用者ごとのクライアント証明書で社内VPNを構成",
+    "prompt": "社内にディレクトリやSAML IdPがなく、管理済み端末ごとに証明書を発行している。VPNのサーバー名の検証に加え、承認CAが発行したクライアント証明書の提示を接続時に必要にする。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Site-to-Site VPNの共有鍵を端末に配り、全員を同じカスタマーゲートウェイとして登録する。",
+        "explanation": "端末ごとのClient VPNの相互認証要件と一致しない。"
+      },
+      {
+        "id": "B",
+        "text": "VPNサーバーの証明書だけを配布し、クライアント認証はサブネットのルートで行う。",
+        "explanation": "ルートの適用では接続端末が承認された証明書を持つか検証できない。"
+      },
+      {
+        "id": "C",
+        "text": "Client VPNで相互認証を選択し、サーバー証明書とクライアント証明書の検証に必要な信頼情報を設定する。",
+        "explanation": "IdPを使わずに、接続する端末に対して承認されたクライアント証明書を求められる。"
+      },
+      {
+        "id": "D",
+        "text": "証明書は使わず、VPCのSGに承認された端末の利用者名を送信元として登録する。",
+        "explanation": "SGは個別の利用者名やクライアント証明書を使ったVPN認証を提供しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/mutual.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "IdPを使わずに、接続する端末に対して承認されたクライアント証明書を求められる。",
+      "concept": "AWS Client VPNの相互認証は、接続時にクライアントとサーバーの証明書を使う。"
+    }
+  },
+  {
+    "id": "ans-c01-d1-073",
+    "revision": 1,
+    "category": "ネットワーク設計",
+    "examDomain": "ネットワーク設計",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-dx-public-vif-local-propagation-community",
+    "title": "公開VIFの広告範囲をBGPコミュニティに対応付ける",
+    "prompt": "企業が所有する公開IPv4をDirect ConnectのパブリックVIFからAWSへ広告する。個別のプレフィックスごとに望むAWS内の伝播範囲へ対応するコミュニティを一つ選ぶ。候補は一回ずつ使う。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "7224:9300",
+        "explanation": "公開AWSリージョンへのグローバルな伝播を表す。"
+      },
+      {
+        "id": "B",
+        "text": "7224:9200",
+        "explanation": "大陸内のAWSリージョンへの伝播を表す。"
+      },
+      {
+        "id": "C",
+        "text": "7224:9100",
+        "explanation": "ローカルのAWSリージョンへの伝播を表す。"
+      }
+    ],
+    "correct": [
+      "C",
+      "B",
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/routing-and-bgp.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ローカルのAWSリージョンへの伝播を表す。 大陸内のAWSリージョンへの伝播を表す。 公開AWSリージョンへのグローバルな伝播を表す。",
+      "concept": "AWSが受けたパブリックVIF上の経路に指定されたBGPコミュニティから、AWS内の伝播範囲を決める。"
+    },
+    "format": "matching",
+    "prompts": [
+      {
+        "id": "item-1",
+        "text": "Direct ConnectのローカルAWSリージョンだけで使う。"
+      },
+      {
+        "id": "item-2",
+        "text": "同一大陸のAWSリージョンで使い、他大陸へは伝播しない。"
+      },
+      {
+        "id": "item-3",
+        "text": "大陸で限定せず、グローバルの公開AWSリージョンで使う。"
+      }
+    ]
+  },
+  {
+    "id": "ans-c01-d2-049",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-cfn-stack-policy-route",
+    "title": "本番経路の置換を更新から保護する",
+    "prompt": "本番スタックのルートテーブルは通常のタグ更新は許すが、誤った更新による置換だけを承認時まで拒否したい。通常時の保護と計画済み変更時の作業はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "termination protectionだけを有効にする。",
+        "explanation": "スタック削除には効くが、更新による変更を拒否しない。"
+      },
+      {
+        "id": "B",
+        "text": "drift detectionを毎時実行する。",
+        "explanation": "差異検出は更新の実行防止ではない。"
+      },
+      {
+        "id": "C",
+        "text": "ルートテーブルの論理IDをDenyするstack policyを設定する。",
+        "explanation": "通常更新から重要リソースを保護できる。"
+      },
+      {
+        "id": "D",
+        "text": "計画済み更新時だけ、許可する変更を含む一時的なstack policyを指定する。",
+        "explanation": "必要な更新を明示承認された範囲だけ実行できる。"
+      },
+      {
+        "id": "E",
+        "text": "リソースを別リージョンへExportする。",
+        "explanation": "Exportは更新保護ではない。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "通常更新から重要リソースを保護できる。 必要な更新を明示承認された範囲だけ実行できる。",
+      "concept": "Stack policyは更新時に指定論理リソースへの更新を拒否できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-050",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-cfn-service-role-network-boundary",
+    "title": "CloudFormationのネットワーク変更権限を固定する",
+    "prompt": "ネットワーク基盤スタックは、承認済みのIAMロールを通してだけVPCやルートテーブルを更新させたい。実行者の個人権限を直接使わず、スタック操作に一貫した最小権限を適用する方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VPC Flow LogsのIAMロールをCloudFormationのservice roleとして再利用する。",
+        "explanation": "Flow Logs配信ロールはネットワーク作成権限を持つ実行ロールではない。"
+      },
+      {
+        "id": "B",
+        "text": "Stack policyだけを設定する。",
+        "explanation": "Stack policyは更新対象を制約するが、AWS APIを実行するIAMロールを指定しない。"
+      },
+      {
+        "id": "C",
+        "text": "ネットワーク操作だけを許可したCloudFormation service roleをスタックへ関連付ける。",
+        "explanation": "CloudFormationが指定ロールでリソース操作を実行するため、実行者ごとの差を抑えられる。"
+      },
+      {
+        "id": "D",
+        "text": "実行者全員へAdministratorAccessを付与する。",
+        "explanation": "最小権限に反し、スタック実行ロールの固定にもならない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudFormationが指定ロールでリソース操作を実行するため、実行者ごとの差を抑えられる。",
+      "concept": "CloudFormation service roleはスタック操作時にCloudFormationが引き受ける実行ロールを指定する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-051",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-alb-desync-strictest",
+    "title": "不正形式HTTPをALB入口で拒否する",
+    "prompt": "公開ALBで曖昧なHTTPメッセージをバックエンドへ渡さず、互換性より厳格な検証を優先する。どの属性を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "target groupのstickinessを有効にする。",
+        "explanation": "同一クライアントの振り分け設定である。"
+      },
+      {
+        "id": "B",
+        "text": "WAFログをS3へ送るだけにする。",
+        "explanation": "記録だけでは入口で拒否しない。"
+      },
+      {
+        "id": "C",
+        "text": "NLBのproxy protocolを有効にする。",
+        "explanation": "別ロードバランサーの接続情報転送である。"
+      },
+      {
+        "id": "D",
+        "text": "routing.http.desync_mitigation_modeをstrictestに設定する。",
+        "explanation": "不正または曖昧な要求を厳格に扱える。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-load-balancer-attributes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "不正または曖昧な要求を厳格に扱える。",
+      "concept": "ALBのdesync mitigation modeはHTTP desyncの扱いを制御する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-052",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-alb-host-header-preservation",
+    "title": "バックエンドへ元のHostヘッダーを渡す",
+    "prompt": "ALBの背後のレガシーアプリは受信したHostヘッダーでテナントを判別する。ALBが生成するホスト名へ書き換えず、クライアントのHostを維持したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "X-Forwarded-Forを無効にする。",
+        "explanation": "送信元情報でありHostを保存しない。"
+      },
+      {
+        "id": "B",
+        "text": "listenerをHTTPからTCPへ変更する。",
+        "explanation": "ALBにはTCP listenerがない。"
+      },
+      {
+        "id": "C",
+        "text": "routing.http.preserve_host_header.enabledをtrueにする。",
+        "explanation": "クライアントのHostヘッダーをバックエンドへ渡せる。"
+      },
+      {
+        "id": "D",
+        "text": "targetのderegistration delayを増やす。",
+        "explanation": "接続ドレイン設定である。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/edit-load-balancer-attributes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "クライアントのHostヘッダーをバックエンドへ渡せる。",
+      "concept": "preserve_host_headerを有効にするとALBはHostヘッダーを保持する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-053",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-route53-change-batch-upsert",
+    "title": "DNS移行を原子的なUPSERTで適用する",
+    "prompt": "DNS移行で複数のAとCNAMEレコードを同時に置換する。途中で一部だけ反映される状態を避け、既存レコードがあっても同じ変更要求で更新したい。Route 53 APIの操作はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Route 53 health checkを作成するとレコードが自動置換される。",
+        "explanation": "ヘルスチェックはDNSレコード更新APIではない。"
+      },
+      {
+        "id": "B",
+        "text": "ChangeResourceRecordSetsで複数変更を一つのbatchにし、各レコードへUPSERTを指定する。",
+        "explanation": "バッチ全体が原子的に検証・適用され、既存レコードも更新できる。"
+      },
+      {
+        "id": "C",
+        "text": "各レコードを別々のDELETE要求で消してからCREATEする。",
+        "explanation": "中間状態が外部へ見え、失敗時に不完全になる。"
+      },
+      {
+        "id": "D",
+        "text": "hosted zoneを削除して同名のzoneを再作成する。",
+        "explanation": "委任や既存レコードを破壊し、原子的移行ではない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "バッチ全体が原子的に検証・適用され、既存レコードも更新できる。",
+      "concept": "ChangeResourceRecordSetsの変更バッチはトランザクションとして適用され、UPSERTは存在有無に応じて作成または更新する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-054",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-nlb-target-health-passive",
+    "title": "NLBが異常ターゲットを早く隔離する",
+    "prompt": "NLBのTCPターゲットはヘルスチェックには応答するが、実際のクライアント接続で失敗を返す。追加の明示設定なしに、NLBが実トラフィック失敗を健全性判断へ反映する仕組みはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Route 53のフェイルオーバーだけを設定する。",
+        "explanation": "NLB内部ターゲットの隔離ではない。"
+      },
+      {
+        "id": "B",
+        "text": "NLBのパッシブヘルスチェックにより、実接続失敗を基に異常ターゲットを検知させる。",
+        "explanation": "実トラフィック観測を健全性判断に利用する。"
+      },
+      {
+        "id": "C",
+        "text": "SGの送信規則を全許可にする。",
+        "explanation": "アプリ失敗を検知しない。"
+      },
+      {
+        "id": "D",
+        "text": "DNS TTLを1秒にする。",
+        "explanation": "名前解決更新はターゲット健全性を評価しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "実トラフィック観測を健全性判断に利用する。",
+      "concept": "NLBはアクティブヘルスチェックに加えパッシブヘルスチェックを行う。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-055",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-ecs-awsvpc-task-eni",
+    "title": "ECSタスクごとにSGを適用する",
+    "prompt": "同一EC2コンテナインスタンス上の二つのECSサービスで、送信先を異なるSG規則で分離したい。ホスト全体に同じSGを適用する方式は使わない。どのnetwork modeか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "awsvpc network modeを使い、各タスクENIにサービス別Security Groupを設定する。",
+        "explanation": "タスク単位のネットワーク境界を作れる。"
+      },
+      {
+        "id": "B",
+        "text": "bridge modeでホストSGだけを使う。",
+        "explanation": "タスクごとのENIとSGを提供しない。"
+      },
+      {
+        "id": "C",
+        "text": "default VPCのDHCPを変更する。",
+        "explanation": "タスク単位の通信許可を分けない。"
+      },
+      {
+        "id": "D",
+        "text": "host modeでコンテナポートを固定する。",
+        "explanation": "ホストネットワーク共有となる。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-networking-awsvpc.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "タスク単位のネットワーク境界を作れる。",
+      "concept": "awsvpcでは各タスクにENIとSecurity Groupを関連付けられる。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-056",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-ecs-awsvpc-trunking",
+    "title": "EC2 ECSでENI不足を緩和する",
+    "prompt": "EC2起動タイプのECSクラスターでawsvpcタスクを高密度に配置する。インスタンス種別のENI上限がボトルネックで、対応するNitroインスタンスを使用できる。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "NAT Gatewayを各AZへ追加する。",
+        "explanation": "ENI上限を増やさない。"
+      },
+      {
+        "id": "B",
+        "text": "Cloud Map名前空間を作る。",
+        "explanation": "サービス検出はENI数を増やさない。"
+      },
+      {
+        "id": "C",
+        "text": "タスクをhost modeに替えてSG分離を維持する。",
+        "explanation": "host modeはタスクENI分離を失う。"
+      },
+      {
+        "id": "D",
+        "text": "アカウントでawsvpcTrunkingを有効にし、対応するNitroインスタンスを再登録する。",
+        "explanation": "trunk ENIによりタスクENIの利用可能数を増やせる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-eni.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "trunk ENIによりタスクENIの利用可能数を増やせる。",
+      "concept": "awsvpcTrunkingは対応EC2でタスクENI密度を高める。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-057",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-eks-pod-sg-branch-eni",
+    "title": "EKS Podに独立したSGを付与する",
+    "prompt": "EKSで決済PodだけをデータベースSGから許可し、同じノード上の一般Podには許可したくない。VPC CNIを使い、Pod単位のSecurity Groupを使うにはどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Security groups for Podsを有効にする。",
+        "explanation": "Podのbranch ENIへ独立SGを適用できる前提となる。"
+      },
+      {
+        "id": "B",
+        "text": "SecurityGroupPolicyで対象Podへ決済用SGを割り当てる。",
+        "explanation": "選択したPodだけへDB許可を与えられる。"
+      },
+      {
+        "id": "C",
+        "text": "ノードSGにDB許可を追加する。",
+        "explanation": "同じノードの全Podまで許可範囲が広がる。"
+      },
+      {
+        "id": "D",
+        "text": "CoreDNSのConfigMapを変更する。",
+        "explanation": "DNS設定はSecurity Group割り当てではない。"
+      },
+      {
+        "id": "E",
+        "text": "Kubernetes ServiceをLoadBalancer型にする。",
+        "explanation": "外部公開方式はPodのSG分離を作らない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eks/latest/userguide/security-groups-for-pods.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Podのbranch ENIへ独立SGを適用できる前提となる。 選択したPodだけへDB許可を与えられる。",
+      "concept": "Security groups for PodsはVPC CNIのbranch ENIでPodへSGを適用する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-058",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-cloud-map-http-namespace",
+    "title": "HTTPサービス名をCloud Map APIで登録する",
+    "prompt": "複数の非ECSワークロードがHTTPサービスのエンドポイントを登録・検索する。DNSだけでなく属性でインスタンスを発見するCloud Map APIを使いたい。どの名前空間か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ECS Service Connectを必須化する。",
+        "explanation": "非ECSワークロードのCloud Map API要件を満たす手段ではない。"
+      },
+      {
+        "id": "B",
+        "text": "Route 53 public hosted zoneを作成する。",
+        "explanation": "インターネット公開DNSである。"
+      },
+      {
+        "id": "C",
+        "text": "HTTP namespaceを作成し、Cloud Map APIでサービスインスタンスを登録・検索する。",
+        "explanation": "DNSレコードを前提にせず属性ベースの検出ができる。"
+      },
+      {
+        "id": "D",
+        "text": "private DNS namespaceだけを作成する。",
+        "explanation": "DNS名前解決向けで、HTTP namespaceのAPI検出要件に合わない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/cloud-map/latest/dg/working-with-namespaces.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "DNSレコードを前提にせず属性ベースの検出ができる。",
+      "concept": "HTTP namespaceはDiscoverInstancesなどCloud Map APIによるサービス検出を提供する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-059",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-cfn-cidr-parameter-validation",
+    "title": "CloudFormationのCIDR入力を作成前に検証する",
+    "prompt": "ネットワークスタックは利用者からIPv4 CIDRパラメータを受け取る。誤った文字列や許可していないアドレス形式でVPC作成APIが呼ばれる前に、テンプレート側で入力を拒否したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CIDRパラメータへAllowedPatternとConstraintDescriptionを設定する。",
+        "explanation": "作成前に形式を検証し、利用者へ制約違反を示せる。"
+      },
+      {
+        "id": "B",
+        "text": "CIDRをOutputにだけ定義する。",
+        "explanation": "Outputは入力検証を行わない。"
+      },
+      {
+        "id": "C",
+        "text": "ParameterをNoEchoにする。",
+        "explanation": "NoEchoは値の表示抑制でありCIDR形式を検証しない。"
+      },
+      {
+        "id": "D",
+        "text": "VPC作成後にNACLでCIDRを拒否する。",
+        "explanation": "リソース作成前の入力検証にならない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "作成前に形式を検証し、利用者へ制約違反を示せる。",
+      "concept": "CloudFormationパラメータのAllowedPatternは入力値を正規表現で検証できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-060",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-vpc-dhcp-domain-search",
+    "title": "VPC内インスタンスへ社内DNSサフィックスを配布する",
+    "prompt": "新規VPCのEC2にcorp.exampleの検索サフィックスと、オンプレミスDNSサーバーを起動時から一貫して配布したい。個別インスタンス設定は避ける。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "domain-nameとdomain-name-serversを含むDHCP option setを作り、VPCへ関連付ける。",
+        "explanation": "VPC内インスタンスへDNS設定を集中配布できる。"
+      },
+      {
+        "id": "B",
+        "text": "SGでUDP 53を全許可にする。",
+        "explanation": "許可だけではDNS設定を配布しない。"
+      },
+      {
+        "id": "C",
+        "text": "private hosted zoneのNSレコードを変更する。",
+        "explanation": "DHCPで配布するDNSサーバー設定ではない。"
+      },
+      {
+        "id": "D",
+        "text": "各subnetのroute tableにDNSサーバーIPを追加する。",
+        "explanation": "ルートはDHCP検索サフィックスを配布しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_DHCP_Options.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "VPC内インスタンスへDNS設定を集中配布できる。",
+      "concept": "DHCP option setはdomain-nameとdomain-name-serversをVPC内インスタンスへ配布する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-061",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-subnet-autoassign-ipv6",
+    "title": "新規起動時だけにIPv6アドレスを自動付与する",
+    "prompt": "IPv6 CIDRを持つsubnetで、既存EC2は変更せず、今後このsubnetに起動するEC2だけへ自動でIPv6アドレスを付与したい。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "existing EC2のENIを再作成する。",
+        "explanation": "既存EC2を変更しない要件に反する。"
+      },
+      {
+        "id": "B",
+        "text": "DHCP option setにIPv6 CIDRを登録する。",
+        "explanation": "DHCP option setはsubnetへのIPv6自動付与を構成しない。"
+      },
+      {
+        "id": "C",
+        "text": "subnet属性AssignIpv6AddressOnCreationを有効にする。",
+        "explanation": "新規に起動するインスタンスへIPv6アドレスを自動割り当てできる。"
+      },
+      {
+        "id": "D",
+        "text": "Internet Gatewayをsubnetへ関連付ける。",
+        "explanation": "IGWはVPCにアタッチし、起動時アドレス付与を制御しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-ip-addressing.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "新規に起動するインスタンスへIPv6アドレスを自動割り当てできる。",
+      "concept": "subnetのauto-assign IPv6設定は新規起動時のIPv6アドレス割り当てを制御する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-062",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-vpc-network-address-usage",
+    "title": "サブネットの予約済みIPを見積もる",
+    "prompt": "小さいIPv4サブネットを作る前に、CIDR総数ではなく実際にEC2等へ割り当て可能な数を算定したい。VPCサブネットでAWSが予約するIP数はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IPv4とIPv6で必ず同じ5個を予約する。",
+        "explanation": "IPv6サブネットの予約規則はIPv4と同一ではない。"
+      },
+      {
+        "id": "B",
+        "text": "IPv4サブネットごとに5個のIPアドレスを予約済みとして容量計画する。",
+        "explanation": "先頭4個と末尾1個はVPC運用で予約される。"
+      },
+      {
+        "id": "C",
+        "text": "各サブネットで1個だけを予約済みとする。",
+        "explanation": "予約数を過少評価する。"
+      },
+      {
+        "id": "D",
+        "text": "AZごとに5個だけ予約する。",
+        "explanation": "予約はAZ単位でなく各サブネット単位である。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "先頭4個と末尾1個はVPC運用で予約される。",
+      "concept": "各IPv4サブネットでは先頭4個と最後の1個、計5個がAWSに予約される。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-063",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-eks-cluster-eni-subnet-update",
+    "title": "EKS制御プレーンENIの配置先を追加する",
+    "prompt": "既存EKSクラスターの制御プレーン用ENIを、現在の二つのsubnetに加えて新設private subnetにも配置できるようにしたい。PodのVPC CNI設定は変えず、control planeとkubelet通信経路の可用性だけを追加する。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "UpdateClusterConfigでcluster VPC configのsubnetIdsへ新しいprivate subnetを追加する。",
+        "explanation": "control planeのcross-account ENIが利用できるsubnetを更新できる。"
+      },
+      {
+        "id": "B",
+        "text": "EKS ServiceのClusterIP CIDRを変更する。",
+        "explanation": "既存クラスターのService CIDR変更ではsubnet配置を追加しない。"
+      },
+      {
+        "id": "C",
+        "text": "新subnetのroute tableへInternet Gatewayを追加する。",
+        "explanation": "control plane ENIのsubnet登録操作ではない。"
+      },
+      {
+        "id": "D",
+        "text": "aws-node DaemonSetだけへ新subnet CIDRを設定する。",
+        "explanation": "これはPodネットワーク設定でcontrol plane ENIの配置を変更しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eks/latest/userguide/network-reqs.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "control planeのcross-account ENIが利用できるsubnetを更新できる。",
+      "concept": "EKSクラスターのVPC config更新でcontrol plane ENIに使用するsubnetを指定できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-064",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-vpc-endpoint-gateway-route-tables",
+    "title": "S3 gateway endpointを必要なサブネットだけへ適用する",
+    "prompt": "同一VPCの二つのprivate subnetのうち、バッチ用subnetだけからS3へNATなしで到達させたい。アプリsubnetのS3経路は現状のまま残す。Gateway endpoint作成時に指定するものはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Internet Gatewayをバッチsubnetへ関連付ける。",
+        "explanation": "subnetへIGWを関連付ける機能はなく、私設S3経路にもならない。"
+      },
+      {
+        "id": "B",
+        "text": "バッチ用subnetのSecurity Groupだけをendpointへ関連付ける。",
+        "explanation": "Gateway endpointにはSecurity Groupを関連付けない。"
+      },
+      {
+        "id": "C",
+        "text": "バッチ用subnetに関連付くroute tableだけをgateway endpointへ関連付ける。",
+        "explanation": "指定したroute tableを使うsubnetだけがendpoint経由になる。"
+      },
+      {
+        "id": "D",
+        "text": "endpoint ENIをバッチsubnetへ作成する。",
+        "explanation": "Gateway endpointはENIを作成しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-s3.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "指定したroute tableを使うsubnetだけがendpoint経由になる。",
+      "concept": "Gateway endpointは選択したroute tableへサービスprefix listのルートを追加する。"
+    }
+  },
+  {
+    "id": "ans-c01-d2-065",
+    "revision": 1,
+    "category": "ネットワーク実装",
+    "examDomain": "ネットワーク実装",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans4-route53-healthcheck-calculated",
+    "title": "複数監視の論理結果でDNS切替する",
+    "prompt": "Route 53のフェイルオーバーレコードを、2つの独立ヘルスチェックがともに正常な場合だけprimaryとして返したい。単一のHTTPチェックへ監視対象をまとめない。どれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "TTLを長くする。",
+        "explanation": "キャッシュ時間はヘルスチェックの論理式を変えない。"
+      },
+      {
+        "id": "B",
+        "text": "multivalue answerを有効にする。",
+        "explanation": "複数正常値を返す機能で、子チェックの条件判定ではない。"
+      },
+      {
+        "id": "C",
+        "text": "2つの子ヘルスチェックを参照するcalculated health checkを作り、必要な正常数を2にする。",
+        "explanation": "双方が正常なときだけ正常状態にできる。"
+      },
+      {
+        "id": "D",
+        "text": "weighted recordを50/50で設定する。",
+        "explanation": "重み付けはヘルスチェックの論理ANDを作らない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-types.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "双方が正常なときだけ正常状態にできる。",
+      "concept": "Calculated health checkは子ヘルスチェックの正常数に基づき状態を決定できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-039",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-network-access-analyzer-static-limit",
+    "title": "Network Access Analyzerの静的分析と実トラフィック障害を区別する",
+    "prompt": "ルートテーブルとセキュリティグループの変更後、短時間だけ発生する接続失敗を調査している。通信を発生させずに構成上の到達可能性も確認したいが、実際のパケット損失や一時的なサービス障害まで判定できるとは誤解したくない。最も適切な運用方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Network Access Analyzerで構成上の経路を検証し、実トラフィックの失敗はFlow Logsやアプリケーション監視で別途調査する",
+        "explanation": "正しい。静的な到達可能性と実運用時の通信成否は別の証拠で確認する必要がある。"
+      },
+      {
+        "id": "B",
+        "text": "Network Access Analyzerのfindingがないことだけで、一時的なパケット損失も起きていないと判断する",
+        "explanation": "静的分析は一時的なネットワーク中断やサービス障害を考慮しない。"
+      },
+      {
+        "id": "C",
+        "text": "Network Access Analyzerを有効にしたらVPC Flow Logsを停止する",
+        "explanation": "構成分析と実トラフィックの観測は補完的であり、ログを止める根拠にならない。"
+      },
+      {
+        "id": "D",
+        "text": "調査用にNetwork Access Analyzerが実パケットを送信するまで待つ",
+        "explanation": "この分析はパケットを送信しないため、待っても実通信の試験にはならない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/network-access-analyzer/how-network-access-analyzer-works.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。静的な到達可能性と実運用時の通信成否は別の証拠で確認する必要がある。",
+      "concept": "Network Access Analyzerは構成の静的分析でパケットを送らず、一時的な中断やサービス障害による損失は考慮しない。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-040",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-resolver-inbound-rni-hotspot",
+    "title": "受信ResolverのENI偏りを特定する",
+    "prompt": "複数ENIを持つResolver inbound endpointで容量Warningが続く。オンプレミス側のDNSフォワーダーが同じIPだけを使っていないか、ENI単位でクエリ数を確認したい。最も適切なメトリクスの組合せはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "InboundQueryVolumeをEndpointIdとRniIdでSumする",
+        "explanation": "正しい。受信DNSクエリ数をENI単位に分け、特定IPへの偏りを確認できる。"
+      },
+      {
+        "id": "B",
+        "text": "P90ResponseTimeをTargetNameServerIPだけでSumする",
+        "explanation": "応答時間はクエリ量ではなく、Sumは有効な統計でもない。"
+      },
+      {
+        "id": "C",
+        "text": "EndpointUnhealthyENICountをEndpointIdとRniIdでSumする",
+        "explanation": "このメトリクスはENIのAUTO_RECOVERING数であり、個々のENIへのクエリ量ではない。"
+      },
+      {
+        "id": "D",
+        "text": "OutboundQueryAggregateVolumeをEndpointIdだけでAverageする",
+        "explanation": "outbound用の全体クエリ数であり、inbound endpointのIPごとの偏りを確認できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/monitoring-resolver-with-cloudwatch.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。受信DNSクエリ数をENI単位に分け、特定IPへの偏りを確認できる。",
+      "concept": "InboundQueryVolumeはRniId次元を使うことでinbound endpointの各IPアドレス単位に確認できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-041",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-resolver-target-timeout-detailed-metrics",
+    "title": "転送先DNSのタイムアウトを区別する",
+    "prompt": "outbound Resolver endpointではENIを増やしても名前解決失敗が続く。詳細メトリクスを有効化済みで、特定のオンプレミスDNSサーバーが応答しないことを確かめたい。最も直接的な指標はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "TimeoutQueriesをEndpointIdとTargetNameServerIPでSumする",
+        "explanation": "正しい。特定の転送先DNSサーバーで起きるタイムアウトを直接確認できる。"
+      },
+      {
+        "id": "B",
+        "text": "InboundQueryVolumeをRniIdでSumする",
+        "explanation": "inbound方向のクエリ量であり、outboundの特定ターゲットへのタイムアウトではない。"
+      },
+      {
+        "id": "C",
+        "text": "NxDomainQueriesをEndpointIdとRniIdでMaximumする",
+        "explanation": "NXDOMAINは名前が存在しない応答であり、ターゲットサーバーの無応答ではない。"
+      },
+      {
+        "id": "D",
+        "text": "EndpointHealthyENICountをEndpointIdでMinimumする",
+        "explanation": "Resolver ENIの動作状態であり、転送先DNSサーバーのタイムアウトを示さない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/monitoring-resolver-with-cloudwatch.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。特定の転送先DNSサーバーで起きるタイムアウトを直接確認できる。",
+      "concept": "TimeoutQueriesはResolver endpointを通じて特定のターゲットネームサーバーへ送られた問い合わせのタイムアウト数を示す。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-042",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-target-tls-negotiation",
+    "title": "ALBからターゲットへのTLS失敗を観測する",
+    "prompt": "HTTPSリスナーのALBで、クライアントとALBのTLSは成功するが、ALBからHTTPSターゲットへ接続するときだけ一部要求が失敗する。ターゲット証明書またはTLSプロトコル・暗号スイートの不一致を最初に確認するCloudWatchメトリクスはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "HTTPCode_Target_5XX_CountのSum",
+        "explanation": "ターゲットがHTTP応答として返した5xxを数える。TLS確立前に失敗する今回の区間を示さない。"
+      },
+      {
+        "id": "B",
+        "text": "TargetTLSNegotiationErrorCountのSum",
+        "explanation": "正しい。ALBとターゲット間のTLSネゴシエーション失敗を直接数える。"
+      },
+      {
+        "id": "C",
+        "text": "ClientTLSNegotiationErrorCountのSum",
+        "explanation": "クライアントとALBのTLS失敗であり、今回の区間とは異なる。"
+      },
+      {
+        "id": "D",
+        "text": "HealthyHostCountのMaximum",
+        "explanation": "健全ターゲット数であり、ターゲットTLSセッションの失敗回数を示さない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。ALBとターゲット間のTLSネゴシエーション失敗を直接数える。",
+      "concept": "TargetTLSNegotiationErrorCountはALBがターゲットとのTLSセッションを確立できなかった回数を示す。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-043",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-unhealthy-routing-failopen",
+    "title": "ALBのゾーン内フェイルオープン転送を検出する",
+    "prompt": "あるAZのALBターゲットグループで健全ターゲットが閾値を下回った。DNSからAZを除外するだけでなく、同AZ内でALBがunhealthyターゲットにも要求を送っているかを確認したい。最も直接的なメトリクスはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "UnhealthyStateDNSのMaximumを確認する",
+        "explanation": "DNSから除外されたゾーンの状態を示すが、unhealthyターゲットへ転送された要求数ではない。"
+      },
+      {
+        "id": "B",
+        "text": "ActiveZonalShiftHostCountのSumを確認する",
+        "explanation": "ARCゾーンシフトで無効化されたターゲット数であり、通常のrouting failoverとは異なる。"
+      },
+      {
+        "id": "C",
+        "text": "HTTPCode_Target_5XX_CountのSumだけを確認する",
+        "explanation": "ターゲット5xxは分かるが、ALBがフェイルオープンで転送したかは判定できない。"
+      },
+      {
+        "id": "D",
+        "text": "UnhealthyRoutingRequestCountのSumをAvailabilityZone次元で確認する",
+        "explanation": "正しい。ゾーンごとのrouting failoverによりunhealthyターゲットへ転送された要求を確認できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。ゾーンごとのrouting failoverによりunhealthyターゲットへ転送された要求を確認できる。",
+      "concept": "UnhealthyRoutingRequestCountはrouting failoverでunhealthyターゲットへ送られた要求数を示す。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-044",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nlb-unhealthy-draining-attribute",
+    "title": "NLBのunhealthy drainingを安全に有効化する",
+    "prompt": "長いTCPセッションを持つNLBターゲットが、ヘルスチェック失敗後にすぐ切断される。新規接続は別ターゲットへ止めつつ、既存接続の猶予を設定したい。NLBターゲットグループで必要な設定はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "NLBのクロスゾーン負荷分散を有効にする",
+        "explanation": "転送先AZの扱いであり、unhealthy接続のdraining条件ではない。"
+      },
+      {
+        "id": "B",
+        "text": "deregistration delayをNLBのunhealthyターゲット用に設定する",
+        "explanation": "登録解除の猶予とは別であり、ヘルスチェック失敗後のunhealthy draining設定ではない。"
+      },
+      {
+        "id": "C",
+        "text": "クライアントIP保存を有効にする",
+        "explanation": "送信元IPの扱いであり、unhealthyターゲットの接続終了の挙動を制御しない。"
+      },
+      {
+        "id": "D",
+        "text": "unhealthy connection terminationを無効にする",
+        "explanation": "正しい。connection terminationが有効なままではunhealthy drainingを有効化できない。"
+      },
+      {
+        "id": "E",
+        "text": "unhealthy draining intervalを設定する",
+        "explanation": "正しい。unhealthyになったターゲットの既存接続へ猶予を与える。"
+      }
+    ],
+    "correct": [
+      "D",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/edit-target-group-attributes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。connection terminationが有効なままではunhealthy drainingを有効化できない。 正しい。unhealthyになったターゲットの既存接続へ猶予を与える。",
+      "concept": "NLBのunhealthy draining intervalを使うにはconnection terminationを無効にしてから、draining intervalを設定する必要がある。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-045",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-nlb-zonal-health-preventive",
+    "title": "NLBのゾーン健全性をDNSキャッシュと分離して監視する",
+    "prompt": "NLBの一つのAZで登録ターゲットの問題が続く。クライアントの一部は過去に得たIPアドレスをDNSキャッシュから使い続けるため、DNS応答や接続数だけではロードバランサー側のゾーン判定を確認できない。AZごとのNLBゾーン健全性そのものを監視する最も適切なCloudWatchメトリクスはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "HealthyHostCountのMaximumを監視する",
+        "explanation": "最大値だけでは一部ターゲットが健全でもゾーンの健全性低下を見逃し得る。"
+      },
+      {
+        "id": "B",
+        "text": "TCP_ELB_Reset_CountのSumを監視する",
+        "explanation": "リセット数は分かるが、DNSキャッシュと分離したゾーン健全性を表さない。"
+      },
+      {
+        "id": "C",
+        "text": "ZonalHealthStatusのMinimumをAvailabilityZone次元で監視する",
+        "explanation": "正しい。特定AZに対するNLBのゾーン健全性状態を直接検出できる。"
+      },
+      {
+        "id": "D",
+        "text": "ActiveFlowCountのSumを監視する",
+        "explanation": "接続数は分かるが、NLBが判定したゾーン健全性状態そのものではない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-cloudwatch-metrics.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。特定AZに対するNLBのゾーン健全性状態を直接検出できる。",
+      "concept": "ZonalHealthStatusはNLBのAZごとの健全性を1または0で示し、クライアントのDNSキャッシュ状態とは別に確認できる。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-046",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-vpn-tunnel-data-direction",
+    "title": "VPNの片方向データ不足をAWS側の方向で読む",
+    "prompt": "Site-to-Site VPNトンネルはUPで、拠点からAWSへのバックアップは進むが、AWSから拠点への応答だけが止まった疑いがある。AWS側からカスタマーゲートウェイへ送信したバイト量を確認するCloudWatchメトリクスはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ConnectionBpsEgressのAverage",
+        "explanation": "Direct Connect接続のメトリクスであり、VPNトンネルの転送量ではない。"
+      },
+      {
+        "id": "B",
+        "text": "TunnelDataOutのSum",
+        "explanation": "正しい。AWSからカスタマーゲートウェイ方向のデータ量を確認できる。"
+      },
+      {
+        "id": "C",
+        "text": "TunnelStateのMinimum",
+        "explanation": "トンネルのup/down状態であり、方向別の転送量を示さない。"
+      },
+      {
+        "id": "D",
+        "text": "TunnelDataInのSum",
+        "explanation": "カスタマーゲートウェイからAWS側へ受信したバイト数であり、逆方向である。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/s2svpn/monitoring-cloudwatch-vpn.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。AWSからカスタマーゲートウェイ方向のデータ量を確認できる。",
+      "concept": "TunnelDataOutはAWS側からカスタマーゲートウェイへVPNトンネルを通じて送信されたバイト数を示す。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-047",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-dx-egress-discards-congestion",
+    "title": "Direct ConnectのAWS側送信破棄を帯域不足と分ける",
+    "prompt": "Direct ConnectのAWS側から拠点へ送る通信で短時間の欠落がある。ConnectionStateはupで、MACエラー数も0である。AWS側インターフェイスのバッファあふれや輻輳による送信パケット破棄を確認する最も直接的なメトリクスはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VirtualInterfaceBgpStatusのMinimum",
+        "explanation": "VIFのBGP状態であり、物理接続のegress破棄レートではない。"
+      },
+      {
+        "id": "B",
+        "text": "ConnectionDiscardsPpsEgressのMaximum",
+        "explanation": "正しい。AWS側egressの破棄レートのピークを確認できる。"
+      },
+      {
+        "id": "C",
+        "text": "ConnectionErrorCountのSum",
+        "explanation": "MAC層エラー数であり、今回確認したい輻輳・バッファ破棄とは異なる。"
+      },
+      {
+        "id": "D",
+        "text": "ConnectionBpsEgressのAverage",
+        "explanation": "送信ビットレートは分かるが、パケット破棄の有無を直接示さない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/directconnect/latest/UserGuide/monitoring-cloudwatch.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。AWS側egressの破棄レートのピークを確認できる。",
+      "concept": "ConnectionDiscardsPpsEgressはAWS側からの送信で、バッファあふれやインターフェイス輻輳などにより破棄されたパケットレートを示す。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-048",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-cloudfront-origin-latency-percentile",
+    "title": "CloudFrontからオリジンへの遅い要求をパーセンタイルで追う",
+    "prompt": "CloudFrontのキャッシュミス時だけ利用者の応答が遅い。平均では短いが、上位数%の遅いオリジン応答を監視したい。追加メトリクスを有効化した後、最も適切な設定はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "RequestsのAverageを取得する",
+        "explanation": "要求数の平均であり、オリジン応答遅延を測定しない。"
+      },
+      {
+        "id": "B",
+        "text": "OriginLatencyのSumを取得する",
+        "explanation": "時間の総和では遅い要求の分位点を示さない。"
+      },
+      {
+        "id": "C",
+        "text": "OriginLatencyをExtendedStatisticsのp95で取得する",
+        "explanation": "正しい。遅い上位5%のオリジン応答をキャッシュヒットと分けて把握できる。"
+      },
+      {
+        "id": "D",
+        "text": "CacheHitRateのp95を取得する",
+        "explanation": "CacheHitRateは割合であり、OriginLatencyのようなパーセンタイル遅延の指標ではない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/programming-cloudwatch-metrics.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。遅い上位5%のオリジン応答をキャッシュヒットと分けて把握できる。",
+      "concept": "OriginLatencyはキャッシュではなくオリジンから応答する要求の最初のバイトまでの時間で、パーセンタイルをExtendedStatisticsで取得する。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-049",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-tgw-ttl-expired-operational",
+    "title": "Transit GatewayのTTL切れによる破棄を検出する",
+    "prompt": "Transit Gatewayを通過する通信だけで、一部パケットがルーティング設定に問題がないのに失われる。TTLを減らす中継ループまたは過剰なホップを運用調査したい。最も直接的なCloudWatchメトリクスはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "PacketDropCountBlackholeのSum",
+        "explanation": "blackholeルートへの一致であり、TTLの消費ではない。"
+      },
+      {
+        "id": "B",
+        "text": "PacketsOutのAverage",
+        "explanation": "送信したパケット数であり、TTL切れの原因別破棄は特定できない。"
+      },
+      {
+        "id": "C",
+        "text": "PacketDropCountNoRouteのSum",
+        "explanation": "経路が一致しない破棄であり、TTL切れではない。"
+      },
+      {
+        "id": "D",
+        "text": "PacketDropCountTTLExpiredのSum",
+        "explanation": "正しい。TTL切れによる破棄だけを直接計数する。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/tgw/transit-gateway-cloudwatch-metrics.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。TTL切れによる破棄だけを直接計数する。",
+      "concept": "PacketDropCountTTLExpiredはTTLが期限切れになったためTransit Gatewayで破棄されたパケット数を示す。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-050",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-flow-logs-tcp-flags-reset",
+    "title": "VPCフローログでTCPリセットの方向を追う",
+    "prompt": "VPC Flow Logsにカスタム形式でtcp-flagsとpkt-srcaddr、pkt-dstaddrを含めている。あるサービスで接続直後のリセットが増え、どちらのIPがRSTを送っているかを実パケット解析なしで集計したい。最も適切な方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "actionがREJECTのレコードだけを集計する",
+        "explanation": "REJECTはVPC側の許可結果であり、許可された通信で発生するTCP RSTを示さない。"
+      },
+      {
+        "id": "B",
+        "text": "srcaddrだけで集計する",
+        "explanation": "中間NATなどを通じる場合にパケットの元の送信元を示さないことがある。"
+      },
+      {
+        "id": "C",
+        "text": "tcp-flagsでRSTを絞り、pkt-srcaddrとpkt-dstaddrごとにフローログを集計する",
+        "explanation": "正しい。RSTを含むレコードを方向別に集計し、元の送信元と宛先を確認できる。"
+      },
+      {
+        "id": "D",
+        "text": "bytesが0のレコードだけを集計する",
+        "explanation": "バイト数だけではTCPフラグやRST送信元を判定できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。RSTを含むレコードを方向別に集計し、元の送信元と宛先を確認できる。",
+      "concept": "tcp-flagsはSYNやRSTなどのTCPフラグを含められ、pkt-srcaddrはパケットの元の送信元を示す。"
+    }
+  },
+  {
+    "id": "ans-c01-d3-051",
+    "revision": 1,
+    "category": "ネットワーク管理と運用",
+    "examDomain": "ネットワーク管理と運用",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ans-alb-target-health-reason-code",
+    "title": "ALBターゲットのヘルスチェック失敗理由を取得する",
+    "prompt": "ALBのUnHealthyHostCountが増えた。ターゲットがhealth checkで期待外のHTTPコードを返したのか、タイムアウトしたのかを、対象ターゲット単位で確認して運用チケットへ記録したい。最も適切な操作はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "HealthyHostCountのAverageだけを確認する",
+        "explanation": "健全ターゲット数は分かるが、各ターゲットの失敗理由を返さない。"
+      },
+      {
+        "id": "B",
+        "text": "HTTPCode_ELB_5XX_Countを確認する",
+        "explanation": "ALBが生成した5xxであり、health checkの対象別reason codeではない。"
+      },
+      {
+        "id": "C",
+        "text": "VPC Reachability Analyzerを実行する",
+        "explanation": "構成上の到達性を解析できても、ALB health checkのHTTP応答理由を返さない。"
+      },
+      {
+        "id": "D",
+        "text": "describe-target-healthでTargetHealth.Reasonを含めて非healthyターゲットを取得する",
+        "explanation": "正しい。Target.ResponseCodeMismatchやTarget.Timeoutなど、対象別の失敗理由を確認できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/check-target-health.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "正しい。Target.ResponseCodeMismatchやTarget.Timeoutなど、対象別の失敗理由を確認できる。",
+      "concept": "describe-target-healthは非healthyターゲットの状態とreason codeを返す。"
+    }
+  },
+  {
+    "id": "ans-c01-d4-047",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "client-vpn-crl",
+    "title": "失効したClient VPN証明書を拒否する",
+    "prompt": "従業員端末の証明書が失効した後、Client VPN接続を拒否したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Client VPN endpointへ証明書失効リストを関連付ける",
+        "explanation": "CRLで失効証明書を拒否できる。"
+      },
+      {
+        "id": "B",
+        "text": "DNS TTLを短くする",
+        "explanation": "失効確認にならない。"
+      },
+      {
+        "id": "C",
+        "text": "NAT Gatewayを追加する",
+        "explanation": "VPN認証を制御しない。"
+      },
+      {
+        "id": "D",
+        "text": "セキュリティグループを変更する",
+        "explanation": "証明書失効を評価しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-certificates.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CRLで失効証明書を拒否できる。",
+      "concept": "Client VPN CRL"
+    }
+  },
+  {
+    "id": "ans-c01-d4-048",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "eks-private-api",
+    "title": "EKS管理APIを社内経路に限定する",
+    "prompt": "EKSクラスターのKubernetes APIをインターネットから到達不能にし、VPC内と接続済み社内網だけで管理したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ノード数を増やす",
+        "explanation": "API公開範囲を変えない。"
+      },
+      {
+        "id": "B",
+        "text": "Pod CIDRを変更する",
+        "explanation": "管理APIの公開設定ではない。"
+      },
+      {
+        "id": "C",
+        "text": "EKSのprivate endpoint accessを有効にしpublic accessを無効化する",
+        "explanation": "API serverへの到達経路をprivateに限定できる。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatch Logsだけを有効にする",
+        "explanation": "到達性を遮断しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "API serverへの到達経路をprivateに限定できる。",
+      "concept": "EKS private endpoint"
+    }
+  },
+  {
+    "id": "ans-c01-d4-049",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "rds-force-ssl",
+    "title": "DBクライアントの平文接続を拒否する",
+    "prompt": "RDS for PostgreSQLの既存カスタムDBパラメータグループでは、平文接続を許容している。アプリはすべてTLSへ移行済みで、DB自体が平文接続を拒否するようにしたい。何を変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DBをprivate subnetへ置くだけにする",
+        "explanation": "経路は限定しても平文接続を拒否しない。"
+      },
+      {
+        "id": "B",
+        "text": "DB parameter groupでrds.force_sslを有効にする",
+        "explanation": "SSLを使わない接続を拒否できる。"
+      },
+      {
+        "id": "C",
+        "text": "Enhanced Monitoringを有効にする",
+        "explanation": "暗号化強制ではない。"
+      },
+      {
+        "id": "D",
+        "text": "Multi-AZにする",
+        "explanation": "可用性構成である。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.SSL.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SSLを使わない接続を拒否できる。",
+      "concept": "RDS PostgreSQL force SSL"
+    }
+  },
+  {
+    "id": "ans-c01-d4-050",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "elasticache-tls-migration",
+    "title": "稼働中RedisキャッシュをTLS必須へ移行する",
+    "prompt": "既存のRedis OSS replication groupを、互換性確認をしながら平文許可からTLS必須へ段階移行したい。最も適切な順序はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "subnet groupを変更する",
+        "explanation": "TLS移行モードを変更しない。"
+      },
+      {
+        "id": "B",
+        "text": "at-rest encryptionだけを有効化する",
+        "explanation": "転送中の平文接続を止めない。"
+      },
+      {
+        "id": "C",
+        "text": "新しいDNS名だけを配布する",
+        "explanation": "キャッシュ側のTLS強制にならない。"
+      },
+      {
+        "id": "D",
+        "text": "transit encryption modeをpreferredにしてクライアント移行後requiredへ変更する",
+        "explanation": "対応バージョンではpreferredでTLS/平文を併用後、requiredでTLSのみを強制できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/in-transit-encryption.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応バージョンではpreferredでTLS/平文を併用後、requiredでTLSのみを強制できる。",
+      "concept": "ElastiCache preferred to required TLS"
+    }
+  },
+  {
+    "id": "ans-c01-d4-051",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "efs-tls-enforcement",
+    "title": "EFSへの平文NFSを技術的に拒否する",
+    "prompt": "複数AZのコンテナからEFSへ接続するが、転送中暗号化を必須にし平文マウントを拒否したい。2つ選択してください。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "mount helperでtlsオプションを指定する",
+        "explanation": "mount helperはTLSトンネルを作成できる。"
+      },
+      {
+        "id": "B",
+        "text": "NFSポートを変更する",
+        "explanation": "TLS強制にならない。"
+      },
+      {
+        "id": "C",
+        "text": "ファイルシステムポリシーでaws:SecureTransport=falseをDenyする",
+        "explanation": "平文トランスポートのクライアント要求を拒否できる。"
+      },
+      {
+        "id": "D",
+        "text": "lifecycle policyを設定する",
+        "explanation": "ストレージ階層化である。"
+      },
+      {
+        "id": "E",
+        "text": "EFSを暗号化して作成するだけにする",
+        "explanation": "保存時暗号化は平文マウントを拒否しない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/efs/latest/ug/security_iam_resource-based-policy-examples.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "mount helperはTLSトンネルを作成できる。 平文トランスポートのクライアント要求を拒否できる。",
+      "concept": "EFS TLS enforcement"
+    }
+  },
+  {
+    "id": "ans-c01-d4-052",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ec2-serial-console-disable",
+    "title": "緊急コンソールの利用を組織で禁止する",
+    "prompt": "規制対象アカウントの指定リージョンではEC2 Serial Consoleを無効化し、通常の管理経路だけを使わせたい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "SSHポートを閉じる",
+        "explanation": "Serial Console設定ではない。"
+      },
+      {
+        "id": "B",
+        "text": "インスタンスを停止する",
+        "explanation": "恒久的な組織統制ではない。"
+      },
+      {
+        "id": "C",
+        "text": "IMDSv2だけを必須にする",
+        "explanation": "Serial Consoleの可否を制御しない。"
+      },
+      {
+        "id": "D",
+        "text": "アカウントのEC2 Serial Console accessを無効化する",
+        "explanation": "アカウント単位でSerial Consoleアクセスを禁止できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configure-access-to-serial-console.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "アカウント単位でSerial Consoleアクセスを禁止できる。",
+      "concept": "EC2 Serial Console account setting"
+    }
+  },
+  {
+    "id": "ans-c01-d4-053",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "client-vpn-connection-logging",
+    "title": "Client VPN接続の認証失敗を監査する",
+    "prompt": "Client VPNの認証失敗と接続履歴を中央ログ基盤へ送信したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "NAT metricsを確認する",
+        "explanation": "利用者認証を記録しない。"
+      },
+      {
+        "id": "B",
+        "text": "Resolver query loggingを使う",
+        "explanation": "VPN接続履歴ではない。"
+      },
+      {
+        "id": "C",
+        "text": "VPC Flow Logsだけを有効にする",
+        "explanation": "認証イベントを提供しない。"
+      },
+      {
+        "id": "D",
+        "text": "Client VPN endpointでconnection loggingを有効化する",
+        "explanation": "接続イベントをCloudWatch Logsへ配信できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/connection-logging.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "接続イベントをCloudWatch Logsへ配信できる。",
+      "concept": "Client VPN connection logging"
+    }
+  },
+  {
+    "id": "ans-c01-d4-054",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "vpc-sharing-default-sg",
+    "title": "共有VPCで既定SGの逸脱を継続検出する",
+    "prompt": "複数チームが共有VPCを使う。default security groupにルールが追加された事実を継続的に検出したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VPCのCIDRを変更する",
+        "explanation": "SGルールを防止しない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudTrailだけを有効にする",
+        "explanation": "事後記録のみである。"
+      },
+      {
+        "id": "C",
+        "text": "Route tableをロックする",
+        "explanation": "SG設定を評価しない。"
+      },
+      {
+        "id": "D",
+        "text": "AWS Config managed ruleでdefault SGが閉じていることを継続評価する",
+        "explanation": "default SGのインバウンド/アウトバウンドルールを検出できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/config/latest/developerguide/vpc-default-security-group-closed.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "default SGのインバウンド/アウトバウンドルールを検出できる。",
+      "concept": "Config default SG closed"
+    }
+  },
+  {
+    "id": "ans-c01-d4-055",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "s3-object-lock-network-evidence",
+    "title": "ネットワーク監査証跡の保持を改ざん不能にする",
+    "prompt": "中央S3バケットへ今後書き込むネットワーク監査ログの各オブジェクトバージョンを、所定期間は管理者でも削除できないようにしたい。Object Lockの前提は満たしている。どの保持設定を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3 Object Lockのコンプライアンスモードで既定の保持期間を設定する。",
+        "explanation": "保護中のオブジェクトバージョンは管理者でも削除できず、保持期間を途中で短縮できない。"
+      },
+      {
+        "id": "B",
+        "text": "S3 Inventoryを有効にする",
+        "explanation": "一覧は改ざん不能性を提供しない。"
+      },
+      {
+        "id": "C",
+        "text": "S3 Object Lockのガバナンスモードにし、必要時に担当管理者がバイパスできるようにする。",
+        "explanation": "所定の権限を持つ管理者はガバナンスモードの保持をバイパスできるため、管理者も削除できないという条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatch alarmを作る",
+        "explanation": "削除操作を拒否しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "保護中のオブジェクトバージョンは管理者でも削除できず、保持期間を途中で短縮できない。",
+      "concept": "S3 Object Lock audit evidence"
+    }
+  },
+  {
+    "id": "ans-c01-d4-056",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "aws-network-manager-event",
+    "title": "グローバルネットワークの変更を検知する",
+    "prompt": "Cloud WANのcore network policy変更を運用チームが即時に検知したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "EventBridgeでNetwork Managerイベントをルール化する",
+        "explanation": "core networkの状態・ポリシーイベントを処理できる。"
+      },
+      {
+        "id": "B",
+        "text": "Route 53 health checkを作る",
+        "explanation": "Cloud WANポリシー変更を検知しない。"
+      },
+      {
+        "id": "C",
+        "text": "VPC Flow Logsだけを見る",
+        "explanation": "ポリシー変更イベントを保証しない。"
+      },
+      {
+        "id": "D",
+        "text": "DX BGPを再起動する",
+        "explanation": "通知構成ではない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-cloudwatch-events.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "core networkの状態・ポリシーイベントを処理できる。",
+      "concept": "Cloud WAN EventBridge events"
+    }
+  },
+  {
+    "id": "ans-c01-d4-057",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "cloudtrail-network-events",
+    "title": "ネットワーク設定変更を組織横断で記録する",
+    "prompt": "VPC endpointやsecurity groupの設定変更を全アカウントで証跡化したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Security Hubだけを有効にする",
+        "explanation": "全管理イベントを記録しない。"
+      },
+      {
+        "id": "B",
+        "text": "S3 Inventoryを出力する",
+        "explanation": "ネットワーク変更操作を記録しない。"
+      },
+      {
+        "id": "C",
+        "text": "各VPCにFlow Logsだけを設定する",
+        "explanation": "管理API操作の網羅的な組織証跡にならない。"
+      },
+      {
+        "id": "D",
+        "text": "Organizationsのorganization trailを作成する",
+        "explanation": "組織内アカウントの管理イベントを一元記録できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "組織内アカウントの管理イベントを一元記録できる。",
+      "concept": "Organization trail"
+    }
+  },
+  {
+    "id": "ans-c01-d4-058",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "acm-private-ca-template",
+    "title": "社内証明書の用途を制限する",
+    "prompt": "Private CAで発行する証明書を、サーバー認証専用にしクライアント認証へ流用させたくない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CRLを無効にする",
+        "explanation": "用途制限ではない。"
+      },
+      {
+        "id": "B",
+        "text": "発行時にserver authentication用テンプレートを指定する",
+        "explanation": "テンプレートで証明書拡張用途を制約できる。"
+      },
+      {
+        "id": "C",
+        "text": "CA証明書の名前をserverにする",
+        "explanation": "名前は拡張用途を制限しない。"
+      },
+      {
+        "id": "D",
+        "text": "証明書を長期化する",
+        "explanation": "利用目的を制御しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/privateca/latest/userguide/UsingTemplates.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "テンプレートで証明書拡張用途を制約できる。",
+      "concept": "Private CA templates"
+    }
+  },
+  {
+    "id": "ans-c01-d4-059",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-synthetics-private",
+    "title": "非公開URLのTLS期限を継続監視する",
+    "prompt": "VPC内部だけから到達できる業務URLのTLS証明書期限と接続失敗を監視したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Route 53 public health checkだけを使う",
+        "explanation": "VPC内限定URLへ到達できない。"
+      },
+      {
+        "id": "B",
+        "text": "VPC内で実行するCloudWatch Synthetics canaryを使う",
+        "explanation": "private endpointに到達してTLSや応答を監視できる。"
+      },
+      {
+        "id": "C",
+        "text": "CloudFront realtime logsを使う",
+        "explanation": "内部URLの能動監視ではない。"
+      },
+      {
+        "id": "D",
+        "text": "NAT metricsだけを見る",
+        "explanation": "証明書期限を検査しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Synthetics_Canaries_VPC.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "private endpointに到達してTLSや応答を監視できる。",
+      "concept": "Synthetics VPC canary"
+    }
+  },
+  {
+    "id": "ans-c01-d4-060",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "config-flowlogs-compliance",
+    "title": "全VPCにFlow Logsがあることを継続評価する",
+    "prompt": "監査要件で、組織内の各VPCが少なくとも1つのVPC Flow Logsを有効にしていることを継続検出したい。最も適切なConfigルールはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS Config managed rule VPC_FLOW_LOGS_ENABLEDを使用する",
+        "explanation": "VPCにFlow Logが存在するかを評価する。"
+      },
+      {
+        "id": "B",
+        "text": "NAT metricsを監視する",
+        "explanation": "Flow Logの存在を示さない。"
+      },
+      {
+        "id": "C",
+        "text": "VPC CIDRを標準化する",
+        "explanation": "ログ有効化を検出しない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudTrail organization trailだけを使う",
+        "explanation": "VPCごとのFlow Log有効性を評価しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/config/latest/developerguide/vpc-flow-logs-enabled.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "VPCにFlow Logが存在するかを評価する。",
+      "concept": "Config VPC_FLOW_LOGS_ENABLED"
+    }
+  },
+  {
+    "id": "ans-c01-d4-061",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "ec2-instance-connect-endpoint",
+    "title": "管理対象EC2へ公開IPなしで一時的にSSH接続する",
+    "prompt": "承認済み運用者がプライベートサブネットのEC2へSSHする。対象にはSSM Agentを導入できず、踏み台と公開IPも使わない。IAMで接続を制御する。どの入口を作るか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "SSHを0.0.0.0/0へ許可する",
+        "explanation": "公開面を広げる。"
+      },
+      {
+        "id": "B",
+        "text": "IGWを追加する",
+        "explanation": "private instanceの安全な管理入口にならない。"
+      },
+      {
+        "id": "C",
+        "text": "NAT Gateway経由でSSHする",
+        "explanation": "NATは外部からの着信SSHを提供しない。"
+      },
+      {
+        "id": "D",
+        "text": "EC2 Instance Connect EndpointをVPCに作成する",
+        "explanation": "公開IPやbastionなしでprivate instanceへIAM認可された接続を提供できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connect-using-eice.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "公開IPやbastionなしでprivate instanceへIAM認可された接続を提供できる。",
+      "concept": "EC2 Instance Connect Endpoint"
+    }
+  },
+  {
+    "id": "ans-c01-d4-062",
+    "revision": 1,
+    "category": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "examDomain": "ネットワークセキュリティ・コンプライアンス・ガバナンス",
+    "version": "ANS-C01 オリジナル問題 2026-11",
+    "similarityGroup": "vpc-flowlogs-kms",
+    "title": "VPC Flow Logsの配信先を暗号化して保護する",
+    "prompt": "機密ネットワークのFlow LogsをCloudWatch Logsへ送る。保存中のログを顧客管理キーで暗号化したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "NAT Gatewayを使う",
+        "explanation": "ログ保存のKMS設定ではない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatch Logs log groupへKMS keyを関連付ける",
+        "explanation": "log groupに保存されるデータをKMSで暗号化できる。"
+      },
+      {
+        "id": "C",
+        "text": "NACLを追加する",
+        "explanation": "保存済みログを暗号化しない。"
+      },
+      {
+        "id": "D",
+        "text": "Flow Log formatだけを変更する",
+        "explanation": "保存先の暗号化を設定しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "log groupに保存されるデータをKMSで暗号化できる。",
+      "concept": "CloudWatch Logs KMS encryption"
+    }
   }
 ]

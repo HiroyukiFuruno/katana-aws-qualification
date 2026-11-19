@@ -61,6 +61,7 @@ const published = new Set(
 const questionIds = new Set<string>();
 const unitIds = new Set<string>();
 const forms = new Set<string>();
+const formCounts = new Map<string, number>();
 for (const unit of value.units) {
   assert(published.has(unit.id), `${unit.id} is not published`);
   assert(!unitIds.has(unit.id), `duplicate unit: ${unit.id}`);
@@ -81,7 +82,9 @@ for (const unit of value.units) {
       question.id,
     );
     assert.equal(new URL(question.source.url).protocol, 'https:', question.id);
-    forms.add(`${question.selectionPolarity}:${question.requiredChoices === 1 ? 'single' : 'multiple'}`);
+    const form = `${question.selectionPolarity}:${question.requiredChoices === 1 ? 'single' : 'multiple'}`;
+    forms.add(form);
+    formCounts.set(form, (formCounts.get(form) ?? 0) + 1);
   }
   const catalogItem = value.catalog.find((item) => item.id === unit.id);
   assert(catalogItem, `missing catalog item: ${unit.id}`);
@@ -90,6 +93,10 @@ assert.deepEqual(unitIds, published);
 assert.deepEqual(
   forms,
   new Set(['correct:single', 'correct:multiple', 'incorrect:single', 'incorrect:multiple']),
+);
+assert(
+  [...formCounts.values()].every((count) => count >= 3),
+  'Each answer form needs three questions',
 );
 console.log(
   `Validated ${value.catalog.length} units, ${questionIds.size} questions, and ${forms.size} answer forms`,

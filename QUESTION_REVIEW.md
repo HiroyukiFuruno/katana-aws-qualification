@@ -1077,3 +1077,13 @@ AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・
 - [Bedrock Flowsの複数ターンの再開](https://docs.aws.amazon.com/bedrock/latest/userguide/flows-multi-turn-invocation.html)
 - [Bedrock FlowsのLambda functionノード](https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html)
 - [EventBridgeの配送失敗とデッドレターキュー](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rule-dlq.html)
+
+## MLA-C01のフル模試5回分と旧版互換性
+
+- 130分・65問のフル模試を、データ準備18問、モデル開発17問、デプロイとオーケストレーション14問、モニタリング・保守・セキュリティ16問で出題する。内訳は公式ガイドの分野比率を65問へ割り当てたもの。
+- 4分野に90・85・70・80問、計325問のオリジナル問題を収録。択一・複数選択・並べ替え・組み合わせに対応し、各選択肢の解説とAWS公式出典を確認した。
+- 現行52,650組と旧版5,200組の文面を比較し、題材が近い設問の正答根拠を照合した。重複しない65問の組を5回分、128通り生成して全325問を出題できることを確認した。
+- 既存の練習と固定模試のデータ、保存キー、問題リビジョンを保持する。旧16件のキーと新規325問のキーは重複しない。
+- [AWSのMLA-C01試験ガイド](https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html)
+- [AWSの試験案内](https://aws.amazon.com/jp/certification/certified-machine-learning-engineer-associate/)
+- [AWSのMLA-C01対象サービス](https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/mla-01-in-scope-services.html)と[対象外サービス](https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/mla-01-out-of-scope-services.html)も照合し、未公開の7問を差し替えた。

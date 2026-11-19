@@ -716,3 +716,15 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 
 - [AWS DataSyncの検証設定](https://docs.aws.amazon.com/datasync/latest/userguide/configure-data-verification-options.html)
 - [AWS DevOps Agentの調査レビュー](https://docs.aws.amazon.com/devopsagent/latest/userguide/working-with-devops-agent-reviewing-investigations.html)
+
+## SOA-C03の重複しないフル模試4回分
+
+新規65問を追加し、既存195問を維持した。独立260問の分野別内訳は順に56・56・56・44・48問。単一選択231問、複数選択29問で、単一選択の正答位置はAから順に58・58・58・57問。
+
+既存設問と草稿の正答の決め手を照合した。同じスケーリング設定を選ばせる草稿は、ECS Execの有効化状態とEKSのKubernetes監査ログを確認する問題に差し替えた。KMSではEBS経由の要求に絞るポリシー条件と、CloudWatch Logsのロググループを暗号化コンテキストで絞る条件を扱う。災害対策ではS3の複製状況を前提として、Multi-Region Access Pointの二つのリージョンでルーティング状態を切り替える手順を問う。
+
+新規65問の出典を含む254件のURL、全4,624通りの採点、フル模試の生成512回、カスタム全65件数を確認した。65問・130分、分野配分14・14・14・11・12問のフル模試を、互いに問題が重複しない4回分として128組生成した。分野ごとの5倍まで残り65問。
+
+- [SOA-C03の監視・分析・修復と性能最適化](https://docs.aws.amazon.com/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03-domain1.html)
+- [S3 Multi-Region Access Pointのフェイルオーバー制御](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingFailover.html)
+- [CloudWatch LogsのロググループとKMS暗号化コンテキスト](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html)

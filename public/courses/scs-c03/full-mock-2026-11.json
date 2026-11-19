@@ -1,0 +1,2854 @@
+[
+  {
+    "id": "scs-c03-d1-001",
+    "revision": 1,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudtrail-s3-data-read-prefix-advanced-selector",
+    "title": "監査対象のS3ダウンロードだけを記録する",
+    "prompt": "既存のCloudTrail組織証跡は管理イベントを記録中である。大量のデータを扱うS3バケットで、顧客情報用prefix内のGetObjectだけを追加記録し、ほかのオブジェクトアクセスは既存のログ量に影響させない。証跡を維持して何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "証跡でバケットのオブジェクト全件を記録し、S3に到着した後でGetObjectだけを抽出する。",
+        "explanation": "後段の抽出は可能だが、ログ記録や転送時の量まで制限できない。"
+      },
+      {
+        "id": "B",
+        "text": "管理イベントの選択を維持し、S3オブジェクトのデータイベントに対象ARNのStartsWithとeventNameのGetObjectを指定する。",
+        "explanation": "データイベントを追加し、プレフィックスと操作の両方で対象を絞れる。"
+      },
+      {
+        "id": "C",
+        "text": "S3バケットの管理イベントにGetObjectへのフィルターを加え、管理とデータの区別をなくして記録する。",
+        "explanation": "GetObjectはデータイベントで、管理イベントの選択を変えても対象にならない。"
+      },
+      {
+        "id": "D",
+        "text": "S3データイベントでバケットARNの完全一致とreadOnly=trueだけを指定し、顧客情報の取得に限定する。",
+        "explanation": "オブジェクトARNはバケットARNと異なり、読み取りの指定だけではGetObjectのみに絞れない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/filtering-data-events.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "データイベントを追加し、プレフィックスと操作の両方で対象を絞れる。",
+      "concept": "CloudTrailデータイベントのリソース範囲とAPI名"
+    }
+  },
+  {
+    "id": "scs-c03-d1-002",
+    "revision": 1,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudtrail-digest-delivery-vs-scheduled-validation",
+    "title": "ログの改変を検出した実行結果が必要になる",
+    "prompt": "CloudTrail証跡でログファイル整合性検証を有効にしており、ダイジェストがS3へ届いている。監査では対象期間のログがダイジェストと一致するか検証した結果を日次で保存し、ファイル削除や改変を検出したい。運用へ何を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象期間に対するCloudTrailのログ検証を定期実行し、検証結果を別の監査先へ記録する。",
+        "explanation": "ダイジェストを生成する設定だけでは検証は実行されない。検証処理で署名、連鎖、ログファイルを照合できる。"
+      },
+      {
+        "id": "B",
+        "text": "CloudTrail Insightsを有効にし、通常と異なるAPI実行量に関するイベントがなければログを有効と判定する。",
+        "explanation": "Insightsが調べるのはAPIの挙動で、保管済みログの完全性ではない。"
+      },
+      {
+        "id": "C",
+        "text": "S3オブジェクトのバージョニングを確認してS3 Inventoryの報告を保存し、過去期間の暗号学的な整合性を認定する。",
+        "explanation": "バージョニングは復元に役立つが、CloudTrailのダイジェスト連鎖との照合を行わない。"
+      },
+      {
+        "id": "D",
+        "text": "ダイジェストが入ったS3プレフィックスのファイル件数を保存し、期待した件数がある場合に改変なしとする。",
+        "explanation": "件数が合っても個別ファイルが期待した内容や署名と一致するかは分からない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-validation-intro.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ダイジェストを生成する設定だけでは検証は実行されない。検証処理で署名、連鎖、ログファイルを照合できる。",
+      "concept": "ダイジェストの生成とログの検証を区別する"
+    }
+  },
+  {
+    "id": "scs-c03-d1-003",
+    "revision": 1,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "securityhub-cspm-region-aggregation-existing-finding-update",
+    "title": "リンクを追加した地域の古い検出結果が中央に出ない",
+    "prompt": "Security Hub CSPMを既に有効にしたリージョンを、今日から中央のホームリージョンにリンクした。あるアクティブな検出結果はリンク前に作られて以来更新されておらず、発生元にはあるがホームになく、新規の結果は届いている。監査に必要な当該結果をどう確認するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ホームリージョンの表示保持期間を延ばし、リンク前の既存結果をすべて再配信させる。",
+        "explanation": "表示や保持に関わる設定を変えても、未更新の結果の遡及集約は始まらない。"
+      },
+      {
+        "id": "B",
+        "text": "対象リージョンのリンクを解除して再作成し、発生元の未更新の既存結果をホームへ同期する。",
+        "explanation": "新しいリンクを作り直しても、未更新の既存結果を直ちに集約する操作にはならない。"
+      },
+      {
+        "id": "C",
+        "text": "発生元リージョンで既存結果を確認する。リンク前からあり変更されていない結果は、更新されてから中央にも集約される。",
+        "explanation": "結果が新規または更新されたときの集約と、リンクを作った直後の全履歴の取得は異なる。"
+      },
+      {
+        "id": "D",
+        "text": "ホームリージョンで同じセキュリティ標準を無効化してから有効にし、発生元の結果を再生成する。",
+        "explanation": "ホーム側の標準設定を切り替えても、報告済みの別リージョンの結果をその場で再生成しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/securityhub/latest/userguide/security-hub-region-aggregation.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "結果が新規または更新されたときの集約と、リンクを作った直後の全履歴の取得は異なる。",
+      "concept": "リンク設定時点の既存結果と更新後の集約"
+    }
+  },
+  {
+    "id": "scs-c03-d1-004",
+    "revision": 1,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "guardduty-suppress-at-ticket-layer-retain-threat-correlation",
+    "title": "既知の保守通知を減らしつつ脅威相関の信号を維持する",
+    "prompt": "GuardDutyの検出結果をEventBridge経由でチケット化している。限定された検証用の保守活動で起票だけを減らしたい。検出結果はGuardDutyでアクティブなまま維持し、脅威相関とセキュリティ側の別経路の調査に使う。どこで絞り込むか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "GuardDutyの抑制ルールで保守対象をアーカイブし、アーカイブした結果をチケット以外の脅威相関へ送り続ける。",
+        "explanation": "抑制でアーカイブした結果はExtended Threat Detectionの相関信号から除かれる。"
+      },
+      {
+        "id": "B",
+        "text": "管理対象アカウントのGuardDutyを検証時間帯だけ停止し、セキュリティ側は中央のアカウントで継続調査する。",
+        "explanation": "対象アカウントで検出自体を止めるので、必要な検出や相関の信号が得られない。"
+      },
+      {
+        "id": "C",
+        "text": "チケット連携のイベントパターンや処理で、承認済みの保守活動に一致する起票だけを除外する。",
+        "explanation": "GuardDutyの結果をアーカイブしないため、相関に使える状態を保ちながらチケットだけを減らせる。"
+      },
+      {
+        "id": "D",
+        "text": "Security Hub CSPMのワークフローステータスをSUPPRESSEDへ更新し、GuardDutyからチケット用に来るイベントはそのままにする。",
+        "explanation": "別サービスで結果のワークフロー状態を変えても、GuardDutyから直接作るチケットの処理を変えない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/guardduty/latest/ug/findings_suppression-rule.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "GuardDutyの結果をアーカイブしないため、相関に使える状態を保ちながらチケットだけを減らせる。",
+      "concept": "GuardDutyの抑制ルールと通知側のフィルタリングの影響"
+    }
+  },
+  {
+    "id": "scs-c03-d1-005",
+    "revision": 1,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "macie-custom-identifier-targeted-s3-discovery-job",
+    "title": "指定された書式の社内番号だけを特定の領域で探す",
+    "prompt": "担当者はS3データの分類を行う。公開前の契約書を格納する指定バケットのcontracts/配下で、自社番号の書式と周辺キーワードに合うデータが入っていないか一度検査する。他プレフィックスは検査対象から外す。何を組み合わせるか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3 Inventoryにすべてのオブジェクトのカスタムメタデータを加え、本文中のキーワードを検索する。",
+        "explanation": "Inventoryはオブジェクトの一覧と属性の出力であり、オブジェクト本文中の番号やキーワードを調べない。"
+      },
+      {
+        "id": "B",
+        "text": "Macieのカスタムデータ識別子を作成して番号のパターンと周辺キーワードを指定する。",
+        "explanation": "組織独自の入力書式や文脈を識別子で表現できる。"
+      },
+      {
+        "id": "C",
+        "text": "対象バケットとプレフィックスを指定した機密データ検出ジョブで、そのカスタム識別子を使う。",
+        "explanation": "選んだ範囲のオブジェクトに対して指定した識別子による検査を実行できる。"
+      },
+      {
+        "id": "D",
+        "text": "GuardDuty Malware Protection for S3で対象を保護し、オブジェクト内の番号の一覧をマルウェア所見として取得する。",
+        "explanation": "マルウェア検査はユーザー指定の機密情報の識別や分類を行う機能ではない。"
+      },
+      {
+        "id": "E",
+        "text": "Macieの許可リストに社内番号を書き、これに一致する値を機密データとして報告させる。",
+        "explanation": "許可リストは一致する値を検出結果から除くために使い、検出を追加しない。"
+      }
+    ],
+    "correct": [
+      "B",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/macie/latest/user/discovery-jobs-scope.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "組織独自の入力書式や文脈を識別子で表現できる。 選んだ範囲のオブジェクトに対して指定した識別子による検査を実行できる。",
+      "concept": "Macieの検出識別子とジョブ対象の絞り込み"
+    }
+  },
+  {
+    "id": "scs-c03-d1-006",
+    "revision": 1,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudwatch-logs-data-protection-audit-mask-unmask-role",
+    "title": "通常の運用ログから個人情報をマスクする",
+    "prompt": "CloudWatch Logsへ取り込む新規イベントに、調査時だけ使う個人情報が混ざる。通常の運用者にはマスクし、権限を与えた事故対応者だけが明示したときに原文を参照できるようにする。ログ送信元は変更できない。どの設定を採用するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象フィールドを抜き出すメトリクスフィルターを設定し、そのフィルターで元のログ行から値を取り除く。",
+        "explanation": "メトリクスフィルターは時系列へ変換する機能で、ログ内のフィールドを編集しない。"
+      },
+      {
+        "id": "B",
+        "text": "運用者にはLogs Insightsで個人情報を表示しないクエリを共有し、同じログへの通常の読み取りも許可する。",
+        "explanation": "保存済みクエリの列を減らしても、元のイベントを別の方法で読めるためマスクを強制できない。"
+      },
+      {
+        "id": "C",
+        "text": "ロググループに監査とマスクのデータ保護ポリシーを付け、logs:Unmaskは対応者のロールだけに付与する。",
+        "explanation": "通常の取得時に適用するマスクを有効にし、指定権限を持つ人だけが明示的に解除できる。"
+      },
+      {
+        "id": "D",
+        "text": "KMSキーでロググループを暗号化し、対応者以外にはKMSのDecryptを直接許可しない。",
+        "explanation": "保存時暗号化はログの機密フィールドを役割ごとにマスクする機能ではない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/mask-sensitive-log-data.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "通常の取得時に適用するマスクを有効にし、指定権限を持つ人だけが明示的に解除できる。",
+      "concept": "CloudWatch Logsの取り込み時検出とUnmask権限"
+    }
+  },
+  {
+    "id": "scs-c03-d1-007",
+    "revision": 1,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "vpc-flow-logs-reject-distinguish-config-evidence",
+    "title": "拒否ログの原因を設定と照合する",
+    "prompt": "構成変更のあと、VPC Flow Logsにテスト環境のENIでREJECTが記録された。直近でセキュリティグループとネットワークACLを両方変更した。REJECTだけからどちらが拒否したか判断せず設定の原因を絞るにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "REJECTのbytesとpacketsを比較し、パケットのサイズでセキュリティグループとネットワークACLを判別する。",
+        "explanation": "通信量と拒否の実施元にそのような対応関係はない。"
+      },
+      {
+        "id": "B",
+        "text": "log-statusがOKならセキュリティグループによる拒否とみなし、ネットワークACLの記録は除外する。",
+        "explanation": "log-statusはログの収集状態を表し、拒否を実施した制御を表さない。"
+      },
+      {
+        "id": "C",
+        "text": "対象フロー、ENI、方向を特定し、同じ経路へのセキュリティグループとネットワークACLの適用ルールを照合する。",
+        "explanation": "REJECTは拒否した設定の識別子を含まないため、フロー情報を基に実際の適用ルールを調べる。"
+      },
+      {
+        "id": "D",
+        "text": "REJECTならネットワークACL、ACCEPTならセキュリティグループと分類し、ログのアクションのみで判定する。",
+        "explanation": "両方の制御が拒否の原因になり得る。アクション値からどちらか一方とは決められない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "REJECTは拒否した設定の識別子を含まないため、フロー情報を基に実際の適用ルールを調べる。",
+      "concept": "Flow LogsのREJECTとVPC設定による拒否の切り分け"
+    }
+  },
+  {
+    "id": "scs-c03-d1-008",
+    "revision": 1,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "securityhub-config-required-resource-type-no-control-finding",
+    "title": "有効なコントロールに評価対象が出ない",
+    "prompt": "Security Hub CSPMでAWS Configを利用するコントロールを有効にした。対象アカウント・リージョンには評価対象リソースがあり、別の型の評価は届いているが、この型はConfigレコーダーの対象外である。正しい評価のために何を変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS Configアグリゲーターに当該アカウントを加え、元リージョンで型を記録せずにコントロールの評価を取得する。",
+        "explanation": "アグリゲーターは各アカウントの記録済みデータを集約する。元データがない型を記録しない。"
+      },
+      {
+        "id": "B",
+        "text": "ホームリージョンのセキュリティスコアの更新を待ち、レコーダーで当該型の記録は無効のままにする。",
+        "explanation": "集計の更新周期を待っても、前提となる型を記録しない問題は解消しない。"
+      },
+      {
+        "id": "C",
+        "text": "当該コントロールの重要度を高に変更し、マネージド評価がConfigを使わずに対象を検査するようにする。",
+        "explanation": "結果の重要度は検査の入力に必要なリソース情報の代わりにならない。"
+      },
+      {
+        "id": "D",
+        "text": "対象アカウントとリージョンのConfigレコーダーで、そのコントロールが必要とするリソース型を記録する。",
+        "explanation": "Config依存のコントロールは、必要なリソース型の記録を有効にしてから対象を評価できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/securityhub/latest/userguide/controls-config-resources.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Config依存のコントロールは、必要なリソース型の記録を有効にしてから対象を評価できる。",
+      "concept": "Security Hub CSPMコントロールとAWS Configの記録対象"
+    }
+  },
+  {
+    "id": "scs-c03-practice-03",
+    "revision": 3,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudtrail-org-trail-member-readonly-automatic-onboarding",
+    "title": "新規メンバーの管理操作も同じ監査先へ送る",
+    "prompt": "監査チームはOrganizations全体の管理操作を、監査用のS3バケットに記録する。新しいメンバーを自動で対象に加え、メンバー側の管理者には記録の停止や証跡の削除を許さない。中央で構成する方法はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "組織の管理側で、すべてのリージョンの管理イベントを記録する組織証跡を作る。",
+        "explanation": "組織証跡は追加されたメンバーにも適用され、メンバーは組織の証跡を変更・削除できない。"
+      },
+      {
+        "id": "B",
+        "text": "管理アカウントだけにマルチリージョンの通常の証跡を作成し、メンバーは同じS3を読めるようにする。",
+        "explanation": "管理アカウントだけの証跡は、他のメンバーアカウントで実行された管理操作を組織全体として記録しない。"
+      },
+      {
+        "id": "C",
+        "text": "各アカウントのCloudTrailイベント履歴にアクセスできるようにして、証跡と中央S3への配信を構成しない。",
+        "explanation": "イベント履歴の閲覧は、組織全体の管理操作を中央バケットに配信して保持する要件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "各メンバーで通常の証跡を個別作成できるようにして、組織を追加した後に同じテンプレートを手動実行する。",
+        "explanation": "新規メンバーへ自動では適用されず、通常の証跡の管理もメンバー側の権限に左右される。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "組織証跡は追加されたメンバーにも適用され、メンバーは組織の証跡を変更・削除できない。",
+      "concept": "組織証跡のメンバーへの自動展開と管理権限"
+    }
+  },
+  {
+    "id": "scs-c03-practice-06",
+    "revision": 3,
+    "category": "検出",
+    "examDomain": "検出",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "guardduty-foundational-data-no-existing-self-managed-flow-trail",
+    "title": "監査ログを増やさずに新規アカウントで脅威を検出する",
+    "prompt": "新規アカウントではVPC Flow Logsの永続配信も、管理イベントを保存する独自のCloudTrail証跡もまだ構成されていない。ネットワークや認証に関する異常をGuardDutyの基礎データソースで検出したい。ログの保全は別途計画済みである。何を行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "組織証跡にS3のオブジェクトデータイベントを追加し、GuardDutyを無効のまま脅威所見の自動生成を待つ。",
+        "explanation": "証跡でのデータイベントの記録自体はGuardDutyの所見を生成しない。"
+      },
+      {
+        "id": "B",
+        "text": "対象リージョンでGuardDutyを有効にする。基礎データソースの収集のために、別の証跡やFlow Logs配信を先に作る必要はない。",
+        "explanation": "GuardDutyはAWSが提供する基礎データの独立したストリームを利用する。"
+      },
+      {
+        "id": "C",
+        "text": "AWS ConfigでVPCの構成履歴だけを有効にし、GuardDutyの検出器を作らずにCloudTrailの操作と通信を分類する。",
+        "explanation": "記録された構成の変更はGuardDutyの脅威検出に代わるものではない。"
+      },
+      {
+        "id": "D",
+        "text": "すべてのサブネットのログをS3へエクスポートし、GuardDutyの基礎検出器の入力としてそのS3バケットを指定する。",
+        "explanation": "自分で配信したS3ログを基礎検出器の入力に設定する必要はない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_data-sources.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "GuardDutyはAWSが提供する基礎データの独立したストリームを利用する。",
+      "concept": "GuardDutyが独立した基礎データストリームを分析する"
+    }
+  },
+  {
+    "id": "scs-c03-d2-001",
+    "revision": 1,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "ec2-containment-tracked-flow-separate-subnet-acl",
+    "title": "セキュリティグループ変更後も残る接続を遮断する",
+    "prompt": "インシデント対応用に用意したサブネットには、いま隔離対象のEC2が1台だけ動作している。稼働状態を証拠採取まで維持する必要がある。許可を外したセキュリティグループに切り替えても、追跡済みの外部接続が残った。次の対応として適切なのはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "インスタンスを強制停止して接続を切断し、その後に同じOSプロセスのメモリを採取する。",
+        "explanation": "停止すると稼働中の揮発性の情報を失うため、証拠採取までインスタンスを稼働させる条件に合わない。"
+      },
+      {
+        "id": "B",
+        "text": "対象のDNS名の回答を空にして、新規の名前解決と確立済みの外部接続を同時に止める。",
+        "explanation": "DNSの変更は、既に通信中の接続で転送されるパケットを拒否するネットワーク制御ではない。"
+      },
+      {
+        "id": "C",
+        "text": "対象サブネットに隔離用ネットワークACLを適用し、その送受信を拒否する。",
+        "explanation": "ネットワークACLはステートレスなので、確立済みの接続も各パケットで拒否できる。他のインスタンスがいない範囲で影響を抑えられる。"
+      },
+      {
+        "id": "D",
+        "text": "空のセキュリティグループをもう一つ追加し、二つのグループの合成で既存接続が拒否されることを期待する。",
+        "explanation": "セキュリティグループに明示的なDenyはなく、同様のグループを追加しても追跡済み接続を直ちに遮断しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-connection-tracking.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ネットワークACLはステートレスなので、確立済みの接続も各パケットで拒否できる。他のインスタンスがいない範囲で影響を抑えられる。",
+      "concept": "セキュリティグループのコネクション追跡とステートレスな遮断"
+    }
+  },
+  {
+    "id": "scs-c03-d2-002",
+    "revision": 1,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "iam-user-specific-compromised-key-deactivate-migrate-clean",
+    "title": "単一のIAMアクセスキーを止めて監査上の識別子を保つ",
+    "prompt": "監査通知でバッチ用IAMユーザーの一方のアクセスキーが露出した。ワークロードは検証済みの別ロールへ切替済みで、流出したキーを直ちに無効化する。同じユーザーの別キーとは区別し、調査期間中は問題のキーの管理上の記録を残す。何をするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "露出したアクセスキーだけをInactiveにし、アクセスキーIDと関連ログを調査記録に保存する。",
+        "explanation": "キーを削除せず、そのキーを使う新たな認証要求を停止できる。発行済みの別の一時セッションがあれば別に調べる。"
+      },
+      {
+        "id": "B",
+        "text": "IAMユーザーのコンソールパスワードだけを無効化し、キーIDとAWS APIアクセスの状態を維持する。",
+        "explanation": "コンソール用パスワードの変更はプログラム用アクセスキーで署名する要求を止めない。"
+      },
+      {
+        "id": "C",
+        "text": "該当キーを直ちに削除し、IAMから同じキーIDをInactiveで再作成して管理記録を保つ。",
+        "explanation": "削除済みキーと同じキーIDを再作成することはできず、無効状態で保持する要件に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "新しいアクセスキーを発行し、流出したキーも調査期間だけActiveで残す。",
+        "explanation": "新しいキーを発行しても古いキーが無効になるわけではない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/securing_access-keys.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "キーを削除せず、そのキーを使う新たな認証要求を停止できる。発行済みの別の一時セッションがあれば別に調べる。",
+      "concept": "IAMユーザーのキー単位の状態と既存アクセス経路"
+    }
+  },
+  {
+    "id": "scs-c03-d2-003",
+    "revision": 1,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "incident-simulation-tabletop-vs-technical-production-impact",
+    "title": "最初に権限と連絡の不足を発見する",
+    "prompt": "新設のチームは、想定した重大インシデントで誰が隔離を承認し、運用・法務・経営へどの順序で連絡するかを確認したい。本番トラフィックやIAMの権限には操作を加えず、対応者がシナリオに沿って意思決定する初回演習が必要である。何を実施するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各チームにそれぞれランブックを黙読してもらい、ロールと連絡先が合っているとして運用開始する。",
+        "explanation": "部門間での判断や引き継ぎを一連のシナリオで確認しないので、境界の抜けを発見しにくい。"
+      },
+      {
+        "id": "B",
+        "text": "運用環境に同じ名前の対応用IAMロールを増やし、全員のアクセスログから承認経路を再構成する。",
+        "explanation": "権限を変えない条件に合わず、事前の部門間の責任の確認にもならない。"
+      },
+      {
+        "id": "C",
+        "text": "AWS FISで本番サービスのインスタンスを停止し、停止通知の受け手から承認者を推定する。",
+        "explanation": "サービスに変更を与えるため、役割を議論で検証する初回演習の条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "机上演習を開き、シナリオを段階的に提示して、判断と連絡を担当者に説明してもらい不足を記録する。",
+        "explanation": "運用環境を変更せずに複数部門の役割、判断、承認経路を通して検証できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/sec10-bp04.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "運用環境を変更せずに複数部門の役割、判断、承認経路を通して検証できる。",
+      "concept": "机上演習で確認する意思決定、役割、連絡経路"
+    }
+  },
+  {
+    "id": "scs-c03-d2-004",
+    "revision": 1,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "detective-finding-group-investigate-related-entities",
+    "title": "一つの所見から関連リソースの行動を調べる",
+    "prompt": "GuardDutyの複数の検出結果が同じ時間帯に発生した。管理アカウントでは以前からDetectiveの行動グラフに対象アカウントを含めている。調査担当者は、検出に関係する主体とリソース、同時期の行動をまとめて比較したい。何を参照するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Amazon Inspectorのソフトウェア部品表を出力し、検出したIAM主体のセッション履歴として利用する。",
+        "explanation": "ソフトウェアの構成情報は、GuardDutyが検出した主体や操作の関連性の記録ではない。"
+      },
+      {
+        "id": "B",
+        "text": "AWS Configで対象リソースの現在のタグを一覧化し、タグが共通であれば同一の活動と断定する。",
+        "explanation": "タグの一致だけでは、事故時にどの主体が各リソースを使用したかを確かめられない。"
+      },
+      {
+        "id": "C",
+        "text": "GuardDutyの個別結果をすべてアーカイブし、アーカイブされた結果だけから一つの攻撃であることを確定する。",
+        "explanation": "保存状態を切り替える操作では、結果が共通の動作やエンティティを持つかは分析できない。"
+      },
+      {
+        "id": "D",
+        "text": "Detectiveの検出結果グループから関連エンティティを辿り、行動グラフの時間帯別の情報を照合する。",
+        "explanation": "共通するエンティティや行動から候補を絞り、関係を同じ調査で比較できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/detective/latest/userguide/groups-about.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "共通するエンティティや行動から候補を絞り、関係を同じ調査で比較できる。",
+      "concept": "Detectiveの検出結果グループを使う関連性の調査"
+    }
+  },
+  {
+    "id": "scs-c03-d2-005",
+    "revision": 1,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-incident-restore-verified-version-retain-evidence",
+    "title": "監査用の版を残して検証済みのS3オブジェクトを復旧する",
+    "prompt": "インシデントでバージョニング有効なS3バケットの配布ファイルが置き換えられた。検証済みの直前バージョンは残っている。クライアントのキー指定を変えずに正しい内容を配り、問題の版も調査のため残すにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バージョニングを停止して検証済みの版を別キーへコピーし、元キーの参照を維持する。",
+        "explanation": "別キーの内容は元キーのクライアントへ配布されず、バージョニングを停止する必要もない。"
+      },
+      {
+        "id": "B",
+        "text": "検証済みのバージョンを同じキーにコピーし、新しい現行バージョンとして配る。",
+        "explanation": "既知の良い内容を現行にしながら、問題のバージョンを非現行版として保持できる。"
+      },
+      {
+        "id": "C",
+        "text": "問題のバージョンのIDを指定して完全削除し、直前のバージョンを現在の状態として扱う。",
+        "explanation": "配布内容を戻せても、調査に必要な問題の版が削除されてしまう。"
+      },
+      {
+        "id": "D",
+        "text": "キーに削除マーカーを作成し、クライアントが旧版に自動でフォールバックすることを期待する。",
+        "explanation": "削除マーカーが現行になると通常のGETは削除済みとして扱われ、自動で旧版を返さない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/RestoringPreviousVersions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "既知の良い内容を現行にしながら、問題のバージョンを非現行版として保持できる。",
+      "concept": "バージョンを指定したコピーと現行版の復旧"
+    }
+  },
+  {
+    "id": "scs-c03-d2-006",
+    "revision": 1,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "incident-response-out-of-band-contact-identity-outage",
+    "title": "通常のアカウントで連絡できない事故に備える",
+    "prompt": "セキュリティチームの連絡先、手順書、承認者一覧は、本番と同じIDプロバイダーへ依存する社内システムにある。そのID基盤が隔離されても事故対応を開始できるよう、平常時に何を準備するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同じID基盤に依存する本番チケットシステムを複数リージョンへ展開し、そこでのみ最新の連絡先を公開する。",
+        "explanation": "リージョンを冗長化しても、共通の認証に入れない場合の依存は残る。"
+      },
+      {
+        "id": "B",
+        "text": "本番と同じID基盤を使う別の社内チャットに担当者一覧を複製し、その回復を待つ。",
+        "explanation": "複製でも認証に共通の障害点があり、別の連絡経路を使えない。"
+      },
+      {
+        "id": "C",
+        "text": "別の認証経路で使える連絡手段とアクセス制限付きの手順書を用意し、通常の認証が使えない条件で訓練する。",
+        "explanation": "影響を受けたID基盤に依存せず、必要な人が連絡と承認に必要な情報を取得できることを検証する。"
+      },
+      {
+        "id": "D",
+        "text": "ID基盤復旧まで連絡とエスカレーションを保留する手順を作り、通常の連絡先だけ維持する。",
+        "explanation": "通常のID基盤を使えない状況で対応を始めるという要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/sec_incident_response_develop_management_plans.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "影響を受けたID基盤に依存せず、必要な人が連絡と承認に必要な情報を取得できることを検証する。",
+      "concept": "対応手順と連絡経路を侵害対象の認証基盤から切り離す"
+    }
+  },
+  {
+    "id": "scs-c03-d2-007",
+    "revision": 1,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "ec2-forensic-memory-before-shutdown",
+    "title": "隔離中のEC2から証拠を採取して停止する",
+    "prompt": "ネットワーク隔離済みのEC2で、稼働中にしか得られない証拠とディスクの状態を保全する。証拠の保全後はインスタンスを停止できる。最も揮発性の高い証拠を優先し、実施する3つの手順を順に選ぶ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "証拠を取得した記録を確認してから、インスタンスを停止する。",
+        "explanation": "停止により揮発性の状態を失うため、必要な証拠を保存してから実施する。"
+      },
+      {
+        "id": "B",
+        "text": "稼働中のメモリとプロセス状態を承認済み手順で取得する。",
+        "explanation": "スナップショットには含まれない揮発性の証拠を先に採取する。"
+      },
+      {
+        "id": "C",
+        "text": "関連するEBSボリュームのスナップショットを作り、調査記録と関連付ける。",
+        "explanation": "揮発性の情報を先に取得した後に、ストレージ上の状態を保存する。"
+      },
+      {
+        "id": "D",
+        "text": "事故端末のルートボリュームから不要ファイルを削除してから取得する。",
+        "explanation": "元のファイル状態を変更してしまうため、証拠保全の手順に入れない。"
+      }
+    ],
+    "correct": [
+      "B",
+      "C",
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-cyber-forensics/forensics-account.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "スナップショットには含まれない揮発性の証拠を先に採取する。 揮発性の情報を先に取得した後に、ストレージ上の状態を保存する。 停止により揮発性の状態を失うため、必要な証拠を保存してから実施する。",
+      "concept": "EC2の揮発性データとスナップショットを別々に保全する"
+    },
+    "format": "ordering"
+  },
+  {
+    "id": "scs-c03-d2-008",
+    "revision": 1,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "incident-match-audit-log-state-and-network-evidence",
+    "title": "調査で必要な事実に適した証拠を対応付ける",
+    "prompt": "不正が疑われる構成変更を調査する。各確認事項について、一次資料として最も直接的なAWS側の記録を対応付ける。各サービスは事前に必要な記録を有効にしている。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS Configの構成タイムライン",
+        "explanation": "各時点の構成アイテムに記録された値を比較できる。"
+      },
+      {
+        "id": "B",
+        "text": "AWS CloudTrailの該当APIイベント",
+        "explanation": "記録対象のAPI呼び出しについて主体と時刻を確認できる。"
+      },
+      {
+        "id": "C",
+        "text": "VPC Flow Logs",
+        "explanation": "ネットワークインターフェイスの通信をフロー単位で観測する。"
+      }
+    ],
+    "correct": [
+      "B",
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/security-ir/latest/userguide/detect-and-analyze.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "記録対象のAPI呼び出しについて主体と時刻を確認できる。 各時点の構成アイテムに記録された値を比較できる。 ネットワークインターフェイスの通信をフロー単位で観測する。",
+      "concept": "操作主体、時点別の設定、ネットワーク観測で使う記録の違い"
+    },
+    "format": "matching",
+    "prompts": [
+      {
+        "id": "item-1",
+        "text": "対象APIを実行した主体と時刻を調べる。"
+      },
+      {
+        "id": "item-2",
+        "text": "リソースの変更直前と直後のプロパティを比較する。"
+      },
+      {
+        "id": "item-3",
+        "text": "ENI上で観測された通信の送受信IPとポートを調べる。"
+      }
+    ]
+  },
+  {
+    "id": "scs-c03-practice-10",
+    "revision": 2,
+    "category": "インシデント対応",
+    "examDomain": "インシデント対応",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "incident-session-containment",
+    "title": "同じIAMロールが発行した古い認証情報だけを止める",
+    "prompt": "運用ロールの一時認証情報が露出した。新規セッションの入口は既に確認し、正規の担当者だけが再接続できる。発行済みのセッションを期限まで残さず拒否し、対応開始後に正規に発行したセッションは利用させたい。どうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "運用ロールのすべてのセッションに適用される明示的Denyを追加し、新しく承認済みのセッションは自動的に例外になるとみなす。",
+        "explanation": "時刻条件がなければ、指定時刻より後の正規のセッションも拒否される。"
+      },
+      {
+        "id": "B",
+        "text": "ロールのアクティブセッションを取り消し、指定時刻より前に発行されたセッションの要求へ明示的Denyを適用する。",
+        "explanation": "既発行の一時認証情報に対する許可の評価を変更し、指定時刻より後の新規セッションは対象外にできる。"
+      },
+      {
+        "id": "C",
+        "text": "運用ロールの信頼ポリシーから引き受けの許可を外し、古い認証情報も同時に無効になるとみなす。",
+        "explanation": "信頼ポリシーはロールの新しい引き受けを制御するもので、既に発行されたセッションの業務権限は失効しない。"
+      },
+      {
+        "id": "D",
+        "text": "ロールの最大セッション期間を短くすれば、既に発行した認証情報の有効期限も新しい設定に短縮されるとみなす。",
+        "explanation": "最大時間の変更はその後の発行に作用する。発行済み認証情報の利用は即時停止しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_revoke-sessions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "既発行の一時認証情報に対する許可の評価を変更し、指定時刻より後の新規セッションは対象外にできる。",
+      "concept": "aws:TokenIssueTimeに基づく既発行セッションの失効"
+    }
+  },
+  {
+    "id": "scs-c03-d3-001",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "cloudfront-oac-s3-website-to-rest-require-private-origin",
+    "title": "静的サイトをCloudFront経由だけで配信する",
+    "prompt": "S3のウェブサイトエンドポイントをCloudFrontのオリジンにしている。セキュリティ要件でS3のパブリックアクセスを遮断し、閲覧者には引き続き静的HTMLをCloudFront経由で配信する。S3ウェブサイト固有のリダイレクトは不要である。どの構成にするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ウェブサイトエンドポイントを維持し、バケットを非公開にしてOACをカスタムオリジンへ関連付ける。",
+        "explanation": "ウェブサイトエンドポイントにOACは使用できず、公開許可をなくすと読み取りも止まる。"
+      },
+      {
+        "id": "B",
+        "text": "S3 RESTエンドポイントへ切り替え、OACを設定して対象ディストリビューションからの読み取りをバケットポリシーで許可する。",
+        "explanation": "署名付きのCloudFrontリクエストだけにアクセスを絞れる。S3のウェブサイトエンドポイントはOACを使用できない。"
+      },
+      {
+        "id": "C",
+        "text": "ウェブサイトエンドポイントを維持し、CloudFrontのビューアーに署名付きURLを必須にしてS3を公開のままにする。",
+        "explanation": "ビューワー制御はCloudFrontへのアクセスに適用され、S3エンドポイントへの直接アクセスは止めない。"
+      },
+      {
+        "id": "D",
+        "text": "バケットを非公開にし、CloudFrontのビューワープロトコルポリシーでHTTPSへの転送だけを構成する。",
+        "explanation": "HTTPSへ誘導してもCloudFrontが非公開バケットのオブジェクトを読む権限は付かない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "署名付きのCloudFrontリクエストだけにアクセスを絞れる。S3のウェブサイトエンドポイントはOACを使用できない。",
+      "concept": "S3 RESTオリジン、OAC署名、ディストリビューション条件"
+    }
+  },
+  {
+    "id": "scs-c03-d3-002",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "network-firewall-symmetric-routing-stateful-az-endpoint",
+    "title": "経路を追加した後に状態追跡フィルターが通信を落とす",
+    "prompt": "単一AZでAWS Network Firewallのステートフル検査を使う。ルート変更後、同じTCP接続の往路はファイアウォールエンドポイントを通るが復路は直接戻る。検査を双方向に維持し、正常な接続を成立させたい。何を修正するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "復路を検査対象から除外したままステートフルルールのアイドル時間を長くする。",
+        "explanation": "復路の情報が入らない問題は、状態を保持する時間では解消しない。"
+      },
+      {
+        "id": "B",
+        "text": "ファイアウォールのアラートログの出力先を変更し、復路を従来の直接経路へ流す。",
+        "explanation": "記録先は実際のパケット転送経路と接続状態の評価に影響しない。"
+      },
+      {
+        "id": "C",
+        "text": "往路と復路が同じファイアウォールエンドポイントを通るよう関連ルートテーブルを設定する。",
+        "explanation": "一つのエンドポイントで接続の両方向を観測できるようにし、状態追跡に必要な通信を揃える。"
+      },
+      {
+        "id": "D",
+        "text": "往路のターゲットを維持し、復路だけ別AZのファイアウォールエンドポイントへ向ける。",
+        "explanation": "異なるエンドポイントを使うと、一つのステートフルエンジンで接続の両方向を追えない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/network-firewall/latest/developerguide/troubleshooting-general-issues.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "一つのエンドポイントで接続の両方向を観測できるようにし、状態追跡に必要な通信を揃える。",
+      "concept": "ステートフルファイアウォールが必要とする対称ルーティング"
+    }
+  },
+  {
+    "id": "scs-c03-d3-003",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "privatelink-onprem-resolver-inbound-private-dns-service-name",
+    "title": "社内から標準サービス名をプライベートに解決する",
+    "prompt": "オンプレミスにあるアプリはVPNを通じてVPCのインターフェイスエンドポイントへ到達できる。アプリはAWSサービスの既定ホスト名のまま使いたいが、社内DNSでは公開IPが返る。VPC内では同じ名前がエンドポイントのプライベートIPへ解決される。DNSをどう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VPCにRoute 53 Resolverのインバウンドエンドポイントを作り、社内DNSから対象のサービス名の問い合わせをそこへ条件付き転送する。",
+        "explanation": "VPCで有効なプライベート名前解決を、VPN経由のDNS問い合わせでも利用できる。"
+      },
+      {
+        "id": "B",
+        "text": "AWSサービス用の公開DNSレコードを変更し、VPCのインターフェイスに割り当てられたプライベートIPを公開する。",
+        "explanation": "AWSの既定サービスの公開ゾーンを利用者は編集できない。社内からVPCの名前解決へ渡す必要がある。"
+      },
+      {
+        "id": "C",
+        "text": "VPCのPrivate DNSを無効にし、社内DNSは公開サービスDNSを使用し続ける。",
+        "explanation": "アプリが解決した宛先は公開IPのままで、PrivateLinkへ導かれない。"
+      },
+      {
+        "id": "D",
+        "text": "Route 53 Resolverのアウトバウンドエンドポイントへ社内DNSから問い合わせを転送する。",
+        "explanation": "VPCから外部DNSへ転送する用途で、社内からVPCの名前解決を受けるインバウンドの代わりにならない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver-forwarding-inbound-queries.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "VPCで有効なプライベート名前解決を、VPN経由のDNS問い合わせでも利用できる。",
+      "concept": "ハイブリッドDNSでVPCのPrivate DNSを受けるインバウンドエンドポイント"
+    }
+  },
+  {
+    "id": "scs-c03-d3-004",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "waf-managed-group-single-rule-action-count-override",
+    "title": "一つの検知による誤遮断だけを観測に切り替える",
+    "prompt": "AWS WAFの管理ルールグループを使うALBで、審査済みの正当な画像送信が個別ルールで遮断される。調整期間に対象ルールの検出件数は観測し、同じグループの残りは検出して遮断できる状態を保つ。どの変更が適切か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "管理ルールグループ全体の戻りアクションをCountに上書きし、グループ内の他のルールだけ遮断を継続するとみなす。",
+        "explanation": "グループの結果をCountへ変えると、そのグループで本来遮断される通信の扱いにも影響する。"
+      },
+      {
+        "id": "B",
+        "text": "対象の管理ルールだけにCountのRuleActionOverridesを設定する。",
+        "explanation": "該当ルールは検出を記録したうえで後続評価へ進み、同じグループの他ルールは通常通り動く。"
+      },
+      {
+        "id": "C",
+        "text": "Web ACLの最優先で画像アップロード経路のすべての通信にAllowを適用し、管理グループを維持する。",
+        "explanation": "終端のAllowが先に適用されると、その通信は後続の管理ルールで検査されない。"
+      },
+      {
+        "id": "D",
+        "text": "対象の管理ルールグループを削除し、Web ACLのデフォルトアクションだけをBlockに変更する。",
+        "explanation": "個別検出の件数を取り続ける設定ではなく、他の正当なリクエストにも影響する。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/web-acl-rule-group-override-options.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "該当ルールは検出を記録したうえで後続評価へ進み、同じグループの他ルールは通常通り動く。",
+      "concept": "ルール単位のアクション上書きとルールグループ全体の上書き"
+    }
+  },
+  {
+    "id": "scs-c03-d3-005",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "shield-advanced-app-layer-ddos-automatic-response-waf",
+    "title": "公開サービスを維持しながらアプリ層のDDoSへ自動対応する",
+    "prompt": "公開ALBはShield Advancedで保護され、AWS WAF v2のWeb ACLが関連付けられている。短い攻撃にも手作業なしでアプリケーション層の緩和を適用したい。従来のWAFルールは維持し、Shieldの緩和に対応できるWCUの空きも確保した。何を有効にするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS WAFを外し、Shield Advancedによるネットワーク層の保護だけでWeb ACLベースの自動緩和をさせる。",
+        "explanation": "ALBのアプリケーション層自動緩和は、対応するWeb ACLとの連携を必要とする。"
+      },
+      {
+        "id": "B",
+        "text": "ALBのサブネットでより厳密なネットワークACLを設定し、そのACLだけでHTTPの検出パターンを自動更新する。",
+        "explanation": "ネットワークACLはHTTPリクエストのパターン評価やアプリケーション層の緩和ルールを管理しない。"
+      },
+      {
+        "id": "C",
+        "text": "Shield Advancedの自動緩和をCountで開始し、その設定だけで攻撃と判定した通信を自動遮断する。",
+        "explanation": "Countは観測用であり、自動緩和の遮断アクションを指定していない。"
+      },
+      {
+        "id": "D",
+        "text": "対象のALB保護でアプリケーション層DDoSの自動緩和を有効にし、Blockを選ぶ。",
+        "explanation": "Shield Advancedが関連Web ACLで緩和ルールを管理して、検出した攻撃通信の自動遮断を行える。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/enable-disable-automatic-app-layer-response.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Shield Advancedが関連Web ACLで緩和ルールを管理して、検出した攻撃通信の自動遮断を行える。",
+      "concept": "Shield AdvancedとWeb ACLを用いたアプリケーション層の自動緩和"
+    }
+  },
+  {
+    "id": "scs-c03-d3-006",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "eks-networkpolicy-aws-vpc-cni-enforcement-default-deny",
+    "title": "YAMLを配備したのにPod間通信が制限されない",
+    "prompt": "Amazon VPC CNIの対応バージョンを使うEKSのLinux EC2ノードで、名前空間内のデータ用PodへNetworkPolicyを適用した。しかしCNI側のNetworkPolicyサポートは無効で、別名前空間からアクセスできる。通信をアプリのラベルで制限するために何を行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "VPCの名前解決を無効にし、宛先IPを知っているPodへの直接通信も名前空間単位で制限する。",
+        "explanation": "名前解決の可否は対象ラベルや宛先へのIP通信を制御するNetworkPolicyの代用にならない。"
+      },
+      {
+        "id": "B",
+        "text": "NetworkPolicyリソースを同一名前空間にもう一度適用し、CNIのネットワークポリシー設定は無効のままにする。",
+        "explanation": "リソースを更新しても、無効なデータプレーンの強制機能は有効にならない。"
+      },
+      {
+        "id": "C",
+        "text": "EKS APIのパブリックアクセスを無効にし、同じVPC内の異なる名前空間間も自動で隔離されるようにする。",
+        "explanation": "KubernetesのAPIエンドポイントへの到達性の設定で、Pod間のアプリ通信を区分けしない。"
+      },
+      {
+        "id": "D",
+        "text": "VPC CNIのネットワークポリシー設定を有効にし、対象Podを選ぶポリシーと許可経路を検証する。",
+        "explanation": "ポリシーオブジェクトの作成に加え、対応CNIがルールを適用して初めて通信を制御できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eks/latest/userguide/cni-network-policy-configure.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ポリシーオブジェクトの作成に加え、対応CNIがルールを適用して初めて通信を制御できる。",
+      "concept": "Kubernetes NetworkPolicyを実際に強制するEKS側の前提"
+    }
+  },
+  {
+    "id": "scs-c03-d3-007",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "ec2-imdsv2-require-validate-compatibility-before-enforcement",
+    "title": "既存のEC2でメタデータのトークンを必須にする",
+    "prompt": "セキュリティ標準でEC2のインスタンスメタデータにIMDSv2を必須とする。インスタンスプロファイルの利用は継続し、設定変更で古いエージェントを突然停止させない。既存フリートを移行するには、どの二つを行うか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "MetadataNoTokenなどでトークンを使わない呼び出しを洗い出し、対応SDKやエージェントに更新して確認する。",
+        "explanation": "トークンを必須にする前に互換性を確認すると、IMDSv1だけを使う処理の停止を防げる。"
+      },
+      {
+        "id": "B",
+        "text": "対象のインスタンスタグにIMDSv2=requiredを付け、そのタグだけで呼び出しを強制する。",
+        "explanation": "タグは対象の識別に使えるが、アクセス時のトークン要件は切り替わらない。"
+      },
+      {
+        "id": "C",
+        "text": "フリートのインスタンスメタデータHTTPエンドポイントをdisableにして、既存のインスタンスプロファイル経由の取得を続ける。",
+        "explanation": "メタデータエンドポイントを無効にすると、そこからロール認証情報を取得する処理にも影響する。"
+      },
+      {
+        "id": "D",
+        "text": "VPCのルートテーブルだけを更新して、IAMロール付きインスタンスのトークン設定が変わるようにする。",
+        "explanation": "インスタンスメタデータのトークン必須設定は、VPCルートテーブルではなくメタデータオプションで管理する。"
+      },
+      {
+        "id": "E",
+        "text": "対応を確認したインスタンスのメタデータオプションをHttpTokens=requiredに設定する。",
+        "explanation": "対応を確認した対象でIMDSv2のトークンが必須になり、必要なメタデータは引き続き取得できる。"
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "トークンを必須にする前に互換性を確認すると、IMDSv1だけを使う処理の停止を防げる。 対応を確認した対象でIMDSv2のトークンが必須になり、必要なメタデータは引き続き取得できる。",
+      "concept": "IMDSv1利用の観測とインスタンスのHttpTokens"
+    }
+  },
+  {
+    "id": "scs-c03-d3-008",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "alb-mtls-verify-trust-store-client-certificate-validation",
+    "title": "アプリに届く前に取引先のクライアント証明書を確認する",
+    "prompt": "取引先ごとのアプリは公開ALBのHTTPSリスナーを使う。取引先のCAで発行されたクライアント証明書だけを入口で受け付け、後段の各アプリにチェーンの検証処理は入れない。どのALB構成にするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "相互TLSをパススルーモードにし、ターゲットではALBから転送された証明書チェーンを検証しない。",
+        "explanation": "パススルーはチェーンをアプリへ伝え、アプリで認証する方式であり、ALB側で信頼済みCAを検証する設定ではない。"
+      },
+      {
+        "id": "B",
+        "text": "ターゲットグループのプロトコルをHTTPSにし、ビューワーのクライアント認証がターゲットへの暗号化で自動的に有効になるようにする。",
+        "explanation": "ALBとターゲット間の暗号化は、クライアント側の証明書をALBで検証する設定ではない。"
+      },
+      {
+        "id": "C",
+        "text": "ALBのACMサーバー証明書に取引先CAのルート証明書も含め、クライアントに提示する証明書チェーンだけで認証する。",
+        "explanation": "クライアントが検証するサーバー証明書と、ALBが検証するクライアント証明書は別である。"
+      },
+      {
+        "id": "D",
+        "text": "信頼するCAの証明書を含むALBトラストストアを関連付け、HTTPSリスナーに相互TLSの検証モードを設定する。",
+        "explanation": "リスナーでクライアント証明書を検証し、信頼ストアに合わない証明書をアプリへ転送する前に拒否できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/mutual-authentication.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "リスナーでクライアント証明書を検証し、信頼ストアに合わない証明書をアプリへ転送する前に拒否できる。",
+      "concept": "ALBの相互TLS検証モードと信頼ストア"
+    }
+  },
+  {
+    "id": "scs-c03-d3-009",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "nlb-target-sg-allow-only-load-balancer-client-ip-preserved",
+    "title": "クライアントIPを保持していても直接到達を防ぐ",
+    "prompt": "セキュリティグループを関連付け済みのNLBで、ターゲットは本来のクライアントIPをログに記録する必要がある。ターゲットへの直接通信は拒否し、NLBからのサービスとヘルスチェックだけを認める。ターゲットの受信ルールをどう変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "すべてのクライアントネットワークのCIDRをターゲット側へ直接許可し、NLB側にも同じCIDRを許可する。",
+        "explanation": "クライアントネットワークからターゲットへの直接接続を許してしまう。"
+      },
+      {
+        "id": "B",
+        "text": "ターゲットのセキュリティグループで、NLBのセキュリティグループを送信元として必要なポートだけ許可する。",
+        "explanation": "NLBによるクライアントIP保持時にもセキュリティグループを参照でき、NLBを経由した通信に制限できる。"
+      },
+      {
+        "id": "C",
+        "text": "クライアントIPの保持を無効にし、NLBのノードのIPアドレスだけをターゲット側の送信元として登録する。",
+        "explanation": "直接アクセス制御の候補になっても、ターゲットでクライアントIPを保持する要件に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "NLBのヘルスチェックポートだけをクライアントへ公開し、ターゲット側のサービスポートは全送信元を許可する。",
+        "explanation": "ヘルスチェックの設定とは別に全送信元からターゲットのサービスへ直接到達できる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-security-groups.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "NLBによるクライアントIP保持時にもセキュリティグループを参照でき、NLBを経由した通信に制限できる。",
+      "concept": "NLBのセキュリティグループを送信元として参照する"
+    }
+  },
+  {
+    "id": "scs-c03-d3-010",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "systems-manager-session-manager-agent-outbound-private-endpoints",
+    "title": "公開IPも管理用受信ポートも持たずにシェルを提供する",
+    "prompt": "EC2に公開IP、インターネット出口、SSH受信用ポートは設定できない。SSM Agentと必要なIAMロールは用意済みで、対応リージョンのSession Managerだけで管理接続を許可する。どう経路を用意するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "必要なSystems Manager用のインターフェイスエンドポイントを使い、EC2からエンドポイントのHTTPSだけを許可する。",
+        "explanation": "エージェントがAWS側へセッション用の接続を開始するので、インスタンスへのSSH受信は必要ない。"
+      },
+      {
+        "id": "B",
+        "text": "S3用ゲートウェイエンドポイントだけを追加し、エージェントのメッセージチャネルが同じ経路へ切り替わるようにする。",
+        "explanation": "S3へのプライベート接続は、Systems Managerの制御やメッセージチャネルのインターフェイスを提供しない。"
+      },
+      {
+        "id": "C",
+        "text": "NATゲートウェイ経由でSystems Manager公開APIへ接続し、インターネット向けのルートは作らずにその経路を使う。",
+        "explanation": "公開API向けNATルートの前提となる出口が許可されておらず、閉域経路の条件に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "インスタンスでSSHだけを受信し、Systems Managerのエンドポイントからの接続開始を待つ。",
+        "explanation": "Session ManagerはエージェントからAWS側への接続を使用し、ゲートウェイからSSHで着信する方式ではない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/systems-manager/latest/userguide/setup-create-vpc.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "エージェントがAWS側へセッション用の接続を開始するので、インスタンスへのSSH受信は必要ない。",
+      "concept": "SSM Agentのアウトバウンド接続とVPCエンドポイント"
+    }
+  },
+  {
+    "id": "scs-c03-d3-011",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "lambda-zip-signing-enforce-profile-family",
+    "title": "本番Lambdaへ署名元の制約をかける",
+    "prompt": "ZIPで配備するLambda関数で、CIロールは既に限定されている。開発用の署名プロファイルで作ったZIPや未署名ZIPは、アプリコードを差し替える操作で拒否する。現行の配信経路は変えず、どの設定を適用するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "コード署名設定で本番プロファイルを指定し、未信頼成果物のポリシーはWarnにして検証違反のメトリクスを監視する。",
+        "explanation": "検証違反を観測できても、Warnはそのコードの配備を許容する。"
+      },
+      {
+        "id": "B",
+        "text": "Lambda関数に署名済み成果物のS3バケットへのアクセスを許し、CIでは署名を検証しないままZIPを更新する。",
+        "explanation": "S3への許可はZIPの真正性を検査する設定ではなく、意図しない署名元のものを拒否しない。"
+      },
+      {
+        "id": "C",
+        "text": "信頼するAWS Signerプロファイルのバージョンを許可したコード署名設定を関数に付け、未信頼成果物のポリシーをEnforceにする。",
+        "explanation": "Lambdaが配備時に署名を検証し、未署名や許可した署名元を使わない成果物を拒否できる。"
+      },
+      {
+        "id": "D",
+        "text": "S3のアップロードにTLSを要求し、オブジェクトのタグがprodならLambdaの署名検証を設定しない。",
+        "explanation": "輸送時の保護とタグの値は、配備用ZIPの署名元の検証にはならない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-codesigning.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Lambdaが配備時に署名を検証し、未署名や許可した署名元を使わない成果物を拒否できる。",
+      "concept": "Lambdaコード署名の許可プロファイルとEnforce"
+    }
+  },
+  {
+    "id": "scs-c03-d3-012",
+    "revision": 1,
+    "category": "インフラストラクチャのセキュリティ",
+    "examDomain": "インフラストラクチャのセキュリティ",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "api-gateway-private-rest-resource-policy-authorized-vpce",
+    "title": "特定のVPCエンドポイントからだけ非公開APIを呼び出す",
+    "prompt": "API Gatewayの新しいREST APIは非公開とし、社内システムが利用する一つのexecute-apiインターフェイスエンドポイントだけを許可する。認証済みユーザーであっても別エンドポイントからは呼べないようにする。API自身の境界をどう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "REST APIをRegionalの公開APIにし、認証用IAMポリシーで特定のIAMユーザー名を許可する。",
+        "explanation": "呼び出し主体を絞っても、その認証がどのVPCエンドポイントを経由したかという条件を設定しない。"
+      },
+      {
+        "id": "B",
+        "text": "プライベートAPIのリソースポリシーでCIDRを固定し、VPCエンドポイントの識別は行わない。",
+        "explanation": "CIDRを条件にしても、経由したVPCエンドポイントのIDを限定する要件は満たさない。"
+      },
+      {
+        "id": "C",
+        "text": "指定されたVPCエンドポイントのポリシーだけでAPIを許可し、API側はすべての利用者の呼び出しを受け付ける。",
+        "explanation": "一つのエンドポイントのポリシーでは、別のエンドポイントから同じAPIが呼び出される場合を制限できない。"
+      },
+      {
+        "id": "D",
+        "text": "REST APIをPrivateにし、リソースポリシーで指定したaws:SourceVpce以外からの呼び出しを明示的に拒否する。",
+        "explanation": "呼び出し元の認証とは別に、APIを呼び出したネットワークのエンドポイントを制限できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-resource-policies-examples.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "呼び出し元の認証とは別に、APIを呼び出したネットワークのエンドポイントを制限できる。",
+      "concept": "プライベートREST APIのリソースポリシーとaws:SourceVpce"
+    }
+  },
+  {
+    "id": "scs-c03-d4-001",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "iam-permissions-boundary-create-role-conditional-delegation",
+    "title": "権限上限を外せない状態でロール作成を委譲する",
+    "prompt": "開発チームはアプリ用ロールを自分で作成する。中央チームの管理ポリシーが上限を定義し、開発者はその範囲内でアプリの権限を追加できる。新規ロールに上限が常に付いており、開発者が解除できないための二つの設定はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "開発者にアプリロールの無条件のCreateRoleを許可し、ロール名を接頭辞で制限して境界の代わりにする。",
+        "explanation": "ロール名の制限だけでは、そのロールで使用できるAWS権限の上限を設定しない。"
+      },
+      {
+        "id": "B",
+        "text": "アプリロールに境界だけを設定し、業務アクションの権限付与はその設定で完了とする。",
+        "explanation": "境界は利用できる権限の最大範囲を定義するもので、単体でアクションを付与しない。"
+      },
+      {
+        "id": "C",
+        "text": "開発者が対象ロールの境界を削除・交換したり、境界ポリシー自体を編集したりできないようにする。",
+        "explanation": "作成時点での条件だけでなく、その後も同じ上限を守れるようにする。"
+      },
+      {
+        "id": "D",
+        "text": "委譲するCreateRoleを、指定した権限境界を付ける要求に限定する。",
+        "explanation": "IAMの権限境界条件を使い、指定した上限を付けないロール作成を許さない。"
+      },
+      {
+        "id": "E",
+        "text": "権限境界のポリシーを作って開発者に添付し、開発者が作るロールが自動で同じ境界を継承するとみなす。",
+        "explanation": "作成者にアタッチした設定は、その作成者が作るロールへ自動で継承されない。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "IAMの権限境界条件を使い、指定した上限を付けないロール作成を許さない。 作成時点での条件だけでなく、その後も同じ上限を守れるようにする。",
+      "concept": "作成時に指定するPermissions Boundaryと境界の変更権限"
+    }
+  },
+  {
+    "id": "scs-c03-d4-002",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "organizations-scp-allow-does-not-grant-missing-role-permission",
+    "title": "SCPで許可したはずの操作がロールで失敗する",
+    "prompt": "組織のメンバーアカウントで、特定のEC2操作をSCPの許可範囲へ追加した。組織階層の全SCPで対象操作が許容され、境界・セッションポリシー・明示的Denyはない。業務ロールの認証後、EC2操作はなおAccessDeniedであり、そのロールのポリシーに当該操作はない。どこを変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "業務ロールの信頼ポリシーへEC2操作名を追加し、AssumeRoleで影響を受けるアクセス許可を増やす。",
+        "explanation": "信頼ポリシーは誰に引き受けを許すかを定義する。ロールの業務アクションに許可を与える場所ではない。"
+      },
+      {
+        "id": "B",
+        "text": "業務ロールのアイデンティティポリシーで、必要なEC2操作を対象に合わせて許可する。",
+        "explanation": "SCPはアカウント内で許され得る範囲を決める。業務ロールに実際の利用許可を追加する必要がある。"
+      },
+      {
+        "id": "C",
+        "text": "業務ロールに新しく権限境界を設定し、そこにEC2操作のAllowだけを追加する。",
+        "explanation": "権限境界は最大範囲を定義するだけで、業務の許可を追加しない。"
+      },
+      {
+        "id": "D",
+        "text": "同じSCPの許可をもう一度対象OUへ追加し、ロール自身のポリシーは変更しない。",
+        "explanation": "SCPを重ねても、その操作をロールへ割り当てることにはならない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SCPはアカウント内で許され得る範囲を決める。業務ロールに実際の利用許可を追加する必要がある。",
+      "concept": "SCPの上限と業務ロールへの権限付与の区別"
+    }
+  },
+  {
+    "id": "scs-c03-d4-003",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sts-session-tag-authorize-team-with-approved-tag-values",
+    "title": "フェデレーションのチーム属性でアクセス先を絞る",
+    "prompt": "フェデレーションした利用者のTeam属性でS3リソースのTeamタグに対するABACを行う。IdPが信頼できるTeam値を出しているが、ロールの引き受けがセッションタグを付けた場合だけ拒否される。許可するチーム属性を限定して何を変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "利用者全員分のTeam値をロールの静的タグへ同じキーで設定し、呼び出し毎に現在の値を推定する。",
+        "explanation": "共有ロールの固定値では、セッションごとに異なる利用者の属性を表せない。"
+      },
+      {
+        "id": "B",
+        "text": "該当するフェデレーション経路のロール信頼にsts:TagSessionを加え、渡せるタグキーと値を制限する。",
+        "explanation": "信頼できる発行元から指定範囲の属性だけをセッションへ渡せるようにする。"
+      },
+      {
+        "id": "C",
+        "text": "ロールのセッション名にTeam値を記載し、既存のPrincipalTag条件が自動でセッション名を読み取るものとする。",
+        "explanation": "セッション名はタグではなく、既存のPrincipalTag条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "ロールのS3アクセス許可にs3:PutObjectTaggingを加え、引き受け時にセッションタグも書き換えられるようにする。",
+        "explanation": "S3オブジェクトのタグ更新とSTSセッションに属性を付ける認可は独立している。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_session-tags.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "信頼できる発行元から指定範囲の属性だけをセッションへ渡せるようにする。",
+      "concept": "sts:TagSessionとセッションタグの制約"
+    }
+  },
+  {
+    "id": "scs-c03-d4-004",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "github-oidc-restrict-owner-repository-base-branch-audience",
+    "title": "共有CIの短期認証を承認済みブランチへ限定する",
+    "prompt": "GitHub ActionsのAWS配備はOIDCを使う。GitHub環境を指定しないブランチ起動のジョブに限り、組織内の一つのリポジトリのmainだけが本番ロールを引き受けられるようにする。AWSでどの信頼条件を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "特定のジョブ名をIAMのアクション名に含め、OIDCのsubjectの値はどのブランチでも許容する。",
+        "explanation": "ジョブ名によるIAMアクションとOIDCの信頼条件は別であり、ブランチの認証を限定しない。"
+      },
+      {
+        "id": "B",
+        "text": "信頼ポリシーでは全ブランチを許可し、ロールのS3リソースポリシーにrefs/heads/mainをリソースARNとして追加する。",
+        "explanation": "GitHubのブランチはAWSのS3リソースARNではなく、その記述でロールの引き受けを制限できない。"
+      },
+      {
+        "id": "C",
+        "text": "audをsts.amazonaws.comにし、subには同じ組織の任意のリポジトリと任意のブランチを許可する。",
+        "explanation": "サービス向けの受信者は確認しても、リポジトリとブランチの要件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "audをsts.amazonaws.comにし、subは対象リポジトリのrefs/heads/mainと完全一致させる。",
+        "explanation": "対象AWSの受信者、発行元のリポジトリ、ブランチをトークン属性で同時に絞る。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対象AWSの受信者、発行元のリポジトリ、ブランチをトークン属性で同時に絞る。",
+      "concept": "OIDCトークンのaudienceとリポジトリ・ブランチを含むsubject"
+    }
+  },
+  {
+    "id": "scs-c03-d4-005",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "saml-federation-provider-update-metadata-preserve-provider-arn",
+    "title": "SAML署名鍵の更新で既存のAWSロール連携を維持する",
+    "prompt": "企業のSAML IdPで署名証明書を更新する。複数のロールは同じIAM SAMLプロバイダーARNを信頼している。ロールの信頼関係とアカウント割り当てを維持したまま、切替前にAWS側へ新しいIdP署名情報を反映するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "既存IAM SAMLプロバイダーにIdPの新しいメタデータ文書をアップロードし、切替を検証する。",
+        "explanation": "同じプロバイダーARNで、発行元の署名情報を含むメタデータを更新できる。"
+      },
+      {
+        "id": "B",
+        "text": "全利用者にAWSアクセスキーを一時配布し、メタデータを後から更新せずSAMLサインインを継続する。",
+        "explanation": "プログラム用アクセスキーはSAMLアサーションの署名更新を反映せず、既存のSSO経路を維持できない。"
+      },
+      {
+        "id": "C",
+        "text": "新しい証明書をACMへインポートし、既存のIAM SAMLプロバイダーの連携情報は変更しない。",
+        "explanation": "ACMに登録した証明書はIAM SAMLプロバイダーの検証用メタデータには自動で反映されない。"
+      },
+      {
+        "id": "D",
+        "text": "同じ名前で新規SAMLプロバイダーを先に追加し、現在のプロバイダーとは別のARNを既存のロールへ自動で参照させる。",
+        "explanation": "ロールは指定されたプロバイダーを信頼するので、別プロバイダーを追加しても自動で切り替わらない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateSAMLProvider.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じプロバイダーARNで、発行元の署名情報を含むメタデータを更新できる。",
+      "concept": "IAM SAMLプロバイダーとIdPのメタデータ更新"
+    }
+  },
+  {
+    "id": "scs-c03-d4-006",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "identity-center-scim-group-assignment-permission-set-per-account",
+    "title": "IdPから同期されたグループにAWSアカウントが表示されない",
+    "prompt": "外部IdPの開発者グループがSCIMでIAM Identity Centerへ同期された。利用者はAWSアクセスポータルにサインインできるが、利用するはずのAWSアカウントとロールが見えない。グループ単位で二つの開発アカウントへ同じ権限を与えるには何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対象の各AWSアカウントで、同期済みグループに開発用の許可セットを割り当てる。",
+        "explanation": "グループの同期はIDを用意する。アカウントの割り当てによって、グループが許可セットのロールでサインインできる。"
+      },
+      {
+        "id": "B",
+        "text": "許可セットのセッション時間を増やし、割り当てずにポータルの一覧を更新させる。",
+        "explanation": "セッション時間は権限が割り当てられた後の利用時間に作用するもので、アカウントを新しく表示しない。"
+      },
+      {
+        "id": "C",
+        "text": "IdP側のSCIMを再同期し、グループ名をAWSアカウント名にそろえてアカウント割り当てを自動生成する。",
+        "explanation": "名前の一致や再同期だけで、特定アカウントに許可セットは割り当てられない。"
+      },
+      {
+        "id": "D",
+        "text": "外部IdPの利用者全員に開発環境のIAMアクセスキーを発行し、既存のアカウント割り当ては空のままにする。",
+        "explanation": "要求されたグループベースのポータルアクセスを設定せず、長期認証情報で別経路を作ってしまう。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/singlesignon/latest/userguide/assignusers.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "グループの同期はIDを用意する。アカウントの割り当てによって、グループが許可セットのロールでサインインできる。",
+      "concept": "IDの同期、AWSアカウントの割り当て、許可セット"
+    }
+  },
+  {
+    "id": "scs-c03-d4-007",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sts-source-identity-preserve-attribution-role-chaining",
+    "title": "複数回のロール引き受け後も最初の利用者を追跡する",
+    "prompt": "監査担当者は、利用者がアクセス用ロールから別アカウントの運用ロールへ引き受けを連鎖させた後も、元の社員IDをCloudTrailで確認したい。同じロールを複数人で使い、セッション名は異なる運用タスク名となる。どの方式を導入するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "管理アカウントのCloudTrailだけを有効にして、メンバーのロール連鎖で元の社員をIAMロールARNから判定する。",
+        "explanation": "共有ロールのARNでは同じロールを使う複数人を区別できず、属性を伝搬する設定にもならない。"
+      },
+      {
+        "id": "B",
+        "text": "最初の引き受けで信頼できる社員IDをSourceIdentityに設定し、連鎖するロールで設定と引継ぎを認可する。",
+        "explanation": "発行時の識別子はロール連鎖を通じて維持され、CloudTrailで監査できる。"
+      },
+      {
+        "id": "C",
+        "text": "最後のロールでRoleSessionNameを運用タスク名に指定し、最初の社員IDも名前の中に自動的に保持させる。",
+        "explanation": "セッション名は新しいロールを引き受ける際に指定でき、元の利用者の識別子を自動で維持しない。"
+      },
+      {
+        "id": "D",
+        "text": "最後のロールに現在の担当者名を静的なタグで付け、そのタグをすべてのセッションの起点とみなす。",
+        "explanation": "ロールの固定タグは複数人が使う個々のセッションごとの利用者を特定しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_monitor.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "発行時の識別子はロール連鎖を通じて維持され、CloudTrailで監査できる。",
+      "concept": "ロールチェーンを通して保持されるSourceIdentity"
+    }
+  },
+  {
+    "id": "scs-c03-d4-008",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "iam-role-trust-id-changed-after-recreate-partner-caller",
+    "title": "同名で再作成されたロールが引き受けに失敗する",
+    "prompt": "取引先のアカウントでIAMロールが誤って削除され、同じパスと名前で再作成された。自社の受け入れロールは、その取引先ロールARNをPrincipalとする信頼を使っていた。発信側の許可は確認済みだが、受け入れ側の古い信頼には見慣れないIDが表示される。どう復旧するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "検証済みの取引先ロールARNを受け入れロールの信頼ポリシーに再指定する。",
+        "explanation": "保存時に現在のロールのプリンシパルIDへ変換され、削除済みのロールへの古い信頼を置き換える。"
+      },
+      {
+        "id": "B",
+        "text": "元と同じ名前で再作成されているので、CloudTrailの配信を待てば古い信頼ポリシーが自動修復される。",
+        "explanation": "名前が同じでも、新しいロールの内部IDは削除済みロールと異なる。"
+      },
+      {
+        "id": "C",
+        "text": "受け入れロールの業務ポリシーに対象ARNをリソースとして加え、変更されていない信頼だけで引き受ける。",
+        "explanation": "業務ポリシーの変更は呼び出し元を認証できない古い信頼の修復にはならない。"
+      },
+      {
+        "id": "D",
+        "text": "取引先アカウント全体を受け入れ側で許可し、元のロール以外も引き受けられる範囲に広げる。",
+        "explanation": "元の単一ロールだけを信頼する範囲を維持できず、不要なプリンシパルへ信頼が広がる。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "保存時に現在のロールのプリンシパルIDへ変換され、削除済みのロールへの古い信頼を置き換える。",
+      "concept": "Principalで指定したロールARNから内部のプリンシパルIDへの変換"
+    }
+  },
+  {
+    "id": "scs-c03-d4-009",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "iam-user-cli-mfa-temp-session-required-protected-action",
+    "title": "MFA付きのコンソール操作が成功してもCLIは拒否される",
+    "prompt": "IAMユーザーでMFA付きのコンソール操作は成功するが、同じユーザーの長期アクセスキーでCLIを実行すると拒否される。ポリシーはその操作にMFAで確認された認証情報を要求する。ユーザーを変更せず、CLIから正規の手順で実行するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "現在の長期アクセスキーで署名する各サービス要求へ、MFAコードのヘッダーを任意で付加する。",
+        "explanation": "一般のAWSサービス要求に任意のMFAヘッダーを付けても、長期認証情報をMFA認証済みセッションには変えない。"
+      },
+      {
+        "id": "B",
+        "text": "コンソールにMFAでログインしたまま、CLIでは以前と同じプロファイルの長期キーを使う。",
+        "explanation": "コンソールのセッションと、長期キーで署名した別のAPI要求には同じMFA認証が適用されない。"
+      },
+      {
+        "id": "C",
+        "text": "登録済みのMFAでGetSessionTokenを呼び、取得したアクセスキー、シークレット、セッショントークンを使う。",
+        "explanation": "MFAで認証した一時セッションの情報がAPI許可の条件として評価される。"
+      },
+      {
+        "id": "D",
+        "text": "IAMユーザーのプロファイルにMFA端末の名前を追加し、長期アクセスキーを交換してから同じ要求を送る。",
+        "explanation": "端末の登録・名称とキーの更新だけでは、対象の要求用にMFAで一時認証していない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_configure-api-require.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "MFAで認証した一時セッションの情報がAPI許可の条件として評価される。",
+      "concept": "MFA付きのGetSessionTokenとセッション認証情報"
+    }
+  },
+  {
+    "id": "scs-c03-d4-010",
+    "revision": 1,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "passrole-limit-release-delegation-to-one-lambda-role",
+    "title": "関数配備に必要な実行ロールだけを指定できるようにする",
+    "prompt": "本番のCIは既存のLambda関数を更新し、専用の実行ロールを設定する。CI自身にはそのロールを引き受ける権限も、別サービスへ渡す権限も与えない。実行ロールはLambdaを信頼済みである。CI側で何を許可するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "実行ロールの信頼対象をCIへ変更し、Lambdaへの配備時にはサービスがそのロールを引き受けるようにする。",
+        "explanation": "既存のLambdaへの信頼を外すとサービスがロールを利用できず、CIへの直接信頼は要件にも合わない。"
+      },
+      {
+        "id": "B",
+        "text": "CIに専用実行ロールのsts:AssumeRoleだけを許可し、Lambdaへのロールの指定も同じ権限で行う。",
+        "explanation": "ロールを自分が引き受ける許可と、サービスへ渡すためのPassRoleは別である。"
+      },
+      {
+        "id": "C",
+        "text": "CIにiam:PassRoleを全ロールへ許可し、対象サービスをLambdaへ限定することでロールも限定されたとみなす。",
+        "explanation": "サービスは限定できても、同じサービスへ他のロールを指定する余地を残す。"
+      },
+      {
+        "id": "D",
+        "text": "専用ロールARNに対してiam:PassRoleを許し、iam:PassedToServiceをLambdaに限定する。",
+        "explanation": "指定されたロールをLambdaへ設定する操作に絞り、CIがそのロールを直接引き受ける許可は追加しない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "指定されたロールをLambdaへ設定する操作に絞り、CIがそのロールを直接引き受ける許可は追加しない。",
+      "concept": "iam:PassRoleのリソース範囲とiam:PassedToService"
+    }
+  },
+  {
+    "id": "scs-c03-practice-02",
+    "revision": 3,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-principal-orgid-follow-organization-membership",
+    "title": "追加されたメンバーアカウントのロールも条件に含める",
+    "prompt": "組織が管理するS3データ交換バケットで、読み取りは当該組織に属するIAM主体だけに認める。アカウントは頻繁に追加・離脱する。組織階層も変わるため、ポリシーにアカウント一覧やOUパスを埋め込まず、主体の所属を確認する。どの条件キーを選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "aws:PrincipalOrgIDに対象の組織IDを指定する。",
+        "explanation": "呼び出しの主体が所属するOrganizationsのIDを評価でき、アカウントの追加や離脱に追従する。"
+      },
+      {
+        "id": "B",
+        "text": "aws:ResourceOrgIDにバケット所有アカウントの組織IDを指定する。",
+        "explanation": "リソースを所有するアカウントの組織を評価し、呼び出し側の組織を検証しない。"
+      },
+      {
+        "id": "C",
+        "text": "aws:PrincipalOrgPathsに現在の全OUパスを列挙し、新しいOUを条件に含めず運用する。",
+        "explanation": "パスを個別に記述する運用になり、今後のOU変更へ組織IDだけで追従する要件に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "aws:PrincipalAccountに組織の管理アカウント番号を指定する。",
+        "explanation": "単一アカウントを判定するもので、新規に入ったメンバーアカウントの主体を自動で含めない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "呼び出しの主体が所属するOrganizationsのIDを評価でき、アカウントの追加や離脱に追従する。",
+      "concept": "aws:PrincipalOrgIDによる呼び出し主体の組織の確認"
+    }
+  },
+  {
+    "id": "scs-c03-practice-04",
+    "revision": 3,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "access-analyzer-organization-zone-no-request-required",
+    "title": "アクセスが起きる前に組織外へ許可したS3バケットを見つける",
+    "prompt": "共有サービスの監査では、S3バケットのポリシーが組織外のIAM主体に読み取りを許し得るかを調べる。過去に読み取りが発生していない場合も検出し、同じ組織内のアカウントへの許可は調査対象から外す。何を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "組織を信頼ゾーンとするIAM Access Analyzerの外部アクセスアナライザーを、対象リージョンで使用する。",
+        "explanation": "対象のポリシーによって組織外のどの主体がアクセス可能かを評価し、実際のアクセスを必要としない。"
+      },
+      {
+        "id": "B",
+        "text": "IAM Access Analyzerで未使用アクセスアナライザーを作り、外部アカウントに開かれたリソースポリシーの一覧を取得する。",
+        "explanation": "未使用アクセスと外部アクセスは目的の異なる分析であり、未使用分析では対象の信頼ゾーンを基に公開範囲を評価しない。"
+      },
+      {
+        "id": "C",
+        "text": "各アカウントを個別の信頼ゾーンとする外部アクセスアナライザーの結果を使い、全検出を組織外とみなす。",
+        "explanation": "同じ組織の別アカウントへの許可も外部結果になり得るので、求める区分に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "S3のCloudTrailデータイベントで組織外のダウンロードを検索し、該当がなければポリシーに外部アクセスがないとする。",
+        "explanation": "記録に現れる実際のアクセスからは、使われていない外部許可までは確認できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access-analyzer-findings.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対象のポリシーによって組織外のどの主体がアクセス可能かを評価し、実際のアクセスを必要としない。",
+      "concept": "組織を信頼ゾーンにしたIAM Access Analyzerの外部アクセス評価"
+    }
+  },
+  {
+    "id": "scs-c03-practice-07",
+    "revision": 2,
+    "category": "アイデンティティとアクセス管理",
+    "examDomain": "アイデンティティとアクセス管理",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "sts-external-id-unique-per-customer-prevent-confused-deputy",
+    "title": "監査サービスが他の顧客の委任で誤って自社のロールを使うのを防ぐ",
+    "prompt": "同じSaaSのAWSプリンシパルが複数顧客の監査ロールを引き受ける。自社は事業者が認識している自社用の契約に対応する引き受けだけを許可したい。事業者のAWSアカウントIDだけでは顧客を区別できない。どの信頼設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "事業者のプリンシパルに限定し、事業者が割り当てた自社固有のsts:ExternalIdを信頼で要求する。",
+        "explanation": "信頼する事業者の要求でも、自社に対応する識別子を持つ引き受けだけに範囲を絞れる。"
+      },
+      {
+        "id": "B",
+        "text": "IAMロールの名前を十分長くし、事業者のプリンシパルだけを信頼する。",
+        "explanation": "名前の推測しにくさでは、正規の事業者が処理する別契約の要求を区別できない。"
+      },
+      {
+        "id": "C",
+        "text": "事業者のプリンシパルに限定し、全顧客で共通のExternalIdを使って利用契約を判別する。",
+        "explanation": "同じ事業者と共通の識別子では、その要求がどの顧客の契約に対応するか区別できない。"
+      },
+      {
+        "id": "D",
+        "text": "事業者のプリンシパルに限定し、ロールの最大セッション期間を短くして顧客を区別する。",
+        "explanation": "引き受けた認証情報の利用時間は調整できるが、顧客ごとの契約を評価しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "信頼する事業者の要求でも、自社に対応する識別子を持つ引き受けだけに範囲を絞れる。",
+      "concept": "共有された委任先と顧客ごとのExternalId"
+    }
+  },
+  {
+    "id": "scs-c03-d5-001",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "kms-encryption-context-aad-bind-record-id-not-secret",
+    "title": "暗号文の取り違えを検出する",
+    "prompt": "同じ対称KMSキーで、複数の契約に対応するデータキーを暗号化する。別契約の暗号化済みデータキーを誤って読み込んだときに復号を拒否したい。契約の非機密な識別子を利用でき、契約ごとのKMSキーは作成しない。何を使用するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "暗号文のデータベース属性に契約IDを書き、復号では暗号化コンテキストを使わずに同じKMSキーを指定する。",
+        "explanation": "ストレージの属性と暗号文の関連はKMSの暗号処理で検証されない。"
+      },
+      {
+        "id": "B",
+        "text": "KMSキーに対象契約のタグを毎回上書きし、同じキーで過去の暗号文を読むと自動で契約IDが検証されるようにする。",
+        "explanation": "キーの現在のタグは暗号化時の値を暗号文に認証付きで関連付けない。"
+      },
+      {
+        "id": "C",
+        "text": "暗号化時に契約IDを暗号化コンテキストに入れ、復号時はアプリが開こうとする契約のIDを同じコンテキストとして渡す。",
+        "explanation": "暗号化時と復号時の認証データが一致する必要があり、別契約の値で復号すると失敗する。"
+      },
+      {
+        "id": "D",
+        "text": "契約IDをKMSキーのエイリアスに付け、復号時に同じキーの契約別エイリアスの名前が合えば検証済みとする。",
+        "explanation": "同じキーのエイリアス名で契約と暗号文が暗号学的に結び付くことはない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/encrypt_context.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "暗号化時と復号時の認証データが一致する必要があり、別契約の値で復号すると失敗する。",
+      "concept": "暗号化コンテキストを追加認証データとして比較する"
+    }
+  },
+  {
+    "id": "scs-c03-d5-002",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "kms-auto-rotate-single-key-old-ciphertext-decrypt",
+    "title": "暗号文をそのままにして同じ鍵の鍵素材を更新する",
+    "prompt": "AWS KMSで生成した鍵素材を使う対称の顧客管理キーがある。監査では定期的な鍵素材の更新が必要で、過去の書類を一括で再暗号化せず、既存のキーARNと権限設定を維持したい。何を行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "現在のキーで自動ローテーションを有効にする。",
+        "explanation": "同じキーの新しい素材を使うようにしつつ、KMSは必要な以前の素材で既存の暗号文を復号できる。"
+      },
+      {
+        "id": "B",
+        "text": "キーポリシーを定期的に再適用し、アクセス許可を保存した時点で素材を置換する。",
+        "explanation": "認可ポリシーの更新は鍵素材と独立している。"
+      },
+      {
+        "id": "C",
+        "text": "現在のキーのエイリアスだけを定期的に改名し、キー素材が名前と連動して更新されたとみなす。",
+        "explanation": "エイリアスは参照名であり、KMSキーの素材を回転させない。"
+      },
+      {
+        "id": "D",
+        "text": "監査のたびに新しいKMSキーを作って既存のエイリアスを切り替え、それまでのキーを削除する。",
+        "explanation": "エイリアスの変更は旧暗号文の鍵素材を変えず、旧キーを消すとその暗号文を復号できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同じキーの新しい素材を使うようにしつつ、KMSは必要な以前の素材で既存の暗号文を復号できる。",
+      "concept": "KMSの鍵素材ローテーションと過去の暗号文"
+    }
+  },
+  {
+    "id": "scs-c03-d5-003",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "secrets-manager-rotation-test-pending-before-finish",
+    "title": "新しいデータベース資格情報を検証してから公開する",
+    "prompt": "Secrets ManagerのカスタムLambdaローテーションで、DB側は新資格情報を受け付ける状態になった。アプリはAWSCURRENTを使う。候補資格情報がDB上で認証でき、必要な操作を実行できることを確認してから利用先を切り替えたい。二つの処理はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "検査に成功した後、finishSecretで候補版へAWSCURRENTを移す。",
+        "explanation": "アプリの既定参照先を検証済みの版に切り替える。"
+      },
+      {
+        "id": "B",
+        "text": "DB接続に成功した後、AWSPENDINGだけを残してAWSCURRENTを取り除く。",
+        "explanation": "AWSCURRENTを使うアプリが候補版を既定で選べる構成にならない。"
+      },
+      {
+        "id": "C",
+        "text": "新版を作成する段階で直ちにAWSCURRENTを付け、DBで利用できるかは後から確認する。",
+        "explanation": "検証前の候補をアプリに配布してしまう。"
+      },
+      {
+        "id": "D",
+        "text": "testSecretで従来版であるAWSCURRENTだけを使用して接続を確認する。",
+        "explanation": "古い現在版が動いても、新しい候補が有効とは限らない。"
+      },
+      {
+        "id": "E",
+        "text": "testSecretでAWSPENDINGの資格情報を使ってDBに接続し、必要な操作を確認する。",
+        "explanation": "次に配布する候補自体をテストし、古い現在値の成功を候補の成功と取り違えない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotate-secrets_lambda-functions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "次に配布する候補自体をテストし、古い現在値の成功を候補の成功と取り違えない。 アプリの既定参照先を検証済みの版に切り替える。",
+      "concept": "testSecretが検証するAWSPENDINGとfinishSecretでの昇格"
+    }
+  },
+  {
+    "id": "scs-c03-d5-004",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "rds-encrypt-existing-unencrypted-db-snapshot-copy-and-cutover",
+    "title": "暗号化していないRDSを暗号化済みの構成へ移行する",
+    "prompt": "RDSの未暗号化DBインスタンスを保守枠で暗号化する。保守枠で書き込みを止められ、移行後のDBは検証してから接続先を切り替える。既存DBのデータと使う暗号キーを確定するため、どの方法を選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DBのスナップショットを暗号化付きでコピーし、そのコピーから新しいDBを復元する。",
+        "explanation": "暗号化したスナップショットから暗号化済みインスタンスを作り、検証後に旧DBから切り替えられる。"
+      },
+      {
+        "id": "B",
+        "text": "既存DBインスタンスを変更し、暗号化を有効にしてキーを指定し、同じストレージをそのまま使う。",
+        "explanation": "既存の未暗号化DBインスタンスで暗号化を直接有効にすることはできない。"
+      },
+      {
+        "id": "C",
+        "text": "既存DBのDBサブネットグループを作り直し、新しいサブネットの暗号化設定を既存ボリュームに引き継がせる。",
+        "explanation": "ネットワーク配置の指定と、DBの保存時暗号化は別である。"
+      },
+      {
+        "id": "D",
+        "text": "クライアントのTLSを必須にし、既存DBの保存済みスナップショットも同じ設定で暗号化されたものとする。",
+        "explanation": "TLSで保護されるのは接続中の通信で、保存済みデータやスナップショットの暗号化は変わらない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.Encryption.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "暗号化したスナップショットから暗号化済みインスタンスを作り、検証後に旧DBから切り替えられる。",
+      "concept": "未暗号化スナップショットの暗号化コピーからRDSを復元する"
+    }
+  },
+  {
+    "id": "scs-c03-d5-005",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "dynamodb-encryption-sdk-client-attribute-plaintext-server-boundary",
+    "title": "特定属性の平文をクライアントにだけ置く",
+    "prompt": "DynamoDBに注文を保存する。注文IDは検索に使い、機密属性は書き込み前に暗号化してDynamoDBのGetItemを許された別チームからも平文を読ませない。平文の取得は指定アプリだけに認める。何を採用するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS Database Encryption SDKで機密属性をクライアント側暗号化し、指定アプリにだけ復号に必要なキーの利用を許可する。",
+        "explanation": "DynamoDBが扱う機密属性は暗号文であり、テーブルを読む権限だけでは平文を復元できない。"
+      },
+      {
+        "id": "B",
+        "text": "テーブルのTLS接続だけを必須にして、接続できるクライアントでは復号鍵の権限を評価しない。",
+        "explanation": "通信が保護されても、読み取り権限を持つクライアントに対して属性の平文を隠さない。"
+      },
+      {
+        "id": "C",
+        "text": "DynamoDBのバックアップだけを暗号化し、運用テーブルは平文のアプリ属性を返すよう維持する。",
+        "explanation": "テーブルの読み取り経路で機密属性が平文で返る問題を解決しない。"
+      },
+      {
+        "id": "D",
+        "text": "テーブルの保存時暗号化を顧客管理KMSキーにして、同じテーブルへの通常のGetItemを全チームに許可する。",
+        "explanation": "サーバー側暗号化だけでは、正規の読み取りに対して属性が暗号文のまま返る要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/database-encryption-sdk/latest/devguide/DDB-encrypted-and-signed.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "DynamoDBが扱う機密属性は暗号文であり、テーブルを読む権限だけでは平文を復元できない。",
+      "concept": "DynamoDBの選択的なクライアント側属性暗号化"
+    }
+  },
+  {
+    "id": "scs-c03-d5-006",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-bucket-policy-deny-non-tls-preserve-existing-client-grants",
+    "title": "既存の認可を維持してS3のHTTPだけ拒否する",
+    "prompt": "S3バケットにはデータを扱う複数のIAMロールがある。通常の直接クライアント要求に限り、ポリシーによる現在の許可を維持したままHTTPだけを強制的に拒否する。S3にアクセスするAWSサービス主体はこの変更の対象から除く。どのステートメントを追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "aws:SecureTransportの有無を見ず、AWSサービス以外のすべての要求を拒否する。",
+        "explanation": "正当なTLSクライアントの既存権限にも拒否が適用され、要件より範囲が広い。"
+      },
+      {
+        "id": "B",
+        "text": "TLSを使う場合のAllowだけを追加し、現在HTTPを許す他のIAMポリシーは維持する。",
+        "explanation": "別経路の許可が有効なら、新しいAllowを追加するだけでは非TLS要求を拒否できない。"
+      },
+      {
+        "id": "C",
+        "text": "AWS KMSキーで保存時暗号化を有効にし、IAMロールが暗号化済みオブジェクトだけを取得するようにする。",
+        "explanation": "保存時暗号化の設定は、クライアントとS3間のHTTPを拒否する条件ではない。"
+      },
+      {
+        "id": "D",
+        "text": "バケットとオブジェクトに、aws:SecureTransportがfalseかつaws:PrincipalIsAWSServiceがfalseの場合の明示的Denyを追加する。",
+        "explanation": "直接の非TLSアクセスを拒否しつつ、サービス主体は新しい拒否の対象から外れる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "直接の非TLSアクセスを拒否しつつ、サービス主体は新しい拒否の対象から外れる。",
+      "concept": "S3のaws:SecureTransport条件とAWSサービス主体の除外"
+    }
+  },
+  {
+    "id": "scs-c03-d5-007",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "rds-postgres-force-ssl-and-client-verify-full",
+    "title": "データベースへの平文接続と接続先のなりすましを防ぐ",
+    "prompt": "RDS for PostgreSQLの全アプリ接続で、平文のセッションを受け付けないことに加え、TLSクライアントが正しいRDSエンドポイントへ接続したことも検証したい。クライアント側はパラメータを変更できる。どの二つを行うか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DBパラメータグループのrds.force_sslを有効にして、TLSを使用しない接続を拒否する。",
+        "explanation": "すべてのクライアントに暗号化接続を使わせるためのサーバー側の制御になる。"
+      },
+      {
+        "id": "B",
+        "text": "セキュリティグループでPostgreSQLポートを許可し、同じポートに到達できるセッションはTLS済みと判定する。",
+        "explanation": "ポートの到達性を設定しても、同じポートを使う平文またはTLSの接続を区別しない。"
+      },
+      {
+        "id": "C",
+        "text": "クライアントのCA信頼設定にRDSのCAを入れ、sslmode=verify-fullで接続名まで検証する。",
+        "explanation": "信頼できる証明書チェーンと要求先のホスト名の両方を検証できる。"
+      },
+      {
+        "id": "D",
+        "text": "クライアントでsslmode=requireだけを設定し、CAとホスト名の検証を独立に設定しない。",
+        "explanation": "暗号化の要求だけでは、正しいホスト名まで確認するverify-fullと同じ保証にならない。"
+      },
+      {
+        "id": "E",
+        "text": "DBインスタンスにKMSによる保存時暗号化を設定し、接続先の検証は認証成功時に行われるものとする。",
+        "explanation": "保存時暗号化は接続中のTLSの強制や接続先の証明書の検証を行わない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.SSL.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "すべてのクライアントに暗号化接続を使わせるためのサーバー側の制御になる。 信頼できる証明書チェーンと要求先のホスト名の両方を検証できる。",
+      "concept": "rds.force_sslでのサーバー側強制とクライアントのverify-full"
+    }
+  },
+  {
+    "id": "scs-c03-d5-008",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-replication-sse-kms-opt-in-destination-key",
+    "title": "暗号化したオブジェクトだけ別リージョンに複製されない",
+    "prompt": "同一アカウントのS3バケット間でクロスリージョンレプリケーションを使う。通常のオブジェクトは複製されるが、ルール作成後にSSE-KMSで書き込まれた対象プレフィックスのオブジェクトは複製されない。宛先でも顧客管理キーを使うにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ソースのリージョンのキーを宛先のレプリカキーとして指定し、クロスリージョンでも同じARNを使用する。",
+        "explanation": "レプリカ用のKMSキーは宛先バケットのリージョンに用意する必要がある。"
+      },
+      {
+        "id": "B",
+        "text": "宛先バケットのデフォルト暗号化で中央キーを指定し、レプリケーションの対象条件は維持する。",
+        "explanation": "宛先のデフォルト設定だけでは、SSE-KMSの入力オブジェクトをレプリケーション対象に加えない。"
+      },
+      {
+        "id": "C",
+        "text": "対象ルールに対するレプリケーションロールのS3許可だけを増やし、暗号化オブジェクトの指定とKMS権限は維持する。",
+        "explanation": "S3権限だけではSSE-KMS対象の選択と、暗号キーの必要な操作の許可が揃わない。"
+      },
+      {
+        "id": "D",
+        "text": "対象ルールでSSE-KMSオブジェクトも選び、宛先リージョンのキーを指定してレプリケーションロールに必要なKMS権限を付ける。",
+        "explanation": "SSE-KMSの明示選択と、ソースの復号および宛先での暗号化の認可を揃える。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-config-for-kms-objects.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SSE-KMSの明示選択と、ソースの復号および宛先での暗号化の認可を揃える。",
+      "concept": "レプリケーションのSSE-KMS選択と宛先リージョンのレプリカキー"
+    }
+  },
+  {
+    "id": "scs-c03-d5-009",
+    "revision": 1,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "kms-asymmetric-sign-runtime-offline-pubkey-verify",
+    "title": "ネットワークに接続できない受け手へ配布物の署名を配る",
+    "prompt": "中央の配備システムで成果物に署名する。社外ネットワークのない端末で署名を検証し、署名に使う秘密鍵はAWS内の鍵管理境界に残す。端末にAWS認証情報は置かない。どう構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "KMSの対称鍵で成果物を暗号化し、端末では同じKMSキーARNを指定してオフラインで復号する。",
+        "explanation": "キーARNだけではオフラインの端末で対称鍵を利用できず、復号と署名の検証も異なる。"
+      },
+      {
+        "id": "B",
+        "text": "KMSのHMACキーでMACを作り、端末へGetPublicKeyで得たHMAC用公開鍵を配って照合する。",
+        "explanation": "HMACは共有秘密鍵を使う方式であり、公開鍵を取得して非対称検証する構造ではない。"
+      },
+      {
+        "id": "C",
+        "text": "非対称KMSキーの秘密鍵を取り出して端末へ保管し、端末側で毎回成果物に署名し直して一致を判定する。",
+        "explanation": "KMSの非対称秘密鍵はエクスポートできない。署名の検証に秘密鍵を配布する必要もない。"
+      },
+      {
+        "id": "D",
+        "text": "KMSの署名用非対称キーで署名し、署名と取得した公開鍵を端末へ配布して検証する。",
+        "explanation": "秘密鍵をKMSの外に出さず署名でき、公開鍵を用いてAWSへ接続せずに検証できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "秘密鍵をKMSの外に出さず署名でき、公開鍵を用いてAWSへ接続せずに検証できる。",
+      "concept": "KMSの署名用非対称キーと公開鍵でのオフライン検証"
+    }
+  },
+  {
+    "id": "scs-c03-practice-01",
+    "revision": 3,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-cross-account-cmk-key-and-caller-policy",
+    "title": "別アカウントに限定してSSE-KMSオブジェクト取込を復旧する",
+    "prompt": "アカウントAのS3バケットに、Aの顧客管理KMSキーで暗号化した会計記録がある。アカウントBの取込ロールは対象プレフィックスのs3:GetObjectを双方から許可済みだが、KMSの拒否で失敗する。Bのほかの主体に権限を広げず、どこを変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Aで同じ取込ロールにs3:GetObjectを再度許可し、B側にだけkms:Decryptを追加する。",
+        "explanation": "B側からIAMの許可を追加しても、Aのキーで外部のロールの使用が許可されていない。"
+      },
+      {
+        "id": "B",
+        "text": "AのキーポリシーでBに対してキーの記述を許し、Bのロールには対象キーへのkms:DescribeKeyを追加する。",
+        "explanation": "キーに関する情報の取得は許せても、暗号文に対する復号の許可が不足している。"
+      },
+      {
+        "id": "C",
+        "text": "Aのバケットに設定したデフォルト暗号化キーをBのキーに変更し、既存オブジェクトも同じ設定で読み直す。",
+        "explanation": "デフォルトの暗号化キーは新規の書き込みに作用する。既存オブジェクトの復号に必要なAの権限は変わらない。"
+      },
+      {
+        "id": "D",
+        "text": "AのKMSキーポリシーでBの取込ロールに復号を許可し、Bの取込ロールにも対象キーへのkms:Decryptを許可する。",
+        "explanation": "クロスアカウントでは鍵の所有側の許可に加えて、呼び出し元のIAMで該当キーの使用が許可される必要がある。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-modifying-external-accounts.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "クロスアカウントでは鍵の所有側の許可に加えて、呼び出し元のIAMで該当キーの使用が許可される必要がある。",
+      "concept": "クロスアカウントの復号には鍵側とIAM側の許可が必要になる"
+    }
+  },
+  {
+    "id": "scs-c03-practice-05",
+    "revision": 3,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "s3-object-lock-compliance-no-early-delete-privileged",
+    "title": "管理者でも保管期間中は対象バージョンを削除できないようにする",
+    "prompt": "監査証跡を格納するS3バケットはバージョニング有効である。対象オブジェクトの各バージョンを作成時から7年間保持し、管理者の誤操作でも削除や短縮ができない必要がある。バケット以外の保管先は使えない。どう設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3の法的保留だけを設定し、取り除ける権限を運用管理者へ与えて7年後に解除するよう頼む。",
+        "explanation": "法的保留の解除権限があれば早期解除でき、固定期間の変更不可という要件に合わない。"
+      },
+      {
+        "id": "B",
+        "text": "Object Lockのコンプライアンスモードを使い、対象バージョンに7年間の保持を設定する。",
+        "explanation": "保持期間中は高い管理権限でも、その版の削除や設定した期間の短縮はできない。"
+      },
+      {
+        "id": "C",
+        "text": "Object Lockのガバナンスモードを使い、管理担当には保持を上書きできるバイパス許可を付ける。",
+        "explanation": "バイパス許可で保管中の削除や変更が可能になり、今回の要件に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "バージョニングを維持してMFA Deleteを有効にし、管理者のMFAがあれば7年以内も版を削除できるようにする。",
+        "explanation": "保管期間の長さを強制せず、認証要件を満たした管理者による版削除が可能である。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html#object-lock-overview",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "保持期間中は高い管理権限でも、その版の削除や設定した期間の短縮はできない。",
+      "concept": "S3 Object Lockのコンプライアンスモードによるコミット済みの保持"
+    }
+  },
+  {
+    "id": "scs-c03-practice-08",
+    "revision": 2,
+    "category": "データ保護",
+    "examDomain": "データ保護",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "kms-via-service",
+    "title": "S3を介した復号だけを鍵の許可に残す",
+    "prompt": "レポート取得用ロールは、東京リージョンのS3で顧客管理KMSキーによって暗号化したファイルを読む。必要なS3のGetObjectは許可済みである。同じキーへの許可を見直し、読み取りに伴ってS3が代行する復号だけを許さなければならない。ほかの復号許可は存在しない。どの条件を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "aws:RequestedRegionを東京リージョンに指定し、その条件だけで直接のDecryptとS3経由のものを区別する。",
+        "explanation": "要求先のリージョンは確認できても、同じリージョンでロールがKMSを直接呼ぶ場合は区別できない。"
+      },
+      {
+        "id": "B",
+        "text": "S3のバケットポリシーにGetObjectの条件を追加し、KMSキーでは同じロールの無条件のDecryptを維持する。",
+        "explanation": "GetObjectの制限は、ロールがKMSに直接出す要求の認可に作用しない。"
+      },
+      {
+        "id": "C",
+        "text": "復号許可を、kms:ViaServiceが東京リージョンのS3サービスに一致する要求に限定する。",
+        "explanation": "サービスが利用者に代わって行うKMS呼び出しと、ロールが直接送る呼び出しを区別できる。"
+      },
+      {
+        "id": "D",
+        "text": "復号許可をTLSを使うKMS要求だけに限定し、S3以外のクライアントも同じ条件を使用する。",
+        "explanation": "暗号化された輸送経路を確認しても、KMS要求がS3の代行処理から来たかは判断できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/conditions-kms.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "サービスが利用者に代わって行うKMS呼び出しと、ロールが直接送る呼び出しを区別できる。",
+      "concept": "kms:ViaServiceによる統合サービス経由への制限"
+    }
+  },
+  {
+    "id": "scs-c03-d6-001",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "control-tower-proactive-plus-detective-non-cloudformation-drift",
+    "title": "テンプレートで拒否し、別経路でできた逸脱も検出する",
+    "prompt": "Control Towerで、同じセキュリティ要件についてCloudFormationでの非準拠リソース作成は事前に拒否し、既存リソースやコンソールからの変更での逸脱は検出する。利用する要件に対応した複数のコントロールがある。どの組み合わせが適切か。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWS Artifactから対象サービスの監査報告書を取得し、テンプレートを配備するときに報告書の発行日を照合する。",
+        "explanation": "AWS自体の監査報告書では、各利用者リソースの作成時または作成後の構成を評価しない。"
+      },
+      {
+        "id": "B",
+        "text": "Organizationsのタグポリシーだけで対象リソース名を標準化し、構成の準拠検査を置き換える。",
+        "explanation": "リソース名やタグの標準化は、指定したセキュリティ設定のプロビジョニング前後の評価にならない。"
+      },
+      {
+        "id": "C",
+        "text": "Configの配信チャネルでスナップショットを長く保持し、同じConfig配信だけで非準拠なCloudFormation作成を拒否する。",
+        "explanation": "評価用データを保管する設定は、CloudFormationでの作成前の拒否を行わない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudFormationでの対象作成を検査するプロアクティブコントロールを有効にする。",
+        "explanation": "CloudFormationフックによる評価で、非準拠の構成をプロビジョニング前に失敗させられる。"
+      },
+      {
+        "id": "E",
+        "text": "対象リソースの逸脱を記録する発見的コントロールを有効にする。",
+        "explanation": "実際にある対象リソースの状態を評価するため、CloudFormation以外からの変更も対象にできる。"
+      }
+    ],
+    "correct": [
+      "D",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/controltower/latest/controlreference/control-behavior.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "CloudFormationフックによる評価で、非準拠の構成をプロビジョニング前に失敗させられる。 実際にある対象リソースの状態を評価するため、CloudFormation以外からの変更も対象にできる。",
+      "concept": "プロアクティブコントロールの事前確認と発見的コントロールの評価"
+    }
+  },
+  {
+    "id": "scs-c03-d6-002",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "control-tower-ou-region-deny-keep-global-services-and-approved-regions",
+    "title": "特定のOUだけで新規リージョン利用を制限する",
+    "prompt": "Control Towerの規制対象OUにある本番アカウントは、許可済みリージョン以外でリージョナルワークロードを利用できない必要がある。別OUの検証環境とIAMなどの必要なグローバルサービスは影響させない。中央で何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "規制対象OU内の各アカウントでコンソールの既定リージョンを変更し、リージョナルAPIを既定値に従わせる。",
+        "explanation": "表示時の既定はCLIやSDKのリージョン指定を強制する権限境界ではない。"
+      },
+      {
+        "id": "B",
+        "text": "規制対象OUにリージョン拒否コントロールを適用し、承認済みリージョンと必要なグローバルサービスの例外を確認する。",
+        "explanation": "組織の一部だけにリージョン境界を適用し、リージョン制限に適さない必要な操作を区別できる。"
+      },
+      {
+        "id": "C",
+        "text": "AWS Configアグリゲーターの対象リージョンを承認済みの一覧だけにして、一覧外でのAPIを拒否する。",
+        "explanation": "収集範囲の設定は各アカウントでAPIを実行する権限を取り除かない。"
+      },
+      {
+        "id": "D",
+        "text": "ランディングゾーン全体でリージョン拒否を適用して、検証OUも本番と同じリージョン一覧へ統一する。",
+        "explanation": "別OUの検証環境も対象となり、規制対象だけを制限する条件を満たさない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/controltower/latest/controlreference/ou-region-deny.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "組織の一部だけにリージョン境界を適用し、リージョン制限に適さない必要な操作を区別できる。",
+      "concept": "OU単位のリージョン拒否とグローバルサービスの扱い"
+    }
+  },
+  {
+    "id": "scs-c03-d6-003",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "firewall-manager-waf-fleet-policy-auto-remediation-scope",
+    "title": "新しい公開ALBにも組織のWAF保護を適用する",
+    "prompt": "複数のメンバーアカウントで公開ALBを管理する。Firewall Managerの管理者と必要な前提設定は済んでいる。既存に加え、今後の対象OUのALBにも、事業チームの個別対応を待たずに組織共通のAWS WAFルールを適用する。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "組織のCloudTrailで全アカウントのALB作成を記録し、作成を検知するだけで共通Web ACLを関連付ける。",
+        "explanation": "CloudTrailは作成操作を記録するが、組織のWAF保護を自動適用する設定ではない。"
+      },
+      {
+        "id": "B",
+        "text": "各メンバーアカウントをAWS Configアグリゲーターに含め、Web ACLのルール定義をアグリゲーターの設定として保存する。",
+        "explanation": "アグリゲーターは構成と準拠データを集め、WAFルールや関連付けを配備しない。"
+      },
+      {
+        "id": "C",
+        "text": "ALBを対象タイプとするFirewall ManagerのAWS WAFポリシーを作り、対象OUに自動修復を適用する。",
+        "explanation": "中央で決めたスコープ内の対象リソースへ保護を適用し、新規対象にも自動で対応できる。"
+      },
+      {
+        "id": "D",
+        "text": "管理者のアカウントでだけ一つのWeb ACLを作成し、組織内すべてのALBに初期状態で関連付くものとする。",
+        "explanation": "個別Web ACLを作るだけでは、組織内の新規リソースに共通ポリシーを自動適用しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/waf-policies.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "中央で決めたスコープ内の対象リソースへ保護を適用し、新規対象にも自動で対応できる。",
+      "concept": "Firewall ManagerのAWS WAFポリシーと自動修復の範囲"
+    }
+  },
+  {
+    "id": "scs-c03-d6-004",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "organizations-basic-tag-policy-does-not-identify-untagged-config-rule",
+    "title": "未タグの資源をタグ値の準拠レポートと別に見つける",
+    "prompt": "組織は基本的なタグ値の準拠ポリシーでCostCenterタグの許容値を管理する。対応する既存のEC2インスタンスにはCostCenterキー自体が付いていないものもあり、その一覧を継続して検出したい。タグ値のポリシーは維持し、何を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CostCenterタグをリソース検索条件として指定し、一致する全インスタンスを未タグの一覧とする。",
+        "explanation": "タグ条件に一致する一覧は該当タグを持つリソースであり、欠落を探す条件ではない。"
+      },
+      {
+        "id": "B",
+        "text": "許容値と同じ名前のOUを作って該当アカウントを移し、アカウント内のEC2にタグが自動で継承されることを期待する。",
+        "explanation": "アカウントの所属OUが変わっても、既存のEC2へCostCenterは自動で付かない。"
+      },
+      {
+        "id": "C",
+        "text": "AWS ConfigでEC2のCostCenterの存在を評価する必須タグルールを追加する。",
+        "explanation": "付いている値の標準化に加え、キー自体がない既存リソースも検出できる。"
+      },
+      {
+        "id": "D",
+        "text": "許容するCostCenterの値を一つに固定し、タグが付いていないインスタンスも同じ評価で非準拠になることを期待する。",
+        "explanation": "基本的なタグ値の準拠は指定タグがある場合を対象とし、タグ欠落の既存インスタンスを網羅しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/config/latest/developerguide/required-tags.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "付いている値の標準化に加え、キー自体がない既存リソースも検出できる。",
+      "concept": "タグ値の準拠と既存リソースのタグ欠落の検出"
+    }
+  },
+  {
+    "id": "scs-c03-d6-005",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "service-catalog-launch-constraint-least-privilege-approved-product",
+    "title": "承認済みの構成だけを担当者がセルフサービスで配備する",
+    "prompt": "プラットフォームチームは、暗号化やログ設定が固定されたAWS Service Catalog製品を利用部門へ提供する。担当者は製品を起動できる必要があるが、裏で作るリソースを任意に直接作成・変更できてはいけない。何を構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Service Catalog製品にテンプレート制約だけを置き、全利用者にリソースを直接作成できる権限を付ける。",
+        "explanation": "テンプレートの入力範囲は制限できても、利用者に直接付けた権限を製品の起動に限定しない。"
+      },
+      {
+        "id": "B",
+        "text": "利用者にCloudFormationと対象となる各AWSサービスの広い作成権限を追加し、製品からだけ使うよう文書で案内する。",
+        "explanation": "文書上の制約では、製品とは関係のないAPIでリソースを直接作成できる状態を防げない。"
+      },
+      {
+        "id": "C",
+        "text": "Service Catalogのポートフォリオを読み取り専用で共有し、利用部門は元のCloudFormationテンプレートを管理者権限で配備する。",
+        "explanation": "製品を使ったセルフサービスの許可と、背後の権限を分ける要件に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "製品に起動制約を付け、作成に必要な権限を持つ起動ロールをService Catalogに使わせる。",
+        "explanation": "製品の起動に必要な権限を実行側へ置き、利用者の直接権限はService Catalogの操作に絞れる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/servicecatalog/latest/adminguide/constraints-launch.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "製品の起動に必要な権限を実行側へ置き、利用者の直接権限はService Catalogの操作に絞れる。",
+      "concept": "配備に用いる起動ロールと製品を操作する利用者の権限"
+    }
+  },
+  {
+    "id": "scs-c03-d6-006",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "artifact-provider-soc-report-customer-control-evidence",
+    "title": "クラウド提供側の監査報告と自社環境の実施記録を揃える",
+    "prompt": "監査人は対象期間のAWSのSOC報告書と、自社アカウントで暗号化要件を運用した証拠を別々に求める。いずれも承認済みの担当者だけが取得する。どの二つの対応が適切か。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AWSとのサービス利用契約を承諾した履歴を保存し、対象期間中のAWS側と自社側のすべての実施記録として使う。",
+        "explanation": "契約の承諾記録と、統制の実施状況を示す監査報告書やリソース証拠は別である。"
+      },
+      {
+        "id": "B",
+        "text": "今月のAWS請求書だけを取得し、発生した料金から利用者の暗号化設定とAWS側の監査結果を証明する。",
+        "explanation": "請求額は、対象サービスの監査結果や個々の暗号化制御の証拠を提供しない。"
+      },
+      {
+        "id": "C",
+        "text": "AWS ArtifactのSOC報告書だけで、自社アカウントの全S3バケットの暗号化が有効だったことを証明する。",
+        "explanation": "AWS側の報告書は、個別の利用者が管理する各リソースの設定値までは保証しない。"
+      },
+      {
+        "id": "D",
+        "text": "自社アカウントの暗号化状況と是正記録を、構成の評価結果などの実施記録からまとめる。",
+        "explanation": "社内の環境と対象期間に関連付けて、実際に適用した利用者側コントロールを説明できる。"
+      },
+      {
+        "id": "E",
+        "text": "AWS Artifactから適切な対象期間とサービス範囲のSOC報告書を取得する。",
+        "explanation": "監査対象のAWS側のコントロールに関する第三者報告書を入手できる。"
+      }
+    ],
+    "correct": [
+      "D",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/artifact/latest/ug/downloading-documents.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "監査対象のAWS側のコントロールに関する第三者報告書を入手できる。 社内の環境と対象期間に関連付けて、実際に適用した利用者側コントロールを説明できる。",
+      "concept": "AWS Artifactの報告書と利用者が保持するコントロール証拠"
+    }
+  },
+  {
+    "id": "scs-c03-d6-007",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "organizations-rcp-s3-protect-resource-from-external-principals",
+    "title": "外部アカウントへのS3の誤許可を組織側で抑止する",
+    "prompt": "組織内の対象OUには機密データ用のS3バケットがある。メンバーの管理者が誤って外部のIAM主体をバケットポリシーで許可した場合にも、S3の対象操作を外部主体に許可しない組織側の境界が必要である。どう実装するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バケット名を内部的に機密な命名規則に変更し、外部プリンシパルのAllowを持つバケットポリシーは有効にしておく。",
+        "explanation": "バケット名は認可上の信頼境界として評価されず、誤ったAllowを無効にしない。"
+      },
+      {
+        "id": "B",
+        "text": "対象OUのS3リソースに対し、外部IAM主体からの対象操作を拒否するリソースコントロールポリシーを適用する。",
+        "explanation": "RCPは組織内の対象リソースの利用可能範囲を制限し、外部主体からの要求にも評価できる。"
+      },
+      {
+        "id": "C",
+        "text": "対象OUのAWS Configアグリゲーターで外部共有を検出し、検出結果が出るまで外部アクセスは自動で止まるとみなす。",
+        "explanation": "検出結果の集約によって、その前の認可評価でアクセスを拒否する仕組みにはならない。"
+      },
+      {
+        "id": "D",
+        "text": "対象OUのSCPだけで、メンバーアカウントに所属していないIAM主体の権限も制御する。",
+        "explanation": "SCPは組織内の対象アカウントのプリンシパルを制約するため、外部IAM主体を直接制約しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "RCPは組織内の対象リソースの利用可能範囲を制限し、外部主体からの要求にも評価できる。",
+      "concept": "対象組織のリソースを守るRCPと組織の主体を制約するSCP"
+    }
+  },
+  {
+    "id": "scs-c03-d6-008",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "shared-responsibility-managed-rds-vs-ec2-guest-os-and-app",
+    "title": "OSとアプリの更新の担当を実行計画に分ける",
+    "prompt": "標準のAmazon RDS for PostgreSQLと、EC2に自分で配備した業務アプリを運用している。OSのパッチと、アプリに組み込むデータベースドライバーの更新の担当を決める。責任分担として適切なのはどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "インスタンスへ接続できる利用者が、標準RDSの基盤OSへ直接ログインしてEC2と同じパッチ手順を実行する。",
+        "explanation": "標準RDSは基盤OSの運用を提供側が担当しており、利用者がゲストOSを直接管理する運用を取らない。"
+      },
+      {
+        "id": "B",
+        "text": "標準RDSの基盤OSはAWSが管理し、EC2のゲストOSと自社アプリのドライバーは利用者が管理する。",
+        "explanation": "マネージドDBの基盤とは異なり、EC2上のOSや利用者が組み込む依存物は利用者の管理範囲である。"
+      },
+      {
+        "id": "C",
+        "text": "RDSとEC2をどちらもAWSのサービスとして利用するため、両方のOSと自社アプリのドライバーはいずれもAWSが管理する。",
+        "explanation": "EC2ゲストOSと自社アプリの依存物の管理はAWSへ移らない。"
+      },
+      {
+        "id": "D",
+        "text": "EC2上のドライバーは利用者が更新するが、EC2のゲストOSと標準RDSの基盤OSは両方AWSが更新する。",
+        "explanation": "標準RDSの基盤OSとは異なり、EC2のゲストOSは利用者が更新する範囲に含まれる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://aws.amazon.com/compliance/shared-responsibility-model/",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "マネージドDBの基盤とは異なり、EC2上のOSや利用者が組み込む依存物は利用者の管理範囲である。",
+      "concept": "マネージドサービスの基盤運用とEC2のゲストOSの管理"
+    }
+  },
+  {
+    "id": "scs-c03-d6-009",
+    "revision": 1,
+    "category": "セキュリティ基盤とガバナンス",
+    "examDomain": "セキュリティ基盤とガバナンス",
+    "version": "SCS-C03 オリジナル問題 2026-11",
+    "similarityGroup": "aws-config-org-conformance-pack-rules-remediation-not-aggregate",
+    "title": "同じ構成評価と是正定義を組織へ配備する",
+    "prompt": "組織の複数のアカウントで同じAWS Configルールと是正アクションを運用する。対象リージョンは一つで、各アカウントは必要な構成を記録済みである。テンプレートを管理アカウント側で版管理し、対象アカウントへまとめて配備するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "管理アカウントのConfigレコーダーだけにルールを追加し、管理アカウントの評価結果でメンバーすべての状態を代用する。",
+        "explanation": "管理アカウント単独の記録では、各メンバーにルールや是正設定は作られない。"
+      },
+      {
+        "id": "B",
+        "text": "AWS Configアグリゲーターで全アカウントを同じ集約元に設定し、集約設定がルールと是正定義を配るようにする。",
+        "explanation": "アグリゲーターは記録済みの構成や評価結果の読み取りが目的で、メンバーへ定義を配備しない。"
+      },
+      {
+        "id": "C",
+        "text": "ルールと是正アクションをコンフォーマンスパックに定義し、AWS Configの組織用操作で対象リージョンのメンバーへ配備する。",
+        "explanation": "ルールと是正定義を一つのテンプレートの単位で展開し、アカウントごとの手設定を減らせる。"
+      },
+      {
+        "id": "D",
+        "text": "Organizationsのバックアップポリシーにルール名と是正アクションを記載し、各アカウントへ同じ名前のConfigルールを作る。",
+        "explanation": "バックアップポリシーはバックアップ計画を管理するためのもので、AWS Configのルールや是正アクションを配備しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/config/latest/developerguide/conformance-pack-organization-apis.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ルールと是正定義を一つのテンプレートの単位で展開し、アカウントごとの手設定を減らせる。",
+      "concept": "OrganizationsのAWS Config組織コンフォーマンスパック"
+    }
+  }
+]

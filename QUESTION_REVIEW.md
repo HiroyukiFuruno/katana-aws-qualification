@@ -872,3 +872,16 @@ CloudFormationの成果物から実行時パラメータを取得する問題、
 - [Global Acceleratorのトラフィックダイヤル](https://docs.aws.amazon.com/global-accelerator/latest/dg/about-endpoint-groups-traffic-dial.html)
 - [AWS Healthのリージョン別配信と重複排除](https://docs.aws.amazon.com/health/latest/ug/choosing-a-region.html)
 - [AWS Backupボールトの複数者承認](https://docs.aws.amazon.com/aws-backup/latest/devguide/multipartyapproval.html)
+
+## SCS-C03のフル模試1回分
+
+AWSの試験ガイドの分野比率16・14・18・20・18・14%に合わせ、65問・170分のフル模試を10・9・12・13・12・9問に配分する。新規56問を作成し、従来の9題は事例の条件と誤答の根拠を見直して改訂した。単一選択56問、複数選択7問、並べ替え1問、組み合わせ1問を収録する。
+
+既存の2問が同じ判断を求めていたS3経由のKMS復号は、改訂した1問を新バンクで出題する。従来の10レコードと過去版6レコードは元の配信ファイルで維持し、保存済み模試を旧ID・改訂番号で解決できるようにする。新バンクでは、同じS3やSecurity Hub CSPMを扱う組も、事故復旧、暗号化されたデータの認可、リージョン間の集約、コントロールの評価前提などの判断を分けた。
+
+フル模試の生成512回で各分野の配分と類似グループの重複がないことを確認した。カスタム全65件数と、単一・複数選択の組み合わせおよび並べ替え・組み合わせの順列を合わせた採点1,150通りを検証した。出典URL64件と旧版16レコードの回復時のキーも確認した。
+
+- [SCS-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/security-specialty-03/security-specialty-03.html)
+- [CloudTrailの詳細イベントセレクタ](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/filtering-data-events.html)
+- [AWSのフォレンジック用アカウント](https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-cyber-forensics/forensics-account.html)
+- [IAMロールの一時認証情報の取り消し](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_revoke-sessions.html)

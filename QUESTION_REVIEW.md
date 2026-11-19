@@ -990,3 +990,16 @@ AWSの出典で正答の条件と誤答の根拠を確認し、追加問を含�
 - [CloudFormationのサービスロール](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html)
 - [NLBターゲットグループの属性](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/edit-target-group-attributes.html)
 - [Direct ConnectのBGPコミュニティ](https://docs.aws.amazon.com/directconnect/latest/UserGuide/routing-and-bgp.html)
+
+## ANS-C01の重複しないフル模試5回分
+
+最後の65問を追加し、既存260問の内容と順序を維持した。独立325問を4分野に95・85・65・80問ずつ収録した。単一選択288問、複数選択27問、組み合わせ10問。単一選択の正答位置はA〜Dで各72問。
+
+追加問を含む18,980組の表記を比較し、候補を正答に必要な判断で照合した。既出のTLSネゴシエーションの測定、CloudFrontのHTTPSのみを要求する設定、ResolverエンドポイントのENI別集計に近い候補は差し替えた。新しい設問にはVPC Flow Logsの配信失敗と通信の有無の切り分け、公開ALBを指定のCloudFront配信に限定する構成、公開DNSの親側の委任といった判断を含めた。
+
+フル模試512回で、各回65問・170分、4分野の配分、類似グループの重複排除、全325問の抽選を確認した。重複しないフル模試5回分を128組生成した。全65カスタム件数、採点5,532通り、公式出典269件、旧版16レコードの復元も検証した。
+
+- [ANS-C01の試験案内](https://aws.amazon.com/certification/certified-advanced-networking-specialty/)
+- [VPC Flow Logsの配信エラー](https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-troubleshooting.html)
+- [CloudFrontからALBへのアクセス制限](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html)
+- [CloudFrontのオリジン待機時間](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistValuesOrigin.html)

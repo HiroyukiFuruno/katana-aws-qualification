@@ -965,3 +965,16 @@ AWSの出典で正答の条件と誤答の根拠を確認し、追加問を含�
 - [Direct Connectの暗号化モード](https://docs.aws.amazon.com/directconnect/latest/UserGuide/updateconnection.html)
 - [Client VPNの認可ルール](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-rules.html)
 - [Network Synthetic Monitorの健全性指標](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/nw-monitor-db.html)
+
+## ANS-C01の重複しないフル模試3回分
+
+65問を追加し、既存130問の内容と順序を維持した。独立195問は4分野に57・51・39・48問。単一選択169問、複数選択20問、組み合わせ6問を収録し、単一選択の正答位置はA〜Dで43・42・42・42問。
+
+各分野の原稿を統合し、追加問を含む10,530組の表記を比較した。AZ IDの照合やPrivateLinkの接続承認など既存問と同じ判断を求める候補は差し替えた。アドレス族を扱う候補では、PrivateLinkは単一ENIに両方のIPを割り当てるサブネットの条件を問う。Client VPNは接続の入口とトンネル内の宛先で、アドレス族を独立に決める判断を問う。
+
+65問・170分の模試を512回生成し、4分野の配分、類似グループの重複排除、全195問の抽選を確認した。互いに重複しない3回分を128組生成し、全65カスタム件数、採点3,380通りと旧版16レコードの復元も検証した。公開条件の独立325問まで130問が残る。
+
+- [Client VPNエンドポイントのアドレス族](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/cvpn-working-endpoints.html)
+- [PrivateLinkのIPv4・IPv6対応](https://docs.aws.amazon.com/vpc/latest/privatelink/privatelink-access-aws-services.html)
+- [EKSのIPv4プレフィックス割り当て](https://docs.aws.amazon.com/eks/latest/userguide/cni-increase-ip-addresses.html)
+- [ALBのTLSセキュリティポリシー](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html)

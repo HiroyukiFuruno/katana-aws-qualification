@@ -741,3 +741,15 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 - [Site-to-Site VPNのトンネルログ](https://docs.aws.amazon.com/vpn/latest/s2svpn/monitoring-logs.html)
 - [Secrets Managerのローテーション方式](https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotation-strategy.html)
 - [Shield Advancedのプロアクティブエンゲージメント](https://docs.aws.amazon.com/waf/latest/developerguide/ddos-srt-proactive-engagement.html)
+
+## DEA-C01のフル模試1回分
+
+新規56問と既存10問をレビューした。既存のIcebergのMERGEを選ぶ問題と、順不同の更新でMERGEを使う問題は同じ類似グループとした。どちらも出題候補として保持し、同じ回には片方だけを出す。既存10問は設問ID、改訂番号、本文、選択肢、正答を維持し、設問に対応する出典と分野を付けた。
+
+全66レコードのうち、独立した出題枠は65問。AWS公式の配分34・26・22・18％は採点対象に対する割合で、練習用には65問・130分に合わせて分野ごとに22・17・14・12問とした。単一選択59問、複数選択7問。フル模試の生成512回で毎回の配分と類似グループの排他を検証し、カスタム全65件数、全1,168通りの採点、出典65件も確認した。
+
+分野ごとの5倍に達するには、順に88・68・56・48問を追加する。
+
+- [DEA-C01の試験概要](https://aws.amazon.com/certification/certified-data-engineer-associate/)
+- [DEA-C01の公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01.html)
+- [AthenaのIcebergテーブルへのMERGE](https://docs.aws.amazon.com/athena/latest/ug/merge-into-statement.html)

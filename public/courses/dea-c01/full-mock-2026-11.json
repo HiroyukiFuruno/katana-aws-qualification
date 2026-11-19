@@ -1,0 +1,2882 @@
+[
+  {
+    "id": "dea-c01-practice-01",
+    "revision": 2,
+    "category": "データ取り込み・変換・運用",
+    "version": "オリジナル模試 2026-11",
+    "title": "増分のS3処理",
+    "prompt": "S3に日々Parquetが追加される。Glue ETLを定期実行し、同じジョブの直前成功分と比べて新規・変更オブジェクトを処理したい。独自チェックポイントを管理せず、新旧ファイルは更新時刻で判別できる。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Glueクローラーをジョブ前に再実行するだけにする",
+        "explanation": "スキーマ更新はできるがジョブごとの処理済み状態を持たない。"
+      },
+      {
+        "id": "B",
+        "text": "Glue Data Catalogのデータベース名を変更する",
+        "explanation": "メタデータの名前を変えても処理済み入力は追跡しない。"
+      },
+      {
+        "id": "C",
+        "text": "Glueのジョブブックマークを有効にする",
+        "explanation": "入力処理の状態を記録し、対応ソースで増分処理ができる。"
+      },
+      {
+        "id": "D",
+        "text": "S3のバージョニングでETL入力を制御する",
+        "explanation": "バージョン保持とジョブの処理位置は別の機能である。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-continuations.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "入力処理の状態を記録し、対応ソースで増分処理ができる。",
+      "concept": "ジョブブックマークは入力側を追跡し、書き込み結果の重複排除は別途設計する。"
+    },
+    "examDomain": "データの取り込みと変換",
+    "similarityGroup": "glue-job-bookmark-s3-last-modified-incremental"
+  },
+  {
+    "id": "dea-c01-practice-02",
+    "revision": 2,
+    "category": "データ取り込み・変換・運用",
+    "version": "オリジナル模試 2026-11",
+    "title": "Athenaの読み取り量",
+    "prompt": "監査ログが毎日S3に届く。Athenaの典型的クエリでは日付範囲を必ず指定し、広いスキーマのうち数列しか読まない。既存のSQLを使いつつスキャン量は日付と列の両方で削減したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "日付パーティション付きのParquetを使う",
+        "explanation": "パーティションプルーニングと列の絞り込みを利用できる。"
+      },
+      {
+        "id": "B",
+        "text": "単一CSVをgzipで圧縮する",
+        "explanation": "圧縮はできるが、日付パーティションと列単位の読み取りを得られない。"
+      },
+      {
+        "id": "C",
+        "text": "日付パーティション付きのテキスト形式にする",
+        "explanation": "日付は絞れるが必要列だけの読み取りには列指向形式が適する。"
+      },
+      {
+        "id": "D",
+        "text": "S3バケットのバージョニングを有効にする",
+        "explanation": "オブジェクトの履歴管理で、クエリの走査範囲は絞らない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/performance-tuning-data-optimization-techniques.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "パーティションプルーニングと列の絞り込みを利用できる。",
+      "concept": "WHERE句でパーティションキーを絞り、SELECTでは必要列だけ指定する。"
+    },
+    "examDomain": "データストア管理",
+    "similarityGroup": "athena-date-partition-parquet-column-pruning"
+  },
+  {
+    "id": "dea-c01-practice-03",
+    "revision": 2,
+    "category": "データ取り込み・変換・運用",
+    "version": "オリジナル模試 2026-11",
+    "title": "更新の取り込み",
+    "prompt": "Athenaエンジン3を使う。更新前後の値が入った日次ファイルから、Icebergテーブルの同一キーの値を更新し、新しいキーの行は追加する。各キーは入力で一意で、単一SQL文で適用したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "INSERT INTOで全行を追加する",
+        "explanation": "既存行の更新はせず、複数行が残り得る。"
+      },
+      {
+        "id": "B",
+        "text": "Glueクローラーだけを起動する",
+        "explanation": "カタログのメタデータを発見する処理で、既存行を変更しない。"
+      },
+      {
+        "id": "C",
+        "text": "Athenaエンジンバージョン3のMERGE INTO",
+        "explanation": "対応するIcebergテーブルで照合と更新・挿入を表現できる。"
+      },
+      {
+        "id": "D",
+        "text": "CTASでステージングテーブルを作るだけにする",
+        "explanation": "元テーブルの同一キーの更新や追加は適用しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/merge-into-statement.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応するIcebergテーブルで照合と更新・挿入を表現できる。",
+      "concept": "更新と挿入の条件、ソース側のキー重複を確認してからMERGEを実行する。"
+    },
+    "examDomain": "データの取り込みと変換",
+    "similarityGroup": "athena-iceberg-merge-upsert"
+  },
+  {
+    "id": "dea-c01-practice-04",
+    "revision": 2,
+    "category": "データ取り込み・変換・運用",
+    "version": "オリジナル模試 2026-11",
+    "title": "S3からRedshiftへの一括取り込み",
+    "prompt": "毎晩S3へ均等なサイズの多数のファイルを出力する。Redshiftへ並列に読み込ませ、データをウェアハウス内に永続化したい。クライアントから個別INSERTはしない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "AthenaでSELECTを実行するだけ",
+        "explanation": "検索結果の参照でありRedshiftへのロードを行わない。"
+      },
+      {
+        "id": "B",
+        "text": "Redshift Spectrumの外部テーブルだけを作成する",
+        "explanation": "S3上を参照できるがウェアハウスの内部表には永続化しない。"
+      },
+      {
+        "id": "C",
+        "text": "クライアントから各行を個別INSERTする",
+        "explanation": "ロード処理の並列性や効率を活かしにくい。"
+      },
+      {
+        "id": "D",
+        "text": "S3を入力元にRedshiftのCOPYを使う",
+        "explanation": "Redshiftの並列ロード機能を利用できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Redshiftの並列ロード機能を利用できる。",
+      "concept": "COPYのIAMロールに入力データへの読み取り権限を与え、ファイル形式やエラー記録を確認する。"
+    },
+    "examDomain": "データの取り込みと変換",
+    "similarityGroup": "redshift-copy-s3-parallel-load"
+  },
+  {
+    "id": "dea-c01-practice-05",
+    "revision": 2,
+    "category": "データ取り込み・変換・運用",
+    "version": "オリジナル模試 2026-11",
+    "title": "テーブル単位の権限",
+    "prompt": "Athenaを使う分析者へ同じS3データレイクの一部のカタログテーブルと列だけを公開する。利用者にS3原本への直アクセスは付与しない。列定義はコピーせず一元管理したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "列ごとにIAMロールのs3:GetObject条件を設定する",
+        "explanation": "一つのオブジェクト内のフィールドはS3権限で区別できない。"
+      },
+      {
+        "id": "B",
+        "text": "Lake Formationのデータ権限",
+        "explanation": "対応エンジンと連携してテーブルや列単位の権限管理ができる。"
+      },
+      {
+        "id": "C",
+        "text": "KMSキーのローテーションを有効にする",
+        "explanation": "鍵の世代管理と列単位のアクセス管理は別である。"
+      },
+      {
+        "id": "D",
+        "text": "S3バケットポリシーだけを使う",
+        "explanation": "ファイルのアクセスは扱えるが、カタログの列単位では判定しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応エンジンと連携してテーブルや列単位の権限管理ができる。",
+      "concept": "データレイクの論理権限に加え、利用者の直接S3アクセスが意図せず残っていないか確認する。"
+    },
+    "examDomain": "データセキュリティとガバナンス",
+    "similarityGroup": "lake-formation-grant-table-specific-columns"
+  },
+  {
+    "id": "dea-c01-practice-06",
+    "revision": 2,
+    "category": "データ取り込み・変換・運用",
+    "version": "オリジナル模試 2026-11",
+    "title": "再生可能なストリーム",
+    "prompt": "新しいKinesisコンシューマーを来月デプロイし、開始時点から遡って7日分をKinesis上で再読する。新機能のために別のストレージへ全件コピーする必要はない。今から何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Enhanced Fan-Outだけを有効にする",
+        "explanation": "コンシューマーの読み取り帯域に関係し、保持期間は変えない。"
+      },
+      {
+        "id": "B",
+        "text": "シャード数だけを増やす",
+        "explanation": "処理容量には影響するが、期限切れレコードは保存しない。"
+      },
+      {
+        "id": "C",
+        "text": "コンシューマーの開始位置をTRIM_HORIZONに変えるだけ",
+        "explanation": "最古の保持レコードから読めるが、保持期限を超えたデータは回復しない。"
+      },
+      {
+        "id": "D",
+        "text": "ストリームの保持期間を7日以上にする",
+        "explanation": "保持期間内のシーケンスから新規コンシューマーが再読できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/streams/latest/dev/kinesis-extended-retention.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "保持期間内のシーケンスから新規コンシューマーが再読できる。",
+      "concept": "保持期間は再読できる範囲であり、コンシューマーの処理位置は別に管理する。"
+    },
+    "examDomain": "データストア管理",
+    "similarityGroup": "kinesis-stream-retention-replay-seven-days"
+  },
+  {
+    "id": "dea-c01-practice-07",
+    "revision": 1,
+    "category": "データ取り込み・変換・運用",
+    "version": "オリジナル模試 2026-11",
+    "title": "同一キーへの順不同更新",
+    "prompt": "ソースの変更イベントをApache Icebergへ取り込む。主キーが重複し順不同で到着し、各行にはソース側の単調増加シーケンスがある。古い再配送で更新後の値を巻き戻さないにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "キーだけで重複排除し、最初に到着した変更を採用する",
+        "explanation": "後から届く正当な変更を捨ててしまう。"
+      },
+      {
+        "id": "B",
+        "text": "ステージングでキーごとに最大シーケンスを残し、既存のシーケンスより新しいときだけMERGEで更新する",
+        "explanation": "同一バッチ内の競合とバッチ間の古い再配送の両方を扱える。"
+      },
+      {
+        "id": "C",
+        "text": "毎回すべてINSERTし、読み手のクエリに変更を加えない",
+        "explanation": "同じキーの旧値と新値を読み手が区別できない。"
+      },
+      {
+        "id": "D",
+        "text": "受信時刻が最新のレコードを無条件で反映する",
+        "explanation": "最新の到着がソースの最新変更とは限らない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/merge-into-statement.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "同一バッチ内の競合とバッチ間の古い再配送の両方を扱える。",
+      "concept": "処理時刻と業務上の更新順を分け、対象行に適用した版を保持する。"
+    },
+    "examDomain": "データの取り込みと変換",
+    "similarityGroup": "athena-iceberg-merge-upsert"
+  },
+  {
+    "id": "dea-c01-practice-08",
+    "revision": 1,
+    "category": "データ取り込み・変換・運用",
+    "version": "オリジナル模試 2026-11",
+    "title": "遅延到着するストリーム集計",
+    "prompt": "クリックを5分窓で集計する。イベントには発生時刻があり、ほとんどは2分以内に届く。少数の極端な遅延は別途点検し、障害再開時も状態を復元したい。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ストリーム保持期間だけを延ばす",
+        "explanation": "再読可能性は増すが、窓の時刻や状態復元の設定は別である。"
+      },
+      {
+        "id": "B",
+        "text": "ウォーターマークを使わず、窓を永久に開いておく",
+        "explanation": "いつ結果が確定するか制御できず状態も増え続ける。"
+      },
+      {
+        "id": "C",
+        "text": "到着時刻で窓を作り、受信時刻順で全件を加算する",
+        "explanation": "遅れて到着したイベントが本来の窓と異なる窓に入る。"
+      },
+      {
+        "id": "D",
+        "text": "Flinkのイベント時間とウォーターマークを設定し、遅延イベントの別出力とチェックポイントを構成する",
+        "explanation": "発生時刻で窓を閉じ、閾値外を点検でき、状態を復元できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/operators/windows/",
+      "label": "Apache Flink公式ドキュメント"
+    },
+    "learning": {
+      "reason": "発生時刻で窓を閉じ、閾値外を点検でき、状態を復元できる。",
+      "concept": "イベント時間、許容遅延、状態のチェックポイントは異なる制御である。"
+    },
+    "examDomain": "データの取り込みと変換",
+    "similarityGroup": "flink-event-time-window-watermark-late-records"
+  },
+  {
+    "id": "dea-c01-practice-09",
+    "revision": 1,
+    "category": "データ取り込み・変換・運用",
+    "similarityGroup": "redshift-distribution-collocate-joins",
+    "version": "オリジナル模試 2026-11 拡充版",
+    "title": "大規模結合の再分散を減らす",
+    "prompt": "Redshiftで数十億行の販売明細と数億行の顧客イベントを頻繁に顧客IDで結合する。顧客IDは均等に分布し、片方を全ノードへ複製する余裕はない。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "両テーブルのソートキーだけを顧客IDにする",
+        "explanation": "並び順の調整ではノード間の配置は一致しない。"
+      },
+      {
+        "id": "B",
+        "text": "両テーブルで顧客IDを分散キーにする",
+        "explanation": "結合キーが同じ行を同じスライスへ配置し、結合時の再分散を抑えられる。"
+      },
+      {
+        "id": "C",
+        "text": "大きい方にALL分散を使う",
+        "explanation": "全ノードへの複製を避ける要件に反する。"
+      },
+      {
+        "id": "D",
+        "text": "両テーブルをEVEN分散にする",
+        "explanation": "均等な配置は得られるが、同じキーの行が同じ場所にある保証はない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/c_best-practices-best-dist-key.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "結合キーが同じ行を同じスライスへ配置し、結合時の再分散を抑えられる。",
+      "concept": "分散キーはノード間の再配布、ソートキーは読み飛ばしや処理順に関わる。"
+    },
+    "examDomain": "データストア管理"
+  },
+  {
+    "id": "dea-c01-practice-10",
+    "revision": 1,
+    "category": "データ取り込み・変換・運用",
+    "similarityGroup": "glue-data-quality-quarantine-invalid-rows",
+    "version": "オリジナル模試 2026-11 拡充版",
+    "title": "品質エラーの隔離",
+    "prompt": "日次取込に顧客IDが欠落した行が混じる。正常行は予定どおり公開し、不良行は原因調査用に元データとバッチIDを残す。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "公開後に件数だけを記録する",
+        "explanation": "下流への混入を予防せず、問題の行を特定できない。"
+      },
+      {
+        "id": "B",
+        "text": "公開前に必須項目を検査し、合格行と隔離出力へ分岐する",
+        "explanation": "不良データの混入を防ぎ、正常データの配信と再調査が可能になる。"
+      },
+      {
+        "id": "C",
+        "text": "バッチ全体を破棄する",
+        "explanation": "正常行の公開と調査用の保存ができない。"
+      },
+      {
+        "id": "D",
+        "text": "欠落したIDを一定値で補完してすべて公開する",
+        "explanation": "無関係な行が同一顧客に集約され得る。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/tutorial-data-quality.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "不良データの混入を防ぎ、正常データの配信と再調査が可能になる。",
+      "concept": "隔離には元の識別子、適用したルール、取込バッチ情報を残し、再処理可能にする。"
+    },
+    "examDomain": "データ運用とサポート"
+  },
+  {
+    "id": "dea-c01-d1-001",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "dms-full-load-change-data-capture-ongoing",
+    "title": "初回ロード後も変更を同期する",
+    "prompt": "オンプレミスの対応するリレーショナルDBからAmazon Redshiftへ移行する。初期データを取り込んだ後も切り替えまで更新を反映し続けたい。ソースのログは保持でき、キーと型の対応は確認済みである。どのDMSタスクか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "既存データの移行と継続的な変更のレプリケーションを行うタスクを作成する。",
+        "explanation": "初期データと変更データを同一の移行タスクで扱える。"
+      },
+      {
+        "id": "B",
+        "text": "毎回DMSの評価レポートを作成する。",
+        "explanation": "移行条件の評価であり、レコードを継続移送しない。"
+      },
+      {
+        "id": "C",
+        "text": "既存データの移行だけを行うタスクを初期ロードのときだけ実行する。",
+        "explanation": "ロード終了後の更新を追従できない。"
+      },
+      {
+        "id": "D",
+        "text": "変更のレプリケーションだけを開始し、ターゲットへ初期データを別途投入しない。",
+        "explanation": "CDC開始点より前の既存レコードを揃えられない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Tasks.Creating.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "初回ロードとCDCを含むDMSタスクは既存のデータを移し、その間と以後の変更を取り込める。",
+      "concept": "継続同期には対象ソースの変更ログを有効にし、切り替えまでは必要な期間を残す。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-002",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kinesis-enhanced-fan-out-dedicated-consumer-throughput",
+    "title": "読み取り帯域をコンシューマーで分離する",
+    "prompt": "Kinesis Data Streamsの同じシャードを、既存の集計と遅延に敏感な新規検知サービスが読む。既存アプリの読み取りは変更せず、新規側が共有の読み取り帯域を取り合わないようにしたい。何を構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "新規サービスのGetRecords呼び出し回数だけを増やす。",
+        "explanation": "共有の読み取り制限を使い続ける。"
+      },
+      {
+        "id": "B",
+        "text": "新規サービスに別のパーティションキーを指定して既存レコードを受信させる。",
+        "explanation": "シャードを決めるパーティションキーは書き込み側の属性で、読取帯域を分離しない。"
+      },
+      {
+        "id": "C",
+        "text": "新規サービスを拡張ファンアウトのコンシューマーとして登録し、SubscribeToShardで読ませる。",
+        "explanation": "新規側に専用枠を与えながら、既存の共有読み取りを維持できる。"
+      },
+      {
+        "id": "D",
+        "text": "データ保持期間だけを延長する。",
+        "explanation": "再読の範囲を変えるが、コンシューマーごとの読み取り帯域は変えない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/streams/latest/dev/building-enhanced-consumers-api.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "拡張ファンアウトに登録したコンシューマーは、シャードごとに専用の読み取りスループットを利用できる。",
+      "concept": "シャードからの独立した配送と、共有のポーリングで割り当てられる帯域を区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-003",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "data-firehose-dynamic-partitioning-by-record-field",
+    "title": "レコードの値に応じてS3の保存先を分ける",
+    "prompt": "Amazon Data Firehoseが、既に一行ずつJSONとして送られるイベントをS3へ保存する。小規模なテナントごとに顧客IDのプレフィックスを分けたい。プロデューサーは一つのストリームを使い続け、別の加工サービスは増やさない。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Glueのクローラーで配信前のレコードから顧客IDを抽出する。",
+        "explanation": "クローラーは配信済みデータなどをカタログ化する機能であり、配信先を決めない。"
+      },
+      {
+        "id": "B",
+        "text": "Firehoseのエラー出力先を顧客ID別の通常出力に使う。",
+        "explanation": "異常時の保存先は成功レコードの動的な配信先の代わりにならない。"
+      },
+      {
+        "id": "C",
+        "text": "新しい配信ストリームで動的パーティショニングを有効にし、インライン解析で顧客IDを抽出してS3プレフィックスに指定する。",
+        "explanation": "データに含まれるキーから配信先を選び、発行者は一つのストリームへ送れる。"
+      },
+      {
+        "id": "D",
+        "text": "S3のプレフィックスを固定し、Firehoseのバッファ時間だけを延長する。",
+        "explanation": "配信単位は変わるが、顧客IDは配信先へ反映されない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/firehose/latest/dev/dynamic-partitioning.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "動的パーティショニングはレコードから得たキーをS3プレフィックスに適用し、同じキーのデータをまとめて配信する。",
+      "concept": "配信時に決めるパスと、到着時刻ベースの静的な標準パスを区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-004",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-jdbc-read-pushdown-samplequery",
+    "title": "DBから移送するデータを読み取り前に絞る",
+    "prompt": "AWS GlueでJDBC接続した大規模なPostgreSQLテーブルから、対象日の行と必要な2列だけを取り込みたい。全件取得してSparkで絞るとソースからの転送量が大きい。データストアが対応するWHEREと列の指定をどこで行うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "全件を動的フレームとしてロードしてからSparkのfilterを適用する。",
+        "explanation": "指定のフィルターがロード後に実行され、入力の転送量を減らせない。"
+      },
+      {
+        "id": "B",
+        "text": "JDBCからのデータを取得した後にGlue Data Catalogの分類子を実行する。",
+        "explanation": "表情報の分類であり、元のSQL取得量は変わらない。"
+      },
+      {
+        "id": "C",
+        "text": "JDBCのsampleQueryで必要列と対象日の条件を指定する。",
+        "explanation": "ソースが絞り込みを先に行い、転送する結果を減らせる。"
+      },
+      {
+        "id": "D",
+        "text": "S3へ書くときのpartitionKeysだけを指定する。",
+        "explanation": "出力の格納方法であり、JDBCの読み取り対象を変えない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-pushdown.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応するJDBC接続では明示したSQLをソースDBで実行し、必要な行と列の結果を取得できる。",
+      "concept": "Glueへ取り込んだ後のフィルターは、DBからすでに転送したレコードを減らさない。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-005",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-spark-join-skew-salted-hot-key",
+    "title": "偏った結合キーのタスクを分散する",
+    "prompt": "AWS GlueのSparkジョブで二つの大規模データセットを結合する。一つのキーにレコードが偏り、一部タスクだけが極端に長い。両方の表全体はブロードキャストできないが、偏ったキーのディメンション側は数行で、出力の結合結果は変えたくない。どの変換か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "両方の表へ独立したソルトを一つずつ無作為に付け、ソルトで結合する。",
+        "explanation": "同じキーでもソルトが違えば対応行を欠落させる。"
+      },
+      {
+        "id": "B",
+        "text": "大きい側の偏ったキーに複数のソルト値を割り当て、小さい側の該当行を各ソルトに対応させ、キーとソルトで結合する。",
+        "explanation": "同じ業務キーを複数パーティションで処理しつつ、必要な対応を維持できる。"
+      },
+      {
+        "id": "C",
+        "text": "通常の元キーのままパーティションを増やす。",
+        "explanation": "同じキーの多数行は同じ結合パーティションに集まり得る。"
+      },
+      {
+        "id": "D",
+        "text": "大規模な方の表全体をブロードキャストする。",
+        "explanation": "メモリの制約を満たさない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "スキューしたキーを複数の補助キーへ分散し、対応する少数行だけを複製すれば、等価な結合を複数タスクに分けられる。",
+      "concept": "シャッフルのパーティション数を増やすだけでは、一つの物理キーへの偏りは解けない。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-006",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-dynamicframe-resolvechoice-type-mismatch",
+    "title": "揺れるJSON型を出力前に確定する",
+    "prompt": "Glueの一つのDynamicFrameで、入力JSONのamountが整数と数値文字列の両方で記録される。すべての値は変換できることを確認済みで、S3上の出力列を一つの整数型に揃えたい。どの変換を加えるか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ResolveChoiceで型ごとの列を作るだけにする。",
+        "explanation": "出力で必要な一つのamount列にならない。"
+      },
+      {
+        "id": "B",
+        "text": "amountを対象とするcastの指定をResolveChoiceに渡し、正規の整数型へ変換する。",
+        "explanation": "整数と変換可能な数値文字列を単一の型に揃えられる。"
+      },
+      {
+        "id": "C",
+        "text": "クローラーを再実行するだけで元データのamountの値を変える。",
+        "explanation": "カタログの推定はレコードの変換を行わない。"
+      },
+      {
+        "id": "D",
+        "text": "amountをパーティションキーにする。",
+        "explanation": "格納場所の指定であり、値のデータ型を統一しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-crawler-pyspark-transforms-ResolveChoice.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ResolveChoiceは複数の型を持つDynamicFrameのフィールドを明示した方針で解決できる。",
+      "concept": "数値の意味が同じでもデータ表現が混在するなら、書き出し前に出力型を決める。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-007",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-studio-relationalize-nested-records",
+    "title": "ネストした配列を結合可能な表に展開する",
+    "prompt": "GlueのDynamicFrameには注文と、その配列に入った商品行がある。注文表と商品明細を別の表として出力し、親子を後から結合できる識別子を保ちたい。既存の注文は明細数が可変である。どのGlue変換か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "型ごとに列を分けるResolveChoiceを注文IDにだけ適用する。",
+        "explanation": "配列の親子構造を複数の表に分けない。"
+      },
+      {
+        "id": "B",
+        "text": "RenameFieldでネストした根の名前を変更する。",
+        "explanation": "名前の変更は明細を独立した表に展開しない。"
+      },
+      {
+        "id": "C",
+        "text": "Relationalizeで注文のルートと配列のフレームを生成し、生成された関連IDを保持する。",
+        "explanation": "注文と可変長の明細を別の表として扱える。"
+      },
+      {
+        "id": "D",
+        "text": "DropFieldsで商品配列を消し、注文だけ残す。",
+        "explanation": "後から結合する明細が失われる。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-api-crawler-pyspark-transforms-Relationalize.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Relationalizeはネストした構造を展開し、配列の内容を親のフレームと関連付けられる別のフレームへ出せる。",
+      "concept": "階層を文字列として保存する方法とは、後で表として扱うときの形が異なる。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-008",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-dynamodb-export-connector-pitr-avoid-table-read-throughput",
+    "title": "大きい稼働テーブルから読取容量を消費せずに取得する",
+    "prompt": "数TBのDynamoDBテーブルをGlueのSparkジョブへ取り込む。ジョブによって取得した一貫性のあるスナップショットを読み、稼働アプリとテーブルの読み取り容量を取り合わない。S3にいったん置くことは許容する。どの準備と取得方式か。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "GlueのDynamoDBエクスポートコネクターで新しいエクスポートをS3へ出し、そこから読み込む。",
+        "explanation": "稼働テーブルの読み取り容量を使わず、スナップショットから変換できる。"
+      },
+      {
+        "id": "B",
+        "text": "TTLを設定し、期限切れのレコードを全件エクスポートとして利用する。",
+        "explanation": "失効イベントだけではテーブル全体の一貫した状態を取得できない。"
+      },
+      {
+        "id": "C",
+        "text": "Glueの標準DynamoDB読み取りで、同時にスキャンする分割数を大きくする。",
+        "explanation": "直接読み取りは稼働テーブルのスループットを消費する。"
+      },
+      {
+        "id": "D",
+        "text": "ソースDynamoDBテーブルでポイントインタイムリカバリを有効にする。",
+        "explanation": "DynamoDBのエクスポートを開始する前提になる。"
+      },
+      {
+        "id": "E",
+        "text": "Global Secondary Indexを作成して全件をScanする。",
+        "explanation": "別途索引の処理と読み取りが必要で、指定時点のエクスポートにはならない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-connect-dynamodb-home.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "GlueのDynamoDBエクスポートコネクターは対象時点のエクスポートをS3から読む。",
+      "concept": "通常のDynamoDBスキャンと異なり、エクスポート処理はテーブルの読み取り容量を消費しない。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-009",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "step-functions-glue-start-job-run-sync",
+    "title": "変換完了まで後続処理を待たせる",
+    "prompt": "AWS Step FunctionsのStandardワークフローがGlue ETLを開始する。成功した結果を使う後続タスクは変換成功後にだけ進め、失敗はワークフローで処理したい。独自の状態ポーリングLambdaは追加しない。何を選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "開始APIの応答を受けたら直ちに次の状態へ進める。",
+        "explanation": "ジョブの受付と処理の成功を区別できない。"
+      },
+      {
+        "id": "B",
+        "text": "StartJobRunの直後に常に60秒のWaitを入れる。",
+        "explanation": "実行時間に変動がある場合、正常完了を保証しない。"
+      },
+      {
+        "id": "C",
+        "text": "GlueのStartJobRunをジョブ実行の同期統合で呼び出す。",
+        "explanation": "実行結果を受けて後続の状態や失敗処理へ進める。"
+      },
+      {
+        "id": "D",
+        "text": "Glueのジョブブックマークを有効にし、Step Functionsの待機は省く。",
+        "explanation": "増分処理の状態であり、現在のジョブ完了を待たない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-glue.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対応するGlueの同期統合では、Step Functionsがジョブの完了まで待てる。",
+      "concept": "開始応答だけで遷移する呼び出しと、ジョブの完了をワークフローに伝える統合を区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-010",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "step-functions-distributed-map-s3-dataset-large-state",
+    "title": "大きなデータ一覧を分割して処理する",
+    "prompt": "Step FunctionsのStandardワークフローでS3の数百万行を並列処理する。全データはステートの入力上限を超え、行ごとの処理履歴を親の履歴に集中させたくない。どの実装が適切か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3データセットをItemReaderで読むDistributed Mapを使い、並列数を調整する。",
+        "explanation": "全項目を親の入力に埋め込まず、実行履歴を子へ分けられる。"
+      },
+      {
+        "id": "B",
+        "text": "Parallelに全行分の分岐を固定で記述する。",
+        "explanation": "入力件数に応じた項目処理にならず、定義や履歴の規模も抑えられない。"
+      },
+      {
+        "id": "C",
+        "text": "一件ずつ名前を列挙するリストを親のResultPathにすべて保持する。",
+        "explanation": "親のペイロードの上限を超える問題が残る。"
+      },
+      {
+        "id": "D",
+        "text": "全行をLambdaの応答で単一の状態入力に入れてInline Mapを使う。",
+        "explanation": "単一の入力サイズと親履歴の制約を解消できない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-map-distributed.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "分散モードのMapはS3のデータセットを入力にでき、項目処理を子ワークフローの実行として管理する。",
+      "concept": "並列数や失敗許容率をデータ処理の制約に合わせて設定できる。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-011",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "mwaa-airflow-catchup-disable-historical-intervals",
+    "title": "稼働開始前の期間を一括実行しない",
+    "prompt": "Amazon MWAAで日次DAGを導入する。DAGのstart_dateは検証を含めて過去日だが、本番有効化のときにその日から過去の全データ区間を自動実行したくない。必要な過去分は担当者が明示した時だけ実行する。どの指定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DAGでcatchupをFalseに指定して本番で有効化する。",
+        "explanation": "過去の全未実行区間を自動で埋めずに定期スケジュールを使用できる。"
+      },
+      {
+        "id": "B",
+        "text": "max_active_runsを1に変更する。",
+        "explanation": "実行を一つずつにしても、過去分を順番に自動実行し得る。"
+      },
+      {
+        "id": "C",
+        "text": "リトライ回数を0にする。",
+        "explanation": "失敗したタスクの再試行を減らすが、スケジューラーの過去区間の作成を変更しない。"
+      },
+      {
+        "id": "D",
+        "text": "過去の日付を指定するバックフィルを最初に登録する。",
+        "explanation": "必要時だけ手動で実行したいところを、有効化時に過去分として意図的に実行してしまう。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://airflow.apache.org/docs/apache-airflow/stable/dag-run.html#catchup",
+      "label": "Apache Airflow公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Airflowのcatchupは前回までの未実行データ区間をスケジューラーが補うかを制御する。",
+      "concept": "過去分の自動実行と、担当者が要求するバックフィルの手順は別である。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-012",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "data-sync-s3-include-exclude-path-periodic-files",
+    "title": "転送対象を名前空間で絞る",
+    "prompt": "オンプレミスのNFS共有からDataSyncでS3へ取り込む。共有には複数チームのデータがあり、指定したexportディレクトリだけを定期転送したい。コピー後にS3で削除する処理は増やさない。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "タスクのincludeフィルターに対象のディレクトリのパスを指定する。",
+        "explanation": "対象外を送信する前に除外できる。"
+      },
+      {
+        "id": "B",
+        "text": "全件をS3へ送り、対象外のプレフィックスをライフサイクルで削除する。",
+        "explanation": "対象外データも一度転送され、条件に合わない。"
+      },
+      {
+        "id": "C",
+        "text": "S3のバケットポリシーで対象外への書き込みを拒否し、タスク全体は無制限に試行させる。",
+        "explanation": "対象外にエラーが発生し得るだけで、転送対象のパスを明示していない。"
+      },
+      {
+        "id": "D",
+        "text": "DataSyncのバイトレート上限だけを設定する。",
+        "explanation": "転送速度は変わるが対象パスは限定されない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/datasync/latest/userguide/filtering.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "DataSyncの転送フィルターで対象の相対パスを選び、対象外を転送前に除外できる。",
+      "concept": "ロケーションを共有しながら、タスクごとに選ぶデータを制御できる。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-013",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kinesis-producer-partition-key-hot-shard-distribution",
+    "title": "一つの書き込みシャードへの集中を抑える",
+    "prompt": "Kinesis Data Streamsへイベントを書き込む。パーティションキーに全端末で同じ環境名を使ったところ、特定シャードでだけ書き込みが制限された。端末内の順序は保ちたいが端末間の順序は不要で、端末ごとの負荷は小さい。どう変更するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "同じ共通キーのままストリームのシャードを増やす。",
+        "explanation": "単一キーは同じハッシュ値となり、同時に複数のシャードへ分散されない。"
+      },
+      {
+        "id": "B",
+        "text": "イベントごとにランダムなキーを生成する。",
+        "explanation": "負荷は分散しやすいが、同じ端末のレコードも別シャードへ送られ得る。"
+      },
+      {
+        "id": "C",
+        "text": "端末IDをパーティションキーにし、各端末のプロデューサーで順序を指定した書き込みを直列化する。",
+        "explanation": "端末ごとのグループを維持し、異なる端末を複数シャードへ割り振れる。"
+      },
+      {
+        "id": "D",
+        "text": "コンシューマーで拡張ファンアウトを有効にする。",
+        "explanation": "読み取り帯域の分離であり、書き込みキーの集中を解消しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/streams/latest/dev/key-concepts.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "パーティションキーはレコードをシャードへ割り当てる。キーの選択によって負荷の分散と順序のグループを調整できる。",
+      "concept": "端末内の厳密な順序が必要なら、書き込みの直列化や順序指定と合わせて設計する。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-014",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-glue-filter-object-prefix-event-pattern",
+    "title": "成功した入力の到着だけで次を起動する",
+    "prompt": "S3バケットのEventBridge配信は有効である。input/配下の新規オブジェクトだけでデータ処理を開始し、同じバケットへ書くoutput/や削除イベントでは開始しない。イベントパターンに何を含めるか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "イベントの種別にObject Createdを指定する。",
+        "explanation": "削除など対象外の種類を除外する。"
+      },
+      {
+        "id": "B",
+        "text": "対象バケットの名前と、オブジェクトキーのinput/プレフィックスを指定する。",
+        "explanation": "他のバケットや自身が書き出したキーから処理を起動しない。"
+      },
+      {
+        "id": "C",
+        "text": "aws.s3というイベントソースだけに一致させる。",
+        "explanation": "他のバケットや関係のない操作を除外しない。"
+      },
+      {
+        "id": "D",
+        "text": "Object Createdをすべて受け、入力トランスフォーマーでキーからoutput/を取り除く。",
+        "explanation": "値の変換は、処理開始の要否を選ぶ機能ではない。"
+      },
+      {
+        "id": "E",
+        "text": "出力データのS3ストレージクラスを変更してイベントを止める。",
+        "explanation": "格納クラスは処理を起動するイベントパターンの代用にならない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-pattern-operators.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "EventBridgeのイベントパターンはイベントの種別、バケット名、オブジェクトキーのプレフィックスを条件にできる。",
+      "concept": "バケット内へ処理結果を書く場合は、結果側をイベント条件から除外すると循環的な起動を避けられる。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-015",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "emr-spark-locality-s3-not-hdfs-persistent-data",
+    "title": "計算クラスターの寿命を入力保存から切り離す",
+    "prompt": "毎週だけAmazon EMRでSpark集計を行う。入力と出力を翌週も利用しながら、処理が終わったらクラスターを終了して計算コストを抑えたい。どの構成にするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "入出力をS3に置き、必要な実行時だけEMRクラスターを立ち上げる。",
+        "explanation": "データを残しながら処理の間だけ計算資源を使用できる。"
+      },
+      {
+        "id": "B",
+        "text": "入出力をEMRクラスターのHDFSにだけ置き、終了後も同じHDFSを参照する。",
+        "explanation": "クラスターを終了するとローカルの分散ストレージを継続利用できない。"
+      },
+      {
+        "id": "C",
+        "text": "入力だけS3に置き、最終出力は一時ノードのローカル領域にだけ残す。",
+        "explanation": "翌週まで出力を保持できない。"
+      },
+      {
+        "id": "D",
+        "text": "データを保つためクラスターを24時間起動しておく。",
+        "explanation": "保持できるが、必要時だけ計算料金を負担する要件に反する。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-file-systems.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Amazon S3上のデータを使えば、EMRクラスターを終了しても入力と出力が残る。",
+      "concept": "作業時に使うローカルまたは分散ストレージと、クラスターの外で維持するデータを区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-016",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "s3-multipart-retry-individual-part-ingestion",
+    "title": "大容量ファイルを部分単位で送り直す",
+    "prompt": "障害が断続的に発生する回線で、大容量の一つのファイルをS3へ取り込む。全体を再送せず、失敗した範囲だけを再試行して一個のオブジェクトにする。どの操作を組み合わせるか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各パートを別オブジェクトに保存し、同じキーのGetObjectで連結されるとみなす。",
+        "explanation": "別オブジェクトが自動で一個のオブジェクトになることはない。"
+      },
+      {
+        "id": "B",
+        "text": "失敗時は同じキーへのPutObjectを最初から繰り返す。",
+        "explanation": "単一リクエストのアップロードでは指定範囲だけの再送にならない。"
+      },
+      {
+        "id": "C",
+        "text": "マルチパートアップロードを開始し、同じアップロードIDで必要なパートを送信し、失敗したパートだけを再送する。",
+        "explanation": "独立したアップロードによって成功済みのパートを送り直さない。"
+      },
+      {
+        "id": "D",
+        "text": "再送せずS3のオブジェクトレプリケーションに不足分を取り込ませる。",
+        "explanation": "未完了の入力をクライアントの代わりに回復しない。"
+      },
+      {
+        "id": "E",
+        "text": "必要なパートが揃ったら、パート番号と対応するETagを指定してアップロードを完了する。",
+        "explanation": "受信済みのパートを一つのオブジェクトに組み立てる。"
+      }
+    ],
+    "correct": [
+      "C",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "S3マルチパートアップロードでは各パートを個別に送信し、最後に一つのオブジェクトへ組み立てる。",
+      "concept": "アップロードIDとパート情報を残し、未完了のまま放置したデータの後片付けも計画する。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-017",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "msk-connect-custom-plugin-sink-managed-workers",
+    "title": "Kafkaの既存コネクターを管理サービスで動かす",
+    "prompt": "Amazon MSKのトピックからS3への取り込みに、互換性を確認済みのKafka ConnectのS3 Sinkプラグインを使用する。Kafka Connectのワーカー群は自分で運用したくない。接続性とS3権限は用意する。どの構成か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3バケットのイベント通知をMSKのSinkとして使う。",
+        "explanation": "S3のオブジェクトイベントはKafkaから既存データを取り出して保存しない。"
+      },
+      {
+        "id": "B",
+        "text": "互換プラグインをMSK Connectのカスタムプラグインとして登録し、Connectorを構成する。",
+        "explanation": "対応する実装を利用しながら管理されたKafka Connectワーカー上で動かせる。"
+      },
+      {
+        "id": "C",
+        "text": "MSKのブローカーにKafka ConnectのJARを直接配置する。",
+        "explanation": "ブローカーとコネクターワーカーは別の実行環境である。"
+      },
+      {
+        "id": "D",
+        "text": "Kafkaのトピックにコネクター設定だけを送信する。",
+        "explanation": "設定だけではワーカーが起動されない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/msk/latest/developerguide/msk-connect-plugins.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "MSK ConnectにはKafka Connectプラグインをカスタムプラグインとして登録できる。",
+      "concept": "プラグインは実際のデータ連携処理を定義し、ワーカーの実行環境とは分けて管理する。"
+    }
+  },
+  {
+    "id": "dea-c01-d1-018",
+    "revision": 1,
+    "category": "データの取り込みと変換",
+    "examDomain": "データの取り込みと変換",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-unload-parquet-analysis-s3-analytics",
+    "title": "結果セットを再利用できる列形式で出力する",
+    "prompt": "Amazon Redshiftの集計結果をAthenaなどで後から再利用する。まとまった結果をS3へ出すが、スキャン列の絞り込みができる列指向形式を使い、クライアントに結果を全件転送して保存したくない。どうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Redshiftのスナップショットだけを作成する。",
+        "explanation": "Athenaが指定された集計のParquetファイルを直接走査できない。"
+      },
+      {
+        "id": "B",
+        "text": "RedshiftのCOPYにSELECT結果を渡してS3へ書く。",
+        "explanation": "COPYはRedshiftへの取り込みであり、結果をエクスポートしない。"
+      },
+      {
+        "id": "C",
+        "text": "集計クエリの結果を通常のCSVとしてUNLOADする。",
+        "explanation": "S3に保存できるが、指定された列指向形式ではない。"
+      },
+      {
+        "id": "D",
+        "text": "集計クエリを指定して、形式をParquetとしたUNLOADでS3へ書き出す。",
+        "explanation": "結果をクライアントへ全件流さず、列指向のデータセットを作れる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "RedshiftのUNLOADはクエリ結果をS3へ書き出し、Parquet形式を指定できる。",
+      "concept": "S3からクラスタへデータを入れるCOPYと、クラスタから結果を出すUNLOADは方向が逆である。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-001",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "athena-partition-projection-date-path-no-glue-registration",
+    "title": "日次パーティションを登録せずに解決する",
+    "prompt": "S3の出力パスは日付で規則的に決まり、対応するテーブルを読むのはAthenaだけである。到着するたびのGlueパーティション登録をなくし、SQLの日付条件に一致する場所をAthenaに計算させたい。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "クローラーのスケジュールを一時間ごとにする。",
+        "explanation": "登録を頻繁に行うだけで、登録自体をなくさない。"
+      },
+      {
+        "id": "B",
+        "text": "すべての日付のパスを毎回ALTER TABLE ADD PARTITIONで追加する。",
+        "explanation": "個別登録の運用が残る。"
+      },
+      {
+        "id": "C",
+        "text": "非パーティションテーブルにして日付条件をSQLから取り除く。",
+        "explanation": "規則を使った日別のスキャン範囲の絞り込みが失われる。"
+      },
+      {
+        "id": "D",
+        "text": "日付の型・範囲・形式とS3ロケーションテンプレートを指定してパーティション投影を有効にする。",
+        "explanation": "日付条件に応じて場所を計算でき、日付ごとの個別登録が不要になる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/partition-projection.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Athenaのパーティション投影は設定した範囲と規則からパーティション値と格納先を計算する。",
+      "concept": "規則的なデータ配置で使う投影と、他エンジンにも共有する実パーティションメタデータを区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-002",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "iceberg-partition-evolution-new-files-metadata",
+    "title": "既存ファイルを保持しつつ新しい分割方式へ移る",
+    "prompt": "Icebergを使う互換エンジンで、日単位の分割を時間単位へ変えたい。過去のデータファイルをすぐに書き直す工数はなく、以前の日付のレコードも同じSQLで読みたい。どの設計を選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対応するエンジンでIcebergのパーティション仕様を更新し、以降を新仕様で書き込む。",
+        "explanation": "既存ファイルは旧仕様のまま維持でき、読み取りで両方を扱える。"
+      },
+      {
+        "id": "B",
+        "text": "従来のHive形式と同様に新旧の物理列をクエリで個別に指定させる。",
+        "explanation": "論理列から透過的にプルーニングしたい要件に合わない。"
+      },
+      {
+        "id": "C",
+        "text": "S3上の既存ファイル名を時間のパスに付け替えるだけにする。",
+        "explanation": "カタログの仕様とIcebergメタデータを変更していない。"
+      },
+      {
+        "id": "D",
+        "text": "新仕様になるまでテーブルの全履歴の参照を停止する。",
+        "explanation": "古いデータを同じSQLから読み続ける要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://iceberg.apache.org/docs/latest/evolution/#partition-evolution",
+      "label": "Apache Iceberg公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Icebergのパーティション仕様の進化で、旧仕様のデータファイルと新仕様のファイルを一つのテーブルで読める。",
+      "concept": "クエリエンジンが各仕様と論理列のフィルターを対応付けるため、利用側SQLに物理パスを埋め込まない。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-003",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "iceberg-expire-snapshots-remove-historical-files-safety",
+    "title": "不要なテーブル履歴にだけストレージ整理を適用する",
+    "prompt": "AthenaがIcebergテーブルを更新し、過去のスナップショットを使う期間は7日と決めた。現行のテーブルから参照される行は残しつつ、古いスナップショットが参照していた不要なファイルを整理したい。何を実行するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Glue Data Catalogからテーブルを削除して同じ場所で再登録する。",
+        "explanation": "必要な履歴を保って安全に不要ファイルを除く手順ではない。"
+      },
+      {
+        "id": "B",
+        "text": "更新後にOPTIMIZEだけを毎回実行し、必ず過去のスナップショットも消えるとみなす。",
+        "explanation": "ファイルのコンパクションは設定した履歴の失効とは別の操作である。"
+      },
+      {
+        "id": "C",
+        "text": "テーブル配下の7日以上前に作成したすべてのS3オブジェクトをライフサイクルで削除する。",
+        "explanation": "現行スナップショットが使用中の古いファイルまで削除し得る。"
+      },
+      {
+        "id": "D",
+        "text": "保持期間と最低スナップショット数を決めたうえで、AthenaのVACUUMを実行する。",
+        "explanation": "必要な履歴と現行データを保ち、不要になった参照を管理できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/vacuum-statement.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "AthenaのVACUUMはIcebergの保持設定に従ってスナップショットを失効させ、対応する不要ファイルを整理する。",
+      "concept": "オブジェクトの古さだけでは現在のメタデータが参照しているかを判定できない。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-004",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-compound-sort-key-timestamp-zone-map",
+    "title": "時間で絞るクエリのブロック読み取りを減らす",
+    "prompt": "Redshiftの大規模ファクト表は毎日追記される。主なクエリはevent_timeの短い範囲に絞り、分散キーは既に結合に最適化されている。表の物理設計として時間条件のブロックスキップを促す変更はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "event_timeを先頭にしたソートキーを使う。",
+        "explanation": "時間範囲から関連するブロックを絞りやすくなる。"
+      },
+      {
+        "id": "B",
+        "text": "event_timeを分散キーに変更し、ソートキーは設けない。",
+        "explanation": "分散の仕方を変えても、時間で近いブロック配置を直接指定しない。"
+      },
+      {
+        "id": "C",
+        "text": "クエリ結果の表示順だけをevent_timeに整える。",
+        "explanation": "ORDER BYは保存時の物理ブロック配置を変更しない。"
+      },
+      {
+        "id": "D",
+        "text": "巨大なファクト表全体をDISTSTYLE ALLで全ノードへ複製する。",
+        "explanation": "データの複製は時間条件に関するブロックスキップを設定しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/c_best-practices-sort-key.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Redshiftはソートされた列で各ブロックの最小値と最大値を使い、条件に合わないブロックを飛ばせる。",
+      "concept": "ブロックを絞るソートキーと、クラスター内で行を配置する分散キーの役割を区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-005",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "dynamodb-sparse-gsi-open-records-include-only",
+    "title": "未処理のレコードだけを索引する",
+    "prompt": "DynamoDBの全注文は顧客IDが主キーの一部である。担当者は部門ごとに未処理注文を一覧したい。未処理は全件の1%未満で、完了レコードを索引に保存したくない。どのモデリングか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "GSIのProjectionTypeをKEYS_ONLYとするだけにする。",
+        "explanation": "投影属性の量は抑えるが、索引項目はキーの存在で決まる。"
+      },
+      {
+        "id": "B",
+        "text": "全注文に未処理または完了のステータス属性を設定し、全件にある属性だけをGSIキーにする。",
+        "explanation": "完了項目も索引付きのままになる。"
+      },
+      {
+        "id": "C",
+        "text": "テーブル全体のScanとFilterExpressionで未処理項目を表示する。",
+        "explanation": "表示は絞れるが、未処理だけに限定した索引を作らない。"
+      },
+      {
+        "id": "D",
+        "text": "未処理の項目だけに索引キー属性を設定し、完了時に属性を削除する疎なGSIを使う。",
+        "explanation": "必要な項目だけが部門別の検索用索引に残る。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-indexes-general-sparse-indexes.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "GSIのキー属性が存在する項目だけが索引の対象になる。",
+      "concept": "ステータスをクエリ後に除外する手法と、索引自体から完了項目を除く設計を区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-006",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "dynamodb-ttl-numeric-epoch-unix-seconds",
+    "title": "一時データの期限属性を設計する",
+    "prompt": "数日だけ残すセッショントークンの参照情報をDynamoDBへ保存する。失効時刻以後に非同期で削除できればよく、別ジョブを管理したくない。アプリは時刻をミリ秒で受け取る。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "時刻のミリ秒値をそのままTTLへ書き、単位を自動検出させる。",
+        "explanation": "DynamoDBはその値を秒として扱い、意図した時刻に達しない。"
+      },
+      {
+        "id": "B",
+        "text": "ミリ秒から秒に変換して数値の期限属性へ書き、テーブルのTTLでその属性を指定する。",
+        "explanation": "新しい定期ジョブを用意せずに、期限後の項目を削除できる。"
+      },
+      {
+        "id": "C",
+        "text": "ISO 8601形式の日時文字列をTTL属性に格納する。",
+        "explanation": "TTLの期限には数値のUnix秒が必要である。"
+      },
+      {
+        "id": "D",
+        "text": "PITRの保存期間を設定してセッション項目を失効させる。",
+        "explanation": "バックアップの復旧可能期間は個々の稼働データを失効させない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "DynamoDB TTLでは、指定した属性にUnixエポックからの秒数を数値で格納する。",
+      "concept": "TTLによる物理削除は非同期であり、期限までの読み取り可否が厳密ならアプリ側の制御も必要になる。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-007",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "s3-intelligent-tiering-uncertain-access-no-retrieval-fee",
+    "title": "変動する参照頻度のストレージ料金を抑える",
+    "prompt": "数MBのS3オブジェクトが長期間保存される。どれがアクセスされるかは月ごとに変わり、通常の読み取りは即時で、取り出し料金を発生させたくない。任意の非同期アーカイブ階層は有効化しない。どれを使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "全オブジェクトをS3 Glacier Flexible Retrievalに保管する。",
+        "explanation": "取得前の復元が必要で、即時読み取りの制約を満たさない。"
+      },
+      {
+        "id": "B",
+        "text": "S3 Intelligent-Tieringを使用し、任意のArchive AccessとDeep Archive Accessは無効にする。",
+        "explanation": "頻度に応じて階層を移り、標準の階層では即時読取と取り出し料金の回避が可能になる。"
+      },
+      {
+        "id": "C",
+        "text": "全オブジェクトをS3 Standard-IAへ移し、読み取りが増えても変更しない。",
+        "explanation": "即時取得は可能だが取り出し料金が発生する。"
+      },
+      {
+        "id": "D",
+        "text": "アクセス頻度に関係なくGlacier Deep Archiveへ移す。",
+        "explanation": "長期保管費用は抑えられるが、通常の読み取りの復元に時間がかかる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/intelligent-tiering-overview.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Intelligent-Tieringの標準のアクセス階層では、アクセスパターンに応じた移動と即時読取を扱える。",
+      "concept": "オブジェクトごとの監視・自動化料金と、読取時の取り出し料金は異なる。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-008",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "s3-versioned-bucket-expire-noncurrent-not-current",
+    "title": "履歴版だけを一定期間後に減らす",
+    "prompt": "バージョニングを有効にしたS3バケットで、現在版には長期参照がある。更新前の履歴版は90日経過後に削除して費用を抑えたい。現行キーを消す削除マーカーを作らずに実行するには何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "NoncurrentVersionExpirationの非現行日数を90にし、現在版を期限切れにする設定は入れない。",
+        "explanation": "指定日数を過ぎた履歴版を整理し、現行版を保持できる。"
+      },
+      {
+        "id": "B",
+        "text": "現在版のExpirationを90日に設定する。",
+        "explanation": "現行キーが削除マーカーで隠れる場合があり、過去版だけを整理しない。"
+      },
+      {
+        "id": "C",
+        "text": "非現行版のバージョン数を制御せず、現行版のストレージクラスだけを変える。",
+        "explanation": "履歴版の存続日数を指定していない。"
+      },
+      {
+        "id": "D",
+        "text": "バージョニングを一時停止し、既に存在する履歴版は自動削除されるとみなす。",
+        "explanation": "一時停止しても既存の履歴版は自動で削除されない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/intro-lifecycle-rules.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "NoncurrentVersionExpirationは、非現行版になってからの期間に基づき履歴を削除する。",
+      "concept": "現在版のExpirationとは対象が異なるため、ライフサイクルルールの両者を確認する。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-009",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-schema-registry-backward-compatible-optional-field",
+    "title": "新しいコンシューマーが旧レコードを読む変更",
+    "prompt": "Glue Schema Registryで管理するAvroストリームでは、変更後に起動するコンシューマーも以前の一つのスキーマで生成されたレコードを読む。新スキーマに追加するフィールドが旧レコードに無いときは既定値を使う。何を組み合わせるか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "追加するAvroフィールドに型と整合する既定値を設定する。",
+        "explanation": "古いレコードにその値が含まれなくても新しい読み手が補える。"
+      },
+      {
+        "id": "B",
+        "text": "互換性モードをFORWARDにする。",
+        "explanation": "以前の読み手が新しいデータを読めるかをチェックする方向である。"
+      },
+      {
+        "id": "C",
+        "text": "互換性をNONEにして検査を省く。",
+        "explanation": "対象方向の互換性を登録時に保証できない。"
+      },
+      {
+        "id": "D",
+        "text": "互換性モードにBACKWARDを指定する。",
+        "explanation": "一つ前のスキーマとの比較で、新しい読み手が以前のデータを読めるかを評価する。"
+      },
+      {
+        "id": "E",
+        "text": "追加フィールドを既定値なしの必須項目にする。",
+        "explanation": "旧レコードに存在しないフィールドを新しい読み手が解決できない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "後方互換性は新しいスキーマで以前のデータを読めるかを検査する方向である。",
+      "concept": "Avroで新しいリーダーが読む側のフィールドに既定値があれば、旧ライターにないフィールドを補える。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-010",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-crawler-schema-change-policy-log-ignore-update",
+    "title": "クローラーから承認済みスキーマを保護する",
+    "prompt": "固定した明示スキーマを使うGlueカタログ表がある。S3の配置調査には同じクローラーを使い続けたいが、クローラーが書き込み側の誤った列型を見つけても、既存のカタログ定義を自動で置換しないようにしたい。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "新規列だけをマージする設定を、既存スキーマに一切変更を許さない代わりに使う。",
+        "explanation": "既存の型を置換しにくくなるが、新規列を承認せず追加する動作が残る。"
+      },
+      {
+        "id": "B",
+        "text": "カタログのテーブル名だけを変えてクローラーの更新設定を維持する。",
+        "explanation": "新しい名前でも、自動で定義を変える動作を制御していない。"
+      },
+      {
+        "id": "C",
+        "text": "UpdateBehaviorをUPDATE_IN_DATABASEにする。",
+        "explanation": "既存カタログの更新を許すため、指定の型保護に合わない。"
+      },
+      {
+        "id": "D",
+        "text": "SchemaChangePolicyのUpdateBehaviorをLOGにする。",
+        "explanation": "既存表のスキーマに対する検出済み更新を、自動適用せずに記録できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/crawler-schema-changes-prevent.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "クローラーのスキーマ変更ポリシーで既存表の更新動作をログにできる。",
+      "concept": "収集した候補を確認することと、カタログに確定した項目へ自動反映することを分けられる。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-011",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "lake-formation-glue-catalog-resource-links-cross-account-query",
+    "title": "共有された表を自アカウントのSQLで参照する",
+    "prompt": "提供側のアカウントはLake Formationで表を共有済みで、受け手は必要な共有招待を承認した。受け手の分析者は自アカウントのAthenaからローカル名を使ってその表を参照したい。元データをコピーしないために何を作るか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Athenaのワークグループを追加するだけにする。",
+        "explanation": "クエリ実行の管理はできるが、共有カタログ表への別名参照を作らない。"
+      },
+      {
+        "id": "B",
+        "text": "受け手のS3へ全ファイルを同期し、コピーだけをカタログに登録する。",
+        "explanation": "クエリは実行できても元データのコピーを避ける要件に反する。"
+      },
+      {
+        "id": "C",
+        "text": "受け手の存在しない表へ直接SELECT権限だけを付ける。",
+        "explanation": "受け手のAthenaが使うカタログ内の参照が作成されない。"
+      },
+      {
+        "id": "D",
+        "text": "受け手のData Catalogで共有表へのリソースリンクを作り、リンクの参照権限と共有表の実データ権限を揃える。",
+        "explanation": "同じデータを複製せず、ローカル名前空間から表を利用できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/resource-links-about.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Lake Formationのリソースリンクは共有対象を参照するカタログ内のオブジェクトとして使える。",
+      "concept": "リンクを参照する許可と、リンク先の表からデータを読む許可は別々に評価される。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-012",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-time-series-data-design-small-append-hot-cold",
+    "title": "月次データを世代単位で入れ替える",
+    "prompt": "Amazon Redshiftへ毎月まとまったイベントをロードする。全月を必要時は一つのSQLで集計するが、保持期限の最も古い月は、巨大な表からDELETEで消す代わりに表単位で速く外したい。クエリは月を含めて最適化できる。どの設計か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "一つの表に全データを入れ、最も古い月を毎回DELETEで削除する。",
+        "explanation": "運用で避けたい行単位の大量削除になる。"
+      },
+      {
+        "id": "B",
+        "text": "ディメンション表だけを月ごとに分け、ファクトは従来どおり一つの表にする。",
+        "explanation": "消したい大量のファクト行が引き続き一つの表にある。"
+      },
+      {
+        "id": "C",
+        "text": "月ごとの表を作成し、必要な期間をUNION ALLするビューを管理する。",
+        "explanation": "期限切れの月を表単位で外して削除できる。"
+      },
+      {
+        "id": "D",
+        "text": "月ごとのビューだけを一つの巨大表の上に作る。",
+        "explanation": "ビューを外しても基になる表の行は物理的に削除されない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/c_best-practices-time-series-tables.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "時系列を期間ごとの表に分けると、古い期間を表のDROPで扱い、ビューから横断できる。",
+      "concept": "毎回大規模な削除と領域回収を行う設計と、期間を単位に管理する設計の違いを評価する。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-013",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-spectrum-external-table-not-copy-raw-lake-data",
+    "title": "ウェアハウスの表とS3データを一つのSQLで結合する",
+    "prompt": "Redshiftの永続表に少量の顧客情報がある。同じクエリでS3の大規模なParquet履歴と結合したいが、履歴をクラスタの内部表へ複製しない。データはGlue Data Catalogに定義済みである。どの構成か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Parquetを日次で内部表へCOPYし、内部表同士を結合する。",
+        "explanation": "クラスターへの複製を避ける要件を満たさない。"
+      },
+      {
+        "id": "B",
+        "text": "データベースのスナップショットを作成し、S3の履歴とスナップショットに対してJOINを実行する。",
+        "explanation": "DBスナップショットをその形でクエリの参照表として利用できない。"
+      },
+      {
+        "id": "C",
+        "text": "内部表のDISTSTYLEをALLにするだけでS3上の未参照データもSQLに加える。",
+        "explanation": "分散キーは外部ストレージのスキーマを公開しない。"
+      },
+      {
+        "id": "D",
+        "text": "Spectrumの外部スキーマをGlue Data Catalogへ接続し、外部表と内表を結合する。",
+        "explanation": "S3上のファイルを保持しながらクラスターの顧客表を使える。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/c-using-spectrum.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Redshift Spectrumでは外部スキーマを通してS3上の外部表を参照し、内部表と同じクエリで結合できる。",
+      "concept": "内部へ取り込む方法と、保管中のデータを読みに行く方法は負担するストレージが異なる。"
+    }
+  },
+  {
+    "id": "dea-c01-d2-014",
+    "revision": 1,
+    "category": "データストア管理",
+    "examDomain": "データストア管理",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-custom-classifier-ordered-csv-header-schema",
+    "title": "CSVの列名推定を制御する",
+    "prompt": "CSVファイルの一行目は常に列名だが、Glueクローラーの既定の推定では一部ファイルの一行目もデータと判定される。ファイルの作成元には変更を加えない。クローラーでこの規約を反映するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "日付のパーティション投影を有効にする。",
+        "explanation": "パーティション値の発見を変えるが、ファイルのヘッダーを指定しない。"
+      },
+      {
+        "id": "B",
+        "text": "一行目がヘッダーであるカスタムCSV分類子を作成し、クローラーで優先適用する。",
+        "explanation": "入力を変更せず、指定ルールで列情報を作れる。"
+      },
+      {
+        "id": "C",
+        "text": "Sparkの書き込みモードをoverwriteにするだけにする。",
+        "explanation": "出力制御であり、クローラーの入力判定は変わらない。"
+      },
+      {
+        "id": "D",
+        "text": "カタログテーブルのストレージロケーションだけを同じS3パスに更新する。",
+        "explanation": "保存場所の変更はヘッダーの判定規則を修正しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "GlueのカスタムCSV分類子で、区切りやヘッダーの扱いを指定できる。",
+      "concept": "分類子はカタログ化する際の解釈に影響するが、S3の入力を変更しない。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-001",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-data-quality-referential-integrity-dqdl-datasets",
+    "title": "外部キーが別データに存在することを確認する",
+    "prompt": "AWS Glueで注文と顧客のデータセットを同じバッチで検証する。注文のcustomer_idがNULLでないことに加え、顧客表の一意なキー集合に存在する割合を測りたい。テーブル名を変えて単純な行数検査を繰り返す方式は避けたい。どのDQDLルールを使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IsUniqueを注文のcustomer_idに適用する。",
+        "explanation": "同じ顧客の複数注文があり得るため、参照整合性の代替にならない。"
+      },
+      {
+        "id": "B",
+        "text": "IsCompleteだけを全注文のcustomer_idに適用する。",
+        "explanation": "欠損は検出できるが、実在する顧客かは評価しない。"
+      },
+      {
+        "id": "C",
+        "text": "顧客表のキーを参照データセットに指定したReferentialIntegrityを使う。",
+        "explanation": "注文のキーが参照集合に含まれるかを直接評価できる。"
+      },
+      {
+        "id": "D",
+        "text": "RowCountMatchで注文表と顧客表の件数が等しいかだけを確認する。",
+        "explanation": "件数が同じでも未知の顧客キーが含まれ得る。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/dqdl-rule-types-ReferentialIntegrity.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "ReferentialIntegrityは指定列の値が参照データセットの対応列に存在するかを検査する。",
+      "concept": "NULLの検査、重複率の検査、他データセットとの整合性検査は異なる条件を表す。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-002",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-job-observability-job-type-error-executor-oom",
+    "title": "Glueの失敗をエラーの分類で監視する",
+    "prompt": "Glueのバッチを複数運用している。ジョブ実行が失敗した件数だけでは、Sparkのドライバー・実行者のメモリ不足に対して専用アラームを作れない。対応するGlueジョブでCloudWatchへ出すどの情報を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ジョブの成功率だけを同じ閾値で監視する。",
+        "explanation": "実行者のメモリ不足か他のエラーかを区別できない。"
+      },
+      {
+        "id": "B",
+        "text": "Glue Data Catalogへの登録件数をメモリ使用量の代わりにする。",
+        "explanation": "カタログ更新件数とSparkのリソース不足に直接の対応はない。"
+      },
+      {
+        "id": "C",
+        "text": "GlueジョブのObservabilityを有効にし、メモリ不足に対応するエラー指標を監視する。",
+        "explanation": "失敗の中から対象の分類を選んで監視できる。"
+      },
+      {
+        "id": "D",
+        "text": "S3の総オブジェクト数だけをアラームにする。",
+        "explanation": "入出力の件数の変化は実行者のメモリ不足の分類を計測しない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Glue Job Observabilityの信頼性指標は、ジョブ実行のエラーを定義済みの分類で記録できる。",
+      "concept": "失敗の総数と、障害の種類を示す指標は通知の用途が異なる。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-003",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "athena-workgroup-per-query-data-usage-limit-cancel",
+    "title": "高いスキャン量のクエリを実行中に止める",
+    "prompt": "Athenaの従量課金ワークグループでは、一つの探索クエリが許容バイト数を超えてスキャンを続ける事例がある。総利用量の通知だけでは足りず、しきい値を超えた個別クエリを止めたい。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "クエリ結果を暗号化し、暗号化キーで最大スキャン量を設定する。",
+        "explanation": "暗号化の設定はクエリのデータ使用量を制限しない。"
+      },
+      {
+        "id": "B",
+        "text": "ワークグループにクエリ単位のデータ使用上限を設定する。",
+        "explanation": "そのワークグループで、しきい値を超えたクエリをキャンセルできる。"
+      },
+      {
+        "id": "C",
+        "text": "クエリ結果バケットのライフサイクルで早く削除する。",
+        "explanation": "保存結果の保持期間を変えるだけで入力のスキャンは止まらない。"
+      },
+      {
+        "id": "D",
+        "text": "ワークグループ全体の日次スキャン量アラームだけを設定する。",
+        "explanation": "利用量を通知できるが、指定された個別クエリは停止しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/workgroups-setting-control-limits-cloudwatch.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Athenaではワークグループごとの各クエリにスキャン量の制限を適用できる。",
+      "concept": "グループ全体の利用通知と、各クエリを中止する制限を区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-004",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-sys-load-error-detail-bad-encoding-column",
+    "title": "COPYエラーの列と行を特定する",
+    "prompt": "Amazon RedshiftでS3からCOPYしたところ、一部のファイルで入力値の型が合わず失敗した。Redshift Serverless上の当該ロードのクエリIDは既知である。対象の列名、行番号、エラー理由を調べるにはどこを参照するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "SYS_LOAD_ERROR_DETAILを当該クエリIDで絞って確認する。",
+        "explanation": "失敗した入力に対応する列や読み込みエラーを調べられる。"
+      },
+      {
+        "id": "B",
+        "text": "SYS_LOAD_HISTORYの行数集計だけを見る。",
+        "explanation": "ロードの状態は見えるが、要求する失敗列と行を直接確認するビューではない。"
+      },
+      {
+        "id": "C",
+        "text": "LISTAGGで正常にロード済みの値をすべて並べる。",
+        "explanation": "失敗して格納されなかった入力を追跡できない。"
+      },
+      {
+        "id": "D",
+        "text": "COPYのIAMロールの最終使用日時を確認する。",
+        "explanation": "エラーを起こした入力行や値の型を示さない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/SYS_LOAD_ERROR_DETAIL.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SYS_LOAD_ERROR_DETAILにはCOPYの失敗レコードに関する列や行などの情報がある。",
+      "concept": "サーバーレスを含むシステム監視ビューで対象クエリに絞り、同時間帯の別ジョブと区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-005",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "kinesis-shard-iterator-age-monitor-read-lag",
+    "title": "ストリームの読み取り遅れを測る",
+    "prompt": "Kinesis Data StreamsからコンシューマーがGetRecordsで集約する。レコードの保持期限には余裕があるが、担当者は配信から処理までの遅れが継続的に伸びるシャードを見つけたい。書き込みの帯域使用率だけでは判別できない。どの監視か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IncomingBytesだけの平均値を確認する。",
+        "explanation": "投入量を測るが、古いレコードを読み続けているかは分からない。"
+      },
+      {
+        "id": "B",
+        "text": "WriteProvisionedThroughputExceededだけで読み取り遅れを判定する。",
+        "explanation": "書き込み側のスロットルを表し、コンシューマーの遅れと同じではない。"
+      },
+      {
+        "id": "C",
+        "text": "保持ウィンドウを伸ばした時間を遅れの指標にする。",
+        "explanation": "何時間保持するかは処理側がどこまで読み終えたかを示さない。"
+      },
+      {
+        "id": "D",
+        "text": "シャードレベルの拡張モニタリングでIteratorAgeMillisecondsを確認する。",
+        "explanation": "シャードごとの読み取りの遅れを検出できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "GetRecordsのIteratorAgeMillisecondsは、返されたレコードがストリームへ書き込まれてからの経過時間を測る。",
+      "concept": "遅れの最大値と処理件数を合わせると、待ちが蓄積しているシャードを調べやすい。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-006",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "athena-query-result-reuse-maximum-staleness-dashboard",
+    "title": "許容時間内の繰り返しクエリを再利用する",
+    "prompt": "Athenaの同じワークグループでダッシュボードが同じSELECTを頻繁に実行する。対象データは約30分間同じ結果でよく、既存結果が利用できる条件を満たす。実行ごとの全表再スキャンを減らすには何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "ワークグループに長いクエリタイムアウトを設定する。",
+        "explanation": "処理可能時間は変わるが再利用は有効にならない。"
+      },
+      {
+        "id": "B",
+        "text": "結果再利用を有効にし、最大経過時間を業務が許容する範囲に設定する。",
+        "explanation": "適格な既存結果がある間は入力を再スキャンせず結果を使える。"
+      },
+      {
+        "id": "C",
+        "text": "元データをGlacierへ移して同じ頻度で再走査する。",
+        "explanation": "結果キャッシュを使う要件と通常アクセス時間を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "クエリ結果の出力先を同じパスにするだけにする。",
+        "explanation": "保存先が同じでも明示的な結果再利用にはならない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/reusing-query-results.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Athenaの結果再利用は、適格な既存クエリ結果を、指定した最大経過時間内で再利用できる。",
+      "concept": "S3にいつまで結果ファイルを保存するかと、新しいリクエストに再利用してよい時間は一致しない。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-007",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-auto-wlm-query-priority-critical-and-background",
+    "title": "同時実行中に優先度の高い処理を進める",
+    "prompt": "プロビジョンドRedshiftの自動WLMで、対話用の短いBIクエリと長いバックグラウンド集計を運用する。集計は中止せず、両者が競合する間は対話用の処理に優先して資源を割り当てたい。どの設定か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "集計側に実行時間しきい値を設定して超過時に中止する。",
+        "explanation": "集計を続行する要件に反する。"
+      },
+      {
+        "id": "B",
+        "text": "集計用クエリに固定の結果保持期間だけを設定する。",
+        "explanation": "対話クエリとの実行時の資源競合を制御しない。"
+      },
+      {
+        "id": "C",
+        "text": "対話用キューのクエリ優先度を集計用より高く設定する。",
+        "explanation": "負荷が競合する間の資源割り当てを業務の重要度に合わせられる。"
+      },
+      {
+        "id": "D",
+        "text": "対話側のセッションの接続タイムアウトを短くする。",
+        "explanation": "自動WLMが競合時に処理へ割り当てる優先度は変わらない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/query-priority.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "自動WLMではキューのクエリ優先度を設定し、競合時の割り当てを調整できる。",
+      "concept": "優先度による調整は、条件一致時にクエリを中止するモニタリングルールとは異なる。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-008",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "step-functions-redrive-failed-standard-execution-step",
+    "title": "成功ステップの副作用を繰り返さない",
+    "prompt": "Step FunctionsのStandard実行は前段の正常処理を終え、後段で一時的な障害により失敗した。再駆動の条件を満たし、問題は解消されている。成功した前段を実行し直さず失敗した箇所から再開するにはどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "失敗実行のステートマシン定義を変更すれば、手動操作なしで実行が再開されるとみなす。",
+        "explanation": "定義の変更だけで過去の実行は再開されない。"
+      },
+      {
+        "id": "B",
+        "text": "CloudWatchから失敗ログを削除して同じ実行名を利用する。",
+        "explanation": "ログ保持と実行状態は独立している。"
+      },
+      {
+        "id": "C",
+        "text": "失敗した実行を指定してredriveする。",
+        "explanation": "失敗時点の情報を維持しながら該当ステップから再実行できる。"
+      },
+      {
+        "id": "D",
+        "text": "同じ入力で新しい実行を開始する。",
+        "explanation": "前段が再実行される恐れがある。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/redrive-executions.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "対象となる失敗済みStandard実行はredriveで成功済みのステップを保ち、失敗地点を再実行できる。",
+      "concept": "新規に実行を開始する場合は前段が再実行されるため、既存の成功結果を使うか判断する。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-009",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "eventbridge-scheduler-dead-letter-queue-retries-failed-trigger",
+    "title": "処理を起動できなかった予定を記録する",
+    "prompt": "EventBridge Schedulerで夜間のバッチAPIを呼び出す。許された再試行か存続時間の範囲内で配信できなかった要求をSQSへ記録する。バッチ実行開始後の業務エラーは別で扱う。必要な設定はどれか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バッチタスクの成功結果だけをSQSへ送る。",
+        "explanation": "スケジュールから起動できなかった場合に記録がない。"
+      },
+      {
+        "id": "B",
+        "text": "対象APIのタイムアウトを延長するだけにする。",
+        "explanation": "Schedulerが呼び出せなかったイベントをSQSに送る設定は追加されない。"
+      },
+      {
+        "id": "C",
+        "text": "スケジュールの実行ロールに、そのキューへメッセージを送信する権限を付ける。",
+        "explanation": "Schedulerが指定したDLQに通知を記録できる。"
+      },
+      {
+        "id": "D",
+        "text": "スケジュールのDLQとして対応する標準SQSキューを指定する。",
+        "explanation": "配信を断念したイベントの保管先になる。"
+      },
+      {
+        "id": "E",
+        "text": "再試行間隔だけを変更して監査用の記録を作らない。",
+        "explanation": "再試行の動作が変わっても、最終的に配信できなかった要求が保存されない。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/scheduler/latest/UserGuide/configuring-schedule-dlq.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "SchedulerのDLQには、配信試行が条件内で成功しなかったイベント情報を送れる。",
+      "concept": "呼び出し元で配信できなかった事象と、処理を受け付けたアプリ内部の失敗を区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-010",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-etl-continuous-logging-log-groups-driver-executor",
+    "title": "Glueジョブの実行中に診断ログを読む",
+    "prompt": "AWS Glue 5.0で多数の実行者を使うSparkジョブが、一定の入力で長時間止まる。キャンセル前に、同じ実行IDのSpark実行者のログと組み込みのアプリ診断ログをまとめて調べたい。どのログ先を利用するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "CloudTrailのStartJobRun管理イベントだけを調べる。",
+        "explanation": "開始APIの監査記録に実行者が発した診断ログは含まれない。"
+      },
+      {
+        "id": "B",
+        "text": "入力のS3アクセスログの配信間隔が変わるまで待つ。",
+        "explanation": "S3への要求は見ても、Spark実行者の内部ログを配信しない。"
+      },
+      {
+        "id": "C",
+        "text": "Glue Data Catalogの表履歴だけを確認する。",
+        "explanation": "カタログの更新履歴からは稼働中のSparkがどこで止まったか判断できない。"
+      },
+      {
+        "id": "D",
+        "text": "Glueの実行ログが出るCloudWatch Logsグループで実行IDに対応するストリームを開く。",
+        "explanation": "ジョブ完了を待たずにSparkの診断を読める。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-continuous-logging.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Glue 5.0はGlueロガーやシステム・Sparkデーモンの実行ログをCloudWatchへリアルタイムで送れる。",
+      "concept": "実行IDに対応するドライバーと実行者のログストリームを分け、それぞれの処理を追える。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-011",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-materialized-view-refresh-scheduled-for-fresh-results",
+    "title": "集計結果を決めた間隔で更新する",
+    "prompt": "Amazon Redshiftで毎回同じ大規模結合と集計を行うダッシュボードがある。参照先を事前集計へ変え、ETL終了後に担当チームが完了を判定した時点で更新する。ソース変更のたびに常に直ちに追従する必要はない。どの構成か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "リフレッシュを明示せずクエリ結果キャッシュだけで更新を統制する。",
+        "explanation": "ETL後の特定時点のマテリアライズを管理できない。"
+      },
+      {
+        "id": "B",
+        "text": "通常のビューを作るだけで、参照前から常に集計結果が格納されるとみなす。",
+        "explanation": "通常のビューはSQLの参照定義であり、同じ事前計算を提供しない。"
+      },
+      {
+        "id": "C",
+        "text": "集計用マテリアライズドビューを作り、ETL完了後にREFRESH MATERIALIZED VIEWを実行する。",
+        "explanation": "参照時に事前計算結果を使い、更新のタイミングを制御できる。"
+      },
+      {
+        "id": "D",
+        "text": "元データのCOPYを増やし同じ集計をダッシュボードから実行する。",
+        "explanation": "ロードが増えるが、参照のたびに同じ集計を処理する。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/materialized-view-overview.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "マテリアライズドビューは結果を保持し、基になる表の変更後にリフレッシュできる。",
+      "concept": "通常のSQLビューは定義を保持するが、同じ形で結果自体を事前計算しない。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-012",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "aws-glue-data-quality-freshness-timestamp-sla-published-feed",
+    "title": "件数の正常な遅延データを識別する",
+    "prompt": "注文の定期データは、前日のパーティションを誤って再配信すると件数検査に合格することがある。Glue Data Qualityで、データの処理時刻列が今から12時間以内であることを検証したい。どのDQDLルールを使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "処理時刻列に対して12時間以内を評価するDataFreshnessを設定する。",
+        "explanation": "件数やファイルの存在とは別にデータの鮮度を検査できる。"
+      },
+      {
+        "id": "B",
+        "text": "RowCountが通常範囲にあるかだけを評価する。",
+        "explanation": "同じ件数の古いデータを判別できない。"
+      },
+      {
+        "id": "C",
+        "text": "ColumnDataTypeで日時型であることだけを検査する。",
+        "explanation": "日時型であっても、到着したデータが要求より古い可能性がある。"
+      },
+      {
+        "id": "D",
+        "text": "IsCompleteで処理時刻がNULLでないかだけを調べる。",
+        "explanation": "古くても値が入っていれば合格する。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/dqdl-rule-types-DataFreshness.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "DataFreshnessは日時列と評価時点との間隔に関する条件を評価できる。",
+      "concept": "件数が平常でも情報が古い場合を独立した指標で検出する。"
+    }
+  },
+  {
+    "id": "dea-c01-d3-013",
+    "revision": 1,
+    "category": "データ運用とサポート",
+    "examDomain": "データ運用とサポート",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "emr-managed-scaling-core-task-limits-spot-capacity",
+    "title": "データ保持ノードと一時処理ノードに異なる上限を設ける",
+    "prompt": "EMR on EC2で一時的なSparkの処理量が増える。HDFSを持つコアノードの最大数は固定したいが、タスクノードの追加まで同じ上限で止めたくない。EMRのマネージドスケーリングで何を調整するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "全体の最大容量をコア上限と同じに変更する。",
+        "explanation": "タスクを追加する余裕も同じ上限で失われる。"
+      },
+      {
+        "id": "B",
+        "text": "対象クラスターに全体の上限とより小さいコア容量の上限を設定する。",
+        "explanation": "追加容量をタスク側へ回せる一方で、コアの増加を制御できる。"
+      },
+      {
+        "id": "C",
+        "text": "HDFSブロックのレプリケーション係数だけを下げる。",
+        "explanation": "格納の冗長度を変えるが、ノードのスケール範囲を設定しない。"
+      },
+      {
+        "id": "D",
+        "text": "Spotの入札価格の値だけを調整する。",
+        "explanation": "コアとタスクの容量上限を分離する設定ではない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-managed-scaling.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "EMR Managed Scalingでは、全体容量の上限とコア容量の上限を別に指定できる。",
+      "concept": "ストレージも持つコア台数を計画し、一時的な計算容量はタスクノードへ振り分けられる。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-001",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "lake-formation-lf-tags-governance-auto-classification-matching",
+    "title": "分類が一致する既存・新規テーブルに権限を付ける",
+    "prompt": "データレイクに部署ごとの表が増え続ける。管理者はGlue Data Catalogの分類タグで承認済みの財務表を識別し、分析ロールへ各テーブル名で個別の付与をしたくない。何を組み合わせるか。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Lake Formationで分析ロールに、一致するLFタグ式によるSELECTを付与する。",
+        "explanation": "個別にテーブル名を列挙せず、式に合う表へ権限が適用される。"
+      },
+      {
+        "id": "B",
+        "text": "必要な全表の名前に対するSELECTを現時点の表だけへ与える。",
+        "explanation": "将来の表へ式に基づく自動適用が行われない。"
+      },
+      {
+        "id": "C",
+        "text": "アカウントの全テーブルにIAMAllowedPrincipalsを追加する。",
+        "explanation": "承認済みの表へ選んで付与する条件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "承認済みの表へ、管理された分類に対応するLFタグのキーと値を割り当てる。",
+        "explanation": "許可対象の資源をタグ式で識別できる。"
+      },
+      {
+        "id": "E",
+        "text": "S3のバケットタグだけを付けてGlueテーブルもLFタグに一致することを期待する。",
+        "explanation": "S3タグをLFタグの代わりには使えない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/tag-based-access-control.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "LFタグベースのアクセス制御はカタログ資源のLFタグと、プリンシパルに付けた式を照合する。",
+      "concept": "個別テーブルの権限付与や汎用のAWSリソースタグとは管理する単位が異なる。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-002",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "lake-formation-data-location-access-create-table-registered-s3",
+    "title": "登録場所で表を作る権限を切り分ける",
+    "prompt": "データ管理ロールはLake FormationのデータベースにCREATE_TABLEを持つ。登録済みの別S3ロケーションを指す表の作成だけが拒否される。新しいテーブルはその場所を参照する必要があり、元データの読取は別権限で管理する。何を追加するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Data CatalogのデータベースをDESCRIBEできる権限だけを加える。",
+        "explanation": "メタデータの参照と場所を指定する権限は異なる。"
+      },
+      {
+        "id": "B",
+        "text": "対象の登録S3ロケーションに対し、管理ロールへDATA_LOCATION_ACCESSを付与する。",
+        "explanation": "必要な場所を指す表を作るための権限を補える。"
+      },
+      {
+        "id": "C",
+        "text": "CREATE_TABLEを対象外の別データベースにも付与する。",
+        "explanation": "名前空間側の権限を増やしても対象ロケーションの認可がないままである。"
+      },
+      {
+        "id": "D",
+        "text": "任意の既存テーブルにSELECTを追加する。",
+        "explanation": "既存データの照会はできても、指定の場所を使う表の作成を許可しない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/access-control-underlying-data.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Lake FormationのDATA_LOCATION_ACCESSは登録済みS3ロケーションを指すカタログ資源を作る条件になる。",
+      "concept": "ロケーションを指定する許可と、SELECTやS3オブジェクト読取を別に考える。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-003",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "cloudtrail-s3-data-events-object-read-selected-prefix",
+    "title": "S3オブジェクトを取得した主体を監査する",
+    "prompt": "監査ルールではS3の顧客データ用プレフィックスに対するGetObjectを保存する必要がある。CloudTrailの管理イベント収集は稼働中で、他プレフィックスのオブジェクトイベントは監査コストを抑えるため対象外としたい。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "高度なイベントセレクターでS3オブジェクトのデータイベントを選び、対象プレフィックスとGetObjectに一致させる。",
+        "explanation": "必要なオブジェクト読み取りだけを証跡へ収集できる。"
+      },
+      {
+        "id": "B",
+        "text": "管理イベントの読み取りを含めるだけにする。",
+        "explanation": "データイベントであるGetObjectは追加されない。"
+      },
+      {
+        "id": "C",
+        "text": "VPC Flow LogsにHTTPSのフローを残し、GetObjectの対象キーとIAM主体も同時に記録されるとみなす。",
+        "explanation": "ネットワークフローにはS3 APIのオブジェクト単位の文脈がない。"
+      },
+      {
+        "id": "D",
+        "text": "対象バケットのPutObjectだけをデータイベントに指定する。",
+        "explanation": "書き込みだけを記録し、取り出した主体の履歴を取らない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "S3のGetObjectはCloudTrailデータイベントに含まれ、高度なイベントセレクターで対象を絞れる。",
+      "concept": "APIの読み取りか書き込みか、S3のオブジェクトリソースか、どのプレフィックスかを条件として指定する。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-004",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "macie-custom-data-identifier-internal-id-with-keyword",
+    "title": "独自の顧客番号を機微な情報として検出する",
+    "prompt": "社内顧客番号は一般的な個人識別番号と異なる規則を持つ。MacieでS3の対応ファイルを検査し、誤検出を抑えるため番号に近接する業務キーワードも使いたい。どの構成か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "正規表現と必要なキーワードを定義したカスタムデータ識別子を作成し、機密データ検出で使用する。",
+        "explanation": "組織独自の表現に合わせて対象を検知しやすくなる。"
+      },
+      {
+        "id": "B",
+        "text": "GuardDutyのS3マルウェア保護に顧客番号の正規表現を登録する。",
+        "explanation": "マルウェア検査は独自の機密データ分類とは別である。"
+      },
+      {
+        "id": "C",
+        "text": "既定の識別子だけを使い、名前が似た識別子に顧客番号も含まれるとみなす。",
+        "explanation": "固有のパターンとキーワードを指定できない。"
+      },
+      {
+        "id": "D",
+        "text": "S3のメタデータに顧客番号があるとタグを付け、ファイルの内容は調べない。",
+        "explanation": "ファイル中の形式と文脈を照合する要件を満たさない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/macie/latest/user/custom-data-identifiers.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Macieのカスタムデータ識別子は独自の正規表現やキーワードなどで検出規則を表せる。",
+      "concept": "既定の識別子だけでは組織固有のフォーマットを詳細に指定できない。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-005",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "glue-security-configuration-encrypt-s3-logs-job-bookmarks",
+    "title": "ETLの出力・ログ・状態を個別に暗号化する",
+    "prompt": "AWS GlueのSparkジョブはS3に結果を保存し、CloudWatch Logsへ記録し、ジョブブックマークも利用する。組織指定のKMSキーを使う対象を三つに明示し、ジョブへまとまった設定として適用したい。実行ロールのKMS許可は用意できる。何を設定するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "S3のデフォルト暗号化だけを設定する。",
+        "explanation": "その設定は出力バケットのオブジェクトへ適用され、Logsやブックマークの設定を含まない。"
+      },
+      {
+        "id": "B",
+        "text": "ジョブのIAMロールに暗号化操作を許可するだけにする。",
+        "explanation": "キーの使用は許可できても、各対象でどの暗号化設定を使うかを指定しない。"
+      },
+      {
+        "id": "C",
+        "text": "Glue Data Catalogのメタデータ暗号化だけを有効にする。",
+        "explanation": "ジョブが使うログや状態とは管理対象が異なる。"
+      },
+      {
+        "id": "D",
+        "text": "各対象の暗号化とKMSキーを指定したGlueセキュリティ設定を作成し、ジョブへ関連付ける。",
+        "explanation": "実行で使う三つの保護設定を明示できる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/encryption-security-configuration.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Glueのセキュリティ設定でS3ターゲット、CloudWatch Logs、ジョブブックマークの暗号化を指定できる。",
+      "concept": "バケットのデフォルト暗号化だけでは、ジョブのログとブックマークの設定まで定義しない。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-006",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "s3-bucket-policy-source-vpce-endpoint-only-access",
+    "title": "バケットでアクセス元のプライベート経路を強制する",
+    "prompt": "環境内の同じIAMロールを使うジョブでも、規定のVPCエンドポイントを利用しないS3アクセスはデータバケットで拒否したい。担当者はVPC外のコンソール操作もこのポリシーでは拒否され得ることを承知している。どの制御か。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "バケットポリシーにaws:SourceVpceが所定の値と異なる要求をDenyする条件を入れる。",
+        "explanation": "バケット自身で指定エンドポイント以外からの要求を拒否できる。"
+      },
+      {
+        "id": "B",
+        "text": "指定端点のエンドポイントポリシーにAllowを追加するだけにする。",
+        "explanation": "他経路でバケットへ届く要求は、そのエンドポイントで評価されない。"
+      },
+      {
+        "id": "C",
+        "text": "S3の暗号化設定をSSE-S3からSSE-KMSへ切り替えるだけにする。",
+        "explanation": "保存時の保護は変わるが、指定VPCエンドポイントを要求しない。"
+      },
+      {
+        "id": "D",
+        "text": "S3のBlock Public Accessだけで許可済みIAMロールのすべての他経路も拒否する。",
+        "explanation": "公開権限を制御する機能であり、許可済みの主体の接続経路に制約を追加しない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "バケットポリシーのaws:SourceVpce条件で、特定のエンドポイントを通らない要求を拒否できる。",
+      "concept": "エンドポイント側で許される資源と、バケット側で許される入力経路を分けて考える。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-007",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "s3-object-lock-compliance-retention-disable-bypass",
+    "title": "証跡の既存版を保存期限まで削除させない",
+    "prompt": "バージョニングとObject Lockを使える監査バケットに、証跡の各バージョンを一定期間保存する。通常の運用担当だけでなく、管理者でも期限より前に保持期間を短縮したり保護された版を削除したりできないことが要件である。どちらを選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "非現行版のライフサイクルを設定するだけで削除操作を制限する。",
+        "explanation": "期限切れを自動化する機能であり、利用者の早期削除を拒否しない。"
+      },
+      {
+        "id": "B",
+        "text": "バージョニングだけを維持し、バージョンの明示削除は許す。",
+        "explanation": "版を明示して削除すると証跡が失われ得る。"
+      },
+      {
+        "id": "C",
+        "text": "Governanceモードだけで権限のある管理者によるバイパスも必ず禁止されると扱う。",
+        "explanation": "必要なバイパス権限を持つ主体は条件を満たしてバイパスできる。"
+      },
+      {
+        "id": "D",
+        "text": "必要なオブジェクトバージョンにComplianceモードの保持期限を設定する。",
+        "explanation": "保護された版について管理者も保持期限を短縮できない。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "S3 Object LockのComplianceモードでは保持期限までの短縮や保護された版の削除が制限される。",
+      "concept": "Governanceモードは許可のある主体による保持のバイパスを認めるため、保持条件が異なる。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-008",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-temporary-db-credentials-iam-auth-provisioned",
+    "title": "固定のDBパスワードを分析ツールから除く",
+    "prompt": "プロビジョンドRedshiftクラスターへの分析ツールの接続を、利用者が認証済みのIAMロールに結び付ける。接続ごとに一時的なデータベース認証情報を使い、固定のDBパスワードをローカルへ置かない。何を構成するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "IAM認証用の対応ドライバーやGetClusterCredentialsを使い、ロールに対象DBユーザーの一時資格情報取得を許可する。",
+        "explanation": "データベース用の識別子を保ちながら、接続用パスワードを短期間だけ発行できる。"
+      },
+      {
+        "id": "B",
+        "text": "S3にセッション情報を書き込むことでRedshift利用者のDBパスワードとして扱う。",
+        "explanation": "S3書き込みとDBの認証は連動しない。"
+      },
+      {
+        "id": "C",
+        "text": "ワークロードへRedshiftクラスター用のサービスロールを見せてSQL接続用パスワードを省く。",
+        "explanation": "S3等へのアクセスに使うクラスター側ロールは、利用者のDB接続をそのまま認証しない。"
+      },
+      {
+        "id": "D",
+        "text": "IAMアクセスキーのシークレットをそのままRedshiftの固定DBパスワードとして設定する。",
+        "explanation": "IAM認証で一時DB認証情報を取得する仕組みを使っていない。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/mgmt/generating-user-credentials.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "RedshiftではIAMに基づいて期限付きのデータベース認証情報を取得できる。",
+      "concept": "AWSのAPI操作を認証するIAM資格情報と、SQL接続に使う一時DB資格情報は異なる。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-009",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-require-ssl-parameter-enforce-client-encryption",
+    "title": "分析接続にTLSを必須にする",
+    "prompt": "プロビジョンドRedshiftのデータを、許可済みの分析ツールからTLSで読む。クラスターで平文接続を拒否し、分析ツールはサーバー証明書の信頼と接続先ホスト名の両方を検査する必要がある。どの設定か。2つ選択。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "対応するクライアントでSSLモードverify-fullを選び、信頼に必要な証明書を構成する。",
+        "explanation": "証明書の信頼とホスト名の照合を有効にできる。"
+      },
+      {
+        "id": "B",
+        "text": "セキュリティグループでSQLポートを開き、プロトコルTCPだけを許す。",
+        "explanation": "指定ポート上でTLSを使うかまではセキュリティグループで判定しない。"
+      },
+      {
+        "id": "C",
+        "text": "クライアントのSSLモードをrequireだけにし、ホスト名の照合も成立するとみなす。",
+        "explanation": "接続の暗号化を要求しても指定のホスト名の検査は保証しない。"
+      },
+      {
+        "id": "D",
+        "text": "適用するクラスターパラメーターグループのrequire_sslをtrueにする。",
+        "explanation": "クラスターが暗号化されない接続を許さない。"
+      },
+      {
+        "id": "E",
+        "text": "クラスター保管時のKMS暗号化を有効にする。",
+        "explanation": "ディスク上のデータを保護するもので、通信の要求条件を変えない。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "Redshiftの設定でSSLを必須にすると暗号化されていないクライアント接続を拒否できる。",
+      "concept": "クライアントの任意設定と、サーバーが許可する条件を区別する。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-010",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "iam-cross-account-external-id-tenant-specific-vendor",
+    "title": "委任先が扱う別の顧客と呼び出しを区別する",
+    "prompt": "外部の分析サービスは多数の顧客のAWSアカウントを運用し、対象データへは顧客ごとのIAMロールを引き受ける。同じ外部側主体を使う顧客間で、別顧客から指定されたロールARNを誤って引き受けないようにしたい。信頼で何を確認するか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "顧客向けロールのセッション最大期間を短くする。",
+        "explanation": "利用できる時間は絞れるが、依頼者と顧客の対応は検証しない。"
+      },
+      {
+        "id": "B",
+        "text": "S3の参照先を暗号化するキーの別名だけで顧客を識別する。",
+        "explanation": "データの暗号化設定はAssumeRoleの顧客条件に使われない。"
+      },
+      {
+        "id": "C",
+        "text": "第三者が対象顧客用に割り当てた値を渡すようにし、信頼ポリシーのsts:ExternalIdで一致を要求する。",
+        "explanation": "同じ外部主体からでも指定の顧客に対応するリクエストを検証できる。"
+      },
+      {
+        "id": "D",
+        "text": "外部アカウントの主体だけを許可し、顧客を識別する条件は設けない。",
+        "explanation": "同じ主体が複数顧客を扱う場合、どの顧客の依頼かを区別できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "第三者が共有するIAM主体に対しては、顧客ごとに割り当てた外部IDをAssumeRoleの条件にできる。",
+      "concept": "外部IDは第三者が各顧客を区別するために管理し、ロールの信頼先も所定の主体に限定する。"
+    }
+  },
+  {
+    "id": "dea-c01-d4-011",
+    "revision": 1,
+    "category": "データセキュリティとガバナンス",
+    "examDomain": "データセキュリティとガバナンス",
+    "version": "DEA-C01 オリジナル問題 2026-11",
+    "similarityGroup": "redshift-dynamic-data-masking-role-based-column-output",
+    "title": "同じ表の見え方を利用者の役割で変更する",
+    "prompt": "Redshiftの会員表では、承認済みの業務担当は電話番号をそのまま参照する。分析ロールも同じ表を同じSQLで利用するが、番号の一部だけを表示する必要がある。データのコピーを作らず、格納値も書き換えない。何を使うか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "テーブル全体に列単位のSELECT禁止をかけ、分析ロールが部分値を見られるとみなす。",
+        "explanation": "列が参照できない状態を作るだけで、値をマスクして返さない。"
+      },
+      {
+        "id": "B",
+        "text": "電話番号を部分マスクするマスキングポリシーを作り、対象列と分析ロールへ関連付ける。",
+        "explanation": "分析ロールで照会された際に列の表示を変えられる。"
+      },
+      {
+        "id": "C",
+        "text": "分析ロール用にRow-Level Securityで電話番号を持つ行をすべて除く。",
+        "explanation": "行がなくなり、指定の部分値を保つ要件を満たさない。"
+      },
+      {
+        "id": "D",
+        "text": "元のデータを部分マスクの値で全件更新する。",
+        "explanation": "業務担当も元の番号を取得できなくなる。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/t_ddm.html",
+      "label": "AWS公式ドキュメント"
+    },
+    "learning": {
+      "reason": "動的データマスキングは、クエリ時に指定されたロールなどに応じて列の見え方を変えられる。",
+      "concept": "行自体へのアクセス制御と、行を返す際の列値の表現を分ける。"
+    }
+  }
+]

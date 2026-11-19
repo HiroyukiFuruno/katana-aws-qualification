@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const compose = ['compose', '-f', 'test/auth/compose.yml'];
 
@@ -30,7 +30,14 @@ try {
     '-addext',
     'basicConstraints=critical,CA:TRUE',
   ]);
-  run('docker', [...compose, 'up', '-d', '--wait', '--wait-timeout', '60']);
+  // CIの非root IdPからも、毎回生成するテスト専用鍵を読み取れるようにする。
+  chmodSync('test-results/auth/tls/server.key', 0o644);
+  try {
+    run('docker', [...compose, 'up', '-d', '--wait', '--wait-timeout', '60']);
+  } catch (error) {
+    spawnSync('docker', [...compose, 'logs', '--no-color', 'kaq-idp'], { stdio: 'inherit' });
+    throw error;
+  }
   run('bunx', ['playwright', 'test']);
 } finally {
   mkdirSync('test-results/auth', { recursive: true });

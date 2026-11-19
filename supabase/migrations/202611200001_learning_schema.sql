@@ -104,7 +104,7 @@ create table public.migration_manifests (
   user_id uuid not null references auth.users(id) on delete cascade,
   manifest_id uuid primary key,
   source_name text not null check (source_name in (
-    'history-local-storage', 'wrong-cookie-v1', 'exam-draft-local-storage', 'profile-local-storage'
+    'history-local-storage', 'wrong-cookie-v1', 'wrong-index-local-storage', 'exam-draft-local-storage', 'profile-local-storage'
   )),
   source_schema_version integer not null check (source_schema_version > 0),
   source_fingerprint text not null check (source_fingerprint ~ '^[0-9a-f]{64}$'),

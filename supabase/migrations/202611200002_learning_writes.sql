@@ -158,6 +158,11 @@ begin
     or p_duration_ms not between 0 and 86400000 then
     raise exception 'invalid exam response' using errcode = '22023';
   end if;
+  if (p_selected_at is null and (p_selected is distinct from '[]'::jsonb or p_duration_ms is distinct from 0))
+    or p_selected_at > least(clock_timestamp(), v_session.deadline_at)
+    or (v_session.started_at is not null and p_selected_at < v_session.started_at) then
+    raise exception 'invalid exam response timing' using errcode = '22023';
+  end if;
   insert into public.exam_responses (user_id, exam_id, question_key, selected, flagged, duration_ms, selected_at)
     values (v_user_id, p_exam_id, p_question_ref::text, p_selected, p_flagged, p_duration_ms, p_selected_at)
     on conflict (user_id, exam_id, question_key) do update set selected = excluded.selected,
@@ -327,6 +332,12 @@ begin
       or jsonb_typeof(v_response->'selected') <> 'array' or not (v_question_order @> jsonb_build_array(v_response->'question_ref'))
       or coalesce((v_response->>'duration_ms')::integer, -1) not between 0 and 86400000 then
       raise exception 'invalid imported exam response' using errcode = '22023';
+    end if;
+    if (nullif(v_response->>'selected_at', '') is null
+      and (v_response->'selected' is distinct from '[]'::jsonb or (v_response->>'duration_ms')::integer is distinct from 0))
+      or nullif(v_response->>'selected_at', '')::timestamptz > least(clock_timestamp(), v_deadline_at)
+      or (v_started_at is not null and nullif(v_response->>'selected_at', '')::timestamptz < v_started_at) then
+      raise exception 'invalid imported exam response timing' using errcode = '22023';
     end if;
     insert into public.exam_responses (user_id, exam_id, question_key, selected, flagged, duration_ms, selected_at)
       values (v_user_id, v_exam_id, (v_response->'question_ref')::text, v_response->'selected',

@@ -2,6 +2,8 @@ begin;
 set local role authenticated;
 select set_config('request.jwt.claims', jsonb_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select public.initialize_learning_state();
+select public.begin_migration(0, '30000000-0000-0000-0000-000000000009', 'wrong-index-local-storage', 1, repeat('9', 64), 0);
+select public.complete_migration(0, '30000000-0000-0000-0000-000000000009');
 
 do $$
 begin
@@ -257,6 +259,7 @@ select public.complete_migration(0, '30000000-0000-0000-0000-000000000001');
 select public.begin_migration(0, '30000000-0000-0000-0000-000000000002', 'exam-draft-local-storage', 1, repeat('b', 64), 1);
 do $$
 declare original_deadline timestamptz := clock_timestamp() + interval '10 minutes'; imported_exam jsonb;
+  original_selection timestamptz := clock_timestamp() - interval '1 minute';
 begin
   imported_exam := jsonb_build_object(
     'exam_id', '20000000-0000-0000-0000-000000000003', 'certification_id', 'saa-c03', 'source_version', '2026-11',
@@ -264,19 +267,32 @@ begin
     'started_at', clock_timestamp() - interval '10 minutes', 'deadline_at', original_deadline,
     'position', 0, 'state', 'draft'
   );
+  begin
+    perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'bad-draft',
+      jsonb_set(imported_exam, '{exam_id}', '"20000000-0000-0000-0000-000000000006"'), jsonb_build_array(jsonb_build_object(
+        'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
+        'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10
+      )), '[]');
+    raise exception 'untimed legacy answer accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  if exists (select 1 from public.exam_sessions where exam_id = '20000000-0000-0000-0000-000000000006')
+    or exists (select 1 from public.migration_items where source_row_id = 'bad-draft') then
+    raise exception 'invalid draft import did not roll back';
+  end if;
   perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'draft-1', imported_exam, jsonb_build_array(jsonb_build_object(
     'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
-    'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10
+    'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10, 'selected_at', original_selection
   )), '[]');
   perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'draft-1', imported_exam, jsonb_build_array(jsonb_build_object(
     'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
-    'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10
+    'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10, 'selected_at', original_selection
   )), '[]');
   begin
     perform public.import_exam_session(0, '30000000-0000-0000-0000-000000000002', 'draft-1',
       jsonb_set(imported_exam, '{exam_id}', '"20000000-0000-0000-0000-000000000005"'), jsonb_build_array(jsonb_build_object(
         'question_ref', jsonb_build_object('question_id', 'draft-1', 'question_revision', 1),
-        'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10
+        'selected', jsonb_build_array('A'), 'flagged', false, 'duration_ms', 10, 'selected_at', original_selection
       )), '[]');
     raise exception 'migration row accepted a different exam';
   exception when unique_violation then null;
@@ -303,6 +319,17 @@ begin
   perform public.save_exam_response('20000000-0000-0000-0000-000000000003', 0, 0, 0,
     jsonb_build_object('question_id', 'draft-1', 'question_revision', 1), jsonb_build_array('B'), true, 20, clock_timestamp());
 end $$;
+
+select public.finalize_exam_session('20000000-0000-0000-0000-000000000003', 0, 1,
+  jsonb_build_array(jsonb_build_object(
+    'event_id', '10000000-0000-0000-0000-000000000032', 'schema_version', 1,
+    'certification_id', 'saa-c03', 'question_id', 'draft-1', 'question_revision', 1, 'source_version', '2026-11',
+    'category', 'security', 'mode', 'exam', 'exam_id', response.exam_id,
+    'answered_at', response.selected_at, 'selected_at', response.selected_at,
+    'selected', response.selected, 'flagged', response.flagged, 'duration_ms', response.duration_ms,
+    'correct', jsonb_build_array('A'), 'is_correct', false, 'attempt_number', 1,
+    'prior_incorrect_count', 0, 'reward', 0
+  ))) from public.exam_responses response where exam_id = '20000000-0000-0000-0000-000000000003';
 
 select public.append_learning_event(jsonb_build_object(
   'event_id', '10000000-0000-0000-0000-000000000020', 'schema_version', 1,

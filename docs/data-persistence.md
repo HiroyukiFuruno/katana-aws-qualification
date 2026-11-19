@@ -21,6 +21,7 @@
 | `wrong-cookie-v1` | `saa_study_incorrect_v1` とlocal fallback | 回答イベントを作らない。履歴から再構成後に照合・失効する |
 | `exam-draft-local-storage` | `saa-study.exam.v1` と`katana.certification-exam.v1.*` | 固定順序・期限を検証できる場合だけ移行し、そうでない下書きは理由付きで拒否する |
 | `profile-local-storage` | `katana.certification-profile.v1` | profile置換と行記録を同一移行処理で行う |
+| `wrong-index-local-storage` | `saa-study.incorrect.v1` | 旧Cookie保存失敗時のJSON誤答ID索引。全IDがクラウドの不正解履歴から再構成できる場合だけ照合後に削除し、日時・回答イベントは作らない |
 
 旧試験は`import_exam_session`でmanifestの1行に束縛して取り込む。入力には元の`started_at`、`deadline_at`、固定`question_order`、draft response、提出済みなら全exam eventを含める。DBは元の期限をそのまま格納し、期限切れdraftの再開や新しい開始時刻による延長を拒否する。manifest行は取り込んだexam IDと全入力のSHA-256を記録し、同一payloadの再送だけを許可する。取り込み済み提出の`submitted_at`は検証済みの元時刻、`submitted_received_at`はこのサーバーへの取込受信時刻として区別する。時刻が欠ける旧形式は`legacy_import`として明示し、`submitted_received_at`を捏造せずnullのままにし、再開可能なdraftにはしない。試験行・回答イベント・manifest行は1トランザクションで確定する。
 

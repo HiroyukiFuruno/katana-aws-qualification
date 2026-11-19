@@ -44,3 +44,13 @@ test('カテゴリと複数タグと検索をANDで組み合わせる', () => {
   expect(filterGlossary('zzzz-nonexistent')).toEqual([]);
   expect(filterGlossary('SSE-KMS', 'storage', ['serverless'])).toEqual([]);
 });
+
+test('Control TowerのGuardrailとBedrock Guardrailsを別の概念として分類する', () => {
+  const governance = filterGlossary('', 'management', ['governance']);
+  expect(governance.map((entry) => entry.term)).toContain('Guardrail');
+  const ai = filterGlossary('', 'ai', ['generative-ai']);
+  expect(ai.map((entry) => entry.term)).not.toContain('Guardrail');
+  expect(ai.map((entry) => entry.term)).toContain('Bedrock Guardrails');
+  expect(glossary.find((entry) => entry.term === 'Bedrock')?.definition).toContain('Bedrock Guardrails');
+  expect(glossary.find((entry) => entry.term === 'Guardrail')?.definition).toContain('Control Tower');
+});

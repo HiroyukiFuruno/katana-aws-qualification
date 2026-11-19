@@ -74,3 +74,26 @@ test('全10言語で絞り込み文言と狭幅表示を検証する', async ({ 
     await expect(page.locator('.glossary-row')).toHaveCount(glossary.length);
   }
 });
+
+test('Control TowerとBedrockのガードレールを区別してリンクする', async ({ page }) => {
+  await page.goto('/ja/glossary/');
+  await page.getByLabel('カテゴリ', { exact: true }).selectOption('management');
+  await page
+    .getByRole('group', { name: 'タグ', exact: true })
+    .getByRole('button', { name: 'ガバナンス', exact: true })
+    .click();
+  await expect(page.locator('#glossary-term-guardrail')).toBeVisible();
+  await expect(page.locator('#glossary-term-bedrock-guardrails')).toHaveCount(0);
+  await page.getByRole('button', { name: '絞り込みを解除' }).click();
+  await page.getByLabel('カテゴリ', { exact: true }).selectOption('ai');
+  await page.getByLabel('用語を検索').fill('Bedrock');
+  await page
+    .locator('.glossary-row dd')
+    .getByRole('link', { name: 'Bedrock Guardrails', exact: true })
+    .click();
+  await expect(page.locator('#glossary-term-bedrock-guardrails')).toBeInViewport();
+  const target = page
+    .locator('.glossary-row')
+    .filter({ has: page.locator('#glossary-term-bedrock-guardrails') });
+  await expect(target).toContainText('生成AIへの入力');
+});

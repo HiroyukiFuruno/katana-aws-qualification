@@ -858,3 +858,17 @@ Elastic Beanstalkの配布方式、CloudFormationの別リージョン出力参�
 - [Kinesisの拡張ファンアウト](https://docs.aws.amazon.com/streams/latest/dev/enhanced-consumers.html)
 - [DynamoDB StreamsでのTTL削除の識別](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ttl-expired-items.html)
 - [Organizationsのリソース制御ポリシー](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html)
+
+## DOP-C02の重複しないフル模試5回分
+
+6分野に新規75問を追加し、既存301レコードを維持した。類似グループで数えた独立375問の分野別内訳は85・65・55・55・50・65問。単一選択333問の正答位置はA〜Dの順に84・83・83・83問で、複数選択は43問。新規の単一選択68問は正答の位置に加え、選択肢の長さだけで正答を推測しにくいよう文量も調整した。
+
+CloudFormationの成果物から実行時パラメータを取得する問題、閉域内での待機条件の応答、Global Acceleratorでの既存接続の維持、EBSの帯域制限の切り分け、AWS Healthの経路冗長化、バックアップの複数者承認などを扱う。既存問と同じ判断を問うCodePipelineの並列実行、ALBの登録解除、CloudWatchの学習期間除外は草稿から差し替えた。近似候補も選択肢の根拠まで比較し、例えばStep Functionsから次のアクションへ渡す出力ファイル、CodeBuildのエクスポート変数、CloudFormationの成果物内の値はそれぞれ異なる制約と操作を問うようにした。
+
+75問・180分の模試を512回生成し、分野配分17・13・11・11・10・13問を確認した。互いに設問が重複しないフル模試5回分を128組生成し、カスタム全75件数、採点6,704通り、出典URL357件を検証した。従来の10レコードと過去版6レコードの配信データを維持する。本試験では採点対象外の問題が含まれるが、このアプリは全75問を採点する。
+
+- [DOP-C02試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02.html)
+- [CloudFormationのパラメータ上書き関数](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/continuous-delivery-codepipeline-parameter-override-functions.html)
+- [Global Acceleratorのトラフィックダイヤル](https://docs.aws.amazon.com/global-accelerator/latest/dg/about-endpoint-groups-traffic-dial.html)
+- [AWS Healthのリージョン別配信と重複排除](https://docs.aws.amazon.com/health/latest/ug/choosing-a-region.html)
+- [AWS Backupボールトの複数者承認](https://docs.aws.amazon.com/aws-backup/latest/devguide/multipartyapproval.html)

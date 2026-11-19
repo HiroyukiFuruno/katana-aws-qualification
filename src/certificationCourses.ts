@@ -4,7 +4,6 @@ const starterCourseIds = new Set([
   'clf-c02',
   'mla-c01',
   'sap-c03',
-  'dop-c02',
   'aip-c01',
   'scs-c03',
   'ans-c01',
@@ -70,10 +69,30 @@ const dataEngineerCourse: Course = {
   reviewedMock: true,
 };
 
+const devOpsMock = 'courses/dop-c02/full-mock-2026-11.json';
+
+const devOpsCourse: Course = {
+  practice: [{ path: devOpsMock, label: 'saaFull' }],
+  mock: devOpsMock,
+  archives: ['courses/dop-c02/questions.json'],
+  exam: {
+    minutes: 180,
+    distribution: {
+      SDLCの自動化: 17,
+      構成管理とIaC: 13,
+      レジリエントなクラウドソリューション: 11,
+      モニタリングとログ記録: 11,
+      インシデントとイベントへの対応: 10,
+      セキュリティとコンプライアンス: 13,
+    },
+  },
+  fixedExamFromBlueprint: true,
+  reviewedMock: true,
+};
+
 const uniqueCounts: Record<string, number> = {
   'aif-c01': 9,
   'aip-c01': 9,
-  'dop-c02': 9,
   'mla-c01': 9,
   'scs-c03': 9,
 };
@@ -111,6 +130,7 @@ export function withAvailableCourses(catalog: Certification[]): Certification[] 
   return catalog.map((certification) => {
     if (certification.course) return certification;
     if (certification.id === 'dea-c01') return { ...certification, course: dataEngineerCourse };
+    if (certification.id === 'dop-c02') return { ...certification, course: devOpsCourse };
     if (starterCourseIds.has(certification.id)) {
       return { ...certification, course: starterCourse(certification) };
     }

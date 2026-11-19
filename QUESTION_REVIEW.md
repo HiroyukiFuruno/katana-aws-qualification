@@ -517,3 +517,13 @@ AWSの試験案内とCLF-C02の試験ガイドを確認した。4分野を16・1
 - [S3のVPCエンドポイント](https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-s3.html)
 - [EC2のハイバネーション](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html)
 - [コスト配分タグのバックフィル](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-allocation-backfill.html)
+
+## AIF-C01の回答形式と初回の追加問題
+
+公式ガイドの並べ替え・組み合わせを各3問追加し、位置を持つ回答を採点・保存・再開時に扱えるようにした。既存10問のID、改訂、設問、選択肢を保持し、通常の複数選択は順不同で採点する。
+
+AI・MLの基礎、生成AIの基礎、基盤モデルの応用、セキュリティとガバナンスの初回分として32問を追加した。モデルの対応形式を同じ判断で問う草稿、既出の更新情報に関する草稿、独立性または一次資料を再確認する推論・分類の草稿は採用していない。類似グループとIDの一意性、全選択肢の説明、採点データ、採用分のAWS一次資料への到達を確認した。
+
+- [AIF-C01公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html)
+- [Amazon Bedrock Knowledge Basesの検索設定](https://docs.aws.amazon.com/bedrock/latest/userguide/kb-test-config.html)
+- [Amazon Bedrockの評価指標](https://docs.aws.amazon.com/bedrock/latest/userguide/model-evaluation-metrics.html)

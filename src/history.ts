@@ -1,4 +1,4 @@
-import { questionKey, type Question } from './questions';
+import { isCorrectAnswer, questionKey, type Question } from './questions';
 
 export type Mode = 'study' | 'review';
 export type Attempt = {
@@ -10,6 +10,7 @@ export type Attempt = {
   answeredAt: string;
   selected: string[];
   correct: string[];
+  format?: Question['format'];
   isCorrect: boolean;
   durationMs: number;
   attemptNumber: number;
@@ -94,7 +95,7 @@ function makeAttempt(
 ): Attempt {
   const stats = statsFor(history, question);
   const correct = question.correct;
-  const isCorrect = correct.length === selected.length && correct.every((id) => selected.includes(id));
+  const isCorrect = isCorrectAnswer(question, selected);
   return {
     schemaVersion: 1,
     questionId: question.id,
@@ -104,6 +105,7 @@ function makeAttempt(
     answeredAt,
     selected,
     correct,
+    ...(question.format ? { format: question.format } : {}),
     isCorrect,
     durationMs,
     attemptNumber: stats.total + 1,

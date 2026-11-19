@@ -30,7 +30,7 @@ export function LearningNotes({ question, selected }: { question: Question; sele
   return (
     <section className="learning-notes" aria-labelledby={heading}>
       <h3 id={heading}>{t('answerReview')}</h3>
-      {feedback.length > 0 && (
+      {!question.format && feedback.length > 0 && (
         <div className="answer-feedback">
           <h4>{t('answerTakeaway')}</h4>
           <ul>

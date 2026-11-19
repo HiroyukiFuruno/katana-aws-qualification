@@ -3,9 +3,10 @@ import { usePreferences } from './preferences';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ExamFormatPicker } from './ExamFormatPicker';
 import { LearningNotes } from './LearningNotes';
+import { StructuredAnswerFields, StructuredAnswerReview } from './StructuredAnswer';
 import type { ExamBlueprint } from './certifications';
 import { saveExam, type Attempt } from './history';
-import { questionKey, type Question } from './questions';
+import { isAnswerComplete, questionKey, type Question } from './questions';
 import {
   canStartExam,
   getResponse,
@@ -241,7 +242,9 @@ export function ExamMode({
             const item = byKey.get(
               questionKey({ id: attempt.questionId, revision: attempt.questionRevision }),
             );
-            const answered = attempt.selected.length === attempt.correct.length;
+            const answered = item
+              ? isAnswerComplete(item, attempt.selected)
+              : attempt.selected.filter(Boolean).length === attempt.correct.length;
             return (
               <details key={attempt.questionId}>
                 <summary>
@@ -250,12 +253,16 @@ export function ExamMode({
                   {item?.title ?? attempt.questionId}
                 </summary>
                 <p>{item?.prompt}</p>
-                <p>
-                  {t('selected')} {attempt.selected.join('・') || t('none')} ／ {t('correct')}{' '}
-                  {attempt.correct.join('・')}
-                </p>
+                {item?.format ? (
+                  <StructuredAnswerReview question={item} selected={attempt.selected} />
+                ) : (
+                  <p>
+                    {t('selected')} {attempt.selected.join('・') || t('none')} ／ {t('correct')}{' '}
+                    {attempt.correct.join('・')}
+                  </p>
+                )}
                 {item && <LearningNotes question={item} selected={attempt.selected} />}
-                {item && (
+                {item && !item.format && (
                   <ul>
                     {item.choices.map((choice) => (
                       <li key={choice.id}>
@@ -320,7 +327,13 @@ export function ExamMode({
       )}
       <section className="card">
         <div className="question-meta">
-          <span>{t('choose', { count })}</span>
+          <span>
+            {question.format === 'ordering'
+              ? t('orderSteps')
+              : question.format === 'matching'
+                ? t('matchPairs')
+                : t('choose', { count })}
+          </span>
         </div>
         <h2 ref={questionHeading} tabIndex={-1} className="exam-question-title">
           {t('questionNumber', { number: draft.position + 1 })}
@@ -330,32 +343,45 @@ export function ExamMode({
         </p>
         <fieldset disabled={expired || submitting}>
           <legend className="sr-only">{t('choices')}</legend>
-          {question.choices.map((choice) => {
-            const selected = response.selected.includes(choice.id);
-            return (
-              <label key={choice.id} className={`choice choice-wrap ${selected ? 'picked' : ''}`}>
-                <input
-                  type={count === 1 ? 'radio' : 'checkbox'}
-                  name="exam-answer"
-                  checked={selected}
-                  disabled={!selected && count > 1 && response.selected.length === count}
-                  onChange={() =>
-                    update(draft.position, {
-                      selected:
-                        count === 1
-                          ? [choice.id]
-                          : selected
-                            ? response.selected.filter((id) => id !== choice.id)
-                            : [...response.selected, choice.id],
-                      selectedAt: Date.now(),
-                    })
-                  }
-                />
-                <span className="letter">{choice.id}</span>
-                <span lang="ja">{choice.text}</span>
-              </label>
-            );
-          })}
+          {question.format ? (
+            <StructuredAnswerFields
+              question={question}
+              selected={response.selected}
+              onChange={(selected) =>
+                update(draft.position, {
+                  selected,
+                  selectedAt: selected.length ? Date.now() : undefined,
+                })
+              }
+            />
+          ) : (
+            question.choices.map((choice) => {
+              const selected = response.selected.includes(choice.id);
+              return (
+                <label key={choice.id} className={`choice choice-wrap ${selected ? 'picked' : ''}`}>
+                  <input
+                    type={count === 1 ? 'radio' : 'checkbox'}
+                    name="exam-answer"
+                    checked={selected}
+                    disabled={!selected && count > 1 && response.selected.length === count}
+                    onChange={() =>
+                      update(draft.position, {
+                        selected:
+                          count === 1
+                            ? [choice.id]
+                            : selected
+                              ? response.selected.filter((id) => id !== choice.id)
+                              : [...response.selected, choice.id],
+                        selectedAt: Date.now(),
+                      })
+                    }
+                  />
+                  <span className="letter">{choice.id}</span>
+                  <span lang="ja">{choice.text}</span>
+                </label>
+              );
+            })
+          )}
         </fieldset>
         <div className="exam-actions">
           <button

@@ -655,3 +655,17 @@ AWSサービスでの開発20問、セキュリティ17問、テストとデプ�
 - [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
 - [ECRレプリケーションバックフィル](https://docs.aws.amazon.com/AmazonECR/latest/userguide/replication-backfill.html)
 - [Lambda関数URLの認可](https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html)
+
+## DVA-C03の独立260問と重複なしの模試4回分
+
+開発20問、セキュリティ17問、テストとデプロイ14問、トラブルシューティングと最適化14問を追加した。既存196レコードを維持し、累計261レコードのうち独立260問。分野順に80・68・56・56問で、単一選択239問、複数選択22問を収録した。新規の選択肢順を調整し、単一選択の正答位置はAから順に60・59・60・60問になった。
+
+開発ではAurora Data APIのトランザクション、Lambdaのストリーミング応答、BedrockのJSON構造化出力を扱った。セキュリティではGitHub OIDCで配備するブランチの限定、JWT署名鍵の移行、Cognitoの認証失敗の統一を確認した。テストとデプロイではLambdaの環境変数の競合防止、CDKの合成結果の再現、CodePipelineの本番進入条件を問う。障害切り分けではCloudFrontで応答送信中の切断を見分ける方法、DynamoDBの書き込み制限の観測単位、Database Insightsの待機とSQLを扱った。
+
+文章と正答の決め手を既存候補と照合し、イベントの途中で識別子を保持する候補と、資格情報の交互ローテーションの候補を差し替えた。Kinesisのチェックポイント直後から再開する判断と、Cognitoで利用者の存在を示さず認証失敗を返す判断を追加した。
+
+出典249件の到達と全4,528通りの採点を確認した。フル生成512回、カスタム全65件数に加え、65問・130分で分野配分20・17・14・14問を満たす互いに重複しない模試4回分を128組生成した。公開条件の各分野5回分まで、残り20・17・14・14問。
+
+- [DVA-C03の対象サービス](https://docs.aws.amazon.com/aws-certification/latest/developer-associate-03/dva-03-in-scope-services.html)
+- [Aurora Data APIの操作](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.calling.cli.html)
+- [Cognitoのユーザー存在エラー制御](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pool-managing-errors.html)

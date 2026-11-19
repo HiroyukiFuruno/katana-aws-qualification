@@ -779,3 +779,16 @@ DVA-C02の公開ページで保存した未提出の模試と提出済み履歴�
 - [Redshift Data API](https://docs.aws.amazon.com/redshift/latest/mgmt/data-api.html)
 - [Glueでのパーティション条件](https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-pushdown.html)
 - [OpenSearchのノード間暗号化](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ntn.html)
+
+## DEA-C01の重複しないフル模試4回分
+
+新規65問を追加し、既存196レコードを維持した。類似グループで数えた独立260問の分野別内訳は88・68・56・48問。単一選択229問、複数選択32問で、単一選択の正答位置はAから順に58・57・57・57問。
+
+DocumentDBの複合索引、Neptuneの多段探索、CQL互換のKeyspaces、MemoryDBの永続ストア、Aurora PostgreSQLのHNSWを追加した。運用では、DynamoDBのGSI作成進捗と主表へのスロットリングの影響を別のメトリクスで評価する。再試行を選ばせる草稿の一つは、EventBridge Pipesの処理段階を記録し、実行データはログに含めない設定に差し替えた。
+
+65問・130分、分野配分22・17・14・12問のフル模試を、互いに設問が重複しない4回分として128組生成した。フル模試の生成512回、カスタム全65件数、採点4,688通り、出典249件を確認した。分野ごとの5倍まで残り22・17・14・12問。
+
+- [Amazon DocumentDBの複合索引](https://docs.aws.amazon.com/documentdb/latest/devguide/indexes-compound.html)
+- [pgvectorのHNSW](https://github.com/pgvector/pgvector#hnsw)
+- [DynamoDBのオンラインGSI管理](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.OnlineOps.html)
+- [EventBridge Pipesのロギング](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-logs.html)

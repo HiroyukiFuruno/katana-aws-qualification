@@ -124,3 +124,21 @@ test('each custom count starts with unique questions and the displayed deadline'
     expect(full.filter((question) => question.category === category)).toHaveLength(quota);
   }
 });
+
+test('SCS-C03 uses the 65-question blueprint and resolves old compact drafts by revision', () => {
+  const security = certifications.find(({ id }) => id === 'scs-c03')?.course;
+  if (!security) throw new Error('SCS-C03 course missing');
+  const questions = JSON.parse(readFileSync(`public/${security.mock}`, 'utf8')) as Question[];
+  const compact = JSON.parse(
+    readFileSync('public/courses/scs-c03/mock-2026-11.json', 'utf8'),
+  ) as Question[];
+  expect(security.examStorageId).toBe('scs-c03');
+  expect(security.archives).toContain('courses/scs-c03/mock-2026-11.json');
+  expect(security.archives).toContain('courses/scs-c03/questions.json');
+  expect(new Set(compact.map((question) => question.similarityGroup ?? question.id)).size).toBe(9);
+  expect(questions).toHaveLength(325);
+  expect(questions.some((question) => questionKey(question) === questionKey(compact[0]))).toBe(false);
+  expect(examPresetCounts(security.exam)).toEqual({ short: 15, medium: 30, full: 65 });
+  expect(Object.values(security.exam.distribution)).toEqual([10, 9, 12, 13, 12, 9]);
+  expect(newExam(questions, security.exam, 0).deadline).toBe(170 * 60_000);
+});

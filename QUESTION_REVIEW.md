@@ -872,3 +872,70 @@ CloudFormationの成果物から実行時パラメータを取得する問題、
 - [Global Acceleratorのトラフィックダイヤル](https://docs.aws.amazon.com/global-accelerator/latest/dg/about-endpoint-groups-traffic-dial.html)
 - [AWS Healthのリージョン別配信と重複排除](https://docs.aws.amazon.com/health/latest/ug/choosing-a-region.html)
 - [AWS Backupボールトの複数者承認](https://docs.aws.amazon.com/aws-backup/latest/devguide/multipartyapproval.html)
+
+## SCS-C03のフル模試1回分
+
+AWSの試験ガイドの分野比率16・14・18・20・18・14%に合わせ、65問・170分のフル模試を10・9・12・13・12・9問に配分する。新規56問を作成し、従来の9題は事例の条件と誤答の根拠を見直して改訂した。単一選択56問、複数選択7問、並べ替え1問、組み合わせ1問を収録する。
+
+既存の2問が同じ判断を求めていたS3経由のKMS復号は、改訂した1問を新バンクで出題する。従来の10レコードと過去版6レコードは元の配信ファイルで維持し、保存済み模試を旧ID・改訂番号で解決できるようにする。新バンクでは、同じS3やSecurity Hub CSPMを扱う組も、事故復旧、暗号化されたデータの認可、リージョン間の集約、コントロールの評価前提などの判断を分けた。
+
+フル模試の生成512回で各分野の配分と類似グループの重複がないことを確認した。カスタム全65件数と、単一・複数選択の組み合わせおよび並べ替え・組み合わせの順列を合わせた採点1,150通りを検証した。出典URL64件と旧版16レコードの回復時のキーも確認した。
+
+- [SCS-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/security-specialty-03/security-specialty-03.html)
+- [CloudTrailの詳細イベントセレクタ](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/filtering-data-events.html)
+- [AWSのフォレンジック用アカウント](https://docs.aws.amazon.com/prescriptive-guidance/latest/security-reference-architecture-cyber-forensics/forensics-account.html)
+- [IAMロールの一時認証情報の取り消し](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_revoke-sessions.html)
+
+## SCS-C03の重複しないフル模試2回分
+
+65問を追加し、既存65問を維持した。独立130問を6分野に20・18・24・26・24・18問ずつ収録する。単一選択114問、複数選択13問、並べ替え2問、組み合わせ1問。単一選択の正答位置はA〜Dの順に29・29・28・28問。
+
+脅威検出の再発通知、証拠の保全と複製、VPCの受信制限、ECSの実行ロールとタスクロール、エンクレーブのアテステーション、組織のバックアップポリシーの継承などを追加した。同じサービスを扱う設問は、問題文、制約、正答に必要な判断を照合した。例えばCertificate Managerの証明書をCloudFrontへ関連付けるリージョン選択と、ALBで参照している同一ARNへの更新は異なる判断を扱う。
+
+フル模試を512回生成し、65問・170分と分野配分を検証した。互いに重複しないフル模試2回分を128組生成し、カスタム全65件数、採点2,294通り、出典URL127件、旧版16レコードの参照を確認した。
+
+- [GuardDuty所見のEventBridge配信](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings_eventbridge.html)
+- [AWSのインシデント対応ガイド](https://docs.aws.amazon.com/pdfs/whitepapers/latest/aws-security-incident-response-guide/aws-security-incident-response-guide.pdf)
+- [KMSのエンクレーブ証明条件](https://docs.aws.amazon.com/kms/latest/developerguide/conditions-attestation.html)
+- [Organizationsのバックアップポリシー](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_backup.html)
+
+## SCS-C03の重複しないフル模試3回分
+
+65問を追加し、既存130問を維持した。独立195問を6分野に30・27・36・39・36・27問ずつ収録する。単一選択171問、複数選択20問、並べ替え3問、組み合わせ1問。単一選択の正答位置はA〜Dの順に43・43・43・42問。
+
+ネットワークアクティビティイベントで認可の拒否を調べる設問、事故調査中にAuto Scalingの稼働台数を保つ設問、利用者と端末の信頼を評価する設問、予定削除を取り消したKMSキーの復旧順序などを追加した。既存問の解説が正答の手がかりになる候補は別の題材に差し替えた。例えばIAMポリシーの検証と観測履歴に基づくポリシー生成は、後者を収録し、前者の候補をNLBのTLS監査に差し替えた。
+
+フル模試を512回生成し、65問・170分と分野配分を検証した。互いに重複しないフル模試3回分を128組生成し、カスタム全65件数、採点3,454通り、出典URL189件、旧版16レコードの参照を確認した。
+
+- [CloudTrailのネットワークアクティビティイベント](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-network-events-with-cloudtrail.html)
+- [Auto ScalingのStandby状態](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-enter-exit-standby.html)
+- [Verified Accessの信頼プロバイダー](https://docs.aws.amazon.com/verified-access/latest/ug/trust-providers.html)
+- [KMSキーの削除の取り消し](https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys-cancelling-key-deletion.html)
+
+## SCS-C03の重複しないフル模試4回分
+
+65問を追加し、既存195問を維持した。独立260問を6分野に40・36・48・52・48・36問ずつ収録する。単一選択228問、複数選択27問、並べ替え4問、組み合わせ1問。単一選択の正答位置はA〜Dで各57問。
+
+GuardDutyの実行時監視の確認、稼働中の複数EBSからの証拠保全、Route 53のDNSSEC委任、Kubernetesの名前空間単位の認可、RDSのCA切替、組織の監査ログ保管と調査の分離などを追加した。同じサービスを扱う設問は、制約と正答に必要な判断を既存問と照合した。例えば、GuardDutyのS3スキャン結果を通知で取得する既存問に対し、追加問は未検査のオブジェクトを読み取らせないバケットポリシーを扱う。
+
+フル模試を512回生成し、65問・170分と6分野の配分を検証した。互いに重複しないフル模試4回分を128組生成し、カスタム全65件数、採点4,596通り、出典URL253件、旧版16レコードの参照を確認した。
+
+- [SCS-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/security-specialty-03/security-specialty-03.html)
+- [GuardDutyのスキャン結果によるS3アクセス制御](https://docs.aws.amazon.com/guardduty/latest/ug/tag-based-access-s3-malware-protection.html)
+- [Route 53のDNSSEC署名と委任](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-enable-signing.html)
+- [KubernetesのRoleBindingとClusterRoleBinding](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+- [RDSのTLS証明書のローテーション](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL-certificate-rotation.html)
+
+## SCS-C03の重複しないフル模試5回分
+
+最終65問を追加し、既存260問は維持した。独立325問を6分野に50・45・60・65・60・45問ずつ収録する。内訳は単一選択285問、複数選択34問、並べ替え4問、組み合わせ2問。単一選択の正答位置はA〜Dの順に72・71・71・71問。
+
+暗号操作とKMS構成変更の監査分類、障害演習の停止条件、Direct Connectのリンク暗号化、Athenaへの利用者ID伝播、CloudFrontのフィールド暗号化、バックアップ計画の継続評価を追加した。既存のS3の非TLS拒否と正答の条件が重なる候補は、利用者IDをデータサービスへ引き継ぐ設問に差し替えた。同じサービスを扱う残りの候補についても、正答に必要な判断を照合した。
+
+フル模試の生成512回で65問・170分と6分野の配分を確認した。互いに重複しないフル模試5回分を128組生成し、全65カスタム件数、採点5,738通り、出典URL316件、旧版16レコードの参照を確認した。
+
+- [SCS-C03試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/security-specialty-03/security-specialty-03.html)
+- [Fault Injection Serviceの停止条件](https://docs.aws.amazon.com/fis/latest/userguide/stop-conditions.html)
+- [Direct ConnectのMACsec](https://docs.aws.amazon.com/directconnect/latest/UserGuide/MACsec.html)
+- [Athenaと信頼されたID伝播](https://docs.aws.amazon.com/singlesignon/latest/userguide/tip-usecase-ate.html)
+- [AWS Backup Audit Managerのコントロール](https://docs.aws.amazon.com/aws-backup/latest/devguide/choosing-controls.html)

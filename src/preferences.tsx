@@ -60,7 +60,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   function changeLocale(next: Locale) {
     if (next === locale) return;
     const path = localePath(next, routeAt(location.pathname)?.page);
-    history.pushState(null, '', path + location.search + location.hash);
+    const localizedPath = routeAt(path)
+      ? path + location.search + location.hash
+      : localePath(next, 'study/questions');
+    history.pushState(null, '', localizedPath);
     writePreference(localeKey, next);
     setLocale(next);
   }

@@ -1,0 +1,88 @@
+import type { Attempt } from '../attempts';
+import type { ExamDraft, ExamResponse } from '../exam';
+import type { ExamFinalizationEvent } from './examFinalization';
+import type { SubmittedExamDraft } from './examRepositoryRead';
+import type { BrowserStorage } from './guest';
+import { emptyProfile, type Profile } from './profileTypes';
+import type { ProgressOwner, ProgressRpcClient } from './types';
+
+export type ProgressSnapshot = {
+  attempts: Attempt[];
+  corruptRows: number;
+  error?: 'load' | 'save' | 'reset';
+  owner: ProgressOwner;
+  profile: Profile;
+  profileRevision: number;
+  examRefreshVersion: number;
+  refreshing?: boolean;
+  state: 'error' | 'loading' | 'ready';
+};
+export type ProgressReadyData = Pick<
+  ProgressSnapshot,
+  'attempts' | 'corruptRows' | 'profile' | 'profileRevision'
+>;
+export type ProgressStore = {
+  appendAttempt(
+    certificationId: string,
+    attempt: Attempt,
+    prepare?: (history: Attempt[]) => Attempt,
+  ): Promise<Attempt>;
+  dispose(clearPending?: boolean): Promise<void>;
+  finalizeExam(draft: ExamDraft, events: ExamFinalizationEvent[]): Promise<string>;
+  finalizeGuestExam(
+    examId: string,
+    events: Attempt[],
+  ): Promise<{ attempts: Attempt[]; history: Attempt[] }>;
+  getSnapshot(): ProgressSnapshot;
+  guestStorageConflicts(): readonly { key: string; kind: 'exam' | 'profile' }[];
+  initialize(): Promise<ProgressSnapshot>;
+  loadExam(certificationId: string): Promise<ExamDraft | undefined>;
+  loadSubmittedExam(certificationId: string): Promise<SubmittedExamDraft | undefined>;
+  notifyExamSessionsChanged(): void;
+  readGuestExam(examKey: string): ExamDraft | undefined;
+  readExamClock(): Promise<string>;
+  removeGuestExam(examKey: string): void;
+  replaceProfile(profile: Profile): Promise<void>;
+  reset(): Promise<void>;
+  resolveGuestStorageConflict(key: string, choice: 'pending' | 'stored'): Promise<void>;
+  retryPending(): Promise<void>;
+  saveExamResponse(
+    draft: ExamDraft,
+    position: number,
+    key: string,
+    response: ExamResponse,
+  ): Promise<ExamDraft>;
+  saveGuestExam(examKey: string, draft: ExamDraft): Promise<void>;
+  startExam(
+    draft: ExamDraft,
+    certificationId: string,
+    sourceVersion: string,
+    durationMs: number,
+  ): Promise<ExamDraft>;
+  subscribe(listener: () => void): () => void;
+};
+
+export type ProgressStoreActions = Pick<
+  ProgressStore,
+  'appendAttempt' | 'initialize' | 'replaceProfile' | 'reset' | 'retryPending'
+>;
+export type ProgressStoreInput = {
+  client?: ProgressRpcClient;
+  isCurrent: () => boolean;
+  onStaleGeneration?: () => void;
+  onProfileConflict?: () => void;
+  owner: ProgressOwner;
+  storage: BrowserStorage;
+};
+
+export function initialProgressSnapshot(owner: ProgressOwner): ProgressSnapshot {
+  return {
+    attempts: [],
+    corruptRows: 0,
+    owner,
+    profile: emptyProfile(),
+    profileRevision: 0,
+    examRefreshVersion: 0,
+    state: 'loading',
+  };
+}

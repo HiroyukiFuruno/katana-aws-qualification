@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ExamBlueprint } from './certifications';
-import { getResponse, remainingLabel } from './exam';
-import { ExamFormatPicker } from './ExamFormatPicker';
 import { ExamNavigation, type Filter } from './ExamNavigation';
 import { ExamQuestion } from './ExamQuestion';
 import { ExamResults } from './ExamResults';
+import { ExamResultsButton } from './ExamResultsButton';
+import { ExamSaveError } from './ExamSaveError';
+import { ExamSetup } from './ExamSetup';
+import { getResponse, remainingLabel } from './exam';
 import type { Attempt } from './history';
 import { usePreferences } from './preferences';
 import type { Question } from './questions';
@@ -18,7 +20,9 @@ export function ExamMode({
   blueprint,
   examKey,
   practiceQuestions,
+  certificationId,
 }: {
+  certificationId: string;
   bank: Question[];
   practiceQuestions: Question[];
   archivedBank: Question[];
@@ -39,10 +43,11 @@ export function ExamMode({
     blueprint,
     examKey,
     practiceQuestions,
-    onStart() {
+    onStart: () => {
       setFilter('all');
       setShowAll(false);
     },
+    certificationId,
   });
   const {
     draft,
@@ -58,12 +63,13 @@ export function ExamMode({
     expired,
     available,
     unanswered,
-    submitting,
     dialog,
     submit,
     start,
     update,
+    saving,
   } = session;
+  const busy = session.submitting || saving || session.reloading;
   useEffect(() => {
     if (draft?.position !== undefined) questionHeading.current?.focus();
   }, [draft?.position]);
@@ -75,6 +81,7 @@ export function ExamMode({
         byKey={byKey}
         blueprint={blueprint}
         available={available}
+        saving={busy}
         error={error}
         showAll={showAll}
         onShowAll={setShowAll}
@@ -84,22 +91,21 @@ export function ExamMode({
     );
   if (!draft)
     return (
-      <section className="card">
-        <h2>{t('examSetup')}</h2>
-        <p>{t('examTiming')}</p>
-        <p>{t('examTimerWarning')}</p>
-        {!available && <p role="alert">{t('tooFew')}</p>}
-        <ExamFormatPicker
+      <>
+        <ExamSetup
           blueprint={blueprint}
           available={available}
+          saving={busy}
           onStart={start}
-          buttonLabel={t('startExam')}
+          error={error}
+          t={t}
         />
-        {error && <p role="alert">{t(error)}</p>}
-      </section>
+        {history.some((attempt) => attempt.mode === 'exam' && attempt.examId) ? (
+          <ExamResultsButton disabled={busy} onClick={() => void session.loadSubmittedExam()} t={t} />
+        ) : null}
+      </>
     );
   if (!correctRevision || !question) return <p role="alert">{t('cannotResume')}</p>;
-  const response = getResponse(draft, key);
   return (
     <>
       <div className={`exam-bar ${draft.deadline - now <= 300_000 ? 'ending' : ''}`}>
@@ -115,17 +121,13 @@ export function ExamMode({
         </div>
       </div>
       {expired && <p className="notice">{t('expired')}</p>}
-      {error && (
-        <p className="notice" role="alert">
-          {t(error)}
-        </p>
-      )}
+      <ExamSaveError busy={busy} error={error} onReload={session.reload} t={t} />
       <ExamQuestion
         draft={draft}
         question={question}
-        response={response}
+        response={getResponse(draft, key)}
         expired={expired}
-        submitting={submitting}
+        submitting={busy}
         t={t}
         heading={questionHeading}
         onUpdate={update}
@@ -135,7 +137,7 @@ export function ExamMode({
         questions={questions}
         filter={filter}
         expired={expired}
-        submitting={submitting}
+        submitting={busy}
         unanswered={unanswered}
         dialog={dialog}
         t={t}

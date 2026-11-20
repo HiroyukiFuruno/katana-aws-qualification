@@ -15,6 +15,7 @@ export function ExamResults({
   byKey,
   blueprint,
   available,
+  saving,
   error,
   showAll,
   onShowAll,
@@ -25,6 +26,7 @@ export function ExamResults({
   byKey: Map<string, Question>;
   blueprint: ExamBlueprint;
   available: boolean;
+  saving: boolean;
   error: Message | '';
   showAll: boolean;
   onShowAll: (show: boolean) => void;
@@ -69,6 +71,7 @@ export function ExamResults({
       <ExamFormatPicker
         blueprint={blueprint}
         available={available}
+        saving={saving}
         onStart={onStart}
         buttonLabel={t('nextExam')}
       />

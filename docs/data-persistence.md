@@ -2,14 +2,23 @@
 
 ログイン中の学習記録の正本はSupabase Postgresであり、全ての所有者は`auth.uid()`で決まる。クライアントは`user_id`を送らず、テーブルへの書込み権限も持たない。ゲストの同意済み端末保存と、ユーザーIDに束縛した一時再送キューは、このDB正本とは別である。
 
+## 適用状態
+
+- `202611200001_learning_schema.sql`、`202611200002_learning_writes.sql`、`202611200003_learning_summaries.sql` は PR #51 と main `9ef8a7e` で本番適用済みである。
+- `202611200004_profile_snapshot.sql` は profile 読取りを単一 snapshot にする後続 migration であり、レビュー前・未公開である。001〜003 を書き換えず、承認後に後続 migration として適用する。
+- `202611200005_exam_clock.sql` はサーバー時刻読取りとconfirmed保存を追加する未適用migrationである。選択時刻をサーバーで決定し、既存v1の期限・世代・改訂検査を維持する。004〜006はレビュー・merge後に適用する。
+- DB migration の適用済み状態と、#23 の frontend/outbox/模試 P1 の公開状態は別である。後者は並行レビュー中で、利用可能・検証済みとして本書から約束しない。
+
 ## RPC
 
 - `initialize_learning_state()`は、初回だけ本人の`generation`を作成して返す。`learning_state`は本人だけが読めるRLSテーブルである。
 - 全ての書込みRPCは`p_expected_generation`を必須にする。`append_learning_event`はさらに`event_id`と正規化済みJSONのSHA-256で再送を冪等にし、同じIDで異なるpayloadを`23505`で拒否する。
 - `start_exam_session(...)`は固定された`question_order`、サーバー時刻で計算する`deadline_at`、初期`revision`を返す。同一入力の再送だけが同じ試験を返す。`save_exam_response(..., p_expected_generation, p_expected_revision, ...)`と`finalize_exam_session(p_exam_id, p_expected_generation, p_expected_revision, p_events)`は世代と楽観ロックを使う。締切後の保存、固定順序以外の提出、異なるpayloadでの再提出は拒否する。締切後の自動採点は、締切前に保存された選択・選択時刻・所要時間・flagと完全一致するpayloadだけを確定する。responseがない設問、および選択時刻なしでflagだけを保存した未回答設問は、空選択・不正解・報酬0のときだけ許可し、クライアント時刻を使わず有効終了時刻を回答時刻に固定する。`submitted_at`は採点上の有効終了時刻（受信時刻と締切の早い方）、`submitted_received_at`はサーバーが確定要求を受信した実時刻である。提出済みへの同一payload再送だけは同じ`submitted_at`を返す。
+- `read_learning_clock(p_expected_generation)`は本人の世代を確認してサーバーUTCを返す。`save_exam_response_confirmed`は回答位置と移動先cursorを分け、同一トランザクションで保存する。同一選択のflag変更・移動では選択時刻を保持し、選択変更時だけ更新する。未回答flagは時刻null/所要0の既存契約を保つ。
+- `load_roadmap_profile_snapshot()`は認証済み本人を確認し、取得資格・査定・改訂を単一MVCC snapshotで読み取る。
 - `replace_roadmap_profile(..., p_expected_generation, p_expected_revision)`も同じ二重ロックを使い、取得資格と査定回答を置換する。JSON `null`は置換対象ではなく不正入力として拒否し、保存済みprofileを消さない。移行RPCも世代を必須にする。
 - `reset_my_learning_data(p_expected_generation)`は呼出し本人のデータだけを削除し、同じトランザクションでgenerationを増やす。reset前のタブや遅延再送は`PT409`で拒否され、履歴を復活させられない。
-- generation不一致はPostgREST HTTP 409になる専用SQLSTATE `PT409`、試験・profile revisionの競合は`40001`である。前者ではキューを破棄してstateを再読込し、後者では最新の対象だけを再読込して利用者に競合を示す。
+- generation不一致はPostgREST HTTP 409になる専用SQLSTATE `PT409`、試験・profile revisionの競合はHTTP 412の`PT412`である。前者ではキューを破棄してstateを再読込し、後者では最新の対象だけを再読込して利用者に競合を示す。006は既適用001〜003を変更せず、業務競合に使用していた`40001`を置き換える。PostgREST 14による無限再試行を防ぎ、本来のDB serialization failureはそのまま扱う。
 
 ## 既存端末データの明示的移行
 
@@ -39,6 +48,12 @@ profile移行は`import_roadmap_profile(...)`がprofile置換とmanifest行の�
 
 ## 適用・復旧・容量
 
-このmigration群は未適用の下書きであり、現時点では本番個人データを持たないため、追跡前なら下書きを破棄して作り直せる。本番適用後はrollback SQLで学習データを削除しない。障害時は書込みを止め、修正migrationで前方修復する。物理復元が必要な場合も、まず別プロジェクトへ復元して対象個人データと差分を検証し、本番を直接上書きしない。
+適用済み migration を rollback SQL で逆適用して学習データを削除しない。障害時は書込みを止め、修正 migration による前方復旧を優先する。物理復元が必要なら、まず隔離環境へ復元して対象個人データと差分を検証し、本番を直接上書きしない。
 
-Free planには自動backupとPITRがないため、適用直前と定期運用で`supabase db dump`による暗号化済みのオフサイト論理backupを取得し、復元手順を別環境で検証する。DB上限は500 MBであるため、`learning_events`の件数・索引を含むDB使用量を月次監視し、保持方針を変更する前に個人データへの影響をレビューする。根拠: [Supabase backups](https://supabase.com/docs/guides/platform/backups)、[Free plan backups](https://supabase.com/kb/faqs/platform/free-plan-backups)、[pricing](https://supabase.com/pricing)。
+運用ポリシーは、変更前の復元可能な暗号化済み論理 backup、隔離環境での復元手順検証、`learning_events` と索引を含む容量の定期確認、保持方針変更前の個人データ影響レビューである。一方、現行 repository には backup 取得・保管・保持期限・PITR・容量アラートを自動化した設定はない。これらを設定済み・稼働中とは扱わず、実運用で設定した証跡を別途残す。
+
+## 公開前バックアップの検証記録
+
+2026-11-20の本番読取で001〜003の保存済みSQLと追跡ソースのSHA-256一致、全9テーブルのRLSを確認した。004追加前の対象publicテーブル（全て0行）と適用済みmigrationを、認証タグ付きAES-256-GCMで暗号化し、Supabaseとは別のMacへ保存した。暗号化鍵はMacキーチェーンの専用サービスで保持し、コード・ログ・文書に記載しない。復号結果の全バイト一致を検査した。これはpublic学習データの適用前保存であり、Authユーザー全体のバックアップや定期自動化、別プロジェクトへの復元試験を実施したという意味ではない。実行証跡は`test-results/data/production-source-checksums.json`、`production-before-profile-snapshot.json`、`production-backup-before-004.json`に記録する。
+
+更新競合の006はPostgREST 14の[custom SQLSTATE 40001無限再試行](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b)を回避する。採用時は4関数の有効定義がSQLSTATE以外不変であることを静的検査し、実HTTP412と並行更新の拒否を確認する。

@@ -29,5 +29,5 @@ export function useAccount() {
   const store = useContext(Context);
   if (!store) throw new Error('Missing authentication context');
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
-  return { state, service: store.service };
+  return { state, service: store.service, authStore: store };
 }

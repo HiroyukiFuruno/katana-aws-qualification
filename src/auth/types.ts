@@ -19,6 +19,7 @@ export type AuthState =
 export interface AccountAuth {
   readonly providers: readonly AuthProvider[];
   getAccount(): Promise<Account | null>;
+  getAccessToken(expectedAccountId: string): Promise<string>;
   subscribe(listener: (account: Account | null) => void): () => void;
   signIn(providerId: string, locale: Locale): Promise<string>;
   completeCallback(search: string): Promise<Account>;

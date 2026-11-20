@@ -1,10 +1,11 @@
 import { createHmac, randomUUID } from 'node:crypto';
+import { verifyConfirmedExamPostgrest } from './verify-exam-clock-rest';
 
 const authUrl = 'http://127.0.0.1:54430';
 const restUrl = 'http://127.0.0.1:54431';
 const jwtSecret = 'kaq-data-integration-jwt-secret-not-for-production';
 
-type AuthSession = { access_token: string; user: { id: string } };
+export type AuthSession = { access_token: string; user: { id: string } };
 type SignUpResponse = { access_token?: string; user?: { id: string }; session?: AuthSession };
 type RequestOptions = { token?: string; method?: string; body?: object };
 
@@ -15,7 +16,7 @@ function apiKey() {
   return `${header}.${payload}.${createHmac('sha256', jwtSecret).update(`${header}.${payload}`).digest('base64url')}`;
 }
 
-async function request(path: string, options: RequestOptions = {}) {
+export async function request(path: string, options: RequestOptions = {}) {
   return fetch(`${restUrl}${path}`, {
     method: options.method ?? 'GET',
     headers: {
@@ -116,4 +117,5 @@ export async function verifyPostgrest(first: AuthSession, second: AuthSession) {
     body: { p_event: event(randomUUID()), p_expected_generation: 0 },
   });
   if (anonymousWrite.ok) throw new Error('PostgREST allowed anonymous RPC write');
+  await verifyConfirmedExamPostgrest(request, first, second);
 }

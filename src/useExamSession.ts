@@ -1,40 +1,51 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ExamBlueprint } from './certifications';
-import {
-  canStartExam,
-  getResponse,
-  isAnswered,
-  newExam,
-  readExam,
-  storeExam,
-  type ExamResponse,
-} from './exam';
+import { isAnswered } from './exam';
+import { examNow } from './examClock';
 import type { Attempt } from './history';
-import { questionKey, type Question } from './questions';
+import { getActiveProgressStore } from './history';
+import { type Question, questionKey } from './questions';
+import { useExamDraftControls } from './useExamDraftControls';
 import { useExamSubmission } from './useExamSubmission';
 import { useStoredExam } from './useStoredExam';
 
-export function useExamSession({
-  bank,
-  archivedBank,
-  history,
-  onSaved,
-  blueprint,
-  examKey,
-  practiceQuestions,
-  onStart,
-}: {
-  bank: Question[];
-  practiceQuestions: Question[];
+type ExamSessionInput = {
   archivedBank: Question[];
+  bank: Question[];
   blueprint: ExamBlueprint;
+  certificationId: string;
   examKey: string;
   history: Attempt[];
-  onStart: () => void;
   onSaved: (history: Attempt[], indexFailed: boolean) => void;
-}) {
-  const { draft, setDraft, error, setError, activeSince } = useStoredExam(examKey);
+  onStart: () => void;
+  practiceQuestions: Question[];
+};
+
+export function useExamSession({
+  archivedBank,
+  bank,
+  blueprint,
+  certificationId,
+  examKey,
+  history,
+  onSaved,
+  onStart,
+  practiceQuestions,
+}: ExamSessionInput) {
+  const progressStore = getActiveProgressStore();
+  const {
+    draft,
+    setDraft,
+    error,
+    setError,
+    activeSince,
+    loading: reloading,
+    reload,
+    loadSubmittedExam,
+  } = useStoredExam(examKey, certificationId);
   const [now, setNow] = useState(Date.now);
+  const [saving, setSaving] = useState(false);
+  const savePending = useRef(false);
   const byKey = new Map(
     [...archivedBank, ...practiceQuestions, ...bank].map((question) => [
       questionKey(question),
@@ -49,99 +60,76 @@ export function useExamSession({
   const question = questions[draft?.position ?? 0];
   const key = question ? questionKey(question) : '';
   const attempts = draft ? history.filter((attempt) => attempt.examId === draft.id) : [];
-  const completed = attempts.length > 0;
-  const expired = !!draft && now >= draft.deadline;
-  const available = canStartExam(bank, blueprint);
+  const completed =
+    attempts.length > 0 || Boolean(draft && 'submitted' in draft && draft.submitted === true);
+  const currentNow = draft ? examNow(draft) : now;
+  const expired = !!draft && currentNow >= draft.deadline;
+  const { submitting, dialog, pending, failedAuto, submit } = useExamSubmission({
+    activeSince,
+    certificationId,
+    completed,
+    correctRevision,
+    draft,
+    examKey,
+    expired,
+    onSaved,
+    progressStore,
+    questions,
+    saving: saving || reloading,
+    setDraft,
+    setError,
+  });
+  const { available, start, update } = useExamDraftControls({
+    activeSince,
+    bank,
+    blueprint,
+    certificationId,
+    draft,
+    examKey,
+    failedAuto,
+    history,
+    onStart,
+    progressStore,
+    savePending,
+    setDraft,
+    setError,
+    setSaving,
+    setNow,
+  });
   const unanswered = draft ? questions.filter((item) => !isAnswered(draft, item)).length : 0;
   useEffect(() => {
     if (!draft?.id || completed || expired) return;
-    const tick = () => setNow(Date.now());
+    const tick = () => setNow(examNow(draft));
     const interval = window.setInterval(tick, 250);
     document.addEventListener('visibilitychange', tick);
     return () => {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', tick);
     };
-  }, [draft?.id, completed, expired]);
-  const { submitting, dialog, pending, failedAuto, submit } = useExamSubmission({
-    draft,
-    questions,
-    correctRevision,
-    completed,
-    expired,
-    examKey,
-    onSaved,
-    activeSince,
-    setError,
-  });
-  function start(count: number) {
-    if (!available) return;
-    try {
-      const current = readExam(examKey);
-      if (current && !history.some((attempt) => attempt.examId === current.id)) {
-        setDraft(current);
-        return;
-      }
-      const next = newExam(bank, blueprint, Date.now(), count);
-      storeExam(examKey, next);
-      setDraft(next);
-      setNow(Date.now());
-      activeSince.current = Date.now();
-      failedAuto.current = false;
-      onStart();
-      setError('');
-    } catch {
-      setError('examSaveFailed');
-    }
-  }
-  function update(position: number, patch: Partial<ExamResponse> = {}) {
-    const at = Date.now();
-    if (!draft || at >= draft.deadline || pending.current) {
-      setNow(at);
-      return;
-    }
-    try {
-      const current = readExam(examKey);
-      if (!current || current.id !== draft.id || current.position !== draft.position) return;
-      const response = getResponse(current, key);
-      const next = {
-        ...current,
-        position,
-        responses: {
-          ...current.responses,
-          [key]: {
-            ...response,
-            ...patch,
-            durationMs: response.durationMs + Math.max(0, at - activeSince.current),
-          },
-        },
-      };
-      storeExam(examKey, next);
-      activeSince.current = at;
-      setDraft(next);
-      setError('');
-    } catch {
-      setError('answerSaveFailed');
-    }
-  }
+  }, [draft, draft?.id, completed, expired]);
   return {
-    draft,
-    now,
-    error,
-    byKey,
-    questions,
-    correctRevision,
-    question,
-    key,
     attempts,
-    completed,
-    expired,
     available,
-    unanswered,
-    submitting,
+    byKey,
+    completed,
+    correctRevision,
     dialog,
-    submit,
+    draft,
+    error,
+    expired,
+    key,
+    now: currentNow,
+    question,
+    questions,
+    reloading,
+    reload,
+    loadSubmittedExam,
     start,
-    update,
+    submit,
+    submitting,
+    saving,
+    unanswered,
+    update: (position: number, patch = {}) =>
+      reloading || pending.current || savePending.current ? undefined : update(position, patch),
   };
 }

@@ -1,0 +1,150 @@
+import { profileKey } from '../assessment';
+import { isGenerationConflict } from './errors';
+import { emptyProfile } from './profileCodec';
+import type { StoreActionDependencies } from './storeActionTypes';
+import { resetGuestProgress } from './storeGuestExams';
+import { updateGuestHistory } from './storeGuestHistory';
+import { loadGuestProgress } from './storeGuestLoad';
+import { memberAttemptSnapshot, recoverMemberAttempt, retryMemberPending } from './storeMemberAttempts';
+import { initializeMemberGeneration } from './storeMemberInitialization';
+import { prepareFreshMemberAttempt } from './storeMemberPreparation';
+import type * as StoreTypes from './storeTypes';
+
+export function createStoreActions(
+  input: StoreTypes.ProgressStoreInput,
+  {
+    failed,
+    getSnapshot,
+    getSnapshotVersion,
+    guest,
+    loading,
+    member,
+    queue,
+    ready,
+    setGeneration,
+  }: StoreActionDependencies,
+): StoreTypes.ProgressStoreActions {
+  async function initialize() {
+    const preserveReady = getSnapshot().state === 'ready';
+    loading();
+    const version = getSnapshotVersion();
+    try {
+      if (input.owner.kind === 'guest') {
+        if (!guest) throw new Error('A guest progress store is required.');
+        const stored = await loadGuestProgress(guest);
+        if (getSnapshotVersion() !== version) return getSnapshot();
+        ready({
+          attempts: stored.attempts.attempts,
+          corruptRows: stored.attempts.corruptRows,
+          profile: stored.profile,
+          profileRevision: 0,
+        });
+      } else {
+        if (!member) throw new Error('A member progress client is required.');
+        await initializeMemberGeneration(member, setGeneration);
+        const [events, profile] = await Promise.all([member.loadAttempts(), member.loadProfile()]);
+        if (getSnapshotVersion() !== version) return getSnapshot();
+        ready({
+          attempts: events,
+          corruptRows: 0,
+          profile: profile.profile,
+          profileRevision: profile.revision,
+        });
+        if (queue?.hasPending()) failed('save');
+      }
+    } catch {
+      if (getSnapshotVersion() === version) failed('load', preserveReady);
+    }
+    return getSnapshot();
+  }
+  return {
+    initialize,
+    async appendAttempt(certificationId, attempt, prepare) {
+      try {
+        const snapshot = getSnapshot();
+        if (input.owner.kind === 'guest') {
+          if (!guest) throw new Error('A guest progress store is required.');
+          const stored = updateGuestHistory(guest, (attempts) => {
+            const prepared = prepare?.(attempts) ?? attempt;
+            return { attempts: [...attempts, prepared], value: prepared };
+          });
+          ready({
+            attempts: stored.attempts,
+            corruptRows: 0,
+            profile: snapshot.profile,
+            profileRevision: snapshot.profileRevision,
+          });
+          return stored.value;
+        }
+        if (!member || !queue) throw new Error('A member progress client is required.');
+        let fresh = [] as Awaited<ReturnType<typeof member.loadAttempts>>;
+        const result = await queue.append(member, certificationId, attempt, async (flushed) => {
+          const prepared = await prepareFreshMemberAttempt(
+            member,
+            attempt,
+            prepare,
+            flushed,
+            getSnapshot,
+          );
+          fresh = prepared.fresh;
+          return prepared.preparation;
+        });
+        ready(memberAttemptSnapshot(getSnapshot(), result.flushed, fresh));
+        return result.attempt;
+      } catch (error) {
+        await recoverMemberAttempt(input, error, queue, member, getSnapshot, ready, failed);
+        throw error;
+      }
+    },
+    async replaceProfile(profile) {
+      try {
+        const snapshot = getSnapshot();
+        if (input.owner.kind === 'guest') {
+          if (!guest) throw new Error('A guest progress store is required.');
+          if (guest.write(profileKey, JSON.stringify(profile)) === 'failed') {
+            throw new Error('Guest profile was not saved.');
+          }
+          ready({
+            attempts: snapshot.attempts,
+            corruptRows: snapshot.corruptRows,
+            profile,
+            profileRevision: snapshot.profileRevision,
+          });
+          return;
+        }
+        if (!member) throw new Error('A member progress client is required.');
+        const revision = await member.replaceProfile(profile, snapshot.profileRevision);
+        ready({
+          attempts: snapshot.attempts,
+          corruptRows: snapshot.corruptRows,
+          profile,
+          profileRevision: revision,
+        });
+      } catch (error) {
+        try {
+          if (!isGenerationConflict(error)) input.onProfileConflict?.();
+        } finally {
+          failed('save');
+        }
+        throw error;
+      }
+    },
+    async reset() {
+      try {
+        if (input.owner.kind === 'guest') {
+          if (!guest) throw new Error('A guest progress store is required.');
+          resetGuestProgress(guest);
+        } else if (member) await setGeneration(await member.reset());
+        else throw new Error('A member progress client is required.');
+        ready({ attempts: [], corruptRows: 0, profile: emptyProfile(), profileRevision: 0 });
+      } catch (error) {
+        failed('reset');
+        throw error;
+      }
+    },
+    async retryPending() {
+      if (input.owner.kind === 'guest') await initialize();
+      else await retryMemberPending(member, queue, initialize, input, getSnapshot, ready, failed);
+    },
+  };
+}

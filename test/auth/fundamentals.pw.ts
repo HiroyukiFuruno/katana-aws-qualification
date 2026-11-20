@@ -8,6 +8,9 @@ const units = content.units;
 for (const unit of units) {
   test(`${unit.id}: read first, answer all four formats and retain progress`, async ({ page }) => {
     await page.goto(`/ja/study/fundamentals/?unit=${encodeURIComponent(unit.id)}`);
+    await page
+      .getByRole('checkbox', { name: 'ゲストの学習記録をこの端末に保存する', exact: true })
+      .check();
     await expect(page.locator('.fundamentals-reading-section')).toHaveCount(unit.sections.length);
     for (const section of unit.sections) {
       await expect(page.getByRole('heading', { name: section.title, exact: true })).toBeVisible();

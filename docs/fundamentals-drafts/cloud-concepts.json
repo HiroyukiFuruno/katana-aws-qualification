@@ -1,0 +1,745 @@
+{
+  "id": "fundamentals.cloud-concepts",
+  "order": 1,
+  "title": "クラウドの基本概念",
+  "summary": "資源を必要に応じて利用する考え方から、責任の境界と障害へ備える設計まで順に学びます。",
+  "prerequisites": [],
+  "objective": "利用量・担当する層・障害の範囲を区別し、クラウド構成を選ぶ理由を説明できる。",
+  "explanation": [
+    "資源の利用量、管理の担当、障害の範囲を順に整理します。"
+  ],
+  "example": "月末の混雑とAZ障害は目的を分けて設計します。",
+  "next": "fundamentals.core-services",
+  "learningObjectives": [
+    {
+      "id": "cloud-1",
+      "text": "オンデマンドと従量課金から、利用量を調整する理由を説明する。",
+      "sectionIds": [
+        "on-demand"
+      ]
+    },
+    {
+      "id": "cloud-2",
+      "text": "利用サービスと管理する層から、AWSと利用者の担当を判断する。",
+      "sectionIds": [
+        "shared-responsibility"
+      ]
+    },
+    {
+      "id": "cloud-3",
+      "text": "Region/AZの階層と共通の障害範囲を説明する。",
+      "sectionIds": [
+        "regions-az"
+      ]
+    },
+    {
+      "id": "cloud-4",
+      "text": "負荷・障害・費用を区別して構成を比較する。",
+      "sectionIds": [
+        "tradeoffs"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "on-demand",
+      "title": "必要なときに用意し、必要量を見直す",
+      "paragraphs": [
+        "アプリを動かすには、計算するサーバー、データを置く場所、通信するネットワークが必要です。自分で機器を買う場合は、利用が始まる前に台数や設置場所を決めます。足りなければ調達を待ち、多すぎれば使わない機器にも費用がかかります。",
+        "クラウドでは、このような資源をネットワーク経由で必要に応じて用意できます。オンデマンドとは、必要な時点で要求して利用することです。最初から最大の混雑を想定して買いそろえる代わりに、小さく始めて利用状況から容量を調整できます。",
+        "スケールアウトは処理を分担する台数を増やすこと、スケールインは減らすことです。スケールアップは1台の能力を上げることです。変更できることと自動で変わることは別なので、自動調整するなら条件や上限も設定します。",
+        "従量課金では、利用した時間・保存量・処理回数などが費用の要因になります。使わない計算資源を止めても、残したディスクや保存データの料金までなくなるとは限りません。何を使い、何を残すかを資源ごとに確認します。"
+      ],
+      "example": {
+        "scenario": "平日は小規模、月末だけ利用が増える社内集計をクラウドへ移します。",
+        "steps": [
+          "平日の必要量を測り、常に月末の最大台数を動かす構成を避けます。",
+          "月末の処理量に合わせて計算資源を増やし、終了後に減らします。",
+          "計算を止めた後も必要なデータは保存し、保存費用を別に確認します。"
+        ],
+        "outcome": "ピーク対応と普段の費用を分けて判断できます。利用量の監視と調整が必要です。"
+      },
+      "misconception": {
+        "claim": "クラウドへ移せば、何もしなくても費用は必ず下がる。",
+        "correction": "余分な資源の稼働や保存、転送が増えると費用も増えます。必要量を測り、設計と利用状況を見直します。"
+      },
+      "takeaways": [
+        "オンデマンドは必要時に資源を利用できる性質です。",
+        "変更の手段と、自動化の設定を分けて考えます。",
+        "費用は計算・保存などの利用要因ごとに確認します。"
+      ],
+      "source": {
+        "label": "AWS: Six advantages of cloud computing",
+        "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/six-advantages-of-cloud-computing.html"
+      }
+    },
+    {
+      "id": "shared-responsibility",
+      "title": "AWSに任せる範囲と、自分で守る範囲",
+      "paragraphs": [
+        "クラウドを使っても、すべての安全対策をAWSへ任せることにはなりません。責任共有モデルは、AWSが管理する部分と、利用者が管理する部分の境界を整理する考え方です。",
+        "AWSはデータセンターの入退室や設備など、サービスを動かす基盤を管理します。一方、誰がデータにアクセスできるか、どんなデータを保存するか、どこまでネットワーク通信を許すかは、利用者側の判断と設定です。",
+        "境界はサービスによって変わります。EC2で自分が管理するOSを動かす場合は、そのOSや導入したアプリの更新を利用者が担当します。S3のようにOSを直接操作しないサービスでは、AWSがその基盤を管理しますが、データの公開範囲などは引き続き利用者が管理します。",
+        "担当を判断するときは、まず使っているサービスを確認し、次に問題となっている層を特定します。『AWS上だからAWSの責任』とも『データに関わるから全部利用者』とも一括りにせず、その資源で誰が何を設定・運用するかを調べます。"
+      ],
+      "example": {
+        "scenario": "EC2で動くWebアプリのOSに更新が必要になりました。",
+        "steps": [
+          "対象がAWSの物理サーバーではなく、利用者が管理するゲストOSであると特定します。",
+          "OS更新の計画・適用・動作確認を利用者側で行います。",
+          "同時に、不要なネットワーク公開やアプリの権限がないかも確認します。"
+        ],
+        "outcome": "AWSが設備を保護していても、利用者が管理するOSとアプリの対策は残ります。"
+      },
+      "misconception": {
+        "claim": "マネージドサービスなら利用者が確認する安全設定はなくなる。",
+        "correction": "運用を任せられる層は増えても、データやアクセス許可など利用者側の責任は残ります。"
+      },
+      "takeaways": [
+        "責任の境界はサービスごとに確認します。",
+        "物理基盤と、利用者の設定・データを区別します。",
+        "EC2のゲストOS更新は利用者が担当します。"
+      ],
+      "source": {
+        "label": "AWS: Shared Responsibility Model",
+        "url": "https://aws.amazon.com/compliance/shared-responsibility-model/"
+      }
+    },
+    {
+      "id": "regions-az",
+      "title": "RegionとAZで障害の範囲を分ける",
+      "paragraphs": [
+        "RegionはAWSの資源を配置する地理的な単位です。利用者との距離、必要なサービス、データを置く場所の制約などを考えて選びます。単に画面でRegionを切り替えるだけで、すでに作った資源が移動するわけではありません。",
+        "Availability Zone（AZ）は、1つのRegion内にある分離された拠点です。AZは1つ以上のデータセンターで構成されます。AZとRegionを同じ大きさの場所として考えないことが大切です。",
+        "同じAZの中にサーバーを2台置けば、1台の故障へ備えられる可能性があります。しかしそのAZ全体に影響する障害では、2台とも使えなくなることがあります。異なるAZへ処理を分散すると、この共通の障害範囲を分けられます。",
+        "複数AZに資源を置くだけでシステム全体の復旧が完成するわけではありません。利用者からの接続を生きている処理先へ流し、必要なデータへアクセスできるようにします。別Regionへの複製も、対象サービスでの設定や運用が必要で、自動的にすべてのデータが世界中へ複製されるわけではありません。"
+      ],
+      "example": {
+        "scenario": "同じAZのサーバー2台でWebサイトを動かしており、AZ障害にも備えたいと考えています。",
+        "steps": [
+          "現在の2台が、AZという共通の障害範囲にあることを確認します。",
+          "異なるAZにも処理を用意し、正常な処理先へ通信を振り分ける構成を検討します。",
+          "片方のAZが使えなくても、残る処理と必要なデータで動くかを確認します。"
+        ],
+        "outcome": "台数だけでなく配置と依存先まで見ると、どの障害へ備えた構成か説明できます。"
+      },
+      "misconception": {
+        "claim": "2台に増やせば、配置に関係なくAZ障害へ対応できる。",
+        "correction": "同じAZの2台はAZ障害の影響を共有します。台数と障害範囲を別々に確認します。"
+      },
+      "takeaways": [
+        "Regionの中に複数のAZがあります。",
+        "複数AZは単一AZ障害の影響を分ける設計に役立ちます。",
+        "配置だけでなく通信とデータの依存先も確認します。"
+      ],
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      }
+    },
+    {
+      "id": "tradeoffs",
+      "title": "止められない理由と、使える費用から設計する",
+      "paragraphs": [
+        "可用性とは、必要なときにサービスを利用できる性質です。すべてのシステムに同じ構成が適するわけではありません。止まったときに誰が困るか、どのくらい待てるか、どこまでの障害へ備えるかを最初に整理します。",
+        "例えば学習用の一時的な環境と、営業時間中に注文を受けるシステムでは、停止による影響が異なります。後者では複数の処理先や障害時の切替を検討しますが、資源や運用が増える分、費用と管理の負担も確認します。",
+        "負荷が増えることと、障害が起こることも分けます。処理能力を増やせば混雑へ対応しやすくなりますが、増やした資源がすべて同じ障害範囲にあれば、その場所の障害対策は不十分です。容量の調整と配置の分散は、目的が異なる判断です。",
+        "設計を比較するときは、『何を防ぐか』『何が残るか』『その費用で運用できるか』を言葉にします。クラウドの機能名を知るだけでなく、残るリスクを把握することが、次の単元でサービスを選ぶための土台になります。"
+      ],
+      "example": {
+        "scenario": "2つの案を比べます。案Aは同じAZに3台、案Bは異なるAZに2台です。",
+        "steps": [
+          "台数だけで性能の優劣を決めず、必要な処理量を測ります。",
+          "AZ障害へ備える目的なら、案Bの配置がどの共通障害を減らすかを確認します。",
+          "案Bも、残った1台の処理能力、接続の切替、必要なデータへの到達性を確認します。"
+        ],
+        "outcome": "『台数が多いから安全』で終わらず、性能・障害範囲・運用費用を分けて比較できます。"
+      },
+      "misconception": {
+        "claim": "複数AZにすれば、負荷対策や費用の確認も不要になる。",
+        "correction": "AZ分散は障害範囲への備えです。残存能力と費用は別の観点で確認します。"
+      },
+      "takeaways": [
+        "利用できない影響から必要な可用性を考えます。",
+        "容量の調整と障害範囲の分散を混同しません。",
+        "利点だけでなく残るリスクと運用負担を説明します。"
+      ],
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-101",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "オンデマンドの利用",
+      "prompt": "オンデマンドの考え方として正しいものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "cloud-1",
+      "sectionId": "on-demand",
+      "application": "recall",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "必要な時点で資源を要求し、利用状況に応じて容量を見直す。",
+          "explanation": "必要時に資源を利用できる性質を表します。"
+        },
+        {
+          "id": "B",
+          "text": "利用開始前に数年後の最大台数を必ず購入する。",
+          "explanation": "最大台数の事前購入はオンデマンドの特徴ではありません。"
+        },
+        {
+          "id": "C",
+          "text": "利用量を確認しなくても費用は必ず最小になる。",
+          "explanation": "費用を抑えるには利用状況を見直す必要があります。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Six advantages of cloud computing",
+        "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/six-advantages-of-cloud-computing.html"
+      },
+      "learning": {
+        "reason": "必要時に資源を利用できる性質を表します。",
+        "concept": "オンデマンドと従量課金から、利用量を調整する理由を説明する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-102",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "停止後に残る費用",
+      "prompt": "計算処理を止め、結果データとディスクを残しました。判断として誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "cloud-1",
+      "sectionId": "on-demand",
+      "application": "apply",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "保存している資源の料金も確認する。",
+          "explanation": "計算と保存は異なる費用要因です。"
+        },
+        {
+          "id": "B",
+          "text": "計算を止めたので、関連する全資源の費用が必ず0になる。",
+          "explanation": "計算停止だけでは、残した保存資源の費用までなくなるとは限りません。"
+        },
+        {
+          "id": "C",
+          "text": "再開に必要なデータと、不要になった資源を分ける。",
+          "explanation": "残す目的を確認すると費用と再開の要件を整理できます。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Six advantages of cloud computing",
+        "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/six-advantages-of-cloud-computing.html"
+      },
+      "learning": {
+        "reason": "計算停止だけでは、残した保存資源の費用までなくなるとは限りません。",
+        "concept": "オンデマンドと従量課金から、利用量を調整する理由を説明する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-103",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "月末だけ増える負荷",
+      "prompt": "月末だけ処理量が増える環境への対応として、正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "cloud-1",
+      "sectionId": "on-demand",
+      "application": "integrate",
+      "correct": [
+        "A",
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "普段の利用量を測り、必要量から始める。",
+          "explanation": "測定が容量調整の判断材料になります。"
+        },
+        {
+          "id": "B",
+          "text": "処理完了後に、増やした計算資源を減らす。",
+          "explanation": "利用が減ったら容量を戻すことで不要な稼働を減らせます。"
+        },
+        {
+          "id": "C",
+          "text": "すべての資源を常に最大量で動かすことが必須である。",
+          "explanation": "オンデマンドでは常時最大量の確保が必須ではありません。"
+        },
+        {
+          "id": "D",
+          "text": "クラウドなら自動調整条件を確認する必要はない。",
+          "explanation": "自動化するなら条件や上限も確認します。"
+        },
+        {
+          "id": "E",
+          "text": "保存や転送の費用は一切発生しない。",
+          "explanation": "費用は計算以外の要因も確認します。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Six advantages of cloud computing",
+        "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/six-advantages-of-cloud-computing.html"
+      },
+      "learning": {
+        "reason": "測定が容量調整の判断材料になります。",
+        "concept": "オンデマンドと従量課金から、利用量を調整する理由を説明する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-001",
+      "revision": 2,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "責任共有",
+      "prompt": "AWSが担当するものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "cloud-2",
+      "sectionId": "shared-responsibility",
+      "application": "recall",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "利用者が選ぶデータの公開範囲",
+          "explanation": "公開範囲は利用者が設定・確認します。"
+        },
+        {
+          "id": "B",
+          "text": "AWS施設の物理的な安全管理",
+          "explanation": "AWSが管理する物理基盤の責任です。"
+        },
+        {
+          "id": "C",
+          "text": "利用者が導入したゲストOSの更新",
+          "explanation": "EC2の利用者が管理するゲストOS更新は利用者の担当です。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Shared Responsibility Model",
+        "url": "https://aws.amazon.com/compliance/shared-responsibility-model/"
+      },
+      "learning": {
+        "reason": "AWSが管理する物理基盤の責任です。",
+        "concept": "利用サービスと管理する層から、AWSと利用者の担当を判断する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-105",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "EC2のOS更新",
+      "prompt": "EC2のゲストOSに更新が必要なとき、誤った判断を1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "cloud-2",
+      "sectionId": "shared-responsibility",
+      "application": "apply",
+      "correct": [
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "利用者側で更新計画と動作確認を行う。",
+          "explanation": "利用者が管理するゲストOSの対策です。"
+        },
+        {
+          "id": "B",
+          "text": "AWS施設の安全対策とOS更新は管理する層が異なる。",
+          "explanation": "物理基盤とゲストOSでは担当が異なります。"
+        },
+        {
+          "id": "C",
+          "text": "AWS上のOSなので利用者は更新を考えなくてよい。",
+          "explanation": "EC2のゲストOS更新は利用者側に残る責任です。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Shared Responsibility Model",
+        "url": "https://aws.amazon.com/compliance/shared-responsibility-model/"
+      },
+      "learning": {
+        "reason": "EC2のゲストOS更新は利用者側に残る責任です。",
+        "concept": "利用サービスと管理する層から、AWSと利用者の担当を判断する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-106",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "マネージドでも残る担当",
+      "prompt": "責任共有について誤っている説明を2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "cloud-2",
+      "sectionId": "shared-responsibility",
+      "application": "integrate",
+      "correct": [
+        "C",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "サービスによって利用者の運用範囲は変わる。",
+          "explanation": "任せる層はサービスごとに異なります。"
+        },
+        {
+          "id": "B",
+          "text": "S3なら保存データのアクセス許可は利用者が確認する。",
+          "explanation": "基盤の運用を任せてもデータの権限は利用者が管理します。"
+        },
+        {
+          "id": "C",
+          "text": "マネージドサービスでは利用者の安全設定はすべて不要になる。",
+          "explanation": "データとアクセス許可などの責任は残ります。"
+        },
+        {
+          "id": "D",
+          "text": "EC2のゲストOS更新はAWS施設の入退室管理と同じ担当である。",
+          "explanation": "ゲストOS更新は利用者、施設の物理安全管理はAWSです。"
+        },
+        {
+          "id": "E",
+          "text": "利用サービスと対象の層を確認して担当を判断する。",
+          "explanation": "一括りにせず境界を特定する方法です。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Shared Responsibility Model",
+        "url": "https://aws.amazon.com/compliance/shared-responsibility-model/"
+      },
+      "learning": {
+        "reason": "データとアクセス許可などの責任は残ります。",
+        "concept": "利用サービスと管理する層から、AWSと利用者の担当を判断する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-002",
+      "revision": 2,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "RegionとAZ",
+      "prompt": "RegionとAZについて誤っている説明を1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "cloud-3",
+      "sectionId": "regions-az",
+      "application": "recall",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "AZは1つのRegion内の分離された拠点である。",
+          "explanation": "Region内にAZがあります。"
+        },
+        {
+          "id": "B",
+          "text": "1つのAZは複数のRegionをまとめた地理的な単位である。",
+          "explanation": "階層が逆です。AZはRegionの中にあります。"
+        },
+        {
+          "id": "C",
+          "text": "Regionは資源を配置する地理的な単位である。",
+          "explanation": "Regionを選んで資源を配置します。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      },
+      "learning": {
+        "reason": "階層が逆です。AZはRegionの中にあります。",
+        "concept": "Region/AZの階層と共通の障害範囲を説明する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-108",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "共通の障害範囲",
+      "prompt": "同じAZにある2台のサーバーを確認しました。正しい説明を2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "cloud-3",
+      "sectionId": "regions-az",
+      "application": "apply",
+      "correct": [
+        "A",
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "1台の故障に備えられる場合がある。",
+          "explanation": "1台の故障とAZ全体の障害は範囲が異なります。"
+        },
+        {
+          "id": "B",
+          "text": "AZ全体の障害では2台とも影響を受ける場合がある。",
+          "explanation": "同じAZという障害範囲を共有しています。"
+        },
+        {
+          "id": "C",
+          "text": "2台あればAZ障害の影響は必ずなくなる。",
+          "explanation": "台数だけでは共通の障害範囲を分けられません。"
+        },
+        {
+          "id": "D",
+          "text": "AZを増やすだけですべてのデータが別Regionへ自動複製される。",
+          "explanation": "別Region複製はサービスごとの設定・運用が必要です。"
+        },
+        {
+          "id": "E",
+          "text": "Region切替画面を操作すると既存サーバーが別Regionへ移動する。",
+          "explanation": "表示するRegionの切替は資源の移動ではありません。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      },
+      "learning": {
+        "reason": "1台の故障とAZ全体の障害は範囲が異なります。",
+        "concept": "Region/AZの階層と共通の障害範囲を説明する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-109",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "分散後の確認",
+      "prompt": "異なるAZへ処理を配置した後の判断として、誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "cloud-3",
+      "sectionId": "regions-az",
+      "application": "integrate",
+      "correct": [
+        "C",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "正常な処理先へ通信が流れるか確認する。",
+          "explanation": "配置と通信経路の両方が必要です。"
+        },
+        {
+          "id": "B",
+          "text": "片方のAZが使えない場合もデータへ到達できるか確認する。",
+          "explanation": "必要なデータが使えなければ処理を継続できません。"
+        },
+        {
+          "id": "C",
+          "text": "配置を分けたので残る資源の能力は確認しなくてよい。",
+          "explanation": "障害時の残存能力を確認します。"
+        },
+        {
+          "id": "D",
+          "text": "複数AZであれば別Regionへの複製も必ず完了している。",
+          "explanation": "AZ分散と別Region複製は同じではありません。"
+        },
+        {
+          "id": "E",
+          "text": "どの障害へ備えたかを配置と依存先から説明する。",
+          "explanation": "台数だけでは分からない障害範囲を整理できます。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      },
+      "learning": {
+        "reason": "障害時の残存能力を確認します。",
+        "concept": "Region/AZの階層と共通の障害範囲を説明する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-110",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "可用性の判断",
+      "prompt": "可用性を考える最初の問いとして、適切なものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "cloud-4",
+      "sectionId": "tradeoffs",
+      "application": "recall",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "停止によって誰が困り、どれくらい待てるか。",
+          "explanation": "停止の影響と必要な継続性が設計の出発点です。"
+        },
+        {
+          "id": "B",
+          "text": "構成の目的にかかわらず台数だけを最大にするか。",
+          "explanation": "台数だけでは必要性や障害の範囲を判断できません。"
+        },
+        {
+          "id": "C",
+          "text": "クラウドなら停止の影響を確認しなくてよいか。",
+          "explanation": "クラウドでも停止の影響を整理する必要があります。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      },
+      "learning": {
+        "reason": "停止の影響と必要な継続性が設計の出発点です。",
+        "concept": "負荷・障害・費用を区別して構成を比較する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-111",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "台数と配置の比較",
+      "prompt": "同じAZに3台ある案と、異なるAZに2台ある案を比べます。正しい比較を2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "cloud-4",
+      "sectionId": "tradeoffs",
+      "application": "apply",
+      "correct": [
+        "A",
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "性能は必要な処理量と資源の能力から評価する。",
+          "explanation": "台数だけでは処理能力は決まりません。"
+        },
+        {
+          "id": "B",
+          "text": "AZ障害への備えは配置と依存先から評価する。",
+          "explanation": "共通の障害範囲を分けているかを確認します。"
+        },
+        {
+          "id": "C",
+          "text": "3台の案は台数が多いので、必ずAZ障害へ強い。",
+          "explanation": "同じAZの障害範囲を共有しています。"
+        },
+        {
+          "id": "D",
+          "text": "異なるAZなら残った1台の能力は確認不要である。",
+          "explanation": "障害時に残る能力の確認が必要です。"
+        },
+        {
+          "id": "E",
+          "text": "すべての構成で費用は同じなので比較しなくてよい。",
+          "explanation": "資源と運用が増えた費用も比較します。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      },
+      "learning": {
+        "reason": "台数だけでは処理能力は決まりません。",
+        "concept": "負荷・障害・費用を区別して構成を比較する。"
+      }
+    },
+    {
+      "unitId": "fundamentals.cloud-concepts",
+      "id": "fund-cloud-112",
+      "revision": 1,
+      "category": "クラウド概念",
+      "version": "2026-11-learning",
+      "title": "負荷と障害の区別",
+      "prompt": "負荷対策と障害対策について誤っている説明を2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "cloud-4",
+      "sectionId": "tradeoffs",
+      "application": "integrate",
+      "correct": [
+        "B",
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "混雑への対応とAZ障害への備えは、分けて考える。",
+          "explanation": "容量と障害範囲は異なる目的です。"
+        },
+        {
+          "id": "B",
+          "text": "処理能力を増やすと、配置に関係なくAZ障害も防げる。",
+          "explanation": "能力を増やしても共通の障害範囲が残る場合があります。"
+        },
+        {
+          "id": "C",
+          "text": "複数AZなら、運用負担や費用は検討しなくてよい。",
+          "explanation": "資源と運用が増える分の負担も確認します。"
+        },
+        {
+          "id": "D",
+          "text": "残るリスクを言葉にして構成を比較する。",
+          "explanation": "何が防げて何が残るかが判断に役立ちます。"
+        },
+        {
+          "id": "E",
+          "text": "学習用と注文受付では停止の影響が異なり得る。",
+          "explanation": "用途によって必要な継続性は異なります。"
+        }
+      ],
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      },
+      "learning": {
+        "reason": "能力を増やしても共通の障害範囲が残る場合があります。",
+        "concept": "負荷・障害・費用を区別して構成を比較する。"
+      }
+    }
+  ]
+}

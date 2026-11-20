@@ -1,0 +1,757 @@
+{
+  "id": "fundamentals.core-services",
+  "order": 2,
+  "title": "主要AWSサービス",
+  "summary": "要件から計算、保存、データベース、実行方式を選びます。",
+  "prerequisites": [
+    "fundamentals.cloud-concepts"
+  ],
+  "objective": "実行、保存、データの性質からAWSサービスを選択できる。",
+  "explanation": [
+    "サービス名ではなく、誰が実行環境を管理するか、何を保存するか、どのように検索するかで選びます。"
+  ],
+  "example": "画像アップロードではS3へ保存し、変換処理の実行方式をEC2またはLambdaから選びます。",
+  "next": "fundamentals.networking-basics",
+  "learningObjectives": [
+    {
+      "id": "compute",
+      "text": "EC2とLambdaを、実行環境を管理する度合いと実行のきっかけから選べる。",
+      "sectionIds": [
+        "compute"
+      ]
+    },
+    {
+      "id": "storage",
+      "text": "S3とEBSを、保存するデータの形と接続先から選べる。",
+      "sectionIds": [
+        "storage"
+      ]
+    },
+    {
+      "id": "database",
+      "text": "RDSとDynamoDBを、問い合わせ方と運用責任から選べる。",
+      "sectionIds": [
+        "database"
+      ]
+    },
+    {
+      "id": "composition",
+      "text": "要件を計算・保存・データの役割へ分け、組み合わせを説明できる。",
+      "sectionIds": [
+        "composition"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "compute",
+      "title": "計算: 実行環境を誰が扱うか",
+      "paragraphs": [
+        "計算サービスは、プログラムを動かす場所です。Amazon EC2のインスタンスは仮想サーバーで、利用者がOSを選び、アプリケーションや更新を管理します。OSや常駐プロセスを細かく扱う必要があるときに、EC2という選択肢が生まれます。",
+        "AWS Lambdaは、イベントを受けてコードを実行するサービスです。ファイルの到着やAPI呼び出しを契機に小さな処理を動かしたい場合、サーバー台数を常時決める代わりに、関数と実行権限を用意します。",
+        "判断は『サーバーが必要か』ではなく、実行時間、OSへの依存、常時動く処理、起動契機を順に確認します。OS設定や長時間の常駐が必要ならEC2、イベント単位の処理ならLambdaをまず比較します。"
+      ],
+      "example": {
+        "scenario": "アップロードされた画像だけを縮小したい。",
+        "steps": [
+          "画像をS3へ置く。",
+          "オブジェクト作成イベントでLambdaを起動する。",
+          "変換結果を別のS3キーへ保存する。"
+        ],
+        "outcome": "常駐サーバーを管理せず、到着した画像にだけ処理を実行できるため、この要件ではLambdaが自然です。"
+      },
+      "misconception": {
+        "claim": "LambdaはEC2より常に高性能な仮想サーバーである。",
+        "correction": "Lambdaはイベント駆動のコード実行方式です。OSや常駐サービスを自由に管理する仮想サーバーではありません。"
+      },
+      "takeaways": [
+        "EC2は利用者がOSとアプリケーションを管理する仮想サーバーです。",
+        "Lambdaはイベントに応じてコードを実行します。",
+        "実行のきっかけと管理範囲から選びます。"
+      ],
+      "source": {
+        "label": "Amazon EC2 instances",
+        "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Instances.html"
+      }
+    },
+    {
+      "id": "storage",
+      "title": "保存: オブジェクトか接続ディスクか",
+      "paragraphs": [
+        "Amazon S3はオブジェクトストレージです。バケットの中で、キーを使ってファイルや画像などのオブジェクトを扱います。アプリケーションはオブジェクトを取得・保存するAPIを使い、OSのディレクトリとして直接マウントする前提では考えません。",
+        "Amazon EBSはEC2インスタンスへ接続して使うブロックストレージです。OSのファイルシステムやデータベースのディスクのように、仮想サーバーから継続的に読み書きする領域を考えるときに使います。",
+        "まずデータの利用者を確認します。複数の利用者がキーでファイルを取得するならS3、特定のEC2のOSがディスクとして使うならEBSです。保存先と計算先を同じサービスだと思い込まないことが重要です。"
+      ],
+      "example": {
+        "scenario": "EC2上のアプリケーションのOSディスクと、利用者がアップロードするPDFを保存したい。",
+        "steps": [
+          "OSとアプリケーションのファイルシステム用にEBSを接続する。",
+          "PDFをS3バケットにオブジェクトとして保存する。",
+          "PDFを読む処理はS3のキーで対象を指定する。"
+        ],
+        "outcome": "接続ディスクと共有するファイルを分けることで、データの使い方に合う保存方式を選べます。"
+      },
+      "misconception": {
+        "claim": "S3はEC2インスタンスに接続するディスクである。",
+        "correction": "S3はキーで扱うオブジェクトストレージです。EC2に接続してブロックデバイスとして使うのはEBSです。"
+      },
+      "takeaways": [
+        "S3はバケット内のオブジェクトをキーで扱います。",
+        "EBSはEC2へ接続して使うブロックストレージです。",
+        "保存形式ではなく利用方法で判断します。"
+      ],
+      "source": {
+        "label": "Amazon S3 objects overview",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingObjects.html"
+      }
+    },
+    {
+      "id": "database",
+      "title": "データベース: 問い合わせと運用範囲",
+      "paragraphs": [
+        "Amazon RDSはリレーショナルデータベースを運用するサービスです。表の関係、SQL、トランザクションを使って業務データを扱いたいとき、データベースエンジンの選択と接続設定を考えます。",
+        "Amazon DynamoDBはフルマネージドのNoSQLデータベースです。テーブルのキーを中心にアクセスパターンを設計します。後から任意の列を検索する前提ではなく、どのキーで読み書きするかを先に決めることが判断の出発点になります。",
+        "選定では『SQLが書けるか』だけで終えません。表の結合や関係を中心に扱うならRDS、予測できるキーアクセスを低運用で扱うならDynamoDBを候補にし、必要な検索と整合性を要件から確認します。"
+      ],
+      "example": {
+        "scenario": "注文、注文行、顧客を結び付け、月次集計も行う。",
+        "steps": [
+          "必要な表の関係と集計を整理する。",
+          "SQLで結合・集計する要件を確認する。",
+          "RDSを候補にしてエンジン、バックアップ、接続を設計する。"
+        ],
+        "outcome": "関係をまたぐ問い合わせが中心なので、キーだけで単純取得する設計よりRDSを比較の起点にできます。"
+      },
+      "misconception": {
+        "claim": "DynamoDBはRDSの表をそのまま移せば、同じ問い合わせを自動で行える。",
+        "correction": "DynamoDBはアクセスするキーを先に設計します。RDSの結合中心の問い合わせをそのまま前提にしません。"
+      },
+      "takeaways": [
+        "RDSはリレーショナルな表とSQLを扱います。",
+        "DynamoDBはキー中心のアクセスを設計します。",
+        "必要な問い合わせから候補を絞ります。"
+      ],
+      "source": {
+        "label": "Choosing between relational and nonrelational data stores",
+        "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/storage-services.html"
+      }
+    },
+    {
+      "id": "composition",
+      "title": "組み合わせ: 要件を役割へ分解する",
+      "paragraphs": [
+        "一つの機能は通常、計算、保存、データベースを組み合わせます。サービスを一つ選んで全てを担わせるのではなく、入力、処理、永続化、検索を順に分解します。",
+        "たとえば写真共有では、ファイル本体はS3、変換はLambda、投稿情報はデータベースに置けます。各サービスの境界を分けると、処理失敗時にどこを確認するか、どの権限を与えるかも明確になります。",
+        "判断手順は、要件から名詞を拾うことではありません。誰が何をいつ処理し、データをどの形で保存・検索するかを文にしてから、各役割に合うサービスを対応付けます。"
+      ],
+      "example": {
+        "scenario": "利用者がCSVを送信すると、検査して注文情報を登録し、元ファイルも保管する。",
+        "steps": [
+          "元CSVはS3へ保存する。",
+          "到着イベントでLambdaを起動して形式を検査する。",
+          "有効な注文情報を、必要な検索方式に合うデータベースへ登録する。"
+        ],
+        "outcome": "ファイル、イベント処理、業務データを分離するので、要件が変わっても各責務を個別に見直せます。"
+      },
+      "misconception": {
+        "claim": "EC2を選べば、ファイル保存と業務データもEC2だけで設計すべきである。",
+        "correction": "EC2は計算の選択肢です。保存や検索の要件はS3やデータベースを別に選びます。"
+      },
+      "takeaways": [
+        "要件を計算、保存、検索へ分解します。",
+        "役割ごとにサービスを選びます。",
+        "組み合わせることで責務と権限の境界が明確になります。"
+      ],
+      "source": {
+        "label": "AWS Well-Architected Framework",
+        "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-001",
+      "revision": 2,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "EC2の役割",
+      "prompt": "EC2について正しいものを1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "compute",
+      "sectionId": "compute",
+      "application": "recall",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "利用者がOSやアプリケーションを管理できる仮想サーバーである。",
+          "explanation": "EC2では利用者がOSを選び、アプリケーションや更新を管理します。"
+        },
+        {
+          "id": "B",
+          "text": "ファイル到着時だけコードを実行する関数である。",
+          "explanation": "これはLambdaの説明です。"
+        },
+        {
+          "id": "C",
+          "text": "オブジェクトをキーで保存するバケットである。",
+          "explanation": "これはS3の説明です。"
+        }
+      ],
+      "source": {
+        "label": "Amazon EC2 instances",
+        "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Instances.html"
+      },
+      "learning": {
+        "reason": "実行環境の管理範囲でEC2を捉えます。",
+        "concept": "EC2は仮想サーバーです。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-002",
+      "revision": 2,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "Lambdaの契機",
+      "prompt": "画像がS3へ到着した時だけ縮小処理を動かしたい。最初に検討する適切な実行方式を1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "compute",
+      "sectionId": "compute",
+      "application": "apply",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "常時稼働するEC2だけで監視を続ける。",
+          "explanation": "可能な構成でも、到着イベントだけを処理する要件では常時監視を前提にする理由を先に確認します。"
+        },
+        {
+          "id": "B",
+          "text": "S3のオブジェクト作成イベントでLambdaを起動する。",
+          "explanation": "イベントを契機に短い処理を実行するため、要件に対応します。"
+        },
+        {
+          "id": "C",
+          "text": "S3をデータベースとしてSQL集計する。",
+          "explanation": "S3はファイル保存であり、縮小処理の実行方式ではありません。"
+        }
+      ],
+      "source": {
+        "label": "AWS Lambda with Amazon S3",
+        "url": "https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html"
+      },
+      "learning": {
+        "reason": "契機と実行方式を結びます。",
+        "concept": "Lambdaはイベント駆動です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-101",
+      "revision": 2,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "実行方式の判断",
+      "prompt": "OSに専用ソフトを常駐させ、利用者がOSパッチの時期も管理したい。最も適切な判断を1つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "compute",
+      "sectionId": "compute",
+      "application": "integrate",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "実行の契機、処理時間、OS管理の要否を確認してEC2を比較する。",
+          "explanation": "常駐ソフトと利用者によるOS管理が要件なので、EC2を比較する判断材料になります。"
+        },
+        {
+          "id": "B",
+          "text": "OS管理の要否は実行方式を選ぶ材料にしない。",
+          "explanation": "誤りです。EC2とLambdaを比べる際、OSを誰が管理するかは重要です。"
+        },
+        {
+          "id": "C",
+          "text": "Lambdaなら利用者が任意のOSサービスを常駐管理できる。",
+          "explanation": "誤りです。Lambdaは利用者がOSを運用する仮想サーバーではありません。"
+        }
+      ],
+      "source": {
+        "label": "AWS Lambda developer guide",
+        "url": "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"
+      },
+      "learning": {
+        "reason": "要件と管理責任を合わせて選びます。",
+        "concept": "常駐OS管理はLambdaの前提ではありません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-102",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "S3の単位",
+      "prompt": "S3について誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "storage",
+      "sectionId": "storage",
+      "application": "recall",
+      "correct": [
+        "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "バケット内でキーを使ってオブジェクトを扱う。",
+          "explanation": "S3ではオブジェクトをキーで識別します。"
+        },
+        {
+          "id": "B",
+          "text": "EC2へ接続してOSのブロックデバイスとして使う。",
+          "explanation": "これはEBSの使い方であり、S3の説明として誤りです。"
+        },
+        {
+          "id": "C",
+          "text": "画像や文書のようなオブジェクトを保存できる。",
+          "explanation": "S3はオブジェクトストレージです。"
+        }
+      ],
+      "source": {
+        "label": "Amazon S3 objects overview",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingObjects.html"
+      },
+      "learning": {
+        "reason": "オブジェクトと接続ディスクを区別します。",
+        "concept": "S3はオブジェクトストレージです。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-103",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "保存先の選択",
+      "prompt": "EC2のOSが使うファイルシステムを置く保存先の説明として誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "storage",
+      "sectionId": "storage",
+      "application": "apply",
+      "correct": [
+        "A"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "S3だけをEC2の接続ディスクとして選ぶ。",
+          "explanation": "これは誤りです。接続ディスクとして考えるならEBSを検討します。"
+        },
+        {
+          "id": "B",
+          "text": "EC2へ接続するブロックストレージとしてEBSを検討する。",
+          "explanation": "OSのファイルシステムという利用方法に合います。"
+        },
+        {
+          "id": "C",
+          "text": "アップロードPDFはキーで扱うためS3を検討する。",
+          "explanation": "ファイルをオブジェクトとして保存・取得する用途に合います。"
+        }
+      ],
+      "source": {
+        "label": "Amazon EBS volumes",
+        "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes.html"
+      },
+      "learning": {
+        "reason": "データの利用方法から保存先を選びます。",
+        "concept": "EBSはEC2用ブロックストレージです。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-104",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "保存の分離",
+      "prompt": "写真本体とEC2のOS領域を分ける設計で、誤っているものを1つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 1,
+      "objectiveId": "storage",
+      "sectionId": "storage",
+      "application": "integrate",
+      "correct": [
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "写真本体はS3のオブジェクトとして扱える。",
+          "explanation": "写真をキーで保存・取得する用途にS3を使えます。"
+        },
+        {
+          "id": "B",
+          "text": "OS領域はEC2に接続するEBSを検討できる。",
+          "explanation": "OSが使うディスクとしてEBSを検討します。"
+        },
+        {
+          "id": "C",
+          "text": "保存対象が異なっても、すべてをIAMへ保存する。",
+          "explanation": "これは誤りです。IAMはアクセス制御であり、保存先ではありません。"
+        }
+      ],
+      "source": {
+        "label": "Amazon S3 objects overview",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingObjects.html"
+      },
+      "learning": {
+        "reason": "サービスの責務を混同しないようにします。",
+        "concept": "IAMは保存サービスではありません。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-105",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "RDSとDynamoDB",
+      "prompt": "RDSとDynamoDBの説明として正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "database",
+      "sectionId": "database",
+      "application": "recall",
+      "correct": [
+        "A",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "RDSは表の関係やSQLを使うデータを扱う候補になる。",
+          "explanation": "RDSはリレーショナルデータベースを運用するサービスです。"
+        },
+        {
+          "id": "B",
+          "text": "DynamoDBではどのような検索でも後から自動で最適化される。",
+          "explanation": "アクセスするキーを先に設計する必要があります。"
+        },
+        {
+          "id": "C",
+          "text": "DynamoDBはOSディスクを接続するサービスである。",
+          "explanation": "OSディスクはEBSの領域です。"
+        },
+        {
+          "id": "D",
+          "text": "DynamoDBでは読み書きするキーを設計の出発点にする。",
+          "explanation": "キー中心のアクセスパターンを先に考えます。"
+        },
+        {
+          "id": "E",
+          "text": "RDSはファイルをオブジェクトキーで保存するサービスである。",
+          "explanation": "これはS3の説明です。"
+        }
+      ],
+      "source": {
+        "label": "Amazon DynamoDB developer guide",
+        "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html"
+      },
+      "learning": {
+        "reason": "問い合わせ方が選定を左右します。",
+        "concept": "RDSは関係、DynamoDBはキー中心です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-106",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "注文データの判断",
+      "prompt": "顧客、注文、注文行を結合し、月次集計したい。正しい判断を2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "database",
+      "sectionId": "database",
+      "application": "apply",
+      "correct": [
+        "B",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "データの関係は不要なので、保存だけを検討する。",
+          "explanation": "結合・集計の要件があるため、関係と問い合わせを確認します。"
+        },
+        {
+          "id": "B",
+          "text": "SQLの結合・集計が必要なためRDSを比較する。",
+          "explanation": "関係をまたぐ問い合わせが中心の要件に対応します。"
+        },
+        {
+          "id": "C",
+          "text": "S3を選べば、注文表の結合が不要になる。",
+          "explanation": "S3はオブジェクト保存であり、要件の結合を解決しません。"
+        },
+        {
+          "id": "D",
+          "text": "EC2を選べば、データモデルの判断は不要になる。",
+          "explanation": "計算方式を選んでもデータの問い合わせ設計は必要です。"
+        },
+        {
+          "id": "E",
+          "text": "必要な検索と整合性を確認してからデータベースを選ぶ。",
+          "explanation": "サービス名ではなく要件から比較します。"
+        }
+      ],
+      "source": {
+        "label": "Amazon RDS user guide",
+        "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html"
+      },
+      "learning": {
+        "reason": "要件の問い合わせを選定基準にします。",
+        "concept": "結合と集計はRDSを比較する材料です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-107",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "アクセスパターン",
+      "prompt": "DynamoDBを選ぶ前の考え方として正しいものを2つ選んでください。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 2,
+      "objectiveId": "database",
+      "sectionId": "database",
+      "application": "integrate",
+      "correct": [
+        "A",
+        "C"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "どのキーで読み書きするかを先に書き出す。",
+          "explanation": "アクセスパターンをキー中心に設計します。"
+        },
+        {
+          "id": "B",
+          "text": "任意の列を後から無制限に結合できる前提にする。",
+          "explanation": "リレーショナルな結合を前提にはしません。"
+        },
+        {
+          "id": "C",
+          "text": "必要な問い合わせがキーアクセスと合うか確認する。",
+          "explanation": "要件とデータモデルを照合します。"
+        },
+        {
+          "id": "D",
+          "text": "OSパッチをDynamoDBへ適用する。",
+          "explanation": "データベースはOS管理の対象ではありません。"
+        },
+        {
+          "id": "E",
+          "text": "S3バケットをDynamoDBの代わりにSQL結合する。",
+          "explanation": "S3はSQL結合用のリレーショナルデータベースではありません。"
+        }
+      ],
+      "source": {
+        "label": "Best practices for designing and using partition keys",
+        "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-design.html"
+      },
+      "learning": {
+        "reason": "キーと問い合わせの整合を確認します。",
+        "concept": "DynamoDBはアクセスパターンから設計します。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-108",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "責務の分解",
+      "prompt": "CSV受信、内容検査、業務データ登録、原本保管の設計について誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "composition",
+      "sectionId": "composition",
+      "application": "recall",
+      "correct": [
+        "B",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "原本CSVをS3に保存する。",
+          "explanation": "ファイルをオブジェクトとして保管する役割に合います。"
+        },
+        {
+          "id": "B",
+          "text": "IAMをCSV本文の保存先にする。",
+          "explanation": "これは誤りです。IAMはアクセス制御であり、データ保存先ではありません。"
+        },
+        {
+          "id": "C",
+          "text": "検査処理の実行方式をイベントと処理内容から選ぶ。",
+          "explanation": "入力時に実行する処理かを確認して選びます。"
+        },
+        {
+          "id": "D",
+          "text": "EC2を選んだら、データベースの検索要件を考えない。",
+          "explanation": "これは誤りです。計算とデータベースの判断は別です。"
+        },
+        {
+          "id": "E",
+          "text": "業務データは必要な問い合わせに合うデータベースへ登録する。",
+          "explanation": "検索と関係の要件でRDSやDynamoDBを比較します。"
+        }
+      ],
+      "source": {
+        "label": "AWS Well-Architected Framework",
+        "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"
+      },
+      "learning": {
+        "reason": "役割を混ぜずに構成します。",
+        "concept": "計算、保存、データを分離します。"
+      },
+      "references": [
+        {
+          "label": "Amazon EC2 instances",
+          "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Instances.html"
+        },
+        {
+          "label": "Amazon S3 objects overview",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingObjects.html"
+        },
+        {
+          "label": "Choosing between relational and nonrelational data stores",
+          "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/storage-services.html"
+        }
+      ]
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-109",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "画像共有の構成",
+      "prompt": "写真共有で、原本保管、到着時変換、投稿検索を行う。誤っている構成を2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "composition",
+      "sectionId": "composition",
+      "application": "apply",
+      "correct": [
+        "A",
+        "E"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "原本写真をIAMポリシーへ保存する。",
+          "explanation": "これは誤りです。IAMポリシーはアクセス許可の定義です。"
+        },
+        {
+          "id": "B",
+          "text": "原本写真をS3へ保存する。",
+          "explanation": "ファイル本体をオブジェクトとして扱えます。"
+        },
+        {
+          "id": "C",
+          "text": "到着を契機にLambdaで変換を検討する。",
+          "explanation": "イベント駆動の処理に合います。"
+        },
+        {
+          "id": "D",
+          "text": "投稿の検索要件からデータベースを選ぶ。",
+          "explanation": "検索方式を確認して選定します。"
+        },
+        {
+          "id": "E",
+          "text": "S3だけでOS常駐サービスを実行する。",
+          "explanation": "これは誤りです。S3は計算実行環境ではありません。"
+        }
+      ],
+      "source": {
+        "label": "AWS Lambda with Amazon S3",
+        "url": "https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html"
+      },
+      "learning": {
+        "reason": "機能ごとに責務を割り当てます。",
+        "concept": "S3、Lambda、DBは別の役割です。"
+      }
+    },
+    {
+      "unitId": "fundamentals.core-services",
+      "id": "fund-services-110",
+      "revision": 1,
+      "category": "主要サービス",
+      "version": "2026-11-learning",
+      "title": "選定手順",
+      "prompt": "新機能のサービス選定手順として誤っているものを2つ選んでください。",
+      "selectionPolarity": "incorrect",
+      "requiredChoices": 2,
+      "objectiveId": "composition",
+      "sectionId": "composition",
+      "application": "integrate",
+      "correct": [
+        "C",
+        "D"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "誰が何をいつ処理するかを整理する。",
+          "explanation": "実行方式の判断材料を明確にします。"
+        },
+        {
+          "id": "B",
+          "text": "データをどの形で保存し、どう検索するかを確認する。",
+          "explanation": "保存とデータベースの選定に必要です。"
+        },
+        {
+          "id": "C",
+          "text": "最初に知っているサービス名を選び、要件は後から合わせる。",
+          "explanation": "これは誤りです。要件を先に分解します。"
+        },
+        {
+          "id": "D",
+          "text": "1サービスだけで全責務を必ず担わせる。",
+          "explanation": "これは誤りです。責務ごとに組み合わせを検討します。"
+        },
+        {
+          "id": "E",
+          "text": "各サービスの権限境界も確認する。",
+          "explanation": "責務を分けると必要な権限も明確になります。"
+        }
+      ],
+      "source": {
+        "label": "AWS Well-Architected Framework",
+        "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"
+      },
+      "learning": {
+        "reason": "要件から責務へ進む順序を守ります。",
+        "concept": "サービスは組み合わせて設計します。"
+      }
+    }
+  ]
+}

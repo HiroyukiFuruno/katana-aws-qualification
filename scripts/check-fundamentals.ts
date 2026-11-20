@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { validFundamentalsContent } from '../src/fundamentals/content';
 
 const value = JSON.parse(await readFile('public/fundamentals/content.json', 'utf8')) as {
   catalog: {
@@ -22,14 +23,16 @@ const value = JSON.parse(await readFile('public/fundamentals/content.json', 'utf
       requiredChoices: number;
       choices: { id: string; text: string; explanation: string }[];
       correct: string[];
+      prompt: string;
       source: { url: string; label: string };
     }[];
   }[];
 };
 
 assert.equal(value.catalog.length, 12);
-assert.equal(value.catalog.filter((item) => item.state === 'published').length, 6);
-assert.equal(value.catalog.filter((item) => item.state === 'planned').length, 6);
+assert.equal(value.catalog.filter((item) => item.state === 'published').length, 12);
+assert.equal(value.catalog.filter((item) => item.state === 'planned').length, 0);
+assert(validFundamentalsContent(value), 'reading, objectives, examples and question references');
 assert.equal(new Set(value.catalog.map((item) => item.id)).size, 12);
 assert.deepEqual(
   value.catalog.map((item) => item.order).sort((a, b) => a - b),
@@ -54,7 +57,7 @@ assert.deepEqual(
     'delivery.lifecycle',
   ]),
 );
-assert.equal(value.units.length, 6);
+assert.equal(value.units.length, 12);
 const published = new Set(
   value.catalog.filter((item) => item.state === 'published').map((item) => item.id),
 );
@@ -66,9 +69,19 @@ for (const unit of value.units) {
   assert(published.has(unit.id), `${unit.id} is not published`);
   assert(!unitIds.has(unit.id), `duplicate unit: ${unit.id}`);
   unitIds.add(unit.id);
-  assert.equal(unit.questions.length, 2, unit.id);
+  assert.equal(unit.questions.length, 12, unit.id);
   for (const question of unit.questions) {
     assert.equal(question.unitId, unit.id);
+    const negativePrompt = /誤って|誤った|誤り|不適切|避けるべき/.test(question.prompt);
+    assert.equal(
+      negativePrompt,
+      question.selectionPolarity === 'incorrect',
+      `${question.id}: prompt polarity`,
+    );
+    assert(
+      question.prompt.includes(`${question.requiredChoices}つ`),
+      `${question.id}: explicit choice count`,
+    );
     assert(!questionIds.has(question.id), question.id);
     questionIds.add(question.id);
     assert(question.revision >= 1, question.id);

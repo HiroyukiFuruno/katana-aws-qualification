@@ -30,10 +30,10 @@ member模試はサーバー時刻と単調時計を使い、端末時計のず�
 
 保存同意のない guest には、学習保存の説明・同意・無料アカウント導線を出す。loading、保存失敗、未同期、成功した 0 件を互いに区別し、失敗を 0 件や guest fallback として表示しない。
 
-guest の明示 reset は端末履歴、profile、旧誤答 local storage、旧模試 draft、旧誤答 Cookie を対象にする。member reset/退会はクラウド記録の処理であり、同じ端末にある guest 原本を暗黙に削除しない。DB 削除範囲と cascade は `data-persistence.md` を参照する。
+guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧誤答 local storage、旧模試 draft、旧誤答 Cookie を対象にする。専用purgeは学習キーだけを削除し、解析・表示設定を消さない。member reset/退会はクラウド記録の処理であり、同じ端末にある guest 原本を暗黙に削除しない。DB 削除範囲と cascade は `data-persistence.md` を参照する。
 
 ## 検査と公開状態
 
-- browser 側の実進捗・移行・reset 検査は `test-results/progress/pr63-final-stable-progress.log`（24件成功） に記録する。IT/E2E は Mock、固定 sleep、timeout 延長を使わない。
+- browser 側の実進捗・移行・reset 検査は `test-results/progress/pr63-release-candidate-progress.log`（25件成功） に記録する。IT/E2E は Mock、固定 sleep、timeout 延長を使わない。
 - DB/RPC の実 GoTrue/Postgres/PostgREST 検査、RLS、revision、migration、reset、cascade は `data-persistence.md` の統合検査境界を参照する。
 - #25 は main `b767b78` で公開済み。#23 は frontend/outbox/模試の実装・自動検査済み、レビュー・merge・公開検証前であり、保存機能を公開済みとして扱わない。#24 は #23 公開後の後続である。

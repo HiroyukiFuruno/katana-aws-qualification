@@ -18,6 +18,6 @@ export function saveGuestExam(guest: GuestProgressRepository, key: string, draft
 }
 
 export function clearGuestExams(guest: GuestProgressRepository) {
-  guest.remove(legacyExamKey);
-  guest.removeMatching(examKeyPrefix);
+  guest.purge(legacyExamKey);
+  guest.purgeMatching(examKeyPrefix);
 }

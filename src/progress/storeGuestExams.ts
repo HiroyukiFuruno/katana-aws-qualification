@@ -33,7 +33,7 @@ export function saveGuestExamDraft(
 }
 
 export function removeGuestExamDraft(guest: GuestProgressRepository, key: string) {
-  guest.remove(key);
+  guest.purge(key);
 }
 
 export function resetGuestExamDrafts(guest: GuestProgressRepository) {
@@ -41,9 +41,9 @@ export function resetGuestExamDrafts(guest: GuestProgressRepository) {
 }
 
 export function resetGuestProgress(guest: GuestProgressRepository) {
-  guest.remove(historyKey);
-  guest.remove(profileKey);
-  guest.remove(legacyIncorrectIndex);
+  guest.purge(historyKey);
+  guest.purge(profileKey);
+  guest.purge(legacyIncorrectIndex);
   resetGuestExamDrafts(guest);
 }
 

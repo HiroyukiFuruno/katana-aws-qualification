@@ -5,6 +5,7 @@ import {
   createProgressStore,
   setGuestProgressConsent,
 } from '../src/progress';
+import { memoryStorage } from './progress-store-fixture';
 
 const examKey = 'katana.certification-exam.v1.saa-c03';
 const historyKey = 'saa-study.attempts.v1';
@@ -34,21 +35,8 @@ function draft(position: number) {
     responses: { '["exam-q",1]': { durationMs: 10, flagged: position === 1, selected: ['A'] } },
   };
 }
-function storage() {
-  const values = new Map<string, string>();
-  return {
-    getItem: (key: string) => values.get(key) ?? null,
-    key: (index: number) => [...values.keys()][index] ?? null,
-    get length() {
-      return values.size;
-    },
-    removeItem: (key: string) => void values.delete(key),
-    setItem: (key: string, value: string) => void values.set(key, value),
-  };
-}
-
 test('a granted guest can replace a valid draft while retaining a corrupt persisted draft', () => {
-  const local = storage();
+  const local = memoryStorage();
   setGuestProgressConsent(local, true);
   const repository = createGuestProgressRepository({ kind: 'guest', generation: 1 }, local, {
     isCurrent: () => true,
@@ -62,7 +50,7 @@ test('a granted guest can replace a valid draft while retaining a corrupt persis
 });
 
 test('guest drafts stay in memory without consent and resume only after consent', async () => {
-  const local = storage();
+  const local = memoryStorage();
   const owner = { kind: 'guest' as const, generation: 1 };
   const first = createProgressStore({ isCurrent: () => true, owner, storage: local });
   await first.initialize();
@@ -80,7 +68,7 @@ test('guest drafts stay in memory without consent and resume only after consent'
 });
 
 test('guest finalization updates the canonical history once before normal learning', async () => {
-  const local = storage();
+  const local = memoryStorage();
   setGuestProgressConsent(local, true);
   const store = createProgressStore({
     isCurrent: () => true,
@@ -97,7 +85,7 @@ test('guest finalization updates the canonical history once before normal learni
 });
 
 test('guest finalization retains an invalid history row instead of duplicating valid attempts', async () => {
-  const local = storage();
+  const local = memoryStorage();
   setGuestProgressConsent(local, true);
   local.setItem(historyKey, JSON.stringify([attempt, { broken: true }]));
   const store = createProgressStore({
@@ -113,7 +101,7 @@ test('guest finalization retains an invalid history row instead of duplicating v
 });
 
 test('guest reset removes persisted and in-memory exam drafts', async () => {
-  const local = storage();
+  const local = memoryStorage();
   setGuestProgressConsent(local, true);
   local.setItem('saa-study.incorrect.v1', '["old"]');
   const store = createProgressStore({

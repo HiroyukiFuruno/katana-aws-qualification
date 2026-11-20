@@ -44,7 +44,7 @@ test('a cloud exam resumes after reload and a repeated finalization stays idempo
     await saved;
     await page.reload();
     await setRealSession(page, session);
-    await openExam(page);
+    await page.locator('.course-nav').getByRole('button', { name: '模擬試験' }).click();
     await expect(page.getByRole('heading', { name: /第2問/ })).toBeVisible();
     await expect(page.locator('input[name="exam-answer"]').first()).toBeChecked();
     await page.getByRole('button', { name: '前の問題' }).click();

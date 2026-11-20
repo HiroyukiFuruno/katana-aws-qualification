@@ -56,7 +56,7 @@ test('a past server deadline auto-submits the confirmed draft without another sa
     });
     await page.reload();
     await setRealSession(page, session);
-    await openExam(page);
+    await page.locator('.course-nav').getByRole('button', { name: '模擬試験' }).click();
     await expect
       .poll(() => examSessions(session))
       .toEqual([expect.objectContaining({ state: 'submitted' })]);

@@ -48,7 +48,7 @@ test('consented guest exam draft keeps answer and flag across reload', async ({ 
     );
     await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), examKey)).not.toBeNull();
     await page.reload();
-    await openExam(page);
+    await page.locator('.course-nav').getByRole('button', { name: '模擬試験' }).click();
     await expect(page.getByRole('heading', { name: /第1問/ })).toBeVisible();
     await expect
       .poll(() =>

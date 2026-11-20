@@ -90,6 +90,10 @@ export function memoryStorage() {
   const values = new Map<string, string>();
   return {
     getItem: (key: string) => values.get(key) ?? null,
+    key: (index: number) => [...values.keys()][index] ?? null,
+    get length() {
+      return values.size;
+    },
     removeItem: (key: string) => void values.delete(key),
     setItem: (key: string, value: string) => void values.set(key, value),
   };

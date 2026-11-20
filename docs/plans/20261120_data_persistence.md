@@ -67,3 +67,7 @@ CI run44670238002は18成功/2失敗。ローカル20成功とは環境・処理
 - [x] 新guest提出の退行防止: 保存失敗後に回答を変更した場合、改訂未定義のguest draftを旧prepared/cacheと同一扱いせず変更後の回答で採点する。同一内容の再試行はdurationを二重加算せず、memberの同改訂immutable再送も維持する。
 
 最終修正後の実測: `test-results/progress/pr63-final-stable-check.log` は166 unit / 1399 assertions、重複0、型/構造/教材/build成功。`pr63-final-stable-progress.log` は実24件成功。native localStorage quotaを実際に満たした保存失敗→選択変更→再提出を含み、Mock/固定待機/timeout延長はない。元のguest同意切替後の履歴回帰は`progress-guest-consent.test.ts`へ同名・同期待値で復元した。時間計測は最終save/prepare成功時に基点を更新し、失敗後の新選択で前区間を再加算しない。レビュー修正のpush/reply/resolveと新headのCIは次工程。
+
+- [x] 最終review P1: 同意撤回後の明示guest resetでも過去の保存済みhistory/profile/旧誤答index/legacy・prefix examを消し、再同意/reloadで復活させない。解析/表示設定など無関係キーとmember reset時のguest原本を保持する。旧global cleanupからstoreへ移した退行として修正・実回帰を追加する。
+
+撤回後resetの修正・再レビュー後: `pr63-purge-final-check.log` 全168 unit / 1405 assertions、重複0、型/構造/教材/build成功。`pr63-release-candidate-progress.log` 実25件成功。9e12b74のCIではguest再開が正しく第1問/選択/flagを復元しているartifactを確認したが、途中setupを待つ誤ったtest helperで失敗した。resume箇所は最終画面/DB状態を待つよう修正し、初回setupと全件の最終期待値は維持した。追加P0/P1なしを再レビューで確認。

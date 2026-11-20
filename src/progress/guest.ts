@@ -46,6 +46,8 @@ export type GuestProgressRepository = {
   read(key: string): string | null;
   remove(key: string): void;
   removeMatching(prefix: string): void;
+  purge(key: string): void;
+  purgeMatching(prefix: string): void;
   write(key: string, value: string): 'saved' | 'blocked' | 'failed';
 };
 
@@ -101,6 +103,22 @@ export function createGuestProgressRepository(
         if (key.startsWith(prefix)) memory.delete(key);
       }
       if (!canPersistGuestProgress(storage) || !storage.key || storage.length === undefined) return;
+      const keys = Array.from({ length: storage.length }, (_, index) => storage.key?.(index)).filter(
+        (key): key is string => key?.startsWith(prefix) ?? false,
+      );
+      for (const key of keys) storage.removeItem(key);
+    },
+    purge(key) {
+      current();
+      memory.delete(key);
+      storage.removeItem(key);
+    },
+    purgeMatching(prefix) {
+      current();
+      for (const key of memory.keys()) {
+        if (key.startsWith(prefix)) memory.delete(key);
+      }
+      if (!storage.key || storage.length === undefined) return;
       const keys = Array.from({ length: storage.length }, (_, index) => storage.key?.(index)).filter(
         (key): key is string => key?.startsWith(prefix) ?? false,
       );

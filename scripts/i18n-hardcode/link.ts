@@ -1,5 +1,6 @@
-import { type Ast, ast, bind, key, nodes, type Source, walk } from './ast.ts';
+import { type Ast, ast, bind, key, nodes, property, type Source, walk } from './ast.ts';
 import { resolveExport } from './exports.ts';
+import { namespaceSource } from './namespace.ts';
 import { importedSource } from './sources.ts';
 
 export function callable(
@@ -11,6 +12,11 @@ export function callable(
   if (!node) return undefined;
   if (['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression'].includes(node.type))
     return { source, node };
+  if (node.type === 'MemberExpression' || node.type === 'JSXMemberExpression') {
+    const namespace = namespaceSource(sources, source, ast(node.object));
+    const exported = namespace && resolveExport(sources, namespace, property(ast(node.property)));
+    return exported ? callable(sources, exported.source, exported.node, seen) : undefined;
+  }
   if (node.type !== 'Identifier') return undefined;
   const marker = `${source.path}:${key(node)}`;
   if (seen.has(marker)) return undefined;

@@ -33,11 +33,13 @@ export function indexModule(source: Source, node: Ast) {
   }
   if (node.type === 'ExportNamedDeclaration') {
     for (const specifier of nodes(node.specifiers)) {
-      const original = ast(specifier.orig);
+      const namespace = specifier.type === 'ExportNamespaceSpecifier';
+      const original = ast(namespace ? specifier.name : specifier.orig);
       if (!original) continue;
       source.exports.set(name(ast(specifier.exported)) || name(original), original);
       const from = name(ast(node.source));
-      if (from) source.imports.set(key(original), { source: from, imported: name(original) });
+      if (from)
+        source.imports.set(key(original), { source: from, imported: namespace ? '*' : name(original) });
     }
   }
 }

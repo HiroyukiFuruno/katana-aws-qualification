@@ -18,6 +18,8 @@ type DraftControlsInput = {
   history: Attempt[];
   onStart: () => void;
   progressStore: ProgressStore | null | undefined;
+  savePending: MutableRefObject<boolean>;
+  setSaving: (saving: boolean) => void;
   setDraft: (draft: ExamDraft | undefined) => void;
   setError: (error: Message | '') => void;
   setNow: (now: number) => void;
@@ -42,8 +44,10 @@ export function useExamDraftControls({
   history,
   onStart,
   progressStore,
+  savePending,
   setDraft,
   setError,
+  setSaving,
   setNow,
 }: DraftControlsInput) {
   const available = canStartExam(bank, blueprint);
@@ -79,16 +83,21 @@ export function useExamDraftControls({
     }
   }
   async function update(position: number, patch: Partial<ExamResponse> = {}) {
+    if (savePending.current) return;
     const at = draft ? examNow(draft) : Date.now();
     if (!draft || at >= draft.deadline) {
       setNow(at);
       return;
     }
+    let saving = false;
     try {
       const member = memberStore(progressStore);
       const guest = guestStore(progressStore);
       const current = guest ? guest.readGuestExam(examKey) : draft;
       if (!current || current.id !== draft.id || current.position !== draft.position) return;
+      savePending.current = true;
+      saving = true;
+      setSaving(true);
       const key = current.order[current.position];
       const response = getResponse(current, key);
       const merged = { ...response, ...patch };
@@ -114,6 +123,11 @@ export function useExamDraftControls({
       setError('');
     } catch {
       setError('answerSaveFailed');
+    } finally {
+      if (saving) {
+        savePending.current = false;
+        setSaving(false);
+      }
     }
   }
   return { available, start, update };

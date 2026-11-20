@@ -71,3 +71,12 @@ CI run44670238002は18成功/2失敗。ローカル20成功とは環境・処理
 - [x] 最終review P1: 同意撤回後の明示guest resetでも過去の保存済みhistory/profile/旧誤答index/legacy・prefix examを消し、再同意/reloadで復活させない。解析/表示設定など無関係キーとmember reset時のguest原本を保持する。旧global cleanupからstoreへ移した退行として修正・実回帰を追加する。
 
 撤回後resetの修正・再レビュー後: `pr63-purge-final-check.log` 全168 unit / 1405 assertions、重複0、型/構造/教材/build成功。`pr63-release-candidate-progress.log` 実25件成功。9e12b74のCIではguest再開が正しく第1問/選択/flagを復元しているartifactを確認したが、途中setupを待つ誤ったtest helperで失敗した。resume箇所は最終画面/DB状態を待つよう修正し、初回setupと全件の最終期待値は維持した。追加P0/P1なしを再レビューで確認。
+
+## Codex追加レビュー（942f233/f00134a）の採用P2
+
+- [x] PRRT_kwDOVzQ52c6510xY / comment4638599221: 取込が別repositoryへ書いた後、成功・部分成功・例外後もcaptured owner/storeをrefreshする。再読込み前に完了UIを出さず、履歴/試行数・profileRevisionを次の保存へ反映する。owner切替で他storeへ触れない。
+- [x] PRRT_kwDOVzQ52c6510xa / comment4638599227: 保存待ち中の通常の複数選択/移動で同じrevisionを並行使用しない。ACKまで選択/flag/clear/移動/提出をbusy+disabled、同一frame ref guard、期限自動提出はsave終了後に評価。実HTTP応答hold/releaseで検査する。
+
+いずれも既存の保存契約と通常操作に影響するため今回対応し、機能範囲は変えない。f00134aの4 CIは全成功（auth10m1s/data45s/glossary1m8s/progress2m45s）だが、上記修正は未commit/未pushであり、そのheadの完了とは扱わない。
+
+追加P2修正後: `pr63-import-and-pending-check.log` 169 unit/1409 assertions・重複0・型/構造/教材/build成功。`pr63-complete-import-pending-progress.log` 実27件成功。profile取込→reloadなし資格変更→revision/earned更新、partial取込直後の次回答、実PostgREST応答hold→UI busy/disabled→複数選択ACK→next/reload保持を確認。採点statusは本来のquestion-title領域を検査し、取込完了statusで代用しない。read-only再レビューで元P2解消・新P0/P1なし。

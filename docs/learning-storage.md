@@ -15,7 +15,7 @@
 
 member の再送キューは owner と generation に束縛し、ログアウト、owner 切替、reset、退会後の古い操作を送らない。保存失敗は UI で可視化し、同じ logical event を再送できる。durable outbox はリロード後も元UUID/payloadを保持する。Web Locksで複数タブの更新を排他化し、別タブの正当なイベントを失わない。世代が古いイベントだけを破棄し、保存済みの前段イベントは後段の失敗でも画面へ反映する。
 
-member模試はサーバー時刻と単調時計を使い、端末時計のずれを期限へ反映しない。選択時刻はDBが確定し、UTC文字列の精度を提出まで保持する。保存後の応答喪失は改訂と内容が一致するDB記録だけを採用する。期限後は保存済み回答だけを確定し、同じ提出の再送は同一UUID/payloadを使う。guest模試も同じstoreを使い、未同意のdraft/提出履歴を端末へ書かない。同意済み提出はstore正本へ反映し、通常回答と直列化する。壊れた既存履歴/draftへの上書きを拒否し、原本とエラーを保持する。DB契約は `data-persistence.md`、時計の固定条件は `plans/20261120_exam_clock.md` を参照する。
+member模試はサーバー時刻と単調時計を使い、端末時計のずれを期限へ反映しない。選択時刻はDBが確定し、UTC文字列の精度を提出まで保持する。保存後の応答喪失は改訂と内容が一致するDB記録だけを採用する。回答保存のACK待ち中は選択・見直し・移動・提出を無効化し、期限後の自動提出も保存終了後に評価する。期限後は保存済み回答だけを確定し、同じ提出の再送は同一UUID/payloadを使う。guest模試も同じstoreを使い、未同意のdraft/提出履歴を端末へ書かない。同意済み提出はstore正本へ反映し、通常回答と直列化する。壊れた既存履歴/draftへの上書きを拒否し、原本とエラーを保持する。DB契約は `data-persistence.md`、時計の固定条件は `plans/20261120_exam_clock.md` を参照する。
 
 ## 端末データの明示的移行 UI
 
@@ -26,6 +26,8 @@ member模試はサーバー時刻と単調時計を使い、端末時計のず�
 - Cookie/index の ID だけから回答 event を捏造しない。
 - 同じ端末原本の再試行、manifest、SHA-256、原子性は DB 正本の移行契約に従う（`data-persistence.md`）。
 
+取込の成功・部分成功・例外後も、同じowner/storeのクラウド正本を再取得する。通常回答と再取得を履歴ロックで直列化し、ready・更新中でないこと・読込失敗なしを確認してから完了を示す。取込後の取得資格/査定revisionは次の保存へ反映する。
+
 ## 画面状態と reset
 
 保存同意のない guest には、学習保存の説明・同意・無料アカウント導線を出す。loading、保存失敗、未同期、成功した 0 件を互いに区別し、失敗を 0 件や guest fallback として表示しない。
@@ -34,6 +36,6 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 
 ## 検査と公開状態
 
-- browser 側の実進捗・移行・reset 検査は `test-results/progress/pr63-release-candidate-progress.log`（25件成功） に記録する。IT/E2E は Mock、固定 sleep、timeout 延長を使わない。
+- browser 側の実進捗・移行・reset 検査は `test-results/progress/pr63-complete-import-pending-progress.log`（27件成功） に記録する。IT/E2E は Mock、固定 sleep、timeout 延長を使わない。
 - DB/RPC の実 GoTrue/Postgres/PostgREST 検査、RLS、revision、migration、reset、cascade は `data-persistence.md` の統合検査境界を参照する。
 - #25 は main `b767b78` で公開済み。#23 は frontend/outbox/模試の実装・自動検査済み、レビュー・merge・公開検証前であり、保存機能を公開済みとして扱わない。#24 は #23 公開後の後続である。

@@ -1,7 +1,7 @@
 import type { ExamDraft, ExamResponse } from './exam';
-import { StructuredAnswerFields } from './StructuredAnswer';
-import type { Question } from './questions';
 import type { usePreferences } from './preferences';
+import type { Question } from './questions';
+import { StructuredAnswerFields } from './StructuredAnswer';
 
 type Translate = ReturnType<typeof usePreferences>['t'];
 
@@ -26,7 +26,7 @@ export function ExamQuestion({
 }) {
   const count = question.correct.length;
   return (
-    <section className="card">
+    <section className="card" aria-busy={submitting}>
       <div className="question-meta">
         <span>
           {question.format === 'ordering'

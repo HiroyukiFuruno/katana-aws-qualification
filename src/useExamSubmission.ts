@@ -22,6 +22,7 @@ export function useExamSubmission({
   progressStore,
   setDraft,
   setError,
+  saving,
 }: {
   draft: ExamDraft | undefined;
   questions: Question[];
@@ -35,6 +36,7 @@ export function useExamSubmission({
   progressStore: ProgressStore | null | undefined;
   setDraft: (draft: ExamDraft) => void;
   setError: (error: Message | '') => void;
+  saving: boolean;
 }) {
   const [submitting, setSubmitting] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -43,7 +45,7 @@ export function useExamSubmission({
   const finalization = useRef(new ExamFinalizationCache());
   const finalizationAttempt = useRef(new ExamSubmissionAttempt());
   const submit = useCallback(async () => {
-    if (!draft || !correctRevision || completed || pending.current) return;
+    if (!draft || !correctRevision || completed || pending.current || saving) return;
     pending.current = true;
     setSubmitting(true);
     setError('');
@@ -136,11 +138,12 @@ export function useExamSubmission({
     onSaved,
     progressStore,
     questions,
+    saving,
     setDraft,
     setError,
   ]);
   useEffect(() => {
-    if (expired && correctRevision && !completed && !failedAuto.current) void submit();
-  }, [expired, correctRevision, completed, submit]);
+    if (expired && correctRevision && !completed && !saving && !failedAuto.current) void submit();
+  }, [expired, correctRevision, completed, saving, submit]);
   return { submitting, dialog, pending, failedAuto, submit };
 }

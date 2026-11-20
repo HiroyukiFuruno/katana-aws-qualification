@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ExamBlueprint } from './certifications';
-import { getResponse, remainingLabel } from './exam';
 import { ExamFormatPicker } from './ExamFormatPicker';
 import { ExamNavigation, type Filter } from './ExamNavigation';
 import { ExamQuestion } from './ExamQuestion';
 import { ExamResults } from './ExamResults';
+import { getResponse, remainingLabel } from './exam';
 import type { Attempt } from './history';
 import { usePreferences } from './preferences';
 import type { Question } from './questions';
@@ -61,12 +61,12 @@ export function ExamMode({
     expired,
     available,
     unanswered,
-    submitting,
     dialog,
     submit,
     start,
     update,
   } = session;
+  const busy = session.submitting || session.saving;
   useEffect(() => {
     if (draft?.position !== undefined) questionHeading.current?.focus();
   }, [draft?.position]);
@@ -102,7 +102,6 @@ export function ExamMode({
       </section>
     );
   if (!correctRevision || !question) return <p role="alert">{t('cannotResume')}</p>;
-  const response = getResponse(draft, key);
   return (
     <>
       <div className={`exam-bar ${draft.deadline - now <= 300_000 ? 'ending' : ''}`}>
@@ -126,9 +125,9 @@ export function ExamMode({
       <ExamQuestion
         draft={draft}
         question={question}
-        response={response}
+        response={getResponse(draft, key)}
         expired={expired}
-        submitting={submitting}
+        submitting={busy}
         t={t}
         heading={questionHeading}
         onUpdate={update}
@@ -138,7 +137,7 @@ export function ExamMode({
         questions={questions}
         filter={filter}
         expired={expired}
-        submitting={submitting}
+        submitting={busy}
         unanswered={unanswered}
         dialog={dialog}
         t={t}

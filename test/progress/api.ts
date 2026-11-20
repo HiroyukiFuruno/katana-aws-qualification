@@ -78,6 +78,16 @@ export async function expireBeforeSave(examId: string) {
     );
 }
 
+export async function holdNextExamSave() {
+  const response = await fetch(`${gatewayOrigin}/test/hold-next-exam-save`, { method: 'POST' });
+  if (!response.ok) throw new Error('Could not hold the next exam save.');
+}
+
+export async function releaseExamSave() {
+  const response = await fetch(`${gatewayOrigin}/test/release-exam-save`, { method: 'POST' });
+  if (!response.ok) throw new Error('Could not release the held exam save.');
+}
+
 export function serviceRows(table: string, userId: string) {
   return rows(`${table}?user_id=eq.${encodeURIComponent(userId)}&select=user_id`, undefined, true);
 }

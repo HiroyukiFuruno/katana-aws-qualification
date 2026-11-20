@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ExamBlueprint } from './certifications';
 import { isAnswered } from './exam';
 import { examNow } from './examClock';
@@ -35,6 +35,8 @@ export function useExamSession({
   const progressStore = getActiveProgressStore();
   const { draft, setDraft, error, setError, activeSince } = useStoredExam(examKey, certificationId);
   const [now, setNow] = useState(Date.now);
+  const [saving, setSaving] = useState(false);
+  const savePending = useRef(false);
   const byKey = new Map(
     [...archivedBank, ...practiceQuestions, ...bank].map((question) => [
       questionKey(question),
@@ -63,6 +65,7 @@ export function useExamSession({
     onSaved,
     progressStore,
     questions,
+    saving,
     setDraft,
     setError,
   });
@@ -77,8 +80,10 @@ export function useExamSession({
     history,
     onStart,
     progressStore,
+    savePending,
     setDraft,
     setError,
+    setSaving,
     setNow,
   });
   const unanswered = draft ? questions.filter((item) => !isAnswered(draft, item)).length : 0;
@@ -109,7 +114,9 @@ export function useExamSession({
     start,
     submit,
     submitting,
+    saving,
     unanswered,
-    update: (position: number, patch = {}) => (pending.current ? undefined : update(position, patch)),
+    update: (position: number, patch = {}) =>
+      pending.current || savePending.current ? undefined : update(position, patch),
   };
 }

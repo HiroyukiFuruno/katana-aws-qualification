@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { createProgressStore } from '../src/progress';
+import { createProgressStore, type ProgressRpcClient } from '../src/progress';
 import { useExamDraftControls as createExamDraftControls } from '../src/useExamDraftControls';
 import { examQuestion } from './progress-store-fixture';
 
@@ -31,10 +31,12 @@ function controls(store: ReturnType<typeof createProgressStore>, staleDraft: Ret
       history: [],
       onStart: () => {},
       progressStore: store,
+      savePending: { current: false },
       setDraft: (next) => {
         if (next) displayed = next;
       },
       setError: () => {},
+      setSaving: () => {},
       setNow: () => {},
     }),
     displayed: () => displayed,
@@ -59,4 +61,65 @@ test('guest controls preserve a newer canonical draft instead of writing a stale
   await staleStart.start(1);
   expect(store.readGuestExam(examKey)).toEqual(canonical);
   expect(started()).toEqual(canonical);
+});
+
+test('controls reject another update while the first member save is pending', async () => {
+  let release: (() => void) | undefined;
+  let requested: (() => void) | undefined;
+  let writes = 0;
+  const client: ProgressRpcClient = {
+    async rpc(name) {
+      if (name === 'initialize_learning_state') return 1;
+      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name !== 'save_exam_response_confirmed') throw new Error(`unexpected rpc: ${name}`);
+      writes += 1;
+      requested?.();
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return [{ duration_ms: 1, revision: 2, selected_at: '2026-11-20T00:00:00.000Z' }];
+    },
+    async select() {
+      return [];
+    },
+  };
+  const store = createProgressStore({
+    client,
+    isCurrent: () => true,
+    owner: { kind: 'member', generation: 1, userId: 'member-a' },
+    storage,
+  });
+  const pending = { current: false };
+  const saving: boolean[] = [];
+  const current = { ...draft('member'), revision: 1 };
+  const control = createExamDraftControls({
+    activeSince: { current: performance.now() },
+    bank: [examQuestion],
+    blueprint,
+    certificationId: 'saa-c03',
+    draft: current,
+    examKey,
+    failedAuto: { current: false },
+    history: [],
+    onStart: () => {},
+    progressStore: store,
+    savePending: pending,
+    setDraft: () => {},
+    setError: () => {},
+    setNow: () => {},
+    setSaving: (next) => saving.push(next),
+  });
+  await store.initialize();
+  const requestedSave = new Promise<void>((resolve) => {
+    requested = resolve;
+  });
+  const first = control.update(0, { flagged: true });
+  await requestedSave;
+  await control.update(0, { flagged: false });
+  expect(writes).toBe(1);
+  expect(pending.current).toBe(true);
+  release?.();
+  await first;
+  expect(pending.current).toBe(false);
+  expect(saving).toEqual([true, false]);
 });

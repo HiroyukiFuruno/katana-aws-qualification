@@ -33,7 +33,15 @@ export function useExamSession({
   practiceQuestions,
 }: ExamSessionInput) {
   const progressStore = getActiveProgressStore();
-  const { draft, setDraft, error, setError, activeSince } = useStoredExam(examKey, certificationId);
+  const {
+    draft,
+    setDraft,
+    error,
+    setError,
+    activeSince,
+    loading: reloading,
+    reload,
+  } = useStoredExam(examKey, certificationId);
   const [now, setNow] = useState(Date.now);
   const [saving, setSaving] = useState(false);
   const savePending = useRef(false);
@@ -65,7 +73,7 @@ export function useExamSession({
     onSaved,
     progressStore,
     questions,
-    saving,
+    saving: saving || reloading,
     setDraft,
     setError,
   });
@@ -111,12 +119,14 @@ export function useExamSession({
     now: currentNow,
     question,
     questions,
+    reloading,
+    reload,
     start,
     submit,
     submitting,
     saving,
     unanswered,
     update: (position: number, patch = {}) =>
-      pending.current || savePending.current ? undefined : update(position, patch),
+      reloading || pending.current || savePending.current ? undefined : update(position, patch),
   };
 }

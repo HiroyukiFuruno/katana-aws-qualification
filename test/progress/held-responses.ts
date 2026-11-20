@@ -1,6 +1,7 @@
 const targets = {
   'exam-save': '/rest/v1/rpc/save_exam_response_confirmed',
   'exam-start': '/rest/v1/rpc/start_exam_session',
+  'exam-load': '/rest/v1/exam_sessions',
   'profile-save': '/rest/v1/rpc/replace_roadmap_profile',
 };
 type Held = { promise: Promise<void>; release: () => void; consumed: boolean };

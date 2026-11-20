@@ -3,6 +3,7 @@ import type { ExamBlueprint } from './certifications';
 import { ExamNavigation, type Filter } from './ExamNavigation';
 import { ExamQuestion } from './ExamQuestion';
 import { ExamResults } from './ExamResults';
+import { ExamSaveError } from './ExamSaveError';
 import { ExamSetup } from './ExamSetup';
 import { getResponse, remainingLabel } from './exam';
 import type { Attempt } from './history';
@@ -67,7 +68,7 @@ export function ExamMode({
     update,
     saving,
   } = session;
-  const busy = session.submitting || saving;
+  const busy = session.submitting || saving || session.reloading;
   useEffect(() => {
     if (draft?.position !== undefined) questionHeading.current?.focus();
   }, [draft?.position]);
@@ -79,7 +80,7 @@ export function ExamMode({
         byKey={byKey}
         blueprint={blueprint}
         available={available}
-        saving={saving}
+        saving={busy}
         error={error}
         showAll={showAll}
         onShowAll={setShowAll}
@@ -92,7 +93,7 @@ export function ExamMode({
       <ExamSetup
         blueprint={blueprint}
         available={available}
-        saving={saving}
+        saving={busy}
         onStart={start}
         error={error}
         t={t}
@@ -114,11 +115,7 @@ export function ExamMode({
         </div>
       </div>
       {expired && <p className="notice">{t('expired')}</p>}
-      {error && (
-        <p className="notice" role="alert">
-          {t(error)}
-        </p>
-      )}
+      <ExamSaveError busy={busy} error={error} onReload={session.reload} t={t} />
       <ExamQuestion
         draft={draft}
         question={question}

@@ -11,6 +11,7 @@ export function useStoredExam(examKey: string, certificationId: string) {
   const examRefreshVersion = store?.getSnapshot().examRefreshVersion;
   const [draft, setDraft] = useState<ExamDraft>();
   const [error, setError] = useState<Message | ''>('');
+  const [loading, setLoading] = useState(true);
   const currentDraft = useRef(draft);
   currentDraft.current = draft;
   const activeSince = useRef(performance.now());
@@ -28,17 +29,26 @@ export function useStoredExam(examKey: string, certificationId: string) {
       examRefreshVersion === store.getSnapshot().examRefreshVersion;
     const refresh = async () => {
       const request = ++requestVersion;
+      setLoading(true);
       try {
         if (!store || !owner) throw new Error('Progress store is unavailable.');
         const next =
           owner.kind === 'member' ? await store.loadExam(certificationId) : store.readGuestExam(examKey);
         if (!current(request)) return;
-        if (currentDraft.current?.id !== next?.id || currentDraft.current?.position !== next?.position)
+        if (
+          currentDraft.current?.id !== next?.id ||
+          currentDraft.current?.position !== next?.position ||
+          currentDraft.current?.revision !== next?.revision
+        )
           activeSince.current = performance.now();
         setDraft(next);
         setError('');
+        setLoading(false);
       } catch {
-        if (current(request)) setError('examLoadFailed');
+        if (current(request)) {
+          setError('examLoadFailed');
+          setLoading(false);
+        }
       }
     };
     const onStorage = (event: StorageEvent) => {
@@ -51,5 +61,10 @@ export function useStoredExam(examKey: string, certificationId: string) {
       window.removeEventListener('storage', onStorage);
     };
   }, [certificationId, examKey, examRefreshVersion, store]);
-  return { draft, setDraft, error, setError, activeSince };
+  const reload = () => {
+    if (!store || store !== getActiveProgressStore()) return;
+    setLoading(true);
+    store.notifyExamSessionsChanged();
+  };
+  return { draft, setDraft, error, setError, activeSince, loading, reload };
 }

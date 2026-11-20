@@ -138,3 +138,20 @@ ba0dfd6の4CIは成功（auth7m7s/data34s/glossary1m3s/progress3m50s）。新指
 - [/] 追加レビュー PRRT_kwDOVzQ52c654uhG: question resolverの失敗Promiseを永続cacheせず失敗entryだけ除去し、同じ移行画面で通信回復後に再試行できるよう修正。成功/inflight cacheは保持し、index/bank各一過性失敗と成功共有を単体回帰で検証する。公開前の実37件はcache差分前であり、最新CIで再確認する。
 
 question resolver差分はindex/bank拒否と成功cache/並行共有を単体で回帰し、pr63-catalog-retry-check.log（191unit/1475assertions、重複0/型構造教材/build成功）。直前の実37件はこの小差分前、最新CIで全体再確認する。
+
+
+- [/] PRRT_kwDOVzQ52c6545Iz: 会員の同模試2tabsで改訂競合後に古いrevisionで失敗し続ける。厳密な応答喪失照合は維持し、エラーから保存済み回答を明示再読込する導線を追加。却下した編集を成功扱い/再適用しない。実2tabsで40001→正本reload→後続保存を回帰検証する。
+
+
+### 16th P2の実HTTP回帰で特定した根本原因
+
+実38件は37成功/新競合検査1timeout。DBはstale exam draftを反復し、PostgREST14.1が業務競合40001をtransient serializationとして無限再試行していた。UI導線だけでは到達できないため、既適用001003を改変せず006でrevision競合4関数をPT412へ変更する。generation専用PT409と分離し、HTTP412/同codeを実APIで必須検証する。固定wait/timeout延長やPostgREST差替えで回避しない。根拠: Supabase公式KB high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b（2026-11-04更新）と実DBログ。
+
+- [/] 006の4関数bodyは40001→PT412以外不変、権限/search_path/署名・既適用SQL追跡を維持。実DB/RLS/並行検査を更新し通す。
+- [/] 実38件でHTTP412→明示reload→正本/後続保存、同exam ID/位置でもremote revision変更時のみ計測開始を更新し、同revision再取得時の計時保持を維持する。
+- [ ] 本番publication guardを004006 inventory・7関数権限へ更新/独立レビューし、merge後に新鮮な暗号化public backupと検証を行ってから適用する。
+
+
+最終検証: `pr63-pt412-reload-check.log`（193unit/1509assertions、全gate成功）、`data/pr63-pt412-integration.log`（実SQL/RLS/RPC/並行/clock/cascade成功）、`pr63-pt412-reload-final-progress.log`（実38件成功1.4分）。再読込GETを実転送した応答をholdし、再取得中は選択/移動/再読込がdisabled、解放後は正本選択復元と後続flag/移動/reload成功を確認した。検査helperのstatus関数呼出し誤りはpropertyへ修正し、finallyでholdを解除する。対象E2Eファイル自体の型検査も `pr63-conflict-test-typecheck.log` で成功。
+
+独立最終レビューのloading競合P1候補は、active判定→notifyが同期JSスタックであり、owner変更時はcoordinatorが先にactiveをnullにする実装を照合して撤回。P0/P1/P2の具体的残件なし。公開guardもcommit固定・live DB body/permission照合・snapshot registry検証・600書込へ改善し再レビュー済み、実merge/backup/適用/公開は未完。

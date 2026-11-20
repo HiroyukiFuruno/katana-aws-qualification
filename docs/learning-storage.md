@@ -58,3 +58,5 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 追加の実認証/DBブラウザ検査は `pr63-completed-cache-progress.log`（37件成功、1.3分）。submitted cacheの新規学習行0と旧started manifest保持、原本削除、再読み込み後2件の正本を確認した。
 
 移行のquestion resolverはindex/bankの失敗Promiseだけを除去し、同じ画面で通信復旧後に再試行できる。成功とinflightは共有し、元の読込エラーは利用者へ返す。`pr63-catalog-retry-check.log`（191unit/1475assertions）で失敗後の再取得と並行共有を検証。実37件の最新差分回帰はCIへ記録する。
+
+会員模試の別tab更新による競合は、006のPT412で明確に拒否する。保存エラーからownerに束縛された正本の再読込を明示実行し、再取得中は選択・移動・開始・提出・自動提出を停止する。同一模試/位置でもserver revisionが変われば新しい回答から計時を再開し、同revision再取得の計時は維持する。最終公開前検証: `pr63-pt412-reload-check.log`（193unit/1509assertions）、`pr63-pt412-reload-final-progress.log`（実38件）、`data/pr63-pt412-integration.log`（SQL/RLS/RPC/並行/clock/cascade成功）。001003は不変、004005006の本番反映はmerge後の工程である。

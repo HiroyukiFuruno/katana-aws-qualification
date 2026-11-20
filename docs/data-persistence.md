@@ -6,7 +6,7 @@
 
 - `202611200001_learning_schema.sql`、`202611200002_learning_writes.sql`、`202611200003_learning_summaries.sql` は PR #51 と main `9ef8a7e` で本番適用済みである。
 - `202611200004_profile_snapshot.sql` は profile 読取りを単一 snapshot にする後続 migration であり、レビュー前・未公開である。001〜003 を書き換えず、承認後に後続 migration として適用する。
-- `202611200005_exam_clock.sql` はサーバー時刻読取りとconfirmed保存を追加する未適用migrationである。選択時刻をサーバーで決定し、既存v1の期限・世代・改訂検査を維持する。004と005はレビュー・merge後に適用する。
+- `202611200005_exam_clock.sql` はサーバー時刻読取りとconfirmed保存を追加する未適用migrationである。選択時刻をサーバーで決定し、既存v1の期限・世代・改訂検査を維持する。004〜006はレビュー・merge後に適用する。
 - DB migration の適用済み状態と、#23 の frontend/outbox/模試 P1 の公開状態は別である。後者は並行レビュー中で、利用可能・検証済みとして本書から約束しない。
 
 ## RPC
@@ -18,7 +18,7 @@
 - `load_roadmap_profile_snapshot()`は認証済み本人を確認し、取得資格・査定・改訂を単一MVCC snapshotで読み取る。
 - `replace_roadmap_profile(..., p_expected_generation, p_expected_revision)`も同じ二重ロックを使い、取得資格と査定回答を置換する。JSON `null`は置換対象ではなく不正入力として拒否し、保存済みprofileを消さない。移行RPCも世代を必須にする。
 - `reset_my_learning_data(p_expected_generation)`は呼出し本人のデータだけを削除し、同じトランザクションでgenerationを増やす。reset前のタブや遅延再送は`PT409`で拒否され、履歴を復活させられない。
-- generation不一致はPostgREST HTTP 409になる専用SQLSTATE `PT409`、試験・profile revisionの競合は`40001`である。前者ではキューを破棄してstateを再読込し、後者では最新の対象だけを再読込して利用者に競合を示す。
+- generation不一致はPostgREST HTTP 409になる専用SQLSTATE `PT409`、試験・profile revisionの競合はHTTP 412の`PT412`である。前者ではキューを破棄してstateを再読込し、後者では最新の対象だけを再読込して利用者に競合を示す。006は既適用001〜003を変更せず、業務競合に使用していた`40001`を置き換える。PostgREST 14による無限再試行を防ぎ、本来のDB serialization failureはそのまま扱う。
 
 ## 既存端末データの明示的移行
 
@@ -55,3 +55,5 @@ profile移行は`import_roadmap_profile(...)`がprofile置換とmanifest行の�
 ## 公開前バックアップの検証記録
 
 2026-11-20の本番読取で001〜003の保存済みSQLと追跡ソースのSHA-256一致、全9テーブルのRLSを確認した。004追加前の対象publicテーブル（全て0行）と適用済みmigrationを、認証タグ付きAES-256-GCMで暗号化し、Supabaseとは別のMacへ保存した。暗号化鍵はMacキーチェーンの専用サービスで保持し、コード・ログ・文書に記載しない。復号結果の全バイト一致を検査した。これはpublic学習データの適用前保存であり、Authユーザー全体のバックアップや定期自動化、別プロジェクトへの復元試験を実施したという意味ではない。実行証跡は`test-results/data/production-source-checksums.json`、`production-before-profile-snapshot.json`、`production-backup-before-004.json`に記録する。
+
+更新競合の006はPostgREST 14の[custom SQLSTATE 40001無限再試行](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b)を回避する。採用時は4関数の有効定義がSQLSTATE以外不変であることを静的検査し、実HTTP412と並行更新の拒否を確認する。

@@ -2,6 +2,7 @@ import { type Locale, locales } from '../../locales.ts';
 import type { DeliveryRouteManifest } from './artifactTypes';
 import { type LessonRoute, lessonPath, lessonRouteAt } from './navigation.ts';
 import manifest from './routeManifest.json' with { type: 'json' };
+import history from './archivedRouteManifest.json' with { type: 'json' };
 
 const routes = manifest as DeliveryRouteManifest;
 type LessonPage = { locale: Locale; page: string; route: LessonRoute; title: string };
@@ -12,8 +13,12 @@ function unit(unitId: string) {
   return result;
 }
 
-function entries(locale: Locale, privateOnly: boolean): LessonPage[] {
-  return routes.units.flatMap((item) => {
+function entries(
+  locale: Locale,
+  privateOnly: boolean,
+  edition: DeliveryRouteManifest = routes,
+): LessonPage[] {
+  return edition.units.flatMap((item) => {
     const result: LessonPage[] = [];
     const resume: LessonRoute = { locale, unitId: item.unitId, stage: 'resume' };
     if (!privateOnly)
@@ -66,7 +71,19 @@ function entries(locale: Locale, privateOnly: boolean): LessonPage[] {
 }
 
 export const publicLessonPages = locales.flatMap((locale) => entries(locale, false));
-export const privateLessonPages = locales.flatMap((locale) => entries(locale, true));
+const currentPrivatePages = locales.flatMap((locale) => entries(locale, true));
+const paths = new Set(
+  [...publicLessonPages, ...currentPrivatePages].map((entry) => lessonPath(entry.route)),
+);
+const archivedPages = (history.editions as DeliveryRouteManifest[])
+  .flatMap((edition) => locales.flatMap((locale) => entries(locale, false, edition)))
+  .filter((entry) => {
+    const path = lessonPath(entry.route);
+    if (paths.has(path)) return false;
+    paths.add(path);
+    return true;
+  });
+export const privateLessonPages = [...currentPrivatePages, ...archivedPages];
 export const publicLessonPageNames = [...new Set(publicLessonPages.map((item) => item.page))];
 export const privateLessonPageNames = [...new Set(privateLessonPages.map((item) => item.page))];
 

@@ -35,18 +35,18 @@ export function LessonLoaded({ services, asset, snapshot, route, update }: Props
   useEffect(() => {
     if (view.redirect) navigateLesson(view.redirect, true);
   }, [view.redirect]);
-  const path = location.pathname;
+  const path = location.pathname + location.search;
   const confirm = (result: LessonSnapshot, href?: string) => {
     update(result);
-    if (href && location.pathname === path) navigateLesson(href);
+    if (href && location.pathname + location.search === path) navigateLesson(href);
   };
   const reloadSaved = async () => {
     const refreshed = await services.loadSaved(asset);
     update(refreshed);
-    if (location.pathname !== path) return;
+    if (location.pathname + location.search !== path) return;
     setReloadVersion((version) => version + 1);
     if (refreshed.progress.activeFinalSessionId !== snapshot.progress.activeFinalSessionId) {
-      navigateLesson(resumeLessonHref(route.locale, asset, refreshed), true);
+      navigateLesson(resumeLessonHref(route.locale, asset, refreshed, route.contentVersion), true);
     }
   };
   if (view.error)
@@ -69,6 +69,7 @@ export function LessonLoaded({ services, asset, snapshot, route, update }: Props
         services={services}
         confirm={confirm}
         reloadSaved={reloadSaved}
+        contentVersion={route.contentVersion}
       />
     );
   }

@@ -19,11 +19,11 @@
 - 実GoTrue/Postgres/browserで終了/再開、現在回答の採点ゲート、再訪・再回答、最終回答保存・未同期を検証する。Mockは単体のみ。
 - 既存の全12単元の320/390px・横画面・200%文字サイズ検査と明暗/keyboard/10言語、品質ゲートを維持する。
 - [x] RED再現→実装→GREEN、既存関連integrationとcheck。
-- [ ] Draft→自己レビュー/@codex review→指摘対応/reply/resolve→Ready→CI→merge→公開URLの実動作確認→Issue Close。
+- [x] Draft→自己レビュー/@codex review→指摘対応/reply/resolve→Ready→CI→merge→公開URLの実動作確認→Issue Close。
 
 ## 作業境界
 
-#24の差分はrelease/dashboardの3b16a8b・ccbe430へコミット保持した。新規worktree/stashは作成せず、既存checkoutのrelease/fundamentals-exitで本修正を先行する。公開後は#24へ戻り、先行修正を取り込んで残DoDを継続する。既存実アカウントの統合・削除は行わない。
+#24の差分はrelease/dashboardの3b16a8b・ccbe430へコミット保持した。新規worktree/stashは作成せず、既存checkoutのrelease/fundamentals-exitで本修正を先行する。公開後は#68の設問内容修正を仕上げ、その後#24へ戻り、先行修正を取り込んで残DoDを継続する。既存実アカウントの統合・削除は行わない。
 
 ## 検証記録
 
@@ -35,7 +35,7 @@
 - `issue67-layout.log`: 10/10成功（15.5s）。全10言語×320/390px×light/darkで終了ボタンの幅・44px・キーボードEnter・言語維持を検証。`issue67-exit-390-dark.png`を確認。
 - `issue67-ready-check.log`: 272単体/2836 assertions、品質・教材生成・3540 public/1560 private lesson routes・30 account shells/build成功。既存14警告とbundle警告は無効化していない。`issue67-dependencies.log`/`issue67-audit.json`: 直接/推移依存とlockfile確認、更新候補・脆弱性検出なし。
 - 自己レビュー: 現在画面の確認だけをgateにし、過去の合格/読了記録を書き換えない。会員finalは保存成功または耐久キューを確認して中断し、古い画面の非同期完了では遷移しない。変更にDB migrationは不要。
-- 残工程: Draftレビュー/指摘対応、CI、merge、本番公開と実URL検証、Issue Close。内容品質の新指摘は#68で192問の監査と個別修正を追跡する。
+- 内容品質の新指摘は#68で192問の監査と個別修正を追跡し、本Issueでは完了扱いにしない。
 - 追加の広告/操作欄: `issue67-ad-layout-red.log`で部品単体9件の失敗を再現。`issue67-ad-layout-green.log`9件/90assertions成功。実コンポーネントとCSSをSSRして実ブラウザで幾何・hit testを行い、広告入力0/300/900px・320/390/横画面でも操作欄の表示、左右同幅、元の広告高さ保持を検証する。これはUI単体の入力試験であり、IT/E2EのサービスをMockしない。
 - ブラウザが必要な部品単体は`fundamentals-controller-layout.unit.tsx`とし、Chromium導入後の既存`progress:integration`入口で必須実行する。Chromium導入前の通常`bun test`へ環境依存を混入しない。
 - `issue67-ads-mobile.log`: 部品単体9成功＋実Auth/DB/browser63成功（2.6m）。全12単元の320/390・横画面・200%文字、10言語/明暗の操作欄同寸法・viewport内表示・終了/再開・実通信断を再検証。更新した390px画像を確認。
@@ -47,3 +47,13 @@
 - CI初回はAuth成功、Progress132成功/1失敗。終了ボタン追加で既存の再試行テストの曖昧なbutton指定が2件一致したため、表示名「再試行」を明示した。`pr69-member-retry.log`で該当ファイルの実Auth/DB/browser全件が成功し、`pr69-selector-check.log`で274単体/2853 assertionsと全check/buildも成功。検査の条件やtimeoutは変更していない。新HEADのレビュー・CIと公開は引き続き回収する。
 - 147ba10のAuthは成功。Progress run44790184497はAzureのUbuntu mirrorから21.9MB取得に6分27秒（56.4kB/s）かかり、15分のjob上限で中断した。再実行でもブラウザ準備に約8分を消費したため、同じ署名付きUbuntu packageを取得する公式archiveへhostだけを変更する。APTの署名検証・package/Playwright/OS版・全検査・15分上限は維持する。`pr69-ci-browser-delay.log`に元の取得速度と上限の証跡を保存した。
 - e55afffの初回は取得先設定が間接参照形式であるため、期待する直接hostが見つからず準備前に停止した。GitHub公式runner imageの`configure-apt-sources.sh`で`mirror+file:/etc/apt/apt-mirrors.txt`を確認し、参照先mirror listをUbuntu公式archive/securityの優先順へ設定するよう修正した。未知形式では失敗させ、元の遅い取得先へ黙って戻さない。公式資料: https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh
+
+## 公開完了（2026-11-21 JST）
+
+PR69のcandidate `9d1b25c839e02613b22a8c11cbfc705b4d790fee`をmain `cd4cb39683a1e0cf386db0a638885b00227509e7`へ通常merge。最新HEADのレビューは指摘なし、全thread解決。mirrorのescapeに関するP1は実原文バイトとBash出力（タブ2/改行2/2 URI行）と実CIの依存導入21秒で反証し、不採用の根拠をreply/resolveして再レビューを回収した。
+
+`pr69-ci-auth-success.log`: 164件成功。`pr69-ci-progress-success.log`: 実Auth/DB/browser133件＋部品単体9件/90assertions成功。品質ゲート・15分上限は維持した。
+
+`production67-source.json`: deployment `dpl_ArapBnos7sYkrSGfKnD1SrV2Xkma` / READY / custom domainの上記main一致。`production67-qa.json`: [公開URL](https://kaq.katana-projects.org/ja/study/fundamentals/)の390×700ブラウザで読書/最終の終了・再開、CP再訪の確認必須、最終12問の選択必須、12/12採点、footerがviewport内、学習Cookie0・analytics通信0を検証。`production67-final-required.png`は実際のfieldset表示を待って撮影し確認した。Issue67は公開照合後にcompletedでClose。
+
+公開済み修正をrelease/fundamentals-contentへ取り込み、不要なlocal release/fundamentals-exitを削除。remote branchは保持、新規worktree/stashは作成せず、他の使用中worktreeは維持した。

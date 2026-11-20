@@ -31,7 +31,7 @@ function App() {
   const consent = useCookieConsent();
   const currentUrl = useLessonLocation();
   const route = routeAt(currentUrl.pathname);
-  const lesson = lessonRouteAt(currentUrl.pathname);
+  const lesson = lessonRouteAt(currentUrl.pathname, currentUrl.search);
   const { state } = useAccount();
   useEffect(() => {
     initializeAnalytics(analyticsAllowedForPath(currentUrl.pathname, consent.value === 'granted'));
@@ -39,7 +39,12 @@ function App() {
   useEffect(() => {
     const beforeNavigation = (event: Event) => {
       if (!(event instanceof CustomEvent) || typeof event.detail !== 'string') return;
-      initializeAnalytics(analyticsAllowedForPath(event.detail, consent.value === 'granted'));
+      initializeAnalytics(
+        analyticsAllowedForPath(
+          new URL(event.detail, location.origin).pathname,
+          consent.value === 'granted',
+        ),
+      );
     };
     const beforeHistory = () =>
       initializeAnalytics(analyticsAllowedForPath(location.pathname, consent.value === 'granted'));

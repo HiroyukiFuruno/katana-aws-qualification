@@ -4,6 +4,7 @@ import type { ProgressRpcClient } from '../../progress/types';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonAssets } from '../delivery/assets';
 import { createGuestLessonRepository, type LessonLearningRepository } from './guestRepository';
+import { readArchivedLessonRecords } from './archivedRecords';
 import { GuestLessonStorage } from './guestStorage';
 import { guestLessonSummaries } from './guestSummary';
 import { createMemberLessonRepository } from './memberRepository';
@@ -100,6 +101,23 @@ export function createLessonServices({ assets, storage, isCurrent, member }: Inp
       }
       if (!guest) throw new Error('Guest lesson repository is unavailable.');
       return guestLessonSummaries(index, assets, guest);
+    },
+    async archivedRecords() {
+      await initialize();
+      return readArchivedLessonRecords(
+        assets,
+        async (index) => {
+          if (memberRepository)
+            return readCurrent(() =>
+              memberRepository.summaries(
+                index.units.map(({ unitId, contentVersion }) => ({ unitId, contentVersion })),
+              ),
+            );
+          if (!guest) throw new Error('Guest lesson repository is unavailable.');
+          return guestLessonSummaries(index, assets, guest);
+        },
+        outbox,
+      );
     },
     dispose: () => guest?.dispose(),
   };

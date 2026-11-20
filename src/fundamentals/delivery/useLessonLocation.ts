@@ -21,14 +21,15 @@ export function navigateLesson(path: string, replace = false) {
   const catalog = locales.some((locale) => target.pathname === localePath(locale, 'study/fundamentals'));
   if (
     target.origin !== location.origin ||
-    target.search ||
     target.hash ||
-    (!catalog && !lessonRouteAt(target.pathname))
+    (catalog && target.search) ||
+    (!catalog && !lessonRouteAt(target.pathname, target.search))
   ) {
     throw new Error('Invalid lesson navigation.');
   }
-  if (target.pathname === location.pathname && !location.search && !location.hash) return;
-  window.dispatchEvent(new CustomEvent('kaq:lesson-navigation', { detail: target.pathname }));
-  history[replace ? 'replaceState' : 'pushState'](null, '', target.pathname);
+  const href = target.pathname + target.search;
+  if (href === location.pathname + location.search && !location.hash) return;
+  window.dispatchEvent(new CustomEvent('kaq:lesson-navigation', { detail: href }));
+  history[replace ? 'replaceState' : 'pushState'](null, '', href);
   window.dispatchEvent(new PopStateEvent('popstate'));
 }

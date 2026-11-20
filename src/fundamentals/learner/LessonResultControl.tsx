@@ -17,9 +17,17 @@ type Props = {
   services: LessonServices;
   confirm: (snapshot: LessonSnapshot, href?: string) => void;
   reloadSaved: () => Promise<void>;
+  contentVersion?: string;
 };
 
-export function LessonResultControl({ asset, snapshot, services, confirm, reloadSaved }: Props) {
+export function LessonResultControl({
+  asset,
+  snapshot,
+  services,
+  confirm,
+  reloadSaved,
+  contentVersion,
+}: Props) {
   const { locale, t } = usePreferences();
   const [sessionId] = useState(() => submittedSession(snapshot.sessions)?.sessionId);
   const mutation = useLessonMutation(services, asset, (result) => confirm(result));
@@ -37,7 +45,13 @@ export function LessonResultControl({ asset, snapshot, services, confirm, reload
     if (active) {
       confirm(
         snapshot,
-        lessonPath({ locale, unitId: asset.unit.id, stage: 'final', position: active.position + 1 }),
+        lessonPath({
+          locale,
+          unitId: asset.unit.id,
+          stage: 'final',
+          position: active.position + 1,
+          contentVersion,
+        }),
       );
       return;
     }
@@ -50,7 +64,10 @@ export function LessonResultControl({ asset, snapshot, services, confirm, reload
         input: { sessionId: crypto.randomUUID(), expectedRevision: snapshot.progress.revision },
       },
       (result) =>
-        confirm(result, lessonPath({ locale, unitId: asset.unit.id, stage: 'final', position: 1 })),
+        confirm(
+          result,
+          lessonPath({ locale, unitId: asset.unit.id, stage: 'final', position: 1, contentVersion }),
+        ),
     );
   };
   return (
@@ -58,6 +75,7 @@ export function LessonResultControl({ asset, snapshot, services, confirm, reload
       asset={asset}
       snapshot={snapshot}
       sessionId={sessionId}
+      contentVersion={contentVersion}
       onRetry={retry}
       onNavigate={(href) => {
         if (!mutation.busy && !recovery.busy && !savedReload.busy) confirm(snapshot, href);

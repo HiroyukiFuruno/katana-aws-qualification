@@ -128,6 +128,7 @@ export function SessionPanel({
       <FinalPassRates sessions={summary.lessonFinals} lessons={lessons} />
       <DashboardDataTable
         primary={widget.chart === 'table' || series.length === 0}
+        keepInCompact={sessions.some((session) => session.submittedAt === null)}
         caption={`${t('dashboardWidgetExams')} · ${timezone}`}
         columns={[
           { id: 'label', label: t('dashboardGroup') },

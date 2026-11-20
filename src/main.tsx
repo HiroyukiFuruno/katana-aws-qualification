@@ -9,7 +9,7 @@ import { dashboardPath } from './auth/navigation';
 import { CertificationPages } from './CertificationPages';
 import { CookieConsent, useCookieConsent } from './CookieConsent';
 import { CourseApp } from './CourseApp';
-import { certifications } from './certifications';
+import { studyCourses } from './certifications';
 import { FundamentalsPage } from './fundamentals/FundamentalsPage';
 import { GlossaryPage } from './GlossaryPage';
 import { localePath } from './locales';
@@ -37,7 +37,7 @@ function App() {
   }, [route, state, locale]);
   if (!route) return <NotFound />;
   const [section, courseId] = route.page.split('/');
-  const selected = section === 'study' ? certifications.find((cert) => cert.id === courseId) : undefined;
+  const selected = section === 'study' ? studyCourses.find((cert) => cert.id === courseId) : undefined;
 
   return (
     <>

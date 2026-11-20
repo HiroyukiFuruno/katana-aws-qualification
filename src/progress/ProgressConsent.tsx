@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePreferences } from '../preferences';
 import { canPersistGuestProgress, guestProgressConsentKey, setGuestProgressConsent } from './guest';
 
@@ -20,9 +20,17 @@ export function ProgressConsent({
   const { t } = usePreferences();
   const [consent, setConsent] = useState(readConsent);
   const [failed, setFailed] = useState(false);
+  const observedConsent = useRef(consent);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   useEffect(() => {
     const refresh = (event: StorageEvent) => {
-      if (event.key === guestProgressConsentKey || event.key === null) setConsent(readConsent());
+      if (event.key !== guestProgressConsentKey && event.key !== null) return;
+      const next = readConsent();
+      if (observedConsent.current === next) return;
+      observedConsent.current = next;
+      setConsent(next);
+      onChangeRef.current();
     };
     window.addEventListener('storage', refresh);
     return () => window.removeEventListener('storage', refresh);
@@ -32,6 +40,7 @@ export function ProgressConsent({
     setFailed(false);
     try {
       if (!setGuestProgressConsent(localStorage, granted)) throw new Error('Storage unavailable');
+      observedConsent.current = granted;
       setConsent(granted);
       onChange();
     } catch {

@@ -105,3 +105,9 @@ guest旧資格の最終修正: aliasを共通helperへ分離し、guestとmember
 追加2件修正後: guest通常回答/模試提出は既存history lock内で最新canonical履歴を読み追加分だけ保存し、prepareも最新履歴で実施する。正当な同内容別操作は残し、破損は原本を維持して拒否する。同examを別stale storeから再提出してもイベントは追加せず、fresh canonical historyをB snapshotへ反映する回帰をRED→GREENで固定（pr63-guest-idempotent-red.log）。取込refresh後だけ専用exam通知を発行し、mounted hookはowner/store/counter/request/cleanupで旧応答を棄却する。同ID/位置の再読込で実測時間を捨てない。
 
 `pr63-guest-import-release-check.log` は全182 unit/1440 assertions・重複0・型/構造/教材/build成功。先のharness5s timeoutはhost高負荷を観測したが閾値を変えず全件再回収した。`pr63-guest-import-progress.log` 実31件成功、最終same-cursor時間保持調整後に `pr63-guest-import-clock-final.log` の時計/期限/実2tab/import5件を成功回収。採用した2threadのreply/resolveと新head CI/レビュー・公開は次工程。
+
+## fdc0517 Ready後の追加レビュー
+
+- [x] comment4639237820 / PRRT_kwDOVzQ52c653VV9: guestの同意withdraw/regrantで同じstoreのexam復元元を切り替え、mounted viewをcanonical draftへ再同期する。withdraw時は保存済み模試をactive表示から中断し、原本保持。regrantはreloadなしで元回答/flagを復元。新memory cacheは導入せず、既存の未同意disk読取禁止・transient/reset境界を維持する。
+
+同意切替の最終検証: guest persistenceの実値が変わったreadyだけ専用exam counterを増やし、通常の回答/profile更新は再読込みを誘発しない。ProgressConsentはnative storage eventの実値変化を一度だけ最新callbackへ通知する。`pr63-consent-tabs-check.log` 全182 unit/1443 assertions・重複0・型/構造/教材/build成功。`pr63-consent-tabs-progress.log` 実33件成功（1.8min）、同tab/別tabのwithdraw→setup・原本保持→regrantで元回答/flag復元を確認。独立read-only最終レビューP0/P1/P2なし。依存確認は `pr63-dependencies-outdated.log`（更新対象なし）、`pr63-dependencies-tree.log`、`pr63-dependencies-audit.log`（問題なし）。新head CI/reviewと公開は後続工程。

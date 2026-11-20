@@ -1,5 +1,5 @@
 import { createMemberExamRepository } from './examRepository';
-import { createGuestProgressRepository } from './guest';
+import { canPersistGuestProgress, createGuestProgressRepository } from './guest';
 import { createMemberProgressRepository } from './member';
 import { MemberRetryQueue } from './retryQueue';
 import { createStoreActions } from './storeActions';
@@ -20,6 +20,7 @@ import { assertCurrentProgressOwner, type ProgressOperation } from './types';
 export function createProgressStore(input: ProgressStoreInput): ProgressStore {
   let active = true;
   let generation = 0;
+  let guestPersistence = input.owner.kind === 'guest' && canPersistGuestProgress(input.storage);
   const operation: ProgressOperation = { isCurrent: () => active && input.isCurrent() };
   const guest =
     input.owner.kind === 'guest'
@@ -45,13 +46,12 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
   };
   const ready = (
     next: Pick<ProgressSnapshot, 'attempts' | 'corruptRows' | 'profile' | 'profileRevision'>,
-  ) =>
-    publish({
-      ...next,
-      owner: input.owner,
-      examRefreshVersion: snapshot.examRefreshVersion,
-      state: 'ready',
-    });
+  ) => {
+    const persistence = input.owner.kind === 'guest' && canPersistGuestProgress(input.storage);
+    const examRefreshVersion = snapshot.examRefreshVersion + Number(persistence !== guestPersistence);
+    guestPersistence = persistence;
+    publish({ ...next, owner: input.owner, examRefreshVersion, state: 'ready' });
+  };
   const failed = (error: ProgressSnapshot['error'], preserveReady = snapshot.state === 'ready') =>
     publish({ ...snapshot, error, state: preserveReady ? 'ready' : 'error', refreshing: false });
   const actions = createStoreActions(input, {

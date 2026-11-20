@@ -45,3 +45,5 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 ゲスト旧プロフィールの互換性: 旧取得資格IDはmember移行と共通の現行IDへ正規化し、保存同意の変更時にstoreと画面のprofileを再同期する。`pr63-guest-profile-sync-check.log` は176 unit/1429 assertions、`pr63-guest-profile-sync-progress.log` は実30件成功。これは公開前検証の記録であり、最新の公開証跡はIssue #23へ記録する。
 
 複数guest tabは既存のhistory lock内で最新のcanonical履歴から追加分を作り、古いsnapshotの共通prefixを再保存しない。同じ内容でも別の回答操作は保持し、同一模試の再提出だけをexam IDで一回にする。移行後のexam通知は通常回答/プロフィール更新と分離し、同じ模試位置の再取得では計測中の時間を保持する。公開前検証は `pr63-guest-import-release-check.log`（182 unit/1440 assertions）と `pr63-guest-import-progress.log`（実31件）、最終timer調整後の `pr63-guest-import-clock-final.log`（対象5件）。
+
+保存同意のwithdraw時は、保存済み模試のactive表示を中断し元データを保持する。再同意時はreloadなしで元回答/flagを復元する。同tab/別tabのnative storage eventとも同じexam source切替通知を使う。最新公開前検証は `pr63-consent-tabs-check.log`（182 unit/1443 assertions）と `pr63-consent-tabs-progress.log`（実33件）。

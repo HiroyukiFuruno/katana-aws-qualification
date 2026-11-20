@@ -45,3 +45,5 @@
 - `pr69-quota-green.log`: 修正後の容量不足/空き確保/同じcommand再試行/再開、通信断での耐久キュー保持、通常終了を含む実Auth/DB/browser5件成功（19.8s）。メモリ保持と耐久保存の区別・別commandの誤認・別タブ削除の単体回帰を追加。
 - `pr69-durability-check.log`: 274単体/2853 assertions、既存全品質ゲートとbuild成功。修正commitのpush後にthreadへreply/resolveし、同じHEADで再レビューとCIを回収する。
 - CI初回はAuth成功、Progress132成功/1失敗。終了ボタン追加で既存の再試行テストの曖昧なbutton指定が2件一致したため、表示名「再試行」を明示した。`pr69-member-retry.log`で該当ファイルの実Auth/DB/browser全件が成功し、`pr69-selector-check.log`で274単体/2853 assertionsと全check/buildも成功。検査の条件やtimeoutは変更していない。新HEADのレビュー・CIと公開は引き続き回収する。
+- 147ba10のAuthは成功。Progress run44790184497はAzureのUbuntu mirrorから21.9MB取得に6分27秒（56.4kB/s）かかり、15分のjob上限で中断した。再実行でもブラウザ準備に約8分を消費したため、同じ署名付きUbuntu packageを取得する公式archiveへhostだけを変更する。APTの署名検証・package/Playwright/OS版・全検査・15分上限は維持する。`pr69-ci-browser-delay.log`に元の取得速度と上限の証跡を保存した。
+- e55afffの初回は取得先設定が間接参照形式であるため、期待する直接hostが見つからず準備前に停止した。GitHub公式runner imageの`configure-apt-sources.sh`で`mirror+file:/etc/apt/apt-mirrors.txt`を確認し、参照先mirror listをUbuntu公式archive/securityの優先順へ設定するよう修正した。未知形式では失敗させ、元の遅い取得先へ黙って戻さない。公式資料: https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh

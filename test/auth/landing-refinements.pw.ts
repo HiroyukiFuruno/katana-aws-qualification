@@ -30,7 +30,9 @@ test('account creation is prominent after value is explained and before the tool
   await expect(pitch.getByRole('link', { name: '無料アカウントを作成' })).toBeVisible();
   await expect(pitch.getByRole('heading', { level: 2 })).toBeVisible();
   await expect(pitch.locator('li')).toHaveCount(3);
-  await expect(pitch).toContainText('準備中');
+  await expect(pitch).not.toContainText('準備中');
+  await expect(pitch).toContainText('ダッシュボード');
+  await expect(pitch).toContainText('学習履歴と表示設定');
   const [values, account, paths] = await Promise.all([
     visibleBounds(page.locator('.landing-values')),
     visibleBounds(page.locator('.landing-account-pitch')),

@@ -76,7 +76,10 @@ export function AccountNavigation() {
             <a href={localePath(locale, 'dashboard')} onClick={() => setOpen(false)}>
               {t('accountDashboard')}
             </a>
-            <a href={localePath(locale, 'dashboard')} onClick={() => setOpen(false)}>
+            <a
+              href={`${localePath(locale, 'dashboard')}#account-settings`}
+              onClick={() => setOpen(false)}
+            >
               {t('accountSettings')}
             </a>
             <button type="button" disabled={busy} onClick={() => void signOut()}>
@@ -94,7 +97,9 @@ export function AccountNavigation() {
             <a className="primary" href={localePath(locale, 'login')} onClick={() => setOpen(false)}>
               {t('accountCreateCta')}
             </a>
-            <span className="account-menu-pending">{t('accountGuestDashboard')}</span>
+            <a href={localePath(locale, 'dashboard')} onClick={() => setOpen(false)}>
+              {t('accountDashboard')}
+            </a>
             <a href={localePath(locale, 'login')} onClick={() => setOpen(false)}>
               {t('accountSignIn')}
             </a>

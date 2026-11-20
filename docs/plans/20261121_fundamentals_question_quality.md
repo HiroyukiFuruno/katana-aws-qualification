@@ -7,7 +7,7 @@
 - [x] 全12単元の最終144問・途中48問をID/極性/選択数/正答とともに照合する。機械的なキー一致は意味の正しさの証明としない。
 - [x] 曖昧な前提、抽象論だけで状況を比較させる設問、本文にない正答条件を修正する。修正した各問は前提→選択肢→正答→解説→本文/一次資料の対応を残す。
 - [x] 公開済みmigration/教材版を改変しない。過去の回答・最終下書き・未同期コマンドが旧版の設問で整合し、新版の合格へ自動流用されないことを検証する。
-- [ ] 品質ゲート、実Auth/DBの新旧版/取込/owner分離、実スライドの表示/採点、Draftレビュー手順、DB/サイトの公開証跡でCloseする。本人実機確認は独立フォローアップ。
+- [x] 品質ゲート、実Auth/DBの新旧版/取込/owner分離、実スライドの表示/採点、Draftレビュー手順、DB/サイトの公開証跡でCloseする。本人実機確認は独立フォローアップ。
 
 ## 監査の扱い
 
@@ -17,12 +17,12 @@
 
 ## 主な採用方針・要確認
 
-- [ ] `fund-cloud-111`: AZ-aに3台のA案、AZ-a/AZ-b各1台のB案とAZ-a停止を明示する。A案の全停止、B案で残る1台と必要な処理能力確認を具体的に問う。架空の台数優位や、未記載の処理性能を断定させない。本文の可用性/性能の区別と接続する。
-- [ ] testing checkpoint test-design: 時計規則だけでなく、入力時刻と適用税率/期待値を固定した例にして、実行時刻依存の曖昧さをなくす。
-- [ ] testing checkpoint quality-gates: どの型検査が必須かを明記する。
-- [ ] release checkpoint observation-abort: baselineとの差と中止閾値を混同しない。中止閾値を超えた観測値を明示して停止判断を問う。
-- [ ] observability checkpoint objectives: SLOの対象/成功条件/分母/観測期間と、通知運用の要件を区別する。SLO定義だけで全alertを必須としない。
-- [ ] NAT ping、TLS診断の確認対象、他のP2候補は原文と一次資料を確認してから採否を決める。「最初に」という問題文にない条件を監査側から付け足さない。
+- [x] `fund-cloud-111`: AZ-aに3台のA案、AZ-a/AZ-b各1台のB案とAZ-a停止を明示する。A案の全停止、B案で残る1台と必要な処理能力確認を具体的に問う。架空の台数優位や、未記載の処理性能を断定させない。本文の可用性/性能の区別と接続する。
+- [x] testing checkpoint test-design: 時計規則だけでなく、入力時刻と適用税率/期待値を固定した例にして、実行時刻依存の曖昧さをなくす。
+- [x] testing checkpoint quality-gates: どの型検査が必須かを明記する。
+- [x] release checkpoint observation-abort: baselineとの差と中止閾値を混同しない。中止閾値を超えた観測値を明示して停止判断を問う。
+- [x] observability checkpoint objectives: SLOの対象/成功条件/分母/観測期間と、通知運用の要件を区別する。SLO定義だけで全alertを必須としない。
+- [x] NAT ping、TLS診断の確認対象、他のP2候補は原文と一次資料を確認してから採否を決める。「最初に」という問題文にない条件を監査側から付け足さない。
 
 AWSのAZ分離・同一AZの障害範囲は公式資料をライブ照合済み:
 https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html
@@ -38,13 +38,13 @@ https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-ava
 
 ## 検証台帳
 
-- [ ] 修正一覧と原文/根拠を確定し、極性/必要選択数/正答の整合を再確認する。
-- [ ] 教材生成・seedの新旧双方の不一致を検出する検査。
-- [ ] 旧版で進行中の会員finalとdurable outbox、新版の別進捗、過去の合格/回答履歴を実境界で検証する。
-- [ ] guest旧版sourceの再開/取込/分析と、会員化後の重複排除・owner分離を検証する。
-- [ ] Draft→自己レビュー/外部レビュー→指摘修正/reply/resolve→Ready/CI→追加DB migration→サイト→公開照合→Issue Close。
+- [x] 修正一覧と原文/根拠を確定し、極性/必要選択数/正答の整合を再確認する。
+- [x] 教材生成・seedの新旧双方の不一致を検出する検査。
+- [x] 旧版で進行中の会員finalとdurable outbox、新版の別進捗、過去の合格/回答履歴を実境界で検証する。
+- [x] guest旧版sourceの再開/取込/分析と、会員化後の重複排除・owner分離を検証する。
+- [x] Draft→自己レビュー/外部レビュー→指摘修正/reply/resolve→Ready/CI→追加DB migration→サイト→公開照合→Issue Close。
 
-この文書は設計・未完了台帳であり、実装/公開済みの証拠ではない。
+以下は時点ごとの履歴。最終の公開証跡は末尾を参照する。
 
 ## 初期実装の証跡（未公開）
 
@@ -68,3 +68,13 @@ https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-ava
 - CIは元の15分上限と全検査を保持し、独立した2VMへshard分割する。`issue68-shards-proof.json`: 元140件と89/51件の和集合が一致、重複/漏れ/余分な検査0。`progress`集約gateは両shard成功時だけ成功する。CIの実行結果はこれから回収する。
 - 直接13/lock解決79の依存を監査、outdated候補なし・audit `{}`。Bunは[公式1.4.5](https://bun.com/blog/bun-v1.4.5)へpackageManager/4 workflow/READMEを揃え、frozen installと上記全検査を通した。lockfileや閾値は変更しない。
 - 公開用のbackup/SQL/DB照合helperはrootが実経路をレビュー中。Draftレビュー・CI・暗号化backup・追加catalogの適用・公開URL照合・Issue Closeは未完了。
+
+## 公開完了（2026-11-21）
+
+PR70/head3bff5be899bff06e0eb0738abbfe142eda994a69をDraftで自己/Codexレビュー（指摘0）、Ready後も指摘0、全CI成功してmain ae346acee1c40e0e2b292af5bbe488292f814b89へmerge。CIはAuth164、Progress89+51=140と27部品/297assertions、data/glossary成功。最新check281単体/3449assertions成功。
+
+本番は新規nonceのAES256GCM暗号化backup/復号照合後、210001のみを適用。全11registry statement/12table RLSとgrant/7RPC bodyとsearch_path/18catalog payloadを照合し、旧12catalogのpublished_atを含む全行hashとowner policies不変・既存件数減少なしを確認した。`test-results/data/production68-backup.json` / `production68-applied.json`。公開helperの異常系17件/guard7件も検査した。
+
+Deployment dpl_6oMSoyT4cD66d7XkG7zmWDE5Pvu1、customdomain READY/main一致。公開実390x700で新版の途中再訪/退出再開/未回答ゲート/12問合格/操作欄寸法/学習Cookie0/analytics0。別ブラウザで旧版下書き→原版問題→12問合格→旧合格保持・新版未学習を確認（production68-qa.json / production68-archive-qa.json）。Issue68は公開検証後にcompletedでClose。本人実機確認は独立フォローアップ。
+
+local release/fundamentals-contentを安全削除、remoteは保持。既存3worktreeと他の差分を保持し、release/dashboardで公開mainをmerge、未公開dashboard migrationだけを210002/210003へ繰り下げた。#24は未完了として継続。

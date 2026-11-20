@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CoursePage } from './CourseNavigation';
+import { coursePageFromSearch } from './coursePageQuery';
 import {
   type Attempt,
   exportHistory,
@@ -29,7 +30,7 @@ export function useCourseProgress(
     historyError,
     resetVersion,
   } = useLearningHistory();
-  const [page, setPage] = useState<CoursePage>('study');
+  const [page, setPage] = useState<CoursePage>(() => coursePageFromSearch(location.search));
   const [session, setSession] = useState<PracticeSession>();
   const [notice, setNotice] = useState<Message | ''>('');
   const [busy, setBusy] = useState(false);

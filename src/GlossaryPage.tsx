@@ -5,6 +5,7 @@ import { GlossaryDefinition, termAnchor } from './GlossaryDefinition';
 import { GlossaryFilters } from './GlossaryFilters';
 import './glossary.css';
 import { usePreferences } from './preferences';
+import { SiteAd } from './SiteAd';
 
 export function GlossaryPage() {
   const { t, locale } = usePreferences();
@@ -47,6 +48,7 @@ export function GlossaryPage() {
         <h1>{t('glossary')}</h1>
         <p>{t('glossaryIntro')}</p>
       </div>
+      <SiteAd placement="inline" />
       <GlossaryFilters
         query={query}
         category={category}

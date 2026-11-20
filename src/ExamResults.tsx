@@ -1,6 +1,7 @@
 import { AccountBenefits } from './auth/AccountBenefits';
 import type { ExamBlueprint } from './certifications';
 import { ExamFormatPicker } from './ExamFormatPicker';
+import { examLength } from './exam';
 import type { Attempt } from './history';
 import { LearningNotes } from './LearningNotes';
 import type { Message } from './messages';
@@ -60,6 +61,9 @@ export function ExamResults({
         })}
       </p>
       <p>{t('examGrading')}</p>
+      {attempts.length === examLength(blueprint) && (
+        <p className="notice">{t('fullMockResultDisclaimer')}</p>
+      )}
       <AccountBenefits context="exam" showAction />
       <dl className="domain-scores">
         {[...scores]

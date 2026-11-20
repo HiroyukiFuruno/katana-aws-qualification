@@ -4,6 +4,7 @@ import { LandingFaq } from './LandingFaq';
 import { LandingPaths, LandingValues } from './LandingJourney';
 import { LandingConcept, LandingHero } from './LandingStory';
 import { usePreferences } from './preferences';
+import { SiteAd } from './SiteAd';
 import './landing.css';
 
 export function LandingPage() {
@@ -13,6 +14,7 @@ export function LandingPage() {
       <LandingHero />
       <div className="shell layout-stack landing-content">
         <LandingConcept />
+        <SiteAd placement="inline" />
         <LandingValues />
         <LandingAccount />
         <LandingPaths />

@@ -4,7 +4,7 @@ import { localePath } from './locales';
 import { usePreferences } from './preferences';
 import { SiteAd } from './SiteAd';
 
-export function SiteFooter() {
+export function SiteFooter({ replaceAdOnMobile = false }: { replaceAdOnMobile?: boolean }) {
   const { t, locale } = usePreferences();
   const homePath = useHomePath();
   return (
@@ -32,7 +32,7 @@ export function SiteFooter() {
         </a>
       </div>
       <div className="shell">
-        <SiteAd />
+        <SiteAd replaceOnMobile={replaceAdOnMobile} />
       </div>
     </footer>
   );

@@ -190,3 +190,11 @@ question resolver差分はindex/bank拒否と成功cache/並行共有を単体�
 最新の公開順序は#23→#25追加改修→#24→#58。既存SSOの連携競合、初回SSO時の分離防止、両SSO所有確認後のアカウント/履歴mergeは#58へ分離し、#23には統合処理を混ぜない。現在の所有者別の履歴・UUID・改訂・模試・プロフィール・移行原本を保持し、他人を氏名やメールで自動的に同一視しない。
 
 19th最終検証: `pr63-member-transport-final-check.log` 全209unit/1611assertions、重複0・型/構造/全教材/build成功。`pr63-member-transport-final-progress.log` 実43件成功1.5分。会員2contextの同設問metadata1/0→2/1→3/2・DB3UUID/reload、offline誤答→正答の2履歴、reload後の元UUID再送を確認。最初の実43件は41成功/2失敗で、実SDKのgetUserが通信失敗をAuthRetryableFetchError(status0/5xx)へ包むことを特定。API境界の既知一時エラー分類へ追加し、認証401/権限403/世代PT409/破損は新eventをenqueueしない。元errorを維持しowner切替時の新eventだけ補償削除する。既存unit3失敗は追加queryの順序/遅延対象を忠実に更新し、条件・timeoutは維持した。修正後の全検査成功と元の失敗ログを分けて保持する。004005006・サイト未公開。
+
+## 20thレビュー: 提出済み模擬試験の再表示
+
+- [/] PRRT_kwDOVzQ52c658h5K / comment4641438649: memberのdraft-only再開から提出済み結果が消える退行を修正する。draft再開と独立したsubmitted loaderを用意し、setupから明示的に結果/解説へ戻る。既存のviewResultsロケールを使用する。
+- [/] owner/gen/同一request/disposedで遅延結果を棄却し、読み込んだexamIdの履歴を更新してから表示。新規模試のpreflightはdraftのみを維持し、結果参照でstart/提出/学習eventを増やさない。
+- [/] 単体・実44件で提出→タブ切替→結果/解説→reload→同じ結果→次の試験→draft再開、他ownerに結果なしを検証する。直前ad6afdcの4CIは全成功、Ready再レビューの追加指摘に対応するためDraftへ戻して公開を維持保留。
+
+20th最終検証: `pr63-submitted-results-check.log` 全211unit/1615assertions・重複0/型構造教材/build成功。`pr63-submitted-results-final-progress.log` 実44件成功1.6分。提出15event→tab→明示結果/解説→reload同一結果→次模試の新draft→reload回答再開、別ownerに結果なし、閲覧でsession/event増加なしを確認。最初43成功/1失敗はrootの検査が解説内のnested detailsも件数へ含めた誤りで、トップレベル15解答の同じ条件へselectorを修正。タイムアウト/期待件数・機能条件は維持。独立read-only reviewで具体的P0/P1/P2なし。004005006・サイト未公開。

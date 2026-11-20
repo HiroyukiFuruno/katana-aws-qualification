@@ -1,3 +1,4 @@
+import { isAuthRetryableFetchError } from '@supabase/auth-js';
 import type { ProgressRpcClient } from './types';
 
 const readableTables: Record<string, string> = {
@@ -30,6 +31,15 @@ export class ProgressApiError extends Error {
   ) {
     super('Learning data request failed');
   }
+}
+
+export function isTransientProgressReadError(error: unknown) {
+  if (error instanceof TypeError) return true;
+  if (error instanceof ProgressApiError) return error.status >= 500 && error.status <= 599;
+  return (
+    isAuthRetryableFetchError(error) &&
+    (error.status === 0 || (error.status !== undefined && error.status >= 500 && error.status <= 599))
+  );
 }
 
 export function createProgressApi(
@@ -72,7 +82,17 @@ export function createProgressApi(
       if (!Object.hasOwn(readableTables, table)) throw new Error('Invalid learning table');
       const query = new URLSearchParams({ select: '*', order: readableTables[table] });
       for (const [column, value] of Object.entries(filters)) {
-        if (!['exam_id', 'certification_id', 'state', 'manifest_id', 'event_id'].includes(column))
+        if (
+          ![
+            'exam_id',
+            'certification_id',
+            'event_id',
+            'manifest_id',
+            'question_id',
+            'question_revision',
+            'state',
+          ].includes(column)
+        )
           throw new Error('Invalid learning filter');
         query.set(column, value);
       }

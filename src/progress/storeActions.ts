@@ -5,13 +5,9 @@ import type { StoreActionDependencies } from './storeActionTypes';
 import { resetGuestProgress } from './storeGuestExams';
 import { updateGuestHistory } from './storeGuestHistory';
 import { loadGuestProgress } from './storeGuestLoad';
-import {
-  memberAttemptSnapshot,
-  mergeMemberAttempts,
-  recoverMemberAttempt,
-  retryMemberPending,
-} from './storeMemberAttempts';
+import { memberAttemptSnapshot, recoverMemberAttempt, retryMemberPending } from './storeMemberAttempts';
 import { initializeMemberGeneration } from './storeMemberInitialization';
+import { prepareFreshMemberAttempt } from './storeMemberPreparation';
 import type * as StoreTypes from './storeTypes';
 
 export function createStoreActions(
@@ -81,13 +77,19 @@ export function createStoreActions(
           return stored.value;
         }
         if (!member || !queue) throw new Error('A member progress client is required.');
-        const result = await queue.append(
-          member,
-          certificationId,
-          attempt,
-          (flushed) => prepare?.(mergeMemberAttempts(snapshot.attempts, flushed)) ?? attempt,
-        );
-        ready(memberAttemptSnapshot(getSnapshot(), result.flushed));
+        let fresh = [] as Awaited<ReturnType<typeof member.loadAttempts>>;
+        const result = await queue.append(member, certificationId, attempt, async (flushed) => {
+          const prepared = await prepareFreshMemberAttempt(
+            member,
+            attempt,
+            prepare,
+            flushed,
+            getSnapshot,
+          );
+          fresh = prepared.fresh;
+          return prepared.preparation;
+        });
+        ready(memberAttemptSnapshot(getSnapshot(), result.flushed, fresh));
         return result.attempt;
       } catch (error) {
         await recoverMemberAttempt(input, error, queue, member, getSnapshot, ready, failed);

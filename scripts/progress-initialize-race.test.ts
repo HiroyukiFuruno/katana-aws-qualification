@@ -26,9 +26,9 @@ test('retry reload does not erase an answer acknowledged while its old read is p
       rows.push(memberEventRow(eventId));
       return eventId;
     },
-    async select(table) {
+    async select(table, filters = {}) {
       const snapshot = [...rows];
-      if (table === 'learning_events' && delayRead) {
+      if (table === 'learning_events' && delayRead && !filters.question_id) {
         reading.resolve();
         await release.promise;
       }

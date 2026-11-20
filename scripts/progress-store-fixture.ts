@@ -37,6 +37,21 @@ export const examQuestion: Question = {
   version: '2026-11',
 };
 
+export const memberAnswerQuestion: Question = {
+  category: 'storage',
+  choices: [
+    { explanation: 'Wrong', id: 'W', text: 'Wrong' },
+    { explanation: 'Correct', id: 'C', text: 'Correct' },
+  ],
+  correct: ['C'],
+  id: 'q-1',
+  prompt: 'Prompt',
+  revision: 1,
+  source: { label: 'AWS', url: 'https://docs.aws.amazon.com/' },
+  title: 'Title',
+  version: '2026-11',
+};
+
 type FixtureMemberEvent = Attempt & { certificationId?: string; examId?: string };
 
 export function memberEventRow(eventId: string, event: FixtureMemberEvent = memberAttempt) {

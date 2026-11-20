@@ -1,6 +1,6 @@
 import type { Attempt } from '../attempts';
 import { recoverAttempt } from './errors';
-import type { MemberProgressRepository } from './member';
+import type { MemberEvent, MemberProgressRepository } from './member';
 import type { PendingEvent } from './retryOutboxStorage';
 import type { MemberRetryQueue } from './retryQueue';
 import { eventKey } from './retryQueue';
@@ -16,8 +16,13 @@ function attemptIdentity(attempt: Attempt) {
     : eventKey(typeof event.certificationId === 'string' ? event.certificationId : '', attempt);
 }
 
-export function mergeMemberAttempts(current: Attempt[], flushed: PendingEvent[]) {
+export function mergeMemberAttempts(
+  current: Attempt[],
+  flushed: PendingEvent[],
+  fresh: MemberEvent[] = [],
+) {
   const attempts = new Map(current.map((item) => [attemptIdentity(item), item]));
+  for (const event of fresh) attempts.set(attemptIdentity(event), event);
   for (const item of flushed) {
     const event = { ...item.attempt, certificationId: item.certificationId, eventId: item.eventId };
     attempts.set(attemptIdentity(event), event);
@@ -28,9 +33,10 @@ export function mergeMemberAttempts(current: Attempt[], flushed: PendingEvent[])
 export function memberAttemptSnapshot(
   snapshot: ProgressSnapshot,
   flushed: PendingEvent[],
+  fresh: MemberEvent[] = [],
 ): ProgressReadyData {
   return {
-    attempts: mergeMemberAttempts(snapshot.attempts, flushed),
+    attempts: mergeMemberAttempts(snapshot.attempts, flushed, fresh),
     corruptRows: snapshot.corruptRows,
     profile: snapshot.profile,
     profileRevision: snapshot.profileRevision,

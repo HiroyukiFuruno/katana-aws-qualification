@@ -36,7 +36,7 @@ test('a failed member write rejects and retries the same logical answer with its
 test('retryPending flushes pending writes before reloading the member snapshot', async () => {
   let fail = true;
   let eventWrites = 0;
-  let learningEventLoads = 0;
+  const learningEventReads: Record<string, string>[] = [];
   const client: ProgressRpcClient = {
     async rpc(name) {
       if (name !== 'append_learning_event') return 1;
@@ -44,8 +44,8 @@ test('retryPending flushes pending writes before reloading the member snapshot',
       if (fail) throw new Error('offline');
       return 'event-id';
     },
-    async select(table) {
-      if (table === 'learning_events') learningEventLoads++;
+    async select(table, filters = {}) {
+      if (table === 'learning_events') learningEventReads.push(filters);
       return [];
     },
   };
@@ -55,7 +55,7 @@ test('retryPending flushes pending writes before reloading the member snapshot',
   fail = false;
   await store.retryPending();
   expect(eventWrites).toBe(2);
-  expect(learningEventLoads).toBe(2);
+  expect(learningEventReads).toEqual([{}, { question_id: 'eq.q-1', question_revision: 'eq.1' }, {}]);
 });
 
 test('a generation conflict during retry drops the old event before a new answer is saved', async () => {
@@ -89,19 +89,19 @@ test('a generation conflict during retry drops the old event before a new answer
 });
 
 test('retry preserves its save error when the generation refresh also fails', async () => {
-  let initialized = false;
+  let rejectGenerationRefresh = false;
   let writes = 0;
   const client: ProgressRpcClient = {
     async rpc(name) {
       if (name === 'initialize_learning_state') {
-        if (initialized) throw new Error('generation unavailable');
-        initialized = true;
+        if (rejectGenerationRefresh) throw new Error('generation unavailable');
         return 1;
       }
       if (name === 'load_roadmap_profile_snapshot') return [];
       if (name === 'append_learning_event') {
         writes++;
         if (writes === 1) throw new Error('offline');
+        rejectGenerationRefresh = true;
         throw Object.assign(new Error('reset'), { code: 'PT409' });
       }
     },

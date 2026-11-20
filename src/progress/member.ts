@@ -1,3 +1,4 @@
+import type { Attempt } from '../attempts';
 import { eventFromRow, eventPayload, type MemberEvent } from './memberEventCodec';
 import type { Profile } from './profileTypes';
 import type { MemberProgressOwner, ProgressOperation, ProgressRpcClient } from './types';
@@ -10,9 +11,10 @@ type ProfileSnapshotRow = { earned: string[]; answers: Record<string, number>; r
 export type MemberProgressRepository = {
   readonly owner: MemberProgressOwner;
   append(event: MemberEvent): Promise<string>;
+  assertCurrent(): void;
   initialize(): Promise<number>;
   refreshGeneration(): Promise<boolean>;
-  loadAttempts(): Promise<MemberEvent[]>;
+  loadAttempts(question?: Pick<Attempt, 'questionId' | 'questionRevision'>): Promise<MemberEvent[]>;
   loadProfile(): Promise<{ profile: Profile; revision: number }>;
   replaceProfile(profile: Profile, expectedRevision: number): Promise<number>;
   reset(): Promise<number>;
@@ -31,9 +33,9 @@ export function createMemberProgressRepository(
     assertCurrentProgressOwner(operation);
     return result;
   }
-  async function select<T>(table: string) {
+  async function select<T>(table: string, filters?: Record<string, string>) {
     assertCurrentProgressOwner(operation);
-    const result = await client.select<T>(table);
+    const result = await client.select<T>(table, filters);
     assertCurrentProgressOwner(operation);
     return result;
   }
@@ -42,6 +44,7 @@ export function createMemberProgressRepository(
   }
   return {
     owner,
+    assertCurrent: () => assertCurrentProgressOwner(operation),
     async initialize() {
       generation = await rpc<number>('initialize_learning_state', {});
       return generation;
@@ -55,9 +58,15 @@ export function createMemberProgressRepository(
       write<string>('append_learning_event', {
         p_event: eventPayload(event),
       }),
-    async loadAttempts() {
+    async loadAttempts(question) {
       const initialGeneration = generation;
-      const rows = await select<Parameters<typeof eventFromRow>[0][]>('learning_events');
+      const rows = await select<Parameters<typeof eventFromRow>[0][]>(
+        'learning_events',
+        question && {
+          question_id: `eq.${question.questionId}`,
+          question_revision: `eq.${question.questionRevision}`,
+        },
+      );
       if (initialGeneration !== undefined) {
         const currentGeneration = await rpc<number>('initialize_learning_state', {});
         if (currentGeneration !== initialGeneration)

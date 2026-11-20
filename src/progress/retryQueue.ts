@@ -1,15 +1,18 @@
 import type { Attempt } from '../attempts';
 import type { MemberEvent, MemberProgressRepository } from './member';
 import {
-  persistOutbox,
+  type PendingEvent,
+  type RetryStorage,
   restoreOutbox,
   retryStorageKey,
   withOutboxLock,
-  type PendingEvent,
-  type RetryStorage,
 } from './retryOutboxStorage';
-import { flushedEventsFor, withFlushedEvents } from './retryQueueReceipt';
+import { clearPendingEvents } from './retryQueueClear';
 import { pendingFor } from './retryQueueKey';
+import { assertCurrentAfterEnqueue } from './retryQueueOwnerGuard';
+import { persistPending, removePendingEvent } from './retryQueuePersistence';
+import { preparationError, preparedAttempt, type QueuePreparation } from './retryQueuePreparation';
+import { flushedEventsFor, withFlushedEvents } from './retryQueueReceipt';
 import type { MemberProgressOwner } from './types';
 
 export { eventKey } from './retryQueueKey';
@@ -44,25 +47,13 @@ export class MemberRetryQueue {
     }
   }
 
-  private persist(removeEventIds: Iterable<string> = []) {
-    return withOutboxLock(this.storageKey, async () => {
-      persistOutbox(
-        this.storage,
-        this.storageKey,
-        this.serverGeneration,
-        this.pending.values(),
-        removeEventIds,
-      );
-    });
-  }
-
   async enqueue(certificationId: string, attempt: Attempt) {
     const current = pendingFor(this.pending.values(), certificationId, attempt);
     if (current) return current;
     const event = { certificationId, attempt, eventId: crypto.randomUUID() };
     this.pending.set(event.eventId, event);
     try {
-      await this.persist();
+      await persistPending(this.storage, this.storageKey, this.serverGeneration, this.pending);
     } catch (error) {
       this.pending.delete(event.eventId);
       throw error;
@@ -82,14 +73,27 @@ export class MemberRetryQueue {
     repository: MemberProgressRepository,
     certificationId: string,
     attempt: Attempt,
-    prepare?: (flushed: PendingEvent[]) => Attempt,
+    prepare?: (flushed: PendingEvent[]) => QueuePreparation | Promise<QueuePreparation>,
   ) {
     const retrying = pendingFor(this.pending.values(), certificationId, attempt);
     const flushed = await this.flush(repository);
     if (retrying) return { attempt: retrying.attempt, flushed };
-    const prepared = prepare?.(flushed) ?? attempt;
     try {
-      await this.enqueue(certificationId, prepared);
+      const preparation = (await prepare?.(flushed)) ?? attempt;
+      repository.assertCurrent();
+      const prepared = preparedAttempt(preparation);
+      const enqueued = await this.enqueue(certificationId, prepared);
+      await assertCurrentAfterEnqueue(repository, () =>
+        removePendingEvent(
+          this.storage,
+          this.storageKey,
+          this.serverGeneration,
+          this.pending,
+          enqueued.eventId,
+        ),
+      );
+      const error = preparationError(preparation);
+      if (error !== undefined) throw error;
       return { attempt: prepared, flushed: [...flushed, ...(await this.flush(repository))] };
     } catch (error) {
       throw withFlushedEvents(error, [...flushed, ...flushedEventsFor(error)]);
@@ -112,7 +116,9 @@ export class MemberRetryQueue {
       }
       this.pending.delete(eventId);
       try {
-        await this.persist([item.eventId]);
+        await persistPending(this.storage, this.storageKey, this.serverGeneration, this.pending, [
+          item.eventId,
+        ]);
         flushed.push(item);
       } catch (error) {
         this.pending.set(eventId, item);
@@ -123,18 +129,7 @@ export class MemberRetryQueue {
   }
 
   async clear() {
-    const previous = new Map(this.pending);
-    this.pending.clear();
-    if (this.serverGeneration === undefined) {
-      await withOutboxLock(this.storageKey, async () => this.storage.removeItem(this.storageKey));
-      return;
-    }
-    try {
-      await this.persist([...previous.values()].map((event) => event.eventId));
-    } catch (error) {
-      for (const [eventId, value] of previous) this.pending.set(eventId, value);
-      throw error;
-    }
+    await clearPendingEvents(this.storage, this.storageKey, this.serverGeneration, this.pending);
   }
 
   async discard() {

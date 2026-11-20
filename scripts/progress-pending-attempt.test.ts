@@ -1,25 +1,11 @@
 import { expect, test } from 'bun:test';
 import { makeAttempt } from '../src/attempts';
-import { setActiveProgressStore, saveAttempt } from '../src/history';
+import { saveAttempt, setActiveProgressStore } from '../src/history';
 import { createProgressStore, type ProgressRpcClient } from '../src/progress';
-import type { Question } from '../src/questions';
 import { MemberRetryQueue } from '../src/progress/retryQueue';
-import { memberStore } from './progress-store-fixture';
+import { memberAnswerQuestion, memberStore } from './progress-store-fixture';
 
-const question: Question = {
-  category: 'storage',
-  choices: [
-    { explanation: 'Wrong', id: 'W', text: 'Wrong' },
-    { explanation: 'Correct', id: 'C', text: 'Correct' },
-  ],
-  correct: ['C'],
-  id: 'q-1',
-  prompt: 'Prompt',
-  revision: 1,
-  source: { label: 'AWS', url: 'https://docs.aws.amazon.com/' },
-  title: 'Title',
-  version: '2026-11',
-};
+const question = memberAnswerQuestion;
 
 test('a new answer after a pending wrong answer uses the flushed attempt statistics', async () => {
   const events: {

@@ -142,7 +142,8 @@ export function createStoreActions(
       }
     },
     async retryPending() {
-      await retryMemberPending(member, queue, initialize, input, getSnapshot, ready, failed);
+      if (input.owner.kind === 'guest') await initialize();
+      else await retryMemberPending(member, queue, initialize, input, getSnapshot, ready, failed);
     },
   };
 }

@@ -1,13 +1,9 @@
 import { profileKey } from './assessment';
+import { normalizeCertificationId } from './certificationAliases';
 import { getActiveProgressStore } from './history';
 import type { Profile } from './progress/profileTypes';
 
 export type { Profile } from './progress/profileTypes';
-
-const updatedCertifications = new Map([
-  ['dva-c02', 'dva-c03'],
-  ['sap-c02', 'sap-c03'],
-]);
 
 export function loadProfile(): Profile {
   const store = getActiveProgressStore();
@@ -25,7 +21,7 @@ export function loadProfile(): Profile {
             ...new Set<string>(
               saved.earned
                 .filter((id: unknown): id is string => typeof id === 'string')
-                .map((id: string) => updatedCertifications.get(id) ?? id),
+                .map(normalizeCertificationId),
             ),
           ]
         : [],

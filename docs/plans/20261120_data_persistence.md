@@ -90,3 +90,9 @@ CI run44670238002は18成功/2失敗。ローカル20成功とは環境・処理
 900b78fはpush済み。data/glossary/progress CI成功、authは実行中。追加3件の修正・検証と新head CIが完了するまでDraftを維持する。
 
 追加3件修正後: `pr63-normalization-profile-check.log` 全174 unit/1423 assertions・重複0・型/構造/教材/build成功。`pr63-normalization-profile-progress-final.log` 実29件成功（59.0秒）。ISO-Zの旧producer履歴、回答/flag/実選択時刻付きdraftの取込→照合→原本削除→再開、実profile応答hold中の全操作無効化→ACK→次資格→両資格とrevision更新→reload保持を確認した。初回27成功/2失敗は新testの入力名・fetch.ok判定の誤りで、期待する保存/再開条件を維持して修正。保存guardはvoidのguest成功とowner/generation切替を区別し、旧成功/失敗・finallyで新ownerを更新しない。read-only再レビューで具体的P0/P1/P2なし。新headのCI/review・merge・SQL004005/サイト公開は継続する。
+
+## Codex追加レビュー（7f4ade2）
+
+- [x] comment4638940146 / PRRT_kwDOVzQ52c652oNO: 保存同意guestの旧取得資格dva-c02/sap-c02を現行IDへ正規化する。従来loadProfileとmember明示移行の変換を共通化して維持し、現在資格のチェックと未取得推薦からの除外・reloadを実検証する。
+
+guest旧資格の最終修正: aliasを共通helperへ分離し、guestとmember移行/照合で同じ現行IDと重複除去を使用する。同意後のretryでguest storeを再初期化し、固定revisionだけでなくprofile identityの変化にもUIを同期する。旧成功/失敗・owner/generation guardは維持。`pr63-guest-profile-sync-check.log` 全176 unit/1429 assertions・重複0・型/構造/教材/build成功、`pr63-guest-profile-sync-progress.log` 実30件成功。初回29成功/1失敗は実際の同意後UI非更新を検出し修正したもの。独立read-only最終レビューP0/P1/P2なし。7f4ade2の4CIは全成功。追加修正headのCI・merge・本番公開確認は次工程。

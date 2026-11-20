@@ -41,3 +41,5 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 - #25 は main `b767b78` で公開済み。#23 は frontend/outbox/模試の実装・自動検査済み、レビュー・merge・公開検証前であり、保存機能を公開済みとして扱わない。#24 は #23 公開後の後続である。
 
 追加移行・並行操作の検証: `test-results/progress/pr63-normalization-profile-check.log` は174 unit/1423 assertions成功、`pr63-normalization-profile-progress-final.log` は実29件成功。旧ISO-Z日時とDB offset日時、旧tuple keyとDB参照object keyを同値照合し、回答/flag/選択時刻を持つ模試の取込・原本削除・再開まで確認した。模試・資格/査定は保存ACKまで変更を無効にし、古い改訂での並行保存を防ぐ。本番004/005とfrontendの公開は引き続き未実施。
+
+ゲスト旧プロフィールの互換性: 旧取得資格IDはmember移行と共通の現行IDへ正規化し、保存同意の変更時にstoreと画面のprofileを再同期する。`pr63-guest-profile-sync-check.log` は176 unit/1429 assertions、`pr63-guest-profile-sync-progress.log` は実30件成功。これは公開前検証の記録であり、最新の公開証跡はIssue #23へ記録する。

@@ -1,8 +1,9 @@
+import { normalizeCertificationId } from '../certificationAliases';
+import { sameStrings } from './migrationCodec';
 import type { MigrationContext } from './migrationContext';
 import { draft, incorrectCookie, profile } from './migrationLegacy';
 import type { LegacyPreviewSource } from './migrationTypes';
 import { hasImportedDraft, hasImportedEvents, type ImportedEvent } from './migrationVerification';
-import { replacedCertifications, sameStrings } from './migrationCodec';
 export async function verify(
   context: MigrationContext,
   source: LegacyPreviewSource,
@@ -15,10 +16,7 @@ export async function verify(
     const remote = await context.repository.loadProfile();
     return (
       !!saved &&
-      sameStrings(
-        [...new Set(saved.earned.map((id) => replacedCertifications.get(id) ?? id))],
-        remote.profile.earned,
-      ) &&
+      sameStrings([...new Set(saved.earned.map(normalizeCertificationId))], remote.profile.earned) &&
       JSON.stringify(Object.entries(saved.answers).sort()) ===
         JSON.stringify(Object.entries(remote.profile.answers).sort())
     );

@@ -16,6 +16,7 @@ export function useRoadmapProfile() {
   const snapshot = store?.getSnapshot();
   const owner = ownerKey(store);
   const profileRevision = snapshot?.profileRevision;
+  const storeProfile = snapshot?.profile;
   const [profile, setProfile] = useState(loadProfile);
   const [saveError, setSaveError] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -26,10 +27,15 @@ export function useRoadmapProfile() {
   useEffect(() => {
     if (status !== 'ready' || !store) return;
     const current = store.getSnapshot();
-    if (owner !== ownerKey(store) || profileRevision !== current.profileRevision) return;
-    setProfile(current.profile);
+    if (
+      owner !== ownerKey(store) ||
+      profileRevision !== current.profileRevision ||
+      current.profile !== storeProfile
+    )
+      return;
+    setProfile(storeProfile);
     setSaveError(false);
-  }, [owner, profileRevision, status, store]);
+  }, [owner, profileRevision, status, store, storeProfile]);
   async function persist(next: Profile) {
     const expectedStore = store;
     if (status !== 'ready' || !expectedStore) {

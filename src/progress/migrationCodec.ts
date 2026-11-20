@@ -1,10 +1,6 @@
 import type { Attempt } from '../attempts';
 import { eventPayload } from './memberEventCodec';
 export type QuestionRef = { id: string; revision: number };
-export const replacedCertifications = new Map([
-  ['dva-c02', 'dva-c03'],
-  ['sap-c02', 'sap-c03'],
-]);
 function uuid(bytes: Uint8Array) {
   bytes[6] = (bytes[6] & 15) | 80;
   bytes[8] = (bytes[8] & 63) | 128;

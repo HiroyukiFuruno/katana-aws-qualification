@@ -1,6 +1,6 @@
+import { normalizeCertificationId } from '../certificationAliases';
 import type { MigrationContext, Upload } from './migrationContext';
 import { incorrectCookie, profile } from './migrationLegacy';
-import { replacedCertifications } from './migrationCodec';
 export async function uploadProfile(
   context: MigrationContext,
   raw: string,
@@ -13,7 +13,7 @@ export async function uploadProfile(
     return { events: [], imported: 0, rejected: 1 };
   }
   const normalized = {
-    earned: [...new Set(saved.earned.map((id) => replacedCertifications.get(id) ?? id))],
+    earned: [...new Set(saved.earned.map(normalizeCertificationId))],
     answers: saved.answers,
   };
   if (!completed) {

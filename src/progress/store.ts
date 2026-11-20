@@ -3,6 +3,7 @@ import { canPersistGuestProgress, createGuestProgressRepository } from './guest'
 import { createMemberProgressRepository } from './member';
 import { MemberRetryQueue } from './retryQueue';
 import { createStoreActions } from './storeActions';
+import { createStoreExamOperations } from './storeExamOperations';
 import {
   finalizeGuestExam,
   readGuestExamDraft,
@@ -54,6 +55,10 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
   };
   const failed = (error: ProgressSnapshot['error'], preserveReady = snapshot.state === 'ready') =>
     publish({ ...snapshot, error, state: preserveReady ? 'ready' : 'error', refreshing: false });
+  const notifyExamSessionsChanged = () => {
+    assertCurrentProgressOwner(operation);
+    publish({ ...snapshot, examRefreshVersion: snapshot.examRefreshVersion + 1 });
+  };
   const actions = createStoreActions(input, {
     failed,
     getSnapshot: () => snapshot,
@@ -74,6 +79,12 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
       if (queue) await queue.setServerGeneration(next);
     },
   });
+  const examOperations = createStoreExamOperations({
+    exams,
+    initialize: actions.initialize,
+    isCurrent: operation.isCurrent,
+    notifyChanged: notifyExamSessionsChanged,
+  });
   return {
     ...actions,
     async dispose(clearPending = false) {
@@ -82,8 +93,7 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
       listeners.clear();
     },
     async finalizeExam(draft, events) {
-      if (!exams) throw new Error('Guest exams use local storage.');
-      const result = await exams.finalize(draft, events);
+      const result = await examOperations.finalize(draft, events);
       if (member) {
         const snapshot = await actions.initialize();
         if (snapshot.error === 'load') throw new Error('Finalized exam could not be reloaded.');
@@ -98,24 +108,18 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
     },
     getSnapshot: () => snapshot,
     async loadExam(certificationId) {
-      if (!exams) throw new Error('Guest exams use local storage.');
-      return exams.load(certificationId);
+      return examOperations.load(certificationId);
     },
-    notifyExamSessionsChanged() {
-      assertCurrentProgressOwner(operation);
-      publish({ ...snapshot, examRefreshVersion: snapshot.examRefreshVersion + 1 });
-    },
+    notifyExamSessionsChanged,
     readGuestExam(examKey) {
       if (!guest) throw new Error('Member exams use cloud storage.');
       return readGuestExamDraft(guest, examKey);
     },
     async readExamClock() {
-      if (!exams) throw new Error('Guest exams use local storage.');
-      return exams.readClock();
+      return examOperations.readClock();
     },
     async saveExamResponse(draft, position, key, response) {
-      if (!exams) throw new Error('Guest exams use local storage.');
-      return exams.save(draft, position, key, response);
+      return examOperations.save(draft, position, key, response);
     },
     removeGuestExam(examKey) {
       if (!guest) throw new Error('Member exams use cloud storage.');
@@ -126,8 +130,7 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
       saveGuestExamDraft(guest, examKey, draft);
     },
     async startExam(draft, certificationId, sourceVersion, durationMs) {
-      if (!exams) throw new Error('Guest exams use local storage.');
-      return exams.start(draft, certificationId, sourceVersion, durationMs);
+      return examOperations.start(draft, certificationId, sourceVersion, durationMs);
     },
     subscribe(listener) {
       listeners.add(listener);

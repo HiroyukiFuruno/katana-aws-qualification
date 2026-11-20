@@ -40,3 +40,7 @@
 - ブラウザが必要な部品単体は`fundamentals-controller-layout.unit.tsx`とし、Chromium導入後の既存`progress:integration`入口で必須実行する。Chromium導入前の通常`bun test`へ環境依存を混入しない。
 - `issue67-ads-mobile.log`: 部品単体9成功＋実Auth/DB/browser63成功（2.6m）。全12単元の320/390・横画面・200%文字、10言語/明暗の操作欄同寸法・viewport内表示・終了/再開・実通信断を再検証。更新した390px画像を確認。
 - スライド内だけ`data-full-width-responsive=false`を指定する。広告をモバイル画面全幅へ自動拡張させない公式パラメータで、他ページの既定表示は維持する。一次資料: https://support.google.com/adsense/answer/9183460?hl=en
+- PR69のP1（thread `PRRT_kwDOVzQ52c66GqJL`）を採用。`hasPending`はメモリ上の未永続化コマンドも含み、耐久性の証明には使えなかった。現在のcommandをrefで追跡し、本人・現世代の保存原文に同じID/全payloadがあることを確認するAPIへ置換した。別commandの保存済み状態や過去のpersistedIdsを根拠にしない。
+- `pr69-quota-red.log`: 実ブラウザのlocalStorageを実際に容量上限まで埋めて、不適切に目次へ遷移することを再現。storage APIのMockやHTTP差替えは使用していない。
+- `pr69-quota-green.log`: 修正後の容量不足/空き確保/同じcommand再試行/再開、通信断での耐久キュー保持、通常終了を含む実Auth/DB/browser5件成功（19.8s）。メモリ保持と耐久保存の区別・別commandの誤認・別タブ削除の単体回帰を追加。
+- `pr69-durability-check.log`: 274単体/2853 assertions、既存全品質ゲートとbuild成功。修正commitのpush後にthreadへreply/resolveし、同じHEADで再レビューとCIを回収する。

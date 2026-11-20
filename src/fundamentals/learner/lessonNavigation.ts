@@ -9,7 +9,7 @@ import type { useLessonActions } from './useLessonActions';
 type Input = {
   asset: DeliveryUnitAsset;
   services: LessonServices;
-  actions: Pick<ReturnType<typeof useLessonActions>, 'pending' | 'saveFinal'>;
+  actions: Pick<ReturnType<typeof useLessonActions>, 'pending' | 'saveFinal' | 'getPendingCommand'>;
   step: LessonStep;
   active: boolean;
   question?: { requiredChoices: number };
@@ -56,13 +56,19 @@ export function useLessonNavigation(input: Input) {
         final,
         pending: input.actions.pending || input.blocked,
         isCurrent: () => mounted.current && location.pathname === path,
-        hasDurablePending: () =>
-          Boolean(
-            input.services.outbox?.hasPending({
-              unitId: input.asset.unit.id,
-              contentVersion: input.asset.contentVersion,
-            }),
-          ),
+        hasDurablePending: () => {
+          const outbox = input.services.outbox;
+          const command = input.actions.getPendingCommand();
+          return Boolean(
+            outbox &&
+              (command
+                ? outbox.isPersisted(command)
+                : outbox.hasPersistedPending({
+                    unitId: input.asset.unit.id,
+                    contentVersion: input.asset.contentVersion,
+                  })),
+          );
+        },
         save: () => input.actions.saveFinal(input.position, input.catalogHref),
         leave: () => input.go(input.catalogHref),
       }),

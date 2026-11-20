@@ -1,6 +1,12 @@
 import { withOutboxLock } from '../../progress/retryOutboxStorage';
-import { persistLessonOutbox, restoreLessonOutbox } from './outboxCodec';
-import type { LessonCommand, LessonOutboxStorage } from './outboxTypes';
+import {
+  persistLessonOutbox,
+  readLessonOutboxEnvelope,
+  restoreLessonOutbox,
+  sameLessonCommand,
+} from './outboxCodec';
+import { pendingLessonCommands } from './outboxScope';
+import type { LessonCommand, LessonOutboxScope, LessonOutboxStorage } from './outboxTypes';
 
 type Input = {
   current: () => void;
@@ -18,6 +24,23 @@ type Input = {
 };
 
 export function createOutboxPersistence(input: Input) {
+  function persistedCommands() {
+    input.current();
+    const generation = input.generation();
+    const raw = input.storage.getItem(input.key);
+    if (generation === undefined || raw === null) return [];
+    const row = readLessonOutboxEnvelope(raw, input.userId);
+    input.current();
+    return row.generation === generation ? row.commands : [];
+  }
+  const stored = (command: LessonCommand, commands: LessonCommand[]) =>
+    commands.some((row) => row.commandId === command.commandId && sameLessonCommand(row, command));
+  const isPersisted = (command: LessonCommand) => stored(command, persistedCommands());
+  function hasPersistedPending(scope?: LessonOutboxScope) {
+    const commands = pendingLessonCommands(input.pending(), scope);
+    const persisted = persistedCommands();
+    return commands.length > 0 && commands.every((command) => stored(command, persisted));
+  }
   async function save(
     additions: LessonCommand[] = [],
     removeIds: Iterable<string> = [],
@@ -92,5 +115,5 @@ export function createOutboxPersistence(input: Input) {
     await save([], staleIds);
   }
 
-  return { reconcile, remove, removeMany, save, synchronize };
+  return { reconcile, remove, removeMany, save, synchronize, isPersisted, hasPersistedPending };
 }

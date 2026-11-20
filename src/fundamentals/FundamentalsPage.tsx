@@ -1,61 +1,35 @@
-import { useEffect, useRef, useState } from 'react';
-import type { Attempt } from '../attempts';
-import { saveAttempt } from '../history';
+import { useEffect, useRef } from 'react';
+import { getActiveProgressStore, saveAttempt } from '../history';
 import { usePreferences } from '../preferences';
-import { QuestionCard } from '../QuestionCard';
 import { questionKey } from '../questions';
 import { FundamentalsCatalog, latestFor } from './FundamentalsCatalog';
 import { FundamentalsLesson } from './FundamentalsLesson';
+import { FundamentalsPractice } from './FundamentalsPractice';
 import { FundamentalsResults } from './FundamentalsResults';
-import {
-  advanceSession,
-  createSession,
-  type FundamentalsSession,
-  hasUnansweredQuestions,
-  sessionComplete,
-} from './session';
-import type { FundamentalsUnit } from './types';
+import { advanceSession, createSession, hasUnansweredQuestions, sessionComplete } from './session';
 import { useFundamentalsContent } from './useFundamentalsContent';
 import { useFundamentalsHistory } from './useFundamentalsHistory';
+import { useFundamentalsSession } from './useFundamentalsSession';
 import './fundamentals.css';
 
-function sessionFor(unit: FundamentalsUnit, attempts: Attempt[], review: boolean) {
-  const nextSession = createSession(unit, attempts, review);
-  return !review && !nextSession.questions.length
-    ? { ...nextSession, questions: unit.questions }
-    : nextSession;
-}
-
 export function FundamentalsPage() {
+  const progressStore = getActiveProgressStore();
   const { t } = usePreferences();
   const { content, error, reload } = useFundamentalsContent();
   const { attempts, historyError, historyLoaded, setAttempts } = useFundamentalsHistory();
-  const [session, setSession] = useState<FundamentalsSession>();
-  const [showResults, setShowResults] = useState(false);
-  const [initialUnitId] = useState(() => new URLSearchParams(location.search).get('unit'));
-  const [initialReview] = useState(() => new URLSearchParams(location.search).get('review') === '1');
-  const initialSessionStarted = useRef(false);
+  const { session, setSession, practice, setPractice, showResults, setShowResults, openUnit } =
+    useFundamentalsSession(content, attempts, historyLoaded);
   const unit = content?.units.find((item) => item.id === session?.unitId);
+  const title = useRef<HTMLHeadingElement>(null);
   const question = session?.questions[session.index];
   const latest = latestFor(attempts);
+  const activeScreen = unit ? `${unit.id}:${session?.index ?? 0}:${practice}:${showResults}` : undefined;
 
   useEffect(() => {
-    if (initialSessionStarted.current || !content || !historyLoaded || !initialUnitId) return;
-    initialSessionStarted.current = true;
-    const initialUnit = content.units.find((item) => item.id === initialUnitId);
-    if (initialUnit) setSession(sessionFor(initialUnit, attempts, initialReview));
-  }, [attempts, content, historyLoaded, initialReview, initialUnitId]);
-
-  function openUnit(id: string, asReview = false) {
-    const unitToOpen = content?.units.find((item) => item.id === id);
-    setSession(unitToOpen ? sessionFor(unitToOpen, attempts, asReview) : undefined);
-    setShowResults(false);
-    history.replaceState(
-      null,
-      '',
-      `${location.pathname}?unit=${encodeURIComponent(id)}${asReview ? '&review=1' : ''}`,
-    );
-  }
+    if (!activeScreen || !title.current) return;
+    title.current.scrollIntoView({ block: 'start' });
+    title.current.focus({ preventScroll: true });
+  }, [activeScreen]);
 
   if (error)
     return (
@@ -95,15 +69,31 @@ export function FundamentalsPage() {
       <p className="eyebrow">
         {unit.order} / {content.catalog.length} · {session.review ? t('review') : t('study')}
       </p>
-      <h1>{unit.title}</h1>
+      <h1 ref={title} tabIndex={-1}>
+        {unit.title}
+      </h1>
       <p>{unit.summary}</p>
       {historyError && (
         <p className="notice" role="alert">
           {t('fundamentalsHistoryUnavailable')}
         </p>
       )}
-      <FundamentalsLesson unit={unit} />
-      {showResults ? (
+      <ol className="fundamentals-steps" aria-label={t('fundamentalsLearningSteps')}>
+        <li aria-current={!practice ? 'step' : undefined}>{t('fundamentalsReadStep')}</li>
+        <li aria-current={practice && !showResults ? 'step' : undefined}>
+          {t('fundamentalsPracticeStep')}
+        </li>
+        <li aria-current={showResults ? 'step' : undefined}>{t('fundamentalsReviewStep')}</li>
+      </ol>
+      {!practice ? (
+        <>
+          <p className="notice">{t('fundamentalsReadBeforePractice')}</p>
+          <FundamentalsLesson unit={unit} />
+          <button className="primary" type="button" onClick={() => setPractice(true)}>
+            {t('fundamentalsStartPractice', { total: session.questions.length })}
+          </button>
+        </>
+      ) : showResults ? (
         <FundamentalsResults
           hasReview={reviewAvailable}
           hasUnanswered={unanswered}
@@ -116,32 +106,29 @@ export function FundamentalsPage() {
       ) : !question ? (
         <p className="notice">{t('fundamentalsNoReview')}</p>
       ) : (
-        <div className="fundamentals-question">
-          <p className="eyebrow">
-            {t('fundamentalsQuestionNumber', {
-              current: session.index + 1,
-              total: session.questions.length,
-            })}
-          </p>
-          <QuestionCard
-            key={`${questionKey(question)}:${session.review ? 'review' : 'study'}:${session.index}`}
-            question={question}
-            last={sessionComplete(session)}
-            onNext={() =>
-              sessionComplete(session) ? setShowResults(true) : setSession(advanceSession(session))
-            }
-            onAnswer={async (selected, elapsed) => {
-              const result = await saveAttempt(
-                question,
-                selected,
-                session.review ? 'review' : 'study',
-                elapsed,
-              );
-              setAttempts(result.history);
-              return result.attempt;
-            }}
-          />
-        </div>
+        <FundamentalsPractice
+          key={`${questionKey(question)}:${session.review ? 'review' : 'study'}:${session.index}`}
+          unit={unit}
+          question={question}
+          current={session.index + 1}
+          total={session.questions.length}
+          last={sessionComplete(session)}
+          onNext={() =>
+            sessionComplete(session) ? setShowResults(true) : setSession(advanceSession(session))
+          }
+          onAnswer={async (selected, elapsed) => {
+            const result = await saveAttempt(
+              question,
+              selected,
+              session.review ? 'review' : 'study',
+              elapsed,
+              'fundamentals',
+              progressStore,
+            );
+            setAttempts(result.history);
+            return result.attempt;
+          }}
+        />
       )}
     </main>
   );

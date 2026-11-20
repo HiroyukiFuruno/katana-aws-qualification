@@ -1,7 +1,7 @@
 import type { ExamDraft, ExamResponse } from './exam';
-import { StructuredAnswerFields } from './StructuredAnswer';
-import type { Question } from './questions';
 import type { usePreferences } from './preferences';
+import type { Question } from './questions';
+import { StructuredAnswerFields } from './StructuredAnswer';
 
 type Translate = ReturnType<typeof usePreferences>['t'];
 
@@ -26,7 +26,7 @@ export function ExamQuestion({
 }) {
   const count = question.correct.length;
   return (
-    <section className="card">
+    <section className="card" aria-busy={submitting}>
       <div className="question-meta">
         <span>
           {question.format === 'ordering'
@@ -39,7 +39,7 @@ export function ExamQuestion({
       <h2 ref={heading} tabIndex={-1} className="exam-question-title">
         {t('questionNumber', { number: draft.position + 1 })}
       </h2>
-      <p className="prompt" lang="ja">
+      <p className="prompt" lang={question.locale ?? 'ja'}>
         {question.prompt}
       </p>
       <fieldset disabled={expired || submitting}>
@@ -78,7 +78,7 @@ export function ExamQuestion({
                   }
                 />
                 <span className="letter">{choice.id}</span>
-                <span lang="ja">{choice.text}</span>
+                <span lang={question.locale ?? 'ja'}>{choice.text}</span>
               </label>
             );
           })

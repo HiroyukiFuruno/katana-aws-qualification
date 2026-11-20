@@ -17,6 +17,7 @@ function fixture() {
   const service: AccountAuth = {
     providers: [],
     getAccount: () => pending,
+    getAccessToken: unsupported,
     subscribe(next) {
       listener = next;
       return () => {

@@ -67,15 +67,20 @@ export class SupabaseAuth implements AccountAuth {
     if (error) throw error;
   }
 
-  async deleteAccount(expectedAccountId: string) {
-    if (!this.deletionBackend) throw new Error('Account deletion is unavailable');
+  async getAccessToken(expectedAccountId: string) {
     const { data, error } = await this.client.getSession();
     if (error) throw error;
     if (!data.session?.access_token) throw new Error('Authentication required');
     const { data: verified, error: userError } = await this.client.getUser(data.session.access_token);
     if (userError) throw userError;
     if (verified.user?.id !== expectedAccountId) throw new Error('Account changed');
-    await requestAccountDeletion(this.deletionBackend, data.session.access_token);
+    return data.session.access_token;
+  }
+
+  async deleteAccount(expectedAccountId: string) {
+    if (!this.deletionBackend) throw new Error('Account deletion is unavailable');
+    const token = await this.getAccessToken(expectedAccountId);
+    await requestAccountDeletion(this.deletionBackend, token);
     const { error: signOutError } = await this.client.signOut({ scope: 'local' });
     if (signOutError) throw signOutError;
   }

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AnalyticsSettings, initializeAnalytics } from './AnalyticsSettings';
+import { analyticsAllowedForPath } from './analyticsNavigation';
 import { AccountPages } from './auth/AccountPages';
 import { AccountPrivacy } from './auth/AccountPrivacy';
 import { AuthCallback } from './auth/AuthCallback';
@@ -9,13 +10,17 @@ import { dashboardPath } from './auth/navigation';
 import { CertificationPages } from './CertificationPages';
 import { CookieConsent, useCookieConsent } from './CookieConsent';
 import { CourseApp } from './CourseApp';
-import { certifications } from './certifications';
-import { FundamentalsPage } from './fundamentals/FundamentalsPage';
+import { studyCourses } from './certifications';
+import { lessonRouteAt } from './fundamentals/delivery/navigation';
+import { useLessonLocation } from './fundamentals/delivery/useLessonLocation';
+import { LessonExperience } from './fundamentals/learner/LessonExperience';
 import { GlossaryPage } from './GlossaryPage';
 import { localePath } from './locales';
 import { PreferencesProvider, usePreferences } from './preferences';
+import { GuestStorageSettings, ProgressGate } from './progress/ProgressGate';
+import { ProgressProvider } from './progress/ProgressProvider';
 import { Roadmap } from './Roadmap';
-import { accountPages, routeAt } from './routes';
+import { routeAt } from './routes';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
 import { Home, NotFound, StudyDirectory, StudyPaths } from './SitePages';
@@ -24,12 +29,32 @@ import './style.css';
 function App() {
   const { t, locale } = usePreferences();
   const consent = useCookieConsent();
-  const route = routeAt(location.pathname);
+  const currentUrl = useLessonLocation();
+  const route = routeAt(currentUrl.pathname);
+  const lesson = lessonRouteAt(currentUrl.pathname, currentUrl.search);
   const { state } = useAccount();
   useEffect(() => {
-    if (!route || accountPages.includes(route.page)) return;
-    initializeAnalytics(consent.value === 'granted');
-  }, [route, consent]);
+    initializeAnalytics(analyticsAllowedForPath(currentUrl.pathname, consent.value === 'granted'));
+  }, [currentUrl.pathname, consent]);
+  useEffect(() => {
+    const beforeNavigation = (event: Event) => {
+      if (!(event instanceof CustomEvent) || typeof event.detail !== 'string') return;
+      initializeAnalytics(
+        analyticsAllowedForPath(
+          new URL(event.detail, location.origin).pathname,
+          consent.value === 'granted',
+        ),
+      );
+    };
+    const beforeHistory = () =>
+      initializeAnalytics(analyticsAllowedForPath(location.pathname, consent.value === 'granted'));
+    window.addEventListener('kaq:lesson-navigation', beforeNavigation);
+    window.addEventListener('popstate', beforeHistory, true);
+    return () => {
+      window.removeEventListener('kaq:lesson-navigation', beforeNavigation);
+      window.removeEventListener('popstate', beforeHistory, true);
+    };
+  }, [consent.value]);
   useEffect(() => {
     if (route?.page === '' && state.status === 'ready' && state.account) {
       location.replace(dashboardPath(locale));
@@ -37,7 +62,17 @@ function App() {
   }, [route, state, locale]);
   if (!route) return <NotFound />;
   const [section, courseId] = route.page.split('/');
-  const selected = section === 'study' ? certifications.find((cert) => cert.id === courseId) : undefined;
+  const selected = section === 'study' ? studyCourses.find((cert) => cert.id === courseId) : undefined;
+  if (section === 'study' && courseId === 'fundamentals') {
+    return (
+      <>
+        {!lesson && <SiteHeader section={section} subpage={courseId} />}
+        <LessonExperience />
+        {!lesson && <SiteFooter />}
+        <CookieConsent />
+      </>
+    );
+  }
 
   return (
     <>
@@ -47,11 +82,11 @@ function App() {
       ) : section === 'login' || section === 'dashboard' ? (
         <AccountPages page={section} />
       ) : selected?.course ? (
-        <CourseApp key={selected.id} id={selected.id} name={selected.name} course={selected.course} />
+        <ProgressGate>
+          <CourseApp key={selected.id} id={selected.id} name={selected.name} course={selected.course} />
+        </ProgressGate>
       ) : section === 'study' && courseId === 'questions' ? (
         <StudyDirectory />
-      ) : section === 'study' && courseId === 'fundamentals' ? (
-        <FundamentalsPage />
       ) : section === 'study' ? (
         <StudyPaths />
       ) : section === 'certifications' ? (
@@ -62,10 +97,13 @@ function App() {
         <main className="shell" id="main">
           <h1>{t('privacy')}</h1>
           <AnalyticsSettings />
+          <GuestStorageSettings />
           <AccountPrivacy />
         </main>
       ) : section === 'assessment' ? (
-        <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
+        <ProgressGate>
+          <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
+        </ProgressGate>
       ) : (
         <Home />
       )}
@@ -80,7 +118,9 @@ if (!root) throw new Error('Application root missing');
 createRoot(root).render(
   <PreferencesProvider>
     <AuthProvider>
-      <App />
+      <ProgressProvider>
+        <App />
+      </ProgressProvider>
     </AuthProvider>
   </PreferencesProvider>,
 );

@@ -25,6 +25,7 @@ test('the deletion endpoint rejects unauthenticated, cross-origin, and body-inje
 
 test('cancelling account deletion hides its confirmation', async ({ page }) => {
   await signIn(page, 'learner');
+  await page.getByRole('button', { name: '必要なもののみ', exact: true }).click();
   await page.getByRole('button', { name: 'アカウントを削除', exact: true }).click();
   const warning = page.getByText(
     'この操作は取り消せません。アカウントを完全に削除することを確認してください。',
@@ -41,6 +42,7 @@ test('a disposable real user can delete only the authenticated account through t
   request,
 }) => {
   await signIn(page, 'delete-account');
+  await page.getByRole('button', { name: '必要なもののみ', exact: true }).click();
   const disposable = await activeSession(page);
   await page.getByRole('button', { name: 'アカウントを削除', exact: true }).click();
   const warning = page.getByText(

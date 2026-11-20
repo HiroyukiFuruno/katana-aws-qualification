@@ -22,7 +22,8 @@ test('signing out clears the authenticated display in another open tab', async (
   await expect(otherTab.getByText('learner@example.test', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await expect(otherTab.getByText('learner@example.test', { exact: true })).toHaveCount(0);
-  await expect(otherTab.getByRole('button', { name: 'GitHubでログイン' })).toBeVisible();
+  await expect(otherTab.getByText('ゲスト・この端末の記録', { exact: true })).toBeVisible();
+  await expect(otherTab.getByRole('link', { name: '無料アカウントを作成', exact: true })).toBeVisible();
 });
 
 test('an expired cached session with a revoked refresh token cannot restore an account', async ({
@@ -44,5 +45,6 @@ test('an expired cached session with a revoked refresh token cannot restore an a
   });
   await page.reload();
   await expect(page.getByText('learner@example.test', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'GitHubでログイン' })).toBeVisible();
+  await expect(page.getByText('ゲスト・この端末の記録', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: '無料アカウントを作成', exact: true })).toBeVisible();
 });

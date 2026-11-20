@@ -1,3 +1,4 @@
+import type { Locale } from './locales';
 import type { Message } from './messages';
 
 export const skills = {
@@ -27,6 +28,8 @@ export type Course = {
   fixedExamFromBlueprint?: boolean;
   reviewedMock?: true;
   examStorageId?: string;
+  studyLocale?: Locale;
+  questionTranslations?: string;
 };
 
 export type Certification = {

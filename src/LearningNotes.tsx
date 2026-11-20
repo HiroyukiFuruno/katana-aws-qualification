@@ -34,9 +34,9 @@ export function LearningNotes({ question, selected }: { question: Question; sele
             {feedback.map(({ choice, label }) => (
               <li key={choice.id}>
                 <strong>
-                  {label} {choice.id} · {choice.text}
+                  {label} {choice.id} · <span lang={question.locale ?? 'ja'}>{choice.text}</span>
                 </strong>
-                <p>{choice.explanation}</p>
+                <p lang={question.locale ?? 'ja'}>{choice.explanation}</p>
               </li>
             ))}
           </ul>
@@ -44,9 +44,9 @@ export function LearningNotes({ question, selected }: { question: Question; sele
       )}
       <dl>
         <dt>{t('reason')}</dt>
-        <dd lang="ja">{notes.reason}</dd>
+        <dd lang={question.locale ?? 'ja'}>{notes.reason}</dd>
         <dt>{t('concept')}</dt>
-        <dd lang="ja">{notes.concept}</dd>
+        <dd lang={question.locale ?? 'ja'}>{notes.concept}</dd>
       </dl>
       {notes.check && (
         <details>

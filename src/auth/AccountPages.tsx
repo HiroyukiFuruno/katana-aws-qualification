@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
+import { DashboardPage } from '../dashboard/DashboardPage';
 import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
 import { AccountBenefits } from './AccountBenefits';
-import { AccountSettings } from './AccountSettings';
 import { useAccount } from './AuthContext';
 import { dashboardPath } from './navigation';
 import { ProviderButtons } from './ProviderButtons';
@@ -16,6 +16,9 @@ export function AccountPages({ page }: { page: string }) {
   useEffect(() => {
     if (page === 'login' && loggedIn) location.replace(dashboardPath(locale));
   }, [page, loggedIn, locale]);
+
+  if (page === 'dashboard' && state.status !== 'loading' && state.status !== 'error')
+    return <DashboardPage />;
 
   return (
     <main id="main" className="shell account-page">
@@ -40,15 +43,12 @@ export function AccountPages({ page }: { page: string }) {
           <AccountBenefits />
         </div>
       ) : (
-        <>
-          <section className="card">
-            <p>{t('accountDashboardPending')}</p>
-            <a className="entry-action" href={localePath(locale, 'study')}>
-              {t('study')}
-            </a>
-          </section>
-          <AccountSettings />
-        </>
+        <section className="card">
+          <p role="status">{t('accountLoading')}</p>
+          <a className="entry-action" href={dashboardPath(locale)}>
+            {t('accountDashboard')}
+          </a>
+        </section>
       )}
     </main>
   );

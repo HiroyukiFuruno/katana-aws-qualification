@@ -1,7 +1,7 @@
 import type { ExamDraft, ExamResponse } from './exam';
 import { isAnswered } from './exam';
-import { questionKey, type Question } from './questions';
 import type { usePreferences } from './preferences';
+import { type Question, questionKey } from './questions';
 
 type Filter = 'all' | 'unanswered' | 'flagged';
 type Translate = ReturnType<typeof usePreferences>['t'];
@@ -33,11 +33,15 @@ export function ExamNavigation({
 }) {
   return (
     <>
-      <section className="card exam-map">
+      <section className="card exam-map" aria-busy={submitting}>
         <h2>{t('questionList')}</h2>
         <label>
           {t('show')}{' '}
-          <select value={filter} onChange={(event) => onFilter(event.target.value as Filter)}>
+          <select
+            value={filter}
+            disabled={expired || submitting}
+            onChange={(event) => onFilter(event.target.value as Filter)}
+          >
             <option value="all">{t('all')}</option>
             <option value="unanswered">{t('unansweredOnly')}</option>
             <option value="flagged">{t('flaggedOnly')}</option>
@@ -77,10 +81,10 @@ export function ExamNavigation({
         <h2 id="exam-submit">{t('confirmSubmit')}</h2>
         <p>{t('submissionWarning', { count: unanswered })}</p>
         <div className="dialog-actions">
-          <button type="button" onClick={() => dialog.current?.close()}>
+          <button type="button" disabled={submitting} onClick={() => dialog.current?.close()}>
             {t('backToExam')}
           </button>
-          <button type="button" className="primary" onClick={onSubmit}>
+          <button type="button" className="primary" disabled={submitting} onClick={onSubmit}>
             {t('submit')}
           </button>
         </div>

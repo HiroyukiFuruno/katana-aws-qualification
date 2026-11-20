@@ -14,7 +14,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
   const { t } = usePreferences();
   const banks = useCourseBanks(course);
   const { questions, questionSets, randomBank, mockBank, archivedBank, loadingError, mockError } = banks;
-  const progress = useCourseProgress([...questions, ...mockBank], archivedBank);
+  const progress = useCourseProgress(id, [...questions, ...mockBank], archivedBank);
   const { answerCount, rate, review, notice, busy, page, navigate } = progress;
 
   function section() {
@@ -36,6 +36,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
           archivedBank={archivedBank}
           history={progress.history}
           onSaved={progress.updateExamHistory}
+          certificationId={id}
         />
       );
     }
@@ -80,6 +81,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
           rate={rate}
           wrongCount={review.length}
           notice={notice}
+          hasQuestionTranslations={!!course.questionTranslations}
         />
         {section()}
         {page !== 'exam' && !progress.session && <AccountBenefits context="study" showAction />}

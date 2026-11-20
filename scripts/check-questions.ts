@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { certifications } from '../src/certifications.ts';
+import { studyCourses } from '../src/certifications.ts';
 import { examDomainOf, type Question, questionGroupKey, validQuestionFormat } from '../src/questions.ts';
+
+import { checkQuestionTranslations } from './check-question-translations.ts';
 
 const banks = new Map<string, Question[]>();
 async function load(path: string) {
@@ -52,7 +54,7 @@ async function load(path: string) {
   return questions;
 }
 
-for (const { course } of certifications) {
+for (const { course } of studyCourses) {
   if (!course) continue;
   const bank = await load(course.mock);
   const groups = new Map<string, string>();
@@ -74,8 +76,11 @@ for (const { course } of certifications) {
       `${course.mock}: ${category} has ${available} distinct questions, expected at least ${required}`,
     );
   }
-  for (const path of [...course.practice.map((entry) => entry.path), ...course.archives])
-    await load(path);
+  const paths = [
+    ...new Set([course.mock, ...course.practice.map((entry) => entry.path), ...course.archives]),
+  ];
+  const sources = await Promise.all(paths.map(load));
+  if (course.questionTranslations) await checkQuestionTranslations(course.questionTranslations, sources);
 }
 
 console.log(`Validated ${banks.size} question banks`);

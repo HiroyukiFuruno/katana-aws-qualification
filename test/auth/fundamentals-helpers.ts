@@ -1,5 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 
+export async function startPractice(page: Page) {
+  await expect(page.locator('.fundamentals-question')).toHaveCount(0);
+  await expect(page.locator('.fundamentals-reading')).toBeVisible();
+  await page.getByRole('button', { name: /^確認問題へ進む/ }).click();
+  await expect(page.locator('.fundamentals-question')).toBeVisible();
+}
+
 export async function answer(page: Page, choices: string[], last?: boolean) {
   const card = page.locator('.fundamentals-question');
   for (const [index, choice] of choices.entries()) {

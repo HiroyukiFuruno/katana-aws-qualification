@@ -11,6 +11,7 @@ export function RoadmapResults({
   onStudy,
   onEdit,
   onRetake,
+  saving,
 }: {
   items: AssessmentItem[];
   earned: string[];
@@ -19,6 +20,7 @@ export function RoadmapResults({
   onStudy: (id: string) => void;
   onEdit: () => void;
   onRetake: () => void;
+  saving: boolean;
 }) {
   const { t } = usePreferences();
   return (
@@ -90,7 +92,7 @@ export function RoadmapResults({
                 </p>
               )}
               {cert.course ? (
-                <button type="button" onClick={() => onStudy(cert.id)}>
+                <button type="button" disabled={saving} onClick={() => onStudy(cert.id)}>
                   {t('openCourse')}
                 </button>
               ) : (
@@ -101,10 +103,10 @@ export function RoadmapResults({
         </ol>
         <p>{t('roadmapScope')}</p>
         <div className="exam-actions">
-          <button type="button" onClick={onEdit}>
+          <button type="button" disabled={saving} onClick={onEdit}>
             {t('editEarned')}
           </button>
-          <button type="button" onClick={onRetake}>
+          <button type="button" disabled={saving} onClick={onRetake}>
             {t('retakeAssessment')}
           </button>
         </div>

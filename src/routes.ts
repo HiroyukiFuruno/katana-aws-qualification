@@ -1,4 +1,5 @@
-import { certifications } from './certifications.ts';
+import { certifications, studyCourses } from './certifications.ts';
+import { privateLessonPageNames, publicLessonPageNames } from './fundamentals/delivery/routePages.ts';
 import { type Locale, localePath, locales } from './locales.ts';
 
 export const publishedPages = [
@@ -11,15 +12,29 @@ export const publishedPages = [
   'glossary',
   'privacy',
   ...certifications.map((cert) => `certifications/${cert.id}`),
-  ...certifications.filter((cert) => cert.course).map((cert) => `study/${cert.id}`),
+  ...studyCourses.map(({ id }) => `study/${id}`),
+  ...publicLessonPageNames,
 ];
 
 export const accountPages = ['login', 'auth/callback', 'dashboard'];
+export const privateLessonPages = privateLessonPageNames;
+
+const studyLocales = new Map<string, Locale>(
+  studyCourses.flatMap(({ id, course }) =>
+    course?.studyLocale ? [[`study/${id}`, course.studyLocale] as const] : [],
+  ),
+);
+
+export function publishedLocalesFor(page: string): readonly Locale[] {
+  const only = studyLocales.get(page);
+  return only ? [only] : locales;
+}
 
 const routes = new Map<string, { locale: Locale; page: string }>();
 for (const locale of locales) {
-  for (const page of [...publishedPages, ...accountPages]) {
-    routes.set(localePath(locale, page), { locale, page });
+  for (const page of [...publishedPages, ...accountPages, ...privateLessonPages]) {
+    if (publishedLocalesFor(page).includes(locale))
+      routes.set(localePath(locale, page), { locale, page });
   }
 }
 

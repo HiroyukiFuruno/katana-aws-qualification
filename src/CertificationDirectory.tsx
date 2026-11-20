@@ -1,10 +1,15 @@
-import { certifications, levelMessage } from './certifications';
+import { certifications, levelMessage, studyCourses } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
 
 type DirectoryProps =
   | { mode: 'certifications' | 'study' }
-  | { mode: 'earned'; selected: string[]; onToggle: (id: string, checked: boolean) => void };
+  | {
+      mode: 'earned';
+      selected: string[];
+      saving: boolean;
+      onToggle: (id: string, checked: boolean) => void;
+    };
 
 const nameOrder = new Intl.Collator('en', { sensitivity: 'base' });
 
@@ -16,7 +21,8 @@ export function CertificationDirectory(props: DirectoryProps) {
   const { locale, t } = usePreferences();
   const { mode } = props;
   const Heading = mode === 'earned' ? 'h3' : 'h2';
-  const visible = certifications.filter((cert) => mode !== 'study' || cert.course);
+  const visible = mode === 'study' ? studyCourses : certifications;
+  const languageNames = new Intl.DisplayNames(locale, { type: 'language' });
 
   return (
     <div
@@ -37,10 +43,12 @@ export function CertificationDirectory(props: DirectoryProps) {
             </Heading>
             <ul className="course-grid">
               {group.map((cert) => {
+                const studyLocale = mode === 'study' ? cert.course?.studyLocale : undefined;
                 const code = (
                   <small className="certification-code">
                     {cert.id.toUpperCase()}
                     {cert.beta ? ` · ${t('beta')}` : ''}
+                    {studyLocale ? ` · ${languageNames.of(studyLocale)}` : ''}
                   </small>
                 );
                 return (
@@ -50,6 +58,7 @@ export function CertificationDirectory(props: DirectoryProps) {
                         <input
                           type="checkbox"
                           checked={props.selected.includes(cert.id)}
+                          disabled={props.saving}
                           onChange={(event) => props.onToggle(cert.id, event.currentTarget.checked)}
                         />
                         <span className="certification-row-content">
@@ -58,7 +67,11 @@ export function CertificationDirectory(props: DirectoryProps) {
                         </span>
                       </label>
                     ) : (
-                      <a className="certification-row" href={localePath(locale, `${mode}/${cert.id}`)}>
+                      <a
+                        className="certification-row"
+                        href={localePath(studyLocale ?? locale, `${mode}/${cert.id}`)}
+                        hrefLang={studyLocale}
+                      >
                         <div className="certification-row-content">
                           {code}
                           <h3>{cert.name}</h3>

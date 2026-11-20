@@ -1,4 +1,5 @@
 import type { ExamBlueprint } from './certifications';
+import type { ExamClock } from './examClock';
 import {
   examDomainOf,
   isAnswerComplete,
@@ -12,6 +13,7 @@ export type ExamResponse = {
   flagged: boolean;
   durationMs: number;
   selectedAt?: number;
+  selectedAtUtc?: string;
 };
 export type ExamDraft = {
   id: string;
@@ -19,6 +21,8 @@ export type ExamDraft = {
   order: string[];
   position: number;
   responses: Record<string, ExamResponse>;
+  revision?: number;
+  clock?: ExamClock;
 };
 
 function uniqueExamQuestions(questions: readonly Question[]) {

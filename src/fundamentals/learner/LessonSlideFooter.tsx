@@ -10,6 +10,7 @@ type LessonSlideFooterProps = {
   onRetry?: () => void | Promise<void>;
   onActionError?: (error: unknown) => void;
   nextLabel?: string;
+  onExit?: () => void | Promise<void>;
 };
 
 export function LessonSlideFooter({
@@ -21,6 +22,7 @@ export function LessonSlideFooter({
   onRetry,
   onActionError,
   nextLabel,
+  onExit,
 }: LessonSlideFooterProps) {
   const { t } = usePreferences();
   const actionBusy = useRef(false);
@@ -67,6 +69,16 @@ export function LessonSlideFooter({
         </span>
       )}
       <div className="lesson-slide-save-state">
+        <button
+          type="button"
+          className="lesson-slide-exit"
+          disabled={saving || !onExit}
+          onClick={() => {
+            if (onExit) void run(onExit);
+          }}
+        >
+          {t('lessonExit')}
+        </button>
         {saving ? <span role="status">{t('lessonSaving')}</span> : null}
         {error ? (
           <p role="alert">

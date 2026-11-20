@@ -41,6 +41,8 @@ export type LessonOutbox = {
   execute(asset: DeliveryUnitAsset, command: LessonCommand): Promise<LessonSnapshot>;
   flush(scope?: LessonOutboxScope): Promise<void>;
   hasPending(scope?: LessonOutboxScope): boolean;
+  isPersisted(command: LessonCommand): boolean;
+  hasPersistedPending(scope?: LessonOutboxScope): boolean;
   initialize(): Promise<void>;
 };
 

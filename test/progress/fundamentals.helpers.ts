@@ -66,7 +66,12 @@ export async function finishLessonFinal(
   await expect(page.locator('fieldset')).toBeVisible();
   for (const [position, question] of asset.finalQuestions.entries()) {
     await expect(page).toHaveURL(new RegExp(`/final/${position + 1}/$`));
-    if (positions.has(position)) await selectLessonAnswer(page, question, question.correct);
+    const wrong = question.choices.find((choice) => !question.correct.includes(choice.id));
+    if (!wrong) throw new Error('The final fixture requires a selectable incorrect answer.');
+    const selected = positions.has(position)
+      ? question.correct
+      : [wrong.id, ...question.correct].slice(0, question.requiredChoices);
+    await selectLessonAnswer(page, question, selected);
     await expect(nextButton(page)).toBeEnabled();
     await nextButton(page).click();
   }

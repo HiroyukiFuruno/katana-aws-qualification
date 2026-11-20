@@ -17,7 +17,12 @@ export function useLessonMutation(
 ) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
-  const [pending, setPending] = useState<Pending>();
+  const [pending, setPendingState] = useState<Pending>();
+  const pendingRef = useRef<Pending | undefined>(undefined);
+  const setPending = (next: Pending | undefined) => {
+    pendingRef.current = next;
+    setPendingState(next);
+  };
   const locked = useRef(false);
   const current = useRef(true);
   useEffect(() => {
@@ -55,6 +60,7 @@ export function useLessonMutation(
     busy,
     error,
     pending: Boolean(pending),
+    getPendingCommand: () => pendingRef.current?.command,
     execute: (command: LessonCommand, done: Pending['done'], followUp?: Pending['followUp']) =>
       run({ command, done, followUp }),
     retry: async () => {

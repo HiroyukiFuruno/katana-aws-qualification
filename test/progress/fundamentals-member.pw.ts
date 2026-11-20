@@ -94,7 +94,10 @@ test('a real offline member step retries its immutable outbox command and resume
     expect(command.kind).toBe('recordStep');
     expect(command.input.expectedRevision).toBe(0);
     await context.setOffline(false);
-    await page.locator('.lesson-slide-save-state').getByRole('button').click();
+    await page
+      .locator('.lesson-slide-save-state')
+      .getByRole('button', { name: '再試行', exact: true })
+      .click();
     await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${asset.totalSteps}`);
     expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
     expect((await snapshot(session)).progress).toMatchObject({ furthestPlanPosition: 1, revision: 1 });

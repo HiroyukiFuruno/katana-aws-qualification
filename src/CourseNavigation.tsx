@@ -72,6 +72,7 @@ export function CourseOverview({
   rate,
   wrongCount,
   notice,
+  hasQuestionTranslations,
 }: {
   id: string;
   name: string;
@@ -80,6 +81,7 @@ export function CourseOverview({
   rate: string;
   wrongCount: number;
   notice: Message | '';
+  hasQuestionTranslations: boolean;
 }) {
   const { t, locale } = usePreferences();
   const heading = coursePages.find(([id]) => page === id)?.[2];
@@ -93,7 +95,7 @@ export function CourseOverview({
         {page === 'study' && <p>{t('studyIntro')}</p>}
         {page === 'review' && <p>{t('reviewIntro')}</p>}
       </div>
-      {locale !== 'ja' && <p>{t('contentLanguage')}</p>}
+      {locale !== 'ja' && !hasQuestionTranslations && <p>{t('contentLanguage')}</p>}
       <section className="metrics" aria-label={t('progress')}>
         <div>
           <span>{t('answerCount')}</span>

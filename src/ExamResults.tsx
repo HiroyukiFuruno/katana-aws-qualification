@@ -37,10 +37,15 @@ export function ExamResults({
     attempt,
     item: byKey.get(questionKey({ id: attempt.questionId, revision: attempt.questionRevision })),
   }));
-  const scores = new Map<string, { correct: number; total: number }>();
+  const scores = new Map<string, { correct: number; total: number; label: string; locale?: string }>();
   for (const { attempt, item } of reviewed) {
     const domain = item ? examDomainOf(item) : attempt.category;
-    const score = scores.get(domain) ?? { correct: 0, total: 0 };
+    const score = scores.get(domain) ?? {
+      correct: 0,
+      total: 0,
+      label: item?.locale ? item.category : domain,
+      locale: item?.locale,
+    };
     score.total += 1;
     if (attempt.isCorrect) score.correct += 1;
     scores.set(domain, score);
@@ -58,10 +63,10 @@ export function ExamResults({
       <AccountBenefits context="exam" showAction />
       <dl className="domain-scores">
         {[...scores]
-          .sort(([first], [second]) => first.localeCompare(second, 'ja'))
+          .sort(([, first], [, second]) => first.label.localeCompare(second.label, first.locale ?? 'ja'))
           .map(([domain, score]) => (
             <div key={domain}>
-              <dt>{domain}</dt>
+              <dt lang={score.locale}>{score.label}</dt>
               <dd>
                 {score.correct} / {score.total}
               </dd>
@@ -97,9 +102,9 @@ export function ExamResults({
               <summary>
                 {t('questionNumber', { number: index + 1 })} ·{' '}
                 {attempt.isCorrect ? t('correct') : answered ? t('incorrect') : t('unanswered')} ·{' '}
-                {item?.title ?? attempt.questionId}
+                <span lang={item?.locale}>{item?.title ?? attempt.questionId}</span>
               </summary>
-              <p>{item?.prompt}</p>
+              <p lang={item?.locale}>{item?.prompt}</p>
               {item?.format ? (
                 <StructuredAnswerReview question={item} selected={attempt.selected} />
               ) : (
@@ -115,10 +120,10 @@ export function ExamResults({
                     <li key={choice.id}>
                       <strong>
                         {choice.id} {attempt.correct.includes(choice.id) ? t('correct') : t('incorrect')}{' '}
-                        · {choice.text}
+                        · <span lang={item.locale}>{choice.text}</span>
                       </strong>
                       <br />
-                      {choice.explanation}
+                      <span lang={item.locale}>{choice.explanation}</span>
                     </li>
                   ))}
                 </ul>

@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { studyCourses } from '../src/certifications.ts';
 import { examDomainOf, type Question, questionGroupKey, validQuestionFormat } from '../src/questions.ts';
 
+import { checkQuestionTranslations } from './check-question-translations.ts';
+
 const banks = new Map<string, Question[]>();
 async function load(path: string) {
   const cached = banks.get(path);
@@ -74,8 +76,11 @@ for (const { course } of studyCourses) {
       `${course.mock}: ${category} has ${available} distinct questions, expected at least ${required}`,
     );
   }
-  for (const path of [...course.practice.map((entry) => entry.path), ...course.archives])
-    await load(path);
+  const paths = [
+    ...new Set([course.mock, ...course.practice.map((entry) => entry.path), ...course.archives]),
+  ];
+  const sources = await Promise.all(paths.map(load));
+  if (course.questionTranslations) await checkQuestionTranslations(course.questionTranslations, sources);
 }
 
 console.log(`Validated ${banks.size} question banks`);

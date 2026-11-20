@@ -1,6 +1,9 @@
+import type { Locale } from './locales';
+
 type QuestionDetails = {
   id: string;
   revision: number;
+  locale?: Locale;
   category: string;
   examDomain?: string;
   similarityGroup?: string;

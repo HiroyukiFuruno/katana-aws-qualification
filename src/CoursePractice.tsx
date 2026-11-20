@@ -104,7 +104,7 @@ function ReviewQueue({
           <ol className="review-list">
             {review.map(({ question, wrong, lastReview }) => (
               <li key={questionKey(question)}>
-                <span>{question.title}</span>
+                <span lang={question.locale}>{question.title}</span>
                 <span>
                   {t('missedCount', { count: wrong })} ·{' '}
                   {lastReview

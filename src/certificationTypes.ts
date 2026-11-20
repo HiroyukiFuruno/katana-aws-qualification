@@ -29,6 +29,7 @@ export type Course = {
   reviewedMock?: true;
   examStorageId?: string;
   studyLocale?: Locale;
+  questionTranslations?: string;
 };
 
 export type Certification = {

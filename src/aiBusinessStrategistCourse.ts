@@ -5,6 +5,7 @@ const mock = 'courses/ai-business-strategist/full-mock-2026-11.json';
 export const aiBusinessStrategistCourse: Course = {
   practice: [{ path: mock, label: 'saaFull' }],
   mock,
+  questionTranslations: 'courses/ai-business-strategist/locales',
   archives: [
     'courses/ai-business-strategist/questions.json',
     'courses/ai-business-strategist/mock-2026-11.json',

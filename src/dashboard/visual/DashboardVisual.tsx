@@ -59,7 +59,7 @@ export function DashboardVisual({
   return (
     <SeriesChart
       widget={widget}
-      rows={dashboardGroupRows(widget, summary, (value) => dashboardDimensionLabel(value, t))}
+      rows={dashboardGroupRows(widget, summary, (value) => dashboardDimensionLabel(value, t), t)}
       categories={summary.groups.categories}
     />
   );

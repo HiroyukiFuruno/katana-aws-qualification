@@ -4,10 +4,11 @@ import { localePath } from './locales';
 import { usePreferences } from './preferences';
 
 export function NotFound() {
+  const { locale, t } = usePreferences();
   return (
     <main id="main" className="shell">
-      <h1>404 — Page not found</h1>
-      <a href={localePath('en')}>KatanA AWS Qualification</a>
+      <h1>{t('pageNotFound')}</h1>
+      <a href={localePath(locale)}>{t('siteName')}</a>
     </main>
   );
 }

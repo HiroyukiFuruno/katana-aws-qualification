@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { filterGlossary, glossary, glossaryCategories, glossaryTags } from './glossary';
 import { GlossaryDefinition, termAnchor } from './GlossaryDefinition';
 import { GlossaryFilters } from './GlossaryFilters';
+import { filterGlossary, glossary, glossaryCategories, glossaryTags } from './glossary';
 import './glossary.css';
 import { usePreferences } from './preferences';
 
@@ -59,7 +59,7 @@ export function GlossaryPage() {
         total={glossary.length}
       />
       {groups.size > 0 ? (
-        <nav aria-label="A–Z" className="glossary-index">
+        <nav aria-label={t('glossaryAlphabetIndex')} className="glossary-index">
           {[...groups.keys()].map((letter) => (
             <a key={letter} href={`#glossary-letter-${letter}`}>
               {letter}

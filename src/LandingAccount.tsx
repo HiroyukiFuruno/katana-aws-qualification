@@ -17,7 +17,7 @@ export function LandingAccount() {
     <section className="landing-account-pitch" aria-labelledby="landing-account-title">
       <div className="landing-account-heading">
         <span className="landing-kicker" aria-hidden="true">
-          03 / ACCOUNT
+          {t('landingAccountLabel')}
         </span>
         <h2 id="landing-account-title">
           <LandingSectionTitle text={t('landingAccountTitle')} />

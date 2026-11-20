@@ -25,7 +25,7 @@ export function AssessmentQuestion({
   return (
     <section className="card roadmap-card" aria-busy={saving}>
       <p className="eyebrow">
-        {skills[item.skill]} · {position + 1} / {total}
+        {t(skills[item.skill])} · {position + 1} / {total}
       </p>
       <h2 lang="ja">{item.prompt}</h2>
       {locale !== 'ja' && <p>{t('contentLanguage')}</p>}

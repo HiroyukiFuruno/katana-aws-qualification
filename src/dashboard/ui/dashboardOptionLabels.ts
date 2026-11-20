@@ -23,7 +23,10 @@ export function dashboardOptionLabel(key: string, value: string, t: Translator) 
   if (key === 'certificationIds') return certificationLabel(value);
   if (key === 'revisions') {
     const revision = JSON.parse(value) as { sourceVersion: string; questionRevision: number };
-    return `${revision.sourceVersion} / r${revision.questionRevision}`;
+    return t('dashboardRevisionLabel', {
+      sourceVersion: revision.sourceVersion,
+      revision: revision.questionRevision,
+    });
   }
   const label = labels[`${key}:${value}`];
   return label ? t(label) : value;

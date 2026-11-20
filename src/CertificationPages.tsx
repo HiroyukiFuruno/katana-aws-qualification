@@ -1,6 +1,6 @@
 import { CertificationDirectory } from './CertificationDirectory';
-import { examPrices, pricingUrl } from './certificationPricing';
 import { certificationGuides, officialGuideLink } from './certificationGuides';
+import { examPrices, pricingUrl } from './certificationPricing';
 import { certifications, levelMessage } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
@@ -56,7 +56,7 @@ export function CertificationPages({ id }: { id?: string }) {
       </p>
       <article className="card">
         <h2>{t('certScope')}</h2>
-        <p lang="ja">{guide.scope}</p>
+        <p>{t(guide.scope)}</p>
         <h2>{t('certDifficulty')}</h2>
         <div
           className="difficulty-rating"
@@ -72,9 +72,9 @@ export function CertificationPages({ id }: { id?: string }) {
             ★★★★★
           </span>
         </div>
-        <p lang="ja">{guide.why}</p>
+        <p>{t(guide.why)}</p>
         <h2>{t('certAudience')}</h2>
-        <p lang="ja">{guide.audience}</p>
+        <p>{t(guide.audience)}</p>
         <div className="exam-actions">
           {certification.course && (
             <a className="entry-action" href={localePath(locale, `study/${certification.id}`)}>

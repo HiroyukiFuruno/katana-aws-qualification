@@ -3,6 +3,7 @@ import { aiBusinessStrategistCourse } from './aiBusinessStrategistCourse.ts';
 import type { Certification, Course } from './certificationTypes';
 import { generativeAiDeveloperCourse } from './generativeAiDeveloperCourse.ts';
 import { machineLearningEngineerCourse } from './machineLearningEngineerCourse.ts';
+import { messages } from './messages.ts';
 import { securitySpecialtyCourse } from './securitySpecialtyCourse.ts';
 
 const starterCourseIds = new Set(['clf-c02', 'sap-c03']);
@@ -113,7 +114,7 @@ function starterCourse(certification: Certification): Course {
             '運用上の優秀性・自動化': 15,
           },
         }
-      : { minutes: count * 2, distribution: { [certification.focus]: count } },
+      : { minutes: count * 2, distribution: { [messages.ja[certification.focus]]: count } },
     fixedExamFromBlueprint: professional,
     reviewedMock: professional ? true : undefined,
     setSize: 4,

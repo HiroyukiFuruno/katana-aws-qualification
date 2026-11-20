@@ -56,14 +56,15 @@ export function SeriesChart({
     chart = (
       <>
         <p className="dashboard-viz-note">
-          X: {t('dashboardMetricAnswered')} · Y: {t('dashboardMetricAccuracy')}
+          {t('dashboardAxisX', { metric: t('dashboardMetricAnswered') })} ·{' '}
+          {t('dashboardAxisY', { metric: t('dashboardMetricAccuracy') })}
           {widget.chart === 'bubble' && <> · {t('dashboardMetricMeanDuration')}</>}
         </p>
         <ScatterChart
           points={categories}
           bubble={widget.chart === 'bubble'}
           label={metric}
-          categoryLabel={dashboardCategoryLabel}
+          categoryLabel={(point) => dashboardCategoryLabel(point, t)}
         />
       </>
     );

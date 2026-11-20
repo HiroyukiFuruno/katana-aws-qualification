@@ -1,5 +1,6 @@
 import { certifications } from '../../certifications';
 import type { Locale } from '../../locales';
+import type { usePreferences } from '../../preferences';
 import type { DashboardMetric } from '../preferenceTypes';
 import type { DashboardCategoryStats, DashboardStats } from '../statTypes';
 
@@ -31,6 +32,14 @@ export function formatDashboardValue(
 export function dashboardCertificationLabel(id: string) {
   return certifications.find((certification) => certification.id === id)?.name ?? id;
 }
-export function dashboardCategoryLabel(point: DashboardCategoryStats) {
-  return `${point.certificationId.toUpperCase()} · ${point.category} · ${point.sourceVersion.slice(0, 16)} / r${point.questionRevision}`;
+export function dashboardCategoryLabel(
+  point: DashboardCategoryStats,
+  t: ReturnType<typeof usePreferences>['t'],
+) {
+  return t('dashboardCategoryRevisionLabel', {
+    certification: point.certificationId.toUpperCase(),
+    category: point.category,
+    sourceVersion: point.sourceVersion.slice(0, 16),
+    revision: point.questionRevision,
+  });
 }

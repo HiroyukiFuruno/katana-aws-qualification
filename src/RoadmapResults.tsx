@@ -22,7 +22,7 @@ export function RoadmapResults({
   onRetake: () => void;
   saving: boolean;
 }) {
-  const { t } = usePreferences();
+  const { t, locale } = usePreferences();
   return (
     <>
       <section className="card roadmap-card">
@@ -77,18 +77,21 @@ export function RoadmapResults({
                 {cert.beta ? ` · ${t('beta')}` : ''}
               </small>
               <p>
-                {t('studyScope')} · {cert.focus}
+                {t('studyScope')} · {t(cert.focus)}
               </p>
               <p>
                 {gaps.length
-                  ? `${t('reviewTopics')} · ${gaps.map((skill) => skills[skill]).join('、')}`
+                  ? `${t('reviewTopics')} · ${new Intl.ListFormat(locale, { style: 'short', type: 'conjunction' }).format(gaps.map((skill) => t(skills[skill])))}`
                   : t('allTopicsCorrect')}
                 {priority > 0 && ` · ${t('retirementPriority')}`}
                 {cert.retireOn && ` · ${t('retirement', { date: cert.retireOn })}`}
               </p>
               {cert.buildsOn && (
                 <p>
-                  {t('relatedCerts')} · {cert.buildsOn.map((id) => id.toUpperCase()).join('、')}
+                  {t('relatedCerts')} ·{' '}
+                  {new Intl.ListFormat(locale, { style: 'short', type: 'conjunction' }).format(
+                    cert.buildsOn.map((id) => id.toUpperCase()),
+                  )}
                 </p>
               )}
               {cert.course ? (

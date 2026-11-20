@@ -127,7 +127,9 @@ export function DashboardWidgetOptions({ widget, facets, onChange }: Props) {
               <option value="">{t('dashboardInherit')}</option>
               {values.period.map((item) => (
                 <option key={item} value={item}>
-                  {item}
+                  {item === 'all'
+                    ? t('dashboardWindowAll')
+                    : t('dashboardWindowDays', { days: Number(item.slice(0, -1)) })}
                 </option>
               ))}
             </select>

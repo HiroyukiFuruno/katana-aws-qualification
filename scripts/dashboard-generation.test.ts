@@ -1,11 +1,9 @@
 import { expect, test } from 'bun:test';
 import { aggregateDashboard } from '../src/dashboard/aggregate';
-import { createDashboardServices } from '../src/dashboard/services';
 import { ProgressApiError } from '../src/progress/api';
-import { createProgressStore } from '../src/progress/store';
 import type { ProgressRpcClient } from '../src/progress/types';
 import { query, records } from './dashboard-fixture';
-import { memoryStorage } from './memory-storage.fixture';
+import { dashboardServicesFixture } from './dashboard-services-fixture';
 
 test('cross-tab reset refreshes read generation once but never automatically replays settings writes', async () => {
   let generation = 0;
@@ -26,29 +24,7 @@ test('cross-tab reset refreshes read generation once but never automatically rep
       throw new Error('Raw table reads are not allowed.');
     },
   };
-  const storage = memoryStorage();
-  const store = createProgressStore({
-    owner: { kind: 'member', userId: '11111111-1111-4111-8111-111111111111', generation: 0 },
-    client,
-    storage,
-    isCurrent: () => true,
-  });
-  const services = createDashboardServices({
-    store,
-    client,
-    storage,
-    isCurrent: () => true,
-    locale: 'ja',
-    assets: {
-      index: async () => {
-        throw new Error('Not needed');
-      },
-      unit: async () => {
-        throw new Error('Not needed');
-      },
-    },
-    resolve: async () => undefined,
-  });
+  const services = dashboardServicesFixture(client);
   await services.settings();
   expect(initializations).toBe(1);
   generation++;

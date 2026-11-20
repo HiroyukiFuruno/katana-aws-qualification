@@ -5,6 +5,7 @@ import type { DashboardRecords } from '../../src/dashboard/eventTypes';
 import { dashboardDefaults } from '../../src/dashboard/preferences';
 import { readDashboardSummary } from '../../src/dashboard/summaryCodec';
 import { assertDashboardEquivalent } from './dashboard-equivalence';
+import { verifyDashboardGenerationRace } from './dashboard-generation-race';
 import { verifyDashboardSettingsRecovery } from './dashboard-settings-recovery';
 import { type AuthSession, createSessions, request } from './rest-client';
 
@@ -113,6 +114,9 @@ export async function verifyDashboardPostgrest() {
     saved,
   );
   await verifyDashboardSettingsRecovery(first, settings);
+  const event = records.events[0];
+  if (!event) throw new Error('Missing dashboard generation fixture');
+  await verifyDashboardGenerationRace(second, event);
   console.log(
     'Dashboard PostgREST: 10 shared guest/SQL scopes, owner isolation, settings retry/conflict/reset retention verified.',
   );

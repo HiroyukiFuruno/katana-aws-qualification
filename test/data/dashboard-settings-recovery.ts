@@ -25,7 +25,7 @@ function code(value: unknown) {
     : null;
 }
 
-function client(session: AuthSession, counts?: Counts): ProgressRpcClient {
+export function dashboardRestClient(session: AuthSession, counts?: Counts): ProgressRpcClient {
   return {
     async rpc<T>(name: string, args: Record<string, unknown>) {
       if (name === 'save_dashboard_settings' && counts) counts.saves++;
@@ -54,7 +54,7 @@ export async function verifyDashboardSettingsRecovery(
 ) {
   const counts = { saves: 0 };
   const owner = { kind: 'member' as const, generation: 0, userId: session.user.id };
-  const dashboardClient = client(session, counts);
+  const dashboardClient = dashboardRestClient(session, counts);
   const store = createProgressStore({
     client: dashboardClient,
     isCurrent: () => true,
@@ -70,7 +70,7 @@ export async function verifyDashboardSettingsRecovery(
     resolve: createQuestionResolver(),
     locale: 'en',
   });
-  const control = client(session);
+  const control = dashboardRestClient(session);
   if ((await services.settings()).revision !== 1)
     throw new Error('Dashboard settings did not start at revision 1.');
 

@@ -82,6 +82,7 @@ export function DashboardReady({
     }),
     [store, assets, resolve, locale, revision, snapshot.attempts, snapshot.examRefreshVersion],
   );
+  const generation = useSyncExternalStore(session.services.subscribe, session.services.getSnapshot);
   const settings = useDashboardSettings(
     session.services,
     initial.filters.timezone,
@@ -91,11 +92,12 @@ export function DashboardReady({
   const cycle = useMemo(
     () => ({
       services: session.services,
+      generation,
       preferences: applied?.preferences ?? initial,
       asOf: Math.max(applied?.asOf ?? 0, session.asOf),
       enabled: settings.status === 'ready' && applied !== null,
     }),
-    [session, applied, initial, settings.status],
+    [session, applied, initial, settings.status, generation],
   );
   const data = useDashboardData(cycle, retry);
   if (settings.status !== 'ready')

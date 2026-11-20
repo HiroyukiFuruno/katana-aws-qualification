@@ -6,6 +6,7 @@ import type { LegacyQuestionResolver } from '../progress/migrationTypes';
 import type { ProgressStore } from '../progress/storeTypes';
 import type { ProgressRpcClient } from '../progress/types';
 import { aggregateDashboard } from './aggregate';
+import { createDashboardGenerationChanges } from './generationChanges';
 import { loadGuestDashboard } from './guestRecords';
 import { createGuestDashboardSettings } from './guestSettings';
 import { createMemberDashboard } from './memberRepository';
@@ -22,13 +23,17 @@ type Input = {
 };
 
 export function createDashboardServices(input: Input) {
+  const changes = createDashboardGenerationChanges();
   if (input.store.getSnapshot().owner.kind === 'member') {
     if (!input.client) throw new Error('Member dashboard access is missing.');
     const repository = createMemberDashboard(input.client, input.isCurrent);
     let initialized: Promise<number> | undefined;
     const ready = () => {
       if (!initialized) {
-        const attempt = repository.initialize();
+        const attempt = repository.initialize().then((generation) => {
+          changes.accept(generation);
+          return generation;
+        });
         initialized = attempt;
         void attempt.catch(() => {
           if (initialized === attempt) initialized = undefined;
@@ -37,17 +42,19 @@ export function createDashboardServices(input: Input) {
       return initialized;
     };
     const read = async <T>(operation: () => Promise<T>): Promise<T> => {
-      await ready();
+      const captured = ready();
+      await captured;
       try {
         return await operation();
       } catch (error) {
         if (!(error instanceof ProgressApiError) || error.code !== 'PT409') throw error;
-        initialized = undefined;
+        if (initialized === captured) initialized = undefined;
         await ready();
         return operation();
       }
     };
     return {
+      ...changes.observer,
       async syncStatus() {
         const generation = await ready();
         if (!input.isCurrent()) throw new Error('Dashboard owner changed.');
@@ -90,6 +97,7 @@ export function createDashboardServices(input: Input) {
     return guest;
   };
   return {
+    ...changes.observer,
     async syncStatus() {
       return { pending: false, unreadable: false };
     },

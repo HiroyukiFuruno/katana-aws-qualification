@@ -90,3 +90,10 @@
 
 - compact-half-viewport.log: 最初のグラフがtablet/desktopの初期viewportに50%以上入る条件でも、10locale/明暗/80画面＋keyboard/設定操作＋旧guest/memberの15件が1.1mで成功。compact-half-check.logは321単体/3616assertionsと全品質・build成功。viewport基準を0.1から0.5へ強化し、timeoutは不変。ja768dark/ja1280lightの新しいスクリーンショットも確認した。
 - 全体回帰の現在の分母は165件（all-progress-tests.txt）。after-merge-progress-full.log / after-merge-auth-full.logは実行中であり、成功として扱わない。公開helperのbaselineを11migration/12table/18catalog、追加を210002/210003とし、全13table/10RPC/旧18catalogの全行保持を照合するよう更新。release-helper-selftest.logは正例1/異常18/guard5成功、本番操作は未実施。
+
+## 公開前の契約レビューと修正
+
+- after-merge-auth-full.log: 実Auth164件/4.2m、after-merge-progress-full.log: 実学習165件/7.8mとも成功（対象4153f0b）。
+- HighのDB/保存契約レビューでP1を1件発見: 再初期化後に遅れた同owner旧世代成功応答を受け取り、初期化も重複していた。generation-race-red-complete.logで4件失敗を再現。generation/epochの前後照合と共有初期化、readだけ1回回復・write非再演へ修正。既に表示済みの別widgetも残らないよう、実世代変更だけをobservable revisionとして全data cycleへ通知する。dirtyな設定は保持する。
+- generation-race-green.log: 関連9単体/27assertions成功。generation-observer-real-db.log: 実GoTrue/PostgRESTの成功1回答を配達だけ保留→実reset→0回答取得→旧応答解放後も0、初期化2回/全カードinvalidate1回、全13migration・既存fixturesも成功。サービス/DBをMockにしていない。
+- generation-observer-check.log: 最新全品質ゲート/build成功。レビュー再確認で未対応P0/P1=0（test-results/dashboard/contract-review.md）。最新Dashboard全native回収・Draft/Codex・CI・本番は未完了。

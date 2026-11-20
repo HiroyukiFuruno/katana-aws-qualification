@@ -1,6 +1,6 @@
+import type { MemberLessonRepository } from '../src/fundamentals/state/memberTypes';
 import { createLessonOutbox } from '../src/fundamentals/state/outbox';
 import type { LessonCommand, LessonOutboxStorage } from '../src/fundamentals/state/outboxTypes';
-import type { MemberLessonRepository } from '../src/fundamentals/state/memberTypes';
 import { emptyLessonSnapshot, lessonAsset } from './fundamentals-state-fixture';
 
 export const userId = '10000000-0000-4000-8000-000000000001';

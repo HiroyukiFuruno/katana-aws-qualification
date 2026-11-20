@@ -74,7 +74,7 @@ test('purges stale generation commands and requires explicit discard for PT412',
   await queue.initialize();
   const old = startCommand(ids[0] ?? '');
   await expect(queue.execute(lessonAsset, old)).rejects.toBe(stale);
-  await expect(queue.execute(lessonAsset, old)).rejects.toThrow('requires reload');
+  await expect(queue.execute(lessonAsset, old)).rejects.toMatchObject({ code: 'PT412' });
   expect(queue.hasPending()).toBe(false);
   const retry = outbox(
     store,

@@ -100,3 +100,9 @@
 CI初回head065de59: data/progress/glossary成功、authは163pass/1fail（全許可再選択後の解析許可再適用）。mainのanalytics初期化依存をcookie consentの値だけでなく安定snapshotへ変更。同意UIが反映済みであることを待ってからoptoutし、実際のga-disable false→true→falseも検証する強化版cookies5件が成功（test-results/auth/pr66-consent-settled-regression.log）。test-results/data/pr66-review-final-check.logの全checkも成功。初回CI失敗を無視してmergeせず、修正後headの全CIを改めて回収する。
 
 SQL最終検証: test-results/data/pr66-import-review-data.log の実001010/全fixture成功。完了済みaccepted row/hashの冪等再試行、不完全進捗/欠落receipt/範囲外/不連続/再開不整合/UUID等価重複/必須field・questionRef欠落を拒否し、CP再挑戦の複数receipt+active final正例を維持した。初回追加validatorの括弧構文エラーを修正し再実行成功。rootは最終SQLに対する実guest移行2件を追加回収する。
+
+再レビュー head912cf34: 追加P2（別タブが破棄/ACK済みcommandを旧pending全体から復活させる）を採用。outbox永続化を新規追加/明示削除とshared storage再照合へ変更し、durable履歴と未永続のmemoryを区別する。agent cicd_questions がoutbox/persistenceとunit回帰を担当中。rootはsharedBrowserContextの2tab+外部更新で、Aの破棄後も古いcacheを持つtabがBを保存してAを復活させない実browser回帰（test/progress/fundamentals-shared-outbox.pw.ts）を作成済み、未実行。freeze後にglobalcheck→対象実progress→commit/push→thread4643263579返信/resolve→再レビュー/最新CIを回収。既存3threadは修正912cf34で返信/resolve済み。
+
+共有outbox検収: rootのnative初回は5/6成功、1件は保存済みreloadが現在のreading STEPを維持する実仕様をSTEP2移動と誤って期待したharnessを修正。storage書込失敗中のRPC禁止と同ID再試行、共有側の新世代検知時に直前commandもinvalidatedにする回帰を追加。後者はREDを確認し、sync前の検証/current UUID無効化で修正。outbox10unit43assertions成功。test-results/data/pr66-shared-outbox-final-check.logの全check成功。最終sourceに対する実6件を再実行中（pr66-shared-outbox-final-progress.log）。
+
+共有outbox最終source: test-results/data/pr66-shared-outbox-final-check.log は264unit/2797assertions・全quality/build成功。test-results/progress/pr66-shared-outbox-final-progress.log は実6件31.1秒成功、同一originのshared context2tabで古いcacheを保持したままA破棄→B保存→A再開しても破棄済みcommandが復活しないことを確認。head912cf34の全4CIも成功（auth44747769555/progress44747769725/data44747769835/glossary44747769977）。この追加修正をcommit/pushし、4th threadへ返信/resolveして最新headの再レビュー/CIを回収する。

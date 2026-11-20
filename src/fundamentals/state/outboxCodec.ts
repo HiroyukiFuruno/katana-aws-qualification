@@ -100,9 +100,11 @@ export function persistLessonOutbox(
     merged.set(command.commandId, command);
   }
   for (const id of removeIds) merged.delete(id);
-  if (!merged.size) return storage.removeItem(key);
-  storage.setItem(
-    key,
-    JSON.stringify({ commands: [...merged.values()], generation, userId, version: 1 }),
-  );
+  if (!merged.size) {
+    storage.removeItem(key);
+    return [];
+  }
+  const next = [...merged.values()];
+  storage.setItem(key, JSON.stringify({ commands: next, generation, userId, version: 1 }));
+  return next;
 }

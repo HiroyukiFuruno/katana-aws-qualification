@@ -1,3 +1,4 @@
+import type { Message } from '../../messages';
 import { usePreferences } from '../../preferences';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardCategoryStats } from '../statTypes';
@@ -29,6 +30,7 @@ export function SeriesChart({
     incorrect: row.stats.answered - row.stats.correct,
   }));
   let chart = null;
+  let notice: Message | undefined;
   if (widget.chart === 'bar' || widget.chart === 'stacked')
     chart = (
       <ValueBars
@@ -39,19 +41,15 @@ export function SeriesChart({
         stacked={widget.chart === 'stacked'}
       />
     );
-  if (widget.chart === 'donut')
-    chart =
-      points.filter((point) => (point.value ?? 0) > 0).length >= 2 ? (
-        <DonutChart points={points} label={metric} format={format} />
-      ) : (
-        <p className="dashboard-viz-note">{t('dashboardDonutRequirement')}</p>
-      );
-  if (widget.chart === 'radar')
-    chart = canRenderRadar(categories) ? (
-      <RadarChart points={categories} label={metric} />
-    ) : (
-      <p className="dashboard-viz-note">{t('dashboardRadarRequirement')}</p>
-    );
+  if (widget.chart === 'donut') {
+    if (points.filter((point) => (point.value ?? 0) > 0).length >= 2)
+      chart = <DonutChart points={points} label={metric} format={format} />;
+    else notice = 'dashboardDonutRequirement';
+  }
+  if (widget.chart === 'radar') {
+    if (canRenderRadar(categories)) chart = <RadarChart points={categories} label={metric} />;
+    else notice = 'dashboardRadarRequirement';
+  }
   if (widget.chart === 'scatter' || widget.chart === 'bubble')
     chart = (
       <>
@@ -70,6 +68,7 @@ export function SeriesChart({
   return (
     <div className="dashboard-viz">
       {chart}
+      {notice && <p className="dashboard-viz-note">{t(notice)}</p>}
       {widget.chart === 'stacked' && (
         <p className="dashboard-viz-legend-text">
           ● {t('dashboardMetricCorrect')} / ○ {t('dashboardMetricIncorrect')}
@@ -81,7 +80,7 @@ export function SeriesChart({
             ? rows.map((row, index) => ({ ...row, label: `${index + 1}. ${row.label}` }))
             : rows
         }
-        primary={widget.chart === 'table'}
+        primary={chart === null}
         caption={`${t(chartKeys[widget.chart])} · ${metric}`}
       />
     </div>

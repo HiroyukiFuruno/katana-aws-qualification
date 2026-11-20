@@ -1,4 +1,5 @@
 import type { Attempt } from '../attempts';
+import { questionKey, refs, storedQuestionKey } from './examRepositoryCodec';
 import type { MemberEvent } from './member';
 import type { LegacyDraft } from './migrationLegacy';
 
@@ -14,7 +15,7 @@ export function hasImportedEvents(events: readonly MemberEvent[], expected: read
       event.questionRevision === attempt.questionRevision &&
       event.sourceVersion === attempt.sourceVersion &&
       event.category === attempt.category &&
-      event.answeredAt === attempt.answeredAt &&
+      sameTimestamp(event.answeredAt, attempt.answeredAt) &&
       event.mode === attempt.mode &&
       (event.examId ?? '') === (attempt.examId ?? '') &&
       event.isCorrect === attempt.isCorrect &&
@@ -45,16 +46,22 @@ type ResponseRow = {
   duration_ms: number;
   selected_at: string | null;
 };
-function refs(order: readonly string[]) {
+function sameTimestamp(left: string, right: string) {
+  const leftMs = Date.parse(left);
+  const rightMs = Date.parse(right);
+  return Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs === rightMs;
+}
+
+function sameEpochTimestamp(value: string | null, expected: number) {
+  const actual = value === null ? Number.NaN : Date.parse(value);
+  return Number.isFinite(actual) && Number.isInteger(expected) && actual === expected;
+}
+
+function canonicalQuestionKey(value: string) {
   try {
-    return order.map((key) => {
-      const value: unknown = JSON.parse(key);
-      return Array.isArray(value) && typeof value[0] === 'string' && Number.isInteger(value[1])
-        ? { question_id: value[0], question_revision: value[1] as number }
-        : undefined;
-    });
+    return Array.isArray(JSON.parse(value)) ? questionKey(refs([value])[0]) : storedQuestionKey(value);
   } catch {
-    return [];
+    return undefined;
   }
 }
 export function hasImportedDraft(
@@ -63,17 +70,22 @@ export function hasImportedDraft(
   responses: readonly ResponseRow[],
 ) {
   const session = sessions.find((row) => row.exam_id === draft.id);
-  const order = refs(draft.order);
+  const order = draft.order.map(canonicalQuestionKey);
+  const storedOrder = session?.question_order.map((item) => questionKey(item));
   return (
     !!session &&
     session.state === 'draft' &&
     session.position === draft.position &&
     Date.parse(session.deadline_at) === draft.deadline &&
     order.length === draft.order.length &&
-    JSON.stringify(session.question_order) === JSON.stringify(order) &&
+    order.every((item): item is string => item !== undefined) &&
+    JSON.stringify(storedOrder) === JSON.stringify(order) &&
     responses.filter((row) => row.exam_id === draft.id).length === Object.keys(draft.responses).length &&
     Object.entries(draft.responses).every(([key, response]) => {
-      const stored = responses.find((row) => row.exam_id === draft.id && row.question_key === key);
+      const canonicalKey = canonicalQuestionKey(key);
+      const stored = responses.find(
+        (row) => row.exam_id === draft.id && canonicalQuestionKey(row.question_key) === canonicalKey,
+      );
       return (
         !!stored &&
         JSON.stringify(stored.selected) === JSON.stringify(response.selected) &&
@@ -81,7 +93,7 @@ export function hasImportedDraft(
         stored.duration_ms === response.durationMs &&
         (response.selectedAt === undefined
           ? stored.selected_at === null
-          : Date.parse(stored.selected_at ?? '') === response.selectedAt)
+          : sameEpochTimestamp(stored.selected_at, response.selectedAt))
       );
     })
   );

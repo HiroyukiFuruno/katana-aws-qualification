@@ -7,7 +7,7 @@ export const validAttempt = {
   questionRevision: 2,
   category: 'セキュリティ',
   sourceVersion: 'SAA-C03 mock / 2026-11 v2',
-  answeredAt: '2026-11-20T00:00:00+00:00',
+  answeredAt: '2026-11-20T00:00:00.000Z',
   selected: ['A'],
   correct: ['A'],
   isCorrect: true,

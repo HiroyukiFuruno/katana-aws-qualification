@@ -599,7 +599,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_1_0$::jsonb),
-  ('fundamentals.routing-connectivity', '343e7fe4fcc0cfdd42fe32db6a0dd782050a7816a5f5884df86715bad63fcf9d', decode('97f40ffca183865f50371b60d27a174c64c66199a7069f7628fd5173cb914506', 'hex'),
+  ('fundamentals.routing-connectivity', '3f53b61111aeeda41888049229207b023c55d0cce37817ce47f6766c5af26c0b', decode('1eb6526700083e75264fb6cbe7c15419212b012734ad7d1729c07ac19510b531', 'hex'),
     $kaq_plan_8_0$[
   {
     "id": "fundamentals.routing-connectivity:intro:orientation:1",
@@ -626,33 +626,39 @@ insert into public.published_fundamentals_catalogs (
     "required": true
   },
   {
-    "id": "fundamentals.routing-connectivity:section:route-selection:example:1",
+    "id": "fundamentals.routing-connectivity:section:route-selection:concept:2",
     "kind": "slide",
     "position": 5,
     "required": true
   },
   {
-    "id": "fundamentals.routing-connectivity:section:route-selection:example:2",
+    "id": "fundamentals.routing-connectivity:section:route-selection:example:1",
     "kind": "slide",
     "position": 6,
     "required": true
   },
   {
-    "id": "fundamentals.routing-connectivity:section:route-selection:misconception:1",
+    "id": "fundamentals.routing-connectivity:section:route-selection:example:2",
     "kind": "slide",
     "position": 7,
     "required": true
   },
   {
-    "id": "fundamentals.routing-connectivity:section:route-selection:takeaway:1",
+    "id": "fundamentals.routing-connectivity:section:route-selection:misconception:1",
     "kind": "slide",
     "position": 8,
     "required": true
   },
   {
+    "id": "fundamentals.routing-connectivity:section:route-selection:takeaway:1",
+    "kind": "slide",
+    "position": 9,
+    "required": true
+  },
+  {
     "id": "fundamentals.routing-connectivity:checkpoint:fundamentals.routing-connectivity.checkpoint.route-selection.v1",
     "kind": "checkpoint",
-    "position": 9,
+    "position": 10,
     "question": {
       "category": "fundamentals.routing-connectivity",
       "choiceIds": [
@@ -682,43 +688,43 @@ insert into public.published_fundamentals_catalogs (
   {
     "id": "fundamentals.routing-connectivity:section:internet-egress:concept:1",
     "kind": "slide",
-    "position": 10,
+    "position": 11,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:internet-egress:concept:2",
     "kind": "slide",
-    "position": 11,
+    "position": 12,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:internet-egress:example:1",
     "kind": "slide",
-    "position": 12,
+    "position": 13,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:internet-egress:example:2",
     "kind": "slide",
-    "position": 13,
+    "position": 14,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:internet-egress:misconception:1",
     "kind": "slide",
-    "position": 14,
+    "position": 15,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:internet-egress:takeaway:1",
     "kind": "slide",
-    "position": 15,
+    "position": 16,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:checkpoint:fundamentals.routing-connectivity.checkpoint.internet-egress.v1",
     "kind": "checkpoint",
-    "position": 16,
+    "position": 17,
     "question": {
       "category": "fundamentals.routing-connectivity",
       "choiceIds": [
@@ -749,43 +755,43 @@ insert into public.published_fundamentals_catalogs (
   {
     "id": "fundamentals.routing-connectivity:section:traffic-controls:concept:1",
     "kind": "slide",
-    "position": 17,
+    "position": 18,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:traffic-controls:concept:2",
     "kind": "slide",
-    "position": 18,
+    "position": 19,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:traffic-controls:example:1",
     "kind": "slide",
-    "position": 19,
+    "position": 20,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:traffic-controls:example:2",
     "kind": "slide",
-    "position": 20,
+    "position": 21,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:traffic-controls:misconception:1",
     "kind": "slide",
-    "position": 21,
+    "position": 22,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:traffic-controls:takeaway:1",
     "kind": "slide",
-    "position": 22,
+    "position": 23,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:checkpoint:fundamentals.routing-connectivity.checkpoint.traffic-controls.v1",
     "kind": "checkpoint",
-    "position": 23,
+    "position": 24,
     "question": {
       "category": "fundamentals.routing-connectivity",
       "choiceIds": [
@@ -815,43 +821,43 @@ insert into public.published_fundamentals_catalogs (
   {
     "id": "fundamentals.routing-connectivity:section:private-paths:concept:1",
     "kind": "slide",
-    "position": 24,
+    "position": 25,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:private-paths:concept:2",
     "kind": "slide",
-    "position": 25,
+    "position": 26,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:private-paths:example:1",
     "kind": "slide",
-    "position": 26,
+    "position": 27,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:private-paths:example:2",
     "kind": "slide",
-    "position": 27,
+    "position": 28,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:private-paths:misconception:1",
     "kind": "slide",
-    "position": 28,
+    "position": 29,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:section:private-paths:takeaway:1",
     "kind": "slide",
-    "position": 29,
+    "position": 30,
     "required": true
   },
   {
     "id": "fundamentals.routing-connectivity:checkpoint:fundamentals.routing-connectivity.checkpoint.private-paths.v1",
     "kind": "checkpoint",
-    "position": 30,
+    "position": 31,
     "question": {
       "category": "fundamentals.routing-connectivity",
       "choiceIds": [
@@ -1188,7 +1194,579 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_8_0$::jsonb),
-  ('fundamentals.testing-quality', '9a9f7c6aeec0c3ca4926cbf1a7f58ea69a54a9102088866cf34b8fb0fdd078e4', decode('b585975f92b3790380ac5f3a92b11b08dc529b99bfc1897b5b805f6459711883', 'hex'),
+  ('fundamentals.cicd', '01622a42f31164863009a0a6f726c295ad63d8e64eb987a3d7145072fea0957b', decode('a5ecfeda772e1bf35b28a613eb6fef5a71f1e7fc7ee68bd9ce951700ff1b0fc7', 'hex'),
+    $kaq_plan_9_0$[
+  {
+    "id": "fundamentals.cicd:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:concept:2",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:example:1",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:example:2",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:misconception:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:takeaway:1",
+    "kind": "slide",
+    "position": 9,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:checkpoint:fundamentals.cicd.checkpoint.continuous-integration.v1",
+    "kind": "checkpoint",
+    "position": 10,
+    "question": {
+      "category": "fundamentals.cicd",
+      "choiceIds": [
+        "B",
+        "A",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cicd.checkpoint.continuous-integration.v1",
+      "objectiveId": "cicd-1",
+      "questionId": "fundamentals.cicd.checkpoint.continuous-integration.v1",
+      "requiredChoices": 1,
+      "revision": 1,
+      "sectionId": "continuous-integration",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "CodePipeline concepts",
+        "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:concept:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:example:1",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:example:2",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:misconception:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:takeaway:1",
+    "kind": "slide",
+    "position": 15,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:checkpoint:fundamentals.cicd.checkpoint.delivery-deployment.v1",
+    "kind": "checkpoint",
+    "position": 16,
+    "question": {
+      "category": "fundamentals.cicd",
+      "choiceIds": [
+        "C",
+        "A",
+        "B",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cicd.checkpoint.delivery-deployment.v1",
+      "objectiveId": "cicd-2",
+      "questionId": "fundamentals.cicd.checkpoint.delivery-deployment.v1",
+      "requiredChoices": 1,
+      "revision": 1,
+      "sectionId": "delivery-deployment",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "CodePipeline approvals",
+        "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/approvals.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:concept:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:example:1",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:example:2",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:misconception:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:takeaway:1",
+    "kind": "slide",
+    "position": 21,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:checkpoint:fundamentals.cicd.checkpoint.artifacts-promotion.v1",
+    "kind": "checkpoint",
+    "position": 22,
+    "question": {
+      "category": "fundamentals.cicd",
+      "choiceIds": [
+        "D",
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "D"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cicd.checkpoint.artifacts-promotion.v1",
+      "objectiveId": "cicd-3",
+      "questionId": "fundamentals.cicd.checkpoint.artifacts-promotion.v1",
+      "requiredChoices": 1,
+      "revision": 1,
+      "sectionId": "artifacts-promotion",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "CodePipeline artifacts",
+        "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:concept:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:example:1",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:example:2",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:misconception:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:takeaway:1",
+    "kind": "slide",
+    "position": 27,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:checkpoint:fundamentals.cicd.checkpoint.quality-gates.v1",
+    "kind": "checkpoint",
+    "position": 28,
+    "question": {
+      "category": "fundamentals.cicd",
+      "choiceIds": [
+        "D",
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "D",
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cicd.checkpoint.quality-gates.v1",
+      "objectiveId": "cicd-4",
+      "questionId": "fundamentals.cicd.checkpoint.quality-gates.v1",
+      "requiredChoices": 2,
+      "revision": 1,
+      "sectionId": "quality-gates",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "CodePipeline pipelines",
+        "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_9_0$::jsonb,
+    $kaq_final_9_0$[
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-001",
+    "objectiveId": "cicd-1",
+    "questionId": "fund-cicd-001",
+    "requiredChoices": 1,
+    "revision": 1,
+    "sectionId": "continuous-integration",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline stages",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 0
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-002",
+    "objectiveId": "cicd-4",
+    "questionId": "fund-cicd-002",
+    "requiredChoices": 2,
+    "revision": 1,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline structure",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/reference-pipeline-structure.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 1
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-cicd-003",
+    "objectiveId": "cicd-4",
+    "questionId": "fund-cicd-003",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline concepts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 2
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-004",
+    "objectiveId": "cicd-1",
+    "questionId": "fund-cicd-004",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "continuous-integration",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline troubleshooting",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/troubleshooting.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 3
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-005",
+    "objectiveId": "cicd-1",
+    "questionId": "fund-cicd-005",
+    "requiredChoices": 2,
+    "revision": 1,
+    "sectionId": "continuous-integration",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline concepts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 4
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cicd-006",
+    "objectiveId": "cicd-2",
+    "questionId": "fund-cicd-006",
+    "requiredChoices": 1,
+    "revision": 1,
+    "sectionId": "delivery-deployment",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline approvals",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/approvals.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 5
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-007",
+    "objectiveId": "cicd-2",
+    "questionId": "fund-cicd-007",
+    "requiredChoices": 1,
+    "revision": 1,
+    "sectionId": "delivery-deployment",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline approvals",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/approvals.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 6
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-cicd-008",
+    "objectiveId": "cicd-2",
+    "questionId": "fund-cicd-008",
+    "requiredChoices": 2,
+    "revision": 1,
+    "sectionId": "delivery-deployment",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline approvals",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/approvals.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 7
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-009",
+    "objectiveId": "cicd-3",
+    "questionId": "fund-cicd-009",
+    "requiredChoices": 2,
+    "revision": 1,
+    "sectionId": "artifacts-promotion",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline artifacts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 8
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-cicd-010",
+    "objectiveId": "cicd-3",
+    "questionId": "fund-cicd-010",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "artifacts-promotion",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline artifacts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 9
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-011",
+    "objectiveId": "cicd-3",
+    "questionId": "fund-cicd-011",
+    "requiredChoices": 2,
+    "revision": 1,
+    "sectionId": "artifacts-promotion",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline artifacts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 10
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-cicd-012",
+    "objectiveId": "cicd-4",
+    "questionId": "fund-cicd-012",
+    "requiredChoices": 2,
+    "revision": 1,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline stages",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 11
+  }
+]$kaq_final_9_0$::jsonb),
+  ('fundamentals.testing-quality', 'fe1b9b7c6f9b65e70d3fced6f8c88a100738e675c33f5a06bca4f2b5c5408032', decode('fa3f445aefdbce939dc5abfe764d465c912d041b7940db3caf71d855251cf3db', 'hex'),
     $kaq_plan_10_0$[
   {
     "id": "fundamentals.testing-quality:intro:orientation:1",
@@ -1768,7 +2346,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "testing-4",
     "questionId": "fund-testing-012",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "failure-regression",
     "selectionPolarity": "incorrect",
     "source": {
@@ -2369,7 +2947,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_11_0$::jsonb),
-  ('fundamentals.observability', 'c79e510b8f8d4c0e3fb5fd46b7564ac778cb9bc6bac91349cc3efdfc9720cbf0', decode('c1810c820eb145cbf8d5b6527a9fb132d582e6c7549a3599158b94fba6edd012', 'hex'),
+  ('fundamentals.observability', '41949fb235addde94e311b999b0efc3d0e7c49edcee82ac9858f0b89e966dde0', decode('50b8abaa7bd02dc72376efbda7469b76fac314b9e3befb75d303f0d87c9575eb', 'hex'),
     $kaq_plan_12_0$[
   {
     "id": "fundamentals.observability:intro:orientation:1",
@@ -2511,7 +3089,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "golden-signals",
       "questionId": "fundamentals.observability.checkpoint.golden-signals.v1",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "golden-signals",
       "selectionPolarity": "correct",
       "source": {

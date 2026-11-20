@@ -53,3 +53,5 @@ https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-ava
 - checkpointの生成器がrevisionを常に1へ戻していたため、正の明示revisionを保持するよう修正し、revision=3の保持とrevision=0拒否を回帰テストへ固定した。
 - `issue68-check.log`: 277単体と全check/build成功。`issue68-edition-revisions.log`: 実Auth/DB/browser3件成功（6.6s）、旧版の最終下書き/合格の明示取込・再取込重複排除・別owner不可視・新版へ合格や読了を流用しないこと、旧版outboxの原版解決/同じreceipt再送を検証した。9件/90assertionsの広告部品単体も入口で成功。
 - 現在のUI進捗は現行版だけ。旧版の原記録は削除せず取込可能。旧版の再開導線・未同期の回復表示、全192問監査文書の最終照合、全体回帰・レビュー・DB/サイト公開は未完了。
+- 追加の原文照合で、最長prefixの本文・CI工程名の導入・CI失敗時の具体例・変更可能な共有データ・Golden Signalsの同じ文型による比較も採用。新版は6単元となり、旧版12単元と合わせて18catalog行になる。他の改善候補は原文から判断可能な初学者向け反復として必須修正に採用しない。監査2文書に誤指摘の撤回を明記した。
+- 旧版再開用の`?version=<contentVersion>`をnavigation codecへ追加した。静的pathnameは増やさず、contentHashとは区別する。rootレビューでcatalog queryの無条件許可とoptional undefinedの拒否を修正し、現在のstep/resume/redirect不変を追加検証した。UIへの版伝播・再開入口・stale guardの実装はまだ行っておらず、このcommitを旧版UI完了とは扱わない。

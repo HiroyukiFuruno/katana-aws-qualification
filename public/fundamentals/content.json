@@ -5443,7 +5443,7 @@
           "title": "routeは宛先ごとの次の送り先を決める",
           "paragraphs": [
             "VPCのroute tableは、subnetから出るパケットの宛先CIDRとtargetを対応付けます。宛先IPが決まってから、そのIPを含むrouteを選びます。",
-            "local routeはVPC内CIDR向けの通信を残します。より具体的な宛先があるときは、default routeだけを見て判断せず、CIDRの包含関係を確認します。",
+            "local routeはVPC内CIDR向けの通信を残します。同じtable内で複数のrouteが宛先IPに一致するときは、最長prefix、つまり最も具体的なCIDRを選びます。例えば10.1.2.3は10.0.0.0/8と10.1.0.0/16の両方に一致し、10.1.0.0/16を選びます。default routeだけを見て判断せず、CIDRの包含関係を確認します。",
             "routeが存在してもtargetが相手へ届くとは限りません。target側のroute、VPNやpeeringの設定、返りの経路も必要です。"
           ],
           "example": {
@@ -6189,6 +6189,7 @@
           "paragraphs": [
             "CIはcommitを起点に変更を取り込み、buildやtestを自動実行する流れです。変更を小さく頻繁に統合すると原因を絞れます。",
             "buildは配布可能な形を作り、testは不備を検査します。成功は本番安全の保証ではなく、次段階へ進むための結果です。",
+            "pipelineではSource、Test、Deployと呼ぶ工程を並べることがあります。Sourceは変更を受け渡し、Testは検査し、Deployは対象環境へ配布する役割の例です。工程名や分け方はツールや組織で異なります。",
             "失敗時はログを確認して修正し、後段へ進めず同じ検査を再実行します。"
           ],
           "example": {
@@ -6439,11 +6440,11 @@
         {
           "unitId": "fundamentals.cicd",
           "id": "fund-cicd-004",
-          "revision": 1,
+          "revision": 2,
           "category": "CI/CD",
           "version": "2026-11",
           "title": "CI失敗時",
-          "prompt": "CIが失敗したとき誤っている対応を1つ選んでください。",
+          "prompt": "必須testが失敗し、ログに不一致が記録されました。次に取る対応として誤っているものを1つ選んでください。",
           "selectionPolarity": "incorrect",
           "requiredChoices": 1,
           "objectiveId": "cicd-1",
@@ -6455,18 +6456,18 @@
           "choices": [
             {
               "id": "A",
-              "text": "ログで原因を絞る。",
-              "explanation": "ログは原因調査の手掛かりです。"
+              "text": "失敗した必須testのログで不一致を確認し、原因を修正する。",
+              "explanation": "失敗ログは原因を絞る手掛かりであり、修正の対象を確認します。"
             },
             {
               "id": "B",
-              "text": "修正後に同じ検査を再実行する。",
-              "explanation": "修正結果を確認します。"
+              "text": "修正後、同じ入力と検査条件で必須testを再実行する。",
+              "explanation": "同じ条件で再検査して、修正後に必須testが通ることを確認します。"
             },
             {
               "id": "C",
-              "text": "失敗してもdeployへ進める。",
-              "explanation": "失敗した検査は後段を止めます。"
+              "text": "必須testが失敗しても、ログを残したままdeployへ進める。",
+              "explanation": "必須testの失敗は後段を止め、修正と同じ条件での再検査が必要です。"
             }
           ],
           "source": {
@@ -7537,7 +7538,7 @@
         {
           "unitId": "fundamentals.testing-quality",
           "id": "fund-testing-012",
-          "revision": 2,
+          "revision": 3,
           "category": "テスト品質",
           "version": "2026-11",
           "title": "失敗から改善",
@@ -7564,8 +7565,8 @@
             },
             {
               "id": "C",
-              "text": "失敗時のデータを共有したまま再実行する。",
-              "explanation": "データ汚染で再現性が失われます。"
+              "text": "別のtestが変更し得る同一データを隔離せずに再実行する。",
+              "explanation": "別のtestによる変更が混ざると、失敗原因と再現条件を切り分けられません。"
             },
             {
               "id": "D",
@@ -8399,7 +8400,7 @@
           "paragraphs": [
             "latencyは応答にかかる時間、errorsは失敗した要求、trafficは要求量、saturationは処理能力がどれだけ使われているかを表します。四つを同時に見ると、利用者が遅いのか、失敗しているのか、負荷が増えたのか、資源に余力がないのかを分けられます。",
             "平均だけでは一部利用者の遅さを隠すことがあります。例えばp95 latencyは、多くの要求より遅い側の体験を確認するための指標です。ただし値を読む前に、対象操作、集計期間、単位を明確にします。",
-            "CPUが高くHTTP 5xxも増えたという同時変化は、調査の手掛かりです。しかしCPU高が5xxの原因だとはまだ言えません。trafficの変化、キュー、依存先の失敗、traceとlogを追加して、説明できる仮説を比較します。"
+            "CPUが高くHTTP 5xxも増えたという同時変化は、調査の手掛かりです。しかしCPU高が5xxの原因だとはまだ言えません。処理待ちqueueの長さや待機数の増加は、処理能力の余力が不足しているsaturationの手掛かりになります。trafficの変化、依存先の失敗、traceとlogを追加して、説明できる仮説を比較します。"
           ],
           "example": {
             "scenario": "昼だけHTTP 5xxとCPU使用率が上がる。",

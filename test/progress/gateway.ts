@@ -3,7 +3,7 @@ import { heldResponses } from './held-responses';
 import { appOrigin, authOrigin, fixtureKey, gatewayOrigin, restOrigin } from './settings';
 
 let finalizeFailure: 'after' | 'before' | undefined;
-let expireBeforeSave: string | undefined;
+const faults = { expireBeforeSave: undefined as string | undefined, confirmedSaveFailure: false };
 const held = heldResponses((request) => forward(request, '/rest/v1', restOrigin));
 
 function validExamId(examId: string) {
@@ -86,7 +86,7 @@ export function serveProgressGateway() {
       if (path === '/test/expire-before-save' && request.method === 'POST') {
         const examId = new URL(request.url).searchParams.get('exam_id') ?? '';
         if (!validExamId(examId)) return new Response('Invalid exam', { status: 400 });
-        expireBeforeSave = examId;
+        faults.expireBeforeSave = examId;
         return new Response(null, { status: 204 });
       }
       if (path === '/test/expire-exam' && request.method === 'POST') {
@@ -99,6 +99,10 @@ export function serveProgressGateway() {
         if (mode !== 'after' && mode !== 'before')
           return new Response('Invalid fault mode', { status: 400 });
         finalizeFailure = mode;
+        return new Response(null, { status: 204 });
+      }
+      if (path === '/test/fail-next-exam-save' && request.method === 'POST') {
+        faults.confirmedSaveFailure = true;
         return new Response(null, { status: 204 });
       }
       const control = held.control(request);
@@ -114,11 +118,17 @@ export function serveProgressGateway() {
         }
         return cors(new Response(null, { status: 503 }), request);
       }
-      if (path === '/rest/v1/rpc/save_exam_response_confirmed' && expireBeforeSave) {
-        const examId = expireBeforeSave;
-        expireBeforeSave = undefined;
+      if (path === '/rest/v1/rpc/save_exam_response_confirmed' && faults.expireBeforeSave) {
+        const examId = faults.expireBeforeSave;
+        faults.expireBeforeSave = undefined;
         if (!expireExam(examId))
           return cors(new Response('Could not expire exam', { status: 500 }), request);
+      }
+      if (path === '/rest/v1/rpc/save_exam_response_confirmed' && faults.confirmedSaveFailure) {
+        faults.confirmedSaveFailure = false;
+        const forwarded = await forward(request.clone(), '/rest/v1', restOrigin);
+        if (!forwarded.ok) return cors(forwarded, request);
+        return cors(new Response(null, { status: 503 }), request);
       }
       const delayed = held.forward(request);
       if (delayed) return cors(await delayed, request);

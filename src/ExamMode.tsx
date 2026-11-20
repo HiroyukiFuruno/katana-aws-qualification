@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ExamBlueprint } from './certifications';
-import { ExamFormatPicker } from './ExamFormatPicker';
 import { ExamNavigation, type Filter } from './ExamNavigation';
 import { ExamQuestion } from './ExamQuestion';
 import { ExamResults } from './ExamResults';
+import { ExamSetup } from './ExamSetup';
 import { getResponse, remainingLabel } from './exam';
 import type { Attempt } from './history';
 import { usePreferences } from './preferences';
@@ -41,7 +41,7 @@ export function ExamMode({
     blueprint,
     examKey,
     practiceQuestions,
-    onStart() {
+    onStart: () => {
       setFilter('all');
       setShowAll(false);
     },
@@ -65,8 +65,9 @@ export function ExamMode({
     submit,
     start,
     update,
+    saving,
   } = session;
-  const busy = session.submitting || session.saving;
+  const busy = session.submitting || saving;
   useEffect(() => {
     if (draft?.position !== undefined) questionHeading.current?.focus();
   }, [draft?.position]);
@@ -78,6 +79,7 @@ export function ExamMode({
         byKey={byKey}
         blueprint={blueprint}
         available={available}
+        saving={saving}
         error={error}
         showAll={showAll}
         onShowAll={setShowAll}
@@ -87,19 +89,14 @@ export function ExamMode({
     );
   if (!draft)
     return (
-      <section className="card">
-        <h2>{t('examSetup')}</h2>
-        <p>{t('examTiming')}</p>
-        <p>{t('examTimerWarning')}</p>
-        {!available && <p role="alert">{t('tooFew')}</p>}
-        <ExamFormatPicker
-          blueprint={blueprint}
-          available={available}
-          onStart={start}
-          buttonLabel={t('startExam')}
-        />
-        {error && <p role="alert">{t(error)}</p>}
-      </section>
+      <ExamSetup
+        blueprint={blueprint}
+        available={available}
+        saving={saving}
+        onStart={start}
+        error={error}
+        t={t}
+      />
     );
   if (!correctRevision || !question) return <p role="alert">{t('cannotResume')}</p>;
   return (

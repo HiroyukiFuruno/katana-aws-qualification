@@ -88,6 +88,21 @@ export async function releaseExamSave() {
   if (!response.ok) throw new Error('Could not release the held exam save.');
 }
 
+export async function failNextExamSave() {
+  const response = await fetch(`${gatewayOrigin}/test/fail-next-exam-save`, { method: 'POST' });
+  if (!response.ok) throw new Error('Could not arm the next confirmed exam save failure.');
+}
+
+export async function holdNextExamStart() {
+  const response = await fetch(`${gatewayOrigin}/test/hold-next-exam-start`, { method: 'POST' });
+  if (!response.ok) throw new Error('Could not hold the next exam start.');
+}
+
+export async function releaseExamStart() {
+  const response = await fetch(`${gatewayOrigin}/test/release-exam-start`, { method: 'POST' });
+  if (!response.ok) throw new Error('Could not release the held exam start.');
+}
+
 export function serviceRows(table: string, userId: string) {
   return rows(`${table}?user_id=eq.${encodeURIComponent(userId)}&select=user_id`, undefined, true);
 }

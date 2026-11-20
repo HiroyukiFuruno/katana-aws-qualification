@@ -1,7 +1,9 @@
 import type { MutableRefObject, RefObject } from 'react';
 import type { ExamBlueprint } from './certifications';
-import { canStartExam, type ExamDraft, type ExamResponse, getResponse, newExam } from './exam';
+import { canStartExam, type ExamDraft, type ExamResponse, getResponse } from './exam';
 import { elapsedExamMs, examNow } from './examClock';
+import { loadOrStartExam } from './examStart';
+import { persistMemberResponse } from './examSubmissionMember';
 import type { Attempt } from './history';
 import type { Message } from './messages';
 import type { ProgressStore } from './progress/storeTypes';
@@ -24,15 +26,12 @@ type DraftControlsInput = {
   setError: (error: Message | '') => void;
   setNow: (now: number) => void;
 };
-
 function memberStore(store: ProgressStore | null | undefined) {
   return store?.getSnapshot().owner.kind === 'member' ? store : undefined;
 }
-
 function guestStore(store: ProgressStore | null | undefined) {
   return store?.getSnapshot().owner.kind === 'guest' ? store : undefined;
 }
-
 export function useExamDraftControls({
   activeSince,
   bank,
@@ -52,26 +51,22 @@ export function useExamDraftControls({
 }: DraftControlsInput) {
   const available = canStartExam(bank, blueprint);
   async function start(count: number) {
-    if (!available) return;
+    if (!available || savePending.current) return;
+    let saving = false;
     try {
-      const member = memberStore(progressStore);
-      const guest = guestStore(progressStore);
-      const current = guest ? guest.readGuestExam(examKey) : draft;
-      if (current && !history.some((attempt) => attempt.examId === current.id)) {
-        setDraft(current);
-        return;
-      }
-      const next = newExam(bank, blueprint, Date.now(), count);
-      let started = next;
-      if (member) {
-        started = await member.startExam(
-          next,
-          certificationId,
-          bank[0]?.version ?? 'current',
-          next.deadline - Date.now(),
-        );
-      } else if (guest) await guest.saveGuestExam(examKey, next);
-      else throw new Error('Progress store is unavailable.');
+      savePending.current = true;
+      saving = true;
+      setSaving(true);
+      const started = await loadOrStartExam({
+        bank,
+        blueprint,
+        certificationId,
+        count,
+        draft,
+        examKey,
+        history,
+        store: progressStore,
+      });
       setDraft(started);
       setNow(examNow(started));
       activeSince.current = performance.now();
@@ -80,6 +75,11 @@ export function useExamDraftControls({
       setError('');
     } catch {
       setError('examSaveFailed');
+    } finally {
+      if (saving) {
+        savePending.current = false;
+        setSaving(false);
+      }
     }
   }
   async function update(position: number, patch: Partial<ExamResponse> = {}) {
@@ -115,7 +115,15 @@ export function useExamDraftControls({
         },
       };
       let saved = next;
-      if (member) saved = await member.saveExamResponse(next, position, key, next.responses[key]);
+      if (member)
+        saved = await persistMemberResponse(
+          member,
+          certificationId,
+          current,
+          key,
+          next.responses[key],
+          position,
+        );
       else if (guest) await guest.saveGuestExam(examKey, next);
       else throw new Error('Progress store is unavailable.');
       activeSince.current = performance.now();

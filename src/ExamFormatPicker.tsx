@@ -16,11 +16,13 @@ const formats = ['short', 'medium', 'full', 'custom'] as const;
 export function ExamFormatPicker({
   blueprint,
   available,
+  saving,
   onStart,
   buttonLabel,
 }: {
   blueprint: ExamBlueprint;
   available: boolean;
+  saving: boolean;
   onStart: (count: number) => void;
   buttonLabel: string;
 }) {
@@ -31,7 +33,7 @@ export function ExamFormatPicker({
   const customCount = Number(custom);
   const validCustom = Number.isInteger(customCount) && customCount >= 1 && customCount <= presets.full;
   const count = format === 'custom' ? customCount : presets[format];
-  const canStart = available && (format !== 'custom' || validCustom);
+  const canStart = available && !saving && (format !== 'custom' || validCustom);
 
   return (
     <form
@@ -45,6 +47,7 @@ export function ExamFormatPicker({
         {t('examFormat')}
         <select
           value={format}
+          disabled={saving}
           onChange={(event) => {
             const next = formats.find((option) => option === event.target.value);
             if (next) setFormat(next);
@@ -75,6 +78,7 @@ export function ExamFormatPicker({
             step={1}
             required
             value={custom}
+            disabled={saving}
             onChange={(event) => setCustom(event.target.value)}
           />
         </label>

@@ -21,10 +21,16 @@ function sameResponse(left: ExamResponse | undefined, right: ExamResponse) {
   );
 }
 
-function isSavedDraft(current: ExamDraft, key: string, response: ExamResponse, remote: ExamDraft) {
+function isSavedDraft(
+  current: ExamDraft,
+  key: string,
+  response: ExamResponse,
+  position: number,
+  remote: ExamDraft,
+) {
   return (
     remote.id === current.id &&
-    remote.position === current.position &&
+    remote.position === position &&
     remote.revision === (current.revision ?? 0) + 1 &&
     sameResponse(remote.responses[key], response)
   );
@@ -34,12 +40,13 @@ function isUnchangedDraft(current: ExamDraft, remote: ExamDraft) {
   return remote.id === current.id && remote.revision === current.revision;
 }
 
-async function recoveredDraft(
+async function recoverMemberExamSave(
   store: MemberExamStore,
   certificationId: string,
   current: ExamDraft,
   key: string,
   response: ExamResponse,
+  position: number,
   error: unknown,
 ) {
   try {
@@ -51,7 +58,7 @@ async function recoveredDraft(
         : undefined;
     }
     const remote = await store.loadExam(certificationId);
-    return remote && isSavedDraft(current, key, response, remote) ? remote : undefined;
+    return remote && isSavedDraft(current, key, response, position, remote) ? remote : undefined;
   } catch {
     return undefined;
   }
@@ -64,15 +71,34 @@ export async function persistFinalMemberResponse(
   key: string,
   response: ExamResponse,
 ) {
+  return persistMemberResponse(store, certificationId, current, key, response, current.position);
+}
+
+export async function persistMemberResponse(
+  store: MemberExamStore,
+  certificationId: string,
+  current: ExamDraft,
+  key: string,
+  response: ExamResponse,
+  position: number,
+) {
   try {
     return await store.saveExamResponse(
       { ...current, responses: { ...current.responses, [key]: response } },
-      current.position,
+      position,
       key,
       response,
     );
   } catch (error) {
-    const recovered = await recoveredDraft(store, certificationId, current, key, response, error);
+    const recovered = await recoverMemberExamSave(
+      store,
+      certificationId,
+      current,
+      key,
+      response,
+      position,
+      error,
+    );
     if (recovered) return recovered;
     throw error;
   }

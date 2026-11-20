@@ -56,3 +56,5 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 #25は新しいスライド学習・途中チェック・合格判定の指示により再Openした。上記の公開済み記載は教材本文整備の成果であり、追加の学習フローが公開済みという意味ではない。#23公開後にこの追加改修を行い、その後#24へ接続する。
 
 追加の実認証/DBブラウザ検査は `pr63-completed-cache-progress.log`（37件成功、1.3分）。submitted cacheの新規学習行0と旧started manifest保持、原本削除、再読み込み後2件の正本を確認した。
+
+移行のquestion resolverはindex/bankの失敗Promiseだけを除去し、同じ画面で通信復旧後に再試行できる。成功とinflightは共有し、元の読込エラーは利用者へ返す。`pr63-catalog-retry-check.log`（191unit/1475assertions）で失敗後の再取得と並行共有を検証。実37件の最新差分回帰はCIへ記録する。

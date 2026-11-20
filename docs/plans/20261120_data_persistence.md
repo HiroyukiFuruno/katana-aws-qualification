@@ -133,3 +133,8 @@ ba0dfd6の4CIは成功（auth7m7s/data34s/glossary1m3s/progress3m50s）。新指
 最新の基礎学習追加要件は #25 を再Openし docs/plans/20261120_fundamentals_delivery.md に固定。#23公開後に#25追加改修、その後#24。
 
 追加検査: pr63-completed-cache-check.log（188unit/1466assertions）、pr63-completed-cache-progress.log（実37件成功1.3分）。submitted履歴と残存draftの移行・history先行移行後の旧started manifestからの再試行とも成功。
+
+
+- [/] 追加レビュー PRRT_kwDOVzQ52c654uhG: question resolverの失敗Promiseを永続cacheせず失敗entryだけ除去し、同じ移行画面で通信回復後に再試行できるよう修正。成功/inflight cacheは保持し、index/bank各一過性失敗と成功共有を単体回帰で検証する。公開前の実37件はcache差分前であり、最新CIで再確認する。
+
+question resolver差分はindex/bank拒否と成功cache/並行共有を単体で回帰し、pr63-catalog-retry-check.log（191unit/1475assertions、重複0/型構造教材/build成功）。直前の実37件はこの小差分前、最新CIで全体再確認する。

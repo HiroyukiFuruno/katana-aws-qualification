@@ -124,7 +124,7 @@ test('server errors preserve a safe status and code without exposing the raw mes
   const original = globalThis.fetch;
   globalThis.fetch = mock(
     async () =>
-      new Response(JSON.stringify({ code: '40001', message: 'private server detail' }), { status: 409 }),
+      new Response(JSON.stringify({ code: 'PT412', message: 'private server detail' }), { status: 412 }),
   ) as typeof fetch;
   try {
     const api = createProgressApi(
@@ -134,7 +134,8 @@ test('server errors preserve a safe status and code without exposing the raw mes
     );
     const result = await api.rpc('save_exam_response', {}).catch((error: unknown) => error);
     expect(result).toBeInstanceOf(ProgressApiError);
-    expect((result as ProgressApiError).code).toBe('40001');
+    expect((result as ProgressApiError).status).toBe(412);
+    expect((result as ProgressApiError).code).toBe('PT412');
     expect((result as Error).message).not.toContain('private');
   } finally {
     globalThis.fetch = original;

@@ -43,6 +43,7 @@ function applyMigrations() {
     '202611200003_learning_summaries.sql',
     '202611200004_profile_snapshot.sql',
     '202611200005_exam_clock.sql',
+    '202611200006_revision_conflicts.sql',
   ]) {
     run('docker', [
       ...compose,

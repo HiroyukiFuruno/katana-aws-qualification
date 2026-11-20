@@ -53,7 +53,7 @@ do $$
 begin
   perform public.replace_roadmap_profile('[]', '{}', 0, 0);
   raise exception 'stale profile unexpectedly permitted';
-exception when serialization_failure then null;
+exception when sqlstate 'PT412' then null;
 end $$;
 do $$
 begin
@@ -106,7 +106,7 @@ begin
     perform public.import_roadmap_profile(0, '30000000-0000-0000-0000-000000000004', 'profile-failure', 0,
       jsonb_build_array('failed-cert'), jsonb_build_object('failed-assessment', 5));
     raise exception 'stale profile import unexpectedly permitted';
-  exception when serialization_failure then null;
+  exception when sqlstate 'PT412' then null;
   end;
   if exists (
     select 1 from public.migration_items
@@ -139,7 +139,7 @@ begin
   perform public.save_exam_response('20000000-0000-0000-0000-000000000002', 0, null, 0,
     jsonb_build_object('question_id', 'exam-1', 'question_revision', 1), jsonb_build_array('A'), false, 10, clock_timestamp());
   raise exception 'null expected exam revision unexpectedly permitted';
-exception when serialization_failure then null;
+exception when sqlstate 'PT412' then null;
 end $$;
 do $$
 declare submission jsonb; first_submission timestamptz; retry_submission timestamptz;
@@ -155,7 +155,7 @@ begin
   begin
     perform public.finalize_exam_session('20000000-0000-0000-0000-000000000002', 0, null, submission);
     raise exception 'null expected finalization revision unexpectedly permitted';
-  exception when serialization_failure then null;
+  exception when sqlstate 'PT412' then null;
   end;
   select public.finalize_exam_session('20000000-0000-0000-0000-000000000002', 0, 1, submission) into first_submission;
   select public.finalize_exam_session('20000000-0000-0000-0000-000000000002', 0, 1, submission) into retry_submission;

@@ -1,5 +1,5 @@
-import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { serveProgressGateway } from '../test/progress/gateway';
 import { authOrigin, gatewayOrigin, restOrigin } from '../test/progress/settings';
@@ -51,6 +51,7 @@ function applyMigrations() {
     '202611200003_learning_summaries.sql',
     '202611200004_profile_snapshot.sql',
     '202611200005_exam_clock.sql',
+    '202611200006_revision_conflicts.sql',
   ]) {
     run(
       'docker',

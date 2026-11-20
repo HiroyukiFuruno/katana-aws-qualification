@@ -1,9 +1,10 @@
 import { profileKey } from '../assessment';
 import type { Attempt } from '../attempts';
 import { historyKey } from '../history';
-import { legacyIncorrectIndex } from '../learningStorage';
+import { guestLessonPrefix, legacyIncorrectIndex } from '../learningStorage';
 import type { GuestProgressRepository } from './guest';
 import { clearGuestExams, readGuestExam, saveGuestExam } from './guestExam';
+import { clearGuestLearningMemory } from './guestMemoryLifecycle';
 import { updateGuestHistory } from './storeGuestHistory';
 import type { ProgressReadyData, ProgressSnapshot } from './storeTypes';
 
@@ -45,6 +46,8 @@ export function resetGuestProgress(guest: GuestProgressRepository) {
   guest.purge(profileKey);
   guest.purge(legacyIncorrectIndex);
   resetGuestExamDrafts(guest);
+  guest.purgeMatching(guestLessonPrefix);
+  clearGuestLearningMemory();
 }
 
 export function finalizeGuestExam(

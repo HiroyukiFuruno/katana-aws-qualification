@@ -1,4 +1,5 @@
 import { certifications, studyCourses } from './certifications.ts';
+import { privateLessonPageNames, publicLessonPageNames } from './fundamentals/delivery/routePages.ts';
 import { type Locale, localePath, locales } from './locales.ts';
 
 export const publishedPages = [
@@ -12,9 +13,11 @@ export const publishedPages = [
   'privacy',
   ...certifications.map((cert) => `certifications/${cert.id}`),
   ...studyCourses.map(({ id }) => `study/${id}`),
+  ...publicLessonPageNames,
 ];
 
 export const accountPages = ['login', 'auth/callback', 'dashboard'];
+export const privateLessonPages = privateLessonPageNames;
 
 const studyLocales = new Map<string, Locale>(
   studyCourses.flatMap(({ id, course }) =>
@@ -29,7 +32,7 @@ export function publishedLocalesFor(page: string): readonly Locale[] {
 
 const routes = new Map<string, { locale: Locale; page: string }>();
 for (const locale of locales) {
-  for (const page of [...publishedPages, ...accountPages]) {
+  for (const page of [...publishedPages, ...accountPages, ...privateLessonPages]) {
     if (publishedLocalesFor(page).includes(locale))
       routes.set(localePath(locale, page), { locale, page });
   }

@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { certifications } from '../src/certifications.ts';
+import { parseCheckpointQuestions } from '../src/fundamentals/checkpointQuestions.ts';
 import { parseQuestions, questionKey } from '../src/questions.ts';
 
 const entries = new Map<string, [string, string] | null>();
@@ -55,6 +56,11 @@ for (const unit of fundamentals.units) {
     entries.set(questionKey(question), ['fundamentals', 'fundamentals/content.json']);
 }
 await includeIfPresent('fundamentals', 'fundamentals/archive/2026-11-questions.json');
+const checkpoints = parseCheckpointQuestions(
+  JSON.parse(await readFile('public/fundamentals/checkpoints.json', 'utf8')),
+);
+for (const question of checkpoints)
+  entries.set(questionKey(question), ['fundamentals', 'fundamentals/checkpoints.json']);
 await writeFile(
   'public/learning-question-index.v1.json',
   JSON.stringify({ schemaVersion: 1, questions: Object.fromEntries(entries) }),

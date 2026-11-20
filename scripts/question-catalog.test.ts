@@ -77,3 +77,25 @@ test('resolves a historical fundamentals revision from its safe archive', async 
     certificationId: 'fundamentals',
   });
 });
+
+test('resolves a checkpoint from its indexed unit bank for later history analysis', async () => {
+  const unitId = 'fundamentals.cloud-concepts';
+  const id = `${unitId}.checkpoint.example`;
+  const checkpoint = { ...question(id, 1), category: unitId };
+  const resolver = createQuestionResolver((input) => {
+    if (String(input) === '/learning-question-index.v1.json') {
+      return response({
+        schemaVersion: 1,
+        questions: { [JSON.stringify([id, 1])]: ['fundamentals', 'fundamentals/checkpoints.json'] },
+      });
+    }
+    if (String(input) === '/fundamentals/checkpoints.json') {
+      return response({ schemaVersion: 1, units: [{ unitId, checkpoints: [checkpoint] }] });
+    }
+    throw new Error('Unexpected checkpoint source.');
+  });
+  await expect(resolver(id, 1)).resolves.toMatchObject({
+    certificationId: 'fundamentals',
+    question: checkpoint,
+  });
+});

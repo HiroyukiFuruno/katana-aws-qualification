@@ -1,15 +1,6 @@
 import { expect, test } from 'bun:test';
 import { createGuestProgressRepository, setGuestProgressConsent } from '../src/progress';
-
-function storage() {
-  const values = new Map<string, string>();
-  return {
-    values,
-    getItem: (key: string) => values.get(key) ?? null,
-    removeItem: (key: string) => void values.delete(key),
-    setItem: (key: string, value: string) => void values.set(key, value),
-  };
-}
+import { memoryStorage as storage } from './memory-storage.fixture';
 
 test('consent grants merge pending history with disk without deduplicating valid repeated rows', () => {
   const local = storage();

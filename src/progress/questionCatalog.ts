@@ -1,3 +1,4 @@
+import { parseCheckpointQuestions } from '../fundamentals/checkpointQuestions';
 import { validFundamentalsContent } from '../fundamentals/content';
 import { parseQuestions, type Question, questionKey } from '../questions';
 
@@ -24,7 +25,7 @@ function parseIndex(value: unknown): QuestionIndex {
       entry.length !== 2 ||
       entry.some((part) => typeof part !== 'string') ||
       !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry[0]) ||
-      !/^(courses\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*\.json|fundamentals\/(?:content|archive\/[0-9]{4}-[0-9]{2}-questions)\.json)$/.test(
+      !/^(courses\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*\.json|fundamentals\/(?:content|checkpoints|archive\/[0-9]{4}-[0-9]{2}-questions)\.json)$/.test(
         entry[1],
       )
     )
@@ -54,6 +55,7 @@ export function createQuestionResolver(fetcher: Fetcher = fetch) {
     const existing = banks.get(path);
     if (existing) return existing;
     const pending = json(path).then((value) => {
+      if (path === 'fundamentals/checkpoints.json') return parseCheckpointQuestions(value);
       if (path === 'fundamentals/content.json') {
         if (!validFundamentalsContent(value)) throw new Error('Fundamentals catalog is invalid');
         return value.units.flatMap((unit) => unit.questions);

@@ -125,6 +125,7 @@ export function LessonSlideShell({
         onRetry={onRetry}
         onActionError={onActionError}
         nextLabel={nextLabel}
+        onExit={onCatalog}
       />
     </section>
   );

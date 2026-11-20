@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
 import type { LessonRoute } from '../delivery/navigation';
 import { GuestLessonConflictError } from '../state/guestStorage';
@@ -7,7 +8,7 @@ import { useLessonUnit } from '../state/useLessonUnit';
 import { LessonLoaded } from './LessonLoaded';
 
 export function LessonUnit({ services, route }: { services: LessonServices; route: LessonRoute }) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
   const unit = useLessonUnit(services, route.unitId);
   const [actionError, setActionError] = useState<unknown>();
   const [busy, setBusy] = useState(false);
@@ -73,6 +74,7 @@ export function LessonUnit({ services, route }: { services: LessonServices; rout
           {t('fundamentalsReload')}
         </button>
       ) : null}
+      <a href={localePath(locale, 'study/fundamentals')}>{t('lessonExit')}</a>
     </main>
   );
 }

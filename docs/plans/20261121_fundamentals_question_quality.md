@@ -55,3 +55,6 @@ https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-ava
 - 現在のUI進捗は現行版だけ。旧版の原記録は削除せず取込可能。旧版の再開導線・未同期の回復表示、全192問監査文書の最終照合、全体回帰・レビュー・DB/サイト公開は未完了。
 - 追加の原文照合で、最長prefixの本文・CI工程名の導入・CI失敗時の具体例・変更可能な共有データ・Golden Signalsの同じ文型による比較も採用。新版は6単元となり、旧版12単元と合わせて18catalog行になる。他の改善候補は原文から判断可能な初学者向け反復として必須修正に採用しない。監査2文書に誤指摘の撤回を明記した。
 - 旧版再開用の`?version=<contentVersion>`をnavigation codecへ追加した。静的pathnameは増やさず、contentHashとは区別する。rootレビューでcatalog queryの無条件許可とoptional undefinedの拒否を修正し、現在のstep/resume/redirect不変を追加検証した。UIへの版伝播・再開入口・stale guardの実装はまだ行っておらず、このcommitを旧版UI完了とは扱わない。
+- その後、旧版の再開入口・版の全href伝播・同じpathnameのquery変更時のremount/stale guardを追加。`issue68-archived-ui-native.log`は実Auth/DB/browser5件成功（9.5s）。旧guestの下書き/合格を再読込し、前後・結果から教材への復習・中断・再受験でも原版を維持、新版進捗0/旧合格保持、明示取込と重複排除・owner分離を検証した。
+- 旧manifestのstep位置が現行と異なるため「queryだけで全既存shellを再利用」の初期案を修正。既存pathnameがある部分は再利用し、不足する旧版の14slot×10言語はprivate/noindex shellとして補う。元15assetと旧010は引き続き不変。`issue68-archived-ui-check.log`は280単体・3560 public/1700 private・30 account shellを含む全check/build成功。
+- #67はmain `cd4cb39683a1e0cf386db0a638885b00227509e7` / deployment `dpl_ArapBnos7sYkrSGfKnD1SrV2Xkma`で公開・実URL検証・Close済み。本Issueの変更はまだlocalであり公開済みとしない。残る全回帰・未知版/競合の回復表示・レビュー/CI/追加DB/site公開を継続する。

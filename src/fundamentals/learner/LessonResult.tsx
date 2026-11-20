@@ -11,6 +11,7 @@ type LessonResultProps = {
   asset: DeliveryUnitAsset;
   snapshot: LessonSnapshot;
   sessionId?: string;
+  contentVersion?: string;
   onRetry: () => Promise<void>;
   onNavigate: (href: string) => void | Promise<void>;
   busy?: boolean;
@@ -23,6 +24,7 @@ export function LessonResult({
   asset,
   snapshot,
   sessionId,
+  contentVersion,
   onRetry,
   onNavigate,
   busy = false,
@@ -123,6 +125,7 @@ export function LessonResult({
               session={session}
               index={index}
               locale={locale}
+              contentVersion={contentVersion}
               onNavigate={navigate}
             />
           ))}

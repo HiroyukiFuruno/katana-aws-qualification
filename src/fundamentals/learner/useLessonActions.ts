@@ -15,6 +15,7 @@ type Input = {
   snapshot: LessonSnapshot;
   step: LessonStep;
   locale: Locale;
+  contentVersion?: string;
   selected: string[];
   confirm: (snapshot: LessonSnapshot, href?: string) => void;
   commit: (snapshot: LessonSnapshot) => void;
@@ -26,6 +27,7 @@ export function useLessonActions({
   snapshot,
   step,
   locale,
+  contentVersion,
   selected,
   confirm,
   commit,
@@ -42,7 +44,7 @@ export function useLessonActions({
     unitId: asset.unit.id,
     contentVersion: asset.contentVersion,
   });
-  const resultHref = lessonPath({ locale, unitId: asset.unit.id, stage: 'result' });
+  const resultHref = lessonPath({ locale, unitId: asset.unit.id, stage: 'result', contentVersion });
   const active = snapshot.sessions.find(
     (session) => session.sessionId === snapshot.progress.activeFinalSessionId,
   );
@@ -66,7 +68,10 @@ export function useLessonActions({
         input: { sessionId: crypto.randomUUID(), expectedRevision: snapshot.progress.revision },
       },
       (result) =>
-        confirm(result, lessonPath({ locale, unitId: asset.unit.id, stage: 'final', position: 1 })),
+        confirm(
+          result,
+          lessonPath({ locale, unitId: asset.unit.id, stage: 'final', position: 1, contentVersion }),
+        ),
     );
   function saveFinal(cursorPosition: number, href: string, submit = false) {
     if (!active) return start();
@@ -90,7 +95,7 @@ export function useLessonActions({
   }
   function next() {
     const next = asset.steps[step.position];
-    const href = next ? stepHref(locale, next, asset) : resultHref;
+    const href = next ? stepHref(locale, next, asset, contentVersion) : resultHref;
     if (step.kind === 'final') {
       return saveFinal(Math.min(finalPosition + 1, 11), href, finalPosition === 11);
     }

@@ -10,6 +10,7 @@ export function LessonResultQuestion({
   session,
   index,
   locale,
+  contentVersion,
   onNavigate,
 }: {
   asset: DeliveryUnitAsset;
@@ -17,13 +18,14 @@ export function LessonResultQuestion({
   session: LessonFinalSession;
   index: number;
   locale: Locale;
+  contentVersion?: string;
   onNavigate: (href: string) => void;
 }) {
   const { t } = usePreferences();
   const selected = session.responses[String(index)]?.selected ?? [];
   const answered = selected.length > 0;
   const exact = selectedSetMatches(question, selected);
-  const reviewHref = reviewPath(asset, question.sectionId ?? '', locale);
+  const reviewHref = reviewPath(asset, question.sectionId ?? '', locale, contentVersion);
   return (
     <details className="card lesson-result-question">
       <summary>

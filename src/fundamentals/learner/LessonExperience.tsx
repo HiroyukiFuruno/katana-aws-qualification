@@ -56,9 +56,20 @@ export function LessonExperience() {
       </main>
     );
   }
-  const route = lessonRouteAt(url.pathname);
+  const route = lessonRouteAt(url.pathname, url.search);
+  if (!route && (url.pathname !== localePath(locale, 'study/fundamentals') || url.search))
+    return (
+      <main id="main" className="shell">
+        <p role="alert">{t('fundamentalsLoadError')}</p>
+        <a href={localePath(locale, 'study/fundamentals')}>{t('fundamentalsBackToCatalog')}</a>
+      </main>
+    );
   return route ? (
-    <LessonUnit key={`${route.unitId}`} services={services} route={route} />
+    <LessonUnit
+      key={`${route.unitId}:${route.contentVersion ?? 'current'}`}
+      services={services}
+      route={route}
+    />
   ) : (
     <LessonCatalogPage services={services} migrationAccess={migrationAccess} />
   );

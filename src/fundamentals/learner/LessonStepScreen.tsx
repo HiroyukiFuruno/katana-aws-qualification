@@ -5,7 +5,6 @@ import { usePreferences } from '../../preferences';
 import { SiteAd, siteAdServingEnabled } from '../../SiteAd';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonRoute } from '../delivery/navigation';
-import { stepHref } from '../delivery/planNavigation';
 import type { LessonStep } from '../delivery/slideTypes';
 import { isLessonConflict } from '../state/isLessonConflict';
 import type { LessonServices } from '../state/services';
@@ -59,6 +58,7 @@ export function LessonStepScreen({
     snapshot,
     step,
     locale,
+    contentVersion: route.contentVersion,
     selected,
     commit,
     confirm: (result, href) => {
@@ -66,9 +66,7 @@ export function LessonStepScreen({
       confirm(result, href);
     },
   });
-  const previous = asset.steps[step.position - 2];
   const savedReload = useSavedLessonReload(actions.discard, reloadSaved, recovery.clear);
-  const previousHref = previous ? stepHref(locale, previous, asset) : undefined;
   const catalogHref = localePath(locale, 'study/fundamentals');
   const blocked =
     actions.busy ||
@@ -89,7 +87,8 @@ export function LessonStepScreen({
     selectedCount: selected.length,
     feedback,
     position,
-    previousHref,
+    locale,
+    contentVersion: route.contentVersion,
     catalogHref,
     blocked,
     saving: actions.busy || recovery.busy || savedReload.busy,
@@ -101,7 +100,7 @@ export function LessonStepScreen({
       unitTitle={asset.unit.title}
       catalogHref={catalogHref}
       onCatalog={navigation.catalog}
-      previousHref={blocked ? undefined : previousHref}
+      previousHref={navigation.previousHref}
       onPrevious={navigation.previous}
       saving={navigation.saving}
       error={saveError || actionError || savedReload.error ? t('progressCloudSaveFailed') : undefined}

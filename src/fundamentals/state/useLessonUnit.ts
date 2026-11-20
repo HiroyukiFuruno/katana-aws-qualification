@@ -11,7 +11,7 @@ type Loaded = {
   version: number;
 };
 
-export function useLessonUnit(services: LessonServices | null, unitId: string) {
+export function useLessonUnit(services: LessonServices | null, unitId: string, contentVersion?: string) {
   const [loaded, setLoaded] = useState<Loaded>();
   const [asset, setAsset] = useState<DeliveryUnitAsset>();
   const [error, setError] = useState<unknown>();
@@ -41,7 +41,7 @@ export function useLessonUnit(services: LessonServices | null, unitId: string) {
     setAsset(undefined);
     if (services) {
       void services.assets
-        .unit(unitId)
+        .unit(unitId, contentVersion)
         .then(async (asset) => {
           if (current) setAsset(asset);
           return { asset, snapshot: await services.load(asset), services, version };
@@ -56,7 +56,7 @@ export function useLessonUnit(services: LessonServices | null, unitId: string) {
     return () => {
       current = false;
     };
-  }, [services, unitId, version]);
+  }, [services, unitId, version, contentVersion]);
   return {
     loaded:
       loaded?.services === services && loaded.asset.unit.id === unitId && loaded.version === version

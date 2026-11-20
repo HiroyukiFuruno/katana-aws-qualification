@@ -1,0 +1,113 @@
+name: kaq-account-merge-integration
+services:
+  database:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: supabase_auth_admin
+      POSTGRES_PASSWORD: integration-only
+      POSTGRES_DB: kaq_account_merge
+    tmpfs:
+      - /var/lib/postgresql
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+      - ../../supabase/migrations:/migrations:ro
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U supabase_auth_admin -d kaq_account_merge]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  auth:
+    image: supabase/gotrue:v2.198.0
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://127.0.0.1:54530/auth/v1
+      GOTRUE_SITE_URL: http://127.0.0.1:54533
+      GOTRUE_URI_ALLOW_LIST: http://127.0.0.1:54533/test/account-merge/browser.html
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:integration-only@database:5432/kaq_account_merge?search_path=auth
+      GOTRUE_JWT_SECRET: kaq-account-merge-only-jwt-secret-not-for-production
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "false"
+      GOTRUE_EXTERNAL_KEYCLOAK_ENABLED: "true"
+      GOTRUE_EXTERNAL_KEYCLOAK_CLIENT_ID: kaq-account-merge
+      GOTRUE_EXTERNAL_KEYCLOAK_SECRET: integration-only
+      GOTRUE_EXTERNAL_KEYCLOAK_URL: https://kaq-merge-idp:54541/realms/merge-first
+      GOTRUE_EXTERNAL_KEYCLOAK_REDIRECT_URI: http://127.0.0.1:54530/auth/v1/callback
+      GOTRUE_EXTERNAL_AZURE_ENABLED: "true"
+      GOTRUE_EXTERNAL_AZURE_CLIENT_ID: kaq-account-merge
+      GOTRUE_EXTERNAL_AZURE_SECRET: integration-only
+      GOTRUE_EXTERNAL_AZURE_URL: http://kaq-merge-gateway:54530/second-issuer
+      GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: http://127.0.0.1:54530/auth/v1/callback
+      GOTRUE_LOG_LEVEL: warn
+      SSL_CERT_FILE: /etc/kaq-merge/server.crt
+    volumes:
+      - ../../test-results/account-merge/integration/tls:/etc/kaq-merge:ro
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O - http://127.0.0.1:9999/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  rest:
+    image: postgrest/postgrest:v14.1
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:integration-only@database:5432/kaq_account_merge
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: kaq-account-merge-only-jwt-secret-not-for-production
+      PGRST_SERVER_PORT: 3000
+  gateway:
+    image: nginx:1.29-alpine
+    ports:
+      - "127.0.0.1:54530:54530"
+    volumes:
+      - ./gateway.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../../test-results/account-merge/integration/tls:/etc/kaq-merge:ro
+    depends_on:
+      auth:
+        condition: service_healthy
+      kaq-merge-idp:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    networks:
+      default:
+        aliases: [kaq-merge-gateway]
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O - http://127.0.0.1:54530/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  kaq-merge-idp:
+    image: quay.io/keycloak/keycloak:26.8.2
+    command:
+      - start-dev
+      - --import-realm
+      - --https-port=54541
+      - --https-certificate-file=/opt/keycloak/conf/tls/server.crt
+      - --https-certificate-key-file=/opt/keycloak/conf/tls/server.key
+    environment:
+      KC_HOSTNAME: https://kaq-merge-idp:54541
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_MANAGEMENT_SCHEME: http
+    ports:
+      - "127.0.0.1:54541:54541"
+    volumes:
+      - ../../test-results/account-merge/integration/realms:/opt/keycloak/data/import:ro
+      - ../../test-results/account-merge/integration/tls:/opt/keycloak/conf/tls:ro
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -ec
+        - "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.0\r\n\r\n' >&3; read -r status <&3; [[ $$status == *'200 OK'* ]]"
+      interval: 2s
+      timeout: 2s
+      retries: 30

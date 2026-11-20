@@ -139,4 +139,29 @@ test/authの削除関数用Bun imageが1.4.4のまま残っている。packageMa
 - 稼働Authの`/auth/v1/health`はHTTP200 / `v2.198.0`。local composeの版と一致。公開クライアント用キーによる読取だけを実施し、管理設定・利用者データは変更していない（`test-results/account-merge/production-auth-health.json`）。
 - PR57の競合説明を現行mainへ追従し、`bun run check`は327 tests / 3,631 assertions、全lint/format/i18n/重複/構造/教材/build検査に成功（`test-results/auth/issue58-initial-check.log`）。
 - 実2ユーザーOIDCの競合回帰は、ダッシュボード刷新前の見出しを期待したため一度失敗した。現行の見出しと未ログイン時の本文内リンクに照合先を直し、再実行1件成功（`issue58-link-conflict-current-retry.log`）。製品コードや待機時間は変更していない。
-- まず競合説明・元session復帰のPR57を独立して公開する。これは#58の予防・統合・履歴保持の完了ではなく、本Issueは継続する。実アカウントの統合・削除は実行しない。
+- PR57はmain `f5afb97667024a7768e8320c94a2414942283f66`で公開済み。deployment `dpl_cq3RNbp4rQFcCAQN8HTmew3WGgzW`の実URLで10言語×4幅/テーマ40条件・keyboard・URL除去・横overflow0/pageerror0を確認した。CIはAuth165件、Progress114+51件成功、最新headのDraft/Readyレビュー指摘0・thread0。これは#58の予防・統合・履歴保持の完了ではなく、本Issueは継続する。実アカウントの統合・削除は実行していない。
+
+## 非公開基盤の段階導入
+
+詳細は[データ保持契約](20261121_account_merge_data.md)と[両側SSO証明契約](20261121_account_merge_proof.md)。既存全12owner表・44SQL関数・Auth/queue/退会の対応を調査し、独立レビューで指摘されたlock順・manifestの相反variant・同一snapshot・複数draftの契約を具体化した。これらは実装予定であり、統合機能の検証成功ではない。
+
+- [x] 実2 issuerのOIDC/GoTrue/Postgres/RESTを同一の専用環境へ接続し、両方の異なるUID/live OAuth session/自己記録だけの読取を確認。従来suiteの別DB成功を統合成功として代用しない。
+- [x] 追加migration `202611210004`で非公開10tableのみ追加。全12owner表が非空の状態で、既存public schema/owner/ACL/関数/trigger/index/制約/policy/default ACLと全内容hashが適用前後で完全一致。既存18教材も不変。
+- [x] 非公開ACL・RLS・全FK・制約・proof session一回性・intent期限/attemptとAuth単体削除のaccount非cascadeを実DB172検査で確認。匿名/両JWTのprivate REST406、全public/Auth4表の全列hash復元、private空も確認。
+- [ ] Draftレビュー/必須CI/通常merge/本番DB適用/実API・公開sourceの照合を完了する。既存provider設定と実利用者の統合/削除は対象外。
+
+この段階ではaccountのbackfillもowner cutoverも行わない。新SSO予防導線・proof endpoint・preview/commit・履歴統合・旧token/queue fence・退会は後続差分で揃え、#58はOpenを維持する。
+
+検証追加に合わせProgressの実165件を55/59/51の3分割へ移す。全件の集合・重複/漏れ0と全shard必須の集約gateを確認し、既存15分上限は変えない。Auth用Bun imageもpackageManagerと同じ1.4.5へ揃える。
+
+### ローカル検証とレビュー指摘への対応
+
+- `foundation-populated-final.log` / `integration/foundation-boundary.json`: 14migration適用、12owner表すべて非空。模試draft/提出済み、最新final draft/旧版12問全問正解合格、started/completed manifest、profile/settings等を既存RPCで生成し、適用前後の件数・hash完全一致を確認。合成UIDだけをAdmin APIで削除しAuth404/全12表残0を確認。
+- `integration/schema-guards.json`: catalog trigger、table/function/schema owner、column/table/function/default ACL、policy、RLS、index/制約/default/公開objectの追加を実際に変える16ケースがすべて検知され、各変更はrollbackで復元。
+- `integration/foundation-proof.json` / `results.json`: 実2issuer・別UID/live OAuth・自己RESTのみ、private172検査成功、Playwright 1件成功。これは統合APIの成功ではなく検証足場と非公開DDLの検査。
+- `foundation-complete-check.log`: 全check327 tests / 3,631 assertions、全静的検査/build成功。`foundation-fixture-types-final.log`: 専用fixtureもstrict型検査成功。
+- `foundation-data.log`: 実GoTrue/PostgREST/全14migrationと既存DB検査成功。`foundation-auth-deletion-retry.log`: Bun1.4.5の実退会3件成功。
+- ローカル全Auth/Progressの試行はセッションの中断で結果未回収。handle消失・該当runner/browser process停止を確認し、ログを`*-interrupted.log`へ保全、残った自分の検証server/containerだけ撤去した。結果を成功として数えず、最新headのCIでAuth全165件・Progress全165件を実行する。
+- `progress-3-shards-proof.json`: 現行165件=55/59/51、重複/漏れ/追加0。既存requiredの`progress`集約は全3shard成功が必要。
+
+ローカル検証のP1（移行前が空）とP2（schema比較の不足）を補強した。PRレビュー・CI・本番適用はまだ未完で、完了後に証跡を追記する。

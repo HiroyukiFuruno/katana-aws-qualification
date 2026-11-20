@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { answerCurrentQuestion, startStudy } from './course';
-import { fixtureKey, gatewayOrigin } from './settings';
 import { createSessions, setRealSession } from './sessions';
+import { fixtureKey, gatewayOrigin } from './settings';
+
 const profileKey = 'katana.certification-profile.v1';
 
 type RealSession = Awaited<ReturnType<typeof createSessions>>[number];
@@ -90,7 +91,7 @@ test('member import prompt writes only after explicit import and removes verifie
       ]);
     await expect.poll(() => earnedRows(session)).toEqual([{ certification_id: 'saa-c03' }]);
     await expect.poll(() => assessmentRows(session)).toEqual([]);
-    await expect(page.evaluate((key) => localStorage.getItem(key), profileKey)).resolves.toBeNull();
+    await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), profileKey)).toBeNull();
     await startStudy(page);
     await answerCurrentQuestion(page);
     await expect.poll(() => learningEvents(session)).toHaveLength(1);

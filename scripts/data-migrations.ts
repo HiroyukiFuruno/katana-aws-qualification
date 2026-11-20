@@ -9,4 +9,6 @@ export const dataMigrations = [
   '202611200008_fundamentals_rpc.sql',
   '202611200009_fundamentals_guest_import.sql',
   '202611200010_fundamentals_catalog.sql',
+  '202611200011_dashboard_summary.sql',
+  '202611200012_dashboard_settings.sql',
 ] as const;

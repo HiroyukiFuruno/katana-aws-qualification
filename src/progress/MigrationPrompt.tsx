@@ -4,7 +4,9 @@ import { createQuestionResolver } from './questionCatalog';
 import { importLegacy, inspectLegacy, type LegacyMigrationInput } from './migration';
 import { createBrowserLegacyStorage } from './migrationBrowserStorage';
 
-type MigrationAccess = Omit<LegacyMigrationInput, 'resolveQuestion' | 'storage'>;
+type MigrationAccess = Omit<LegacyMigrationInput, 'resolveQuestion' | 'storage'> & {
+  refresh: () => Promise<void>;
+};
 type PromptState = 'complete' | 'failed' | 'idle' | 'importing' | 'skipped';
 
 export function MigrationPrompt({ access }: { access: () => MigrationAccess | null }) {
@@ -14,7 +16,7 @@ export function MigrationPrompt({ access }: { access: () => MigrationAccess | nu
   const [preview, setPreview] = useState(() => inspectLegacy(storage));
   const [state, setState] = useState<PromptState>('idle');
   const [rejected, setRejected] = useState(0);
-  if (!preview.rows && !preview.errors) return null;
+  if (!preview.rows && !preview.errors && state !== 'complete' && state !== 'failed') return null;
   async function migrate() {
     const input = access();
     if (!input) {
@@ -24,17 +26,25 @@ export function MigrationPrompt({ access }: { access: () => MigrationAccess | nu
     setState('importing');
     try {
       const report = await importLegacy({ ...input, resolveQuestion, storage });
+      await input.refresh();
       setRejected(report.rejected + report.failed);
       setPreview(inspectLegacy(storage));
       setState(report.failed || report.rejected || report.retained ? 'failed' : 'complete');
     } catch {
+      try {
+        await input.refresh();
+      } catch {
+        // owner切替後のstoreには触れず、元のimport失敗だけを表示する。
+      }
       setState('failed');
     }
   }
   return (
     <section className="shell card layout-stack" aria-labelledby="progress-migration-title">
       <h2 id="progress-migration-title">{t('progressMigrationTitle')}</h2>
-      <p>{t('progressMigrationDescription', { count: preview.rows })}</p>
+      {(preview.rows > 0 || preview.errors > 0) && (
+        <p>{t('progressMigrationDescription', { count: preview.rows })}</p>
+      )}
       <p className="progress-source">{t('progressAccountSource')}</p>
       {preview.errors > 0 && <p role="alert">{t('progressMigrationFailed')}</p>}
       {state === 'complete' && <p role="status">{t('progressMigrationComplete')}</p>}

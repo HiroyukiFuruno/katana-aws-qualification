@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { answerCurrentQuestion, startStudy } from './course';
 import { createSessions, setRealSession } from './sessions';
 import { historyKey, items, learningEvents, manifests, validAttempt } from './migration-history.helpers';
 
@@ -87,6 +88,10 @@ test('mixed legacy history imports valid rows and retains the corrupt source', a
       );
     await expect.poll(() => learningEvents(session)).toHaveLength(1);
     await expect(page.evaluate((key) => localStorage.getItem(key), historyKey)).resolves.toBe(raw);
+    await startStudy(page);
+    await answerCurrentQuestion(page);
+    await expect.poll(() => learningEvents(session)).toHaveLength(2);
+    await expect(page.locator('.metrics strong').first()).toHaveText('2');
   } finally {
     await context.close();
   }

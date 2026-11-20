@@ -8,12 +8,17 @@ import {
 } from 'react';
 import { useAccount } from '../auth/AuthContext';
 import { authConfiguration } from '../auth/config';
+import { withHistoryLock } from '../history';
 import { createProgressApi } from './api';
 import type { BrowserStorage } from './guest';
 import type { LegacyMigrationInput } from './migration';
 import { ProgressCoordinator } from './ProgressCoordinator';
 import { sameProgressOwner } from './types';
 import './progress.css';
+
+type MigrationAccess = Omit<LegacyMigrationInput, 'resolveQuestion' | 'storage'> & {
+  refresh: () => Promise<void>;
+};
 
 const Context = createContext<ProgressCoordinator | null>(null);
 const storage: BrowserStorage = {
@@ -51,7 +56,7 @@ export function useProgress() {
   const activeCoordinator = coordinator;
   const { authStore, service } = useAccount();
   const snapshot = useSyncExternalStore(activeCoordinator.subscribe, activeCoordinator.getSnapshot);
-  function migrationAccess(): Omit<LegacyMigrationInput, 'resolveQuestion' | 'storage'> | null {
+  function migrationAccess(): MigrationAccess | null {
     const store = snapshot.store;
     const owner = store?.getSnapshot().owner;
     const configuration =
@@ -78,6 +83,17 @@ export function useProgress() {
           sameProgressOwner(current.getSnapshot().owner, owner) &&
           authStore.getSnapshot().account?.id === owner.userId
         );
+      },
+      refresh: async () => {
+        if (activeCoordinator.getSnapshot().store !== store) throw new Error('Progress owner changed');
+        const refreshed = await withHistoryLock(() => store.initialize());
+        if (
+          activeCoordinator.getSnapshot().store !== store ||
+          refreshed.state !== 'ready' ||
+          refreshed.refreshing ||
+          refreshed.error === 'load'
+        )
+          throw new Error('Imported progress could not be reloaded.');
       },
     };
   }

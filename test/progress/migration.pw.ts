@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { answerCurrentQuestion, startStudy } from './course';
 import { fixtureKey, gatewayOrigin } from './settings';
 import { createSessions, setRealSession } from './sessions';
-
 const profileKey = 'katana.certification-profile.v1';
 
 type RealSession = Awaited<ReturnType<typeof createSessions>>[number];
@@ -19,7 +19,6 @@ type MigrationItem = {
 };
 type EarnedRow = { certification_id: string };
 type AssessmentRow = { assessment_id: string; answer: number };
-
 async function rows<T>(path: string, session: RealSession) {
   const response = await fetch(`${gatewayOrigin}/rest/v1/${path}`, {
     headers: {
@@ -31,29 +30,27 @@ async function rows<T>(path: string, session: RealSession) {
     throw new Error(`PostgREST read failed: ${response.status} ${await response.text()}`);
   return (await response.json()) as T[];
 }
-
 function manifests(session: RealSession, sourceName = 'profile-local-storage') {
   return rows<Manifest>(
     `migration_manifests?source_name=eq.${sourceName}&select=manifest_id,source_name,status,declared_rows`,
     session,
   );
 }
-
 function items(session: RealSession, manifestId: string) {
   return rows<MigrationItem>(
     `migration_items?manifest_id=eq.${encodeURIComponent(manifestId)}&select=source_row_id,outcome,reason_code,import_kind`,
     session,
   );
 }
-
 function earnedRows(session: RealSession) {
   return rows<EarnedRow>('earned_certifications?select=certification_id', session);
 }
-
 function assessmentRows(session: RealSession) {
   return rows<AssessmentRow>('assessment_answers?select=assessment_id,answer', session);
 }
-
+function learningEvents(session: RealSession) {
+  return rows<{ question_id: string }>('learning_events?select=question_id', session);
+}
 test('member import prompt writes only after explicit import and removes verified profile source', async ({
   browser,
 }) => {
@@ -71,7 +68,6 @@ test('member import prompt writes only after explicit import and removes verifie
     await expect(page.getByRole('heading', { name: '端末の記録を引き継ぐ' })).toBeVisible();
     await expect(page.getByText(/この端末の記録1件/)).toBeVisible();
     await expect.poll(() => manifests(session)).toEqual([]);
-
     await page.getByRole('button', { name: '自分の記録を取り込む' }).click();
     await expect
       .poll(() => manifests(session))
@@ -95,6 +91,10 @@ test('member import prompt writes only after explicit import and removes verifie
     await expect.poll(() => earnedRows(session)).toEqual([{ certification_id: 'saa-c03' }]);
     await expect.poll(() => assessmentRows(session)).toEqual([]);
     await expect(page.evaluate((key) => localStorage.getItem(key), profileKey)).resolves.toBeNull();
+    await startStudy(page);
+    await answerCurrentQuestion(page);
+    await expect.poll(() => learningEvents(session)).toHaveLength(1);
+    await expect(page.locator('.metrics strong').first()).toHaveText('1');
   } finally {
     await context.close();
   }

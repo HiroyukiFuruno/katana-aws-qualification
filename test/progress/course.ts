@@ -23,7 +23,9 @@ export async function answerCurrentQuestion(page: Page) {
   }
   await expect(grade).toBeEnabled();
   await grade.click();
-  await expect(page.locator('.question-card, .card').getByRole('status')).toBeVisible();
+  await expect(
+    page.locator('section[aria-labelledby="question-title"]').getByRole('status'),
+  ).toBeVisible();
 }
 
 export async function openExam(page: Page) {

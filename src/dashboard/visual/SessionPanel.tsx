@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { usePreferences } from '../../preferences';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardStats } from '../statTypes';
 import type { DashboardSummary } from '../summaryTypes';
 import { metricKeys } from '../ui/dashboardLabels';
 import type { DashboardLessonData } from '../viewTypes';
+import { useDashboardDensity } from './DashboardDensity';
 import { DashboardDataTable } from './DataTable';
 import { FinalPassRates } from './FinalPassRates';
 import { dashboardCertificationLabel, dashboardMetricValue, formatDashboardValue } from './format';
@@ -29,6 +31,8 @@ export function SessionPanel({
   summary: DashboardSummary;
   lessons: readonly DashboardLessonData[];
 }) {
+  const density = useDashboardDensity();
+  const [selected, setSelected] = useState('');
   const { locale, t } = usePreferences();
   const timezone = summary.query.range.timezone;
   const date = (value: string | null) =>
@@ -80,13 +84,27 @@ export function SessionPanel({
     group.push(session);
     groups.set(session.series, group);
   }
+  const series = [...groups];
+  const current = series.find(([key]) => key === selected) ?? series[series.length - 1];
+  const displayed = density === 'full' ? series : current ? [current] : [];
   const format = (value: number | null) =>
     formatDashboardValue(value, widget.metric, locale, t('dashboardNotMeasured'));
   return (
     <div className="dashboard-viz">
-      <FinalPassRates sessions={summary.lessonFinals} lessons={lessons} />
+      {widget.chart !== 'table' && density !== 'full' && series.length > 1 && current && (
+        <label className="dashboard-chart-picker">
+          {t('dashboardSeries')}
+          <select value={current[0]} onChange={(event) => setSelected(event.target.value)}>
+            {series.map(([key, group]) => (
+              <option key={key} value={key}>
+                {group[0].label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {widget.chart !== 'table' &&
-        [...groups].map(([key, group]) => (
+        displayed.map(([key, group]) => (
           <div key={key}>
             <h3>{group[0].label}</h3>
             <p>
@@ -107,7 +125,9 @@ export function SessionPanel({
             />
           </div>
         ))}
+      <FinalPassRates sessions={summary.lessonFinals} lessons={lessons} />
       <DashboardDataTable
+        primary={widget.chart === 'table' || series.length === 0}
         caption={`${t('dashboardWidgetExams')} · ${timezone}`}
         columns={[
           { id: 'label', label: t('dashboardGroup') },

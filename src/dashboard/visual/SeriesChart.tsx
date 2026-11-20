@@ -81,6 +81,7 @@ export function SeriesChart({
             ? rows.map((row, index) => ({ ...row, label: `${index + 1}. ${row.label}` }))
             : rows
         }
+        primary={widget.chart === 'table'}
         caption={`${t(chartKeys[widget.chart])} · ${metric}`}
       />
     </div>

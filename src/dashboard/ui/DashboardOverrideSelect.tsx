@@ -42,22 +42,24 @@ export function DashboardOverrideSelect({
     custom: 'dashboardOverrideCustom',
   } as const;
   return (
-    <label>
-      {label}
-      <select
-        multiple
-        value={selected}
-        onChange={(event) => {
-          const next = [...event.currentTarget.selectedOptions].map((option) => option.value);
-          apply(next.length ? next : null);
-        }}
-      >
-        {values.map((item) => (
-          <option key={item} value={item}>
-            {dashboardOptionLabel(keyName, item, t)}
-          </option>
-        ))}
-      </select>
+    <div className="dashboard-filter-field">
+      <label>
+        {label}
+        <select
+          multiple
+          value={selected}
+          onChange={(event) => {
+            const next = [...event.currentTarget.selectedOptions].map((option) => option.value);
+            apply(next.length ? next : null);
+          }}
+        >
+          {values.map((item) => (
+            <option key={item} value={item}>
+              {dashboardOptionLabel(keyName, item, t)}
+            </option>
+          ))}
+        </select>
+      </label>
       <span className="dashboard-override-mode">{t(modeKeys[overrideMode(widget, keyName)])}</span>
       <button type="button" onClick={() => onChange(updateWidgetOverride(widget, keyName, undefined))}>
         {t('dashboardInherit')}
@@ -65,6 +67,6 @@ export function DashboardOverrideSelect({
       <button type="button" onClick={() => onChange(updateWidgetOverride(widget, keyName, null))}>
         {t('dashboardAll')}
       </button>
-    </label>
+    </div>
   );
 }

@@ -6,7 +6,15 @@ import { DashboardDataTable } from './DataTable';
 import { dashboardMetricValue, formatDashboardValue } from './format';
 
 export type DashboardStatRow = { id: string; label: string; stats: DashboardStats };
-export function StatsTable({ rows, caption }: { rows: readonly DashboardStatRow[]; caption: string }) {
+export function StatsTable({
+  rows,
+  caption,
+  primary,
+}: {
+  rows: readonly DashboardStatRow[];
+  caption: string;
+  primary?: boolean;
+}) {
   const { locale, t } = usePreferences();
   const metrics: DashboardMetric[] = [
     'answered',
@@ -19,6 +27,7 @@ export function StatsTable({ rows, caption }: { rows: readonly DashboardStatRow[
   return (
     <DashboardDataTable
       caption={caption}
+      primary={primary}
       columns={[
         { id: 'label', label: t('dashboardGroup') },
         ...metrics.map((metric) => ({ id: metric, label: t(metricKeys[metric]), numeric: true })),

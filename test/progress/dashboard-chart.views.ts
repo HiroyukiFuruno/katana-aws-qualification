@@ -5,7 +5,7 @@ import type { CategoryFixture } from './dashboard-chart.math';
 
 export async function expectAlternativeCharts(page: Page, fixture: CategoryFixture[]) {
   await chooseChart(page, dashboardText.dashboardWidgetCategories, 'stacked');
-  const categories = chartWidget(page, dashboardText.dashboardWidgetCategories);
+  const categories = await chartWidget(page, dashboardText.dashboardWidgetCategories);
   await expect(categories.locator('.dashboard-viz-track > span')).toHaveCount(6);
   for (const row of fixture) {
     const segments = categories
@@ -19,28 +19,28 @@ export async function expectAlternativeCharts(page: Page, fixture: CategoryFixtu
     expect(widths[1]).toBeCloseTo(100 / row.count, 3);
   }
   await chooseChart(page, dashboardText.dashboardWidgetRelationship, 'scatter');
-  const points = chartWidget(page, dashboardText.dashboardWidgetRelationship).locator(
+  const points = (await chartWidget(page, dashboardText.dashboardWidgetRelationship)).locator(
     '.dashboard-viz-svg circle',
   );
   await expect(points).toHaveCount(3);
   for (let index = 0; index < 3; index++) await expect(points.nth(index)).toHaveAttribute('r', '4');
   await chooseChart(page, dashboardText.dashboardWidgetTrend, 'line');
   await expect(
-    chartWidget(page, dashboardText.dashboardWidgetTrend).locator('.dashboard-viz-line'),
+    (await chartWidget(page, dashboardText.dashboardWidgetTrend)).locator('.dashboard-viz-line'),
   ).toHaveCount(1);
   await chooseChart(page, dashboardText.dashboardWidgetTrend, 'area');
   await expect(
-    chartWidget(page, dashboardText.dashboardWidgetTrend).locator('.dashboard-viz-area'),
+    (await chartWidget(page, dashboardText.dashboardWidgetTrend)).locator('.dashboard-viz-area'),
   ).toHaveCount(1);
   await chooseChart(page, dashboardText.dashboardWidgetCertifications, 'donut');
   await expect(
-    chartWidget(page, dashboardText.dashboardWidgetCertifications).getByText(
+    (await chartWidget(page, dashboardText.dashboardWidgetCertifications)).getByText(
       dashboardText.dashboardDonutRequirement,
       { exact: true },
     ),
   ).toBeVisible();
   await chooseChart(page, dashboardText.dashboardWidgetLessons, 'ring');
-  const rings = chartWidget(page, dashboardText.dashboardWidgetLessons).locator(
+  const rings = (await chartWidget(page, dashboardText.dashboardWidgetLessons)).locator(
     '.dashboard-viz-donut circle',
   );
   await expect(rings).toHaveCount(12);

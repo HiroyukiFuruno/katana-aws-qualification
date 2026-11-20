@@ -1,5 +1,14 @@
+import type { Message } from '../../messages';
 import type { usePreferences } from '../../preferences';
+import type { DashboardFilters } from '../queryTypes';
 import { certificationLabel } from './dashboardFilterOptions';
+
+export const dashboardPeriodKeys = {
+  '7d': 'dashboard7d',
+  '30d': 'dashboard30d',
+  '90d': 'dashboard90d',
+  all: 'dashboardAllTime',
+} as const satisfies Record<DashboardFilters['period'], Message>;
 
 type Translator = ReturnType<typeof usePreferences>['t'];
 const labels: Record<string, Parameters<Translator>[0]> = {

@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { type Locale, localePath } from '../../src/locales';
 import { messages } from '../../src/messages';
+import { showDashboardWidget } from './dashboard-actions';
 
 export const layoutConditions = [
   { width: 390, height: 844, theme: 'light' },
@@ -32,9 +33,7 @@ export async function setTheme(page: Page, locale: Locale, theme: 'light' | 'dar
 
 export async function expectLocalizedLayout(page: Page, locale: Locale, width: number) {
   const text = messages[locale];
-  const overview = page
-    .locator('.dashboard-widget')
-    .filter({ has: page.getByRole('heading', { name: text.dashboardWidgetOverview, exact: true }) });
+  const overview = await showDashboardWidget(page, text.dashboardWidgetOverview, locale);
   await expect(page.getByText(text.progressGuestSource, { exact: true })).toBeVisible();
   await expect(
     overview.locator('.dashboard-viz-metric > span').filter({ hasText: text.dashboardMetricAnswered }),
@@ -54,10 +53,13 @@ export async function expectLocalizedLayout(page: Page, locale: Locale, width: n
       .filter({ hasText: text.dashboardMetricAccuracy })
       .locator('strong'),
   ).toHaveText(/50\s*%/);
-  await expect(page.locator('.dashboard-viz-table').first()).toBeVisible();
+  const trend = await showDashboardWidget(page, text.dashboardWidgetTrend, locale);
+  await expect(trend.locator('table')).toBeHidden();
+  await expect(
+    trend.getByText(`${text.dashboardDetailTable} · ${text.dashboardWidgetTrend}`, { exact: true }),
+  ).toBeVisible();
   await expect(page.locator('.dashboard-viz-svg').first()).toBeVisible();
   await expect(page.locator('.dashboard-controls[open]')).toHaveCount(0);
-  await expect(page.locator('details.dashboard-widget-customize[open]')).toHaveCount(0);
   if (width >= 768)
     await expect(page.locator('.dashboard-viz-svg').first()).toBeInViewport({ ratio: 0.5 });
   await expect

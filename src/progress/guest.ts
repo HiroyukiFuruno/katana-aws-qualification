@@ -1,6 +1,11 @@
 import { historyKey } from '../learningStorage';
-import { parseStoredAttempts } from './attemptCodec';
-import { isGuestExamDraft } from './guestExamCodec';
+import { GuestHistoryMemory } from './guestHistoryMemory';
+import {
+  clearMatchingMemory,
+  createGuestPendingOperations,
+  type GuestStorageConflict,
+  mergeGuestValue,
+} from './guestPendingMemory';
 import type { GuestProgressOwner, ProgressOperation } from './types';
 import { assertCurrentProgressOwner } from './types';
 
@@ -43,11 +48,15 @@ export function writeGuestProgress(
 
 export type GuestProgressRepository = {
   readonly owner: GuestProgressOwner;
+  flushPending(): 'blocked' | 'conflict' | 'failed' | 'saved';
+  hasPending(): boolean;
   read(key: string): string | null;
+  resolveStorageConflict(key: string, choice: 'pending' | 'stored'): 'blocked' | 'failed' | 'saved';
   remove(key: string): void;
   removeMatching(prefix: string): void;
   purge(key: string): void;
   purgeMatching(prefix: string): void;
+  storageConflicts(): readonly GuestStorageConflict[];
   write(key: string, value: string): 'saved' | 'blocked' | 'failed';
 };
 
@@ -57,51 +66,38 @@ export function createGuestProgressRepository(
   operation: ProgressOperation,
 ): GuestProgressRepository {
   const memory = new Map<string, string>();
+  const history = new GuestHistoryMemory();
   const current = () => assertCurrentProgressOwner(operation);
-  const profile = (value: unknown) => {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-    const candidate = value as { earned?: unknown; answers?: unknown };
-    return (
-      Array.isArray(candidate.earned) &&
-      candidate.earned.every((item) => typeof item === 'string') &&
-      candidate.answers !== null &&
-      typeof candidate.answers === 'object' &&
-      !Array.isArray(candidate.answers) &&
-      Object.values(candidate.answers).every((item) => typeof item === 'number')
-    );
-  };
-  const merged = (key: string, disk: string | null, pending: string): string | undefined => {
-    if (disk === null || disk === pending) return pending;
-    try {
-      const diskRows: unknown = JSON.parse(disk);
-      const pendingRows: unknown = JSON.parse(pending);
-      if (profile(diskRows) && profile(pendingRows)) return pending;
-      if (isGuestExamDraft(diskRows) && isGuestExamDraft(pendingRows)) return pending;
-      if (!Array.isArray(diskRows) || !Array.isArray(pendingRows)) return undefined;
-      if (key === historyKey && parseStoredAttempts(disk).corruptRows > 0) return undefined;
-      const prefix = JSON.stringify(pendingRows.slice(0, diskRows.length)) === JSON.stringify(diskRows);
-      return JSON.stringify(prefix ? pendingRows : [...diskRows, ...pendingRows]);
-    } catch {
-      return undefined;
-    }
-  };
+  const pending = createGuestPendingOperations(
+    storage,
+    memory,
+    history,
+    current,
+    () => canPersistGuestProgress(storage),
+    (key, value) => writeGuestProgress(storage, key, value),
+  );
   return {
     owner,
+    flushPending: pending.flush,
+    hasPending: pending.hasPending,
     read(key) {
       current();
-      if (canPersistGuestProgress(storage)) return memory.get(key) ?? storage.getItem(key);
+      const persisted = canPersistGuestProgress(storage);
+      if (key === historyKey) return history.read(persisted ? storage.getItem(key) : null, persisted);
+      if (persisted) return memory.get(key) ?? storage.getItem(key);
       return memory.get(key) ?? null;
     },
+    resolveStorageConflict: pending.resolve,
     remove(key) {
       current();
+      if (key === historyKey) history.clear();
       memory.delete(key);
       if (canPersistGuestProgress(storage)) storage.removeItem(key);
     },
     removeMatching(prefix) {
       current();
-      for (const key of memory.keys()) {
-        if (key.startsWith(prefix)) memory.delete(key);
-      }
+      if (historyKey.startsWith(prefix)) history.clear();
+      clearMatchingMemory(memory, prefix);
       if (!canPersistGuestProgress(storage) || !storage.key || storage.length === undefined) return;
       const keys = Array.from({ length: storage.length }, (_, index) => storage.key?.(index)).filter(
         (key): key is string => key?.startsWith(prefix) ?? false,
@@ -110,34 +106,43 @@ export function createGuestProgressRepository(
     },
     purge(key) {
       current();
+      if (key === historyKey) history.clear();
       memory.delete(key);
       storage.removeItem(key);
     },
     purgeMatching(prefix) {
       current();
-      for (const key of memory.keys()) {
-        if (key.startsWith(prefix)) memory.delete(key);
-      }
+      if (historyKey.startsWith(prefix)) history.clear();
+      clearMatchingMemory(memory, prefix);
       if (!storage.key || storage.length === undefined) return;
       const keys = Array.from({ length: storage.length }, (_, index) => storage.key?.(index)).filter(
         (key): key is string => key?.startsWith(prefix) ?? false,
       );
       for (const key of keys) storage.removeItem(key);
     },
+    storageConflicts: pending.conflicts,
     write(key, value) {
       current();
       if (!canPersistGuestProgress(storage)) {
+        if (key === historyKey) {
+          history.remember(value);
+          return 'blocked';
+        }
         memory.set(key, value);
         return 'blocked';
       }
-      const pending = value;
-      const disk = storage.getItem(key);
-      const valueToPersist = merged(key, disk, pending);
+      if (key === historyKey) {
+        return history.save(storage.getItem(key), value, (pending) =>
+          writeGuestProgress(storage, key, pending),
+        );
+      }
+      if (pending.conflicts().some((conflict) => conflict.key === key)) {
+        return 'failed';
+      }
+      const valueToPersist = mergeGuestValue(storage.getItem(key), value);
       if (valueToPersist === undefined) return 'failed';
       const result = writeGuestProgress(storage, key, valueToPersist);
-      if (result === 'saved') {
-        memory.delete(key);
-      }
+      if (result === 'saved') memory.delete(key);
       return result;
     },
   };

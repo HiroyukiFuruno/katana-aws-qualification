@@ -33,6 +33,7 @@ export type ProgressStore = {
     events: Attempt[],
   ): Promise<{ attempts: Attempt[]; history: Attempt[] }>;
   getSnapshot(): ProgressSnapshot;
+  guestStorageConflicts(): readonly { key: string; kind: 'exam' | 'profile' }[];
   initialize(): Promise<ProgressSnapshot>;
   loadExam(certificationId: string): Promise<ExamDraft | undefined>;
   notifyExamSessionsChanged(): void;
@@ -41,6 +42,7 @@ export type ProgressStore = {
   removeGuestExam(examKey: string): void;
   replaceProfile(profile: Profile): Promise<void>;
   reset(): Promise<void>;
+  resolveGuestStorageConflict(key: string, choice: 'pending' | 'stored'): Promise<void>;
   retryPending(): Promise<void>;
   saveExamResponse(
     draft: ExamDraft,

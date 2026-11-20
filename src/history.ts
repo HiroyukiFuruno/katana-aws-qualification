@@ -1,4 +1,5 @@
 import { type Attempt, type Mode, makeAttempt } from './attempts';
+import { withHistoryLock } from './historyLock';
 import {
   clearBrowserLearningRecords,
   examKeyPrefix,
@@ -10,6 +11,7 @@ import type { Question } from './questions';
 
 export { type Attempt, type Mode, statsFor } from './attempts';
 export { exportHistory } from './historyExport';
+export { withHistoryLock } from './historyLock';
 export { historyKey } from './learningStorage';
 
 const legacyIncorrectCookie = 'saa_study_incorrect_v1';
@@ -48,11 +50,6 @@ export function readHistory(expectedStore?: ProgressStore | null): Attempt[] {
   const history: Attempt[] = JSON.parse(raw);
   if (!Array.isArray(history)) throw new Error('学習履歴を読み込めませんでした。');
   return history;
-}
-
-export function withHistoryLock<T>(operation: () => T): Promise<T> {
-  if (navigator.locks) return navigator.locks.request(historyKey, operation);
-  return Promise.resolve().then(operation);
 }
 
 export function expireLegacyIncorrectCookie() {

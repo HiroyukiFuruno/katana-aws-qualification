@@ -2,14 +2,18 @@ import { Fragment, type ReactNode } from 'react';
 import { useAccount } from '../auth/AuthContext';
 import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
+import { GuestStorageConflicts } from './GuestStorageConflicts';
+import { MigrationPrompt } from './MigrationPrompt';
 import { ProgressConsent } from './ProgressConsent';
 import { useProgress } from './ProgressProvider';
-import { MigrationPrompt } from './MigrationPrompt';
 
 export function GuestStorageSettings() {
   const { status, store, retry } = useProgress();
   return status === 'ready' && store?.getSnapshot().owner.kind === 'guest' ? (
-    <ProgressConsent onChange={retry} />
+    <>
+      <ProgressConsent onChange={retry} />
+      <GuestStorageConflicts store={store} />
+    </>
   ) : null;
 }
 
@@ -52,6 +56,7 @@ export function ProgressGate({ children }: { children: ReactNode }) {
           {t(owner.kind === 'member' ? 'progressAccountSource' : 'progressGuestSource')}
         </p>
         {owner.kind === 'guest' && <ProgressConsent compact onChange={retry} />}
+        {owner.kind === 'guest' && <GuestStorageConflicts store={store} />}
         {snapshot.error && (
           <p role="alert">
             {t(snapshot.error === 'load' ? 'progressCloudLoadFailed' : 'progressCloudSaveFailed')}

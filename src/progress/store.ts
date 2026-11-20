@@ -10,6 +10,7 @@ import {
   removeGuestExamDraft,
   saveGuestExamDraft,
 } from './storeGuestExams';
+import { resolveGuestStorageConflict } from './storeGuestStorageConflict';
 import {
   initialProgressSnapshot,
   type ProgressSnapshot,
@@ -107,23 +108,31 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
       return { attempts: result.attempts, history: result.history };
     },
     getSnapshot: () => snapshot,
-    async loadExam(certificationId) {
-      return examOperations.load(certificationId);
-    },
+    guestStorageConflicts: () => guest?.storageConflicts() ?? [],
+    loadExam: (certificationId) => examOperations.load(certificationId),
     notifyExamSessionsChanged,
     readGuestExam(examKey) {
       if (!guest) throw new Error('Member exams use cloud storage.');
       return readGuestExamDraft(guest, examKey);
     },
-    async readExamClock() {
-      return examOperations.readClock();
-    },
+    readExamClock: () => examOperations.readClock(),
     async saveExamResponse(draft, position, key, response) {
       return examOperations.save(draft, position, key, response);
     },
     removeGuestExam(examKey) {
       if (!guest) throw new Error('Member exams use cloud storage.');
       removeGuestExamDraft(guest, examKey);
+    },
+    async resolveGuestStorageConflict(key, choice) {
+      if (!guest) throw new Error('Member storage conflicts cannot be resolved here.');
+      await resolveGuestStorageConflict(
+        guest,
+        operation,
+        actions.initialize,
+        notifyExamSessionsChanged,
+        key,
+        choice,
+      );
     },
     async saveGuestExam(examKey, draft) {
       if (!guest) throw new Error('Member exams use cloud storage.');

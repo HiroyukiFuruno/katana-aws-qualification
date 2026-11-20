@@ -1,11 +1,10 @@
 import { profileKey } from '../assessment';
-import { historyKey } from '../history';
-import { parseStoredAttempts } from './attemptCodec';
 import { isGenerationConflict } from './errors';
-import { emptyProfile, parseStoredProfile } from './profileCodec';
+import { emptyProfile } from './profileCodec';
 import type { StoreActionDependencies } from './storeActionTypes';
 import { resetGuestProgress } from './storeGuestExams';
 import { updateGuestHistory } from './storeGuestHistory';
+import { loadGuestProgress } from './storeGuestLoad';
 import {
   memberAttemptSnapshot,
   mergeMemberAttempts,
@@ -36,12 +35,12 @@ export function createStoreActions(
     try {
       if (input.owner.kind === 'guest') {
         if (!guest) throw new Error('A guest progress store is required.');
-        const stored = parseStoredAttempts(guest.read(historyKey));
+        const stored = await loadGuestProgress(guest);
         if (getSnapshotVersion() !== version) return getSnapshot();
         ready({
-          attempts: stored.attempts,
-          corruptRows: stored.corruptRows,
-          profile: parseStoredProfile(guest.read(profileKey)),
+          attempts: stored.attempts.attempts,
+          corruptRows: stored.attempts.corruptRows,
+          profile: stored.profile,
           profileRevision: 0,
         });
       } else {

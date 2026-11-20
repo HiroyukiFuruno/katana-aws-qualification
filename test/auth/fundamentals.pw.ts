@@ -110,12 +110,12 @@ test('every catalog unit offers reading and a practice entry', async ({ page }) 
   await expect(heading).toBeFocused();
 });
 
-test('all locales expose a readable fundamentals route on mobile', async ({ page }) => {
-  for (const width of [320, 390]) {
-    for (const colorScheme of ['light', 'dark'] as const) {
-      await page.setViewportSize({ width, height: 844 });
-      await page.emulateMedia({ colorScheme });
-      for (const locale of locales) {
+for (const width of [320, 390]) {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    for (const locale of locales) {
+      test(`fundamentals route ${locale} at ${width}px in ${colorScheme}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 844 });
+        await page.emulateMedia({ colorScheme });
         await page.goto(localePath(locale));
         const route = localePath(locale, 'study/fundamentals');
         await page.locator('.study-navigation-toggle').click();
@@ -127,7 +127,7 @@ test('all locales expose a readable fundamentals route on mobile', async ({ page
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
           width,
         );
-      }
+      });
     }
   }
-});
+}

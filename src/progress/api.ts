@@ -91,6 +91,7 @@ export function createProgressApi(
             'question_id',
             'question_revision',
             'state',
+            'mode',
           ].includes(column)
         )
           throw new Error('Invalid learning filter');

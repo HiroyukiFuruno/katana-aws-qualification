@@ -3,6 +3,7 @@ import { createExamClock } from '../examClock';
 import type { ExamFinalizationEvent } from './examFinalization';
 import { questionKey, refs, type SessionRow } from './examRepositoryCodec';
 import { readExamSession, type SubmittedExamDraft } from './examRepositoryRead';
+import { pickLatestSubmitted } from './submittedExamSelection';
 import type { ProgressRpcClient } from './types';
 
 type ConfirmedResponse = { duration_ms: number; revision: number; selected_at: string | null };
@@ -39,12 +40,16 @@ export function createMemberExamRepository(
         certification_id: `eq.${certificationId}`,
         state: 'eq.submitted',
       });
-      const submitted = sessions
-        .filter((item) => item.certification_id === certificationId && item.state === 'submitted')
-        .sort((left, right) => {
-          const date = (item: SessionRow) => Date.parse(item.submitted_at ?? item.started_at ?? '') || 0;
-          return date(right) - date(left);
-        })[0];
+      const submitted = await pickLatestSubmitted(sessions, certificationId, async () => {
+        const events = await client.select<
+          { answered_at: string; certification_id: string; exam_id?: string | null; mode: string }[]
+        >('learning_events', {
+          certification_id: `eq.${certificationId}`,
+          mode: 'eq.exam',
+        });
+        if (!isCurrent()) throw new Error('Progress owner changed');
+        return events;
+      });
       return submitted
         ? ((await readExamSession(client, readClock, isCurrent, submitted, true)) as SubmittedExamDraft)
         : undefined;

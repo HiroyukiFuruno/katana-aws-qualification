@@ -198,3 +198,9 @@ question resolver差分はindex/bank拒否と成功cache/並行共有を単体�
 - [/] 単体・実44件で提出→タブ切替→結果/解説→reload→同じ結果→次の試験→draft再開、他ownerに結果なしを検証する。直前ad6afdcの4CIは全成功、Ready再レビューの追加指摘に対応するためDraftへ戻して公開を維持保留。
 
 20th最終検証: `pr63-submitted-results-check.log` 全211unit/1615assertions・重複0/型構造教材/build成功。`pr63-submitted-results-final-progress.log` 実44件成功1.6分。提出15event→tab→明示結果/解説→reload同一結果→次模試の新draft→reload回答再開、別ownerに結果なし、閲覧でsession/event増加なしを確認。最初43成功/1失敗はrootの検査が解説内のnested detailsも件数へ含めた誤りで、トップレベル15解答の同じ条件へselectorを修正。タイムアウト/期待件数・機能条件は維持。独立read-only reviewで具体的P0/P1/P2なし。004005006・サイト未公開。
+
+## 21stレビュー: 日時を持たない取込済み模擬試験の結果順序
+
+- [/] PRRT_kwDOVzQ52c658-u3 / comment4641628557: legacy取込sessionはstarted_at/submitted_atがNULLであり、IDやepoch 0で最新結果を決めない。該当資格・examモードの実answered_atの最大値で順序を補い、通常の提出日時を持つsessionと比較する。欠損・不正日付は明示エラー。draft再開は変更しない。
+- [/] 全check212unit/1616assertions成功（pr63-legacy-result-order-check.log）。実45件成功1.5分（pr63-legacy-result-order-final-progress.log）。新回帰は日付NULLのlegacy模試2件を実取込し、辞書順と逆の実回答日時に基づく最新結果0/1・解説・reload・原本日時NULL保持・閲覧による追加保存なしを確認。初回44成功/1失敗はscoreの日本語表示に対する検査期待形式の誤りを修正し、期待正答数は維持した。
+- [ ] 新headのDraftレビュー・全4CI・reply/resolve・公開を回収する。既存26d17b3の4CIは成功（auth10m51/data34s/glossary1m19/progress3m24）だが新headの代用としない。

@@ -43,7 +43,7 @@ test('a linked identity conflict keeps the existing account and offers its dashb
   const anonymous = await browser.newPage();
   await anonymous.goto('/ja/auth/callback/?error_code=identity_already_exists');
   await expect(anonymous.locator('[data-auth-failure="identity-conflict"]')).toBeVisible();
-  await expect(anonymous.getByRole('link', { name: 'ログイン' })).toBeVisible();
+  await expect(anonymous.locator('main').getByRole('link', { name: 'ログイン' })).toBeVisible();
   await expect(anonymous.getByRole('link', { name: 'ダッシュボード' })).toHaveCount(0);
   await anonymous.close();
 
@@ -69,7 +69,7 @@ test('a linked identity conflict keeps the existing account and offers its dashb
   ).toBe(original);
   await page.getByRole('link', { name: 'ダッシュボード' }).click();
   await expect(page).toHaveURL(/\/ja\/dashboard\/$/);
-  await expect(page.getByRole('heading', { name: 'アカウント設定' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ダッシュボード', exact: true })).toBeVisible();
   expect(
     await page.evaluate(() => JSON.parse(localStorage.getItem('kaq.auth.v1') ?? '{}').user.id),
   ).toBe(original);

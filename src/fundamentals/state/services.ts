@@ -76,7 +76,7 @@ export function createLessonServices({ assets, storage, isCurrent, member }: Inp
     outbox,
     async load(asset: DeliveryUnitAsset) {
       await initialize();
-      await outbox?.flush();
+      await outbox?.flush({ unitId: asset.unit.id, contentVersion: asset.contentVersion });
       return readCurrent(() => repository.load(asset));
     },
     async execute(asset: DeliveryUnitAsset, command: LessonCommand) {
@@ -91,7 +91,6 @@ export function createLessonServices({ assets, storage, isCurrent, member }: Inp
     async summaries() {
       const index = await assets.index();
       await initialize();
-      await outbox?.flush();
       if (memberRepository) {
         return readCurrent(() =>
           memberRepository.summaries(

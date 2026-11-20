@@ -11,6 +11,7 @@ export function LessonCatalogCard({
   unit,
   summary,
   summaryUnavailable = false,
+  pending = false,
   status,
   href,
   action,
@@ -20,6 +21,7 @@ export function LessonCatalogCard({
   unit: DeliveryIndexAsset['units'][number];
   summary?: LessonSummary;
   summaryUnavailable?: boolean;
+  pending?: boolean;
   status: CatalogStatus;
   href: string;
   action: string;
@@ -32,6 +34,7 @@ export function LessonCatalogCard({
         {unit.order} · {moduleLabels[unit.parent] ? t(moduleLabels[unit.parent]) : unit.parent}
       </p>
       <h2>{unit.title}</h2>
+      {pending && <p role="status">{t('lessonPendingSave')}</p>}
       <p className="lesson-catalog-objective">{unit.objective}</p>
       <dl className="lesson-catalog-facts">
         <div>

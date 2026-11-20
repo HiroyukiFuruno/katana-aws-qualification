@@ -1,3 +1,4 @@
+import { isGenerationConflict } from '../../progress/errors';
 import { withOutboxLock } from '../../progress/retryOutboxStorage';
 import type { MemberLessonRepository } from './memberTypes';
 import {
@@ -8,6 +9,7 @@ import {
   validateLessonCommand,
 } from './outboxCodec';
 import { invokeLessonCommand, resolveLessonAsset } from './outboxExecutor';
+import { pendingLessonCommands } from './outboxScope';
 import type {
   LessonAssetResolver,
   LessonCommand,
@@ -25,10 +27,6 @@ type Input = {
 
 function ownerChanged() {
   throw new Error('Progress owner changed');
-}
-
-function code(error: unknown) {
-  return typeof error === 'object' && error ? String((error as { code?: unknown }).code) : '';
 }
 
 export function createLessonOutbox(input: Input): LessonOutbox {
@@ -102,7 +100,7 @@ export function createLessonOutbox(input: Input): LessonOutbox {
       current();
       return result;
     } catch (error) {
-      if (code(error) === 'PT409') await reconcileGeneration();
+      if (isGenerationConflict(error)) await reconcileGeneration();
       if (!input.isCurrent()) await discardChangedOwner(command.commandId, error);
       throw error;
     }
@@ -118,8 +116,8 @@ export function createLessonOutbox(input: Input): LessonOutbox {
       current();
     },
     execute,
-    async flush() {
-      for (const command of [...pending]) {
+    async flush(scope) {
+      for (const command of pendingLessonCommands(pending, scope)) {
         current();
         await execute(await resolveLessonAsset(input.resolveAsset, command), command);
       }
@@ -145,6 +143,6 @@ export function createLessonOutbox(input: Input): LessonOutbox {
         throw error;
       }
     },
-    hasPending: () => pending.length > 0,
+    hasPending: (scope) => pendingLessonCommands(pending, scope).length > 0,
   };
 }

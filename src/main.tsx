@@ -35,7 +35,7 @@ function App() {
   const { state } = useAccount();
   useEffect(() => {
     initializeAnalytics(analyticsAllowedForPath(currentUrl.pathname, consent.value === 'granted'));
-  }, [currentUrl.pathname, consent.value]);
+  }, [currentUrl.pathname, consent]);
   useEffect(() => {
     const beforeNavigation = (event: Event) => {
       if (!(event instanceof CustomEvent) || typeof event.detail !== 'string') return;

@@ -33,13 +33,14 @@ export type LessonCommand =
     };
 
 export type LessonOutboxStorage = Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>;
+export type LessonOutboxScope = Pick<LessonCommand, 'unitId' | 'contentVersion'>;
 export type LessonOutbox = {
   clear(): Promise<void>;
   discard(commandId: string): Promise<void>;
   discardUnit(unitId: string, contentVersion: string): Promise<void>;
   execute(asset: DeliveryUnitAsset, command: LessonCommand): Promise<LessonSnapshot>;
-  flush(): Promise<void>;
-  hasPending(): boolean;
+  flush(scope?: LessonOutboxScope): Promise<void>;
+  hasPending(scope?: LessonOutboxScope): boolean;
   initialize(): Promise<void>;
 };
 

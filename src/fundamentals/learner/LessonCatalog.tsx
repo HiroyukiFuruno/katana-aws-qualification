@@ -12,6 +12,7 @@ type LessonCatalogProps = {
   loading?: boolean;
   error?: string;
   summaryUnavailable?: boolean;
+  pendingUnitIds?: readonly string[];
   onRetry?: () => void | Promise<void>;
   onNavigate: (href: string) => void | Promise<void>;
 };
@@ -36,6 +37,7 @@ export function LessonCatalog({
   loading = false,
   error,
   summaryUnavailable = false,
+  pendingUnitIds = [],
   onRetry,
   onNavigate,
 }: LessonCatalogProps) {
@@ -92,6 +94,7 @@ export function LessonCatalog({
               unit={unit}
               summary={summary}
               summaryUnavailable={summaryUnavailable}
+              pending={pendingUnitIds.includes(unit.unitId)}
               status={status}
               href={href}
               action={status === 'notStarted' ? t('fundamentalsStart') : t('fundamentalsResume')}

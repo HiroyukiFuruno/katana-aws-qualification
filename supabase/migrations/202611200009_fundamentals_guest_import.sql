@@ -5,11 +5,11 @@ create function public.fundamentals_import_question_matches(
   p_reference jsonb
 ) returns boolean
 language sql immutable security definer set search_path = public, auth as $$
-  select p_reference = jsonb_build_object(
+  select coalesce(p_reference = jsonb_build_object(
     'questionId', p_question->>'questionId',
     'revision', (p_question->>'revision')::integer,
     'sourceVersion', p_question->>'sourceVersion'
-  );
+  ), false);
 $$;
 
 create function public.fundamentals_import_response(
@@ -23,6 +23,7 @@ declare
   v_duration integer;
 begin
   if jsonb_typeof(p_response) <> 'object'
+    or (select count(*) from jsonb_object_keys(p_response)) <> 4
     or exists (
       select 1 from jsonb_object_keys(p_response) key
       where key not in ('questionRef', 'selected', 'selectedAt', 'durationMs')
@@ -100,10 +101,16 @@ declare
   v_context jsonb;
   v_imported_passed_session uuid;
   v_imported_passed_at timestamptz;
+  v_source_furthest integer;
+  v_plan_count integer;
+  v_source_stage text;
+  v_source_step_id text;
+  v_next jsonb;
 begin
   if jsonb_typeof(p_payload) <> 'object'
     or nullif(p_source_row_id, '') is null
     or length(p_source_row_id) > 200
+    or (select count(*) from jsonb_object_keys(p_payload)) <> 10
     or exists (
       select 1 from jsonb_object_keys(p_payload) key
       where key not in (
@@ -123,8 +130,14 @@ begin
     or jsonb_typeof(p_payload->'completedCheckpointIds') <> 'array'
     or jsonb_typeof(p_payload->'checkpointReceipts') <> 'array'
     or jsonb_typeof(p_payload->'submittedFinals') <> 'array'
-    or coalesce((p_payload->>'furthestPlanPosition')::integer, -1) < 0
+    or jsonb_typeof(p_payload->'furthestPlanPosition') <> 'number'
+    or coalesce(p_payload->>'furthestPlanPosition', '') !~ '^(0|[1-9][0-9]*)$'
+    or jsonb_typeof(p_payload->'resumeStage') is distinct from 'string'
     or nullif(p_payload->>'resumeStage', '') not in ('slide', 'checkpoint', 'final', 'result') then
+    raise exception 'invalid fundamentals import payload' using errcode = '22023';
+  end if;
+  if jsonb_typeof(p_payload->'resumeStepId') not in ('null', 'string')
+    or length(p_payload->>'furthestPlanPosition') > 9 then
     raise exception 'invalid fundamentals import payload' using errcode = '22023';
   end if;
 
@@ -133,8 +146,7 @@ begin
     from public.migration_manifests
     where user_id = v_user_id and manifest_id = p_manifest_id
     for update;
-  if v_manifest_status is distinct from 'started'
-    or v_manifest_source is distinct from 'fundamentals-progress-local-storage' then
+  if v_manifest_source is distinct from 'fundamentals-progress-local-storage' then
     raise exception 'invalid migration manifest item' using errcode = '22023';
   end if;
 
@@ -142,7 +154,19 @@ begin
     from public.migration_items
     where user_id = v_user_id and manifest_id = p_manifest_id and source_row_id = p_source_row_id
     for update;
-  if found then
+  if v_manifest_status = 'completed' then
+    if not found then
+      raise exception 'completed migration is missing its fundamentals item' using errcode = '22023';
+    end if;
+    if v_existing_item.outcome is distinct from 'accepted'
+      or v_existing_item.import_kind is distinct from 'fundamentals-unit'
+      or v_existing_item.payload_hash is distinct from v_payload_hash then
+      raise exception 'fundamentals migration row was reused' using errcode = '23505';
+    end if;
+    return public.fundamentals_progress_snapshot(v_user_id, v_unit_id, v_content_version);
+  elsif v_manifest_status is distinct from 'started' then
+    raise exception 'invalid migration manifest item' using errcode = '22023';
+  elsif found then
     if v_existing_item.outcome is distinct from 'accepted'
       or v_existing_item.import_kind is distinct from 'fundamentals-unit'
       or v_existing_item.payload_hash is distinct from v_payload_hash then
@@ -154,20 +178,90 @@ begin
   v_catalog := public.require_fundamentals_catalog(v_unit_id, v_content_version);
   v_source_slides := p_payload->'completedSlideIds';
   v_source_checkpoints := p_payload->'completedCheckpointIds';
-  if exists (
-    select 1 from jsonb_array_elements_text(v_source_slides) item(id)
-    where not exists (
-      select 1 from jsonb_array_elements(v_catalog.plan) plan(value)
-      where plan.value->>'kind' = 'slide' and plan.value->>'id' = item.id
-    )
-  ) or exists (
-    select 1 from jsonb_array_elements_text(v_source_checkpoints) item(id)
-    where not exists (
-      select 1 from jsonb_array_elements(v_catalog.plan) plan(value)
-      where plan.value->>'kind' = 'checkpoint' and plan.value->>'id' = item.id
-    )
-  ) then
-    raise exception 'imported fundamentals completion is not in catalog' using errcode = '22023';
+  v_source_furthest := (p_payload->>'furthestPlanPosition')::integer;
+  v_plan_count := jsonb_array_length(v_catalog.plan);
+  v_source_stage := p_payload->>'resumeStage';
+  v_source_step_id := p_payload->>'resumeStepId';
+  if v_source_furthest > v_plan_count
+    or (jsonb_typeof(p_payload->'resumeStepId') = 'string' and nullif(v_source_step_id, '') is null)
+    or exists (select 1 from jsonb_array_elements(v_source_slides) item(value)
+      where jsonb_typeof(item.value) <> 'string' or nullif(item.value #>> '{}', '') is null)
+    or exists (select 1 from jsonb_array_elements(v_source_checkpoints) item(value)
+      where jsonb_typeof(item.value) <> 'string' or nullif(item.value #>> '{}', '') is null)
+    or exists (select id from jsonb_array_elements_text(v_source_slides) item(id) group by id having count(*) > 1)
+    or exists (select id from jsonb_array_elements_text(v_source_checkpoints) item(id) group by id having count(*) > 1) then
+    raise exception 'invalid imported fundamentals completion' using errcode = '22023';
+  end if;
+  if exists (select 1 from jsonb_array_elements(v_catalog.plan) plan(value)
+      where (plan.value->>'position')::integer <= v_source_furthest
+        and plan.value->>'kind' = 'slide' and not (v_source_slides ? (plan.value->>'id')))
+    or exists (select 1 from jsonb_array_elements_text(v_source_slides) item(id)
+      where not exists (select 1 from jsonb_array_elements(v_catalog.plan) plan(value)
+        where (plan.value->>'position')::integer <= v_source_furthest
+          and plan.value->>'kind' = 'slide' and plan.value->>'id' = item.id))
+    or exists (select 1 from jsonb_array_elements(v_catalog.plan) plan(value)
+      where (plan.value->>'position')::integer <= v_source_furthest
+        and plan.value->>'kind' = 'checkpoint' and not (v_source_checkpoints ? (plan.value->>'id')))
+    or exists (select 1 from jsonb_array_elements_text(v_source_checkpoints) item(id)
+      where not exists (select 1 from jsonb_array_elements(v_catalog.plan) plan(value)
+        where (plan.value->>'position')::integer <= v_source_furthest
+          and plan.value->>'kind' = 'checkpoint' and plan.value->>'id' = item.id)) then
+    raise exception 'imported fundamentals completion is not a contiguous catalog prefix' using errcode = '22023';
+  end if;
+  if v_source_furthest < v_plan_count then
+    select value into v_next from jsonb_array_elements(v_catalog.plan) plan(value)
+      where (plan.value->>'position')::integer = v_source_furthest + 1;
+    if v_source_stage is distinct from v_next->>'kind' or v_source_step_id is distinct from v_next->>'id' then
+      raise exception 'imported fundamentals resume does not match completion' using errcode = '22023';
+    end if;
+  elsif v_source_step_id is not null
+    or (p_payload->'activeFinal') is not null and p_payload->'activeFinal' <> 'null'::jsonb and v_source_stage <> 'final'
+    or jsonb_array_length(p_payload->'submittedFinals') > 0 and v_source_stage not in ('final', 'result')
+    or ((p_payload->'activeFinal') is null or p_payload->'activeFinal' = 'null'::jsonb)
+      and jsonb_array_length(p_payload->'submittedFinals') = 0 and v_source_stage <> 'final' then
+    raise exception 'imported fundamentals resume does not match completion' using errcode = '22023';
+  end if;
+  if ((p_payload->'activeFinal') is not null and p_payload->'activeFinal' <> 'null'::jsonb
+      or jsonb_array_length(p_payload->'submittedFinals') > 0)
+    and v_source_furthest <> v_plan_count then
+    raise exception 'imported final requires completed lesson steps' using errcode = '22023';
+  end if;
+  if exists (select (receipt.value->>'receiptId')::uuid from jsonb_array_elements(p_payload->'checkpointReceipts') receipt(value)
+      group by (receipt.value->>'receiptId')::uuid having count(*) > 1) then
+    raise exception 'checkpoint receipts do not match completion' using errcode = '22023';
+  end if;
+  for v_receipt in select value from jsonb_array_elements(p_payload->'checkpointReceipts') loop
+    if jsonb_typeof(v_receipt) <> 'object'
+      or (select count(*) from jsonb_object_keys(v_receipt)) <> 6
+      or exists (select 1 from jsonb_object_keys(v_receipt) key
+        where key not in ('stepId', 'receiptId', 'questionRef', 'selected', 'answeredAt', 'durationMs'))
+      or nullif(v_receipt->>'stepId', '') is null
+      or nullif(v_receipt->>'receiptId', '') is null
+      or jsonb_typeof(v_receipt->'answeredAt') <> 'string'
+      or nullif(v_receipt->>'answeredAt', '') is null
+      or nullif(v_receipt->>'durationMs', '') is null then
+      raise exception 'invalid checkpoint receipt' using errcode = '22023';
+    end if;
+    v_event_id := (v_receipt->>'receiptId')::uuid;
+    v_answered_at := (v_receipt->>'answeredAt')::timestamptz;
+    v_duration := (v_receipt->>'durationMs')::integer;
+    select plan.value->'question' into v_checkpoint from jsonb_array_elements(v_catalog.plan) plan(value)
+      where plan.value->>'kind' = 'checkpoint' and plan.value->>'id' = v_receipt->>'stepId';
+    if not isfinite(v_answered_at) or v_checkpoint is null
+      or not (v_source_checkpoints ? (v_receipt->>'stepId'))
+      or not public.fundamentals_import_question_matches(v_checkpoint, v_receipt->'questionRef')
+      or v_duration not between 0 and 86400000 then
+      raise exception 'checkpoint receipt does not match catalog' using errcode = '22023';
+    end if;
+    v_selected := public.fundamentals_canonical_selection(v_checkpoint, v_receipt->'selected');
+    if jsonb_array_length(v_selected) <> (v_checkpoint->>'requiredChoices')::integer then
+      raise exception 'checkpoint receipt selection count is invalid' using errcode = '22023';
+    end if;
+  end loop;
+  if exists (select 1 from jsonb_array_elements_text(v_source_checkpoints) checkpoint(id)
+      where not exists (select 1 from jsonb_array_elements(p_payload->'checkpointReceipts') receipt(value)
+        where receipt.value->>'stepId' = checkpoint.id)) then
+    raise exception 'checkpoint receipts do not match completion' using errcode = '22023';
   end if;
 
   insert into public.fundamentals_unit_progress(user_id, unit_id, content_version)
@@ -182,6 +276,7 @@ begin
   if v_active is not null and v_active <> 'null'::jsonb
     and (
       jsonb_typeof(v_active) <> 'object'
+      or (select count(*) from jsonb_object_keys(v_active)) <> 5
       or exists (
         select 1 from jsonb_object_keys(v_active) key
         where key not in ('sessionId', 'startedAt', 'position', 'questionOrder', 'responses')
@@ -332,6 +427,7 @@ begin
 
   for v_submitted in select value from jsonb_array_elements(p_payload->'submittedFinals') loop
     if jsonb_typeof(v_submitted) <> 'object'
+      or (select count(*) from jsonb_object_keys(v_submitted)) <> 6
       or exists (
         select 1 from jsonb_object_keys(v_submitted) key
         where key not in ('sessionId', 'startedAt', 'questionOrder', 'responses', 'submittedAt', 'eventIds')
@@ -457,29 +553,25 @@ begin
     end loop;
   end loop;
 
+  v_source_furthest := jsonb_array_length(v_slides) + jsonb_array_length(v_checkpoints);
+  select value into v_next from jsonb_array_elements(v_catalog.plan) plan(value)
+    where (plan.value->>'position')::integer = v_source_furthest + 1;
   update public.fundamentals_unit_progress set
     completed_slide_ids = v_slides,
     completed_checkpoint_ids = v_checkpoints,
-    furthest_plan_position = greatest(
-      furthest_plan_position,
-      (p_payload->>'furthestPlanPosition')::integer
-    ),
+    furthest_plan_position = v_source_furthest,
     resume_stage = case
       when v_progress.active_final_session_id is not null then 'final'
-      when jsonb_array_length(p_payload->'submittedFinals') > 0
-        and v_progress.furthest_plan_position = 0
-        and v_progress.resume_stage = 'slide'
-        and v_progress.passed_final_session_id is null then 'result'
-      else v_progress.resume_stage
+      when v_progress.resume_stage = 'result' or v_source_stage = 'result' then 'result'
+      when v_source_furthest = v_plan_count then 'final'
+      else v_next->>'kind'
     end,
     resume_step_id = case
       when v_progress.active_final_session_id is not null
         or v_progress.resume_stage = 'result'
-        or (jsonb_array_length(p_payload->'submittedFinals') > 0
-          and v_progress.furthest_plan_position = 0
-          and v_progress.resume_stage = 'slide'
-          and v_progress.passed_final_session_id is null) then null
-      else v_progress.resume_step_id
+        or v_source_stage = 'result'
+        or v_source_furthest = v_plan_count then null
+      else v_next->>'id'
     end,
     active_final_session_id = v_progress.active_final_session_id,
     passed_final_session_id = coalesce(passed_final_session_id, v_imported_passed_session),

@@ -84,3 +84,15 @@ pending guest sourceを明示discardするまで再試行可能に保つ。
 guest importはsourceのfinite UTC `startedAt` / `selectedAt` / `answeredAt` / `submittedAt` と有効なdurationを
 保持する。欠損timestampをserver時刻で捏造せず、source内で比較・検証できる情報だけを採用する。通常の
 オンラインRPCはserver receipt時刻を`answered_at`に使うが、明示移行したreceiptはsourceの`answeredAt`を保持する。
+
+## 単元間の保存待ちと移行再試行
+
+会員outboxの読込時再送はunitId/contentVersion単位とし、別単元のPT412が現在の単元を止めない。
+目次の集計はDBで確認済みの記録を読み、未送信commandのある単元には保存待ちの案内を表示する。
+利用者が該当単元を開くと同じcommandを再送し、競合時は保存済みの記録を明示的に読み直す。
+別単元を開いたことを理由に、競合commandや原本を破棄しない。
+
+ゲスト移行はclientのcodecだけでなくDBもtrusted catalogの連続した必須STEP完了と位置、
+途中チェックのreceipt、final開始前提を検証する。途中チェックの再挑戦は別receiptとして保持する。
+complete_migration後の通信・再読込・端末削除失敗でも、同じmanifest/row/hashのaccepted receiptを
+再検証して削除手順を再開できる。完了済みmanifestへ新しいrowや別payloadを追加しない。

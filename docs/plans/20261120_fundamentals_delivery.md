@@ -88,3 +88,15 @@
 既知の失敗と修正: 初回guest検査のCookieモーダル操作、SQL final/result resumeStepIdの誤値、submitted importのUIcursor混入、未回答/部分選択拒否、同時刻表現の文字列比較、catalog遷移完了前の原本比較をそれぞれ原因に沿って修正。保存元は各失敗時に保持され、移行成功時のみ削除した。保存競合時の明示再読込は画面を再初期化し、別タブの更新で入力中の選択を自動破棄しない。
 
 最新回収: main672904aへff統合後のcheckは259unit/2775assertions成功（test-results/data/fundamentals-upstream-check.log）。authは初回162pass/2fail（catalog名と本文titleの語順差を検査が同一視したもの）をstable単元URLによる特定へ修正し、全164件3.9分成功（test-results/auth/fundamentals-fixed-auth.log）。progress全114件4.7分成功（fundamentals-complete-progress.log）、data最新SQL匿名権限回帰込み全fixture成功（fundamentals-complete-data.log）。上流追加AIB-C01実回帰1件を別途回収し、既存114件の結果を保持する。公開前のDraft review/CI/merge/本番反映は未完。
+
+## PR66 指摘対応
+
+- [x] P2 completedmanifestで同一row/hashの移行確認・削除再試行を許可（別payloadは拒否）。
+- [x] P1 trusted catalogから連続した完了prefix/位置/receipt/final前提をDBでも検証。CP再挑戦の複数receiptは保持する。
+- [x] P2 単元Aのoutbox競合でB/catalogを止めない。unit/version別flush、confirmed summaryと保存待ち案内。test-results/progress/pr66-outbox-scope-progress.log 実7件33.4秒成功、元command保持/別単元保存/明示解決を確認。
+- [x] test-results/data/pr66-review-check.log: 260unit/2781assertions・全quality/build成功。全基礎E2E型検査も成功。
+- [ ] 最新SQL実検証・統合focused回帰→commit/push→3threadreply/resolve→再review/最新head全CI→Ready/merge/publication。
+
+CI初回head065de59: data/progress/glossary成功、authは163pass/1fail（全許可再選択後の解析許可再適用）。mainのanalytics初期化依存をcookie consentの値だけでなく安定snapshotへ変更。同意UIが反映済みであることを待ってからoptoutし、実際のga-disable false→true→falseも検証する強化版cookies5件が成功（test-results/auth/pr66-consent-settled-regression.log）。test-results/data/pr66-review-final-check.logの全checkも成功。初回CI失敗を無視してmergeせず、修正後headの全CIを改めて回収する。
+
+SQL最終検証: test-results/data/pr66-import-review-data.log の実001010/全fixture成功。完了済みaccepted row/hashの冪等再試行、不完全進捗/欠落receipt/範囲外/不連続/再開不整合/UUID等価重複/必須field・questionRef欠落を拒否し、CP再挑戦の複数receipt+active final正例を維持した。初回追加validatorの括弧構文エラーを修正し再実行成功。rootは最終SQLに対する実guest移行2件を追加回収する。

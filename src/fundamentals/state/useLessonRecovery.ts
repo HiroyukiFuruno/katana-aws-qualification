@@ -10,7 +10,11 @@ export function useLessonRecovery(
   asset: DeliveryUnitAsset,
   onConfirmed: Confirm,
 ) {
-  const initiallyPending = useRef(Boolean(services.outbox?.hasPending()));
+  const initiallyPending = useRef(
+    Boolean(
+      services.outbox?.hasPending({ unitId: asset.unit.id, contentVersion: asset.contentVersion }),
+    ),
+  );
   const [busy, setBusy] = useState(initiallyPending.current);
   const [error, setError] = useState<unknown>();
   const mounted = useRef(true);

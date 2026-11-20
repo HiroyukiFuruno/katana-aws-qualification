@@ -100,6 +100,9 @@ export function LessonCatalogPage({ services, migrationAccess }: LessonCatalogPa
           loading={loading}
           error={summaryFailed ? t('fundamentalsHistoryUnavailable') : undefined}
           summaryUnavailable={summaryFailed}
+          pendingUnitIds={index.units
+            .filter((unit) => services.outbox?.hasPending(unit))
+            .map((unit) => unit.unitId)}
           onRetry={() => setReloadToken((value) => value + 1)}
           onNavigate={navigateLesson}
         />

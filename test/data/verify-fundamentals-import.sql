@@ -58,7 +58,19 @@ declare
   v_second_manifest uuid := '83333333-3333-4333-8333-333333333333';
   v_invalid_manifest uuid := '83444444-4444-4444-8444-444444444444';
   v_infinite_manifest uuid := '83555555-5555-4555-8555-555555555555';
+  v_missing_receipt_manifest uuid := '83666666-6666-4666-8666-666666666666';
+  v_canonical_uuid_manifest uuid := '84222222-2222-4222-8222-222222222222';
+  v_missing_checkpoint_ref_manifest uuid := '84333333-3333-4333-8333-333333333333';
+  v_missing_final_ref_manifest uuid := '84444444-4444-4444-8444-444444444444';
+  v_missing_final_selected_manifest uuid := '84555555-5555-4555-8555-555555555555';
+  v_incomplete_manifest uuid := '83777777-7777-4777-8777-777777777777';
+  v_out_of_range_manifest uuid := '83888888-8888-4888-8888-888888888888';
+  v_noncontiguous_manifest uuid := '83999999-9999-4999-8999-999999999999';
+  v_resume_manifest uuid := '84000000-0000-4000-8000-000000000000';
+  v_revisit_manifest uuid := '84111111-1111-4111-8111-111111111111';
   v_conflict jsonb;
+  v_bad jsonb;
+  v_revisit jsonb;
 begin
   perform public.initialize_learning_state();
   select jsonb_agg(
@@ -124,6 +136,101 @@ begin
   perform public.import_fundamentals_unit(0, v_manifest, 'import-unit:v1', v_payload);
   perform public.import_fundamentals_unit(0, v_manifest, 'import-unit:v1', v_payload);
   perform public.complete_migration(0, v_manifest);
+  perform public.import_fundamentals_unit(0, v_manifest, 'import-unit:v1', v_payload);
+  begin
+    perform public.import_fundamentals_unit(
+      0, v_manifest, 'import-unit:v1', jsonb_set(v_payload, '{resumeStage}', '"final"'::jsonb)
+    );
+    raise exception 'completed manifest accepted a different source hash';
+  exception when sqlstate '23505' then null;
+  end;
+  perform public.begin_migration(0, v_missing_receipt_manifest, 'fundamentals-progress-local-storage', 1, repeat('e', 64), 1);
+  begin
+    perform public.import_fundamentals_unit(
+      0, v_missing_receipt_manifest, 'import-unit:v1', jsonb_set(v_payload, '{checkpointReceipts}', '[]'::jsonb)
+    );
+    raise exception 'completed checkpoint without its receipt was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.begin_migration(0, v_canonical_uuid_manifest, 'fundamentals-progress-local-storage', 1, repeat('a', 63) || '5', 1);
+  v_bad := jsonb_set(v_payload, '{checkpointReceipts}', jsonb_build_array(
+    jsonb_build_object(
+      'stepId', 'check-1', 'receiptId', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'questionRef', jsonb_build_object('questionId', 'check-1', 'revision', 1, 'sourceVersion', 'v1'),
+      'selected', jsonb_build_array('a'), 'answeredAt', '2026-11-20T00:00:00Z', 'durationMs', 1200
+    ),
+    jsonb_build_object(
+      'stepId', 'check-1', 'receiptId', 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA',
+      'questionRef', jsonb_build_object('questionId', 'check-1', 'revision', 1, 'sourceVersion', 'v1'),
+      'selected', jsonb_build_array('a'), 'answeredAt', '2026-11-20T00:01:00Z', 'durationMs', 1200
+    )
+  ));
+  begin
+    perform public.import_fundamentals_unit(0, v_canonical_uuid_manifest, 'import-unit:v1', v_bad);
+    raise exception 'case-variant checkpoint receipt UUIDs were accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.begin_migration(0, v_missing_checkpoint_ref_manifest, 'fundamentals-progress-local-storage', 1, repeat('a', 63) || '6', 1);
+  begin
+    perform public.import_fundamentals_unit(0, v_missing_checkpoint_ref_manifest, 'import-unit:v1',
+      jsonb_set(v_payload, '{checkpointReceipts,0}', (v_payload->'checkpointReceipts'->0) - 'questionRef'));
+    raise exception 'checkpoint receipt without questionRef was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.begin_migration(0, v_missing_final_ref_manifest, 'fundamentals-progress-local-storage', 1, repeat('a', 63) || '7', 1);
+  begin
+    perform public.import_fundamentals_unit(0, v_missing_final_ref_manifest, 'import-unit:v1',
+      jsonb_set(v_payload, '{submittedFinals,0,responses,0}', (v_payload->'submittedFinals'->0->'responses'->'0') - 'questionRef'));
+    raise exception 'final response without questionRef was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.begin_migration(0, v_missing_final_selected_manifest, 'fundamentals-progress-local-storage', 1, repeat('a', 63) || '8', 1);
+  begin
+    perform public.import_fundamentals_unit(0, v_missing_final_selected_manifest, 'import-unit:v1',
+      jsonb_set(v_payload, '{submittedFinals,0,responses,0}', (v_payload->'submittedFinals'->0->'responses'->'0') - 'selected'));
+    raise exception 'final response without selected was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.begin_migration(0, v_incomplete_manifest, 'fundamentals-progress-local-storage', 1, repeat('f', 64), 1);
+  v_bad := jsonb_set(jsonb_set(jsonb_set(jsonb_set(v_payload, '{completedSlideIds}', '[]'::jsonb),
+    '{completedCheckpointIds}', '[]'::jsonb), '{checkpointReceipts}', '[]'::jsonb), '{furthestPlanPosition}', '0'::jsonb);
+  begin
+    perform public.import_fundamentals_unit(0, v_incomplete_manifest, 'import-unit:v1', v_bad);
+    raise exception 'submitted final without completed lesson steps was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.begin_migration(0, v_out_of_range_manifest, 'fundamentals-progress-local-storage', 1, repeat('a', 63) || '1', 1);
+  begin
+    perform public.import_fundamentals_unit(
+      0, v_out_of_range_manifest, 'import-unit:v1', jsonb_set(v_payload, '{furthestPlanPosition}', '3'::jsonb)
+    );
+    raise exception 'out-of-range lesson position was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.begin_migration(0, v_noncontiguous_manifest, 'fundamentals-progress-local-storage', 1, repeat('a', 63) || '2', 1);
+  begin
+    perform public.import_fundamentals_unit(
+      0, v_noncontiguous_manifest, 'import-unit:v1', jsonb_set(v_payload, '{completedSlideIds}', '[]'::jsonb)
+    );
+    raise exception 'noncontiguous lesson completion was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.begin_migration(0, v_resume_manifest, 'fundamentals-progress-local-storage', 1, repeat('a', 63) || '3', 1);
+  v_bad := jsonb_set(jsonb_set(v_payload, '{resumeStage}', '"slide"'::jsonb), '{resumeStepId}', '"slide-1"'::jsonb);
+  begin
+    perform public.import_fundamentals_unit(0, v_resume_manifest, 'import-unit:v1', v_bad);
+    raise exception 'inconsistent result resume state was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  if (select count(*) from public.migration_items
+    where user_id = '88888888-8888-4888-8888-888888888888' and manifest_id = v_manifest) <> 1
+    or exists (select 1 from public.migration_items where manifest_id in (
+      v_missing_receipt_manifest, v_canonical_uuid_manifest, v_missing_checkpoint_ref_manifest,
+      v_missing_final_ref_manifest, v_missing_final_selected_manifest, v_incomplete_manifest, v_out_of_range_manifest,
+      v_noncontiguous_manifest, v_resume_manifest
+    )) then
+    raise exception 'invalid or completed fundamentals imports changed migration receipts';
+  end if;
   if public.load_fundamentals_snapshot('import-unit', 'v1', 0)->'progress'->>'resumeStage' is distinct from 'result'
     or public.load_fundamentals_snapshot('import-unit', 'v1', 0)->'progress'->'resumeStepId' is distinct from 'null'::jsonb then
     raise exception 'submitted guest import did not resume at the result without a lesson step id';
@@ -134,9 +241,30 @@ begin
     raise exception 'progress summary did not read the owner submitted result';
   end if;
 
-  perform public.start_fundamentals_final(
-    '86666666-6666-4666-8666-666666666666', 'import-unit', 'v1', 1, 0
-  );
+  perform public.begin_migration(0, v_revisit_manifest, 'fundamentals-progress-local-storage', 1, repeat('a', 63) || '4', 1);
+  v_revisit := jsonb_set(v_payload, '{checkpointReceipts}',
+    v_payload->'checkpointReceipts' || jsonb_build_array(jsonb_build_object(
+      'stepId', 'check-1',
+      'receiptId', '85555555-5555-4555-8555-555555555556',
+      'questionRef', jsonb_build_object('questionId', 'check-1', 'revision', 1, 'sourceVersion', 'v1'),
+      'selected', jsonb_build_array('a'),
+      'answeredAt', '2026-11-20T00:06:00Z',
+      'durationMs', 1300
+    )));
+  v_revisit := jsonb_set(v_revisit, '{activeFinal}', jsonb_build_object(
+    'sessionId', '86666666-6666-4666-8666-666666666666',
+    'startedAt', '2026-11-20T00:06:00Z',
+    'position', 0,
+    'questionOrder', v_order,
+    'responses', '{}'::jsonb
+  ));
+  v_revisit := jsonb_set(jsonb_set(v_revisit, '{resumeStage}', '"final"'::jsonb), '{resumeStepId}', 'null'::jsonb);
+  perform public.import_fundamentals_unit(0, v_revisit_manifest, 'import-unit:v1', v_revisit);
+  if not exists (select 1 from public.migration_items where manifest_id = v_revisit_manifest)
+    or public.load_fundamentals_snapshot('import-unit', 'v1', 0)->'progress'->>'activeFinalSessionId'
+      is distinct from '86666666-6666-4666-8666-666666666666' then
+    raise exception 'revisited checkpoint and active final import was not retained';
+  end if;
   perform public.begin_migration(
     0, v_second_manifest, 'fundamentals-progress-local-storage', 1,
     repeat('b', 64), 1
@@ -149,6 +277,7 @@ begin
     'responses', '{}'::jsonb
   ));
   v_conflict := jsonb_set(v_conflict, '{submittedFinals}', '[]'::jsonb);
+  v_conflict := jsonb_set(v_conflict, '{resumeStage}', '"final"'::jsonb);
   begin
     perform public.import_fundamentals_unit(0, v_second_manifest, 'import-unit:v1', v_conflict);
     raise exception 'conflicting active final was accepted';
@@ -186,7 +315,7 @@ begin
   ) then
     raise exception 'submitted guest final was not server-rescored';
   end if;
-  if (select count(*) from public.learning_events where user_id = '88888888-8888-4888-8888-888888888888') <> 13 then
+  if (select count(*) from public.learning_events where user_id = '88888888-8888-4888-8888-888888888888') <> 14 then
     raise exception 'checkpoint and submitted final history was not recorded exactly once';
   end if;
   if not exists (

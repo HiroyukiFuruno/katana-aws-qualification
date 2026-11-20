@@ -3,14 +3,16 @@ import { openMemberCourse } from './course';
 import {
   allowDashboardGuestStorage,
   clearGuestConsent,
-  dashboardOverview,
   dashboardText,
   expectDashboardMetrics,
-  openDashboardAdvanced,
-  openWidgetCustomize,
   saveMemberDashboardAttempts,
   seedGuestDashboardAttempts,
 } from './dashboard.helpers';
+import {
+  openDashboardAdvanced,
+  openDashboardSettingsCategory,
+  openDashboardWidgetSettings,
+} from './dashboard-actions';
 import { createSessions, setRealSession } from './sessions';
 
 test('unconsented guest does not read saved learning records for dashboard data', async ({
@@ -110,11 +112,12 @@ test('member settings persist independently and widget overrides differ from glo
     await controls.getByLabel(dashboardText.dashboardFormat).selectOption('choice-single');
     await controls.getByRole('button', { name: dashboardText.dashboardApply }).click();
     await expectDashboardMetrics(firstPage, '1', '100%');
-    const overview = dashboardOverview(firstPage);
-    await openWidgetCustomize(overview);
-    await overview
-      .locator('label')
-      .filter({ hasText: dashboardText.dashboardFormat })
+    const editor = await openDashboardWidgetSettings(firstPage, dashboardText.dashboardWidgetOverview);
+    await editor
+      .locator('.dashboard-filter-field')
+      .filter({
+        has: firstPage.getByRole('listbox', { name: dashboardText.dashboardFormat, exact: true }),
+      })
       .getByRole('button', { name: dashboardText.dashboardAll })
       .click();
     await expectDashboardMetrics(firstPage, '2', '50%');
@@ -130,9 +133,12 @@ test('member settings persist independently and widget overrides differ from glo
     await secondPage.goto('/ja/dashboard/');
     await setRealSession(secondPage, second);
     await secondPage.reload();
-    await expect(
-      secondPage.locator('.dashboard-controls').getByLabel(dashboardText.dashboardPeriod),
-    ).toHaveValue('30d');
+    const secondSettings = await openDashboardSettingsCategory(
+      secondPage,
+      'dashboardSettingsFilters',
+      'dashboardSettingsBasic',
+    );
+    await expect(secondSettings.getByLabel(dashboardText.dashboardPeriod)).toHaveValue('30d');
   } finally {
     await Promise.all([firstContext.close(), secondContext.close()]);
   }

@@ -1,9 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { test } from '@playwright/test';
 import { type Locale, locales } from '../../src/locales';
 import {
   allowDashboardGuestStorage,
-  dashboardOverview,
-  dashboardText,
+  expectDashboardMetrics,
   seedGuestDashboardAttempts,
 } from './dashboard.helpers';
 import {
@@ -21,19 +20,7 @@ for (const locale of locales) {
     await allowDashboardGuestStorage(page);
     await seedGuestDashboardAttempts(page);
     await page.reload();
-    const overview = dashboardOverview(page);
-    await expect(
-      overview
-        .locator('.dashboard-viz-metric')
-        .filter({ hasText: dashboardText.dashboardMetricAnswered })
-        .locator('strong'),
-    ).toHaveText('2');
-    await expect(
-      overview
-        .locator('.dashboard-viz-metric')
-        .filter({ hasText: dashboardText.dashboardMetricAccuracy })
-        .locator('strong'),
-    ).toHaveText('50%');
+    await expectDashboardMetrics(page, '2', '50%');
     for (const condition of layoutConditions) {
       await page.setViewportSize({ width: condition.width, height: condition.height });
       await openLocalizedDashboard(page, locale as Locale);

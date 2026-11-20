@@ -1,10 +1,10 @@
 import { expect, type Page, test } from '@playwright/test';
+import { allowDashboardGuestStorage, dashboardText } from './dashboard.helpers';
 import {
-  allowDashboardGuestStorage,
-  dashboardText,
   openDashboardAdvanced,
-  openWidgetCustomize,
-} from './dashboard.helpers';
+  openDashboardWidgetSettings,
+  setDashboardDensity,
+} from './dashboard-actions';
 
 function dashboardWidgets(page: Page) {
   return page.locator('.dashboard-widget');
@@ -25,6 +25,7 @@ function widgetTitles(page: Page) {
 async function openGuestDashboard(page: Page) {
   await page.goto('/ja/dashboard/');
   await allowDashboardGuestStorage(page);
+  await setDashboardDensity(page, 'full');
 }
 
 test('guest keeps two instances of the same widget after saving and reloading', async ({ browser }) => {
@@ -32,7 +33,11 @@ test('guest keeps two instances of the same widget after saving and reloading', 
   try {
     const page = await context.newPage();
     await openGuestDashboard(page);
-    await openDashboardAdvanced(page);
+    await openDashboardWidgetSettings(page);
+    const addDetails = page.locator('.dashboard-controls details').filter({
+      hasText: dashboardText.dashboardAddWidget,
+    });
+    await addDetails.locator('summary').click();
     const addTrend = page.getByRole('button', {
       name: `${dashboardText.dashboardAddWidget} ${dashboardText.dashboardWidgetTrend}`,
     });
@@ -55,9 +60,8 @@ test('guest moves widgets with the keyboard while retaining focus', async ({ bro
   try {
     const page = await context.newPage();
     await openGuestDashboard(page);
-    const trend = dashboardWidget(page, dashboardText.dashboardWidgetTrend);
-    await openWidgetCustomize(trend);
-    const up = trend.getByRole('button', { name: dashboardText.dashboardMoveUp });
+    const editor = await openDashboardWidgetSettings(page, dashboardText.dashboardWidgetTrend);
+    const up = editor.getByRole('button', { name: dashboardText.dashboardMoveUp });
     await up.focus();
     await page.keyboard.press('Enter');
     await expect
@@ -69,7 +73,7 @@ test('guest moves widgets with the keyboard while retaining focus', async ({ bro
       ]);
     await expect(up).toBeFocused();
 
-    const down = trend.getByRole('button', { name: dashboardText.dashboardMoveDown });
+    const down = editor.getByRole('button', { name: dashboardText.dashboardMoveDown });
     await down.focus();
     await page.keyboard.press('Enter');
     await expect

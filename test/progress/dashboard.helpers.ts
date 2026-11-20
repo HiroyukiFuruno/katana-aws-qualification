@@ -1,10 +1,13 @@
 import { expect, type Page } from '@playwright/test';
+import type { Locale } from '../../src/locales';
 import ja from '../../src/locales/ja.json' with { type: 'json' };
+import { messages } from '../../src/messages';
+import { showDashboardWidget } from './dashboard-actions';
 
 const historyKey = 'saa-study.attempts.v1';
 const consentKey = 'katana.learning-progress-consent.v1';
 
-export const dashboardText = ja;
+export { ja as dashboardText };
 
 async function questions(page: Page) {
   return page.evaluate(async () => {
@@ -61,53 +64,28 @@ export async function clearGuestConsent(page: Page) {
   await page.evaluate((key) => localStorage.removeItem(key), consentKey);
 }
 
-export async function allowDashboardGuestStorage(page: Page) {
-  await expect(
-    page.getByRole('heading', { name: dashboardText.dashboardTitle, exact: true }),
-  ).toBeVisible();
-  const necessary = page.getByRole('button', { name: '必要なもののみ', exact: true });
+export async function allowDashboardGuestStorage(page: Page, locale: Locale = 'ja') {
+  const text = messages[locale];
+  await expect(page.getByRole('heading', { name: text.dashboardTitle, exact: true })).toBeVisible();
+  const necessary = page.getByRole('button', { name: text.cookieNecessary, exact: true });
   if (await necessary.isVisible()) await necessary.click();
-  await page.getByRole('checkbox', { name: dashboardText.progressStorageAllow }).click();
+  await page.getByRole('checkbox', { name: text.progressStorageAllow }).click();
   await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), consentKey)).toBe('granted');
 }
 
-function overview(page: Page) {
-  return page
-    .locator('.dashboard-widget')
-    .filter({ has: page.getByRole('heading', { name: dashboardText.dashboardWidgetOverview }) });
-}
-
 export async function expectDashboardMetrics(page: Page, answered: string, accuracy: string) {
-  const widget = overview(page);
+  const widget = await showDashboardWidget(page, ja.dashboardWidgetOverview);
   await expect(widget).toBeVisible();
   await expect(
     widget
       .locator('.dashboard-viz-metric')
-      .filter({ hasText: dashboardText.dashboardMetricAnswered })
+      .filter({ hasText: ja.dashboardMetricAnswered })
       .locator('strong'),
   ).toHaveText(answered);
   await expect(
     widget
       .locator('.dashboard-viz-metric')
-      .filter({ hasText: dashboardText.dashboardMetricAccuracy })
+      .filter({ hasText: ja.dashboardMetricAccuracy })
       .locator('strong'),
   ).toHaveText(accuracy);
-}
-
-export function dashboardOverview(page: Page) {
-  return overview(page);
-}
-
-export async function openWidgetCustomize(widget: ReturnType<typeof overview>) {
-  const details = widget.locator('details.dashboard-widget-customize');
-  await details.locator('summary').filter({ hasText: dashboardText.dashboardCustomize }).first().click();
-  await expect(details).toHaveAttribute('open', '');
-}
-
-export async function openDashboardAdvanced(page: Page) {
-  const controls = page.locator('.dashboard-controls');
-  if ((await controls.getAttribute('open')) === null) await controls.locator(':scope > summary').click();
-  const details = page.locator('.dashboard-controls details.dashboard-advanced-controls');
-  await details.locator('summary').filter({ hasText: dashboardText.dashboardCustomize }).click();
-  await expect(details).toHaveAttribute('open', '');
 }

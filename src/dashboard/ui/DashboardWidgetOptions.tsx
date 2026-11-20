@@ -4,6 +4,7 @@ import type { DashboardFilters } from '../queryTypes';
 import type { DashboardFacets } from '../summaryTypes';
 import { DashboardOverrideSelect } from './DashboardOverrideSelect';
 import { dashboardFilterOptions } from './dashboardFilterOptions';
+import { dashboardPeriodKeys } from './dashboardOptionLabels';
 import { type DashboardOverrideKey, updateWidgetOverride } from './dashboardWidgetOverrides';
 
 type Props = {
@@ -36,7 +37,6 @@ export function DashboardWidgetOptions({ widget, facets, onChange }: Props) {
     unitIds: null,
   });
   const values: Record<string, string[]> = {
-    period: ['7d', '30d', '90d', 'all'],
     certificationIds: filterOptions.certificationIds,
     categories: filterOptions.categories,
     modes: filterOptions.modes,
@@ -103,7 +103,7 @@ export function DashboardWidgetOptions({ widget, facets, onChange }: Props) {
             {t('dashboardTimezone')}
             <input
               value={typeof widget.overrides.timezone === 'string' ? widget.overrides.timezone : ''}
-              placeholder={t('dashboardInherit')}
+              placeholder={t('dashboardOverrideInherit')}
               onChange={(event) =>
                 onChange(updateWidgetOverride(widget, key, event.target.value || undefined))
               }
@@ -125,9 +125,9 @@ export function DashboardWidgetOptions({ widget, facets, onChange }: Props) {
               }
             >
               <option value="">{t('dashboardInherit')}</option>
-              {values.period.map((item) => (
-                <option key={item} value={item}>
-                  {item}
+              {Object.entries(dashboardPeriodKeys).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {t(label)}
                 </option>
               ))}
             </select>

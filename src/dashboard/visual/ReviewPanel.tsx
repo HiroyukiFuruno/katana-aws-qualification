@@ -5,6 +5,7 @@ import { dashboardCourseLink, dashboardLessonLink } from '../learningLinks';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardReview } from '../summaryTypes';
 import type { DashboardLessonData } from '../viewTypes';
+import { dashboardChartPageSize, useDashboardDensity } from './DashboardDensity';
 import { DashboardDataTable } from './DataTable';
 import { DashboardPagePicker } from './PagePicker';
 import { ValueBars } from './ValueBars';
@@ -31,11 +32,13 @@ export function ReviewPanel({
     titles: Map<string, string>;
     failed: boolean;
   } | null>(null);
-  const pages = Math.max(1, Math.ceil(review.length / 10));
+  const density = useDashboardDensity();
+  const size = widget.chart === 'bar' && density !== 'full' ? dashboardChartPageSize(density) : 10;
+  const pages = Math.max(1, Math.ceil(review.length / size));
   const page = Math.min(requested, pages - 1);
   const scope = useMemo(
-    () => ({ rows: review.slice(page * 10, (page + 1) * 10), retry }),
-    [review, page, retry],
+    () => ({ rows: review.slice(page * size, (page + 1) * size), retry }),
+    [review, page, retry, size],
   );
   useEffect(() => {
     let active = true;
@@ -80,6 +83,7 @@ export function ReviewPanel({
       )}
       {widget.chart === 'bar' && (
         <ValueBars
+          paginate={false}
           points={scope.rows.map((row) => ({
             id: identity(row),
             label: title(row),
@@ -92,6 +96,8 @@ export function ReviewPanel({
         />
       )}
       <DashboardDataTable
+        primary={widget.chart === 'table'}
+        keepInCompact
         caption={t('dashboardWidgetReviews')}
         columns={[
           { id: 'title', label: t('dashboardGroup') },
@@ -123,7 +129,12 @@ export function ReviewPanel({
           };
         })}
       />
-      <DashboardPagePicker page={page} pages={pages} onChange={setRequested} />
+      <DashboardPagePicker
+        chart={widget.chart === 'bar'}
+        page={page}
+        pages={pages}
+        onChange={setRequested}
+      />
     </div>
   );
 }

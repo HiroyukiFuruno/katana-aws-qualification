@@ -1,6 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 import type { DashboardChart } from '../../src/dashboard/preferenceTypes';
-import { dashboardText, openDashboardAdvanced } from './dashboard.helpers';
+import { dashboardText } from './dashboard.helpers';
+import {
+  openDashboardAdvanced,
+  openDashboardWidgetSettings,
+  setDashboardDensity,
+  showDashboardWidget,
+} from './dashboard-actions';
 
 export const chartFixture = {
   counts: [5, 6, 7] as const,
@@ -48,9 +54,18 @@ export async function seedChartFixture(page: Page) {
 }
 
 export async function saveAllDashboardWidgets(page: Page) {
+  await setDashboardDensity(page, 'full');
+  const controls = page.locator('.dashboard-controls');
+  await openDashboardWidgetSettings(page);
+  await controls.getByRole('tab', { name: dashboardText.dashboardSettingsFilters }).click();
+  await controls.getByLabel(dashboardText.dashboardTimezone).fill('UTC');
+  await controls.getByRole('tab', { name: dashboardText.dashboardSettingsDisplay }).click();
   await openDashboardAdvanced(page);
-  await page.locator('.dashboard-controls').getByLabel(dashboardText.dashboardTimezone).fill('UTC');
-  const picker = page.locator('.dashboard-widget-picker');
+  await controls.getByLabel(dashboardText.dashboardTimezone).fill('UTC');
+  await openDashboardWidgetSettings(page);
+  const add = controls.locator('details').filter({ hasText: dashboardText.dashboardAddWidget });
+  if ((await add.getAttribute('open')) === null) await add.locator('summary').click();
+  const picker = controls.locator('.dashboard-widget-picker');
   while ((await picker.getByRole('button', { name: dashboardText.dashboardShowWidget }).count()) > 0) {
     await picker.getByRole('button', { name: dashboardText.dashboardShowWidget }).first().click();
   }
@@ -64,26 +79,16 @@ export async function selectFixtureCharts(page: Page) {
     [dashboardText.dashboardWidgetCategories, 'radar'],
     [dashboardText.dashboardWidgetDurations, 'box'],
   ] as const) {
-    const widget = page.locator('.dashboard-widget').filter({
-      has: page.getByRole('heading', { name: title, exact: true }),
-    });
-    const details = widget.locator('details.dashboard-widget-customize');
-    if ((await details.getAttribute('open')) === null) await details.locator('summary').click();
-    await details.getByLabel(dashboardText.dashboardChart).selectOption(chart);
+    const editor = await openDashboardWidgetSettings(page, title);
+    await editor.getByLabel(dashboardText.dashboardChart).selectOption(chart);
   }
   await page.getByRole('button', { name: dashboardText.dashboardApply, exact: true }).click();
   await page.getByRole('button', { name: dashboardText.dashboardSave, exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: dashboardText.dashboardSaved })).toBeVisible();
 }
 
-export function chartWidget(page: Page, title: string) {
-  return page
-    .locator('.dashboard-widget')
-    .filter({ has: page.getByRole('heading', { name: title, exact: true }) });
-}
+export const chartWidget = showDashboardWidget;
 export async function chooseChart(page: Page, title: string, chart: DashboardChart) {
-  const widget = chartWidget(page, title);
-  const details = widget.locator('details.dashboard-widget-customize');
-  if ((await details.getAttribute('open')) === null) await details.locator('summary').click();
-  await details.getByLabel(dashboardText.dashboardChart).selectOption(chart);
+  const editor = await openDashboardWidgetSettings(page, title);
+  await editor.getByLabel(dashboardText.dashboardChart).selectOption(chart);
 }

@@ -19,26 +19,28 @@ export function DashboardFilterFields({ filters, facets, onChange }: Props) {
     change: (next: string[] | null) => void,
     labelValue = (value: string) => value,
   ) => (
-    <label>
-      {label}
-      <select
-        multiple
-        value={current ?? []}
-        onChange={(event) => {
-          const next = [...event.currentTarget.selectedOptions].map((option) => option.value);
-          change(next.length ? next : null);
-        }}
-      >
-        {values.map((value) => (
-          <option key={value} value={value}>
-            {labelValue(value)}
-          </option>
-        ))}
-      </select>
+    <div className="dashboard-filter-field">
+      <label>
+        {label}
+        <select
+          multiple
+          value={current ?? []}
+          onChange={(event) => {
+            const next = [...event.currentTarget.selectedOptions].map((option) => option.value);
+            change(next.length ? next : null);
+          }}
+        >
+          {values.map((value) => (
+            <option key={value} value={value}>
+              {labelValue(value)}
+            </option>
+          ))}
+        </select>
+      </label>
       <button type="button" onClick={() => change(null)}>
         {t('dashboardAll')}
       </button>
-    </label>
+    </div>
   );
   const enumLabel = (key: string) => (value: string) => dashboardOptionLabel(key, value, t);
   return (

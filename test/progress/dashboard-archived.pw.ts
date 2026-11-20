@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { dashboardText, expectDashboardMetrics } from './dashboard.helpers';
-import { archivedAsset, archivedGuestFinal } from './fundamentals-edition.fixture';
+import { setDashboardDensity, showDashboardWidget } from './dashboard-actions';
 import { lessonPrefix } from './fundamentals.helpers';
+import { archivedAsset, archivedGuestFinal } from './fundamentals-edition.fixture';
 import { createSessions, setRealSession } from './sessions';
 
 for (const owner of ['guest', 'member'] as const) {
@@ -27,19 +28,25 @@ for (const owner of ['guest', 'member'] as const) {
     }
     await page.goto('/ja/dashboard/');
     await expectDashboardMetrics(page, '16', '100%');
+    await setDashboardDensity(page, 'full');
+    await showDashboardWidget(page, dashboardText.dashboardWidgetExams);
     const finals = page.getByRole('table', {
       name: dashboardText.dashboardFinalPassRate,
       exact: true,
     });
     await expect(finals).toContainText('100%');
-    const progress = page
+    const progress = page.locator('.dashboard-widget').filter({
+      has: page.getByRole('heading', { name: dashboardText.dashboardWidgetLessons, exact: true }),
+    });
+    await showDashboardWidget(page, dashboardText.dashboardWidgetLessons);
+    const lessonProgress = progress
       .getByRole('table', { name: dashboardText.lessonProgress, exact: true })
       .getByRole('row')
       .filter({ hasText: archivedAsset.unit.title });
-    await expect(progress).toContainText('0 / 27');
-    await expect(progress).toContainText('0 / 4');
-    await expect(progress).toContainText(dashboardText.fundamentalsNotStarted);
-    await expect(progress).not.toContainText(dashboardText.lessonPassed);
+    await expect(lessonProgress).toContainText('0 / 27');
+    await expect(lessonProgress).toContainText('0 / 4');
+    await expect(lessonProgress).toContainText(dashboardText.fundamentalsNotStarted);
+    await expect(lessonProgress).not.toContainText(dashboardText.lessonPassed);
     await expect(page.getByText(dashboardText.dashboardError, { exact: true })).toHaveCount(0);
     await page.reload();
     await expectDashboardMetrics(page, '16', '100%');

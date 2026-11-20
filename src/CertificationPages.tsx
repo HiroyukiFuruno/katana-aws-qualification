@@ -4,6 +4,7 @@ import { certificationGuides, officialGuideLink } from './certificationGuides';
 import { certifications, levelMessage } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
+import { SiteAd } from './SiteAd';
 
 export function CertificationPages({ id }: { id?: string }) {
   const { locale, t } = usePreferences();
@@ -14,6 +15,7 @@ export function CertificationPages({ id }: { id?: string }) {
     return (
       <main id="main" className="shell study-directory">
         <h1>{t('certGuides')}</h1>
+        <SiteAd placement="inline" />
         <CertificationDirectory mode="certifications" />
       </main>
     );
@@ -54,6 +56,7 @@ export function CertificationPages({ id }: { id?: string }) {
       <p className="cert-fee-note">
         {t('certExchangeNote', { conversion: price.conversion, rate: price.rate })}
       </p>
+      <SiteAd placement="inline" />
       <article className="card">
         <h2>{t('certScope')}</h2>
         <p lang="ja">{guide.scope}</p>

@@ -2,6 +2,7 @@ import { AccountBenefits } from './auth/AccountBenefits';
 import { CertificationDirectory } from './CertificationDirectory';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
+import { SiteAd } from './SiteAd';
 
 export function NotFound() {
   return (
@@ -23,6 +24,7 @@ export function StudyPaths() {
         <p>{t('studyPathsIntro')}</p>
       </div>
       <AccountBenefits context="study" showAction />
+      <SiteAd placement="inline" />
       <div className="entry-grid study-paths">
         <a className="entry-card" href={localePath(locale, 'study/fundamentals')}>
           <h2>{t('learnFundamentals')}</h2>
@@ -51,6 +53,7 @@ export function StudyDirectory() {
         <h1>{t('learnFromQuestions')}</h1>
         <p>{t('studyEntry')}</p>
       </div>
+      <SiteAd placement="inline" />
       <CertificationDirectory mode="study" />
     </main>
   );

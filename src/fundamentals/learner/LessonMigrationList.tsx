@@ -24,15 +24,15 @@ export function LessonMigrationList({ services, access, onImported }: Props) {
     setFailed(false);
     if (!member || !canPersistGuestProgress(localStorage)) return;
     void services.assets
-      .index()
-      .then(async (index) => {
+      .editions()
+      .then(async (editions) => {
         const pending = new Set<string>();
         for (let offset = 0; offset < localStorage.length; offset++) {
           const key = localStorage.key(offset);
           if (key?.startsWith(guestLessonPrefix)) pending.add(key);
         }
         const assets: DeliveryUnitAsset[] = [];
-        for (const entry of index.units) {
+        for (const entry of editions.flatMap(({ index }) => index.units)) {
           const key = `${guestLessonPrefix}${entry.unitId}.${entry.contentVersion}`;
           if (pending.delete(key))
             assets.push(await services.assets.unit(entry.unitId, entry.contentVersion));

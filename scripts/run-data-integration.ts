@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { createSessions, verifyPostgrest, waitForRest } from '../test/data/rest-client.ts';
 import { verifyConcurrentRevisions } from '../test/data/verify-concurrency.ts';
+import { dataMigrations } from './data-migrations.ts';
 
 const compose = ['compose', '-f', 'test/data/compose.yml'];
 
@@ -33,18 +34,15 @@ function psql(userA: string, userB: string) {
     '/verification/verify-exam-clock.sql',
     '-f',
     '/verification/verify-cascade.sql',
+    '-f',
+    '/verification/verify-fundamentals.sql',
+    '-f',
+    '/verification/verify-fundamentals-import.sql',
   ]);
 }
 
 function applyMigrations() {
-  for (const migration of [
-    '202611200001_learning_schema.sql',
-    '202611200002_learning_writes.sql',
-    '202611200003_learning_summaries.sql',
-    '202611200004_profile_snapshot.sql',
-    '202611200005_exam_clock.sql',
-    '202611200006_revision_conflicts.sql',
-  ]) {
+  for (const migration of dataMigrations) {
     run('docker', [
       ...compose,
       'exec',

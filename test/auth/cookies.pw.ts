@@ -64,15 +64,18 @@ test('analytics choice opens global consent instead of showing an ineffective ch
 test('accept all reapplies analytics after a separate analytics opt-out', async ({ page }) => {
   await page.goto('/ja/privacy/');
   await page.getByRole('button', { name: 'アクセス解析・広告を許可', exact: true }).click();
+  const analyticsDisabled = () => page.evaluate(() => window['ga-disable-G-XS97G1267H' as keyof Window]);
+  await expect.poll(analyticsDisabled).toBe(false);
   const analytics = page.getByRole('checkbox', {
     name: 'GA4 によるアクセス計測を許可する',
     exact: true,
   });
+  await expect(analytics).toBeChecked();
   await analytics.uncheck();
+  await expect(analytics).not.toBeChecked();
+  await expect.poll(analyticsDisabled).toBe(true);
   await page.getByRole('button', { name: 'Cookie設定', exact: true }).click();
   await page.getByRole('button', { name: 'アクセス解析・広告を許可', exact: true }).click();
   await expect(analytics).toBeChecked();
-  await expect
-    .poll(() => page.evaluate(() => window['ga-disable-G-XS97G1267H' as keyof Window]))
-    .toBe(false);
+  await expect.poll(analyticsDisabled).toBe(false);
 });

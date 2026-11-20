@@ -1,9 +1,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { certifications, studyCourses } from '../src/certifications.ts';
+import { titleForLessonPage } from '../src/fundamentals/delivery/routePages.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { type Message, messages } from '../src/messages.ts';
-import { accountPages, publishedLocalesFor, publishedPages } from '../src/routes.ts';
+import { accountPages, privateLessonPages, publishedLocalesFor, publishedPages } from '../src/routes.ts';
 
 const origin = 'https://kaq.katana-projects.org';
 const template = await readFile('dist/index.html', 'utf8');
@@ -35,9 +36,12 @@ for (const locale of locales) {
     const path = localePath(locale, entry);
     const entries = entry.startsWith('study/') ? studyCourses : certifications;
     const certification = entries.find((cert) => cert.id === entry.split('/')[1]);
-    const baseTitle = Object.hasOwn(indexTitles, entry)
-      ? dictionary[indexTitles[entry as keyof typeof indexTitles]]
-      : certification && `${certification.name} (${certification.id.toUpperCase()})`;
+    const lessonTitle = titleForLessonPage(entry);
+    const baseTitle =
+      lessonTitle ??
+      (Object.hasOwn(indexTitles, entry)
+        ? dictionary[indexTitles[entry as keyof typeof indexTitles]]
+        : certification && `${certification.name} (${certification.id.toUpperCase()})`);
     if (!baseTitle) throw new Error(`Missing title for ${entry}`);
     const alternateLinks = [...supported, 'x-default']
       .map(
@@ -81,6 +85,22 @@ for (const locale of locales) {
       );
     const directory = join('dist', path);
     await mkdir(directory, { recursive: true });
+    await writeFile(join(directory, 'index.html'), html);
+  }
+}
+
+for (const locale of locales) {
+  for (const entry of privateLessonPages) {
+    const path = localePath(locale, entry);
+    const directory = join('dist', path);
+    await mkdir(directory, { recursive: true });
+    const html = template
+      .replace('lang="en"', `lang="${locale}"`)
+      .replace(/<link rel="canonical" href="[^"]*">/, '')
+      .replace(
+        '</head>',
+        '<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer"></head>',
+      );
     await writeFile(join(directory, 'index.html'), html);
   }
 }

@@ -1,36 +1,31 @@
 import { expect, test } from '@playwright/test';
-import content from '../../public/fundamentals/content.json' with { type: 'json' };
-import { answer, startPractice } from './fundamentals-helpers';
+import { lessonPath } from '../../src/fundamentals/delivery/navigation';
+import { lessonAssets, walkLessonReading } from '../progress/fundamentals.helpers';
+import { acceptNecessaryCookies } from '../progress/fundamentals-mobile.helpers';
 
-test('another tab refreshes catalog progress while an active review queue stays fixed', async ({
+test('another tab refreshes the catalog summary and reset clears the guest record', async ({
   page,
   context,
 }) => {
-  const unit = content.units[0];
-  const question = unit.questions[0];
-  const other = await context.newPage();
+  const asset = lessonAssets[0];
+  if (!asset) throw new Error('Missing fundamentals asset.');
   await page.goto('/ja/study/fundamentals/');
-  await page
-    .getByRole('checkbox', { name: 'ゲストの学習記録をこの端末に保存する', exact: true })
-    .check();
-  const card = page.locator('article').filter({ has: page.getByRole('heading', { name: unit.title }) });
-  await expect(card.locator('.fundamentals-status')).toContainText('未学習');
-  await other.goto(`/ja/study/fundamentals/?unit=${unit.id}`);
-  await startPractice(other);
-  const wrong = question.choices.find((choice) => !question.correct.includes(choice.id));
-  if (!wrong) throw Error('A wrong choice is required');
-  await answer(other, [...question.correct.slice(0, -1), wrong.id]);
-  await expect(card.locator('.fundamentals-status')).toContainText('復習対象あり');
-  await card.getByRole('button', { name: '誤答を復習する' }).click();
-  await other.goto(`/ja/study/fundamentals/?unit=${unit.id}&review=1`);
-  await answer(other, question.correct);
-  await expect(page.locator('.fundamentals-question .prompt')).toHaveText(question.prompt);
-  await page.getByRole('button', { name: '基礎学習の目次' }).click();
-  await expect(card.locator('.fundamentals-status')).toContainText('学習中');
+  await acceptNecessaryCookies(page);
+  await page.getByLabel('ゲストの学習記録をこの端末に保存する').check();
+  const card = page.locator('.lesson-catalog-card').filter({
+    has: page.getByRole('heading', { name: asset.unit.title, exact: true }),
+  });
+  await expect(card.locator('.lesson-catalog-status')).toContainText('未学習');
+  const other = await context.newPage();
+  await other.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' }));
+  await acceptNecessaryCookies(other);
+  await walkLessonReading(other, asset);
+  await other.getByRole('link', { name: '基礎学習の目次', exact: true }).click();
+  await expect(card.locator('.lesson-catalog-status')).toContainText('学習中');
   await other.evaluate(async () => {
-    const module = '/src/history.ts';
-    const { resetHistory } = await import(module);
+    const { resetHistory } = await import('/src/history.ts');
     await resetHistory();
   });
-  await expect(card.locator('.fundamentals-status')).toContainText('未学習');
+  await expect(card.locator('.lesson-catalog-status')).toContainText('未学習');
+  await other.close();
 });

@@ -1,23 +1,34 @@
 import { useEffect, useState } from 'react';
 import type { CoursePage } from './CourseNavigation';
 import {
+  type Attempt,
   exportHistory,
-  historyKey,
+  getActiveProgressStore,
   readHistory,
   resetHistory,
   saveAttempt,
   statsFor,
-  type Attempt,
 } from './history';
 import type { Message } from './messages';
 import { usePreferences } from './preferences';
-import { questionKey, type Question } from './questions';
+import { useLearningHistory } from './progress/useLearningHistory';
+import { type Question, questionKey } from './questions';
 
 export type PracticeSession = { questions: Question[]; index: number; correct: number };
 
-export function useCourseProgress(questions: Question[], archivedBank: Question[]) {
+export function useCourseProgress(
+  certificationId: string,
+  questions: Question[],
+  archivedBank: Question[],
+) {
+  const progressStore = getActiveProgressStore();
   const { t } = usePreferences();
-  const [history, setHistory] = useState<Attempt[]>([]);
+  const {
+    attempts: history,
+    setAttempts: setHistory,
+    historyError,
+    resetVersion,
+  } = useLearningHistory();
   const [page, setPage] = useState<CoursePage>('study');
   const [session, setSession] = useState<PracticeSession>();
   const [notice, setNotice] = useState<Message | ''>('');
@@ -37,23 +48,11 @@ export function useCourseProgress(questions: Question[], archivedBank: Question[
     : '—';
 
   useEffect(() => {
-    function refresh() {
-      try {
-        setHistory(readHistory());
-      } catch {
-        setNotice('historyFailed');
-      }
-    }
-    function onStorage(event: StorageEvent) {
-      if (event.key === historyKey || event.key === null) {
-        refresh();
-        if (event.newValue === null) setSession(undefined);
-      }
-    }
-    refresh();
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+    if (historyError) setNotice('historyFailed');
+  }, [historyError]);
+  useEffect(() => {
+    if (resetVersion > 0) setSession(undefined);
+  }, [resetVersion]);
 
   function navigate(next: CoursePage) {
     if (page === next) return;
@@ -69,7 +68,14 @@ export function useCourseProgress(questions: Question[], archivedBank: Question[
     if (!question || (page !== 'study' && page !== 'review')) throw new Error(t('questionMissing'));
     setBusy(true);
     try {
-      const result = await saveAttempt(question, selected, page, elapsed);
+      const result = await saveAttempt(
+        question,
+        selected,
+        page,
+        elapsed,
+        certificationId,
+        progressStore,
+      );
       setHistory(result.history);
       setSession(
         (current) => current && { ...current, correct: current.correct + result.attempt.reward },

@@ -1,13 +1,18 @@
 import { profileKey } from './assessment';
+import { normalizeCertificationId } from './certificationAliases';
+import { getActiveProgressStore } from './history';
+import type { Profile } from './progress/profileTypes';
 
-export type Profile = { earned: string[]; answers: Record<string, number> };
-
-const updatedCertifications = new Map([
-  ['dva-c02', 'dva-c03'],
-  ['sap-c02', 'sap-c03'],
-]);
+export type { Profile } from './progress/profileTypes';
 
 export function loadProfile(): Profile {
+  const store = getActiveProgressStore();
+  if (store === null) throw new Error('ロードマップを初期化中です。');
+  if (store) {
+    const snapshot = store.getSnapshot();
+    if (snapshot.state !== 'ready') throw new Error('ロードマップを読み込めませんでした。');
+    return snapshot.profile;
+  }
   try {
     const saved = JSON.parse(localStorage.getItem(profileKey) ?? 'null');
     return {
@@ -16,7 +21,7 @@ export function loadProfile(): Profile {
             ...new Set<string>(
               saved.earned
                 .filter((id: unknown): id is string => typeof id === 'string')
-                .map((id: string) => updatedCertifications.get(id) ?? id),
+                .map(normalizeCertificationId),
             ),
           ]
         : [],
@@ -25,4 +30,20 @@ export function loadProfile(): Profile {
   } catch {
     return { earned: [], answers: {} };
   }
+}
+
+export async function saveProfile(profile: Profile, expectedStore = getActiveProgressStore()) {
+  const current = getActiveProgressStore();
+  if (expectedStore !== undefined && expectedStore !== current) {
+    throw new Error('ロードマップの保存先が切り替わりました。');
+  }
+  if (expectedStore === null || current === null) throw new Error('ロードマップを初期化中です。');
+  if (expectedStore) {
+    const result = await expectedStore.replaceProfile(profile);
+    if (expectedStore !== getActiveProgressStore()) {
+      throw new Error('ロードマップの保存先が切り替わりました。');
+    }
+    return result;
+  }
+  localStorage.setItem(profileKey, JSON.stringify(profile));
 }

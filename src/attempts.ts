@@ -28,7 +28,13 @@ export function statsFor(history: Attempt[], question: Question) {
   return {
     total: attempts.length,
     wrong: attempts.filter((attempt) => !attempt.isCorrect).length,
-    lastReview: attempts.findLast((attempt) => attempt.mode === 'review'),
+    lastReview: attempts
+      .filter((attempt) => attempt.mode === 'review')
+      .reduce<Attempt | undefined>(
+        (latest, attempt) =>
+          !latest || Date.parse(attempt.answeredAt) >= Date.parse(latest.answeredAt) ? attempt : latest,
+        undefined,
+      ),
   };
 }
 

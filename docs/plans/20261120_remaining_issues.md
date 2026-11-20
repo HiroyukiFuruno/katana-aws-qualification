@@ -23,7 +23,7 @@ GitHubのOpen Issue #17, #19〜#25の本文を要件・DoDの一次情報とす�
 - [ ] #22 Facebook: 公開条件/最小権限、メール不足/取消し、連携/回帰/公開証跡。
 - [ ] #23 永続化: 全保存データ/RLS/冪等性/明示移行/同期失敗/切替/削除/JSONL/集計契約と実DB検証。
 - [ ] #24 ダッシュボード: 契約数値/フィルタ/空・失敗の区別/学習導線/全言語・アクセシビリティ/公開検証。
-- [ ] #25 基礎学習: 棚卸し→分類・到達目標・前提・順序・対象固定→教材と4設問形式→内容照合/検証/公開。
+- [x] #25 基礎学習: 棚卸し→分類・到達目標・前提・順序・対象固定→教材と4設問形式→内容照合/検証/公開。
 - [ ] #17 親: 全子Issueの担当範囲・公開証跡と要件対応を照合しClose。
 
 ## 作業分担と現状
@@ -56,6 +56,10 @@ GitHubはManagement APIからKeychain内の実credential再設定後、本人Chr
 
 - [/] 追加フィードバック: ログインボタンをベンダーごとの公式ロゴ/カラーへ変更（20261120_provider_buttons.md）。
 
+## Amazonのスコープアウト（最新指示）
+
+本人の明示指示により#21は今回の対象外。保留・上流待ちではなくnot plannedでCloseする。残る4種類のSSO、学習保存・移行、ダッシュボードの要件と品質条件は維持する。
+
 ## 2026-11-20 継続時点の担当と証跡
 
 #20はPR37/main75298dac、#22のprovider部分はPR43/mainedc0b2dで小分けに公開済み。両デプロイ後の本番6条件検査をaccount-planningのmicrosoft/facebook-incremental-validationへ保存。MicrosoftはAADSTS16000で本人の管理組織確認を親#17へ独立記録し、#20の実装・検証・公開範囲をCloseした。一般向け有効化は未完了でボタン非表示。Facebookも外部設定まで非表示。
@@ -80,4 +84,9 @@ GitHubはManagement APIからKeychain内の実credential再設定後、本人Chr
 - [/] #20: 外部設定を完了し、本番で個人Microsoftアカウントの認可→日本語dashboard→verified identity→reload→logout→再ログインを確認した。common tenant/個人+任意組織、email/xms_edov、最小scopeを保存。Issue20は公開証跡を記録してClose。詳細はdocs/auth-microsoft.md。
 - [ ] #22: app/callback/email/icon/credentialの設定は済みだが、Metaの既存アカウント制限でビジネスポートフォリオ作成が拒否され、一般公開のbusiness verification/App Review/実ログインは未完。providerと本番ボタンを無効に保つ。詳細はdocs/auth-facebook.md。
 - 本人の最新指示により、Microsoftと基礎学習を先行して公開し、Facebookはその後に取り組む。#22を完了扱いにせず、#23/#24の独立した実装・検証も続ける。
-- #25再実装はDraft PR55でレビュー/CI中。最新main統合後の全check73件/1,152assert、実Auth/OIDC/browser123件成功。公開確認まではIssue25をOpenに保つ。
+- #25はPR55/main b767b78で公開・Close済。12単元の読む教材と144問、実Auth/OIDC/browser162件・公開12単元のreading→practiceを検証済。
+
+
+## 最新の後続順序
+
+本人の指示により#25→#23→#24→#58。連携競合・分離防止・既存履歴mergeは#58へ分離し、本Issue群でアカウントの削除/統合を実行しない。#24は全資格/カテゴリ等の分析軸・各種グラフ・既定表示とユーザーカスタマイズを含む。ダッシュボード公開後の設定拡充は#59、資格取得/学習/模擬/本番予定のマイルストーンは#60へ登録済。

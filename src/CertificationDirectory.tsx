@@ -4,7 +4,12 @@ import { usePreferences } from './preferences';
 
 type DirectoryProps =
   | { mode: 'certifications' | 'study' }
-  | { mode: 'earned'; selected: string[]; onToggle: (id: string, checked: boolean) => void };
+  | {
+      mode: 'earned';
+      selected: string[];
+      saving: boolean;
+      onToggle: (id: string, checked: boolean) => void;
+    };
 
 const nameOrder = new Intl.Collator('en', { sensitivity: 'base' });
 
@@ -53,6 +58,7 @@ export function CertificationDirectory(props: DirectoryProps) {
                         <input
                           type="checkbox"
                           checked={props.selected.includes(cert.id)}
+                          disabled={props.saving}
                           onChange={(event) => props.onToggle(cert.id, event.currentTarget.checked)}
                         />
                         <span className="certification-row-content">

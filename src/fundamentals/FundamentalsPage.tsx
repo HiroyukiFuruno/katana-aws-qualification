@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { saveAttempt } from '../history';
+import { getActiveProgressStore, saveAttempt } from '../history';
 import { usePreferences } from '../preferences';
 import { questionKey } from '../questions';
 import { FundamentalsCatalog, latestFor } from './FundamentalsCatalog';
@@ -13,6 +13,7 @@ import { useFundamentalsSession } from './useFundamentalsSession';
 import './fundamentals.css';
 
 export function FundamentalsPage() {
+  const progressStore = getActiveProgressStore();
   const { t } = usePreferences();
   const { content, error, reload } = useFundamentalsContent();
   const { attempts, historyError, historyLoaded, setAttempts } = useFundamentalsHistory();
@@ -121,6 +122,8 @@ export function FundamentalsPage() {
               selected,
               session.review ? 'review' : 'study',
               elapsed,
+              'fundamentals',
+              progressStore,
             );
             setAttempts(result.history);
             return result.attempt;

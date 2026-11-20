@@ -10,6 +10,9 @@ test('another tab refreshes catalog progress while an active review queue stays 
   const question = unit.questions[0];
   const other = await context.newPage();
   await page.goto('/ja/study/fundamentals/');
+  await page
+    .getByRole('checkbox', { name: 'ゲストの学習記録をこの端末に保存する', exact: true })
+    .check();
   const card = page.locator('article').filter({ has: page.getByRole('heading', { name: unit.title }) });
   await expect(card.locator('.fundamentals-status')).toContainText('未学習');
   await other.goto(`/ja/study/fundamentals/?unit=${unit.id}`);

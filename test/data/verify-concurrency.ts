@@ -96,14 +96,14 @@ export async function verifyConcurrentRevisions(userId: string) {
     userId,
     "select public.replace_roadmap_profile('[]', '{}', 0, 0);",
     "select public.replace_roadmap_profile('[]', '{}', 0, 0);",
-    '40001',
+    'PT412',
   );
   sql(
     `begin; ${claim(userId)} select public.start_exam_session('60000000-0000-0000-0000-000000000001', 'saa-c03', '2026-11', jsonb_build_array(jsonb_build_object('question_id', 'q', 'question_revision', 1)), 60000, 0); commit;`,
   );
   const save =
     "select public.save_exam_response('60000000-0000-0000-0000-000000000001', 0, 0, 0, jsonb_build_object('question_id', 'q', 'question_revision', 1), '[]', false, 0, null);";
-  await assertConcurrent(userId, save, save, '40001');
+  await assertConcurrent(userId, save, save, 'PT412');
   const stale =
     "select public.append_learning_event(jsonb_build_object('event_id', '60000000-0000-0000-0000-000000000002', 'schema_version', 1, 'certification_id', 'saa-c03', 'question_id', 'q', 'question_revision', 1, 'source_version', '2026-11', 'category', 'security', 'mode', 'study', 'answered_at', '2026-01-01T00:00:00Z', 'selected', '[]', 'correct', '[]', 'is_correct', false, 'duration_ms', 0, 'attempt_number', 1, 'prior_incorrect_count', 0, 'reward', 0), 0);";
   await assertConcurrent(userId, 'select public.reset_my_learning_data(0);', stale, 'PT409');

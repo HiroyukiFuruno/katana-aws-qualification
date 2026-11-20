@@ -10,6 +10,7 @@ export function AssessmentQuestion({
   selectAnswer,
   onBack,
   onNext,
+  saving,
 }: {
   item: AssessmentItem;
   answer: number | undefined;
@@ -18,16 +19,17 @@ export function AssessmentQuestion({
   selectAnswer: (choice: number) => void;
   onBack: () => void;
   onNext: () => void;
+  saving: boolean;
 }) {
   const { t, locale } = usePreferences();
   return (
-    <section className="card roadmap-card">
+    <section className="card roadmap-card" aria-busy={saving}>
       <p className="eyebrow">
         {skills[item.skill]} · {position + 1} / {total}
       </p>
       <h2 lang="ja">{item.prompt}</h2>
       {locale !== 'ja' && <p>{t('contentLanguage')}</p>}
-      <fieldset>
+      <fieldset disabled={saving}>
         <legend className="sr-only">{t('choices')}</legend>
         {item.options.map((option, index) => (
           <label className="choice choice-wrap" key={option}>
@@ -51,10 +53,15 @@ export function AssessmentQuestion({
         </label>
       </fieldset>
       <div className="exam-actions">
-        <button type="button" onClick={onBack}>
+        <button type="button" disabled={saving} onClick={onBack}>
           {t('back')}
         </button>
-        <button type="button" className="primary" disabled={answer === undefined} onClick={onNext}>
+        <button
+          type="button"
+          className="primary"
+          disabled={saving || answer === undefined}
+          onClick={onNext}
+        >
           {position === total - 1 ? t('viewAssessment') : t('next')}
         </button>
       </div>

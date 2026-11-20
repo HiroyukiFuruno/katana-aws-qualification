@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { dashboardText } from './dashboard.helpers';
+import { setDashboardDensity, showDashboardWidget } from './dashboard-actions';
 import {
   finishLessonFinal,
   lessonAssets,
@@ -26,11 +27,14 @@ test('fundamentals final result and dashboard keep final-test scope separate', a
     await expect(page.locator('.lesson-result-score')).toContainText('12問中 10問正解');
     await page.goto('/ja/dashboard/');
     await expect(page.getByRole('heading', { name: dashboardText.dashboardTitle })).toBeVisible();
+    await setDashboardDensity(page, 'full');
+    await showDashboardWidget(page, dashboardText.dashboardWidgetExams);
     const finals = page.getByRole('table', { name: dashboardText.dashboardFinalPassRate, exact: true });
     await expect(finals).toContainText('100%');
     const exams = page.getByRole('table', { name: new RegExp(dashboardText.dashboardWidgetExams) });
     await expect(exams).toContainText('10 / 12');
     await expect(exams).toContainText(dashboardText.lessonPassed);
+    await showDashboardWidget(page, dashboardText.dashboardWidgetLessons);
     const progress = page
       .getByRole('table', { name: dashboardText.lessonProgress, exact: true })
       .getByRole('row')

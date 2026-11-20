@@ -114,7 +114,7 @@ export const dashboardWidgets: readonly DashboardWidgetDefinition[] = [
     kind: 'reviews',
     charts: ['table', 'bar'],
     metrics: ['incorrect'],
-    defaultChart: 'table',
+    defaultChart: 'bar',
     defaultMetric: 'incorrect',
     defaultVisible: true,
     defaultWidth: 'normal',

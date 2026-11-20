@@ -27,6 +27,20 @@ for (const locale of locales) {
         expect(bounds.x).toBeGreaterThanOrEqual(0);
         expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+        const navigation = await page.locator('.lesson-slide-actions').evaluate((footer) => {
+          const previous = footer.querySelector('.lesson-slide-action')?.getBoundingClientRect();
+          const next = footer.querySelector('button.primary')?.getBoundingClientRect();
+          if (!previous || !next) throw new Error('Missing navigation controls.');
+          return {
+            widthDifference: Math.abs(previous.width - next.width),
+            heightDifference: Math.abs(previous.height - next.height),
+            bottom: footer.getBoundingClientRect().bottom,
+            viewport: visualViewport?.height ?? innerHeight,
+          };
+        });
+        expect(navigation.widthDifference).toBeLessThanOrEqual(1);
+        expect(navigation.heightDifference).toBeLessThanOrEqual(1);
+        expect(navigation.bottom).toBeLessThanOrEqual(navigation.viewport);
         await exit.focus();
         await expect(exit).toBeFocused();
         if (locale === 'ja' && width === 390 && theme === 'dark')

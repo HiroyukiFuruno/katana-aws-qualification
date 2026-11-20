@@ -110,12 +110,12 @@ export function LessonSlideShell({
           </h1>
           {children}
         </div>
+        {adSlot ? (
+          <aside className="lesson-slide-ad" aria-label={t('lessonAdvertisement')}>
+            {adSlot}
+          </aside>
+        ) : null}
       </main>
-      {adSlot ? (
-        <aside className="lesson-slide-ad" aria-label={t('lessonAdvertisement')}>
-          {adSlot}
-        </aside>
-      ) : null}
       <LessonSlideFooter
         previousHref={previousHref}
         saving={saving}

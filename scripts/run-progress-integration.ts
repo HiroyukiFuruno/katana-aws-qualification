@@ -113,6 +113,7 @@ if (process.argv[2] === 'gateway') {
   writeFileSync(logFile, '');
   let gateway: ReturnType<typeof spawn> | undefined;
   try {
+    run('bun', ['test', './scripts/fundamentals-controller-layout.unit.tsx'], true);
     run('docker', [...compose, 'up', '-d', '--wait', 'database', 'auth'], true);
     applyMigrations();
     run('docker', [...compose, 'up', '-d', 'rest'], true);

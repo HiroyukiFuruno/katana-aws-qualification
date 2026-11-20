@@ -119,7 +119,7 @@ export function LessonStepScreen({
       nextLabel={navigation.nextLabelKey ? t(navigation.nextLabelKey, { total: 12 }) : undefined}
       adSlot={
         step.kind !== 'final' && siteAdServingEnabled && consent.value === 'granted' ? (
-          <SiteAd />
+          <SiteAd fullWidth={false} />
         ) : undefined
       }
     >

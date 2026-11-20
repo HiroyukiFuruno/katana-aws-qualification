@@ -43,3 +43,5 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 追加移行・並行操作の検証: `test-results/progress/pr63-normalization-profile-check.log` は174 unit/1423 assertions成功、`pr63-normalization-profile-progress-final.log` は実29件成功。旧ISO-Z日時とDB offset日時、旧tuple keyとDB参照object keyを同値照合し、回答/flag/選択時刻を持つ模試の取込・原本削除・再開まで確認した。模試・資格/査定は保存ACKまで変更を無効にし、古い改訂での並行保存を防ぐ。本番004/005とfrontendの公開は引き続き未実施。
 
 ゲスト旧プロフィールの互換性: 旧取得資格IDはmember移行と共通の現行IDへ正規化し、保存同意の変更時にstoreと画面のprofileを再同期する。`pr63-guest-profile-sync-check.log` は176 unit/1429 assertions、`pr63-guest-profile-sync-progress.log` は実30件成功。これは公開前検証の記録であり、最新の公開証跡はIssue #23へ記録する。
+
+複数guest tabは既存のhistory lock内で最新のcanonical履歴から追加分を作り、古いsnapshotの共通prefixを再保存しない。同じ内容でも別の回答操作は保持し、同一模試の再提出だけをexam IDで一回にする。移行後のexam通知は通常回答/プロフィール更新と分離し、同じ模試位置の再取得では計測中の時間を保持する。公開前検証は `pr63-guest-import-release-check.log`（182 unit/1440 assertions）と `pr63-guest-import-progress.log`（実31件）、最終timer調整後の `pr63-guest-import-clock-final.log`（対象5件）。

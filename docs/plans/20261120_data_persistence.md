@@ -96,3 +96,12 @@ CI run44670238002は18成功/2失敗。ローカル20成功とは環境・処理
 - [x] comment4638940146 / PRRT_kwDOVzQ52c652oNO: 保存同意guestの旧取得資格dva-c02/sap-c02を現行IDへ正規化する。従来loadProfileとmember明示移行の変換を共通化して維持し、現在資格のチェックと未取得推薦からの除外・reloadを実検証する。
 
 guest旧資格の最終修正: aliasを共通helperへ分離し、guestとmember移行/照合で同じ現行IDと重複除去を使用する。同意後のretryでguest storeを再初期化し、固定revisionだけでなくprofile identityの変化にもUIを同期する。旧成功/失敗・owner/generation guardは維持。`pr63-guest-profile-sync-check.log` 全176 unit/1429 assertions・重複0・型/構造/教材/build成功、`pr63-guest-profile-sync-progress.log` 実30件成功。初回29成功/1失敗は実際の同意後UI非更新を検出し修正したもの。独立read-only最終レビューP0/P1/P2なし。7f4ade2の4CIは全成功。追加修正headのCI・merge・本番公開確認は次工程。
+
+## Ready後の追加レビュー（e04add9、修正中はDraftへ戻す）
+
+- [x] comment4639033871 / PRRT_kwDOVzQ52c6522TE: 同意guest2タブが同じHを読み、一方がAを保存してから他方が古いHにBを追加するとH,A,H,Bになる。最新保存履歴と追加suffixの扱いを修正し、共有prefixだけを重複させず、正当な別回答を全体dedupで消さない。
+- [x] comment4639033876 / PRRT_kwDOVzQ52c6522TH: 模試setupを開いたまま旧draftを取り込んだとき、同じstore identityのrefreshだけで終わらず、mounted examを再読込みしてreloadなしで回答/flagを復元する。owner/古い応答の境界は維持する。
+
+追加2件修正後: guest通常回答/模試提出は既存history lock内で最新canonical履歴を読み追加分だけ保存し、prepareも最新履歴で実施する。正当な同内容別操作は残し、破損は原本を維持して拒否する。同examを別stale storeから再提出してもイベントは追加せず、fresh canonical historyをB snapshotへ反映する回帰をRED→GREENで固定（pr63-guest-idempotent-red.log）。取込refresh後だけ専用exam通知を発行し、mounted hookはowner/store/counter/request/cleanupで旧応答を棄却する。同ID/位置の再読込で実測時間を捨てない。
+
+`pr63-guest-import-release-check.log` は全182 unit/1440 assertions・重複0・型/構造/教材/build成功。先のharness5s timeoutはhost高負荷を観測したが閾値を変えず全件再回収した。`pr63-guest-import-progress.log` 実31件成功、最終same-cursor時間保持調整後に `pr63-guest-import-clock-final.log` の時計/期限/実2tab/import5件を成功回収。採用した2threadのreply/resolveと新head CI/レビュー・公開は次工程。

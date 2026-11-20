@@ -2,9 +2,9 @@ import { profileKey } from '../assessment';
 import type { Attempt } from '../attempts';
 import { historyKey } from '../history';
 import { legacyIncorrectIndex } from '../learningStorage';
-import { parseStoredAttempts } from './attemptCodec';
 import type { GuestProgressRepository } from './guest';
 import { clearGuestExams, readGuestExam, saveGuestExam } from './guestExam';
+import { updateGuestHistory } from './storeGuestHistory';
 import type { ProgressReadyData, ProgressSnapshot } from './storeTypes';
 
 function readyData(
@@ -53,15 +53,14 @@ export function finalizeGuestExam(
   examId: string,
   events: Attempt[],
 ) {
-  const existing = snapshot.attempts.filter((attempt) => attempt.examId === examId);
-  if (existing.length) return { attempts: existing, history: snapshot.attempts, ready: undefined };
-  if (guest.write(historyKey, JSON.stringify([...snapshot.attempts, ...events])) === 'failed') {
-    throw new Error('Guest exam was not saved.');
-  }
-  const stored = parseStoredAttempts(guest.read(historyKey));
+  const stored = updateGuestHistory(guest, (attempts) => {
+    const existing = attempts.filter((attempt) => attempt.examId === examId);
+    if (existing.length) return { attempts, value: { attempts: existing } };
+    return { attempts: [...attempts, ...events], value: { attempts: events } };
+  });
   return {
-    attempts: events,
+    attempts: stored.value.attempts,
     history: stored.attempts,
-    ready: readyData(snapshot, stored.attempts, stored.corruptRows),
+    ready: readyData(snapshot, stored.attempts, 0),
   };
 }

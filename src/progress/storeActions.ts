@@ -5,6 +5,7 @@ import { isGenerationConflict } from './errors';
 import { emptyProfile, parseStoredProfile } from './profileCodec';
 import type { StoreActionDependencies } from './storeActionTypes';
 import { resetGuestProgress } from './storeGuestExams';
+import { updateGuestHistory } from './storeGuestHistory';
 import {
   memberAttemptSnapshot,
   mergeMemberAttempts,
@@ -68,18 +69,17 @@ export function createStoreActions(
         const snapshot = getSnapshot();
         if (input.owner.kind === 'guest') {
           if (!guest) throw new Error('A guest progress store is required.');
-          const attempts = [...snapshot.attempts, attempt];
-          if (guest.write(historyKey, JSON.stringify(attempts)) === 'failed') {
-            throw new Error('Guest history was not saved.');
-          }
-          const stored = parseStoredAttempts(guest.read(historyKey));
+          const stored = updateGuestHistory(guest, (attempts) => {
+            const prepared = prepare?.(attempts) ?? attempt;
+            return { attempts: [...attempts, prepared], value: prepared };
+          });
           ready({
             attempts: stored.attempts,
-            corruptRows: stored.corruptRows,
+            corruptRows: 0,
             profile: snapshot.profile,
             profileRevision: snapshot.profileRevision,
           });
-          return attempt;
+          return stored.value;
         }
         if (!member || !queue) throw new Error('A member progress client is required.');
         const result = await queue.append(

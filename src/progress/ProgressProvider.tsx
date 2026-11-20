@@ -94,6 +94,7 @@ export function useProgress() {
           refreshed.error === 'load'
         )
           throw new Error('Imported progress could not be reloaded.');
+        store.notifyExamSessionsChanged();
       },
     };
   }

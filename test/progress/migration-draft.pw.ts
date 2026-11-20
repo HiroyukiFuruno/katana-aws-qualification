@@ -53,6 +53,8 @@ test('imports a real draft response, removes the source, and resumes it', async 
     await page.reload();
     await expect(page.getByRole('heading', { name: '端末の記録を引き継ぐ' })).toBeVisible();
     await expect(page.getByText(/この端末の記録1件/)).toBeVisible();
+    await page.getByRole('button', { name: '模擬試験' }).click();
+    await expect(page.getByRole('heading', { name: '模擬試験の出題設定' })).toBeVisible();
     await expect
       .poll(() =>
         rows<Manifest>(
@@ -98,7 +100,12 @@ test('imports a real draft response, removes the source, and resumes it', async 
         selected_at_ms: selectedAt,
       });
     await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), examKey)).toBeNull();
-
+    await expect(page.getByRole('heading', { name: '第1問' })).toBeVisible();
+    await expect(page.locator('input[name="exam-answer"]').first()).toBeChecked();
+    await expect(page.getByRole('button', { name: '見直しマーク' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     await page.reload();
     await page.getByRole('button', { name: '模擬試験' }).click();
     await expect(page.getByRole('heading', { name: '第1問' })).toBeVisible();

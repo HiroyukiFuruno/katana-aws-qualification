@@ -12,6 +12,7 @@ export type ProgressSnapshot = {
   owner: ProgressOwner;
   profile: Profile;
   profileRevision: number;
+  examRefreshVersion: number;
   refreshing?: boolean;
   state: 'error' | 'loading' | 'ready';
 };
@@ -34,6 +35,7 @@ export type ProgressStore = {
   getSnapshot(): ProgressSnapshot;
   initialize(): Promise<ProgressSnapshot>;
   loadExam(certificationId: string): Promise<ExamDraft | undefined>;
+  notifyExamSessionsChanged(): void;
   readGuestExam(examKey: string): ExamDraft | undefined;
   readExamClock(): Promise<string>;
   removeGuestExam(examKey: string): void;
@@ -76,6 +78,7 @@ export function initialProgressSnapshot(owner: ProgressOwner): ProgressSnapshot 
     owner,
     profile: emptyProfile(),
     profileRevision: 0,
+    examRefreshVersion: 0,
     state: 'loading',
   };
 }

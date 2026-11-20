@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
 import type { DashboardViewProps } from '../viewTypes';
+import { dashboardDisplayFacets } from './dashboardDisplayFacets';
 import { DashboardControls } from './DashboardControls';
 import { DashboardWidgetCard } from './DashboardWidgetCard';
 import './dashboard.css';
@@ -10,7 +11,10 @@ export function DashboardView(props: DashboardViewProps) {
   const { locale, t } = usePreferences();
   const visible = props.preferences.widgets.filter((widget) => widget.visible);
   const ready = [...props.data.values()].find((state) => state.status === 'ready');
-  const facets = ready?.status === 'ready' ? ready.summary.facets : undefined;
+  const facets = dashboardDisplayFacets(
+    ready?.status === 'ready' ? ready.summary.facets : undefined,
+    props.lessons.items,
+  );
   const allowed = props.owner === 'member' || props.consented;
   const controls = <DashboardControls key="controls" {...props} facets={facets} />;
   const cards: ReactNode[] = [];
@@ -54,7 +58,13 @@ export function DashboardView(props: DashboardViewProps) {
       {props.storageControl}
       {allowed && props.pendingLearning && (
         <p className="notice" role="status">
-          {t('dashboardPending')}
+          {t('dashboardPending')}{' '}
+          <a href={localePath(locale, 'study/fundamentals')}>{t('dashboardPendingReview')}</a>
+        </p>
+      )}
+      {allowed && props.syncUnreadable && (
+        <p className="notice" role="alert">
+          {t('dashboardPendingReadFailed')}
         </p>
       )}
       {allowed && props.dirty && (

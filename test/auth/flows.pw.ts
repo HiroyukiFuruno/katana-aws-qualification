@@ -15,6 +15,9 @@ test('real OIDC sign-in, verified session, reload, refresh, home and sign-out', 
   await expect(page).toHaveURL(/\/ja\/$/);
   await page.goto('/ja/dashboard/');
   await expect(page.getByText('learner@example.test', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('ゲスト・この端末の記録', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: '無料アカウントを作成', exact: true }).click();
+  await expect(page).toHaveURL(/\/ja\/login\/$/);
   await expect(page.getByRole('button', { name: 'GitHubでログイン' })).toBeVisible();
 });
 

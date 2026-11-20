@@ -38,7 +38,7 @@ export function readDashboardSummary(raw: unknown, expectedQuery: DashboardQuery
     [groups.formats, dashboardFormats],
     [groups.polarities, dashboardPolarities],
   ] as const) {
-    if (group.some((item) => !choices.includes(item.key as never)))
+    if (group.some((item) => !choices.some((choice) => choice === item.key)))
       throw new Error('Unknown dashboard grouping key.');
   }
   const exams = readDashboardExams(row.exams);

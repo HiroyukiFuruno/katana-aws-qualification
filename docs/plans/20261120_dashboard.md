@@ -1,6 +1,6 @@
 # #24 学習ダッシュボード
 
-一次情報: Issue #24、#23の保存・集計契約、本人の「ログイン後のホーム」「同意したゲストも利用」「ログイン時はCookieとの二重管理なし」。本書は設計準備であり、画面の実装開始は#23公開済み・#25追加改修の公開後とする。Amazonは対象外、SSOはGitHub/Google/Microsoft/Facebookの4種類。
+一次情報: Issue #24、#23の保存・集計契約、本人の「ログイン後のホーム」「同意したゲストも利用」「ログイン時はCookieとの二重管理なし」。#23・#25追加改修の公開を確認して実装・検証中。Amazonは対象外、SSOはGitHub/Google/Microsoft/Facebookの共通契約を維持し、Facebookの一般公開は独立した外部手続きとして追跡する。
 
 ## 着手条件と責務
 
@@ -42,7 +42,7 @@
 - [ ] 資格別・カテゴリ別・学習形式別（通常学習/基礎checkpoint/基礎最終/模試）・期間別・教材改訂別を網羅する。同じ名のcategoryでもsourceVersion/questionRevisionを混同しない。
 - [ ] 日次推移（回答数/正答率/記録時間の折れ線・棒）、資格/カテゴリ比較（横棒）、学習形式構成（ドーナツ）、得意不得意（十分な回答数の軸だけレーダー）、活動カレンダー（ヒートマップ）、模試/基礎最終の受験回推移を、実際に記録されたデータで提供する。意味のない種類を水増しせず、各図に数値表・凡例・空/少数状態を備える。
 - [ ] 初期配置は過去30日/全資格/全形式/端末IANAtimezone、要約→推移→資格/分野→活動→復習→受験履歴。ユーザーはwidgetの表示/非表示、順序、適合するグラフ種類、期間/資格/形式/timezoneを変更でき、初期設定へ戻せる。keyboardで並べ替えられ、mobileは1列、desktopは密度のあるgridとする。
-- [ ] カスタマイズはownerごとのUI設定として保存し、他人の配置を流用しない。会員はアカウントへ、ゲストは許可した端末へ保存する。未同意guestはタブ内のみ。#59の言語/theme/取得資格設定とは混同しない。設定失敗/破損は明示して初期表示に戻す動作を仕様化し、学習記録を消さない。
+- [ ] カスタマイズはownerごとのUI設定として保存し、他人の配置を流用しない。会員はアカウントへ、ゲストは許可した端末へ保存する。未同意guestは履歴・設定を読み込まず、保存同意と無料登録を案内する（Issue #24の保存境界）。#59の言語/theme/取得資格設定とは混同しない。設定失敗/破損は明示して初期表示に戻す動作を仕様化し、学習記録を消さない。
 - [ ] guestの基礎回答は専用GuestLessonSourceをtrusted artifactへ照合して回答イベント/受験回へ派生し、legacy attemptsと重複させない。会員はSQL集計の正本を使い、欠けている分析軸はRPC契約を拡張して同じ固定入力でguestと一致を検証する。
 
 2026-11-20読取調査: 現行learning_summaryはtotal/byMode/byCategory/daily/examsを提供。dashboard UI/厳密view model/owner-filter世代guard/guest基礎回答adapterは未実装。時刻不明をepochで埋めない。上記は計画であり完了証跡ではない。
@@ -51,7 +51,7 @@
 
 - [x] 共通型を`src/dashboard/*Types.ts`に固定。詳細は`docs/dashboard-analysis.md`。
 - [x] 集計SQL・設定保存SQL・実DB固定入力検査。001–012と既存fixture、新規dashboard fixture、実PostgRESTの10条件一致・2owner・設定競合・reset後の読取回復を確認（`test-results/dashboard/data-recovery.log`）。
-- [/] SVGグラフ・カスタマイズ・10言語UIを実装。元の試作図は正式図へ置換済み。全グラフ/全localeのnative確認と未参照試作コードの整理が残る。
+- [/] SVGグラフ・カスタマイズ・10言語UIを実装。元の試作図を正式図へ置換し、未参照の試作4ファイルを整理。全グラフの数値確認8件と全locale/操作15件は成功。全体回帰・レビュー・公開は未完了。
 - [x] 厳密codec・guest派生/集計・owner/generation guard・設定と画面接続。既存全checkは298単体/2931 assertions、型・重複0・教材・build成功（`test-results/dashboard/check.log`）。
 - [ ] 共通固定入力のSQL/guest一致、owner競合、設定retry/衝突、実ブラウザ、既存品質ゲート。
 - [ ] Draftレビュー回収/修正/解決、Ready/CI/merge、本番DB/サイト/公開値の照合、Issue Close。
@@ -65,3 +65,12 @@
 - Lintの既存14警告は変更外のCSS/既存テストで、今回のファイルから新規警告なし。bundleサイズ警告も既存ゲートを維持し、無効化していない。
 - DB世代変更後は読取だけ1回再初期化して回復する。設定書込は自動再演しない。同意済みguestの別タブ設定更新は未編集時だけ再読込し、編集中は競合を案内する。
 - ここまでの証跡はローカル検証。Draftレビュー・全native/CI・DB/サイト公開・Issue Closeは未完了。
+
+- 最新`test-results/dashboard/final-check.log`: 300単体/2948 assertions、既存品質ゲートと全route build成功。`dependencies.log`で直接・推移依存/lockfileを確認、`bun outdated`に更新候補なし、`dependency-audit.json`は検出0。
+- `native-final-layout.log`でグラフ数学・基礎合否・owner等8件成功。localeテスト10件は非表示のoptionと指標spanを同時選択したテストの誤りで失敗。商用コードやtimeoutを変えずselectorを限定し、`native-layout-interactions.log`で15/15成功（41.8s）。10言語×320/390px×light/dark、同種widget追加/保存/reload、keyboard上下移動/フォーカス、未回答単元filter、本人キューの未同期/破損/他人・ゲスト分離を実検証。ja390の明暗とde320スクリーンショットを確認。
+- 基礎の未同期キューは読み取りだけとし、DB集計へ加算・再送・削除しない。破損/未来世代/保存領域アクセス失敗は明示する（`scripts/dashboard-pending.test.ts`、上記real native）。
+
+- 全Progress140ケース: `progress-full.log`139成功/1失敗。削除テストのCookieバナー遮蔽をtraceで特定し、必要なもののみを選ぶ操作へ修正。`account-deletion-retry.log`で実handler/cascade成功（2.8s、全体8.2s）。
+- 全Auth164ケース: `auth-full.log`159成功/5失敗。削除2件は同じバナー遮蔽、残り3件はguest dashboardにもログインボタンがあるという旧期待値だった。製品コードをテストに合わせず、実際のguest表示・無料登録への遷移を検証する契約へ修正。`auth-targeted-retry.log`7成功（15.1s）と`auth-lifecycle-retry.log`2成功（6.9s）で該当箇所を回帰。
+- 最終品質ゲートは`pre-pr-check.log` exit0。レビュー/CIで全件の再実行・公開確認を残す。
+- 最新ユーザーFBのスライド終了・checkpoint再訪は独立Issue #67として先行修正する。#24の検証済み差分を正式な作業ブランチのコミットへ保持し、新規worktree/stashは作成しない。本Issueは未完了のまま維持する。

@@ -15,6 +15,7 @@ const currentValues = (value: unknown) =>
     : [];
 export function dashboardFilterOptions(facets: DashboardFacets | undefined, current: DashboardFilters) {
   const certificationIds = unique([
+    'fundamentals',
     ...certifications.map((item) => item.id),
     ...(facets?.certificationIds ?? []),
     ...(current.certificationIds ?? []),

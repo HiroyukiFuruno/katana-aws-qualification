@@ -1,6 +1,7 @@
 import { usePreferences } from '../../preferences';
 import type { DashboardViewProps } from '../viewTypes';
 import { dashboardWidgets } from '../widgetRegistry';
+import { titleKeys } from './dashboardLabels';
 
 export function DashboardWidgetPicker({
   preferences,
@@ -21,7 +22,7 @@ export function DashboardWidgetPicker({
       widgets: [
         ...preferences.widgets,
         {
-          id: `${definition.kind}-${Date.now()}`,
+          id: `${definition.kind}-${crypto.randomUUID()}`,
           kind: definition.kind,
           visible: true,
           width: definition.defaultWidth,
@@ -38,21 +39,19 @@ export function DashboardWidgetPicker({
         .filter((widget) => !widget.visible)
         .map((widget) => (
           <button key={widget.id} type="button" onClick={() => reveal(widget.id)}>
-            {t('dashboardShowWidget')} {widget.kind}
+            {t('dashboardShowWidget')} {t(titleKeys[widget.kind])}
           </button>
         ))}
-      {dashboardWidgets
-        .filter((definition) => !preferences.widgets.some((widget) => widget.kind === definition.kind))
-        .map((definition) => (
-          <button
-            key={definition.kind}
-            type="button"
-            disabled={preferences.widgets.length >= 20}
-            onClick={() => add(definition)}
-          >
-            {t('dashboardShowWidget')} {definition.kind}
-          </button>
-        ))}
+      {dashboardWidgets.map((definition) => (
+        <button
+          key={definition.kind}
+          type="button"
+          disabled={preferences.widgets.length >= 20}
+          onClick={() => add(definition)}
+        >
+          {t('dashboardAddWidget')} {t(titleKeys[definition.kind])}
+        </button>
+      ))}
     </div>
   );
 }

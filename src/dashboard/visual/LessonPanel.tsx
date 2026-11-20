@@ -45,6 +45,7 @@ export function LessonPanel({
           </h3>
           {widget.chart === 'ring' ? (
             <DonutChart
+              colors={{ completed: 'var(--link)', remaining: 'var(--line)' }}
               label={`${lesson.title} · ${t('dashboardReadingProgress')}`}
               points={[
                 {

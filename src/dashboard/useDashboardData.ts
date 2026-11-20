@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadDashboardWidgets } from './loadWidgets';
+import { clearDashboardSync, type DashboardSyncStatus } from './pending';
 import type { DashboardPreferences } from './preferenceTypes';
 import type { DashboardServices } from './services';
 import type { DashboardDataState, DashboardViewProps } from './viewTypes';
@@ -8,6 +9,7 @@ type State = {
   cycle: object;
   data: Map<string, DashboardDataState>;
   lessons: DashboardViewProps['lessons'];
+  syncStatus: DashboardSyncStatus;
 };
 export function useDashboardData(
   cycle: {
@@ -22,10 +24,16 @@ export function useDashboardData(
     cycle,
     data: new Map(),
     lessons: { status: 'loading', items: [] },
+    syncStatus: clearDashboardSync,
   });
   useEffect(() => {
     let active = true;
-    setState({ cycle, data: new Map(), lessons: { status: 'loading', items: [] } });
+    setState({
+      cycle,
+      data: new Map(),
+      lessons: { status: 'loading', items: [] },
+      syncStatus: clearDashboardSync,
+    });
     if (!cycle.enabled)
       return () => {
         active = false;
@@ -44,17 +52,26 @@ export function useDashboardData(
           return { ...previous, cycle, data };
         });
       },
-    }).catch(() => {
-      if (!active) return;
-      setState((previous) => ({
-        ...previous,
-        data: new Map(
-          cycle.preferences.widgets
-            .filter((widget) => widget.visible)
-            .map((widget) => [widget.id, { status: 'error' as const, retry }]),
-        ),
-      }));
-    });
+    })
+      .catch(() => {
+        if (!active) return;
+        setState((previous) => ({
+          ...previous,
+          data: new Map(
+            cycle.preferences.widgets
+              .filter((widget) => widget.visible)
+              .map((widget) => [widget.id, { status: 'error' as const, retry }]),
+          ),
+        }));
+      })
+      .then(() => cycle.services.syncStatus())
+      .then((syncStatus) => {
+        if (active) setState((previous) => ({ ...previous, syncStatus }));
+      })
+      .catch(() => {
+        if (active)
+          setState((previous) => ({ ...previous, syncStatus: { pending: false, unreadable: true } }));
+      });
     void cycle.services
       .lessons()
       .then((items) => {
@@ -73,5 +90,6 @@ export function useDashboardData(
         cycle,
         data: new Map<string, DashboardDataState>(),
         lessons: { status: 'loading' as const, items: [] },
+        syncStatus: clearDashboardSync,
       };
 }

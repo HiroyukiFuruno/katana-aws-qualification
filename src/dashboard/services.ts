@@ -9,6 +9,7 @@ import { aggregateDashboard } from './aggregate';
 import { loadGuestDashboard } from './guestRecords';
 import { createGuestDashboardSettings } from './guestSettings';
 import { createMemberDashboard } from './memberRepository';
+import { dashboardLessonSyncStatus } from './pending';
 
 type Input = {
   store: ProgressStore;
@@ -24,7 +25,7 @@ export function createDashboardServices(input: Input) {
   if (input.store.getSnapshot().owner.kind === 'member') {
     if (!input.client) throw new Error('Member dashboard access is missing.');
     const repository = createMemberDashboard(input.client, input.isCurrent);
-    let initialized: Promise<void> | undefined;
+    let initialized: Promise<number> | undefined;
     const ready = () => {
       if (!initialized) {
         const attempt = repository.initialize();
@@ -47,6 +48,15 @@ export function createDashboardServices(input: Input) {
       }
     };
     return {
+      async syncStatus() {
+        const generation = await ready();
+        if (!input.isCurrent()) throw new Error('Dashboard owner changed.');
+        const owner = input.store.getSnapshot().owner;
+        if (owner.kind !== 'member') throw new Error('Member dashboard owner changed.');
+        const result = dashboardLessonSyncStatus(input.storage, owner.userId, generation);
+        if (!input.isCurrent()) throw new Error('Dashboard owner changed.');
+        return result;
+      },
       async settings() {
         return read(repository.settings);
       },
@@ -80,6 +90,9 @@ export function createDashboardServices(input: Input) {
     return guest;
   };
   return {
+    async syncStatus() {
+      return { pending: false, unreadable: false };
+    },
     async settings() {
       return settings.load();
     },

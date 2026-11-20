@@ -79,6 +79,11 @@ test('member dashboard is isolated from another member and retained guest histor
     await firstPage.goto('/ja/dashboard/');
     await expectDashboardMetrics(firstPage, '2', '50%');
 
+    await setRealSession(firstPage, second);
+    await expectDashboardMetrics(firstPage, '0', dashboardText.dashboardNotMeasured);
+    await setRealSession(firstPage, first);
+    await expectDashboardMetrics(firstPage, '2', '50%');
+
     const secondPage = await secondContext.newPage();
     await secondPage.goto('/ja/dashboard/');
     await setRealSession(secondPage, second);

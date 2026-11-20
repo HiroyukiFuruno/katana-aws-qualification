@@ -7,9 +7,11 @@ import { dashboardDimensionLabel } from './labels';
 export function FilterCaption({
   query,
   lessons,
+  currentProgress = false,
 }: {
   query: DashboardQuery;
   lessons: readonly DashboardLessonData[];
+  currentProgress?: boolean;
 }) {
   const { locale, t } = usePreferences();
   const date = (time: string) =>
@@ -39,21 +41,31 @@ export function FilterCaption({
     ],
   ];
   return (
-    <details className="dashboard-viz-conditions">
-      <summary>{t('dashboardConditions')}</summary>
-      <p>
-        {query.range.from === null ? t('dashboardAllTime') : date(query.range.from)} –{' '}
-        {date(new Date(Date.parse(query.range.to) - 1).toISOString())} · {query.range.timezone}
+    <div className="dashboard-viz-conditions">
+      <p className="dashboard-viz-note">
+        {currentProgress ? (
+          t('dashboardLessonScope')
+        ) : (
+          <>
+            {query.range.from === null ? t('dashboardAllTime') : date(query.range.from)} –{' '}
+            {date(new Date(Date.parse(query.range.to) - 1).toISOString())} · {query.range.timezone}
+          </>
+        )}
       </p>
-      <dl>
-        {items.map(([label, values]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{values?.join(' · ') ?? t('dashboardAll')}</dd>
-          </div>
-        ))}
-      </dl>
-      <p>{t('dashboardAnswerScope')}</p>
-    </details>
+      <details>
+        <summary>{t('dashboardConditions')}</summary>
+        <dl>
+          {items
+            .filter((_, index) => !currentProgress || index === 0 || index === 7)
+            .map(([label, values]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{values?.join(' · ') ?? t('dashboardAll')}</dd>
+              </div>
+            ))}
+        </dl>
+        {!currentProgress && <p>{t('dashboardAnswerScope')}</p>}
+      </details>
+    </div>
   );
 }

@@ -70,7 +70,11 @@ export function DashboardWidgetState({
         </p>
       )}
       {content}
-      <FilterCaption query={state.summary.query} lessons={items} />
+      <FilterCaption
+        query={state.summary.query}
+        lessons={items}
+        currentProgress={widget.kind === 'lessons'}
+      />
     </>
   );
 }

@@ -25,6 +25,7 @@ export function createMemberDashboard(client: ProgressRpcClient, isCurrent: () =
       const raw = await client.rpc<unknown>('initialize_learning_state', {});
       current();
       generation = dashboardNumber(raw);
+      return generation;
     },
     async settings() {
       return readDashboardSettings(await request('load_dashboard_settings', {}));

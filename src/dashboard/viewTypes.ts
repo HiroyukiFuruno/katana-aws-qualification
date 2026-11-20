@@ -23,6 +23,7 @@ export type DashboardViewProps = {
   saving: boolean;
   saveState: 'idle' | 'saved' | 'error' | 'conflict' | 'invalid-stored';
   pendingLearning: boolean;
+  syncUnreadable?: boolean;
   data: ReadonlyMap<string, DashboardDataState>;
   lessons: { status: 'loading' | 'ready' | 'error'; items: DashboardLessonData[] };
   onPreferences: (preferences: DashboardPreferences) => void;

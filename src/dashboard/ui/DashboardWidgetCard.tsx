@@ -43,6 +43,12 @@ export function DashboardWidgetCard({
     >
       <div className="dashboard-widget-heading">
         <h2 id={`dashboard-widget-${widget.id}`}>{t(titleKeys[widget.kind])}</h2>
+        {Object.keys(widget.overrides).length > 0 && (
+          <span className="eyebrow">{t('dashboardOverrideCustom')}</span>
+        )}
+      </div>
+      <details className="dashboard-widget-customize">
+        <summary>{t('dashboardCustomize')}</summary>
         <div className="dashboard-widget-actions">
           <button type="button" onClick={() => move(-1)} aria-label={t('dashboardMoveUp')}>
             ↑
@@ -57,9 +63,6 @@ export function DashboardWidgetCard({
             {t('dashboardHideWidget')}
           </button>
         </div>
-      </div>
-      <details className="dashboard-widget-customize">
-        <summary>{t('dashboardCustomize')}</summary>
         <div className="dashboard-widget-options">
           <label>
             {t('dashboardChart')}

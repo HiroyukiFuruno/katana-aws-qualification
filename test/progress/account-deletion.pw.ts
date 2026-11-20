@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { learningEvents } from './api';
 import { answerCurrentQuestion, openMemberCourse, startStudy } from './course';
+import { acceptNecessaryCookies } from './fundamentals-mobile.helpers';
 import { createSessions, setRealSession } from './sessions';
 
 test('account deletion invokes the real handler and cascades learning records', async ({ browser }) => {
@@ -15,6 +16,7 @@ test('account deletion invokes the real handler and cascades learning records', 
     await page.goto('/ja/dashboard/');
     await setRealSession(page, session);
     await page.reload();
+    await acceptNecessaryCookies(page);
     await page.getByRole('button', { name: 'アカウントを削除' }).click();
     await page.getByRole('button', { name: 'アカウントを完全に削除' }).click();
     await expect(page).toHaveURL(/\/ja\/$/);

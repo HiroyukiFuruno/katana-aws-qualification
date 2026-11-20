@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createLessonAssets } from '../fundamentals/delivery/assets';
+import { lessonOutboxKey } from '../fundamentals/state/outboxCodec';
 import { getActiveProgressStore } from '../history';
 import { withHistoryLock } from '../historyLock';
 import { guestLessonPrefix, historyKey } from '../learningStorage';
@@ -41,14 +42,16 @@ export function DashboardReady({
   useEffect(() => {
     const changed = (event: StorageEvent) => {
       if (
-        snapshot.owner.kind === 'guest' &&
-        (event.key === null || event.key === historyKey || event.key?.startsWith(guestLessonPrefix))
+        event.key === null ||
+        (snapshot.owner.kind === 'guest'
+          ? event.key === historyKey || event.key?.startsWith(guestLessonPrefix)
+          : event.key === lessonOutboxKey(snapshot.owner.userId))
       )
         retry();
     };
     window.addEventListener('storage', changed);
     return () => window.removeEventListener('storage', changed);
-  }, [snapshot.owner.kind, retry]);
+  }, [snapshot.owner, retry]);
   const [initial] = useState(() => dashboardDefaults(Intl.DateTimeFormat().resolvedOptions().timeZone));
   const [applied, setApplied] = useState<{ preferences: DashboardPreferences; asOf: number } | null>(
     null,
@@ -119,7 +122,10 @@ export function DashboardReady({
       dirty={settings.dirty}
       saving={settings.saving}
       saveState={settings.saveState}
-      pendingLearning={snapshot.error !== undefined || snapshot.refreshing === true}
+      pendingLearning={
+        snapshot.error !== undefined || snapshot.refreshing === true || data.syncStatus.pending
+      }
+      syncUnreadable={data.syncStatus.unreadable}
       data={data.data}
       lessons={data.lessons}
       onPreferences={(draft) => {

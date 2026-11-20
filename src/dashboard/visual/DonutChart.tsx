@@ -4,10 +4,12 @@ export function DonutChart({
   points,
   label,
   format,
+  colors,
 }: {
   points: readonly ValuePoint[];
   label: string;
   format: (value: number | null) => string;
+  colors?: Record<string, string>;
 }) {
   const values = points.filter((point) => point.value !== null && point.value > 0);
   const segments = donutSegments(values.map((point) => point.value ?? 0));
@@ -21,7 +23,7 @@ export function DonutChart({
             cy="90"
             r="62"
             fill="none"
-            stroke={chartPalette[index % chartPalette.length]}
+            stroke={colors?.[values[index].id] ?? chartPalette[index % chartPalette.length]}
             strokeWidth="22"
             pathLength="1"
             strokeDasharray={`${segment.fraction} ${1 - segment.fraction}`}
@@ -37,7 +39,7 @@ export function DonutChart({
           <li key={point.id}>
             <span
               className="dashboard-viz-swatch"
-              style={{ background: chartPalette[index % chartPalette.length] }}
+              style={{ background: colors?.[point.id] ?? chartPalette[index % chartPalette.length] }}
             />
             <span>{point.label}</span>
             <strong>{format(point.value)}</strong>

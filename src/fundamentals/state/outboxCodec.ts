@@ -4,6 +4,8 @@ import type { LessonCommand, LessonOutboxStorage } from './outboxTypes';
 
 type Row = { commands: LessonCommand[]; generation: number };
 
+export { read as readLessonOutboxEnvelope };
+
 export function lessonOutboxKey(userId: string) {
   return `katana.fundamentals-outbox.v1.${encodeURIComponent(userId)}`;
 }

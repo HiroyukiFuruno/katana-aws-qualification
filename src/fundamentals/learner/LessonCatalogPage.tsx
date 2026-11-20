@@ -9,6 +9,7 @@ import type { LessonMigrationAccess } from '../state/importTypes';
 import type { LessonSummary } from '../state/memberTypes';
 import type { LessonServices } from '../state/services';
 import { LessonCatalog } from './LessonCatalog';
+import { LessonArchivedRecords } from './LessonArchivedRecords';
 import { LessonMigrationList } from './LessonMigrationList';
 
 type LessonCatalogPageProps = {
@@ -107,6 +108,7 @@ export function LessonCatalogPage({ services, migrationAccess }: LessonCatalogPa
           onNavigate={navigateLesson}
         />
       )}
+      {index && <LessonArchivedRecords services={services} reloadToken={reloadToken} />}
     </ProgressGate>
   );
 }

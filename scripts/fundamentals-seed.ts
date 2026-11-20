@@ -2,9 +2,13 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { seedSql } from './fundamentals-seed-support';
 
-const output = join(process.cwd(), 'supabase/migrations/202611200010_fundamentals_catalog.sql');
+const history = 'public/fundamentals/delivery/history/2026-11-20';
+const published = join(process.cwd(), 'supabase/migrations/202611200010_fundamentals_catalog.sql');
+const output = join(process.cwd(), 'supabase/migrations/202611210001_fundamentals_catalog_revision.sql');
 const mode = process.argv[2];
-const expected = await seedSql();
+if ((await readFile(published, 'utf8')) !== (await seedSql(history)))
+  throw new Error('Published fundamentals migration or its archived input changed.');
+const expected = await seedSql('public/fundamentals/delivery', [history]);
 
 if (mode === '--write') {
   await writeFile(output, expected);

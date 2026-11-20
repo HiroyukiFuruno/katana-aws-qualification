@@ -37,11 +37,22 @@ export function questionPosition(questionId: string, asset: DeliveryUnitAsset) {
   return position >= 0 ? position + 1 : undefined;
 }
 
-export function reviewPath(asset: DeliveryUnitAsset, sectionId: string, locale: Locale) {
+export function reviewPath(
+  asset: DeliveryUnitAsset,
+  sectionId: string,
+  locale: Locale,
+  contentVersion?: string,
+) {
   const step =
     asset.steps.find((candidate) => candidate.kind === 'reading' && candidate.sectionId === sectionId) ??
     asset.steps.find((candidate) => candidate.kind === 'reading');
   return step
-    ? lessonPath({ locale, unitId: asset.unit.id, stage: 'slides', position: step.position })
+    ? lessonPath({
+        locale,
+        unitId: asset.unit.id,
+        stage: 'slides',
+        position: step.position,
+        contentVersion,
+      })
     : undefined;
 }

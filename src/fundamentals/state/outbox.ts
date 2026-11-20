@@ -144,5 +144,7 @@ export function createLessonOutbox(input: Input): LessonOutbox {
       }
     },
     hasPending: (scope) => pendingLessonCommands(pending, scope).length > 0,
+    isPersisted: persistence.isPersisted,
+    hasPersistedPending: persistence.hasPersistedPending,
   };
 }

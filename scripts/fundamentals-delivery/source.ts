@@ -1,7 +1,9 @@
 import type { DeliveryQuestion } from '../../src/fundamentals/delivery/artifactTypes';
 import type { FundamentalsContent, FundamentalsUnit } from '../../src/fundamentals/types';
 
-type RawCheckpoint = Omit<DeliveryQuestion, 'category' | 'revision' | 'title' | 'unitId' | 'version'>;
+type RawCheckpoint = Omit<DeliveryQuestion, 'category' | 'revision' | 'title' | 'unitId' | 'version'> & {
+  revision?: number;
+};
 
 export type CheckpointDocument = {
   schemaVersion: 1;
@@ -32,6 +34,8 @@ export function normalizeCheckpoints(unit: FundamentalsUnit, checkpoints: RawChe
       throw new Error(`${unit.id} checkpoint is invalid.`);
     seen.add(checkpoint.id);
     if (
+      (checkpoint.revision !== undefined &&
+        (!Number.isSafeInteger(checkpoint.revision) || checkpoint.revision < 1)) ||
       checkpoint.requiredChoices !== checkpoint.correct.length ||
       !checkpoint.correct.every((choice) => checkpoint.choices.some((item) => item.id === choice))
     )
@@ -39,7 +43,7 @@ export function normalizeCheckpoints(unit: FundamentalsUnit, checkpoints: RawChe
     return {
       ...checkpoint,
       category: unit.id,
-      revision: 1,
+      revision: checkpoint.revision ?? 1,
       title: section.title,
       unitId: unit.id,
       version: '2026-11-learning',

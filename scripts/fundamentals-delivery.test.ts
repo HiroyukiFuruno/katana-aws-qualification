@@ -13,6 +13,12 @@ test('builds deterministic delivery assets without losing published learning con
   expect(first.units.flatMap((unit) => unit.finalQuestions)).toHaveLength(144);
 
   for (const unit of content.units) {
+    const checkpointDefinitions = new Map(
+      required(
+        checkpoints.units.find((item) => item.unitId === unit.id),
+        'checkpoint source',
+      ).checkpoints.map((question) => [question.sectionId, question]),
+    );
     const asset = first.units.find((item) => item.unit.id === unit.id);
     const route = first.routeManifest.units.find((item) => item.unitId === unit.id);
     const trusted = first.trustedCatalog.units.find((item) => item.unitId === unit.id);
@@ -49,7 +55,7 @@ test('builds deterministic delivery assets without losing published learning con
         (unit.sections ?? []).map((section) =>
           expect.objectContaining({
             category: unit.id,
-            revision: 1,
+            revision: checkpointDefinitions.get(section.id)?.revision ?? 1,
             title: section.title,
             unitId: unit.id,
             version: '2026-11-learning',
@@ -67,7 +73,7 @@ test('builds deterministic delivery assets without losing published learning con
       );
       expect(checkpointQuestion).toMatchObject({
         category: unit.id,
-        revision: 1,
+        revision: checkpointDefinitions.get(section.id)?.revision ?? 1,
         title: section.title,
         unitId: unit.id,
         version: '2026-11-learning',

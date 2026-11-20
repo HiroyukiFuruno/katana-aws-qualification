@@ -6,7 +6,7 @@ const publisher = 'ca-pub-6906125453421012';
 const slot = '1732021005';
 export const siteAdServingEnabled = import.meta.env.PROD && import.meta.env.VITE_ADSENSE_SERVING === '1';
 
-export function SiteAd() {
+export function SiteAd({ fullWidth = true }: { fullWidth?: boolean }) {
   const consent = useCookieConsent();
   const allowed = siteAdServingEnabled && consent.value === 'granted';
   const requested = useRef(false);
@@ -34,7 +34,7 @@ export function SiteAd() {
       data-ad-client={publisher}
       data-ad-slot={slot}
       data-ad-format="auto"
-      data-full-width-responsive="true"
+      data-full-width-responsive={fullWidth ? 'true' : 'false'}
     />
   ) : null;
 }

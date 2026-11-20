@@ -107,13 +107,13 @@ export function parseDeliveryUnit(
 export async function loadDeliveryUnit(
   index: DeliveryIndexAsset,
   unitId: string,
-  options: { signal?: AbortSignal; fetcher?: Fetcher } = {},
+  options: { signal?: AbortSignal; fetcher?: Fetcher; basePath?: string } = {},
 ) {
   const entry = index.units.find((unit) => unit.unitId === unitId);
   if (!entry) throw new Error(`Unknown fundamentals delivery unit: ${unitId}`);
   return parseDeliveryUnit(
     await fetchDeliveryJson(
-      `/fundamentals/delivery/${entry.slug}.json`,
+      `${options.basePath ?? '/fundamentals/delivery'}/${entry.slug}.json`,
       options.signal,
       options.fetcher,
     ),

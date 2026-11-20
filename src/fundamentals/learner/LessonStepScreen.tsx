@@ -5,7 +5,6 @@ import { usePreferences } from '../../preferences';
 import { SiteAd, siteAdServingEnabled } from '../../SiteAd';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonRoute } from '../delivery/navigation';
-import { stepHref } from '../delivery/planNavigation';
 import type { LessonStep } from '../delivery/slideTypes';
 import { isLessonConflict } from '../state/isLessonConflict';
 import type { LessonServices } from '../state/services';
@@ -15,6 +14,7 @@ import { useSavedLessonReload } from '../state/useSavedLessonReload';
 import { LessonSlideShell } from './LessonSlideShell';
 import { LessonStepContent } from './LessonStepContent';
 import { useLessonActions } from './useLessonActions';
+import { useLessonNavigation } from './lessonNavigation';
 
 type Props = {
   asset: DeliveryUnitAsset;
@@ -58,6 +58,7 @@ export function LessonStepScreen({
     snapshot,
     step,
     locale,
+    contentVersion: route.contentVersion,
     selected,
     commit,
     confirm: (result, href) => {
@@ -65,9 +66,7 @@ export function LessonStepScreen({
       confirm(result, href);
     },
   });
-  const previous = asset.steps[step.position - 2];
   const savedReload = useSavedLessonReload(actions.discard, reloadSaved, recovery.clear);
-  const previousHref = previous ? stepHref(locale, previous, asset) : undefined;
   const catalogHref = localePath(locale, 'study/fundamentals');
   const blocked =
     actions.busy ||
@@ -77,27 +76,33 @@ export function LessonStepScreen({
     Boolean(recovery.error || savedReload.error);
   const saveError = actions.error || recovery.error;
   const conflict = isLessonConflict(saveError);
-  const checkpointDone = snapshot.progress.completedCheckpointIds.includes(step.id);
-  const nextAllowed = !blocked && (step.kind !== 'checkpoint' || checkpointDone);
   const go = (href: string) => confirm(snapshot, href);
+  const navigation = useLessonNavigation({
+    asset,
+    services,
+    actions,
+    step,
+    active: Boolean(active),
+    question,
+    selectedCount: selected.length,
+    feedback,
+    position,
+    locale,
+    contentVersion: route.contentVersion,
+    catalogHref,
+    blocked,
+    saving: actions.busy || recovery.busy || savedReload.busy,
+    go,
+  });
   return (
     <LessonSlideShell
       step={step}
       unitTitle={asset.unit.title}
       catalogHref={catalogHref}
-      onCatalog={() => {
-        if (blocked) return;
-        if (step.kind === 'final' && active) return actions.saveFinal(position, catalogHref);
-        go(catalogHref);
-      }}
-      previousHref={blocked ? undefined : previousHref}
-      onPrevious={() => {
-        if (!previousHref || blocked) return;
-        if (step.kind === 'final' && active)
-          return actions.saveFinal(Math.max(position - 1, 0), previousHref);
-        go(previousHref);
-      }}
-      saving={actions.busy || recovery.busy || savedReload.busy}
+      onCatalog={navigation.catalog}
+      previousHref={navigation.previousHref}
+      onPrevious={navigation.previous}
+      saving={navigation.saving}
       error={saveError || actionError || savedReload.error ? t('progressCloudSaveFailed') : undefined}
       onRetry={
         savedReload.error
@@ -109,17 +114,11 @@ export function LessonStepScreen({
               : actions.retry
       }
       onActionError={setActionError}
-      onNext={nextAllowed ? actions.next : undefined}
-      nextLabel={
-        step.kind === 'final' && !active
-          ? t('fundamentalsStartPractice', { total: 12 })
-          : step.kind === 'final' && position === 11
-            ? t('lessonFinalSubmit')
-            : undefined
-      }
+      onNext={navigation.nextAllowed ? actions.next : undefined}
+      nextLabel={navigation.nextLabelKey ? t(navigation.nextLabelKey, { total: 12 }) : undefined}
       adSlot={
         step.kind !== 'final' && siteAdServingEnabled && consent.value === 'granted' ? (
-          <SiteAd />
+          <SiteAd fullWidth={false} />
         ) : undefined
       }
     >

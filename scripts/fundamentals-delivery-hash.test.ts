@@ -13,6 +13,18 @@ test('changes the version and catalog hashes when published source text changes'
   expect(revised.contentHash).not.toBe(original.contentHash);
 });
 
+test('preserves an explicit checkpoint revision instead of regenerating revision one', () => {
+  const edited = structuredClone(checkpoints);
+  const question = required(required(edited.units[0], 'checkpoint unit').checkpoints[0], 'checkpoint');
+  question.revision = 3;
+  const original = required(buildDelivery(content, checkpoints).units[0], 'original');
+  const revised = required(buildDelivery(content, edited).units[0], 'revised');
+  expect(revised.checkpoints[0]?.revision).toBe(3);
+  expect(revised.contentVersion).not.toBe(original.contentVersion);
+  question.revision = 0;
+  expect(() => buildDelivery(content, edited)).toThrow('choices are invalid');
+});
+
 test('versions include the generated semantic plan and canonical JSON omits only object undefined values', () => {
   const unit = required(content.units[0], 'unit');
   const asset = required(buildDelivery(content, checkpoints).units[0], 'delivery');

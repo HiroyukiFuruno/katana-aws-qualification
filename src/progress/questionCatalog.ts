@@ -41,24 +41,37 @@ export function createQuestionResolver(fetcher: Fetcher = fetch) {
     if (!response.ok) throw new Error('Question catalog could not be loaded');
     return response.json();
   }
+  function loadIndex() {
+    if (index) return index;
+    const pending = json('learning-question-index.v1.json').then(parseIndex);
+    index = pending;
+    void pending.catch(() => {
+      if (index === pending) index = undefined;
+    });
+    return pending;
+  }
+  function loadBank(path: string) {
+    const existing = banks.get(path);
+    if (existing) return existing;
+    const pending = json(path).then((value) => {
+      if (path === 'fundamentals/content.json') {
+        if (!validFundamentalsContent(value)) throw new Error('Fundamentals catalog is invalid');
+        return value.units.flatMap((unit) => unit.questions);
+      }
+      return parseQuestions(value);
+    });
+    banks.set(path, pending);
+    void pending.catch(() => {
+      if (banks.get(path) === pending) banks.delete(path);
+    });
+    return pending;
+  }
   return async (questionId: string, revision: number) => {
-    index ??= json('learning-question-index.v1.json').then(parseIndex);
     const key = questionKey({ id: questionId, revision });
-    const entry = (await index).questions[key];
+    const entry = (await loadIndex()).questions[key];
     if (!entry) return undefined;
     const [certificationId, path] = entry;
-    if (!banks.has(path))
-      banks.set(
-        path,
-        json(path).then((value) => {
-          if (path === 'fundamentals/content.json') {
-            if (!validFundamentalsContent(value)) throw new Error('Fundamentals catalog is invalid');
-            return value.units.flatMap((unit) => unit.questions);
-          }
-          return parseQuestions(value);
-        }),
-      );
-    const question = (await banks.get(path))?.find((candidate) => questionKey(candidate) === key);
+    const question = (await loadBank(path)).find((candidate) => questionKey(candidate) === key);
     return question ? { certificationId, question } : undefined;
   };
 }

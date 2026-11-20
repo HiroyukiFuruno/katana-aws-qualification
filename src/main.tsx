@@ -21,6 +21,7 @@ import { GuestStorageSettings, ProgressGate } from './progress/ProgressGate';
 import { ProgressProvider } from './progress/ProgressProvider';
 import { Roadmap } from './Roadmap';
 import { routeAt } from './routes';
+import { SiteAdLayout } from './SiteAd';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
 import { Home, NotFound, StudyDirectory, StudyPaths } from './SitePages';
@@ -74,40 +75,54 @@ function App() {
     );
   }
 
+  const contentAds =
+    section === '' ||
+    section === 'glossary' ||
+    section === 'certifications' ||
+    route.page === 'study' ||
+    route.page === 'study/questions';
+
   return (
     <>
       <SiteHeader section={section} subpage={courseId} />
-      {section === 'auth' ? (
-        <AuthCallback />
-      ) : section === 'login' || section === 'dashboard' ? (
-        <AccountPages page={section} />
-      ) : selected?.course ? (
-        <ProgressGate>
-          <CourseApp key={selected.id} id={selected.id} name={selected.name} course={selected.course} />
-        </ProgressGate>
-      ) : section === 'study' && courseId === 'questions' ? (
-        <StudyDirectory />
-      ) : section === 'study' ? (
-        <StudyPaths />
-      ) : section === 'certifications' ? (
-        <CertificationPages id={courseId} />
-      ) : section === 'glossary' ? (
-        <GlossaryPage />
-      ) : section === 'privacy' ? (
-        <main className="shell" id="main">
-          <h1>{t('privacy')}</h1>
-          <AnalyticsSettings />
-          <GuestStorageSettings />
-          <AccountPrivacy />
-        </main>
-      ) : section === 'assessment' ? (
-        <ProgressGate>
-          <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
-        </ProgressGate>
-      ) : (
-        <Home />
-      )}
-      <SiteFooter />
+      <SiteAdLayout show={contentAds}>
+        {section === 'auth' ? (
+          <AuthCallback />
+        ) : section === 'login' || section === 'dashboard' ? (
+          <AccountPages page={section} />
+        ) : selected?.course ? (
+          <ProgressGate>
+            <CourseApp
+              key={selected.id}
+              id={selected.id}
+              name={selected.name}
+              course={selected.course}
+            />
+          </ProgressGate>
+        ) : section === 'study' && courseId === 'questions' ? (
+          <StudyDirectory />
+        ) : section === 'study' ? (
+          <StudyPaths />
+        ) : section === 'certifications' ? (
+          <CertificationPages id={courseId} />
+        ) : section === 'glossary' ? (
+          <GlossaryPage />
+        ) : section === 'privacy' ? (
+          <main className="shell" id="main">
+            <h1>{t('privacy')}</h1>
+            <AnalyticsSettings />
+            <GuestStorageSettings />
+            <AccountPrivacy />
+          </main>
+        ) : section === 'assessment' ? (
+          <ProgressGate>
+            <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
+          </ProgressGate>
+        ) : (
+          <Home />
+        )}
+      </SiteAdLayout>
+      <SiteFooter replaceAdOnMobile={contentAds} />
       <CookieConsent />
     </>
   );

@@ -60,4 +60,6 @@ JSONLは1行1回答。回答日時はUTCのISO 8601、所要時間は設問の�
 
 GA4 は KatanA 本家と同じ測定 ID を使い、サイトのプライバシー設定で同意した場合に読み込みます。Google Search Console で URL プレフィックスの HTML タグ認証を選んだ場合は、Vercel の Production に `VITE_GOOGLE_SITE_VERIFICATION` を設定してデプロイし、`/sitemap.xml` を送信します。
 
-AdSense の確認用にアカウントのメタタグと `/ads.txt` を公開します。親ドメインが承認され、対象地域の同意メッセージが公開済みであることを確認した上で、Vercel の Production に `VITE_ADSENSE_SERVING=1` を設定すると、全ページ共通のKAQ専用広告枠が有効になります。広告はCookie設定で「すべて許可」を選んだ後に読み込みます。
+AdSense の確認用にアカウントのメタタグと `/ads.txt` を公開します。親ドメインが承認され、対象地域の同意メッセージが公開済みであることを確認した上で、Vercel の Production に `VITE_ADSENSE_SERVING=1` を設定すると、KAQ専用広告枠が有効になります。広告はCookie設定で「アクセス解析・広告を許可」を選んだ後に読み込みます。
+
+トップ、学習一覧、資格ガイド、用語集では、画面幅1,520px以上のときに左右の余白へ広告枠を追加します。768px未満では本文の区切りに横長枠を1つ表示します。

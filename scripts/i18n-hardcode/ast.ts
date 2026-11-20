@@ -7,6 +7,7 @@ export type Source = {
   bindings: Map<string, Binding[]>;
   imports: Map<string, { source: string; imported: string }>;
   exports: Map<string, Ast>;
+  exportStars: string[];
   parents: WeakMap<Ast, Ast>;
   errors: Set<string>;
 };

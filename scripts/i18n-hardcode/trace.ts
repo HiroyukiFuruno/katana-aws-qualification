@@ -12,6 +12,7 @@ import {
   type Trace,
 } from './ast.ts';
 import { callEnvironment, environmentKey } from './calls.ts';
+import { resolveExport } from './exports.ts';
 import { callable } from './link.ts';
 import { traceMember } from './member.ts';
 import { importedSource } from './sources.ts';
@@ -56,11 +57,10 @@ export function createTrace(sources: Source[]): Trace {
         const target = imported && importedSource(sources, source, imported.source);
         const importedKey = imported?.imported === '*' ? path[0] : imported?.imported;
         const importedPath = imported?.imported === '*' ? path.slice(1) : path;
+        const exported = target && importedKey && resolveExport(sources, target, importedKey);
         return [
           ...local,
-          ...(target && importedKey
-            ? trace(target, target.exports.get(importedKey), importedPath, nextSeen)
-            : []),
+          ...(exported ? trace(exported.source, exported.node, importedPath, nextSeen) : []),
         ];
       }
       case 'MemberExpression':

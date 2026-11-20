@@ -1,5 +1,6 @@
 import { relative } from 'node:path';
 import { type Ast, args, ast, name, nodes, property, prose, type Source, walk } from './ast.ts';
+import { nativeDialog } from './dialogs.ts';
 import { displayProp, linkSources } from './link.ts';
 import { createTrace } from './trace.ts';
 
@@ -95,7 +96,7 @@ export function checkSources(sources: Source[], root: string): Finding[] {
         const callee = ast(node.callee);
         const member = callee?.type === 'MemberExpression' ? property(ast(callee.property)) : '';
         const direct = name(callee);
-        if (['alert', 'confirm', 'prompt'].includes(direct) || member === 'setCustomValidity') {
+        if (nativeDialog(callee) || member === 'setCustomValidity') {
           inspect(source, args(node)[0], member || direct);
         }
         if (

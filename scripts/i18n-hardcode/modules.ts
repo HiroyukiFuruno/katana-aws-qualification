@@ -1,6 +1,10 @@
 import { type Ast, ast, key, name, nodes, type Source } from './ast.ts';
 
 export function indexModule(source: Source, node: Ast) {
+  if (node.type === 'ExportAllDeclaration' && !node.typeOnly) {
+    const from = name(ast(node.source));
+    if (from) source.exportStars.push(from);
+  }
   if (node.type === 'ImportDeclaration') {
     for (const specifier of nodes(node.specifiers)) {
       const local = ast(specifier.local);

@@ -1,4 +1,5 @@
 import { type Ast, ast, bind, key, nodes, type Source, walk } from './ast.ts';
+import { resolveExport } from './exports.ts';
 import { importedSource } from './sources.ts';
 
 export function callable(
@@ -21,9 +22,8 @@ export function callable(
   }
   const imported = source.imports.get(key(node));
   const target = imported && importedSource(sources, source, imported.source);
-  return target && imported
-    ? callable(sources, target, target.exports.get(imported.imported), seen)
-    : undefined;
+  const exported = target && imported && resolveExport(sources, target, imported.imported);
+  return exported ? callable(sources, exported.source, exported.node, seen) : undefined;
 }
 
 export function parameters(node: Ast) {

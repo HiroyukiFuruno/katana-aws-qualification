@@ -22,6 +22,7 @@ export function createSource(path: string, text: string): Source {
     bindings: new Map(),
     imports: new Map(),
     exports: new Map(),
+    exportStars: [],
     parents: new WeakMap(),
     errors: new Set(),
   };

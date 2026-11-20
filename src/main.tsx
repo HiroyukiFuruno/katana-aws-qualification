@@ -14,6 +14,8 @@ import { FundamentalsPage } from './fundamentals/FundamentalsPage';
 import { GlossaryPage } from './GlossaryPage';
 import { localePath } from './locales';
 import { PreferencesProvider, usePreferences } from './preferences';
+import { GuestStorageSettings, ProgressGate } from './progress/ProgressGate';
+import { ProgressProvider } from './progress/ProgressProvider';
 import { Roadmap } from './Roadmap';
 import { accountPages, routeAt } from './routes';
 import { SiteFooter } from './SiteFooter';
@@ -47,11 +49,15 @@ function App() {
       ) : section === 'login' || section === 'dashboard' ? (
         <AccountPages page={section} />
       ) : selected?.course ? (
-        <CourseApp key={selected.id} id={selected.id} name={selected.name} course={selected.course} />
+        <ProgressGate>
+          <CourseApp key={selected.id} id={selected.id} name={selected.name} course={selected.course} />
+        </ProgressGate>
       ) : section === 'study' && courseId === 'questions' ? (
         <StudyDirectory />
       ) : section === 'study' && courseId === 'fundamentals' ? (
-        <FundamentalsPage />
+        <ProgressGate>
+          <FundamentalsPage />
+        </ProgressGate>
       ) : section === 'study' ? (
         <StudyPaths />
       ) : section === 'certifications' ? (
@@ -62,10 +68,13 @@ function App() {
         <main className="shell" id="main">
           <h1>{t('privacy')}</h1>
           <AnalyticsSettings />
+          <GuestStorageSettings />
           <AccountPrivacy />
         </main>
       ) : section === 'assessment' ? (
-        <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
+        <ProgressGate>
+          <Roadmap onStudy={(id) => location.assign(localePath(locale, `study/${id}`))} />
+        </ProgressGate>
       ) : (
         <Home />
       )}
@@ -80,7 +89,9 @@ if (!root) throw new Error('Application root missing');
 createRoot(root).render(
   <PreferencesProvider>
     <AuthProvider>
-      <App />
+      <ProgressProvider>
+        <App />
+      </ProgressProvider>
     </AuthProvider>
   </PreferencesProvider>,
 );

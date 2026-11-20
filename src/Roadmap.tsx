@@ -4,7 +4,6 @@ import {
   assessmentDate,
   assessmentEstimate,
   assessmentItems,
-  profileKey,
   remainingCertifications,
 } from './assessment';
 import { AccountBenefits } from './auth/AccountBenefits';
@@ -12,14 +11,13 @@ import { CertificationDirectory } from './CertificationDirectory';
 import { usePreferences } from './preferences';
 import { RoadmapResults } from './RoadmapResults';
 
-import { loadProfile, type Profile } from './roadmapProfile';
+import { useRoadmapProfile } from './useRoadmapProfile';
 
 export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
   const { t } = usePreferences();
-  const [profile, setProfile] = useState(loadProfile);
+  const { profile, persist, saveError } = useRoadmapProfile();
   const [position, setPosition] = useState(0);
   const [phase, setPhase] = useState<'setup' | 'questions' | 'result'>('setup');
-  const [saveError, setSaveError] = useState(false);
   const today = assessmentDate();
   const remaining = remainingCertifications(profile.earned, today);
   const items = assessmentItems(profile.earned, today);
@@ -33,16 +31,6 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
         profile.answers[id] >= 0 &&
         profile.answers[id] <= options.length,
     );
-
-  function persist(next: Profile) {
-    setProfile(next);
-    try {
-      localStorage.setItem(profileKey, JSON.stringify(next));
-      setSaveError(false);
-    } catch {
-      setSaveError(true);
-    }
-  }
 
   function enterAssessment() {
     if (complete) {
@@ -66,11 +54,11 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
     const answers = Object.fromEntries(
       Object.entries(profile.answers).filter(([question]) => remainingItems.has(question)),
     );
-    persist({ earned, answers });
+    void persist({ earned, answers });
   }
 
   function selectAnswer(choice: number) {
-    persist({ ...profile, answers: { ...profile.answers, [item.id]: choice } });
+    void persist({ ...profile, answers: { ...profile.answers, [item.id]: choice } });
   }
 
   return (
@@ -128,7 +116,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
           onStudy={onStudy}
           onEdit={() => setPhase('setup')}
           onRetake={() => {
-            persist({ ...profile, answers: {} });
+            void persist({ ...profile, answers: {} });
             setPosition(0);
             setPhase('questions');
           }}

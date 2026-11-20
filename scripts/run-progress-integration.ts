@@ -49,8 +49,34 @@ function applyMigrations() {
     '202611200001_learning_schema.sql',
     '202611200002_learning_writes.sql',
     '202611200003_learning_summaries.sql',
+    '202611200004_profile_snapshot.sql',
   ]) {
-    run('docker', [
+    run(
+      'docker',
+      [
+        ...compose,
+        'exec',
+        '-T',
+        'database',
+        'psql',
+        '-v',
+        'ON_ERROR_STOP=1',
+        '-U',
+        'supabase_auth_admin',
+        '-d',
+        'kaq_data',
+        '-f',
+        `/migrations/${migration}`,
+      ],
+      true,
+    );
+  }
+}
+
+function verifyNoOrphanedLearningData() {
+  run(
+    'docker',
+    [
       ...compose,
       'exec',
       '-T',
@@ -62,33 +88,16 @@ function applyMigrations() {
       'supabase_auth_admin',
       '-d',
       'kaq_data',
-      '-f',
-      `/migrations/${migration}`,
-    ], true);
-  }
-}
-
-function verifyNoOrphanedLearningData() {
-  run('docker', [
-    ...compose,
-    'exec',
-    '-T',
-    'database',
-    'psql',
-    '-v',
-    'ON_ERROR_STOP=1',
-    '-U',
-    'supabase_auth_admin',
-    '-d',
-    'kaq_data',
-    '-c',
-    `DO $$ BEGIN
+      '-c',
+      `DO $$ BEGIN
       IF EXISTS (SELECT 1 FROM public.learning_events e LEFT JOIN auth.users u ON u.id = e.user_id WHERE u.id IS NULL)
         OR EXISTS (SELECT 1 FROM public.learning_state s LEFT JOIN auth.users u ON u.id = s.user_id WHERE u.id IS NULL)
         OR EXISTS (SELECT 1 FROM public.roadmap_profiles p LEFT JOIN auth.users u ON u.id = p.user_id WHERE u.id IS NULL)
       THEN RAISE EXCEPTION 'orphaned learning data remains after account deletion'; END IF;
     END $$;`,
-  ], true);
+    ],
+    true,
+  );
 }
 
 async function waitForGateway() {
@@ -115,7 +124,11 @@ if (process.argv[2] === 'gateway') {
     await requireServices();
     gateway = spawn('bun', ['scripts/run-progress-integration.ts', 'gateway'], { stdio: 'inherit' });
     await waitForGateway();
-    run('bunx', ['playwright', 'test', '--config=playwright.progress.config.ts', ...process.argv.slice(2)], true);
+    run(
+      'bunx',
+      ['playwright', 'test', '--config=playwright.progress.config.ts', ...process.argv.slice(2)],
+      true,
+    );
     verifyNoOrphanedLearningData();
   } finally {
     gateway?.kill('SIGTERM');

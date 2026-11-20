@@ -18,7 +18,9 @@ export function ExamMode({
   blueprint,
   examKey,
   practiceQuestions,
+  certificationId,
 }: {
+  certificationId: string;
   bank: Question[];
   practiceQuestions: Question[];
   archivedBank: Question[];
@@ -43,6 +45,7 @@ export function ExamMode({
       setFilter('all');
       setShowAll(false);
     },
+    certificationId,
   });
   const {
     draft,

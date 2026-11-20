@@ -1,39 +1,38 @@
 import { useEffect, useState } from 'react';
 import type { ExamBlueprint } from './certifications';
-import {
-  canStartExam,
-  getResponse,
-  isAnswered,
-  newExam,
-  readExam,
-  storeExam,
-  type ExamResponse,
-} from './exam';
+import { isAnswered } from './exam';
 import type { Attempt } from './history';
-import { questionKey, type Question } from './questions';
+import { getActiveProgressStore } from './history';
+import { type Question, questionKey } from './questions';
+import { useExamDraftControls } from './useExamDraftControls';
 import { useExamSubmission } from './useExamSubmission';
 import { useStoredExam } from './useStoredExam';
 
-export function useExamSession({
-  bank,
-  archivedBank,
-  history,
-  onSaved,
-  blueprint,
-  examKey,
-  practiceQuestions,
-  onStart,
-}: {
-  bank: Question[];
-  practiceQuestions: Question[];
+type ExamSessionInput = {
   archivedBank: Question[];
+  bank: Question[];
   blueprint: ExamBlueprint;
+  certificationId: string;
   examKey: string;
   history: Attempt[];
-  onStart: () => void;
   onSaved: (history: Attempt[], indexFailed: boolean) => void;
-}) {
-  const { draft, setDraft, error, setError, activeSince } = useStoredExam(examKey);
+  onStart: () => void;
+  practiceQuestions: Question[];
+};
+
+export function useExamSession({
+  archivedBank,
+  bank,
+  blueprint,
+  certificationId,
+  examKey,
+  history,
+  onSaved,
+  onStart,
+  practiceQuestions,
+}: ExamSessionInput) {
+  const progressStore = getActiveProgressStore();
+  const { draft, setDraft, error, setError, activeSince } = useStoredExam(examKey, certificationId);
   const [now, setNow] = useState(Date.now);
   const byKey = new Map(
     [...archivedBank, ...practiceQuestions, ...bank].map((question) => [
@@ -51,7 +50,35 @@ export function useExamSession({
   const attempts = draft ? history.filter((attempt) => attempt.examId === draft.id) : [];
   const completed = attempts.length > 0;
   const expired = !!draft && now >= draft.deadline;
-  const available = canStartExam(bank, blueprint);
+  const { submitting, dialog, pending, failedAuto, submit } = useExamSubmission({
+    activeSince,
+    certificationId,
+    completed,
+    correctRevision,
+    draft,
+    examKey,
+    expired,
+    history,
+    onSaved,
+    progressStore,
+    questions,
+    setError,
+  });
+  const { available, start, update } = useExamDraftControls({
+    activeSince,
+    bank,
+    blueprint,
+    certificationId,
+    draft,
+    examKey,
+    failedAuto,
+    history,
+    onStart,
+    progressStore,
+    setDraft,
+    setError,
+    setNow,
+  });
   const unanswered = draft ? questions.filter((item) => !isAnswered(draft, item)).length : 0;
   useEffect(() => {
     if (!draft?.id || completed || expired) return;
@@ -63,85 +90,24 @@ export function useExamSession({
       document.removeEventListener('visibilitychange', tick);
     };
   }, [draft?.id, completed, expired]);
-  const { submitting, dialog, pending, failedAuto, submit } = useExamSubmission({
-    draft,
-    questions,
-    correctRevision,
-    completed,
-    expired,
-    examKey,
-    onSaved,
-    activeSince,
-    setError,
-  });
-  function start(count: number) {
-    if (!available) return;
-    try {
-      const current = readExam(examKey);
-      if (current && !history.some((attempt) => attempt.examId === current.id)) {
-        setDraft(current);
-        return;
-      }
-      const next = newExam(bank, blueprint, Date.now(), count);
-      storeExam(examKey, next);
-      setDraft(next);
-      setNow(Date.now());
-      activeSince.current = Date.now();
-      failedAuto.current = false;
-      onStart();
-      setError('');
-    } catch {
-      setError('examSaveFailed');
-    }
-  }
-  function update(position: number, patch: Partial<ExamResponse> = {}) {
-    const at = Date.now();
-    if (!draft || at >= draft.deadline || pending.current) {
-      setNow(at);
-      return;
-    }
-    try {
-      const current = readExam(examKey);
-      if (!current || current.id !== draft.id || current.position !== draft.position) return;
-      const response = getResponse(current, key);
-      const next = {
-        ...current,
-        position,
-        responses: {
-          ...current.responses,
-          [key]: {
-            ...response,
-            ...patch,
-            durationMs: response.durationMs + Math.max(0, at - activeSince.current),
-          },
-        },
-      };
-      storeExam(examKey, next);
-      activeSince.current = at;
-      setDraft(next);
-      setError('');
-    } catch {
-      setError('answerSaveFailed');
-    }
-  }
   return {
-    draft,
-    now,
-    error,
-    byKey,
-    questions,
-    correctRevision,
-    question,
-    key,
     attempts,
-    completed,
-    expired,
     available,
-    unanswered,
-    submitting,
+    byKey,
+    completed,
+    correctRevision,
     dialog,
-    submit,
+    draft,
+    error,
+    expired,
+    key,
+    now,
+    question,
+    questions,
     start,
-    update,
+    submit,
+    submitting,
+    unanswered,
+    update: (position: number, patch = {}) => (pending.current ? undefined : update(position, patch)),
   };
 }

@@ -19,6 +19,7 @@ export type ExamDraft = {
   order: string[];
   position: number;
   responses: Record<string, ExamResponse>;
+  revision?: number;
 };
 
 function uniqueExamQuestions(questions: readonly Question[]) {

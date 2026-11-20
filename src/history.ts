@@ -1,18 +1,48 @@
-import { type Attempt, makeAttempt, type Mode } from './attempts';
+import { type Attempt, type Mode, makeAttempt } from './attempts';
+import {
+  clearBrowserLearningRecords,
+  examKeyPrefix,
+  historyKey,
+  legacyExamKey,
+} from './learningStorage';
+import type { ProgressStore } from './progress/storeTypes';
 import type { Question } from './questions';
+
+export { historyKey } from './learningStorage';
 
 export { type Attempt, type Mode, statsFor } from './attempts';
 
-export const historyKey = 'saa-study.attempts.v1';
-const legacyExamKey = 'saa-study.exam.v1';
-const examKeyPrefix = 'katana.certification-exam.v1.';
+const legacyIncorrectCookie = 'saa_study_incorrect_v1';
+let activeProgressStore: ProgressStore | null | undefined;
+
+export function setActiveProgressStore(store: ProgressStore | null | undefined) {
+  activeProgressStore = store;
+}
+
+export function getActiveProgressStore() {
+  return activeProgressStore;
+}
+
+function progressStore(expected: ProgressStore | null | undefined) {
+  if (expected !== undefined && expected !== activeProgressStore) {
+    throw new Error('学習記録の保存先が切り替わりました。');
+  }
+  if (expected === null || activeProgressStore === null) {
+    throw new Error('学習記録の保存先を初期化中です。');
+  }
+  return expected ?? activeProgressStore;
+}
 export function examKeyFor(certificationId: string) {
   return certificationId === 'saa-c03' ? legacyExamKey : examKeyPrefix + certificationId;
 }
-const wrongKey = 'saa-study.incorrect.v1';
-const cookieName = 'saa_study_incorrect_v1';
 
-export function readHistory(): Attempt[] {
+export function readHistory(expectedStore?: ProgressStore | null): Attempt[] {
+  const store = progressStore(expectedStore);
+  if (store) {
+    const snapshot = store.getSnapshot();
+    if (snapshot.state !== 'ready') throw new Error('学習履歴を読み込めませんでした。');
+    return snapshot.attempts;
+  }
   const raw = localStorage.getItem(historyKey);
   if (raw === null) return [];
   const history: Attempt[] = JSON.parse(raw);
@@ -20,55 +50,44 @@ export function readHistory(): Attempt[] {
   return history;
 }
 
-function readCookie() {
-  return document.cookie
-    .split(';')
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${cookieName}=`));
-}
-
-function syncIncorrectIds(history: Attempt[]) {
-  const ids = [
-    ...new Set(history.filter((attempt) => !attempt.isCorrect).map((attempt) => attempt.questionId)),
-  ];
-  if (!ids.length) return;
-  const cookie = `${cookieName}=${encodeURIComponent(JSON.stringify(ids))}`;
-  let stored = false;
-  try {
-    if (cookie.length <= 3800) {
-      document.cookie =
-        cookie +
-        '; Path=/; Max-Age=31536000; SameSite=Lax' +
-        (location.protocol === 'https:' ? '; Secure' : '');
-      stored = readCookie() === cookie;
-    }
-    if (!stored) document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
-  } catch {
-    // The detailed history remains authoritative when cookies are blocked.
-  }
-  if (stored) localStorage.removeItem(wrongKey);
-  else localStorage.setItem(wrongKey, JSON.stringify(ids));
-}
-
 export function withHistoryLock<T>(operation: () => T): Promise<T> {
   if (navigator.locks) return navigator.locks.request(historyKey, operation);
   return Promise.resolve().then(operation);
 }
 
-function persist(history: Attempt[]) {
-  localStorage.setItem(historyKey, JSON.stringify(history));
+export function expireLegacyIncorrectCookie() {
   try {
-    syncIncorrectIds(history);
-    return false;
-  } catch {
-    return true;
+    document.cookie = `${legacyIncorrectCookie}=; Path=/; Max-Age=0; SameSite=Lax`;
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === 'SecurityError')) throw error;
   }
 }
 
-export function saveAttempt(question: Question, selected: string[], mode: Mode, durationMs: number) {
+function persist(history: Attempt[]) {
+  localStorage.setItem(historyKey, JSON.stringify(history));
+  return false;
+}
+
+export function saveAttempt(
+  question: Question,
+  selected: string[],
+  mode: Mode,
+  durationMs: number,
+  certificationId?: string,
+  expectedStore?: ProgressStore | null,
+) {
   return withHistoryLock(() => {
-    const history = readHistory();
+    const history = readHistory(expectedStore);
     const attempt = makeAttempt(history, question, selected, mode, durationMs, new Date().toISOString());
+    const store = progressStore(expectedStore);
+    if (store) {
+      if (store.getSnapshot().owner.kind === 'member' && !certificationId) {
+        throw new Error('資格IDなしに学習記録を同期できません。');
+      }
+      return store
+        .appendAttempt(certificationId ?? 'guest', attempt)
+        .then(() => ({ attempt, history: readHistory(store), indexFailed: false }));
+    }
     const updated = [...history, attempt];
     return { attempt, history: updated, indexFailed: persist(updated) };
   });
@@ -104,22 +123,19 @@ export function saveExam(
 }
 
 export function resetHistory() {
+  if (activeProgressStore === null) throw new Error('学習記録の保存先を初期化中です。');
+  if (activeProgressStore) {
+    const owner = activeProgressStore.getSnapshot().owner;
+    return activeProgressStore.reset().then(() => {
+      if (owner.kind === 'guest') {
+        expireLegacyIncorrectCookie();
+        clearBrowserLearningRecords();
+      }
+    });
+  }
   return withHistoryLock(() => {
-    try {
-      document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
-      if (readCookie()) throw new Error('誤答Cookieを削除できませんでした。');
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'SecurityError')) throw error;
-    }
-    const keys = [wrongKey, historyKey, legacyExamKey];
-    for (let index = 0; index < localStorage.length; index++) {
-      const key = localStorage.key(index);
-      if (key?.startsWith(examKeyPrefix)) keys.push(key);
-    }
-    for (const key of keys) localStorage.removeItem(key);
-    if (keys.some((key) => localStorage.getItem(key) !== null)) {
-      throw new Error('学習データの削除を確認できませんでした。');
-    }
+    expireLegacyIncorrectCookie();
+    clearBrowserLearningRecords();
   });
 }
 

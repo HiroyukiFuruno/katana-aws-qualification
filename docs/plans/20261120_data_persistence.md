@@ -1,6 +1,6 @@
 # #23 学習記録の永続化
 
-一次情報はIssue #23、親 #17、本人によるAmazon保留・ゲスト利用・Cookie二重管理廃止の指示。#24の画面実装は、本契約の検証・公開後に進める。
+一次情報はIssue #23、親 #17、本人によるAmazon対象外・ゲスト利用・Cookie二重管理廃止の指示。#24の画面実装は、本契約の検証・公開後に進める。
 
 ## 固定する完了条件
 
@@ -176,3 +176,17 @@ question resolver差分はindex/bank拒否と成功cache/並行共有を単体�
 独立18thレビューで追加P1を採用: 同意後のprofile/exam競合の解決前に通常の保存UIがdiskを上書きできる経路を確認。repositoryで未解決keyの通常writeを拒否し、stored/pendingの明示解決だけを許可する。既存履歴lockは専用moduleへ実装不変で抽出し、循環依存を除去する。最初のfullcheckは構造検査で停止し、追加E2Eの型不整合（部分Question/Playwright matcher）は修正済み。これらは検査成功の主張ではなく、再検査を継続する。
 
 18th最終検証: `pr63-consent-reconcile-preserve-check.log` 全204unit/1568assertions、重複0・型構造教材/build成功。`pr63-consent-reconcile-progress.log` 実42件成功1.4分。H/B統合→同意直後reload→C metadata3/2、profile競合の両選択→reload保持を実UI/native storageで確認。独立再レビューで上書きP1解消・具体的残P0/P1/P2なし。001003不変、004005006/本番サイト未公開。
+
+## 19thレビュー: 会員の複数タブの回答metadata
+
+- [/] PRRT_kwDOVzQ52c657VOM / comment4640932111: 同じ会員の2タブを初期化後、Aの誤答をBのcapture済みsnapshotが持たず、Bの次回答が1/0になる経路を修正。新しい回答の準備前に同一問題・改訂の現行server履歴を読み、UUIDで既知履歴と統合する。既存pendingのUUID/payloadは変えない。
+- [/] 通信失敗では既存のoffline outbox契約を維持し、現在ownerを確認したうえで既知履歴に基づく新eventを保持し、元errorを報告する。generation/auth/破損/旧ownerを成功やoffline扱いへ隠さない。
+- [/] 公開storeの共有server2タブunitと実2contextのA→B→A metadata1/0→2/1→3/2・DB3UUID/reloadを固定。全check/実43件/独立review/push/reply/resolve/最新CIを回収。
+
+直前28e29b4の4CIはすべて成功（auth11m35、data47s、glossary5m36、progress4m1）。新19th採用のためDraftへ戻し、004005006・本番サイトは未公開のまま維持する。
+
+## アカウント統合との境界（root計画の統合）
+
+最新の公開順序は#23→#25追加改修→#24→#58。既存SSOの連携競合、初回SSO時の分離防止、両SSO所有確認後のアカウント/履歴mergeは#58へ分離し、#23には統合処理を混ぜない。現在の所有者別の履歴・UUID・改訂・模試・プロフィール・移行原本を保持し、他人を氏名やメールで自動的に同一視しない。
+
+19th最終検証: `pr63-member-transport-final-check.log` 全209unit/1611assertions、重複0・型/構造/全教材/build成功。`pr63-member-transport-final-progress.log` 実43件成功1.5分。会員2contextの同設問metadata1/0→2/1→3/2・DB3UUID/reload、offline誤答→正答の2履歴、reload後の元UUID再送を確認。最初の実43件は41成功/2失敗で、実SDKのgetUserが通信失敗をAuthRetryableFetchError(status0/5xx)へ包むことを特定。API境界の既知一時エラー分類へ追加し、認証401/権限403/世代PT409/破損は新eventをenqueueしない。元errorを維持しowner切替時の新eventだけ補償削除する。既存unit3失敗は追加queryの順序/遅延対象を忠実に更新し、条件・timeoutは維持した。修正後の全検査成功と元の失敗ログを分けて保持する。004005006・サイト未公開。

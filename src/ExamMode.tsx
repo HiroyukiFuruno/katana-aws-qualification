@@ -3,6 +3,7 @@ import type { ExamBlueprint } from './certifications';
 import { ExamNavigation, type Filter } from './ExamNavigation';
 import { ExamQuestion } from './ExamQuestion';
 import { ExamResults } from './ExamResults';
+import { ExamResultsButton } from './ExamResultsButton';
 import { ExamSaveError } from './ExamSaveError';
 import { ExamSetup } from './ExamSetup';
 import { getResponse, remainingLabel } from './exam';
@@ -90,14 +91,19 @@ export function ExamMode({
     );
   if (!draft)
     return (
-      <ExamSetup
-        blueprint={blueprint}
-        available={available}
-        saving={busy}
-        onStart={start}
-        error={error}
-        t={t}
-      />
+      <>
+        <ExamSetup
+          blueprint={blueprint}
+          available={available}
+          saving={busy}
+          onStart={start}
+          error={error}
+          t={t}
+        />
+        {history.some((attempt) => attempt.mode === 'exam' && attempt.examId) ? (
+          <ExamResultsButton disabled={busy} onClick={() => void session.loadSubmittedExam()} t={t} />
+        ) : null}
+      </>
     );
   if (!correctRevision || !question) return <p role="alert">{t('cannotResume')}</p>;
   return (

@@ -15,6 +15,8 @@ export function useStoredExam(examKey: string, certificationId: string) {
   const currentDraft = useRef(draft);
   currentDraft.current = draft;
   const activeSince = useRef(performance.now());
+  const submittedPending = useRef<object | null>(null);
+  const loadSubmittedRef = useRef<() => Promise<void>>(async () => {});
   useEffect(() => {
     let disposed = false;
     let requestVersion = 0;
@@ -27,14 +29,31 @@ export function useStoredExam(examKey: string, certificationId: string) {
       store === getActiveProgressStore() &&
       sameProgressOwner(owner, store.getSnapshot().owner) &&
       examRefreshVersion === store.getSnapshot().examRefreshVersion;
-    const refresh = async () => {
+    const refresh = async (mode: 'draft' | 'submitted' = 'draft') => {
       const request = ++requestVersion;
       setLoading(true);
       try {
         if (!store || !owner) throw new Error('Progress store is unavailable.');
-        const next =
-          owner.kind === 'member' ? await store.loadExam(certificationId) : store.readGuestExam(examKey);
+        let next: ExamDraft | undefined;
+        let historyReady = true;
+        if (mode === 'submitted') {
+          if (owner.kind !== 'member') throw new Error('Submitted results require an account.');
+          const refreshed = await store.initialize();
+          if (!current(request)) return;
+          if (refreshed.state !== 'ready' || refreshed.error === 'load' || refreshed.refreshing)
+            throw new Error('Learning history is not ready.');
+          next = await store.loadSubmittedExam(certificationId);
+          const submittedId = next?.id;
+          historyReady =
+            !submittedId || refreshed.attempts.some((attempt) => attempt.examId === submittedId);
+        } else {
+          next =
+            owner.kind === 'member'
+              ? await store.loadExam(certificationId)
+              : store.readGuestExam(examKey);
+        }
         if (!current(request)) return;
+        if (!historyReady) throw new Error('Submitted exam history is not ready.');
         if (
           currentDraft.current?.id !== next?.id ||
           currentDraft.current?.position !== next?.position ||
@@ -51,6 +70,16 @@ export function useStoredExam(examKey: string, certificationId: string) {
         }
       }
     };
+    loadSubmittedRef.current = async () => {
+      if (submittedPending.current) return;
+      const token = {};
+      submittedPending.current = token;
+      try {
+        await refresh('submitted');
+      } finally {
+        if (submittedPending.current === token) submittedPending.current = null;
+      }
+    };
     const onStorage = (event: StorageEvent) => {
       if (event.key === examKey || event.key === null) void refresh();
     };
@@ -58,6 +87,9 @@ export function useStoredExam(examKey: string, certificationId: string) {
     window.addEventListener('storage', onStorage);
     return () => {
       disposed = true;
+      requestVersion += 1;
+      submittedPending.current = null;
+      loadSubmittedRef.current = async () => {};
       window.removeEventListener('storage', onStorage);
     };
   }, [certificationId, examKey, examRefreshVersion, store]);
@@ -66,5 +98,6 @@ export function useStoredExam(examKey: string, certificationId: string) {
     setLoading(true);
     store.notifyExamSessionsChanged();
   };
-  return { draft, setDraft, error, setError, activeSince, loading, reload };
+  const loadSubmittedExam = () => loadSubmittedRef.current();
+  return { draft, setDraft, error, setError, activeSince, loading, reload, loadSubmittedExam };
 }

@@ -1,11 +1,13 @@
 import type { ExamDraft, ExamResponse } from '../exam';
 import { isGenerationConflict } from './errors';
 import type { ExamFinalizationEvent } from './examFinalization';
+import type { SubmittedExamDraft } from './examRepositoryRead';
 import type { ProgressSnapshot } from './storeTypes';
 
 type MemberExamOperations = {
   finalize(draft: ExamDraft, events: ExamFinalizationEvent[]): Promise<string>;
   load(certificationId: string): Promise<ExamDraft | undefined>;
+  loadSubmitted(certificationId: string): Promise<SubmittedExamDraft | undefined>;
   readClock(): Promise<string>;
   save(draft: ExamDraft, position: number, key: string, response: ExamResponse): Promise<ExamDraft>;
   start(
@@ -55,6 +57,8 @@ export function createStoreExamOperations({
     finalize: (draft: ExamDraft, events: ExamFinalizationEvent[]) =>
       execute((repository) => repository.finalize(draft, events)),
     load: (certificationId: string) => execute((repository) => repository.load(certificationId)),
+    loadSubmitted: (certificationId: string) =>
+      execute((repository) => repository.loadSubmitted(certificationId)),
     readClock: () => execute((repository) => repository.readClock()),
     save: (draft: ExamDraft, position: number, key: string, response: ExamResponse) =>
       execute((repository) => repository.save(draft, position, key, response)),

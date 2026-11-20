@@ -1,13 +1,8 @@
 import type { ExamDraft, ExamResponse } from '../exam';
 import { createExamClock } from '../examClock';
 import type { ExamFinalizationEvent } from './examFinalization';
-import {
-  questionKey,
-  type ResponseRow,
-  refs,
-  type SessionRow,
-  storedQuestionKey,
-} from './examRepositoryCodec';
+import { questionKey, refs, type SessionRow } from './examRepositoryCodec';
+import { readExamSession, type SubmittedExamDraft } from './examRepositoryRead';
 import type { ProgressRpcClient } from './types';
 
 type ConfirmedResponse = { duration_ms: number; revision: number; selected_at: string | null };
@@ -36,30 +31,23 @@ export function createMemberExamRepository(
         (item) => item.certification_id === certificationId && item.state === 'draft',
       );
       if (!session) return undefined;
-      const rows = await client.select<ResponseRow[]>('exam_responses', {
-        exam_id: `eq.${session.exam_id}`,
-      });
-      const serverISO = await readClock();
+      return readExamSession(client, readClock, isCurrent, session);
+    },
+    async loadSubmitted(certificationId: string): Promise<SubmittedExamDraft | undefined> {
       if (!isCurrent()) throw new Error('Progress owner changed');
-      const responses: Record<string, ExamResponse> = {};
-      for (const row of rows.filter((item) => item.exam_id === session.exam_id))
-        responses[storedQuestionKey(row.question_key)] = {
-          selected: row.selected,
-          flagged: row.flagged,
-          durationMs: row.duration_ms,
-          ...(row.selected_at
-            ? { selectedAt: Date.parse(row.selected_at), selectedAtUtc: row.selected_at }
-            : {}),
-        };
-      return {
-        clock: createExamClock(serverISO),
-        id: session.exam_id,
-        deadline: Date.parse(session.deadline_at),
-        order: session.question_order.map(questionKey),
-        position: session.position,
-        responses,
-        revision: session.revision,
-      };
+      const sessions = await client.select<SessionRow[]>('exam_sessions', {
+        certification_id: `eq.${certificationId}`,
+        state: 'eq.submitted',
+      });
+      const submitted = sessions
+        .filter((item) => item.certification_id === certificationId && item.state === 'submitted')
+        .sort((left, right) => {
+          const date = (item: SessionRow) => Date.parse(item.submitted_at ?? item.started_at ?? '') || 0;
+          return date(right) - date(left);
+        })[0];
+      return submitted
+        ? ((await readExamSession(client, readClock, isCurrent, submitted, true)) as SubmittedExamDraft)
+        : undefined;
     },
     async start(draft: ExamDraft, certificationId: string, sourceVersion: string, durationMs: number) {
       const clock = createExamClock(await readClock());

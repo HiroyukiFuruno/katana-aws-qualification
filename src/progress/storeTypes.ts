@@ -1,6 +1,7 @@
 import type { Attempt } from '../attempts';
 import type { ExamDraft, ExamResponse } from '../exam';
 import type { ExamFinalizationEvent } from './examFinalization';
+import type { SubmittedExamDraft } from './examRepositoryRead';
 import type { BrowserStorage } from './guest';
 import { emptyProfile, type Profile } from './profileTypes';
 import type { ProgressOwner, ProgressRpcClient } from './types';
@@ -36,6 +37,7 @@ export type ProgressStore = {
   guestStorageConflicts(): readonly { key: string; kind: 'exam' | 'profile' }[];
   initialize(): Promise<ProgressSnapshot>;
   loadExam(certificationId: string): Promise<ExamDraft | undefined>;
+  loadSubmittedExam(certificationId: string): Promise<SubmittedExamDraft | undefined>;
   notifyExamSessionsChanged(): void;
   readGuestExam(examKey: string): ExamDraft | undefined;
   readExamClock(): Promise<string>;

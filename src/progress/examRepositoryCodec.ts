@@ -17,6 +17,8 @@ export type SessionRow = {
   question_order: QuestionRef[];
   revision: number;
   state: string;
+  started_at?: string | null;
+  submitted_at?: string | null;
 };
 
 function ref(value: unknown): QuestionRef {

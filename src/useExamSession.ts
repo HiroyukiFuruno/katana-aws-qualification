@@ -41,6 +41,7 @@ export function useExamSession({
     activeSince,
     loading: reloading,
     reload,
+    loadSubmittedExam,
   } = useStoredExam(examKey, certificationId);
   const [now, setNow] = useState(Date.now);
   const [saving, setSaving] = useState(false);
@@ -59,7 +60,8 @@ export function useExamSession({
   const question = questions[draft?.position ?? 0];
   const key = question ? questionKey(question) : '';
   const attempts = draft ? history.filter((attempt) => attempt.examId === draft.id) : [];
-  const completed = attempts.length > 0;
+  const completed =
+    attempts.length > 0 || Boolean(draft && 'submitted' in draft && draft.submitted === true);
   const currentNow = draft ? examNow(draft) : now;
   const expired = !!draft && currentNow >= draft.deadline;
   const { submitting, dialog, pending, failedAuto, submit } = useExamSubmission({
@@ -121,6 +123,7 @@ export function useExamSession({
     questions,
     reloading,
     reload,
+    loadSubmittedExam,
     start,
     submit,
     submitting,

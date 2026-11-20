@@ -110,6 +110,7 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
     getSnapshot: () => snapshot,
     guestStorageConflicts: () => guest?.storageConflicts() ?? [],
     loadExam: (certificationId) => examOperations.load(certificationId),
+    loadSubmittedExam: (certificationId) => examOperations.loadSubmitted(certificationId),
     notifyExamSessionsChanged,
     readGuestExam(examKey) {
       if (!guest) throw new Error('Member exams use cloud storage.');

@@ -13,7 +13,12 @@ export function LessonExperience() {
   const { locale, t } = usePreferences();
   const { services, status, cleanupError, retry, migrationAccess } = useLessonServices();
   const [legacyError, setLegacyError] = useState<unknown>();
-  const legacyUnit = url.searchParams.get('unit');
+  const legacyQuery =
+    url.pathname === localePath(locale, 'study/fundamentals') &&
+    url.searchParams.getAll('unit').length === 1 &&
+    url.searchParams.getAll('review').length <= 1 &&
+    [...url.searchParams.keys()].every((key) => key === 'unit' || key === 'review');
+  const legacyUnit = legacyQuery ? url.searchParams.get('unit') : null;
   const review = url.searchParams.get('review') === '1';
   useEffect(() => {
     let current = true;

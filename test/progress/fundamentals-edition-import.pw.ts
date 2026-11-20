@@ -59,5 +59,20 @@ for (const submitted of [false, true]) {
     await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
     expect(await snapshot(a, archivedAsset)).toEqual(old);
     expect(await learningEvents(a)).toHaveLength(submitted ? 16 : 4);
+    const archive = page.locator('.lesson-archived-records');
+    await archive.locator('summary').click();
+    await archive.getByRole('link').click();
+    expect(new URL(page.url()).searchParams.get('version')).toBe(archivedAsset.contentVersion);
+    if (!submitted) {
+      await expect(page).toHaveURL(/\/final\/12\/\?version=/);
+      const question = archivedAsset.finalQuestions[11];
+      if (!question) throw new Error('Missing last archived question');
+      await expect(page.locator('fieldset input:checked')).toHaveCount(question.requiredChoices);
+      await page.locator('.lesson-slide-actions > button.primary').click();
+    }
+    await expect(page.locator('.lesson-result-pass')).toBeVisible();
+    await expect(page.locator('.lesson-result-score')).toContainText('12問中 12問正解');
+    expect((await snapshot(a, currentAsset)).progress.passedAt).toBeNull();
+    expect(await learningEvents(a)).toHaveLength(16);
   });
 }

@@ -1,10 +1,10 @@
 import { deleteAccount } from '../../supabase/functions/delete-account/handler';
+import { heldResponses } from './held-responses';
 import { appOrigin, authOrigin, fixtureKey, gatewayOrigin, restOrigin } from './settings';
 
 let finalizeFailure: 'after' | 'before' | undefined;
 let expireBeforeSave: string | undefined;
-let holdExamSaveResponse: Promise<void> | undefined;
-let releaseExamSaveResponse: (() => void) | undefined;
+const held = heldResponses((request) => forward(request, '/rest/v1', restOrigin));
 
 function validExamId(examId: string) {
   return /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(examId);
@@ -101,19 +101,8 @@ export function serveProgressGateway() {
         finalizeFailure = mode;
         return new Response(null, { status: 204 });
       }
-      if (path === '/test/hold-next-exam-save' && request.method === 'POST') {
-        if (holdExamSaveResponse) return new Response('An exam save is already held.', { status: 409 });
-        holdExamSaveResponse = new Promise<void>((resolve) => {
-          releaseExamSaveResponse = resolve;
-        });
-        return new Response(null, { status: 204 });
-      }
-      if (path === '/test/release-exam-save' && request.method === 'POST') {
-        if (!releaseExamSaveResponse) return new Response('No exam save is held.', { status: 409 });
-        releaseExamSaveResponse();
-        releaseExamSaveResponse = undefined;
-        return new Response(null, { status: 204 });
-      }
+      const control = held.control(request);
+      if (control) return control;
       if (path.startsWith('/auth/v1/'))
         return cors(await forward(request, '/auth/v1', authOrigin), request);
       if (path === '/rest/v1/rpc/finalize_exam_session' && finalizeFailure) {
@@ -131,13 +120,8 @@ export function serveProgressGateway() {
         if (!expireExam(examId))
           return cors(new Response('Could not expire exam', { status: 500 }), request);
       }
-      if (path === '/rest/v1/rpc/save_exam_response_confirmed' && holdExamSaveResponse) {
-        const hold = holdExamSaveResponse;
-        holdExamSaveResponse = undefined;
-        const forwarded = await forward(request, '/rest/v1', restOrigin);
-        await hold;
-        return cors(forwarded, request);
-      }
+      const delayed = held.forward(request);
+      if (delayed) return cors(await delayed, request);
       if (path.startsWith('/rest/v1/'))
         return cors(await forward(request, '/rest/v1', restOrigin), request);
       if (path === '/functions/v1/delete-account') {

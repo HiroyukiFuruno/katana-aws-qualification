@@ -15,7 +15,7 @@ import { useRoadmapProfile } from './useRoadmapProfile';
 
 export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
   const { t } = usePreferences();
-  const { profile, persist, saveError } = useRoadmapProfile();
+  const { profile, persist, saveError, saving } = useRoadmapProfile();
   const [position, setPosition] = useState(0);
   const [phase, setPhase] = useState<'setup' | 'questions' | 'result'>('setup');
   const today = assessmentDate();
@@ -62,7 +62,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
   }
 
   return (
-    <main className="shell" id="main">
+    <main className="shell" id="main" aria-busy={saving}>
       <div className="intro">
         <h1>{t('skillsAssessment')}</h1>
         <p>{t('roadmapIntro')}</p>
@@ -84,9 +84,14 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
         <section className="card roadmap-card">
           <h2>{t('earned')}</h2>
           <p>{t('earnedIntro')}</p>
-          <CertificationDirectory mode="earned" selected={profile.earned} onToggle={toggleEarned} />
+          <CertificationDirectory
+            mode="earned"
+            selected={profile.earned}
+            saving={saving}
+            onToggle={toggleEarned}
+          />
           {remaining.length ? (
-            <button type="button" className="primary" onClick={enterAssessment}>
+            <button type="button" className="primary" disabled={saving} onClick={enterAssessment}>
               {complete ? t('certOrder') : t('startAssessment', estimate)}
             </button>
           ) : (
@@ -106,6 +111,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
             else if (complete) setPhase('result');
             else setPosition(items.findIndex((question) => profile.answers[question.id] === undefined));
           }}
+          saving={saving}
         />
       ) : (
         <RoadmapResults
@@ -120,6 +126,7 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
             setPosition(0);
             setPhase('questions');
           }}
+          saving={saving}
         />
       )}
     </main>

@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { getActiveProgressStore } from './history';
 import { useProgress } from './progress/ProgressProvider';
 import { loadProfile, type Profile, saveProfile } from './roadmapProfile';
+import { RoadmapProfileSaveGuard } from './roadmapProfileSaveGuard';
 
 function ownerKey(store: ReturnType<typeof useProgress>['store']) {
   const owner = store?.getSnapshot().owner;
@@ -16,6 +18,11 @@ export function useRoadmapProfile() {
   const profileRevision = snapshot?.profileRevision;
   const [profile, setProfile] = useState(loadProfile);
   const [saveError, setSaveError] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const guard = useRef(new RoadmapProfileSaveGuard());
+  useEffect(() => {
+    guard.current.invalidate(owner, store, setSaving);
+  }, [owner, store]);
   useEffect(() => {
     if (status !== 'ready' || !store) return;
     const current = store.getSnapshot();
@@ -30,12 +37,15 @@ export function useRoadmapProfile() {
       return;
     }
     try {
-      await saveProfile(next, expectedStore);
+      const saved = await guard.current.run(() => saveProfile(next, expectedStore), setSaving);
+      if (!saved.accepted || !saved.current) return;
+      if (expectedStore !== getActiveProgressStore() || owner !== ownerKey(expectedStore)) return;
       setProfile(next);
       setSaveError(false);
     } catch {
-      setSaveError(true);
+      if (expectedStore === getActiveProgressStore() && owner === ownerKey(expectedStore))
+        setSaveError(true);
     }
   }
-  return { persist, profile, saveError };
+  return { persist, profile, saveError, saving };
 }

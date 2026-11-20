@@ -1,6 +1,7 @@
 import { normalizeCertificationId } from '../certificationAliases';
 import { sameStrings } from './migrationCodec';
 import type { MigrationContext } from './migrationContext';
+import { isCompletedExamCache } from './migrationDraftUpload';
 import { draft, incorrectCookie, profile } from './migrationLegacy';
 import type { LegacyPreviewSource } from './migrationTypes';
 import { hasImportedDraft, hasImportedEvents, type ImportedEvent } from './migrationVerification';
@@ -23,6 +24,16 @@ export async function verify(
   }
   if (source.sourceName === 'exam-draft-local-storage') {
     const saved = draft(raw);
+    if (saved) {
+      const details = await Promise.all(
+        saved.order.map(async (key) => {
+          const value = JSON.parse(key) as [string, number];
+          return context.input.resolveQuestion(value[0], value[1]);
+        }),
+      );
+      if (details.every((item): item is NonNullable<typeof item> => item !== undefined))
+        if (await isCompletedExamCache(context, saved, details)) return true;
+    }
     return (
       !!saved &&
       hasImportedDraft(
@@ -33,6 +44,8 @@ export async function verify(
             deadline_at: string;
             position: number;
             question_order: { question_id: string; question_revision: number }[];
+            certification_id: string;
+            source_version: string;
             state: string;
           }[]
         >('exam_sessions'),

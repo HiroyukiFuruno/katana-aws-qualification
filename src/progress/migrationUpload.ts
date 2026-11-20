@@ -1,6 +1,9 @@
-import { history } from './migrationLegacy';
+import { fingerprint, ref, stableId } from './migrationCodec';
 import { createMigrationContext, type MigrationContext, type Upload } from './migrationContext';
-import { fingerprint, stableId } from './migrationCodec';
+import { isCompletedExamCache, uploadDraft } from './migrationDraftUpload';
+import { uploadHistory } from './migrationHistoryUpload';
+import { draft, history } from './migrationLegacy';
+import { uploadCookie, uploadProfile } from './migrationOtherUpload';
 import { inspectLegacy } from './migrationPreview';
 import type {
   LegacyMigrationInput,
@@ -8,10 +11,8 @@ import type {
   LegacyMigrationSourceReport,
   LegacyPreviewSource,
 } from './migrationTypes';
-import { uploadHistory } from './migrationHistoryUpload';
-import { uploadDraft } from './migrationDraftUpload';
-import { uploadProfile, uploadCookie } from './migrationOtherUpload';
 import { verify } from './migrationVerifySource';
+
 type ManifestRow = {
   manifest_id: string;
   source_fingerprint: string;
@@ -61,16 +62,19 @@ async function migrate(context: MigrationContext, source: LegacyPreviewSource) {
       failed: 0,
       removed: false,
     };
-  const sourceFingerprint = await fingerprint(source.raw);
+  const completedCache = await completedExamCache(context, source);
+  const sourceFingerprint = await fingerprint(
+    completedCache ? `completed-exam-cache-v2:${source.raw}` : source.raw,
+  );
   const requestedManifest = await stableId(
     `${context.input.owner.userId}:${source.sourceName}:${source.key}:${sourceFingerprint}`,
   );
   const manifestId = await context.repository.write<string>('begin_migration', {
     p_manifest_id: requestedManifest,
     p_source_name: source.sourceName,
-    p_schema_version: 1,
+    p_schema_version: completedCache ? 2 : 1,
     p_fingerprint: sourceFingerprint,
-    p_declared_rows: declaredRows(source),
+    p_declared_rows: completedCache ? 0 : declaredRows(source),
   });
   const manifests = await context.select<ManifestRow[]>('migration_manifests');
   const completed = manifests.some(
@@ -80,7 +84,7 @@ async function migrate(context: MigrationContext, source: LegacyPreviewSource) {
   if (!completed)
     await context.repository.write<void>('complete_migration', { p_manifest_id: manifestId });
   const verified = upload.rejected === 0 && (await verify(context, source, upload.events));
-  const removed = verified && unchanged(context, source);
+  const removed = verified && context.input.isCurrent() && unchanged(context, source);
   if (removed) remove(context, source);
   return {
     sourceName: source.sourceName,
@@ -89,6 +93,21 @@ async function migrate(context: MigrationContext, source: LegacyPreviewSource) {
     failed: 0,
     removed,
   };
+}
+
+async function completedExamCache(context: MigrationContext, source: LegacyPreviewSource) {
+  if (source.sourceName !== 'exam-draft-local-storage' || source.raw === null) return false;
+  const saved = draft(source.raw);
+  if (!saved) return false;
+  const details = await Promise.all(
+    saved.order.map((key) => {
+      const question = ref(key);
+      return question ? context.input.resolveQuestion(question.id, question.revision) : undefined;
+    }),
+  );
+  return details.every((item): item is NonNullable<typeof item> => item !== undefined)
+    ? isCompletedExamCache(context, saved, details)
+    : false;
 }
 function unchanged(context: MigrationContext, source: LegacyPreviewSource) {
   return source.sourceName === 'wrong-cookie-v1'

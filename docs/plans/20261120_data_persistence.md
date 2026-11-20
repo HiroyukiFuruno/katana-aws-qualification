@@ -80,3 +80,13 @@ CI run44670238002は18成功/2失敗。ローカル20成功とは環境・処理
 いずれも既存の保存契約と通常操作に影響するため今回対応し、機能範囲は変えない。f00134aの4 CIは全成功（auth10m1s/data45s/glossary1m8s/progress2m45s）だが、上記修正は未commit/未pushであり、そのheadの完了とは扱わない。
 
 追加P2修正後: `pr63-import-and-pending-check.log` 169 unit/1409 assertions・重複0・型/構造/教材/build成功。`pr63-complete-import-pending-progress.log` 実27件成功。profile取込→reloadなし資格変更→revision/earned更新、partial取込直後の次回答、実PostgREST応答hold→UI busy/disabled→複数選択ACK→next/reload保持を確認。採点statusは本来のquestion-title領域を検査し、取込完了statusで代用しない。read-only再レビューで元P2解消・新P0/P1なし。
+
+## Codex追加レビュー（900b78f時点の対応）
+
+- [x] comment4638649399: 旧producerのISO Z日時とDBのoffset日時を同一時点として照合し、不正日時を拒否する。producer形式の実データを使った取込・照合・原本削除を検証する。
+- [x] comment4638649404: 旧draftのarray question keyとDB ref-object keyを既存codecで正規化して照合する。回答/flag/有効timingを持つdraftの実取込・原本削除・再開を検証する。
+- [x] comment4638649407: 資格/査定の連続操作が同じ古いrevisionで競合しないよう、保存待ちの操作制御とref guardを追加する。実応答hold/releaseで確認する。
+
+900b78fはpush済み。data/glossary/progress CI成功、authは実行中。追加3件の修正・検証と新head CIが完了するまでDraftを維持する。
+
+追加3件修正後: `pr63-normalization-profile-check.log` 全174 unit/1423 assertions・重複0・型/構造/教材/build成功。`pr63-normalization-profile-progress-final.log` 実29件成功（59.0秒）。ISO-Zの旧producer履歴、回答/flag/実選択時刻付きdraftの取込→照合→原本削除→再開、実profile応答hold中の全操作無効化→ACK→次資格→両資格とrevision更新→reload保持を確認した。初回27成功/2失敗は新testの入力名・fetch.ok判定の誤りで、期待する保存/再開条件を維持して修正。保存guardはvoidのguest成功とowner/generation切替を区別し、旧成功/失敗・finallyで新ownerを更新しない。read-only再レビューで具体的P0/P1/P2なし。新headのCI/review・merge・SQL004005/サイト公開は継続する。

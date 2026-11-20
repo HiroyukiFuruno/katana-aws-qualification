@@ -39,3 +39,5 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 - browser 側の実進捗・移行・reset 検査は `test-results/progress/pr63-complete-import-pending-progress.log`（27件成功） に記録する。IT/E2E は Mock、固定 sleep、timeout 延長を使わない。
 - DB/RPC の実 GoTrue/Postgres/PostgREST 検査、RLS、revision、migration、reset、cascade は `data-persistence.md` の統合検査境界を参照する。
 - #25 は main `b767b78` で公開済み。#23 は frontend/outbox/模試の実装・自動検査済み、レビュー・merge・公開検証前であり、保存機能を公開済みとして扱わない。#24 は #23 公開後の後続である。
+
+追加移行・並行操作の検証: `test-results/progress/pr63-normalization-profile-check.log` は174 unit/1423 assertions成功、`pr63-normalization-profile-progress-final.log` は実29件成功。旧ISO-Z日時とDB offset日時、旧tuple keyとDB参照object keyを同値照合し、回答/flag/選択時刻を持つ模試の取込・原本削除・再開まで確認した。模試・資格/査定は保存ACKまで変更を無効にし、古い改訂での並行保存を防ぐ。本番004/005とfrontendの公開は引き続き未実施。

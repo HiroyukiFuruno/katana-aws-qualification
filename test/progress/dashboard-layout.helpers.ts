@@ -7,6 +7,10 @@ export const layoutConditions = [
   { width: 390, height: 844, theme: 'dark' },
   { width: 320, height: 568, theme: 'light' },
   { width: 320, height: 568, theme: 'dark' },
+  { width: 768, height: 1024, theme: 'light' },
+  { width: 768, height: 1024, theme: 'dark' },
+  { width: 1280, height: 900, theme: 'light' },
+  { width: 1280, height: 900, theme: 'dark' },
 ] as const;
 
 export async function openLocalizedDashboard(page: Page, locale: Locale) {
@@ -54,6 +58,8 @@ export async function expectLocalizedLayout(page: Page, locale: Locale, width: n
   await expect(page.locator('.dashboard-viz-svg').first()).toBeVisible();
   await expect(page.locator('.dashboard-controls[open]')).toHaveCount(0);
   await expect(page.locator('details.dashboard-widget-customize[open]')).toHaveCount(0);
+  if (width >= 768)
+    await expect(page.locator('.dashboard-viz-svg').first()).toBeInViewport({ ratio: 0.5 });
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(width);
@@ -68,6 +74,8 @@ export async function expectLocalizedLayout(page: Page, locale: Locale, width: n
 export function screenshotPath(locale: Locale, width: number, theme: 'light' | 'dark') {
   if (locale === 'ja' && width === 390) return `test-results/dashboard/${locale}-${width}-${theme}.png`;
   if (locale === 'de' && width === 320 && theme === 'light')
+    return `test-results/dashboard/${locale}-${width}-${theme}.png`;
+  if (locale === 'ja' && (width === 768 || width === 1280))
     return `test-results/dashboard/${locale}-${width}-${theme}.png`;
   return undefined;
 }

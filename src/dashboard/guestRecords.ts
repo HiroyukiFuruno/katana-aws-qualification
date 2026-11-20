@@ -28,10 +28,16 @@ export async function loadGuestDashboard(input: Input) {
   };
   current();
   const index = await input.assets.index();
+  const editions = await input.assets.editions();
   current();
-  const known = new Map(
-    index.units.map((entry) => [`${guestLessonPrefix}${entry.unitId}.${entry.contentVersion}`, entry]),
-  );
+  const currentVersions = new Map(index.units.map((entry) => [entry.unitId, entry.contentVersion]));
+  const known = new Map<string, (typeof index.units)[number]>();
+  for (const edition of editions) {
+    for (const entry of edition.index.units) {
+      const key = `${guestLessonPrefix}${entry.unitId}.${entry.contentVersion}`;
+      if (!known.has(key)) known.set(key, entry);
+    }
+  }
   const rawSources = [...known].map(([key, entry]) => ({ entry, raw: input.storage.getItem(key) }));
   let unknownSources = 0;
   if (input.storage.key && input.storage.length !== undefined) {
@@ -50,12 +56,14 @@ export async function loadGuestDashboard(input: Input) {
   const lessons: DashboardLessonData[] = [];
   for (const { entry, raw } of rawSources) {
     current();
+    const currentVersion = currentVersions.get(entry.unitId) === entry.contentVersion;
     const common = {
       unitId: entry.unitId,
       title: entry.title,
       href: localePath(input.locale, `study/fundamentals/${entry.slug}`),
     };
     if (raw === null) {
+      if (!currentVersion) continue;
       lessons.push({
         ...common,
         summary: {
@@ -85,7 +93,7 @@ export async function loadGuestDashboard(input: Input) {
     const derived = dashboardGuestLesson(source, asset);
     records.events.push(...derived.events);
     records.lessonFinals.push(...derived.lessonFinals);
-    lessons.push({ ...common, summary: derived.summary });
+    if (currentVersion) lessons.push({ ...common, summary: derived.summary });
   }
   current();
   if (new Set(records.events.map((event) => event.eventId)).size !== records.events.length)

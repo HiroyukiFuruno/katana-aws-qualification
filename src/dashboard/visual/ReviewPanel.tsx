@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePreferences } from '../../preferences';
 import { createQuestionResolver } from '../../progress/questionCatalog';
-import { dashboardCourseLink } from '../learningLinks';
+import { dashboardCourseLink, dashboardLessonLink } from '../learningLinks';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardReview } from '../summaryTypes';
 import type { DashboardLessonData } from '../viewTypes';
@@ -105,7 +105,7 @@ export function ReviewPanel({
           const href =
             row.unitId === null
               ? dashboardCourseLink(row.certificationId, locale, 'review')
-              : lessons.find((lesson) => lesson.unitId === row.unitId)?.href;
+              : dashboardLessonLink(row.unitId, row.contentVersion, lessons, locale);
           return {
             id: identity(row),
             cells: {

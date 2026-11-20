@@ -38,7 +38,7 @@ export function DashboardWidgetCard({
   };
   return (
     <section
-      className={`card dashboard-widget dashboard-widget-${widget.width}`}
+      className={`card dashboard-widget dashboard-widget-${widget.width} dashboard-widget-kind-${widget.kind}`}
       aria-labelledby={`dashboard-widget-${widget.id}`}
     >
       <div className="dashboard-widget-heading">
@@ -46,65 +46,65 @@ export function DashboardWidgetCard({
         {Object.keys(widget.overrides).length > 0 && (
           <span className="eyebrow">{t('dashboardOverrideCustom')}</span>
         )}
+        <details className="dashboard-widget-customize">
+          <summary>{t('dashboardCustomize')}</summary>
+          <div className="dashboard-widget-actions">
+            <button type="button" onClick={() => move(-1)} aria-label={t('dashboardMoveUp')}>
+              ↑
+            </button>
+            <button type="button" onClick={() => move(1)} aria-label={t('dashboardMoveDown')}>
+              ↓
+            </button>
+            <button
+              type="button"
+              onClick={() => onPreferences(updateWidget(preferences, widget.id, { visible: false }))}
+            >
+              {t('dashboardHideWidget')}
+            </button>
+          </div>
+          <div className="dashboard-widget-options">
+            <label>
+              {t('dashboardChart')}
+              <select
+                value={widget.chart}
+                onChange={(e) =>
+                  onPreferences(
+                    updateWidget(preferences, widget.id, { chart: e.target.value as DashboardChart }),
+                  )
+                }
+              >
+                {definition.charts.map((chart) => (
+                  <option key={chart} value={chart}>
+                    {t(chartKeys[chart])}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t('dashboardMetric')}
+              <select
+                value={widget.metric}
+                onChange={(e) =>
+                  onPreferences(
+                    updateWidget(preferences, widget.id, { metric: e.target.value as DashboardMetric }),
+                  )
+                }
+              >
+                {dashboardChartMetrics(definition, widget.chart).map((metric) => (
+                  <option key={metric} value={metric}>
+                    {t(metricKeys[metric])}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <DashboardWidgetOptions
+              widget={widget}
+              facets={facets}
+              onChange={(next) => onPreferences(updateWidget(preferences, widget.id, next))}
+            />
+          </div>
+        </details>
       </div>
-      <details className="dashboard-widget-customize">
-        <summary>{t('dashboardCustomize')}</summary>
-        <div className="dashboard-widget-actions">
-          <button type="button" onClick={() => move(-1)} aria-label={t('dashboardMoveUp')}>
-            ↑
-          </button>
-          <button type="button" onClick={() => move(1)} aria-label={t('dashboardMoveDown')}>
-            ↓
-          </button>
-          <button
-            type="button"
-            onClick={() => onPreferences(updateWidget(preferences, widget.id, { visible: false }))}
-          >
-            {t('dashboardHideWidget')}
-          </button>
-        </div>
-        <div className="dashboard-widget-options">
-          <label>
-            {t('dashboardChart')}
-            <select
-              value={widget.chart}
-              onChange={(e) =>
-                onPreferences(
-                  updateWidget(preferences, widget.id, { chart: e.target.value as DashboardChart }),
-                )
-              }
-            >
-              {definition.charts.map((chart) => (
-                <option key={chart} value={chart}>
-                  {t(chartKeys[chart])}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            {t('dashboardMetric')}
-            <select
-              value={widget.metric}
-              onChange={(e) =>
-                onPreferences(
-                  updateWidget(preferences, widget.id, { metric: e.target.value as DashboardMetric }),
-                )
-              }
-            >
-              {dashboardChartMetrics(definition, widget.chart).map((metric) => (
-                <option key={metric} value={metric}>
-                  {t(metricKeys[metric])}
-                </option>
-              ))}
-            </select>
-          </label>
-          <DashboardWidgetOptions
-            widget={widget}
-            facets={facets}
-            onChange={(next) => onPreferences(updateWidget(preferences, widget.id, next))}
-          />
-        </div>
-      </details>
       <DashboardWidgetState state={state} widget={widget} lessons={lessons} t={t} />
     </section>
   );

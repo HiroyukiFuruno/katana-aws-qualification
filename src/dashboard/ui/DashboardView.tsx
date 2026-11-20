@@ -18,7 +18,7 @@ export function DashboardView(props: DashboardViewProps) {
   const allowed = props.owner === 'member' || props.consented;
   const controls = <DashboardControls key="controls" {...props} facets={facets} />;
   const cards: ReactNode[] = [];
-  for (const [index, widget] of visible.entries()) {
+  for (const widget of visible) {
     cards.push(
       <DashboardWidgetCard
         key={`widget:${widget.id}`}
@@ -30,9 +30,7 @@ export function DashboardView(props: DashboardViewProps) {
         facets={facets}
       />,
     );
-    if (index === 0) cards.push(controls);
   }
-  if (!visible.length) cards.push(controls);
   return (
     <main id="main" className="shell dashboard-page">
       <header className="dashboard-heading">
@@ -55,7 +53,10 @@ export function DashboardView(props: DashboardViewProps) {
           )}
         </section>
       )}
-      {props.storageControl}
+      <div className="dashboard-toolbar">
+        {props.storageControl}
+        {allowed && controls}
+      </div>
       {allowed && props.pendingLearning && (
         <p className="notice" role="status">
           {t('dashboardPending')}{' '}

@@ -69,6 +69,7 @@ test('denied guest dashboard does not read stored lesson data or fetch catalogs'
           return index;
         },
         unit: async () => lessonAsset,
+        editions: async () => [{ index, basePath: '/fundamentals/delivery' }],
       },
     }),
   ).rejects.toThrow();
@@ -90,7 +91,11 @@ test('current lesson progress uses validated source; corrupt records are retaine
     resolve,
     locale: 'ja' as const,
     isCurrent: () => true,
-    assets: { index: async () => index, unit: async () => lessonAsset },
+    assets: {
+      index: async () => index,
+      unit: async () => lessonAsset,
+      editions: async () => [{ index, basePath: '/fundamentals/delivery' }],
+    },
   };
   const first = await loadGuestDashboard(input);
   expect(first.lessons).toHaveLength(12);

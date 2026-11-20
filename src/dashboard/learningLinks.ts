@@ -1,5 +1,18 @@
 import { studyCourses } from '../certifications';
+import { lessonPath } from '../fundamentals/delivery/navigation';
 import { type Locale, localePath } from '../locales';
+import type { DashboardLessonData } from './viewTypes';
+
+export function dashboardLessonLink(
+  unitId: string,
+  contentVersion: string | null,
+  lessons: readonly DashboardLessonData[],
+  locale: Locale,
+) {
+  const lesson = lessons.find((lesson) => lesson.unitId === unitId);
+  if (!lesson || !contentVersion) return undefined;
+  return lessonPath({ locale, unitId, stage: 'resume', contentVersion });
+}
 
 export function dashboardCourseLink(
   certificationId: string,

@@ -74,3 +74,19 @@
 - 全Auth164ケース: `auth-full.log`159成功/5失敗。削除2件は同じバナー遮蔽、残り3件はguest dashboardにもログインボタンがあるという旧期待値だった。製品コードをテストに合わせず、実際のguest表示・無料登録への遷移を検証する契約へ修正。`auth-targeted-retry.log`7成功（15.1s）と`auth-lifecycle-retry.log`2成功（6.9s）で該当箇所を回帰。
 - 最終品質ゲートは`pre-pr-check.log` exit0。レビュー/CIで全件の再実行・公開確認を残す。
 - 最新ユーザーFBのスライド終了・checkpoint再訪は独立Issue #67として先行修正する。#24の検証済み差分を正式な作業ブランチのコミットへ保持し、新規worktree/stashは作成しない。本Issueは未完了のまま維持する。
+
+## #67/#68公開後の継続（2026-11-21）
+
+#67/PR69はcd4cb39、#68/PR70はae346acとして本番公開・Close済み。release/dashboardへ公開mainを統合（6759c2e）。未公開の001011/001012だけを210002/210003へ変更し、公開済み001010/210001は不変。
+
+- [/] ゲストの旧版回答が分析から漏れる問題を3件REDで再現し、recognized editions全18pairを重複なく読み取るよう修正。旧16回答/受験は集計、新版の単元進捗は0。未知版は原文保持・除外件数表示、通信失敗は明示。archived-guest-green.log:7件29assertions成功。
+- [/] 復習リンクも記録のcontentVersionを保持。editions-navigation.log:2件9assertions成功。
+- [x] editions-native.log: 実guest/memberの旧版16回答/合格と新版未学習、10locale×mobile/tablet/desktop×明暗（80条件）を12件/1.0mで成功。
+- [x] after-editions-check.log: 全check/build成功、数値はログ参照。
+- [ ] 全Auth/Progress/data回帰、Draftレビュー/CI、本番backup/SQL/サイト/公開検証。private公開guardは新しい11本baseline・18catalogに更新してから使う。
+
+- 表示密度を目視レビューし、最初のグラフがPCの初期viewportに入らない問題を厳密検査へ追加。compact-native-red.logは5成功/10失敗（1.9m）、比率0。widget設定を見出し横、全体設定を保存状態と同じtoolbarへ移し、0.1以上のグラフ表示比率を維持して再検証する。検査閾値やtimeoutは変更しない。
+- compact-check.log: 321単体/3616assertionsと全check/build成功。toolbar調整後の再checkと実native回収は未完了。
+
+- compact-half-viewport.log: 最初のグラフがtablet/desktopの初期viewportに50%以上入る条件でも、10locale/明暗/80画面＋keyboard/設定操作＋旧guest/memberの15件が1.1mで成功。compact-half-check.logは321単体/3616assertionsと全品質・build成功。viewport基準を0.1から0.5へ強化し、timeoutは不変。ja768dark/ja1280lightの新しいスクリーンショットも確認した。
+- 全体回帰の現在の分母は165件（all-progress-tests.txt）。after-merge-progress-full.log / after-merge-auth-full.logは実行中であり、成功として扱わない。公開helperのbaselineを11migration/12table/18catalog、追加を210002/210003とし、全13table/10RPC/旧18catalogの全行保持を照合するよう更新。release-helper-selftest.logは正例1/異常18/guard5成功、本番操作は未実施。

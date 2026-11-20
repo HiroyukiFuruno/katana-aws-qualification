@@ -164,3 +164,15 @@ question resolver差分はindex/bank拒否と成功cache/並行共有を単体�
 - [/] 本番read-only preflightは旧4関数のうちfinalize/importの既存search_pathにextensionsがあることを確認。新pubguardの誤った一律public/auth期待を関数別の厳密な元定義へ直し、4/7関数・不正権限/検索path/テーブルをprivate単体で検査。最終preflightは18body/4perms/9table成功、未適用004005006を維持。
 
 最終17th検証: `pr63-exam-generation-check.log`（195unit/1537assertions、全gate成功）、`pr63-exam-generation-progress.log`（実39件成功1.4分）。実2contextでreset→旧RPC409/PT409→世代再同期/旧draft破棄→generation1のclock/start→異なる新exam1件→回答/flag/移動/reloadを確認。独立差分レビューP0/P1/P2なし。原本削除のCI回帰も期待値/timeout不変でcondition pollへ変更。
+
+
+## 18thレビュー: 同意後のmemory/disk正本の統合
+
+- [/] PRRT_kwDOVzQ52c656KSQ: persisted H＋未同意memory Bを同意時snapshotで統合し、次CのattemptNumber=3/priorIncorrectCount=2をfull knownhistoryから計算する。H/Bの過去metadataは遡及書換えしない。等値の別操作をcontent dedupで消さず、明示的base provenanceで既知prefixだけを除去する。
+- [/] guest initializeのreconcile/flushをguest分岐のhistory lock内で行い、同意直後reloadでもH+B=2を保持。profile/exam pendingも既存write意味を維持してflushし、quota/corrupt時は原本/メモリ保持とerror。未同意はdisk学習データの読書きなし。
+- [/] member-only MigrationAccess.refreshのouter historylockとguest initialize branchは同一product経路にない。storeGuestHistory.updateにはinnerlockを追加しない。
+- [/] 公開store unitと実browser/consent UI/native storageで40件目の回帰、旧old/a/b/c・等値distinct・他tab追記・corrupt保持も検証。
+
+独立18thレビューで追加P1を採用: 同意後のprofile/exam競合の解決前に通常の保存UIがdiskを上書きできる経路を確認。repositoryで未解決keyの通常writeを拒否し、stored/pendingの明示解決だけを許可する。既存履歴lockは専用moduleへ実装不変で抽出し、循環依存を除去する。最初のfullcheckは構造検査で停止し、追加E2Eの型不整合（部分Question/Playwright matcher）は修正済み。これらは検査成功の主張ではなく、再検査を継続する。
+
+18th最終検証: `pr63-consent-reconcile-preserve-check.log` 全204unit/1568assertions、重複0・型構造教材/build成功。`pr63-consent-reconcile-progress.log` 実42件成功1.4分。H/B統合→同意直後reload→C metadata3/2、profile競合の両選択→reload保持を実UI/native storageで確認。独立再レビューで上書きP1解消・具体的残P0/P1/P2なし。001003不変、004005006/本番サイト未公開。

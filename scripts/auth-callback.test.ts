@@ -13,6 +13,14 @@ test('provider cancellation, expiration and unknown failures are distinct safe c
   expect(callbackFailureKind(new Error('sensitive provider response'), '')).toBe('unknown');
 });
 
+test('an identity already linked to another account has a fixed safe category', () => {
+  expect(callbackFailureKind({ code: 'identity_already_exists' }, '')).toBe('identity-conflict');
+  expect(callbackFailureKind(null, '?error_code=identity_already_exists')).toBe('identity-conflict');
+  expect(
+    callbackFailureKind(null, '?error_code=identity_already_exists&error_description=private'),
+  ).toBe('identity-conflict');
+});
+
 test('Microsoft diagnostic descriptions never alter safe callback categories', () => {
   expect(
     callbackFailureKind(null, '?error=access_denied&error_description=AADSTS900941%3A+secret'),

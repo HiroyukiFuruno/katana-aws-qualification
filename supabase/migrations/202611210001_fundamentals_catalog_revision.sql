@@ -2947,7 +2947,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_11_0$::jsonb),
-  ('fundamentals.observability', '41949fb235addde94e311b999b0efc3d0e7c49edcee82ac9858f0b89e966dde0', decode('50b8abaa7bd02dc72376efbda7469b76fac314b9e3befb75d303f0d87c9575eb', 'hex'),
+  ('fundamentals.observability', '7957f482b70cf340d863db490d026fecb5b5051908490217a9e13e2aa5561fe2', decode('e4943e531cebbbd0885a2283015d50c7852f0c4566e6f0078ec6e44193c05966', 'hex'),
     $kaq_plan_12_0$[
   {
     "id": "fundamentals.observability:intro:orientation:1",

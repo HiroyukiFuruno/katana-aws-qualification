@@ -18,6 +18,20 @@ export async function reconcileAttemptConflict(
   repository: MemberProgressRepository,
 ) {
   if (!isGenerationConflict(error) || !(await repository.refreshGeneration())) return;
-  queue.clear();
+  await queue.setServerGeneration(await repository.initialize());
   input.onStaleGeneration?.();
+}
+
+export function recoverAttempt(
+  input: ProgressStoreInput,
+  error: unknown,
+  queue: MemberRetryQueue | undefined,
+  repository: MemberProgressRepository | undefined,
+  failed: (error: 'save') => void,
+) {
+  return (
+    queue && repository ? reconcileAttemptConflict(input, error, queue, repository) : Promise.resolve()
+  )
+    .catch(() => undefined)
+    .finally(() => failed('save'));
 }

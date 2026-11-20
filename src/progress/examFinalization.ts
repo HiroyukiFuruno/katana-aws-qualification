@@ -70,14 +70,16 @@ function createFinalization(
       flagged: false,
       selected: [],
     };
-    const answeredAt = Math.min(response.selectedAt ?? endedAt, draft.deadline);
+    const answeredAt =
+      response.selectedAtUtc ??
+      new Date(Math.min(response.selectedAt ?? endedAt, draft.deadline)).toISOString();
     return makeAttempt(
       history,
       question,
       [...response.selected],
       'exam',
       response.durationMs,
-      new Date(answeredAt).toISOString(),
+      answeredAt,
       draft.id,
     );
   });

@@ -28,6 +28,8 @@ test('an offline answer retries its original event UUID exactly once', async ({ 
       page.getByText('学習履歴を保存できませんでした。保存領域の設定を確認してから再試行してください。'),
     ).toBeVisible();
     await context.setOffline(false);
+    await page.reload();
+    await expect(page.getByRole('button', { name: '再試行' })).toBeVisible();
     await page.getByRole('button', { name: '再試行' }).click();
     await expect.poll(() => learningEvents(session)).toHaveLength(1);
     await expect(page.getByRole('button', { name: '再試行' })).toHaveCount(0);

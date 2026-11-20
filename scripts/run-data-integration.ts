@@ -30,6 +30,8 @@ function psql(userA: string, userB: string) {
     '-f',
     '/verification/verify.sql',
     '-f',
+    '/verification/verify-exam-clock.sql',
+    '-f',
     '/verification/verify-cascade.sql',
   ]);
 }
@@ -40,6 +42,7 @@ function applyMigrations() {
     '202611200002_learning_writes.sql',
     '202611200003_learning_summaries.sql',
     '202611200004_profile_snapshot.sql',
+    '202611200005_exam_clock.sql',
   ]) {
     run('docker', [
       ...compose,

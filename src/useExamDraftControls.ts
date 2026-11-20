@@ -1,6 +1,7 @@
 import type { MutableRefObject, RefObject } from 'react';
 import type { ExamBlueprint } from './certifications';
 import { canStartExam, type ExamResponse, getResponse, newExam, readExam, storeExam } from './exam';
+import { elapsedExamMs, examNow } from './examClock';
 import type { Attempt } from './history';
 import type { Message } from './messages';
 import type { ProgressStore } from './progress/storeTypes';
@@ -62,8 +63,8 @@ export function useExamDraftControls({
         );
       } else storeExam(examKey, next);
       setDraft(started);
-      setNow(Date.now());
-      activeSince.current = Date.now();
+      setNow(examNow(started));
+      activeSince.current = performance.now();
       failedAuto.current = false;
       onStart();
       setError('');
@@ -72,7 +73,7 @@ export function useExamDraftControls({
     }
   }
   async function update(position: number, patch: Partial<ExamResponse> = {}) {
-    const at = Date.now();
+    const at = draft ? examNow(draft) : Date.now();
     if (!draft || at >= draft.deadline) {
       setNow(at);
       return;
@@ -83,22 +84,24 @@ export function useExamDraftControls({
       if (!current || current.id !== draft.id || current.position !== draft.position) return;
       const key = current.order[current.position];
       const response = getResponse(current, key);
+      const merged = { ...response, ...patch };
       const next = {
         ...current,
         position,
         responses: {
           ...current.responses,
           [key]: {
-            ...response,
-            ...patch,
-            durationMs: response.durationMs + Math.max(0, at - activeSince.current),
+            ...merged,
+            durationMs: merged.selected.length
+              ? response.durationMs + elapsedExamMs(activeSince.current)
+              : 0,
           },
         },
       };
       let saved = next;
       if (member) saved = await member.saveExamResponse(next, position, key, next.responses[key]);
       else storeExam(examKey, next);
-      activeSince.current = at;
+      activeSince.current = performance.now();
       setDraft(saved);
       setError('');
     } catch {

@@ -1,16 +1,16 @@
 import type { AuthStore } from '../auth/AuthStore';
 import { setActiveProgressStore } from '../history';
-import { createProgressApi } from './api';
+import { createMemberClient } from './memberClient';
 import type { ProgressConfiguration, ProgressCoordinatorSnapshot } from './coordinatorTypes';
 import type { BrowserStorage } from './guest';
 import { createProgressStore } from './store';
 import type { ProgressStore } from './storeTypes';
 import { matchesAuthOwner, type ProgressOwner, sameProgressOwner } from './types';
-
 export type { ProgressCoordinatorSnapshot } from './coordinatorTypes';
 export class ProgressCoordinator {
   private active = false;
   private generation = 0;
+  private transitionId = 0;
   private owner: ProgressOwner | null = null;
   private store: ProgressStore | null = null;
   private readonly listeners = new Set<() => void>();
@@ -39,9 +39,12 @@ export class ProgressCoordinator {
   stop() {
     if (!this.active) return;
     this.active = false;
+    this.transitionId++;
     this.unsubscribeAuth?.();
     this.unsubscribeAuth = null;
-    this.disposeStore();
+    void this.disposeStore(false).catch(() => {
+      if (this.active) this.publish({ status: 'error', store: null });
+    });
     this.publish({ status: 'loading', store: null });
   }
   async retry() {
@@ -67,10 +70,12 @@ export class ProgressCoordinator {
   private synchronize() {
     const auth = this.authStore.getSnapshot();
     if (auth.status === 'loading') {
+      this.transitionId++;
       this.publish({ status: 'loading', store: null });
       return;
     }
     if (auth.status === 'error') {
+      this.transitionId++;
       this.publish({ status: 'error', store: null });
       return;
     }
@@ -84,23 +89,35 @@ export class ProgressCoordinator {
       if (this.store.getSnapshot().state === 'error') void this.store.initialize();
       return;
     }
-    this.replaceStore(owner);
+    const transitionId = ++this.transitionId;
+    void this.replaceStore(owner, transitionId).catch(() => {
+      if (this.active && this.transitionId === transitionId)
+        this.publish({ status: 'error', store: null });
+    });
   }
   private ownerFor(userId?: string): ProgressOwner | null {
     if (!userId) return { generation: this.generation, kind: 'guest' };
     if (!this.authStore.service || !this.configuration) return null;
     return { generation: this.generation, kind: 'member', userId };
   }
-  private replaceStore(nextOwner: ProgressOwner) {
+  private async replaceStore(nextOwner: ProgressOwner, transitionId: number) {
     if (this.owner) this.generation++;
     const owner = this.ownerFor(nextOwner.kind === 'member' ? nextOwner.userId : undefined);
-    if (!owner) {
-      this.publish({ status: 'error', store: null });
+    if (!owner) throw new Error('Member progress requires authentication.');
+    await this.disposeStore(true);
+    if (
+      !this.active ||
+      this.transitionId !== transitionId ||
+      !matchesAuthOwner(this.authStore.getSnapshot(), owner)
+    )
       return;
-    }
-    this.disposeStore();
     let store: ProgressStore | null = null;
-    const client = owner.kind === 'member' ? this.memberClient(owner, () => store) : undefined;
+    const client =
+      owner.kind === 'member'
+        ? createMemberClient(this.authStore, this.configuration, owner, () =>
+            this.isCurrent(owner, store),
+          )
+        : undefined;
     store = createProgressStore({
       client,
       isCurrent: () => this.isCurrent(owner, store),
@@ -116,35 +133,18 @@ export class ProgressCoordinator {
     this.publishStore(store);
     void store.initialize();
   }
-  private memberClient(
-    owner: Extract<ProgressOwner, { kind: 'member' }>,
-    current: () => ProgressStore | null,
-  ) {
-    const configuration = this.configuration;
-    const service = this.authStore.service;
-    if (!configuration || !service) throw new Error('Member progress requires authentication.');
-    return createProgressApi(
-      configuration,
-      () => service.getAccessToken(owner.userId),
-      () => this.isCurrent(owner, current()),
-    );
-  }
-  private isCurrent(owner: ProgressOwner, store: ProgressStore | null) {
-    const auth = this.authStore.getSnapshot();
-    return (
-      this.active &&
-      matchesAuthOwner(auth, owner) &&
-      this.owner !== null &&
-      sameProgressOwner(this.owner, owner) &&
-      this.store === store
-    );
-  }
-  private disposeStore() {
+  private isCurrent = (owner: ProgressOwner, store: ProgressStore | null) =>
+    this.active &&
+    matchesAuthOwner(this.authStore.getSnapshot(), owner) &&
+    this.owner !== null &&
+    sameProgressOwner(this.owner, owner) &&
+    this.store === store;
+  private async disposeStore(clearPending = false) {
     setActiveProgressStore(null);
     this.unsubscribeStore?.();
     this.unsubscribeStore = null;
-    this.store?.dispose();
-    this.store = null;
-    this.owner = null;
+    const store = this.store;
+    this.store = this.owner = null;
+    if (store) await store.dispose(clearPending);
   }
 }

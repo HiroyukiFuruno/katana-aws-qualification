@@ -9,7 +9,7 @@ export function useStoredExam(examKey: string, certificationId: string) {
   const store = progressStore ?? getActiveProgressStore();
   const [draft, setDraft] = useState<ExamDraft>();
   const [error, setError] = useState<Message | ''>('');
-  const activeSince = useRef(Date.now());
+  const activeSince = useRef(performance.now());
   useEffect(() => {
     const refresh = async () => {
       try {
@@ -18,7 +18,7 @@ export function useStoredExam(examKey: string, certificationId: string) {
             ? await store.loadExam(certificationId)
             : readExam(examKey);
         setDraft(next);
-        activeSince.current = Date.now();
+        activeSince.current = performance.now();
       } catch {
         setError('examLoadFailed');
       }

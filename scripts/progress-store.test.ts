@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import type { Attempt } from '../src/attempts';
 import { historyKey } from '../src/history';
 import { createProgressStore, type ProgressRpcClient } from '../src/progress';
+import { memoryStorage } from './progress-store-fixture';
 
 const attempt: Attempt = {
   answeredAt: '2026-11-20T00:00:00.000Z',
@@ -21,17 +22,8 @@ const attempt: Attempt = {
   sourceVersion: '2026-11',
 };
 
-function storage() {
-  const values = new Map<string, string>();
-  return {
-    getItem: (key: string) => values.get(key) ?? null,
-    removeItem: (key: string) => void values.delete(key),
-    setItem: (key: string, value: string) => void values.set(key, value),
-  };
-}
-
 test('a guest without learning-record consent keeps progress only in memory', async () => {
-  const local = storage();
+  const local = memoryStorage();
   const store = createProgressStore({
     isCurrent: () => true,
     owner: { kind: 'guest', generation: 1 },
@@ -44,7 +36,7 @@ test('a guest without learning-record consent keeps progress only in memory', as
 });
 
 test('corrupt guest rows are reported without deleting the original payload', async () => {
-  const local = storage();
+  const local = memoryStorage();
   local.setItem('katana.learning-progress-consent.v1', 'granted');
   local.setItem(historyKey, JSON.stringify([attempt, { schemaVersion: 1, questionId: 3 }]));
   const store = createProgressStore({
@@ -96,7 +88,7 @@ test('a later cloud-load failure retains the last successful member snapshot', a
     client,
     isCurrent: () => true,
     owner: { kind: 'member', generation: 1, userId: 'member-a' },
-    storage: storage(),
+    storage: memoryStorage(),
   });
   await store.initialize();
   fail = true;

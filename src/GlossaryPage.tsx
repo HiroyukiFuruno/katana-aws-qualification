@@ -1,80 +1,20 @@
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { glossary } from './glossary';
+import { filterGlossary, glossary, glossaryCategories, glossaryTags } from './glossary';
+import { GlossaryDefinition, termAnchor } from './GlossaryDefinition';
+import { GlossaryFilters } from './GlossaryFilters';
+import './glossary.css';
 import { usePreferences } from './preferences';
 
-function termAnchor(term: string) {
-  return `glossary-term-${term.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-}
-
-const termNames = new Map(glossary.map(([term]) => [term.toLowerCase(), term]));
-for (const [mention, term] of [
-  ['パイロットライト', 'Pilot light'],
-  ['ウォームスタンバイ', 'Warm standby'],
-  ['VPCエンドポイント', 'VPC endpoint'],
-  ['冪等性', 'Idempotency'],
-]) {
-  termNames.set(mention.toLowerCase(), term);
-}
-
-const mentions = [...termNames.keys()]
-  .sort((a, b) => b.length - a.length)
-  .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  .join('|');
-const mentionPattern = new RegExp(`(?<![a-z0-9-])(?:${mentions})(?![a-z0-9-])`, 'gi');
-
-function Definition({
-  text,
-  term,
-  onFollow,
-}: {
-  text: string;
-  term: string;
-  onFollow: (term: string) => void;
-}) {
-  let cursor = 0;
-  const links = [...text.matchAll(mentionPattern)].flatMap((match) => {
-    const mention = match[0];
-    const target = termNames.get(mention.toLowerCase());
-    if (!target || target === term) return [];
-    const before = text.slice(cursor, match.index);
-    cursor = match.index + mention.length;
-    return (
-      <Fragment key={match.index}>
-        {before}
-        <a href={`#${termAnchor(target)}`} onClick={() => onFollow(target)}>
-          {mention}
-        </a>
-      </Fragment>
-    );
-  });
-  return (
-    <>
-      {links}
-      {text.slice(cursor)}
-    </>
-  );
-}
-
-function searchText(value: string) {
-  return value.normalize('NFKC').toLowerCase();
-}
-
 export function GlossaryPage() {
-  const { t } = usePreferences();
+  const { t, locale } = usePreferences();
   const [query, setQuery] = useState('');
-  const search = searchText(query.trim());
-  const words = search.split(/\s+/);
-  const exact = glossary.find(([term]) => searchText(term) === search);
-  const matches = exact
-    ? [exact]
-    : glossary.filter((entry) => {
-        const text = searchText(entry.join(' '));
-        return words.every((word) => text.includes(word));
-      });
+  const [category, setCategory] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const matches = filterGlossary(query, category, tags);
   const groups = new Map<string, typeof matches>();
   for (const entry of matches) {
-    const initial = entry[0][0].toUpperCase();
+    const initial = entry.term[0].toUpperCase();
     const group = groups.get(initial) ?? [];
     group.push(entry);
     groups.set(initial, group);
@@ -85,8 +25,20 @@ export function GlossaryPage() {
     if (anchor.startsWith('glossary-')) document.getElementById(anchor)?.scrollIntoView();
   }, []);
 
+  function reset() {
+    setQuery('');
+    setCategory('');
+    setTags([]);
+  }
+
   function followTerm(term: string) {
-    if (!matches.some(([name]) => name === term)) flushSync(() => setQuery(''));
+    if (!matches.some((entry) => entry.term === term)) flushSync(reset);
+  }
+
+  function toggleTag(tag: string) {
+    setTags((previous) =>
+      previous.includes(tag) ? previous.filter((id) => id !== tag) : [...previous, tag],
+    );
   }
 
   return (
@@ -95,15 +47,17 @@ export function GlossaryPage() {
         <h1>{t('glossary')}</h1>
         <p>{t('glossaryIntro')}</p>
       </div>
-      <search className="glossary-search">
-        <label htmlFor="glossary-search">{t('glossarySearch')}</label>
-        <input
-          type="search"
-          id="glossary-search"
-          value={query}
-          onChange={(event) => setQuery(event.currentTarget.value)}
-        />
-      </search>
+      <GlossaryFilters
+        query={query}
+        category={category}
+        tags={tags}
+        setQuery={setQuery}
+        setCategory={setCategory}
+        toggleTag={toggleTag}
+        reset={reset}
+        count={matches.length}
+        total={glossary.length}
+      />
       {groups.size > 0 ? (
         <nav aria-label="A–Z" className="glossary-index">
           {[...groups.keys()].map((letter) => (
@@ -113,24 +67,46 @@ export function GlossaryPage() {
           ))}
         </nav>
       ) : (
-        <p role="status">{t('glossaryNoResults')}</p>
+        <p>{t('glossaryNoResults')}</p>
       )}
       <div className="glossary-groups">
         {[...groups].map(([letter, entries]) => (
           <section key={letter} aria-labelledby={`glossary-letter-${letter}`}>
             <h2 id={`glossary-letter-${letter}`}>{letter}</h2>
             <dl lang="ja">
-              {entries.map(([term, expansion, definition]) => (
-                <div key={term} className="glossary-row">
-                  <dt id={termAnchor(term)} lang="en">
-                    <strong>{term}</strong>
-                    {expansion && <span>{expansion}</span>}
-                  </dt>
-                  <dd>
-                    <Definition text={definition} term={term} onFollow={followTerm} />
-                  </dd>
-                </div>
-              ))}
+              {entries.map(
+                ({ term, expansion, definition, category: termCategory, tags: termTags, source }) => (
+                  <div key={term} className="glossary-row">
+                    <dt id={termAnchor(term)} lang="en">
+                      <strong>{term}</strong>
+                      {expansion && <span>{expansion}</span>}
+                    </dt>
+                    <dd>
+                      <GlossaryDefinition text={definition} term={term} onFollow={followTerm} />
+                      <div className="glossary-chips glossary-term-tags" lang={locale}>
+                        <button
+                          type="button"
+                          aria-pressed={category === termCategory}
+                          onClick={() => setCategory(category === termCategory ? '' : termCategory)}
+                        >
+                          {t(glossaryCategories[termCategory])}
+                        </button>
+                        {termTags.map((tag) => (
+                          <button
+                            type="button"
+                            key={tag}
+                            aria-pressed={tags.includes(tag)}
+                            onClick={() => toggleTag(tag)}
+                          >
+                            {t(glossaryTags[tag])}
+                          </button>
+                        ))}
+                        {source && <a href={source}>{t('glossarySource')}</a>}
+                      </div>
+                    </dd>
+                  </div>
+                ),
+              )}
             </dl>
           </section>
         ))}

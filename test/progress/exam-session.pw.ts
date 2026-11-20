@@ -21,10 +21,38 @@ test('a cloud exam resumes after reload and a repeated finalization stays idempo
     await expect
       .poll(() => examSessions(session))
       .toEqual([expect.objectContaining({ state: 'draft' })]);
+    let saved = page.waitForResponse(
+      (response) => response.url().includes('/rpc/save_exam_response_confirmed') && response.ok(),
+    );
+    await page.locator('input[name="exam-answer"]').first().click();
+    await saved;
+    saved = page.waitForResponse(
+      (response) => response.url().includes('/rpc/save_exam_response_confirmed') && response.ok(),
+    );
+    await page.getByRole('button', { exact: true, name: '見直しマーク' }).click();
+    await saved;
+    saved = page.waitForResponse(
+      (response) => response.url().includes('/rpc/save_exam_response_confirmed') && response.ok(),
+    );
+    await page.getByRole('button', { name: '次の問題' }).click();
+    await saved;
+    await expect(page.getByRole('heading', { name: /第2問/ })).toBeVisible();
+    saved = page.waitForResponse(
+      (response) => response.url().includes('/rpc/save_exam_response_confirmed') && response.ok(),
+    );
+    await page.locator('input[name="exam-answer"]').first().click();
+    await saved;
     await page.reload();
     await setRealSession(page, session);
     await openExam(page);
-    await expect(page.getByRole('heading', { name: /第1問/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /第2問/ })).toBeVisible();
+    await expect(page.locator('input[name="exam-answer"]').first()).toBeChecked();
+    await page.getByRole('button', { name: '前の問題' }).click();
+    await expect(page.locator('input[name="exam-answer"]').first()).toBeChecked();
+    await expect(page.getByRole('button', { exact: true, name: '見直しマーク' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     await page.getByRole('button', { name: '試験を提出する' }).click();
     await page.getByRole('dialog').getByRole('button', { name: '提出する' }).click();
     await expect

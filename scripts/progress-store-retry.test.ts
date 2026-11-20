@@ -1,18 +1,24 @@
 import { expect, test } from 'bun:test';
 import { createProgressStore, type ProgressRpcClient } from '../src/progress';
-import { memberAttempt, memberStore } from './progress-store-fixture';
+import {
+  memberAttempt,
+  memberEventRow,
+  memberStore,
+  retryGenerationConflictClient,
+} from './progress-store-fixture';
 
 test('a failed member write rejects and retries the same logical answer with its original UUID', async () => {
   const eventIds: string[] = [];
   let fail = true;
   const client: ProgressRpcClient = {
     async rpc(name, args) {
+      if (name === 'initialize_learning_state') return 1;
       if (name !== 'append_learning_event') return;
       eventIds.push((args.p_event as { event_id: string }).event_id);
       if (fail) throw new Error('response lost');
     },
     async select() {
-      return [];
+      return [memberEventRow('event-id')];
     },
   };
   const store = memberStore(client);
@@ -23,7 +29,7 @@ test('a failed member write rejects and retries the same logical answer with its
   await store.appendAttempt('saa-c03', { ...memberAttempt, answeredAt: '2026-11-20T00:01:00.000Z' });
   expect(eventIds).toHaveLength(2);
   expect(eventIds[0]).toBe(eventIds[1]);
-  expect(store.getSnapshot().attempts).toEqual([memberAttempt]);
+  expect(store.getSnapshot().attempts).toMatchObject([memberAttempt]);
   expect(store.getSnapshot().error).toBeUndefined();
 });
 
@@ -57,22 +63,11 @@ test('a generation conflict during retry drops the old event before a new answer
   let staleCalls = 0;
   const writes: { eventId: string; generation: number }[] = [];
   const accepted: string[] = [];
-  const client: ProgressRpcClient = {
-    async rpc(name, args) {
-      if (name === 'initialize_learning_state') return generation;
-      if (name === 'load_roadmap_profile_snapshot') return [];
-      if (name !== 'append_learning_event') return;
-      const event = args.p_event as { event_id: string };
-      writes.push({ eventId: event.event_id, generation: args.p_expected_generation as number });
-      if (writes.length === 1) throw new Error('offline');
-      if (writes.length === 2) throw Object.assign(new Error('reset'), { code: 'PT409' });
-      accepted.push(event.event_id);
-      return event.event_id;
-    },
-    async select() {
-      return [];
-    },
-  };
+  const client = retryGenerationConflictClient(
+    () => generation,
+    writes,
+    (eventId) => accepted.push(eventId),
+  );
   const store = createProgressStore({
     client,
     isCurrent: () => true,

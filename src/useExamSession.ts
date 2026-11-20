@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ExamBlueprint } from './certifications';
 import { isAnswered } from './exam';
+import { examNow } from './examClock';
 import type { Attempt } from './history';
 import { getActiveProgressStore } from './history';
 import { type Question, questionKey } from './questions';
@@ -49,7 +50,8 @@ export function useExamSession({
   const key = question ? questionKey(question) : '';
   const attempts = draft ? history.filter((attempt) => attempt.examId === draft.id) : [];
   const completed = attempts.length > 0;
-  const expired = !!draft && now >= draft.deadline;
+  const currentNow = draft ? examNow(draft) : now;
+  const expired = !!draft && currentNow >= draft.deadline;
   const { submitting, dialog, pending, failedAuto, submit } = useExamSubmission({
     activeSince,
     certificationId,
@@ -62,6 +64,7 @@ export function useExamSession({
     onSaved,
     progressStore,
     questions,
+    setDraft,
     setError,
   });
   const { available, start, update } = useExamDraftControls({
@@ -82,14 +85,14 @@ export function useExamSession({
   const unanswered = draft ? questions.filter((item) => !isAnswered(draft, item)).length : 0;
   useEffect(() => {
     if (!draft?.id || completed || expired) return;
-    const tick = () => setNow(Date.now());
+    const tick = () => setNow(examNow(draft));
     const interval = window.setInterval(tick, 250);
     document.addEventListener('visibilitychange', tick);
     return () => {
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', tick);
     };
-  }, [draft?.id, completed, expired]);
+  }, [draft, draft?.id, completed, expired]);
   return {
     attempts,
     available,
@@ -101,7 +104,7 @@ export function useExamSession({
     error,
     expired,
     key,
-    now,
+    now: currentNow,
     question,
     questions,
     start,

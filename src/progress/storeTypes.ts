@@ -15,13 +15,22 @@ export type ProgressSnapshot = {
   refreshing?: boolean;
   state: 'error' | 'loading' | 'ready';
 };
+export type ProgressReadyData = Pick<
+  ProgressSnapshot,
+  'attempts' | 'corruptRows' | 'profile' | 'profileRevision'
+>;
 export type ProgressStore = {
-  appendAttempt(certificationId: string, attempt: Attempt): Promise<void>;
-  dispose(): void;
+  appendAttempt(
+    certificationId: string,
+    attempt: Attempt,
+    prepare?: (history: Attempt[]) => Attempt,
+  ): Promise<Attempt>;
+  dispose(clearPending?: boolean): Promise<void>;
   finalizeExam(draft: ExamDraft, events: ExamFinalizationEvent[]): Promise<string>;
   getSnapshot(): ProgressSnapshot;
   initialize(): Promise<ProgressSnapshot>;
   loadExam(certificationId: string): Promise<ExamDraft | undefined>;
+  readExamClock(): Promise<string>;
   replaceProfile(profile: Profile): Promise<void>;
   reset(): Promise<void>;
   retryPending(): Promise<void>;

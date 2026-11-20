@@ -1,12 +1,7 @@
-import { assessmentDate, assessmentEstimate, assessmentItems } from './assessment';
 import { AccountBenefits } from './auth/AccountBenefits';
-import { AccountEntryCta } from './auth/AccountEntryCta';
 import { CertificationDirectory } from './CertificationDirectory';
-import { LandingCatalogStats } from './LandingCatalogStats';
-import { LandingFaq } from './LandingFaq';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
-import './landing.css';
 
 export function NotFound() {
   return (
@@ -17,60 +12,7 @@ export function NotFound() {
   );
 }
 
-function wrapJapanesePhrase(text: string, japanese: boolean, nextPhrase: string) {
-  const boundary = japanese ? text.indexOf(nextPhrase) : -1;
-  if (boundary < 1) return text;
-  return (
-    <>
-      {text.slice(0, boundary)}
-      <wbr />
-      {text.slice(boundary)}
-    </>
-  );
-}
-
-export function Home() {
-  const { locale, t } = usePreferences();
-  const estimate = assessmentEstimate(assessmentItems([], assessmentDate()).length);
-  return (
-    <main id="main" className="landing">
-      <section className="landing-hero">
-        <div className="shell layout-stack">
-          <h1>{wrapJapanesePhrase(t('landingTitle'), locale === 'ja', 'AWS')}</h1>
-          <p>{wrapJapanesePhrase(t('landingIntro'), locale === 'ja', 'KAQ')}</p>
-          <LandingCatalogStats />
-          <AccountEntryCta />
-        </div>
-      </section>
-      <div className="shell layout-stack landing-content">
-        <div className="entry-grid">
-          <a className="entry-card" href={localePath(locale, 'study')}>
-            <h2>{t('study')}</h2>
-            <p>{t('studyPathsIntro')}</p>
-            <span className="entry-action" aria-hidden="true">
-              →
-            </span>
-          </a>
-          <a className="entry-card" href={localePath(locale, 'assessment')}>
-            <h2>{t('skillsAssessment')}</h2>
-            <p>{t('assessmentEntry')}</p>
-            {estimate.count > 0 && <small>{t('assessmentLength', estimate)}</small>}
-            <span className="entry-action">
-              {t('assessmentSetup')} <span aria-hidden="true">→</span>
-            </span>
-          </a>
-        </div>
-        <section className="landing-concept layout-stack" aria-labelledby="landing-concept-title">
-          <h2 id="landing-concept-title">{t('landingConceptTitle')}</h2>
-          <p>{t('landingConceptIntro')}</p>
-          <p>{t('landingConceptUses')}</p>
-        </section>
-        <AccountBenefits context="home" showAction />
-        <LandingFaq />
-      </div>
-    </main>
-  );
-}
+export { LandingPage as Home } from './LandingPage';
 
 export function StudyPaths() {
   const { locale, t } = usePreferences();

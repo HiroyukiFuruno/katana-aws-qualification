@@ -1,28 +1,19 @@
 import { expect, test } from 'bun:test';
 import { createMemberExamRepository, type ProgressRpcClient } from '../src/progress';
 import { ExamFinalizationCache } from '../src/progress/examFinalization';
-import type { Question } from '../src/questions';
-
-const question: Question = {
-  category: 'storage',
-  choices: [{ explanation: 'Correct', id: 'a', text: 'A' }],
-  correct: ['a'],
-  id: 'q',
-  prompt: 'Prompt',
-  revision: 1,
-  source: { label: 'AWS', url: 'https://docs.aws.amazon.com/' },
-  title: 'Title',
-  version: '2026-11',
-};
+import { examQuestion } from './progress-store-fixture';
 
 test('exam writes include generation, revision, and the immutable question reference', async () => {
   const calls: { name: string; args: Record<string, unknown> }[] = [];
   const client: ProgressRpcClient = {
     async rpc(name, args) {
       calls.push({ name, args });
-      return name === 'start_exam_session'
-        ? [{ exam_id: 'e', deadline_at: '2026-12-01T00:00:00Z', revision: 2 }]
-        : 3;
+      if (name === 'read_learning_clock') return '2026-11-20T00:00:00.123456+00:00';
+      if (name === 'start_exam_session')
+        return [{ exam_id: 'e', deadline_at: '2026-12-01T00:00:00Z', revision: 2 }];
+      if (name === 'save_exam_response_confirmed')
+        return [{ duration_ms: 2, revision: 3, selected_at: '2026-11-20T00:00:00.123456+00:00' }];
+      return 'e';
     },
     async select() {
       return [];
@@ -44,24 +35,29 @@ test('exam writes include generation, revision, and the immutable question refer
     flagged: false,
     selected: ['a'],
   });
-  const finalization = new ExamFinalizationCache().getOrCreate([], 'saa-c03', saved, [question], 0);
+  const finalization = new ExamFinalizationCache().getOrCreate([], 'saa-c03', saved, [examQuestion], 0);
   await repo.finalize(saved, finalization.events);
-  expect(calls[0]).toMatchObject({
+  expect(calls.find((call) => call.name === 'start_exam_session')).toMatchObject({
     name: 'start_exam_session',
     args: { p_expected_generation: 7, p_question_order: [{ question_id: 'q', question_revision: 1 }] },
   });
-  expect(calls[1]).toMatchObject({
-    name: 'save_exam_response',
+  expect(calls.find((call) => call.name === 'save_exam_response_confirmed')).toMatchObject({
+    name: 'save_exam_response_confirmed',
     args: {
       p_expected_generation: 7,
       p_expected_revision: 2,
       p_question_ref: { question_id: 'q', question_revision: 1 },
+      p_response_position: 0,
     },
   });
-  expect(calls[2]).toMatchObject({
+  expect(calls.find((call) => call.name === 'finalize_exam_session')).toMatchObject({
     name: 'finalize_exam_session',
     args: {
-      p_events: finalization.events.map((event) => ({ ...event, flagged: false, selected_at: null })),
+      p_events: finalization.events.map((event) => ({
+        ...event,
+        flagged: false,
+        selected_at: '2026-11-20T00:00:00.123456+00:00',
+      })),
       p_expected_generation: 7,
       p_expected_revision: 3,
     },
@@ -101,8 +97,8 @@ test('exam finalization keeps an immutable event payload for a retry', () => {
     revision: 4,
   };
   const cache = new ExamFinalizationCache();
-  const first = cache.getOrCreate([], 'saa-c03', draft, [question], 900);
-  const retry = cache.getOrCreate([], 'saa-c03', draft, [question], 1_000);
+  const first = cache.getOrCreate([], 'saa-c03', draft, [examQuestion], 900);
+  const retry = cache.getOrCreate([], 'saa-c03', draft, [examQuestion], 1_000);
   expect(retry).toBe(first);
   expect(first.events).toEqual([
     expect.objectContaining({

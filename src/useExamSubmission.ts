@@ -1,5 +1,8 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { type ExamDraft, getResponse, readExam } from './exam';
+import { elapsedExamMs } from './examClock';
+import { ExamSubmissionAttempt } from './examSubmissionAttempt';
+import { finalMemberDraft } from './examSubmissionMember';
 import { type Attempt, saveExam } from './history';
 import type { Message } from './messages';
 import { ExamFinalizationCache } from './progress/examFinalization';
@@ -18,6 +21,7 @@ export function useExamSubmission({
   certificationId,
   history,
   progressStore,
+  setDraft,
   setError,
 }: {
   draft: ExamDraft | undefined;
@@ -31,6 +35,7 @@ export function useExamSubmission({
   certificationId: string;
   history: Attempt[];
   progressStore: ProgressStore | null | undefined;
+  setDraft: (draft: ExamDraft) => void;
   setError: (error: Message | '') => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
@@ -38,6 +43,7 @@ export function useExamSubmission({
   const pending = useRef(false);
   const failedAuto = useRef(false);
   const finalization = useRef(new ExamFinalizationCache());
+  const finalizationAttempt = useRef(new ExamSubmissionAttempt());
   const submit = useCallback(async () => {
     if (!draft || !correctRevision || completed || pending.current) return;
     pending.current = true;
@@ -48,38 +54,38 @@ export function useExamSubmission({
       const member = progressStore?.getSnapshot().owner.kind === 'member';
       const current = member ? draft : readExam(examKey);
       if (!current || current.id !== draft.id) throw new Error('Stale exam');
-      const end = Math.min(Date.now(), current.deadline);
+      const serverNow =
+        member && progressStore ? Date.parse(await progressStore.readExamClock()) : Date.now();
+      if (!Number.isFinite(serverNow)) throw new Error('Invalid exam server time');
+      const end = Math.min(serverNow, current.deadline);
       if (member && progressStore) {
         const key = current.order[current.position];
-        const response = getResponse(current, key);
-        let finalizationDraft = current;
-        if (response.selected.length) {
-          const savedResponse = {
-            ...response,
-            durationMs: response.durationMs + Math.max(0, end - activeSince.current),
-          };
-          finalizationDraft = await progressStore.saveExamResponse(
-            {
-              ...current,
-              responses: { ...current.responses, [key]: savedResponse },
-            },
-            current.position,
+        const retryDraft = finalizationAttempt.current.retry(current);
+        let finalizationDraft = retryDraft ?? current;
+        if (!retryDraft) {
+          finalization.current = new ExamFinalizationCache();
+          const response = getResponse(current, key);
+          finalizationDraft = await finalMemberDraft(
+            progressStore,
+            certificationId,
+            current,
             key,
-            savedResponse,
+            response,
+            elapsedExamMs(activeSince.current),
+            serverNow,
           );
+          finalizationDraft = finalizationAttempt.current.prepare(finalizationDraft);
+          setDraft(finalizationDraft);
         }
-        const submissionDraft = {
-          ...finalizationDraft,
-        };
         const submission = finalization.current.getOrCreate(
           history,
           certificationId,
-          submissionDraft,
+          finalizationDraft,
           questions,
           end,
         );
         await progressStore.finalizeExam(finalizationDraft, submission.events);
-        onSaved([...history, ...submission.attempts], false);
+        onSaved(progressStore.getSnapshot().attempts, false);
       } else {
         const result = await saveExam(
           examKey,
@@ -93,7 +99,7 @@ export function useExamSubmission({
               selectedAt: response.selectedAt,
               durationMs:
                 response.durationMs +
-                (index === current.position ? Math.max(0, end - activeSince.current) : 0),
+                (index === current.position ? elapsedExamMs(activeSince.current) : 0),
             };
           }),
         );
@@ -117,6 +123,7 @@ export function useExamSubmission({
     onSaved,
     progressStore,
     questions,
+    setDraft,
     setError,
   ]);
   useEffect(() => {

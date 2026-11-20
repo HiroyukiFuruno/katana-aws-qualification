@@ -11,6 +11,7 @@ import type { Question } from './questions';
 export { historyKey } from './learningStorage';
 
 export { type Attempt, type Mode, statsFor } from './attempts';
+export { exportHistory } from './historyExport';
 
 const legacyIncorrectCookie = 'saa_study_incorrect_v1';
 let activeProgressStore: ProgressStore | null | undefined;
@@ -78,15 +79,18 @@ export function saveAttempt(
 ) {
   return withHistoryLock(() => {
     const history = readHistory(expectedStore);
-    const attempt = makeAttempt(history, question, selected, mode, durationMs, new Date().toISOString());
+    const answeredAt = new Date().toISOString();
+    const makeCurrentAttempt = (current: Attempt[]) =>
+      makeAttempt(current, question, selected, mode, durationMs, answeredAt);
+    const attempt = makeCurrentAttempt(history);
     const store = progressStore(expectedStore);
     if (store) {
       if (store.getSnapshot().owner.kind === 'member' && !certificationId) {
         throw new Error('資格IDなしに学習記録を同期できません。');
       }
       return store
-        .appendAttempt(certificationId ?? 'guest', attempt)
-        .then(() => ({ attempt, history: readHistory(store), indexFailed: false }));
+        .appendAttempt(certificationId ?? 'guest', attempt, makeCurrentAttempt)
+        .then((saved) => ({ attempt: saved, history: readHistory(store), indexFailed: false }));
     }
     const updated = [...history, attempt];
     return { attempt, history: updated, indexFailed: persist(updated) };
@@ -137,14 +141,4 @@ export function resetHistory() {
     expireLegacyIncorrectCookie();
     clearBrowserLearningRecords();
   });
-}
-
-export function exportHistory(history: Attempt[]) {
-  const data = history.map((attempt) => JSON.stringify(attempt)).join('\n');
-  const url = URL.createObjectURL(new Blob([`${data}\n`], { type: 'application/x-ndjson' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'saa-study-history.jsonl';
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

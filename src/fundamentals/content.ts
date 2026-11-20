@@ -1,5 +1,6 @@
 import { parseQuestions } from '../questions';
 import { moduleLabels } from './moduleLabels';
+import { validReadingContent } from './readingContent';
 import type { FundamentalsContent } from './types';
 
 const text = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
@@ -38,12 +39,17 @@ export function validFundamentalsContent(value: unknown): value is FundamentalsC
     catalog.filter((item) => item.state === 'published').map((item) => item.id),
   );
   const plannedIds = new Set(catalog.filter((item) => item.state === 'planned').map((item) => item.id));
-  if (publishedIds.size !== 6 || plannedIds.size !== 6 || units.length !== publishedIds.size)
+  if (
+    publishedIds.size !== catalog.length ||
+    plannedIds.size !== 0 ||
+    units.length !== publishedIds.size
+  )
     return false;
   const unitIds = new Set<string>();
   const questionIds = new Set<string>();
   return units.every((unit: unknown) => {
     if (!record(unit)) return false;
+    if (!validReadingContent(unit)) return false;
     const questions = unit.questions;
     return (
       text(unit.id) &&

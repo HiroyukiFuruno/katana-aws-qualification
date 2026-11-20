@@ -1,4 +1,4 @@
--- A profile read is one statement so its values share one MVCC snapshot.
+-- 取得資格・査定回答・改訂を同一のスナップショットから読み、競合更新を上書きしない。
 create or replace function public.load_roadmap_profile_snapshot()
 returns table(earned jsonb, answers jsonb, revision bigint)
 language plpgsql stable security definer set search_path = public, auth as $$

@@ -16,6 +16,30 @@ export async function stableId(value: string) {
     new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))).slice(0, 16),
   );
 }
+export function canonicalAttemptKey(attempt: Attempt) {
+  return JSON.stringify({
+    schemaVersion: attempt.schemaVersion,
+    questionId: attempt.questionId,
+    questionRevision: attempt.questionRevision,
+    sourceVersion: attempt.sourceVersion,
+    category: attempt.category,
+    mode: attempt.mode,
+    examId: attempt.examId ?? '',
+    answeredAt: attempt.answeredAt,
+    selected: attempt.selected,
+    correct: attempt.correct,
+    ...(attempt.format === undefined ? {} : { format: attempt.format }),
+    isCorrect: attempt.isCorrect,
+    durationMs: attempt.durationMs,
+    attemptNumber: attempt.attemptNumber,
+    priorIncorrectCount: attempt.priorIncorrectCount,
+    reviewCorrect: attempt.reviewCorrect,
+    reward: attempt.reward,
+  });
+}
+export async function stableAttemptId(attempt: Attempt, occurrence: number) {
+  return stableId(`legacy-attempt-v2:${canonicalAttemptKey(attempt)}:${occurrence}`);
+}
 export async function fingerprint(raw: string) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)))]
     .map((byte) => byte.toString(16).padStart(2, '0'))

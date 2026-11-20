@@ -1,38 +1,16 @@
 import type { ExamDraft, ExamResponse } from '../exam';
+import { createExamClock } from '../examClock';
 import type { ExamFinalizationEvent } from './examFinalization';
+import {
+  questionKey,
+  type ResponseRow,
+  refs,
+  type SessionRow,
+  storedQuestionKey,
+} from './examRepositoryCodec';
 import type { ProgressRpcClient } from './types';
 
-type SessionRow = {
-  certification_id: string;
-  state: string;
-  deadline_at: string;
-  exam_id: string;
-  question_order: QuestionRef[];
-  revision: number;
-  position: number;
-};
-type ResponseRow = {
-  exam_id: string;
-  question_key: string;
-  selected: string[];
-  flagged: boolean;
-  duration_ms: number;
-  selected_at: string | null;
-};
-type QuestionRef = { question_id: string; question_revision: number };
-
-function refs(order: string[]) {
-  return order.map((key) => {
-    const value: unknown = JSON.parse(key);
-    if (!Array.isArray(value) || typeof value[0] !== 'string' || !Number.isInteger(value[1]))
-      throw new Error('Invalid exam question key');
-    return { question_id: value[0], question_revision: value[1] };
-  });
-}
-
-function key(ref: QuestionRef) {
-  return JSON.stringify([ref.question_id, ref.question_revision]);
-}
+type ConfirmedResponse = { duration_ms: number; revision: number; selected_at: string | null };
 
 export function createMemberExamRepository(
   client: ProgressRpcClient,
@@ -45,7 +23,9 @@ export function createMemberExamRepository(
     if (!isCurrent()) throw new Error('Progress owner changed');
     return result;
   }
+  const readClock = () => rpc<string>('read_learning_clock', {});
   return {
+    readClock,
     async load(certificationId: string): Promise<ExamDraft | undefined> {
       if (!isCurrent()) throw new Error('Progress owner changed');
       const sessions = await client.select<SessionRow[]>('exam_sessions', {
@@ -59,25 +39,30 @@ export function createMemberExamRepository(
       const rows = await client.select<ResponseRow[]>('exam_responses', {
         exam_id: `eq.${session.exam_id}`,
       });
+      const serverISO = await readClock();
       if (!isCurrent()) throw new Error('Progress owner changed');
       const responses: Record<string, ExamResponse> = {};
       for (const row of rows.filter((item) => item.exam_id === session.exam_id))
-        responses[row.question_key] = {
+        responses[storedQuestionKey(row.question_key)] = {
           selected: row.selected,
           flagged: row.flagged,
           durationMs: row.duration_ms,
-          ...(row.selected_at ? { selectedAt: Date.parse(row.selected_at) } : {}),
+          ...(row.selected_at
+            ? { selectedAt: Date.parse(row.selected_at), selectedAtUtc: row.selected_at }
+            : {}),
         };
       return {
+        clock: createExamClock(serverISO),
         id: session.exam_id,
         deadline: Date.parse(session.deadline_at),
-        order: session.question_order.map(key),
+        order: session.question_order.map(questionKey),
         position: session.position,
         responses,
         revision: session.revision,
       };
     },
     async start(draft: ExamDraft, certificationId: string, sourceVersion: string, durationMs: number) {
+      const clock = createExamClock(await readClock());
       const rows = await rpc<{ exam_id: string; deadline_at: string; revision: number }[]>(
         'start_exam_session',
         {
@@ -90,24 +75,36 @@ export function createMemberExamRepository(
       );
       const result = rows.find((row) => row.exam_id === draft.id);
       if (!result) throw new Error('Exam start response is invalid');
-      return { ...draft, deadline: Date.parse(result.deadline_at), revision: result.revision };
+      return { ...draft, clock, deadline: Date.parse(result.deadline_at), revision: result.revision };
     },
-    async save(draft: ExamDraft, position: number, questionKey: string, response: ExamResponse) {
-      const revision = await rpc<number>('save_exam_response', {
+    async save(draft: ExamDraft, position: number, responseKey: string, response: ExamResponse) {
+      const responsePosition = draft.order.indexOf(responseKey);
+      if (responsePosition < 0) throw new Error('Exam response is not in the draft.');
+      const [confirmed] = await rpc<ConfirmedResponse[]>('save_exam_response_confirmed', {
         p_exam_id: draft.id,
         p_expected_revision: draft.revision ?? 0,
         p_position: position,
-        p_question_ref: refs([questionKey])[0],
+        p_response_position: responsePosition,
+        p_question_ref: refs([responseKey])[0],
         p_selected: response.selected,
         p_flagged: response.flagged,
-        p_duration_ms: response.durationMs,
-        p_selected_at: response.selectedAt ? new Date(response.selectedAt).toISOString() : null,
+        p_duration_ms: Math.max(0, Math.round(response.durationMs)),
+        p_selection_made: response.selectedAt !== undefined,
       });
+      if (!confirmed) throw new Error('Confirmed exam response is invalid.');
+      const { selectedAt: _selectedAt, selectedAtUtc: _selectedAtUtc, ...current } = response;
+      const savedResponse = {
+        ...current,
+        durationMs: confirmed.duration_ms,
+        ...(confirmed.selected_at
+          ? { selectedAt: Date.parse(confirmed.selected_at), selectedAtUtc: confirmed.selected_at }
+          : {}),
+      };
       return {
         ...draft,
         position,
-        revision,
-        responses: { ...draft.responses, [questionKey]: response },
+        revision: confirmed.revision,
+        responses: { ...draft.responses, [responseKey]: savedResponse },
       };
     },
     finalize: (draft: ExamDraft, events: ExamFinalizationEvent[]) =>
@@ -117,12 +114,12 @@ export function createMemberExamRepository(
         p_events: events.map((event) => {
           const response =
             draft.responses[
-              key({ question_id: event.question_id, question_revision: event.question_revision })
+              questionKey({ question_id: event.question_id, question_revision: event.question_revision })
             ];
           return {
             ...event,
             flagged: response?.flagged ?? false,
-            selected_at: response?.selectedAt ? new Date(response.selectedAt).toISOString() : null,
+            selected_at: response?.selectedAtUtc ?? null,
           };
         }),
       }),

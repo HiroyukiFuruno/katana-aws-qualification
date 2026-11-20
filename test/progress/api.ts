@@ -30,6 +30,21 @@ export function learningEvents(session: RealSession) {
   return rows<{ event_id: string }>('/learning_events?select=event_id', session.accessToken);
 }
 
+export function learningEventRows(session: RealSession) {
+  return rows<{
+    attempt_number: number;
+    event_id: string;
+    is_correct: boolean;
+    prior_incorrect_count: number;
+    question_id: string;
+    question_revision: number;
+    selected: string[];
+  }>(
+    '/learning_events?select=event_id,question_id,question_revision,selected,is_correct,attempt_number,prior_incorrect_count',
+    session.accessToken,
+  );
+}
+
 export function profileRows(session: RealSession) {
   return rows<{ revision: number }>('/roadmap_profiles?select=revision', session.accessToken);
 }
@@ -39,6 +54,28 @@ export function examSessions(session: RealSession) {
     '/exam_sessions?select=exam_id,state',
     session.accessToken,
   );
+}
+
+export async function expireExam(examId: string) {
+  const response = await fetch(
+    `${gatewayOrigin}/test/expire-exam?exam_id=${encodeURIComponent(examId)}`,
+    {
+      method: 'POST',
+    },
+  );
+  if (!response.ok)
+    throw new Error(`PostgREST exam expiry fixture failed: ${response.status} ${await response.text()}`);
+}
+
+export async function expireBeforeSave(examId: string) {
+  const response = await fetch(
+    `${gatewayOrigin}/test/expire-before-save?exam_id=${encodeURIComponent(examId)}`,
+    { method: 'POST' },
+  );
+  if (!response.ok)
+    throw new Error(
+      `Could not arm the deadline-crossing save: ${response.status} ${await response.text()}`,
+    );
 }
 
 export function serviceRows(table: string, userId: string) {

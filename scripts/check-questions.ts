@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { certifications } from '../src/certifications.ts';
+import { studyCourses } from '../src/certifications.ts';
 import { examDomainOf, type Question, questionGroupKey, validQuestionFormat } from '../src/questions.ts';
 
 const banks = new Map<string, Question[]>();
@@ -52,7 +52,7 @@ async function load(path: string) {
   return questions;
 }
 
-for (const { course } of certifications) {
+for (const { course } of studyCourses) {
   if (!course) continue;
   const bank = await load(course.mock);
   const groups = new Map<string, string>();

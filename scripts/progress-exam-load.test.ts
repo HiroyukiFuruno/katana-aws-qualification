@@ -11,7 +11,8 @@ test('exam resume selects only the requested certification draft and its respons
     revision: 3,
   };
   const client: ProgressRpcClient = {
-    async rpc<T>(): Promise<T> {
+    async rpc<T>(name: string): Promise<T> {
+      if (name === 'read_learning_clock') return '2026-11-20T00:00:00Z' as T;
       throw new Error('Unexpected write');
     },
     async select<T>(table: string, filters?: Record<string, string>): Promise<T> {
@@ -26,7 +27,7 @@ test('exam resume selects only the requested certification draft and its respons
           : [
               {
                 exam_id: 'correct-draft',
-                question_key: '["q",1]',
+                question_key: '{"question_id":"q","question_revision":1}',
                 selected: ['A'],
                 flagged: false,
                 duration_ms: 100,
@@ -34,7 +35,7 @@ test('exam resume selects only the requested certification draft and its respons
               },
               {
                 exam_id: 'wrong-course',
-                question_key: '["q",1]',
+                question_key: '{"question_id":"q","question_revision":1}',
                 selected: ['B'],
                 flagged: true,
                 duration_ms: 999,
@@ -60,7 +61,11 @@ test('exam resume selects only the requested certification draft and its respons
 
 test('an empty start RPC table response is rejected instead of creating an invalid deadline', async () => {
   const repository = createMemberExamRepository(
-    { rpc: async <T>() => [] as T, select: async <T>() => [] as T },
+    {
+      rpc: async <T>(name: string) =>
+        (name === 'read_learning_clock' ? '2026-11-20T00:00:00Z' : []) as T,
+      select: async <T>() => [] as T,
+    },
     () => 0,
     () => true,
   );

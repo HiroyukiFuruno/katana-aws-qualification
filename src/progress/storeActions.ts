@@ -1,27 +1,36 @@
 import { profileKey } from '../assessment';
 import { historyKey } from '../history';
 import { parseStoredAttempts } from './attemptCodec';
-import { isGenerationConflict, reconcileAttemptConflict } from './errors';
+import { isGenerationConflict } from './errors';
 import type { GuestProgressRepository } from './guest';
 import type { MemberProgressRepository } from './member';
+import { initializeMemberGeneration } from './storeMemberInitialization';
 import { emptyProfile, parseStoredProfile } from './profileCodec';
 import type { MemberRetryQueue } from './retryQueue';
-import type { ProgressSnapshot, ProgressStore, ProgressStoreInput } from './storeTypes';
-type ReadyData = Pick<ProgressSnapshot, 'attempts' | 'corruptRows' | 'profile' | 'profileRevision'>;
+import type * as StoreTypes from './storeTypes';
+import {
+  memberAttemptSnapshot,
+  mergeMemberAttempts,
+  recoverMemberAttempt,
+  retryMemberPending,
+} from './storeMemberAttempts';
 type Dependencies = {
-  failed: (error: ProgressSnapshot['error'], preserveReady?: boolean) => void;
-  getSnapshot: () => ProgressSnapshot;
+  failed: (error: StoreTypes.ProgressSnapshot['error'], preserveReady?: boolean) => void;
+  getSnapshot: () => StoreTypes.ProgressSnapshot;
   guest?: GuestProgressRepository;
   loading: () => void;
   member?: MemberProgressRepository;
   queue?: MemberRetryQueue;
-  ready: (next: ReadyData) => void;
-  setGeneration: (generation: number) => void;
+  ready: (next: StoreTypes.ProgressReadyData) => void;
+  setGeneration: (generation: number) => Promise<void>;
 };
 export function createStoreActions(
-  input: ProgressStoreInput,
+  input: StoreTypes.ProgressStoreInput,
   { failed, getSnapshot, guest, loading, member, queue, ready, setGeneration }: Dependencies,
-): Pick<ProgressStore, 'appendAttempt' | 'initialize' | 'replaceProfile' | 'reset' | 'retryPending'> {
+): Pick<
+  StoreTypes.ProgressStore,
+  'appendAttempt' | 'initialize' | 'replaceProfile' | 'reset' | 'retryPending'
+> {
   async function initialize() {
     const preserveReady = getSnapshot().state === 'ready';
     loading();
@@ -37,7 +46,7 @@ export function createStoreActions(
         });
       } else {
         if (!member) throw new Error('A member progress client is required.');
-        setGeneration(await member.initialize());
+        await initializeMemberGeneration(member, setGeneration);
         const [events, profile] = await Promise.all([member.loadAttempts(), member.loadProfile()]);
         ready({
           attempts: events,
@@ -45,19 +54,16 @@ export function createStoreActions(
           profile: profile.profile,
           profileRevision: profile.revision,
         });
+        if (queue?.hasPending()) failed('save');
       }
     } catch {
       failed('load', preserveReady);
     }
     return getSnapshot();
   }
-  const recoverAttempt = (error: unknown) =>
-    (member && queue ? reconcileAttemptConflict(input, error, queue, member) : Promise.resolve())
-      .catch(() => undefined)
-      .finally(() => failed('save'));
   return {
     initialize,
-    async appendAttempt(certificationId, attempt) {
+    async appendAttempt(certificationId, attempt, prepare) {
       try {
         const snapshot = getSnapshot();
         if (input.owner.kind === 'guest') {
@@ -73,18 +79,19 @@ export function createStoreActions(
             profile: snapshot.profile,
             profileRevision: snapshot.profileRevision,
           });
-          return;
+          return attempt;
         }
         if (!member || !queue) throw new Error('A member progress client is required.');
-        const events = await queue.append(member, certificationId, attempt);
-        ready({
-          attempts: [...snapshot.attempts, ...events.map((event) => event.attempt)],
-          corruptRows: snapshot.corruptRows,
-          profile: snapshot.profile,
-          profileRevision: snapshot.profileRevision,
-        });
+        const result = await queue.append(
+          member,
+          certificationId,
+          attempt,
+          (flushed) => prepare?.(mergeMemberAttempts(snapshot.attempts, flushed)) ?? attempt,
+        );
+        ready(memberAttemptSnapshot(snapshot, result.flushed));
+        return result.attempt;
       } catch (error) {
-        await recoverAttempt(error);
+        await recoverMemberAttempt(input, error, queue, member, getSnapshot, ready, failed);
         throw error;
       }
     },
@@ -127,9 +134,8 @@ export function createStoreActions(
           if (!guest) throw new Error('A guest progress store is required.');
           guest.remove(historyKey);
           guest.remove(profileKey);
-        } else if (member) setGeneration(await member.reset());
+        } else if (member) await setGeneration(await member.reset());
         else throw new Error('A member progress client is required.');
-        queue?.clear();
         ready({ attempts: [], corruptRows: 0, profile: emptyProfile(), profileRevision: 0 });
       } catch (error) {
         failed('reset');
@@ -137,13 +143,7 @@ export function createStoreActions(
       }
     },
     async retryPending() {
-      try {
-        if (member && queue) await queue.flush(member);
-        await initialize();
-      } catch (error) {
-        await recoverAttempt(error);
-        throw error;
-      }
+      await retryMemberPending(member, queue, initialize, input, getSnapshot, ready, failed);
     },
   };
 }

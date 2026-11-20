@@ -23,7 +23,8 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
     input.owner.kind === 'member' && input.client
       ? createMemberProgressRepository(input.owner, input.client, operation)
       : undefined;
-  const queue = input.owner.kind === 'member' ? new MemberRetryQueue(input.owner) : undefined;
+  const queue =
+    input.owner.kind === 'member' ? new MemberRetryQueue(input.owner, input.storage) : undefined;
   const exams =
     input.owner.kind === 'member' && input.client
       ? createMemberExamRepository(input.client, () => generation, operation.isCurrent)
@@ -53,25 +54,35 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
     member,
     queue,
     ready,
-    setGeneration: (next) => {
+    setGeneration: async (next) => {
       generation = next;
+      if (queue) await queue.setServerGeneration(next);
     },
   });
   return {
     ...actions,
-    dispose() {
+    async dispose(clearPending = false) {
       active = false;
-      queue?.clear();
+      if (clearPending && queue) await queue.discard();
       listeners.clear();
     },
     async finalizeExam(draft, events) {
       if (!exams) throw new Error('Guest exams use local storage.');
-      return exams.finalize(draft, events);
+      const result = await exams.finalize(draft, events);
+      if (member) {
+        const snapshot = await actions.initialize();
+        if (snapshot.error === 'load') throw new Error('Finalized exam could not be reloaded.');
+      }
+      return result;
     },
     getSnapshot: () => snapshot,
     async loadExam(certificationId) {
       if (!exams) throw new Error('Guest exams use local storage.');
       return exams.load(certificationId);
+    },
+    async readExamClock() {
+      if (!exams) throw new Error('Guest exams use local storage.');
+      return exams.readClock();
     },
     async saveExamResponse(draft, position, key, response) {
       if (!exams) throw new Error('Guest exams use local storage.');

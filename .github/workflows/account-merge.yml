@@ -1,0 +1,43 @@
+name: Account ownership integration
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'supabase/**'
+      - 'test/account-merge/**'
+      - 'scripts/run-account-merge-integration.ts'
+      - 'scripts/data-migrations.ts'
+      - 'playwright.account-merge.config.ts'
+      - 'package.json'
+      - 'bun.lock'
+      - '.github/workflows/account-merge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: '1.4.5'
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '26'
+      - run: bun install --frozen-lockfile
+      - run: bun run account:typecheck
+      - name: Use Ubuntu archive for browser dependencies
+        run: |
+          grep -F 'mirror+file:/etc/apt/apt-mirrors.txt' /etc/apt/sources.list.d/ubuntu.sources
+          printf 'https://archive.ubuntu.com/ubuntu/\tpriority:1\nhttps://security.ubuntu.com/ubuntu/\tpriority:2\n' | sudo tee /etc/apt/apt-mirrors.txt
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run account:integration
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: account-ownership-results
+          path: test-results/account-merge/integration/
+          retention-days: 7
+          if-no-files-found: error

@@ -3,8 +3,9 @@ create schema if not exists extensions authorization supabase_auth_admin;
 create role postgres nologin;
 create role anon nologin noinherit;
 create role authenticated nologin noinherit;
+create role service_role nologin noinherit bypassrls;
 create role authenticator login noinherit password 'integration-only';
-grant anon, authenticated to authenticator;
+grant anon, authenticated, service_role to authenticator;
 grant usage on schema auth, public to anon, authenticated;
 
 -- Supabaseのauth.uid()と同じJWT claim bridge。実ユーザーとtokenはGoTrue APIが発行する。

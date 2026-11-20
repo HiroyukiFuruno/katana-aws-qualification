@@ -15,7 +15,7 @@
 - 全ての書込みRPCは`p_expected_generation`を必須にする。`append_learning_event`はさらに`event_id`と正規化済みJSONのSHA-256で再送を冪等にし、同じIDで異なるpayloadを`23505`で拒否する。
 - `start_exam_session(...)`は固定された`question_order`、サーバー時刻で計算する`deadline_at`、初期`revision`を返す。同一入力の再送だけが同じ試験を返す。`save_exam_response(..., p_expected_generation, p_expected_revision, ...)`と`finalize_exam_session(p_exam_id, p_expected_generation, p_expected_revision, p_events)`は世代と楽観ロックを使う。締切後の保存、固定順序以外の提出、異なるpayloadでの再提出は拒否する。締切後の自動採点は、締切前に保存された選択・選択時刻・所要時間・flagと完全一致するpayloadだけを確定する。responseがない設問、および選択時刻なしでflagだけを保存した未回答設問は、空選択・不正解・報酬0のときだけ許可し、クライアント時刻を使わず有効終了時刻を回答時刻に固定する。`submitted_at`は採点上の有効終了時刻（受信時刻と締切の早い方）、`submitted_received_at`はサーバーが確定要求を受信した実時刻である。提出済みへの同一payload再送だけは同じ`submitted_at`を返す。
 - `read_learning_clock(p_expected_generation)`は本人の世代を確認してサーバーUTCを返す。`save_exam_response_confirmed`は回答位置と移動先cursorを分け、同一トランザクションで保存する。同一選択のflag変更・移動では選択時刻を保持し、選択変更時だけ更新する。未回答flagは時刻null/所要0の既存契約を保つ。
-- `load_roadmap_profile_snapshot(p_expected_generation)`は取得資格・査定・改訂を単一MVCC snapshotで読み取る。
+- `load_roadmap_profile_snapshot()`は認証済み本人を確認し、取得資格・査定・改訂を単一MVCC snapshotで読み取る。
 - `replace_roadmap_profile(..., p_expected_generation, p_expected_revision)`も同じ二重ロックを使い、取得資格と査定回答を置換する。JSON `null`は置換対象ではなく不正入力として拒否し、保存済みprofileを消さない。移行RPCも世代を必須にする。
 - `reset_my_learning_data(p_expected_generation)`は呼出し本人のデータだけを削除し、同じトランザクションでgenerationを増やす。reset前のタブや遅延再送は`PT409`で拒否され、履歴を復活させられない。
 - generation不一致はPostgREST HTTP 409になる専用SQLSTATE `PT409`、試験・profile revisionの競合は`40001`である。前者ではキューを破棄してstateを再読込し、後者では最新の対象だけを再読込して利用者に競合を示す。

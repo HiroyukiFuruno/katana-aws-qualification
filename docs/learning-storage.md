@@ -49,3 +49,10 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 保存同意のwithdraw時は、保存済み模試のactive表示を中断し元データを保持する。再同意時はreloadなしで元回答/flagを復元する。同tab/別tabのnative storage eventとも同じexam source切替通知を使う。最新公開前検証は `pr63-consent-tabs-check.log`（182 unit/1443 assertions）と `pr63-consent-tabs-progress.log`（実33件）。
 
 模試の通常saveもconfirmed response喪失後に同ID/rev+1/対象位置/内容の全照合で復旧する。startは待機中guardとserver draft確認で連打/曖昧な再試行を処理する。既存の「再試行」はreset/profileの失敗後も最新epoch/revisionへ再同期する。公開前最新検証は `pr63-exam-recovery-final-check.log`（187 unit/1464 assertions）、`pr63-exam-recovery-progress.log`（実35件）。
+
+
+提出済み模試の結果表示用キャッシュは、同じexam IDのsubmitted sessionと全問題/回答を照合できる場合に限り、追加の学習行を作らず整理する。監査は同じsource nameのschema version 2、`completed-exam-cache-v2:`を含めたfingerprint、宣言0行のmanifestとし、旧started manifestを改変しない。元rawの不変と現在ownerを削除直前に確認し、競合・不完全・未知原本は保持する。公開前の追加checkは `pr63-completed-cache-check.log`（188 unit/1466 assertions）。
+
+#25は新しいスライド学習・途中チェック・合格判定の指示により再Openした。上記の公開済み記載は教材本文整備の成果であり、追加の学習フローが公開済みという意味ではない。#23公開後にこの追加改修を行い、その後#24へ接続する。
+
+追加の実認証/DBブラウザ検査は `pr63-completed-cache-progress.log`（37件成功、1.3分）。submitted cacheの新規学習行0と旧started manifest保持、原本削除、再読み込み後2件の正本を確認した。

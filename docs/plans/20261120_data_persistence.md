@@ -122,3 +122,14 @@ ba0dfd6の4CIは成功（auth7m7s/data34s/glossary1m3s/progress3m50s）。新指
 通常模試save/startの最終修正: normal updateと最終saveは同一の厳密なresponse-loss復旧を共用し、同ID/rev+1/target position/selected/flag/duration一致後だけremoteを採用する。startはload前からref guardを立て、memberの既存draftをserverから読み再開、応答喪失後の再クリックでも別UUIDを作らない。開始/format controlsはACK待ちdisabled。
 
 `pr63-exam-recovery-final-check.log` 全187 unit/1464 assertions・重複0・型/構造/教材/build成功。`pr63-exam-recovery-progress.log` 実35件成功（1.2min）、forward後503の実DB確定回答→次flag/navigation→reload保持、native doubleclick+start hold→実session1件→同ID再開を確認。clockに依存しない送信payload由来のunitでtarget位置違いの応答喪失も固定。追加横断auditは既存ProgressGate再試行でreset/profile正本復旧を2回帰で検証し、無用な成功推測/単一active制約追加はしない。独立最終レビュー具体的P0/P1/P2なし。新headのCI/reviewと公開は後続。
+
+
+## 追加レビュー: 提出済みゲスト試験の残存キャッシュ（2026-11-20）
+
+- [/] PR63 PRRT_kwDOVzQ52c654R8A: 同IDの提出済みhistoryとresults用draftの移行衝突を修正。提出済みsession/全question順序とrevision/正答・選択・時間・資格・版を照合した場合のみ残存cacheとして削除可能。
+- [/] schema2・completed-exam-cache-v2 fingerprint namespace・宣言0行のmanifestで監査。旧started宣言1行manifestは書き換えず保持し、historyが既に移行/削除済みでも再試行可能にする。
+- [/] live/mismatch/未知原本は保持。raw不変/owner世代を削除直前に確認。実DB/GoTrue/PostgRESTで完了模試の移行・再試行・原本削除と重複なしを検証。
+
+最新の基礎学習追加要件は #25 を再Openし docs/plans/20261120_fundamentals_delivery.md に固定。#23公開後に#25追加改修、その後#24。
+
+追加検査: pr63-completed-cache-check.log（188unit/1466assertions）、pr63-completed-cache-progress.log（実37件成功1.3分）。submitted履歴と残存draftの移行・history先行移行後の旧started manifestからの再試行とも成功。

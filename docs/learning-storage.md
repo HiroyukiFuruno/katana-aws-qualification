@@ -60,3 +60,5 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 移行のquestion resolverはindex/bankの失敗Promiseだけを除去し、同じ画面で通信復旧後に再試行できる。成功とinflightは共有し、元の読込エラーは利用者へ返す。`pr63-catalog-retry-check.log`（191unit/1475assertions）で失敗後の再取得と並行共有を検証。実37件の最新差分回帰はCIへ記録する。
 
 会員模試の別tab更新による競合は、006のPT412で明確に拒否する。保存エラーからownerに束縛された正本の再読込を明示実行し、再取得中は選択・移動・開始・提出・自動提出を停止する。同一模試/位置でもserver revisionが変われば新しい回答から計時を再開し、同revision再取得の計時は維持する。最終公開前検証: `pr63-pt412-reload-check.log`（193unit/1509assertions）、`pr63-pt412-reload-final-progress.log`（実38件）、`data/pr63-pt412-integration.log`（SQL/RLS/RPC/並行/clock/cascade成功）。001003は不変、004005006の本番反映はmerge後の工程である。
+
+別tab reset後のmember模試RPCがPT409を受けた場合、store境界で既存initializeによるserver generation/outbox同期を行い、元の模試操作は再送せず拒否を返す。同owner/currentかつ取得成功時だけexam通知で旧draftを破棄する。PT412や入力エラーはこの復旧の対象にしない。`pr63-exam-generation-check.log`（195unit/1537assertions）、`pr63-exam-generation-progress.log`（実39件成功）で旧模試不復活と世代1の新規開始/保存/再開を検証した。

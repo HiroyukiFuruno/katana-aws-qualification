@@ -155,3 +155,12 @@ question resolver差分はindex/bank拒否と成功cache/並行共有を単体�
 最終検証: `pr63-pt412-reload-check.log`（193unit/1509assertions、全gate成功）、`data/pr63-pt412-integration.log`（実SQL/RLS/RPC/並行/clock/cascade成功）、`pr63-pt412-reload-final-progress.log`（実38件成功1.4分）。再読込GETを実転送した応答をholdし、再取得中は選択/移動/再読込がdisabled、解放後は正本選択復元と後続flag/移動/reload成功を確認した。検査helperのstatus関数呼出し誤りはpropertyへ修正し、finallyでholdを解除する。対象E2Eファイル自体の型検査も `pr63-conflict-test-typecheck.log` で成功。
 
 独立最終レビューのloading競合P1候補は、active判定→notifyが同期JSスタックであり、owner変更時はcoordinatorが先にactiveをnullにする実装を照合して撤回。P0/P1/P2の具体的残件なし。公開guardもcommit固定・live DB body/permission照合・snapshot registry検証・600書込へ改善し再レビュー済み、実merge/backup/適用/公開は未完。
+
+
+## 17thレビューとCIの後続回帰
+
+- [/] PRRT_kwDOVzQ52c655rov: 別tabでreset後、模試repositoryだけserver generationが古いままPT409を繰り返す。store境界で世代をinitializeしoutboxを同期、却下された旧模試の操作は再生しない。現在ownerにだけexam通知し、旧draftを破棄して新規受験へ進める。単体publicstoreと実2contextで検証する。
+- [/] 65b275aのCI progressは37成功/1失敗。profile行反映の後でも端末原本削除は非同期照合後なので、単発evaluateではなく元rawがnullになることをpollで待つ。期待値/timeoutは不変。実装の削除条件を弱めない。
+- [/] 本番read-only preflightは旧4関数のうちfinalize/importの既存search_pathにextensionsがあることを確認。新pubguardの誤った一律public/auth期待を関数別の厳密な元定義へ直し、4/7関数・不正権限/検索path/テーブルをprivate単体で検査。最終preflightは18body/4perms/9table成功、未適用004005006を維持。
+
+最終17th検証: `pr63-exam-generation-check.log`（195unit/1537assertions、全gate成功）、`pr63-exam-generation-progress.log`（実39件成功1.4分）。実2contextでreset→旧RPC409/PT409→世代再同期/旧draft破棄→generation1のclock/start→異なる新exam1件→回答/flag/移動/reloadを確認。独立差分レビューP0/P1/P2なし。原本削除のCI回帰も期待値/timeout不変でcondition pollへ変更。

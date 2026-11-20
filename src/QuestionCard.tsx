@@ -1,9 +1,9 @@
-import { usePreferences } from './preferences';
-import { useEffect, useState, useRef } from 'react';
-import { LearningNotes } from './LearningNotes';
-import { StructuredAnswerFields, StructuredAnswerReview } from './StructuredAnswer';
-import { isAnswerComplete, type Question } from './questions';
+import { useEffect, useRef, useState } from 'react';
 import type { Attempt } from './history';
+import { LearningNotes } from './LearningNotes';
+import { usePreferences } from './preferences';
+import { isAnswerComplete, type Question } from './questions';
+import { StructuredAnswerFields, StructuredAnswerReview } from './StructuredAnswer';
 
 type Props = {
   question: Question;
@@ -11,7 +11,6 @@ type Props = {
   onNext: () => void;
   last: boolean;
 };
-
 export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
   const { t } = usePreferences();
   const [selected, setSelected] = useState<string[]>([]);
@@ -22,12 +21,11 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
   const [error, setError] = useState(false);
   const [started] = useState(() => performance.now());
   const count = question.correct.length;
+  const lang = question.locale ?? 'ja';
   const complete = isAnswerComplete(question, selected);
-
   useEffect(() => {
     if (result) resultSummary.current?.focus();
   }, [result]);
-
   async function submit() {
     if (pending.current || result || !complete) return;
     pending.current = true;
@@ -42,11 +40,10 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
       setBusy(false);
     }
   }
-
   return (
     <section className="card" aria-labelledby="question-title">
       <div className="question-meta">
-        <span>{question.category}</span>
+        <span lang={lang}>{question.category}</span>
         <span>
           {question.format === 'ordering'
             ? t('orderSteps')
@@ -55,8 +52,10 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
               : t('choose', { count })}
         </span>
       </div>
-      <h2 id="question-title">{result ? question.title : t('question')}</h2>
-      <p className="prompt" lang="ja">
+      <h2 id="question-title" lang={result ? lang : undefined}>
+        {result ? question.title : t('question')}
+      </h2>
+      <p className="prompt" lang={lang}>
         {question.prompt}
       </p>
       <form
@@ -117,11 +116,12 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
                       }
                     />
                     <span className="letter">{choice.id}</span>
-                    <span lang="ja">{choice.text}</span>
+                    <span lang={lang}>{choice.text}</span>
                   </label>
                   {result && (
                     <p className="explanation">
-                      <strong>{correct ? t('correct') : t('incorrect')}</strong> {choice.explanation}
+                      <strong>{correct ? t('correct') : t('incorrect')}</strong>{' '}
+                      <span lang={lang}>{choice.explanation}</span>
                     </p>
                   )}
                 </div>

@@ -1,4 +1,4 @@
-import { isCorrectAnswer, questionKey, type Question } from './questions';
+import { examDomainOf, isCorrectAnswer, type Question, questionKey } from './questions';
 
 export type Mode = 'study' | 'review';
 export type Attempt = {
@@ -48,7 +48,7 @@ export function makeAttempt(
     schemaVersion: 1,
     questionId: question.id,
     questionRevision: question.revision,
-    category: question.category,
+    category: question.locale ? examDomainOf(question) : question.category,
     sourceVersion: question.version,
     answeredAt,
     selected,

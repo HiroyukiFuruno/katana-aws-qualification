@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import type { Course } from './certifications';
 import { usePreferences } from './preferences';
 import { loadQuestions, questionKey, type Question } from './questions';
+import {
+  applyQuestionTranslation,
+  fetchQuestionTranslation,
+  questionTranslationPath,
+} from './questionTranslations';
 
 type LoadedPractice = Omit<Course['practice'][number], 'path'> & { questions: Question[] };
 type LoadError = 'invalidQuestionData' | 'loadQuestionError';
@@ -13,7 +18,9 @@ function errorKey(error: unknown): LoadError {
 }
 
 export function useCourseBanks(course: Course) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
+  const translationPath = questionTranslationPath(course.questionTranslations, locale);
+  const questionLocale = translationPath ? locale : undefined;
   const [practiceSets, setPracticeSets] = useState<LoadedPractice[]>([]);
   const [mockBank, setMockBank] = useState<Question[]>([]);
   const [archivedBank, setArchivedBank] = useState<Question[]>([]);
@@ -22,11 +29,20 @@ export function useCourseBanks(course: Course) {
 
   useEffect(() => {
     let cancelled = false;
+    const translation = translationPath ? fetchQuestionTranslation(translationPath) : undefined;
+    setLoadingError(undefined);
+    setMockError(undefined);
     const requests = new Map<string, Promise<Question[]>>();
     function load(path: string) {
       const cached = requests.get(path);
       if (cached) return cached;
-      const request = loadQuestions(path);
+      const source = loadQuestions(path);
+      const request =
+        translation && questionLocale
+          ? Promise.all([source, translation]).then(([bank, text]) =>
+              applyQuestionTranslation(bank, questionLocale, text),
+            )
+          : source;
       requests.set(path, request);
       return request;
     }
@@ -52,7 +68,7 @@ export function useCourseBanks(course: Course) {
     return () => {
       cancelled = true;
     };
-  }, [course]);
+  }, [course, questionLocale, translationPath]);
 
   const questions = practiceSets.flatMap((set) => set.questions);
   const questionSets = practiceSets.flatMap((set) => {

@@ -22,9 +22,9 @@ export function useCourseProgress(questions: Question[], archivedBank: Question[
   const [session, setSession] = useState<PracticeSession>();
   const [notice, setNotice] = useState<Message | ''>('');
   const [busy, setBusy] = useState(false);
-  const question = session?.questions[session.index];
-
   const known = new Map(questions.map((item) => [questionKey(item), item]));
+  const current = session?.questions[session.index];
+  const question = current && (known.get(questionKey(current)) ?? current);
   const courseIds = new Set([...known.values(), ...archivedBank].map((item) => item.id));
   const courseHistory = history.filter((attempt) => courseIds.has(attempt.questionId));
   const review = [...known.values()]

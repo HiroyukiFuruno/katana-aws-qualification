@@ -80,6 +80,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
           rate={rate}
           wrongCount={review.length}
           notice={notice}
+          hasQuestionTranslations={!!course.questionTranslations}
         />
         {section()}
         {page !== 'exam' && !progress.session && <AccountBenefits context="study" showAction />}

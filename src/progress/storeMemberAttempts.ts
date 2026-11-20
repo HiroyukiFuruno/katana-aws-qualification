@@ -1,11 +1,11 @@
 import type { Attempt } from '../attempts';
 import { recoverAttempt } from './errors';
 import type { MemberProgressRepository } from './member';
+import type { PendingEvent } from './retryOutboxStorage';
 import type { MemberRetryQueue } from './retryQueue';
+import { eventKey } from './retryQueue';
 import { flushedEventsFor } from './retryQueueReceipt';
 import type { ProgressReadyData, ProgressSnapshot, ProgressStoreInput } from './storeTypes';
-import { eventKey } from './retryQueue';
-import type { PendingEvent } from './retryOutboxStorage';
 
 type StoredAttempt = Attempt & { certificationId?: unknown; eventId?: unknown };
 
@@ -74,7 +74,8 @@ export async function retryMemberPending(
   failed: (error: 'save') => void,
 ) {
   try {
-    await (member && queue ? queue.flush(member) : Promise.resolve());
+    const flushed = member && queue ? await queue.flush(member) : [];
+    if (flushed.length) ready(memberAttemptSnapshot(getSnapshot(), flushed));
     await initialize();
   } catch (error) {
     await recoverMemberAttempt(input, error, queue, member, getSnapshot, ready, failed);

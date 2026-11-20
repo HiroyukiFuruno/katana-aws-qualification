@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test';
 import type { Attempt } from '../src/attempts';
-import { createProgressStore, type ProgressRpcClient } from '../src/progress';
+import type { ProgressRpcClient } from '../src/progress';
 import type { ExamFinalizationEvent } from '../src/progress/examFinalization';
+import { finalizationEventRow, memberEventRow, memberStore } from './progress-store-fixture';
 
 const studyAttempt: Attempt = {
   schemaVersion: 1,
@@ -42,30 +43,6 @@ const examEvent: ExamFinalizationEvent = {
   schema_version: 1,
 };
 
-function row(event: Attempt & { certificationId?: string; eventId?: string; examId?: string }) {
-  return {
-    answer_format: undefined,
-    answered_at: event.answeredAt,
-    attempt_number: event.attemptNumber,
-    category: event.category,
-    certification_id: event.certificationId ?? 'saa-c03',
-    correct: event.correct,
-    duration_ms: event.durationMs,
-    event_id: event.eventId ?? 'study-event',
-    exam_id: event.examId ?? '',
-    is_correct: event.isCorrect,
-    mode: event.mode,
-    prior_incorrect_count: event.priorIncorrectCount,
-    question_id: event.questionId,
-    question_revision: event.questionRevision,
-    review_correct: event.reviewCorrect,
-    reward: event.reward,
-    schema_version: event.schemaVersion,
-    selected: event.selected,
-    source_version: event.sourceVersion,
-  };
-}
-
 test('finalize refreshes the DB snapshot before a later study append', async () => {
   let hasExam = false;
   let hasStudy = false;
@@ -86,27 +63,12 @@ test('finalize refreshes the DB snapshot before a later study append', async () 
     async select(table) {
       if (table !== 'learning_events') return [];
       return [
-        ...(hasExam
-          ? [
-              row({
-                ...studyAttempt,
-                questionId: 'exam-q',
-                mode: 'exam',
-                examId,
-                eventId: examEvent.event_id,
-              }),
-            ]
-          : []),
-        ...(hasStudy ? [row(studyAttempt)] : []),
+        ...(hasExam ? [finalizationEventRow(examEvent)] : []),
+        ...(hasStudy ? [memberEventRow('study-event', studyAttempt)] : []),
       ];
     },
   };
-  const store = createProgressStore({
-    client,
-    isCurrent: () => true,
-    owner: { kind: 'member', generation: 1, userId: 'member-a' },
-    storage: { getItem: () => null, removeItem: () => {}, setItem: () => {} },
-  });
+  const store = memberStore(client);
   const snapshots: number[] = [];
   store.subscribe(() => snapshots.push(store.getSnapshot().attempts.length));
   await store.initialize();

@@ -4,6 +4,12 @@ import { createMemberProgressRepository } from './member';
 import { MemberRetryQueue } from './retryQueue';
 import { createStoreActions } from './storeActions';
 import {
+  finalizeGuestExam,
+  readGuestExamDraft,
+  removeGuestExamDraft,
+  saveGuestExamDraft,
+} from './storeGuestExams';
+import {
   initialProgressSnapshot,
   type ProgressSnapshot,
   type ProgressStore,
@@ -31,8 +37,10 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
       : undefined;
   const listeners = new Set<() => void>();
   let snapshot: ProgressSnapshot = initialProgressSnapshot(input.owner);
+  let snapshotVersion = 0;
   const publish = (next: ProgressSnapshot) => {
     snapshot = next;
+    snapshotVersion += 1;
     for (const listener of listeners) listener();
   };
   const ready = (
@@ -43,6 +51,7 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
   const actions = createStoreActions(input, {
     failed,
     getSnapshot: () => snapshot,
+    getSnapshotVersion: () => snapshotVersion,
     guest,
     loading: () =>
       publish({
@@ -75,10 +84,20 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
       }
       return result;
     },
+    async finalizeGuestExam(examId, events) {
+      if (!guest) throw new Error('Member exams use cloud storage.');
+      const result = finalizeGuestExam(guest, snapshot, examId, events);
+      if (result.ready) ready(result.ready);
+      return { attempts: result.attempts, history: result.history };
+    },
     getSnapshot: () => snapshot,
     async loadExam(certificationId) {
       if (!exams) throw new Error('Guest exams use local storage.');
       return exams.load(certificationId);
+    },
+    readGuestExam(examKey) {
+      if (!guest) throw new Error('Member exams use cloud storage.');
+      return readGuestExamDraft(guest, examKey);
     },
     async readExamClock() {
       if (!exams) throw new Error('Guest exams use local storage.');
@@ -87,6 +106,14 @@ export function createProgressStore(input: ProgressStoreInput): ProgressStore {
     async saveExamResponse(draft, position, key, response) {
       if (!exams) throw new Error('Guest exams use local storage.');
       return exams.save(draft, position, key, response);
+    },
+    removeGuestExam(examKey) {
+      if (!guest) throw new Error('Member exams use cloud storage.');
+      removeGuestExamDraft(guest, examKey);
+    },
+    async saveGuestExam(examKey, draft) {
+      if (!guest) throw new Error('Member exams use cloud storage.');
+      saveGuestExamDraft(guest, examKey, draft);
     },
     async startExam(draft, certificationId, sourceVersion, durationMs) {
       if (!exams) throw new Error('Guest exams use local storage.');

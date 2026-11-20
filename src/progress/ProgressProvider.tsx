@@ -8,8 +8,8 @@ import {
 } from 'react';
 import { useAccount } from '../auth/AuthContext';
 import { authConfiguration } from '../auth/config';
-import type { BrowserStorage } from './guest';
 import { createProgressApi } from './api';
+import type { BrowserStorage } from './guest';
 import type { LegacyMigrationInput } from './migration';
 import { ProgressCoordinator } from './ProgressCoordinator';
 import { sameProgressOwner } from './types';
@@ -18,6 +18,10 @@ import './progress.css';
 const Context = createContext<ProgressCoordinator | null>(null);
 const storage: BrowserStorage = {
   getItem: (key) => localStorage.getItem(key),
+  key: (index) => localStorage.key(index),
+  get length() {
+    return localStorage.length;
+  },
   setItem: (key, value) => localStorage.setItem(key, value),
   removeItem: (key) => localStorage.removeItem(key),
 };

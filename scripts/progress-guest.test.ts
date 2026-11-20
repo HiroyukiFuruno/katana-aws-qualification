@@ -1,7 +1,5 @@
 import { expect, test } from 'bun:test';
-import type { Attempt } from '../src/attempts';
 import { createGuestProgressRepository, setGuestProgressConsent } from '../src/progress';
-import { createProgressStore } from '../src/progress';
 
 function storage() {
   const values = new Map<string, string>();
@@ -12,24 +10,6 @@ function storage() {
     setItem: (key: string, value: string) => void values.set(key, value),
   };
 }
-
-const learningAttempt: Attempt = {
-  schemaVersion: 1,
-  questionId: 'old',
-  questionRevision: 1,
-  category: 'storage',
-  sourceVersion: 'test',
-  answeredAt: '2026-11-20T00:00:00.000Z',
-  selected: ['A'],
-  correct: ['A'],
-  isCorrect: true,
-  durationMs: 100,
-  attemptNumber: 1,
-  priorIncorrectCount: 0,
-  mode: 'study',
-  reviewCorrect: null,
-  reward: 1,
-};
 
 test('consent grants merge pending history with disk without deduplicating valid repeated rows', () => {
   const local = storage();
@@ -111,24 +91,4 @@ test('a corrupt persisted value is retained when an append cannot safely merge i
   });
   expect(repo.write('history', JSON.stringify([{ id: 1 }]))).toBe('failed');
   expect(local.getItem('history')).toBe('{bad json');
-});
-
-test('guest append refreshes the UI from the merged disk snapshot after consent changes', async () => {
-  const local = storage();
-  local.setItem('katana.learning-progress-consent.v1', 'denied');
-  local.setItem('saa-study.attempts.v1', JSON.stringify([learningAttempt]));
-  const store = createProgressStore({
-    isCurrent: () => true,
-    owner: { kind: 'guest', generation: 1 },
-    storage: local,
-  });
-  await store.initialize();
-  await store.appendAttempt('saa-c03', { ...learningAttempt, questionId: 'a' });
-  setGuestProgressConsent(local, true);
-  await store.initialize();
-  await store.appendAttempt('saa-c03', { ...learningAttempt, questionId: 'b' });
-  await store.appendAttempt('saa-c03', { ...learningAttempt, questionId: 'c' });
-  const ids = store.getSnapshot().attempts.map((item) => item.questionId);
-  expect(ids).toEqual(['old', 'a', 'b', 'c']);
-  expect(JSON.parse(local.getItem('saa-study.attempts.v1') ?? '')).toHaveLength(4);
 });

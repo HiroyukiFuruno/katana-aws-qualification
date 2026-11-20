@@ -8,10 +8,9 @@ import {
 import type { ProgressStore } from './progress/storeTypes';
 import type { Question } from './questions';
 
-export { historyKey } from './learningStorage';
-
 export { type Attempt, type Mode, statsFor } from './attempts';
 export { exportHistory } from './historyExport';
+export { historyKey } from './learningStorage';
 
 const legacyIncorrectCookie = 'saa_study_incorrect_v1';
 let activeProgressStore: ProgressStore | null | undefined;
@@ -97,35 +96,6 @@ export function saveAttempt(
   });
 }
 
-export function saveExam(
-  examKey: string,
-  id: string,
-  deadline: number,
-  answers: { question: Question; selected: string[]; durationMs: number; selectedAt?: number }[],
-) {
-  return withHistoryLock(() => {
-    const history = readHistory();
-    const previous = history.filter((attempt) => attempt.examId === id);
-    if (previous.length) return { attempts: previous, history, indexFailed: false };
-    const draft = localStorage.getItem(examKey);
-    if (!draft || JSON.parse(draft).id !== id) throw new Error('受験データが更新されました。');
-    const submittedAt = Math.min(Date.now(), deadline);
-    const attempts = answers.map(({ question, selected, durationMs, selectedAt }) =>
-      makeAttempt(
-        history,
-        question,
-        selected,
-        'exam',
-        durationMs,
-        new Date(selectedAt ?? submittedAt).toISOString(),
-        id,
-      ),
-    );
-    const updated = [...history, ...attempts];
-    return { attempts, history: updated, indexFailed: persist(updated) };
-  });
-}
-
 export function resetHistory() {
   if (activeProgressStore === null) throw new Error('学習記録の保存先を初期化中です。');
   if (activeProgressStore) {
@@ -133,7 +103,6 @@ export function resetHistory() {
     return activeProgressStore.reset().then(() => {
       if (owner.kind === 'guest') {
         expireLegacyIncorrectCookie();
-        clearBrowserLearningRecords();
       }
     });
   }

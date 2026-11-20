@@ -48,3 +48,22 @@ SQL001〜003は先行PR #51で公開済み。フロント・追加SQL004/005・�
 - [x] 最終review P1: confirmed保存の期限跨ぎ拒否後、同じrevisionの確認済みDB draftへ切替して採点する。期限前/他エラー/別exam/競合は成功扱いしない。
 
 最終review修正後: check157件/1371 assertions、実progress20件、実Auth162件成功。`test-results/progress/persistence-reviewed-check.log` / `persistence-clock-complete-progress.log` / `persistence-reviewed-auth.log`。レビュー指摘P0/P1ゼロを再確認。Draft/CI/merge/公開は後続工程。
+
+## PR #63 のレビュー・CI指摘（公開前に必須）
+
+- [x] P1（Codex comment4638259488）: ゲスト模試のstart/read/save/submitを同意付きrepositoryへ統一する。未同意のdraft・回答・履歴はreload後に残さない。同意時は再開できる。
+- [x] P2（Codex comment4638259493、既存保存契約に影響するため採用）: ゲスト模試提出をstore正本へ反映し、次の通常回答で模試や事前履歴を消したり重複させたりしない。
+- [x] CI: member模試のDB提出済みを確認した直後に通常回答を始めても、finalize後reloadとappendの競合でsnapshotの15件が1件へ減らない。画面だけでなくDBとstoreの対応を固定回帰で検証する。
+- [x] CI: 移行の行受付は最終照合・原本削除の完了ではない。原本削除確認は完了をpollし、既存の削除条件・期待値を維持する。
+
+CI run44670238002は18成功/2失敗。ローカル20成功とは環境・処理速度が異なる実失敗として扱い、成功へ言い換えない。PRはDraftを維持し、修正・再検査・各threadへのreply/resolve後にレビューを再回収する。
+
+追加の統合結果: `pr63-guest-and-race-full-progress.log` は22成功/1失敗。guest模試3件とmember模試再送2件は成功したが、guest resetで旧誤答indexだけ残留し修正中。
+
+- [x] P1: retryPendingの再読込み中に通常回答がACKされたとき、古いinitialize結果でその回答を消さない。`scripts/progress-initialize-race.test.ts` で期待2件/実際1件をRED再現。古い成功/失敗応答の棄却を操作世代またはsnapshot更新で検査する。
+- [x] 退行防止: guest模試のstart/update/submitで最新の同意対応repositoryを読み、別draftやreset後の古いcomponent状態を上書き保存しない。旧canonical ID確認を維持する。
+- [x] guest store resetへ移した旧誤答indexの削除を補完し、member resetがguest原本を保持する既存期待値も維持する。
+
+- [x] 新guest提出の退行防止: 保存失敗後に回答を変更した場合、改訂未定義のguest draftを旧prepared/cacheと同一扱いせず変更後の回答で採点する。同一内容の再試行はdurationを二重加算せず、memberの同改訂immutable再送も維持する。
+
+最終修正後の実測: `test-results/progress/pr63-final-stable-check.log` は166 unit / 1399 assertions、重複0、型/構造/教材/build成功。`pr63-final-stable-progress.log` は実24件成功。native localStorage quotaを実際に満たした保存失敗→選択変更→再提出を含み、Mock/固定待機/timeout延長はない。元のguest同意切替後の履歴回帰は`progress-guest-consent.test.ts`へ同名・同期待値で復元した。時間計測は最終save/prepare成功時に基点を更新し、失敗後の新選択で前区間を再加算しない。レビュー修正のpush/reply/resolveと新headのCIは次工程。

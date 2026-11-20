@@ -1,9 +1,13 @@
+import { historyKey } from '../learningStorage';
+import { parseStoredAttempts } from './attemptCodec';
+import { isGuestExamDraft } from './guestExamCodec';
 import type { GuestProgressOwner, ProgressOperation } from './types';
 import { assertCurrentProgressOwner } from './types';
 
 export const guestProgressConsentKey = 'katana.learning-progress-consent.v1';
 
-export type BrowserStorage = Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>;
+export type BrowserStorage = Pick<Storage, 'getItem' | 'removeItem' | 'setItem'> &
+  Partial<Pick<Storage, 'key' | 'length'>>;
 
 export function canPersistGuestProgress(storage: BrowserStorage) {
   try {
@@ -41,6 +45,7 @@ export type GuestProgressRepository = {
   readonly owner: GuestProgressOwner;
   read(key: string): string | null;
   remove(key: string): void;
+  removeMatching(prefix: string): void;
   write(key: string, value: string): 'saved' | 'blocked' | 'failed';
 };
 
@@ -63,13 +68,15 @@ export function createGuestProgressRepository(
       Object.values(candidate.answers).every((item) => typeof item === 'number')
     );
   };
-  const merged = (disk: string | null, pending: string): string | undefined => {
+  const merged = (key: string, disk: string | null, pending: string): string | undefined => {
     if (disk === null || disk === pending) return pending;
     try {
       const diskRows: unknown = JSON.parse(disk);
       const pendingRows: unknown = JSON.parse(pending);
       if (profile(diskRows) && profile(pendingRows)) return pending;
+      if (isGuestExamDraft(diskRows) && isGuestExamDraft(pendingRows)) return pending;
       if (!Array.isArray(diskRows) || !Array.isArray(pendingRows)) return undefined;
+      if (key === historyKey && parseStoredAttempts(disk).corruptRows > 0) return undefined;
       const prefix = JSON.stringify(pendingRows.slice(0, diskRows.length)) === JSON.stringify(diskRows);
       return JSON.stringify(prefix ? pendingRows : [...diskRows, ...pendingRows]);
     } catch {
@@ -88,6 +95,17 @@ export function createGuestProgressRepository(
       memory.delete(key);
       if (canPersistGuestProgress(storage)) storage.removeItem(key);
     },
+    removeMatching(prefix) {
+      current();
+      for (const key of memory.keys()) {
+        if (key.startsWith(prefix)) memory.delete(key);
+      }
+      if (!canPersistGuestProgress(storage) || !storage.key || storage.length === undefined) return;
+      const keys = Array.from({ length: storage.length }, (_, index) => storage.key?.(index)).filter(
+        (key): key is string => key?.startsWith(prefix) ?? false,
+      );
+      for (const key of keys) storage.removeItem(key);
+    },
     write(key, value) {
       current();
       if (!canPersistGuestProgress(storage)) {
@@ -96,7 +114,7 @@ export function createGuestProgressRepository(
       }
       const pending = value;
       const disk = storage.getItem(key);
-      const valueToPersist = merged(disk, pending);
+      const valueToPersist = merged(key, disk, pending);
       if (valueToPersist === undefined) return 'failed';
       const result = writeGuestProgress(storage, key, valueToPersist);
       if (result === 'saved') {

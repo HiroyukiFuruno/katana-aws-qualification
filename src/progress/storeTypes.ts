@@ -27,10 +27,16 @@ export type ProgressStore = {
   ): Promise<Attempt>;
   dispose(clearPending?: boolean): Promise<void>;
   finalizeExam(draft: ExamDraft, events: ExamFinalizationEvent[]): Promise<string>;
+  finalizeGuestExam(
+    examId: string,
+    events: Attempt[],
+  ): Promise<{ attempts: Attempt[]; history: Attempt[] }>;
   getSnapshot(): ProgressSnapshot;
   initialize(): Promise<ProgressSnapshot>;
   loadExam(certificationId: string): Promise<ExamDraft | undefined>;
+  readGuestExam(examKey: string): ExamDraft | undefined;
   readExamClock(): Promise<string>;
+  removeGuestExam(examKey: string): void;
   replaceProfile(profile: Profile): Promise<void>;
   reset(): Promise<void>;
   retryPending(): Promise<void>;
@@ -40,6 +46,7 @@ export type ProgressStore = {
     key: string,
     response: ExamResponse,
   ): Promise<ExamDraft>;
+  saveGuestExam(examKey: string, draft: ExamDraft): Promise<void>;
   startExam(
     draft: ExamDraft,
     certificationId: string,
@@ -48,6 +55,11 @@ export type ProgressStore = {
   ): Promise<ExamDraft>;
   subscribe(listener: () => void): () => void;
 };
+
+export type ProgressStoreActions = Pick<
+  ProgressStore,
+  'appendAttempt' | 'initialize' | 'replaceProfile' | 'reset' | 'retryPending'
+>;
 export type ProgressStoreInput = {
   client?: ProgressRpcClient;
   isCurrent: () => boolean;

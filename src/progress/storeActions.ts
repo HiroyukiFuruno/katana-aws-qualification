@@ -2,42 +2,41 @@ import { profileKey } from '../assessment';
 import { historyKey } from '../history';
 import { parseStoredAttempts } from './attemptCodec';
 import { isGenerationConflict } from './errors';
-import type { GuestProgressRepository } from './guest';
-import type { MemberProgressRepository } from './member';
-import { initializeMemberGeneration } from './storeMemberInitialization';
 import { emptyProfile, parseStoredProfile } from './profileCodec';
-import type { MemberRetryQueue } from './retryQueue';
-import type * as StoreTypes from './storeTypes';
+import type { StoreActionDependencies } from './storeActionTypes';
+import { resetGuestProgress } from './storeGuestExams';
 import {
   memberAttemptSnapshot,
   mergeMemberAttempts,
   recoverMemberAttempt,
   retryMemberPending,
 } from './storeMemberAttempts';
-type Dependencies = {
-  failed: (error: StoreTypes.ProgressSnapshot['error'], preserveReady?: boolean) => void;
-  getSnapshot: () => StoreTypes.ProgressSnapshot;
-  guest?: GuestProgressRepository;
-  loading: () => void;
-  member?: MemberProgressRepository;
-  queue?: MemberRetryQueue;
-  ready: (next: StoreTypes.ProgressReadyData) => void;
-  setGeneration: (generation: number) => Promise<void>;
-};
+import { initializeMemberGeneration } from './storeMemberInitialization';
+import type * as StoreTypes from './storeTypes';
+
 export function createStoreActions(
   input: StoreTypes.ProgressStoreInput,
-  { failed, getSnapshot, guest, loading, member, queue, ready, setGeneration }: Dependencies,
-): Pick<
-  StoreTypes.ProgressStore,
-  'appendAttempt' | 'initialize' | 'replaceProfile' | 'reset' | 'retryPending'
-> {
+  {
+    failed,
+    getSnapshot,
+    getSnapshotVersion,
+    guest,
+    loading,
+    member,
+    queue,
+    ready,
+    setGeneration,
+  }: StoreActionDependencies,
+): StoreTypes.ProgressStoreActions {
   async function initialize() {
     const preserveReady = getSnapshot().state === 'ready';
     loading();
+    const version = getSnapshotVersion();
     try {
       if (input.owner.kind === 'guest') {
         if (!guest) throw new Error('A guest progress store is required.');
         const stored = parseStoredAttempts(guest.read(historyKey));
+        if (getSnapshotVersion() !== version) return getSnapshot();
         ready({
           attempts: stored.attempts,
           corruptRows: stored.corruptRows,
@@ -48,6 +47,7 @@ export function createStoreActions(
         if (!member) throw new Error('A member progress client is required.');
         await initializeMemberGeneration(member, setGeneration);
         const [events, profile] = await Promise.all([member.loadAttempts(), member.loadProfile()]);
+        if (getSnapshotVersion() !== version) return getSnapshot();
         ready({
           attempts: events,
           corruptRows: 0,
@@ -57,7 +57,7 @@ export function createStoreActions(
         if (queue?.hasPending()) failed('save');
       }
     } catch {
-      failed('load', preserveReady);
+      if (getSnapshotVersion() === version) failed('load', preserveReady);
     }
     return getSnapshot();
   }
@@ -88,7 +88,7 @@ export function createStoreActions(
           attempt,
           (flushed) => prepare?.(mergeMemberAttempts(snapshot.attempts, flushed)) ?? attempt,
         );
-        ready(memberAttemptSnapshot(snapshot, result.flushed));
+        ready(memberAttemptSnapshot(getSnapshot(), result.flushed));
         return result.attempt;
       } catch (error) {
         await recoverMemberAttempt(input, error, queue, member, getSnapshot, ready, failed);
@@ -132,8 +132,7 @@ export function createStoreActions(
       try {
         if (input.owner.kind === 'guest') {
           if (!guest) throw new Error('A guest progress store is required.');
-          guest.remove(historyKey);
-          guest.remove(profileKey);
+          resetGuestProgress(guest);
         } else if (member) await setGeneration(await member.reset());
         else throw new Error('A member progress client is required.');
         ready({ attempts: [], corruptRows: 0, profile: emptyProfile(), profileRevision: 0 });

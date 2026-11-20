@@ -3,7 +3,7 @@ import { profileKey } from './assessment';
 export const historyKey = 'saa-study.attempts.v1';
 export const legacyExamKey = 'saa-study.exam.v1';
 export const examKeyPrefix = 'katana.certification-exam.v1.';
-const legacyIncorrectIndex = 'saa-study.incorrect.v1';
+export const legacyIncorrectIndex = 'saa-study.incorrect.v1';
 
 export function clearBrowserLearningRecords() {
   const keys = [historyKey, profileKey, legacyIncorrectIndex, legacyExamKey];

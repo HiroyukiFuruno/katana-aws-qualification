@@ -60,7 +60,6 @@ export function useExamSession({
     draft,
     examKey,
     expired,
-    history,
     onSaved,
     progressStore,
     questions,

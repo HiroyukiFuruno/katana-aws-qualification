@@ -1,6 +1,6 @@
 import type { MutableRefObject, RefObject } from 'react';
 import type { ExamBlueprint } from './certifications';
-import { canStartExam, type ExamResponse, getResponse, newExam, readExam, storeExam } from './exam';
+import { canStartExam, type ExamDraft, type ExamResponse, getResponse, newExam } from './exam';
 import { elapsedExamMs, examNow } from './examClock';
 import type { Attempt } from './history';
 import type { Message } from './messages';
@@ -12,19 +12,23 @@ type DraftControlsInput = {
   bank: Question[];
   blueprint: ExamBlueprint;
   certificationId: string;
-  draft: ReturnType<typeof readExam>;
+  draft: ExamDraft | undefined;
   examKey: string;
   failedAuto: MutableRefObject<boolean>;
   history: Attempt[];
   onStart: () => void;
   progressStore: ProgressStore | null | undefined;
-  setDraft: (draft: ReturnType<typeof readExam>) => void;
+  setDraft: (draft: ExamDraft | undefined) => void;
   setError: (error: Message | '') => void;
   setNow: (now: number) => void;
 };
 
 function memberStore(store: ProgressStore | null | undefined) {
   return store?.getSnapshot().owner.kind === 'member' ? store : undefined;
+}
+
+function guestStore(store: ProgressStore | null | undefined) {
+  return store?.getSnapshot().owner.kind === 'guest' ? store : undefined;
 }
 
 export function useExamDraftControls({
@@ -47,7 +51,8 @@ export function useExamDraftControls({
     if (!available) return;
     try {
       const member = memberStore(progressStore);
-      const current = member ? draft : readExam(examKey);
+      const guest = guestStore(progressStore);
+      const current = guest ? guest.readGuestExam(examKey) : draft;
       if (current && !history.some((attempt) => attempt.examId === current.id)) {
         setDraft(current);
         return;
@@ -61,7 +66,8 @@ export function useExamDraftControls({
           bank[0]?.version ?? 'current',
           next.deadline - Date.now(),
         );
-      } else storeExam(examKey, next);
+      } else if (guest) await guest.saveGuestExam(examKey, next);
+      else throw new Error('Progress store is unavailable.');
       setDraft(started);
       setNow(examNow(started));
       activeSince.current = performance.now();
@@ -80,7 +86,8 @@ export function useExamDraftControls({
     }
     try {
       const member = memberStore(progressStore);
-      const current = member ? draft : readExam(examKey);
+      const guest = guestStore(progressStore);
+      const current = guest ? guest.readGuestExam(examKey) : draft;
       if (!current || current.id !== draft.id || current.position !== draft.position) return;
       const key = current.order[current.position];
       const response = getResponse(current, key);
@@ -100,7 +107,8 @@ export function useExamDraftControls({
       };
       let saved = next;
       if (member) saved = await member.saveExamResponse(next, position, key, next.responses[key]);
-      else storeExam(examKey, next);
+      else if (guest) await guest.saveGuestExam(examKey, next);
+      else throw new Error('Progress store is unavailable.');
       activeSince.current = performance.now();
       setDraft(saved);
       setError('');

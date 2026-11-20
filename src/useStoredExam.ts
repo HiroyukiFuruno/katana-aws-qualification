@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { readExam, type ExamDraft } from './exam';
+import type { ExamDraft } from './exam';
 import { getActiveProgressStore } from './history';
 import type { Message } from './messages';
 import { useProgress } from './progress/ProgressProvider';
@@ -13,10 +13,11 @@ export function useStoredExam(examKey: string, certificationId: string) {
   useEffect(() => {
     const refresh = async () => {
       try {
+        if (!store) throw new Error('Progress store is unavailable.');
         const next =
-          store?.getSnapshot().owner.kind === 'member'
+          store.getSnapshot().owner.kind === 'member'
             ? await store.loadExam(certificationId)
-            : readExam(examKey);
+            : store.readGuestExam(examKey);
         setDraft(next);
         activeSince.current = performance.now();
       } catch {

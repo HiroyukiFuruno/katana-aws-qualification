@@ -39,7 +39,7 @@ test('normal legacy history imports its real question event and survives reload'
           is_correct: true,
         }),
       ]);
-    await expect(page.evaluate((key) => localStorage.getItem(key), historyKey)).resolves.toBeNull();
+    await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), historyKey)).toBeNull();
     await page.goto('/ja/study/saa-c03/');
     await setRealSession(page, session);
     await page.reload();

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
-import { createProgressStore, type ProgressRpcClient } from '../src/progress';
-import { memberEventRow } from './progress-store-fixture';
+import type { ProgressRpcClient } from '../src/progress';
+import { memberEventRow, memberStore } from './progress-store-fixture';
 
 test('member read rejects a same-count replacement during pagination and keeps the prior snapshot', async () => {
   let generation = 1;
@@ -17,12 +17,7 @@ test('member read rejects a same-count replacement during pagination and keeps t
       return [memberEventRow(replaceDuringRead ? 'event-2' : 'event-1')];
     },
   };
-  const store = createProgressStore({
-    client,
-    isCurrent: () => true,
-    owner: { kind: 'member', generation: 1, userId: 'member-a' },
-    storage: { getItem: () => null, removeItem: () => {}, setItem: () => {} },
-  });
+  const store = memberStore(client);
   await store.initialize();
   expect(store.getSnapshot().attempts).toHaveLength(1);
   replaceDuringRead = true;

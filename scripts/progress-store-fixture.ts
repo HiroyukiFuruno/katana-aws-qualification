@@ -1,5 +1,6 @@
 import type { Attempt } from '../src/attempts';
 import { createProgressStore, type ProgressRpcClient } from '../src/progress';
+import type { ExamFinalizationEvent } from '../src/progress/examFinalization';
 import type { Question } from '../src/questions';
 
 const identifying = {
@@ -36,27 +37,53 @@ export const examQuestion: Question = {
   version: '2026-11',
 };
 
-export function memberEventRow(eventId: string) {
+type FixtureMemberEvent = Attempt & { certificationId?: string; examId?: string };
+
+export function memberEventRow(eventId: string, event: FixtureMemberEvent = memberAttempt) {
   return {
-    answer_format: undefined,
-    answered_at: memberAttempt.answeredAt,
-    attempt_number: memberAttempt.attemptNumber,
-    category: memberAttempt.category,
-    certification_id: 'saa-c03',
-    correct: memberAttempt.correct,
-    duration_ms: memberAttempt.durationMs,
+    ...(event.format === undefined ? { answer_format: undefined } : { answer_format: event.format }),
+    answered_at: event.answeredAt,
+    attempt_number: event.attemptNumber,
+    category: event.category,
+    certification_id: event.certificationId ?? 'saa-c03',
+    correct: event.correct,
+    duration_ms: event.durationMs,
     event_id: eventId,
-    is_correct: memberAttempt.isCorrect,
-    mode: memberAttempt.mode,
-    prior_incorrect_count: memberAttempt.priorIncorrectCount,
-    question_id: memberAttempt.questionId,
-    question_revision: memberAttempt.questionRevision,
-    review_correct: memberAttempt.reviewCorrect,
-    reward: memberAttempt.reward,
-    schema_version: memberAttempt.schemaVersion,
-    selected: memberAttempt.selected,
-    source_version: memberAttempt.sourceVersion,
+    ...(event.examId === undefined ? {} : { exam_id: event.examId }),
+    is_correct: event.isCorrect,
+    mode: event.mode,
+    prior_incorrect_count: event.priorIncorrectCount,
+    question_id: event.questionId,
+    question_revision: event.questionRevision,
+    review_correct: event.reviewCorrect,
+    reward: event.reward,
+    schema_version: event.schemaVersion,
+    selected: event.selected,
+    source_version: event.sourceVersion,
   };
+}
+
+export function finalizationEventRow(event: ExamFinalizationEvent) {
+  return memberEventRow(event.event_id, {
+    answeredAt: event.answered_at,
+    attemptNumber: event.attempt_number,
+    category: event.category,
+    certificationId: event.certification_id,
+    correct: event.correct,
+    durationMs: event.duration_ms,
+    examId: event.exam_id,
+    ...(event.answer_format === undefined ? {} : { format: event.answer_format }),
+    isCorrect: event.is_correct,
+    mode: event.mode,
+    priorIncorrectCount: event.prior_incorrect_count,
+    questionId: event.question_id,
+    questionRevision: event.question_revision,
+    reviewCorrect: event.review_correct,
+    reward: event.reward,
+    schemaVersion: event.schema_version,
+    selected: event.selected,
+    sourceVersion: event.source_version,
+  });
 }
 
 export function memoryStorage() {
@@ -98,6 +125,6 @@ export function memberStore(client: ProgressRpcClient) {
     client,
     isCurrent: () => true,
     owner: { kind: 'member', generation: 1, userId: 'member-a' },
-    storage: { getItem: () => null, removeItem: () => {}, setItem: () => {} },
+    storage: memoryStorage(),
   });
 }

@@ -18,11 +18,11 @@ permissions:
   contents: read
 jobs:
   progress_tests:
-    name: progress tests (${{ matrix.shard }}/2)
+    name: progress tests (${{ matrix.shard }}/3)
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -39,7 +39,7 @@ jobs:
           grep -F 'mirror+file:/etc/apt/apt-mirrors.txt' /etc/apt/sources.list.d/ubuntu.sources
           printf 'https://archive.ubuntu.com/ubuntu/\tpriority:1\nhttps://security.ubuntu.com/ubuntu/\tpriority:2\n' | sudo tee /etc/apt/apt-mirrors.txt
       - run: bunx playwright install --with-deps chromium
-      - run: bun run progress:integration --shard=${{ matrix.shard }}/2
+      - run: bun run progress:integration --shard=${{ matrix.shard }}/3
       - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
@@ -52,7 +52,7 @@ jobs:
     needs: progress_tests
     if: ${{ always() }}
     steps:
-      - name: Require both integration shards to pass
+      - name: Require all integration shards to pass
         env:
           KAQ_PROGRESS_SHARDS_RESULT: ${{ needs.progress_tests.result }}
         run: test "$KAQ_PROGRESS_SHARDS_RESULT" = success

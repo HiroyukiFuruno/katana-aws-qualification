@@ -47,3 +47,5 @@ guest の明示 reset は保存同意の撤回後も端末履歴、profile、旧
 複数guest tabは既存のhistory lock内で最新のcanonical履歴から追加分を作り、古いsnapshotの共通prefixを再保存しない。同じ内容でも別の回答操作は保持し、同一模試の再提出だけをexam IDで一回にする。移行後のexam通知は通常回答/プロフィール更新と分離し、同じ模試位置の再取得では計測中の時間を保持する。公開前検証は `pr63-guest-import-release-check.log`（182 unit/1440 assertions）と `pr63-guest-import-progress.log`（実31件）、最終timer調整後の `pr63-guest-import-clock-final.log`（対象5件）。
 
 保存同意のwithdraw時は、保存済み模試のactive表示を中断し元データを保持する。再同意時はreloadなしで元回答/flagを復元する。同tab/別tabのnative storage eventとも同じexam source切替通知を使う。最新公開前検証は `pr63-consent-tabs-check.log`（182 unit/1443 assertions）と `pr63-consent-tabs-progress.log`（実33件）。
+
+模試の通常saveもconfirmed response喪失後に同ID/rev+1/対象位置/内容の全照合で復旧する。startは待機中guardとserver draft確認で連打/曖昧な再試行を処理する。既存の「再試行」はreset/profileの失敗後も最新epoch/revisionへ再同期する。公開前最新検証は `pr63-exam-recovery-final-check.log`（187 unit/1464 assertions）、`pr63-exam-recovery-progress.log`（実35件）。

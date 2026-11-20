@@ -111,3 +111,14 @@ guest旧資格の最終修正: aliasを共通helperへ分離し、guestとmember
 - [x] comment4639237820 / PRRT_kwDOVzQ52c653VV9: guestの同意withdraw/regrantで同じstoreのexam復元元を切り替え、mounted viewをcanonical draftへ再同期する。withdraw時は保存済み模試をactive表示から中断し、原本保持。regrantはreloadなしで元回答/flagを復元。新memory cacheは導入せず、既存の未同意disk読取禁止・transient/reset境界を維持する。
 
 同意切替の最終検証: guest persistenceの実値が変わったreadyだけ専用exam counterを増やし、通常の回答/profile更新は再読込みを誘発しない。ProgressConsentはnative storage eventの実値変化を一度だけ最新callbackへ通知する。`pr63-consent-tabs-check.log` 全182 unit/1443 assertions・重複0・型/構造/教材/build成功。`pr63-consent-tabs-progress.log` 実33件成功（1.8min）、同tab/別tabのwithdraw→setup・原本保持→regrantで元回答/flag復元を確認。独立read-only最終レビューP0/P1/P2なし。依存確認は `pr63-dependencies-outdated.log`（更新対象なし）、`pr63-dependencies-tree.log`、`pr63-dependencies-audit.log`（問題なし）。新head CI/reviewと公開は後続工程。
+
+## ba0dfd6 Ready後の追加レビュー
+
+- [x] comment4639369545 / PRRT_kwDOVzQ52c653pZE: 通常member模試のconfirmed saveがcommit後応答だけ失われても、旧revisionのまま後続40001を繰返さない。最終saveと同じ厳密なconfirmed response照合を共用し、正常復旧後に次の回答/移動を最新revisionで保存する。
+- [x] comment4639369553 / PRRT_kwDOVzQ52c653pZI: start待ち中の二重クリックをrefで即時拒否し、開始/format controlをdisabledにする。1操作でserver session1つ、ACK後とreloadで同じexamを開く。
+
+ba0dfd6の4CIは成功（auth7m7s/data34s/glossary1m3s/progress3m50s）。新指摘対応中はDraftを維持し、merge/公開しない。依存更新dry-runは159packagesを確認し更新なし（pr63-dependencies-update-dry-run.log）。
+
+通常模試save/startの最終修正: normal updateと最終saveは同一の厳密なresponse-loss復旧を共用し、同ID/rev+1/target position/selected/flag/duration一致後だけremoteを採用する。startはload前からref guardを立て、memberの既存draftをserverから読み再開、応答喪失後の再クリックでも別UUIDを作らない。開始/format controlsはACK待ちdisabled。
+
+`pr63-exam-recovery-final-check.log` 全187 unit/1464 assertions・重複0・型/構造/教材/build成功。`pr63-exam-recovery-progress.log` 実35件成功（1.2min）、forward後503の実DB確定回答→次flag/navigation→reload保持、native doubleclick+start hold→実session1件→同ID再開を確認。clockに依存しない送信payload由来のunitでtarget位置違いの応答喪失も固定。追加横断auditは既存ProgressGate再試行でreset/profile正本復旧を2回帰で検証し、無用な成功推測/単一active制約追加はしない。独立最終レビュー具体的P0/P1/P2なし。新headのCI/reviewと公開は後続。

@@ -4,9 +4,9 @@
 
 ## 到達条件
 
-- [ ] 全12単元の最終144問・途中48問をID/極性/選択数/正答とともに照合する。機械的なキー一致は意味の正しさの証明としない。
-- [ ] 曖昧な前提、抽象論だけで状況を比較させる設問、本文にない正答条件を修正する。修正した各問は前提→選択肢→正答→解説→本文/一次資料の対応を残す。
-- [ ] 公開済みmigration/教材版を改変しない。過去の回答・最終下書き・未同期コマンドが旧版の設問で整合し、新版の合格へ自動流用されないことを検証する。
+- [x] 全12単元の最終144問・途中48問をID/極性/選択数/正答とともに照合する。機械的なキー一致は意味の正しさの証明としない。
+- [x] 曖昧な前提、抽象論だけで状況を比較させる設問、本文にない正答条件を修正する。修正した各問は前提→選択肢→正答→解説→本文/一次資料の対応を残す。
+- [x] 公開済みmigration/教材版を改変しない。過去の回答・最終下書き・未同期コマンドが旧版の設問で整合し、新版の合格へ自動流用されないことを検証する。
 - [ ] 品質ゲート、実Auth/DBの新旧版/取込/owner分離、実スライドの表示/採点、Draftレビュー手順、DB/サイトの公開証跡でCloseする。本人実機確認は独立フォローアップ。
 
 ## 監査の扱い
@@ -58,3 +58,13 @@ https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-ava
 - その後、旧版の再開入口・版の全href伝播・同じpathnameのquery変更時のremount/stale guardを追加。`issue68-archived-ui-native.log`は実Auth/DB/browser5件成功（9.5s）。旧guestの下書き/合格を再読込し、前後・結果から教材への復習・中断・再受験でも原版を維持、新版進捗0/旧合格保持、明示取込と重複排除・owner分離を検証した。
 - 旧manifestのstep位置が現行と異なるため「queryだけで全既存shellを再利用」の初期案を修正。既存pathnameがある部分は再利用し、不足する旧版の14slot×10言語はprivate/noindex shellとして補う。元15assetと旧010は引き続き不変。`issue68-archived-ui-check.log`は280単体・3560 public/1700 private・30 account shellを含む全check/build成功。
 - #67はmain `cd4cb39683a1e0cf386db0a638885b00227509e7` / deployment `dpl_ArapBnos7sYkrSGfKnD1SrV2Xkma`で公開・実URL検証・Close済み。本Issueの変更はまだlocalであり公開済みとしない。残る全回帰・未知版/競合の回復表示・レビュー/CI/追加DB/site公開を継続する。
+
+## PR前の全体検証（未公開）
+
+- `issue68-pre-pr-check.log`: 281単体/3449 assertions、全品質ゲートとbuild成功。原192問の監査表と原版の極性/選択数/正答キーを照合する検査も固定した。意味の監査とキー検査は混同しない。
+- `issue68-full-auth.log`: 実認証164件成功（4.0m）。`issue68-full-progress.log`: 学習140件成功（5.9m）＋広告部品単体27件/297 assertions。`issue68-full-data.log`: 001010と追加202611210001・既存全SQL fixtures/実API検査成功。本人の実機確認を必須条件にしない。
+- 未知版に旧形式のunit queryを混ぜると現行へ切り替わる抜け道を`issue68-legacy-query-red.log`で再現。旧形式を目次のunit/reviewだけに限定し、`issue68-legacy-query-green.log`で旧版競合の明示回復・未知/混合queryの原文保持2件成功（4.9s）。
+- 開始ボタンなどの長いラベルで高さと列幅が揃わない問題を追加の27ケースで再現（初回18失敗）。gridを等幅・stretch・長語折返しにし、0/300/900px広告と320/390/横画面の27ケース/297 assertionsでcontrollerの寸法・表示・hit testを確認した。
+- CIは元の15分上限と全検査を保持し、独立した2VMへshard分割する。`issue68-shards-proof.json`: 元140件と89/51件の和集合が一致、重複/漏れ/余分な検査0。`progress`集約gateは両shard成功時だけ成功する。CIの実行結果はこれから回収する。
+- 直接13/lock解決79の依存を監査、outdated候補なし・audit `{}`。Bunは[公式1.4.5](https://bun.com/blog/bun-v1.4.5)へpackageManager/4 workflow/READMEを揃え、frozen installと上記全検査を通した。lockfileや閾値は変更しない。
+- 公開用のbackup/SQL/DB照合helperはrootが実経路をレビュー中。Draftレビュー・CI・暗号化backup・追加catalogの適用・公開URL照合・Issue Closeは未完了。

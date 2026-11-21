@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readdirSync, writeFileSync } from 'node:fs';
+import { verifyCleanupHarness } from '../test/account-merge/cleanup-harness';
 import { run } from '../test/account-merge/commands';
 import { verifyIntentHarness } from '../test/account-merge/intent-harness';
 import { verifyLegHarness } from '../test/account-merge/leg-harness';
@@ -128,3 +129,4 @@ await verifyLockingHarness();
 await verifyIntentHarness();
 await verifyRuntimeHarness();
 await verifyLegHarness();
+await verifyCleanupHarness();

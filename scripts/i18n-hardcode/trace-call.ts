@@ -16,7 +16,7 @@ import { callArguments, callEnvironment } from './calls.ts';
 import { knownArrayIndexOccupied } from './concat-index.ts';
 import { knownSelectedArrayValues } from './known-array-values.ts';
 import { callable } from './link.ts';
-import { mappedPaths } from './mapped-path.ts';
+import { mapInputPath, mappedPaths } from './mapped-path.ts';
 import { translationCall } from './translation.ts';
 import { errorObject } from './values.ts';
 
@@ -28,14 +28,6 @@ function selectsArray(path: Path) {
     (typeof head === 'string' && /^(0|[1-9][0-9]*)$/.test(head)) ||
     (typeof head === 'object' && ['array-filter', 'array-range', 'array-rest'].includes(head.kind))
   );
-}
-
-function mapInputPath(path: Path): Path {
-  return path.some((part) => typeof part === 'object' && part.kind === 'array-filter')
-    ? ['*']
-    : path.length
-      ? path
-      : ['*'];
 }
 
 export function traceCall(

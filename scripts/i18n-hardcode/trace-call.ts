@@ -13,6 +13,7 @@ import {
 } from './ast.ts';
 import { callEnvironment } from './calls.ts';
 import { callable } from './link.ts';
+import { mappedPaths } from './mapped-path.ts';
 import { translationCall } from './translation.ts';
 import { errorObject, functionReturns } from './values.ts';
 
@@ -49,16 +50,10 @@ export function traceCall(
     const method = property(ast(callee.property));
     if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
       return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
-    if (['map', 'flatMap'].includes(method)) {
-      if (path.length && path[0] !== '*' && !/^\d+$/.test(String(path[0]))) return [];
-      const selected = path.length ? path.slice(1) : path;
-      return args(node).flatMap((argument) => [
-        ...recur(argument, selected),
-        ...(method === 'flatMap'
-          ? recur(argument, [{ kind: 'array-rest', start: 0 }, '*', ...selected])
-          : []),
-      ]);
-    }
+    if (['map', 'flatMap'].includes(method))
+      return args(node).flatMap((argument) =>
+        mappedPaths(path, method === 'flatMap').flatMap((selected) => recur(argument, selected)),
+      );
     if (
       [
         'filter',

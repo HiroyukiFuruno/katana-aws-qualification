@@ -8,8 +8,8 @@ export function createTrace(sources: Source[]): Trace {
   let environment = new Map<string, Binding[]>();
   const trace: Trace = (source, node, path = [], seen = new Set(), options = {}) => {
     if (!node) return [];
-    const span = node.span as { start?: number } | undefined;
-    const marker = `${source.path}:${span?.start}:${node.type}:${JSON.stringify(path)}`;
+    const span = node.span as { start?: number; end?: number } | undefined;
+    const marker = `${source.path}:${span?.start}:${span?.end}:${node.type}:${JSON.stringify(path)}`;
     if (seen.has(marker)) return [];
     const nextSeen = new Set(seen).add(marker);
     const recur = (value: Ast | undefined, nextPath = path) =>

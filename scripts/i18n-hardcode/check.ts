@@ -14,6 +14,7 @@ import {
 import { nativeDialog } from './dialogs.ts';
 import { jsxTextSinks } from './jsx.ts';
 import { linkSources } from './link.ts';
+import { sinkCallOrigins } from './sink-call-context.ts';
 import { createTrace } from './trace.ts';
 
 export type Finding = {
@@ -43,7 +44,7 @@ export function checkSources(sources: Source[], root: string): Finding[] {
   const findings = new Map<string, Finding>();
   const inspect = (source: Source, node: Ast | undefined, sink: string, path: Path = []) => {
     if (!node) return;
-    for (const origin of trace(source, node, path)) {
+    for (const origin of sinkCallOrigins(sources, source, node, path, trace)) {
       if (!origin.rawError && !prose(origin.text)) continue;
       const at = location(origin.source, origin.node);
       const finding: Finding = {

@@ -32,8 +32,11 @@ function contextKey(environment: Map<string, Binding[]>) {
     .join(';');
 }
 
-export function createTrace(sources: Source[]): Trace {
-  let environment = new Map<string, Binding[]>();
+export function createTrace(
+  sources: Source[],
+  initialEnvironment = new Map<string, Binding[]>(),
+): Trace {
+  let environment = new Map(initialEnvironment);
   const trace: Trace = (source, node, path = [], seen = new Set()) => {
     if (!node) return [];
     const span = node.span as { start?: number; end?: number } | undefined;

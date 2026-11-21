@@ -59,3 +59,16 @@ test('flatMap never flattens object properties into rendered member paths', () =
     const rows=[0].flatMap(() => [row]);const View=()=> <p>{rows[0].caption}</p>`),
   ).toEqual(['Visible copy']);
 });
+
+test('flatMap follows array selectors through mapped arrays and array preserving calls', () => {
+  for (const suffix of ['', '.filter(() => true)', '.slice(0)']) {
+    expect(
+      scan(`const rows=[0].flatMap(() => [0].map(() => ({caption:'Please sign in'}))${suffix});
+      const View=()=> <p>{rows[0].caption}</p>`),
+    ).toEqual(['Please sign in']);
+  }
+  expect(
+    scan(`const rows=[0].flatMap(() => [0].flatMap(() => [{caption:'Please sign in'}]));
+    const View=()=> <p>{rows[0].caption}</p>`),
+  ).toEqual(['Please sign in']);
+});

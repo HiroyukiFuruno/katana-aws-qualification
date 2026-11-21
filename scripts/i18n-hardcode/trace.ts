@@ -14,6 +14,7 @@ import {
 import { callEnvironment, environmentKey } from './calls.ts';
 import { namespaceValues, resolveImport } from './exports.ts';
 import { callable } from './link.ts';
+import { mappedPaths } from './mapped-path.ts';
 import { traceMember } from './member.ts';
 import { translationCall } from './translation.ts';
 import { arrayValues, errorObject, functionReturns, objectValues } from './values.ts';
@@ -22,8 +23,8 @@ export function createTrace(sources: Source[]): Trace {
   let environment = new Map<string, Binding[]>();
   const trace: Trace = (source, node, path = [], seen = new Set()) => {
     if (!node) return [];
-    const span = node.span as { start?: number } | undefined;
-    const marker = `${source.path}:${span?.start}:${node.type}:${JSON.stringify(path)}`;
+    const span = node.span as { start?: number; end?: number } | undefined;
+    const marker = `${source.path}:${span?.start}:${span?.end}:${node.type}:${JSON.stringify(path)}`;
     if (seen.has(marker)) return [];
     const nextSeen = new Set(seen).add(marker);
     const recur = (value: Ast | undefined, nextPath = path) => trace(source, value, nextPath, nextSeen);
@@ -90,16 +91,10 @@ export function createTrace(sources: Source[]): Trace {
           const method = property(ast(callee.property));
           if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
             return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
-          if (['map', 'flatMap'].includes(method)) {
-            if (path.length && path[0] !== '*' && !/^\d+$/.test(String(path[0]))) return [];
-            const selected = path.length ? path.slice(1) : path;
-            return args(node).flatMap((argument) => [
-              ...recur(argument, selected),
-              ...(method === 'flatMap'
-                ? recur(argument, [{ kind: 'array-rest', start: 0 }, '*', ...selected])
-                : []),
-            ]);
-          }
+          if (['map', 'flatMap'].includes(method))
+            return args(node).flatMap((argument) =>
+              mappedPaths(path, method === 'flatMap').flatMap((selected) => recur(argument, selected)),
+            );
           if (
             [
               'filter',

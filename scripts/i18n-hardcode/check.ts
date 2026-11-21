@@ -13,8 +13,13 @@ import {
 } from './ast.ts';
 import { nativeDialog } from './dialogs.ts';
 import { displayProp, linkSources } from './link.ts';
+import {
+  isTextualAriaAttribute,
+  isTextualDomProperty,
+  sinkNames,
+  textualSpreadProperties,
+} from './sink-metadata.ts';
 import { createTrace } from './trace.ts';
-
 export type Finding = {
   file: string;
   line: number;
@@ -25,7 +30,6 @@ export type Finding = {
   sinkFile: string;
   sinkLine: number;
 };
-
 export function location(source: Source, node: Ast) {
   const span = node.span as { start: number } | undefined;
   const rootSpan = source.ast.span as { start: number };
@@ -35,7 +39,6 @@ export function location(source: Source, node: Ast) {
   const lines = before.split('\n');
   return { line: lines.length, column: (lines.at(-1)?.length ?? 0) + 1 };
 }
-
 export function checkSources(sources: Source[], root: string): Finding[] {
   linkSources(sources);
   const trace = createTrace(sources);
@@ -57,6 +60,8 @@ export function checkSources(sources: Source[], root: string): Finding[] {
       findings.set(`${finding.file}:${at.line}:${at.column}:${finding.rule}`, finding);
     }
   };
+  const namesFrom = (source: Source, node: Ast | undefined) =>
+    sinkNames(trace.bind(undefined, source), node);
   for (const source of sources)
     walk(source.ast, (node) => {
       if (node.type === 'JSXElement' || node.type === 'JSXFragment') {
@@ -89,16 +94,7 @@ export function checkSources(sources: Source[], root: string): Finding[] {
         }
         for (const attribute of nodes(node.attributes)) {
           if (attribute.type !== 'SpreadElement') continue;
-          for (const field of [
-            'label',
-            'title',
-            'placeholder',
-            'alt',
-            'aria-label',
-            'aria-description',
-            'text',
-            'message',
-          ]) {
+          for (const field of textualSpreadProperties) {
             inspect(source, ast(attribute.arguments), `JSX spread ${field}`, [field]);
           }
         }
@@ -110,20 +106,40 @@ export function checkSources(sources: Source[], root: string): Finding[] {
         if (nativeDialog(callee) || member === 'setCustomValidity') {
           inspect(source, args(node)[0], member || direct);
         }
-        if (
-          member === 'setAttribute' &&
-          ['aria-label', 'aria-description', 'title', 'alt', 'placeholder'].includes(name(args(node)[0]))
-        ) {
-          inspect(source, args(node)[1], `setAttribute ${name(args(node)[0])}`);
+        if (member === 'setAttribute') {
+          for (const attribute of namesFrom(source, args(node)[0])) {
+            if (
+              isTextualAriaAttribute(attribute) ||
+              ['title', 'alt', 'placeholder'].includes(attribute)
+            ) {
+              inspect(source, args(node)[1], `setAttribute ${attribute}`);
+            }
+          }
         }
       }
       if (node.type === 'AssignmentExpression') {
         const target = ast(node.left);
+        const targetProperty = target?.type === 'MemberExpression' ? ast(target.property) : undefined;
+        const properties =
+          target?.type === 'MemberExpression' && property(targetProperty) !== '*'
+            ? [property(targetProperty)]
+            : namesFrom(source, targetProperty);
         if (
           target?.type === 'MemberExpression' &&
-          ['textContent', 'innerText', 'title', 'placeholder'].includes(property(ast(target.property)))
+          properties.some(
+            (targetName) =>
+              ['textContent', 'innerText', 'title', 'placeholder'].includes(targetName) ||
+              isTextualDomProperty(targetName),
+          )
         ) {
-          inspect(source, ast(node.right), `DOM ${property(ast(target.property))}`);
+          for (const targetName of properties) {
+            if (
+              ['textContent', 'innerText', 'title', 'placeholder'].includes(targetName) ||
+              isTextualDomProperty(targetName)
+            ) {
+              inspect(source, ast(node.right), `DOM ${targetName}`);
+            }
+          }
         }
       }
     });

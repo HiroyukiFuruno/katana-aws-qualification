@@ -1,6 +1,7 @@
 import { type Ast, ast, bind, key, nodes, property, type Source, walk } from './ast.ts';
 import { resolveExport } from './exports.ts';
 import { namespaceSource } from './namespace.ts';
+import { isTextualAriaAttribute } from './sink-metadata.ts';
 import { importedSource } from './sources.ts';
 
 export function callable(
@@ -61,7 +62,10 @@ export function linkSources(sources: Source[]) {
 }
 
 export function displayProp(value: string): boolean {
-  return /^(?:aria-label|aria-description|alt|title|placeholder|label|children|text|message|description|heading|caption|subtitle|buttonLabel|emptyMessage|errorMessage)$/.test(
-    value,
+  return (
+    isTextualAriaAttribute(value) ||
+    /^(?:alt|title|placeholder|label|children|text|message|description|heading|caption|subtitle|buttonLabel|emptyMessage|errorMessage)$/.test(
+      value,
+    )
   );
 }

@@ -1,0 +1,25 @@
+# #58 proof用SDK storageの暗号化部品
+
+一次要件は[proof契約](20261121_account_merge_proof.md)。通常ログインのstorageを共有せず、legごとのサーバー内storageを使うための部品を実装する。
+
+## 完了条件と対象境界
+
+- [x] AES-256-GCMでSDKのstorage値を暗号化し、intent/leg/attempt/purpose/発行時刻/期限/keyをAADへ束縛する。
+- [x] contextを固定し、leg最大3分・proof最大10分、非active・期限切れ・改ざん・未知keyを拒否する。
+- [x] AuthJSの利用するkeyだけを受け入れ、provider tokenを永続化前に除去する。
+- [x] 非同期処理の前後で失効を確認し、書込みには正規contextとrevisionの原子的なCASを要求する。
+- [x] 期限切れ後も復号を要しないCAS cleanupを提供し、元のphase/contextをDB照合へ渡す。
+- [x] 実WebCryptoの単体検査と独立した差分レビューを回収する。
+- [ ] 標準check、Draftレビュー、指摘対応、Ready、必須CI、merge、公開を完了する。
+
+これは注入されたrepository/keyringを利用する部品であり、本番DB adapter・鍵発行・公式SDKによるOAuth交換・公開APIの完成ではない。DB adapterはactive状態と正規phase・発行時刻・期限・revisionをDB時刻で同一transaction内に照合する必要がある。in-memory repositoryは単体検査だけに使い、IT/E2Eへ流用しない。
+
+## 検証
+
+`test-results/account-merge/runtime-parent-unit.log`: 13件成功、48検証。実WebCryptoで暗号化往復・各AAD項目の改ざん・nonce更新・key切替・入力検査・await中の期限切れ/terminal・CAS競合・後片付け・秘密を含む例外の非露出を検査した。
+
+`test-results/account-merge/runtime-review.md`: 固定したソースSHAに対する独立レビュー。部品の範囲では未対応P0/P1/P2なし。本番adapterと公開フローの未実装は残す。
+
+追加レビューで、同じlegの認証段階が変わった後に古いstorageのcleanupが新しいproof記録を消し得るinterface不足を検出した。`deleteIfRevision`へ元の不変contextを必須で渡し、adapterにphase/contextとrevisionの同一transaction照合を要求する。`runtime-cleanup-red.log`→`runtime-cleanup-green.log`で、古いlegによる削除拒否と正しいproofによる削除成功を回帰化した。active/期限をcleanupの条件には追加していない。変更後の全検査・再レビューは回収して記録する。
+
+`runtime-candidate-check.log`: 固定候補tree `c59853e63019b4ee896634dcc36037598a26b437`の標準check全体が成功。692単体検査・4,068検証、うちruntimeは14件・51検証。693文言/10言語、351ソースの直書き違反0、重複0、型・教材・構造・buildも成功した。最初の標準checkが検出したテスト重複5件は、単体検査専用fixtureへ整理して解消した。検査条件と全assertionは維持した。

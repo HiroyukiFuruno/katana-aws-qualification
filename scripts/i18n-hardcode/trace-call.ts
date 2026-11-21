@@ -56,22 +56,21 @@ export function traceCall(
         .flatMap((argument) =>
           mappedPaths(path, method === 'flatMap').flatMap((selected) => recur(argument, selected)),
         );
+    if (method === 'concat')
+      return [
+        ...recur(ast(callee.object), path),
+        ...args(node).flatMap((argument) =>
+          mappedPaths(path, true).flatMap((selected) => recur(argument, selected)),
+        ),
+      ];
     if (
-      [
-        'filter',
-        'find',
-        'slice',
-        'concat',
-        'join',
-        'toUpperCase',
-        'toLowerCase',
-        'trim',
-        'replace',
-      ].includes(method)
+      ['filter', 'find', 'slice', 'join', 'toUpperCase', 'toLowerCase', 'trim', 'replace'].includes(
+        method,
+      )
     )
       return [
         ...recur(ast(callee.object), ['find', 'join'].includes(method) ? ['*', ...path] : path),
-        ...(['concat', 'join', 'replace'].includes(method)
+        ...(['join', 'replace'].includes(method)
           ? args(node)
               .slice(method === 'replace' ? 1 : 0)
               .flatMap((argument) => recur(argument))

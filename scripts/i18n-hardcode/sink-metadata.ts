@@ -47,7 +47,9 @@ export function sinkNames(trace: SinkTrace, node: Ast | undefined): string[] {
   const expression = node?.type === 'Computed' ? ast(node.expression) : node;
   return [
     ...new Set(
-      trace(expression, [], undefined, { resolveComposite: true }).map((origin) => origin.text),
+      trace(expression, [], undefined, { resolveComposite: true, resolveScalarProperty: true }).map(
+        (origin) => origin.text,
+      ),
     ),
   ];
 }

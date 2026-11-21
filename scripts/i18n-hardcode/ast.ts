@@ -23,7 +23,11 @@ export type Source = {
   errors: Set<string>;
 };
 export type Origin = { source: Source; node: Ast; text: string; rawError?: boolean };
-export type TraceOptions = { resolveComposite?: boolean; invokeFunction?: boolean };
+export type TraceOptions = {
+  resolveComposite?: boolean;
+  invokeFunction?: boolean;
+  resolveScalarProperty?: boolean;
+};
 export type Trace = (
   source: Source,
   node: Ast | undefined,

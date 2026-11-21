@@ -26,3 +26,11 @@ test('concat keeps visible additions and receiver values when their index can re
     scan(`const parts=[42];parts.pop();export const View=()=> <p>{parts.concat('Visible copy')[0]}</p>`),
   ).toEqual(['Visible copy']);
 });
+
+test('concat preserves candidates from potentially spreadable object literals', () => {
+  expect(
+    scan(
+      "export const View=()=> <p>{[].concat({0:'Visible copy',length:1,[Symbol.isConcatSpreadable]:true})[0]}</p>;",
+    ),
+  ).toEqual(['Visible copy']);
+});

@@ -84,7 +84,7 @@ export function createTrace(sources: Source[]): Trace {
       case 'MemberExpression':
         return traceMember(source, node, path, recur, trace, nextSeen, environment, options);
       case 'ObjectExpression':
-        return objectValues(node, path, recur);
+        return objectValues(node, path, recur, options.resolveScalarProperty);
       case 'ArrayExpression':
         if (options.resolveComposite && !path.length) return [];
         return arrayValues(node, path, recur);

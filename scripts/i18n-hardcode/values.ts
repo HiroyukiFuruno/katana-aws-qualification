@@ -42,7 +42,12 @@ export function templateValues(
   );
 }
 
-export function objectValues(node: Ast, path: Path, recur: Recur): Origin[] {
+export function objectValues(
+  node: Ast,
+  path: Path,
+  recur: Recur,
+  resolveScalarProperty = false,
+): Origin[] {
   let [head, ...rest] = path;
   const excluded = new Set<string>();
   while (head && typeof head !== 'string') {
@@ -56,7 +61,8 @@ export function objectValues(node: Ast, path: Path, recur: Recur): Origin[] {
     const memberKey = property(ast(member.key)) || name(member);
     if (excluded.has(memberKey)) return [];
     if (head !== '*' && head !== memberKey) return [];
-    if (!rest.length && technicalIdentifier(memberKey, ast(member.value))) return [];
+    if (!rest.length && !resolveScalarProperty && technicalIdentifier(memberKey, ast(member.value)))
+      return [];
     return recur(member.type === 'Identifier' ? member : ast(member.value), rest);
   });
 }

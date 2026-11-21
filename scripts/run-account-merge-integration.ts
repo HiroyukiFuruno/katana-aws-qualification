@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readdirSync, writeFileSync } from 'node:fs';
 import { run } from '../test/account-merge/commands';
+import { verifyIntentHarness } from '../test/account-merge/intent-harness';
 import { verifyLockingHarness } from '../test/account-merge/locking-harness';
 import { prepareFixtures } from '../test/account-merge/prepare';
 import { publicState } from '../test/account-merge/public-state';
@@ -122,3 +123,4 @@ try {
   run('docker', [...compose, 'down', '--volumes']);
 }
 await verifyLockingHarness();
+await verifyIntentHarness();

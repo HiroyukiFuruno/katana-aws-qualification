@@ -6,7 +6,7 @@ do $$
 declare i uuid:=gen_random_uuid(); l uuid:=gen_random_uuid(); expired_i uuid:=gen_random_uuid(); expired_l uuid:=gen_random_uuid(); late_i uuid:=gen_random_uuid(); late_l uuid:=gen_random_uuid();
   issued timestamptz:=date_trunc('milliseconds',clock_timestamp()); leg_expiry timestamptz:=issued+interval '2 seconds'; intent_expiry timestamptz:=issued+interval '9 minutes';
   late_issued timestamptz; late_intent_expiry timestamptz; late_leg_expiry timestamptz; late_guard jsonb; late_next jsonb; late_baseline jsonb;
-  guard jsonb; proof_guard jsonb; next jsonb; baseline jsonb; field text; altered jsonb; revision bigint;
+  guard jsonb; proof_guard jsonb; next jsonb; revision_one_next jsonb; baseline jsonb; field text; altered jsonb; revision bigint;
 begin
   insert into kaq_private.account_intents(id,kind,actor_uid,actor_session_id,secret_hash,expires_at)
     values(i,'add_existing',gen_random_uuid(),gen_random_uuid(),decode(repeat('11',32),'hex'),intent_expiry);
@@ -20,48 +20,52 @@ begin
   perform pg_temp.runtime_check('next_null_expected_rejected',not kaq_private.runtime_next_valid(next,null,leg_expiry));
   perform pg_temp.runtime_check('initial_cas',kaq_private.runtime_compare_and_swap(l,null,next,guard));
   baseline:=(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l);
+  revision_one_next:=next||jsonb_build_object('revision',1);
+  if kaq_private.runtime_next_valid(revision_one_next,1,leg_expiry) is not true then
+    raise exception 'rejection fixture requires an otherwise-valid revision-1 candidate';
+  end if;
   foreach field in array array['purpose','intentId','legId','attempt','storageKey','issuedAt','expiresAt'] loop
     altered:=jsonb_set(guard,array[field],case field when 'purpose' then '"proof"'::jsonb when 'intentId' then to_jsonb(gen_random_uuid()::text)
       when 'legId' then to_jsonb(gen_random_uuid()::text) when 'attempt' then '2'::jsonb when 'storageKey' then '"different"'::jsonb
       when 'issuedAt' then to_jsonb((guard->>'issuedAt')::bigint+1) else to_jsonb((guard->>'expiresAt')::bigint+1) end);
-    perform pg_temp.runtime_check('guard_'||field,not kaq_private.runtime_compare_and_swap(l,0,next,altered));
+    perform pg_temp.runtime_check('guard_'||field,not kaq_private.runtime_compare_and_swap(l,0,revision_one_next,altered));
     perform pg_temp.runtime_check('guard_'||field||'_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
     altered:=jsonb_set(guard,array[field],'null'::jsonb);
-    perform pg_temp.runtime_check('guard_null_'||field,not kaq_private.runtime_compare_and_swap(l,0,next,altered));
+    perform pg_temp.runtime_check('guard_null_'||field,not kaq_private.runtime_compare_and_swap(l,0,revision_one_next,altered));
     perform pg_temp.runtime_check('guard_null_'||field||'_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
   end loop;
-  perform pg_temp.runtime_check('bad_key',not kaq_private.runtime_compare_and_swap(l,0,next||jsonb_build_object('keyVersion','bad key'),guard));
+  perform pg_temp.runtime_check('bad_key',not kaq_private.runtime_compare_and_swap(l,0,revision_one_next||jsonb_build_object('keyVersion','bad key'),guard));
   perform pg_temp.runtime_check('bad_key_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
-  perform pg_temp.runtime_check('bad_nonce',not kaq_private.runtime_compare_and_swap(l,0,next||jsonb_build_object('nonce','01'),guard));
+  perform pg_temp.runtime_check('bad_nonce',not kaq_private.runtime_compare_and_swap(l,0,revision_one_next||jsonb_build_object('nonce','01'),guard));
   perform pg_temp.runtime_check('bad_nonce_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
-  perform pg_temp.runtime_check('bad_cipher',not kaq_private.runtime_compare_and_swap(l,0,next||jsonb_build_object('ciphertext','01'),guard));
+  perform pg_temp.runtime_check('bad_cipher',not kaq_private.runtime_compare_and_swap(l,0,revision_one_next||jsonb_build_object('ciphertext','01'),guard));
   perform pg_temp.runtime_check('bad_cipher_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
-  perform pg_temp.runtime_check('bad_revision',not kaq_private.runtime_compare_and_swap(l,0,next||jsonb_build_object('revision',7),guard));
+  perform pg_temp.runtime_check('bad_revision',not kaq_private.runtime_compare_and_swap(l,0,revision_one_next||jsonb_build_object('revision',7),guard));
   perform pg_temp.runtime_check('bad_revision_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
   foreach field in array array['revision','keyVersion','nonce','ciphertext','expiresAt'] loop
-    perform pg_temp.runtime_check('next_null_'||field,not kaq_private.runtime_compare_and_swap(l,0,jsonb_set(next,array[field],'null'::jsonb),guard));
+    perform pg_temp.runtime_check('next_null_'||field,not kaq_private.runtime_compare_and_swap(l,0,jsonb_set(revision_one_next,array[field],'null'::jsonb),guard));
     perform pg_temp.runtime_check('next_null_'||field||'_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
   end loop;
-  perform pg_temp.runtime_check('key_65_rejected',not kaq_private.runtime_compare_and_swap(l,0,next||jsonb_build_object('keyVersion',repeat('a',65)),guard));
+  perform pg_temp.runtime_check('key_65_rejected',not kaq_private.runtime_compare_and_swap(l,0,revision_one_next||jsonb_build_object('keyVersion',repeat('a',65)),guard));
   perform pg_temp.runtime_check('key_65_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
-  perform pg_temp.runtime_check('revision_unsafe_rejected',not kaq_private.runtime_compare_and_swap(l,0,next||jsonb_build_object('revision',9007199254740992),guard));
+  perform pg_temp.runtime_check('revision_unsafe_rejected',not kaq_private.runtime_compare_and_swap(l,0,revision_one_next||jsonb_build_object('revision',9007199254740992),guard));
   perform pg_temp.runtime_check('revision_unsafe_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
   update kaq_private.account_proof_runtime set revision=9007199254740992 where leg_id=l;
   late_baseline:=(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l);
-  perform pg_temp.runtime_check('corrupt_revision_rejected',not kaq_private.runtime_compare_and_swap(l,9007199254740992,next,guard));
+  perform pg_temp.runtime_check('corrupt_revision_rejected',not kaq_private.runtime_compare_and_swap(l,9007199254740992,revision_one_next,guard));
   perform pg_temp.runtime_check('corrupt_revision_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=late_baseline);
   update kaq_private.account_proof_runtime set revision=0 where leg_id=l;
-  perform pg_temp.runtime_check('stale_revision',not kaq_private.runtime_compare_and_swap(l,7,next,guard));
+  perform pg_temp.runtime_check('stale_revision',not kaq_private.runtime_compare_and_swap(l,7,revision_one_next,guard));
   perform pg_temp.runtime_check('stale_revision_unchanged',(select to_jsonb(r) from kaq_private.account_proof_runtime r where leg_id=l)=baseline);
   foreach field in array array['superseded','failed','exchange_unknown'] loop
     update kaq_private.account_proof_legs set state=field where id=l;
     perform pg_temp.runtime_check('terminal_'||field,kaq_private.runtime_is_terminal(l,guard));
-    perform pg_temp.runtime_check('terminal_'||field||'_cas',not kaq_private.runtime_compare_and_swap(l,0,next,guard));
+    perform pg_temp.runtime_check('terminal_'||field||'_cas',not kaq_private.runtime_compare_and_swap(l,0,revision_one_next,guard));
     update kaq_private.account_proof_legs set state='issued' where id=l;
   end loop;
   update kaq_private.account_intents set state='cancelled' where id=i;
   perform pg_temp.runtime_check('terminal_cancelled',kaq_private.runtime_is_terminal(l,guard));
-  perform pg_temp.runtime_check('terminal_cancelled_cas',not kaq_private.runtime_compare_and_swap(l,0,next,guard));
+  perform pg_temp.runtime_check('terminal_cancelled_cas',not kaq_private.runtime_compare_and_swap(l,0,revision_one_next,guard));
   update kaq_private.account_intents set state='awaiting_source' where id=i;
   update kaq_private.account_proof_legs set state='exchanging' where id=l;
   proof_guard:=guard||jsonb_build_object('purpose','proof','expiresAt',kaq_private.runtime_epoch_ms(intent_expiry));

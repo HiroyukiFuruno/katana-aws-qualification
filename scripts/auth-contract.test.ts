@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import { authConfiguration, configuredProviders } from '../src/auth/config';
 import { callbackCode, callbackPath, dashboardPath } from '../src/auth/navigation';
-import { locales } from '../src/locales';
+import { localePath, locales } from '../src/locales';
 import { publishedPages, routeAt } from '../src/routes';
 
 test('auth configuration fails closed and accepts only public HTTPS service URLs', () => {
@@ -31,10 +31,11 @@ test('callback accepts one authorization code, rejects errors and ambiguous para
 });
 
 test('auth routes resolve in every locale without entering the public sitemap list', () => {
-  for (const page of ['login', 'auth/callback', 'dashboard']) {
+  for (const page of ['login', 'auth/callback', 'dashboard', 'account/settings']) {
     expect(publishedPages).not.toContain(page);
-    expect(routeAt(`/ja/${page}/`)).toEqual({ locale: 'ja', page });
-    expect(routeAt(`/${page}/`)).toEqual({ locale: 'en', page });
+    for (const locale of locales) {
+      expect(routeAt(localePath(locale, page))).toEqual({ locale, page });
+    }
   }
   expect(routeAt('/ja/auth/callback/extra/')).toBeUndefined();
 });

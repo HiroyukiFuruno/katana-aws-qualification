@@ -30,6 +30,6 @@ test('a callback opened in another browser explains the PKCE boundary and starts
   await returningPage.getByLabel('Password', { exact: true }).fill('integration-only');
   await returningPage.getByRole('button', { name: 'Sign In', exact: true }).click();
   await expect(returningPage).toHaveURL(/\/ja\/dashboard\/$/);
-  await expect(returningPage.getByRole('heading', { name: 'アカウント設定' })).toBeVisible();
+  await expect(returningPage.locator('header a.brand')).toHaveAttribute('href', '/ja/dashboard/');
   await returningContext.close();
 });

@@ -3,6 +3,7 @@ import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
 import { useAccount } from './AuthContext';
 import { DeleteAccount } from './DeleteAccount';
+import { dashboardPath } from './navigation';
 import { ProviderButtons } from './ProviderButtons';
 
 export function AccountSettings() {
@@ -10,8 +11,6 @@ export function AccountSettings() {
   const { locale, t } = usePreferences();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
-  if (state.status !== 'ready' || !state.account || !service) return null;
-  const account = state.account;
 
   async function perform(identityId?: string) {
     if (!service) return;
@@ -32,12 +31,33 @@ export function AccountSettings() {
     }
   }
 
+  if (state.status !== 'ready' || !state.account || !service) {
+    return (
+      <main id="main" className="shell account-page">
+        <h1>{t('accountSettings')}</h1>
+        {state.status === 'loading' ? (
+          <p role="status">{t('accountLoading')}</p>
+        ) : (
+          <section className="card layout-stack">
+            {state.status === 'error' && <p role="alert">{t('accountSessionFailed')}</p>}
+            <a className="entry-action" href={localePath(locale, 'login')}>
+              {t('accountSignIn')}
+            </a>
+          </section>
+        )}
+      </main>
+    );
+  }
+  const account = state.account;
   return (
-    <>
+    <main id="main" className="shell account-page">
+      <h1>{t('accountSettings')}</h1>
+      <a className="account-settings-back" href={dashboardPath(locale)}>
+        {t('accountDashboard')}
+      </a>
       <section className="card layout-stack">
-        <h2>{t('accountSettings')}</h2>
         {account.email && <p>{account.email}</p>}
-        <h3>{t('accountLinkedProviders')}</h3>
+        <h2>{t('accountLinkedProviders')}</h2>
         <ul className="action-list">
           {account.identities.map((identity) => (
             <li key={identity.id}>
@@ -63,6 +83,6 @@ export function AccountSettings() {
         {failed && <p role="alert">{t('accountActionFailed')}</p>}
       </section>
       <DeleteAccount key={account.id} />
-    </>
+    </main>
   );
 }

@@ -13,30 +13,17 @@ function storeId(store: ProgressStore) {
 export function DashboardPage() {
   const progress = useProgress();
   const { t } = usePreferences();
-  const { state } = useAccount();
-  return (
-    <>
-      {progress.status !== 'ready' || !progress.store ? (
-        <main id="main" className="shell account-page">
-          <h1>{t('accountDashboard')}</h1>
-          <p role={progress.status === 'error' ? 'alert' : 'status'}>
-            {t(progress.status === 'error' ? 'dashboardError' : 'accountLoading')}
-          </p>
-          <button type="button" onClick={() => void progress.retry()}>
-            {t('progressRetry')}
-          </button>
-        </main>
-      ) : (
-        <DashboardOwner key={storeId(progress.store)} store={progress.store} />
-      )}
-      {state.status === 'ready' && state.account && (
-        <div className="shell account-page" id="account-settings">
-          <AccountSettings />
-        </div>
-      )}
-    </>
+  return progress.status !== 'ready' || !progress.store ? (
+    <main id="main" className="shell account-page">
+      <h1>{t('accountDashboard')}</h1>
+      <p role={progress.status === 'error' ? 'alert' : 'status'}>
+        {t(progress.status === 'error' ? 'dashboardError' : 'accountLoading')}
+      </p>
+      <button type="button" onClick={() => void progress.retry()}>
+        {t('progressRetry')}
+      </button>
+    </main>
+  ) : (
+    <DashboardOwner key={storeId(progress.store)} store={progress.store} />
   );
 }
-
-import { AccountSettings } from '../auth/AccountSettings';
-import { useAccount } from '../auth/AuthContext';

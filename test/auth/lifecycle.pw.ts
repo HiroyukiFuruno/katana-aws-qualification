@@ -11,17 +11,21 @@ for (const locale of locales) {
     await page.getByLabel('Password', { exact: true }).fill('integration-only');
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     await expect(page).toHaveURL(`http://127.0.0.1:5173${localePath(locale, 'dashboard')}`);
+    await page.goto(localePath(locale, 'account/settings'));
     await expect(page.getByText('learner@example.test', { exact: true })).toBeVisible();
   });
 }
 
 test('signing out clears the authenticated display in another open tab', async ({ page }) => {
   await signIn(page);
+  await page.goto('/ja/account/settings/');
   const otherTab = await page.context().newPage();
-  await otherTab.goto('/ja/dashboard/');
+  await otherTab.goto('/ja/account/settings/');
   await expect(otherTab.getByText('learner@example.test', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await expect(otherTab.getByText('learner@example.test', { exact: true })).toHaveCount(0);
+  await expect(otherTab.getByRole('main').getByRole('link', { name: 'ログイン' })).toBeVisible();
+  await otherTab.goto('/ja/dashboard/');
   await expect(otherTab.getByText('ゲスト・この端末の記録', { exact: true })).toBeVisible();
   await expect(otherTab.getByRole('link', { name: '無料アカウントを作成', exact: true })).toBeVisible();
 });

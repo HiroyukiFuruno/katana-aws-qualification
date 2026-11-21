@@ -54,7 +54,9 @@ export function traceCall(
       const selected = path.length ? path.slice(1) : path;
       return args(node).flatMap((argument) => [
         ...recur(argument, selected),
-        ...(method === 'flatMap' ? recur(argument, ['*', ...selected]) : []),
+        ...(method === 'flatMap'
+          ? recur(argument, [{ kind: 'array-rest', start: 0 }, '*', ...selected])
+          : []),
       ]);
     }
     if (

@@ -5,6 +5,7 @@ language plpgsql stable security definer
 set search_path = pg_catalog, public, kaq_private, extensions
 set timezone = 'UTC'
 set datestyle = 'ISO, YMD'
+set bytea_output = 'hex'
 as $$
 declare
   owners uuid[]; public_tables text[]; actual_tables text[]; table_name text;

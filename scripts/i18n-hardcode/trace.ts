@@ -6,12 +6,33 @@ import { callable } from './link.ts';
 import { traceMember } from './member.ts';
 import { traceCall } from './trace-call.ts';
 import { arrayValues, functionReturns, objectValues } from './values.ts';
+
+function contextKey(environment: Map<string, Binding[]>) {
+  return [...environment]
+    .map(
+      ([scope, bindings]) =>
+        `${scope}:${bindings
+          .map((binding) => {
+            const span = binding.expression.span as { start?: number; end?: number } | undefined;
+            return `${binding.source?.path ?? ''}:${span?.start}:${span?.end}:${JSON.stringify(binding.path)}`;
+          })
+          .join(',')}`,
+    )
+    .sort()
+    .join(';');
+}
+
 export function createTrace(sources: Source[]): Trace {
   let environment = new Map<string, Binding[]>();
   const trace: Trace = (source, node, path = [], seen = new Set()) => {
     if (!node) return [];
     const span = node.span as { start?: number; end?: number } | undefined;
-    const marker = `${source.path}:${span?.start}:${span?.end}:${node.type}:${JSON.stringify(path)}`;
+    const pathKey = ['ArrowFunctionExpression', 'FunctionExpression', 'FunctionDeclaration'].includes(
+      node.type,
+    )
+      ? ''
+      : JSON.stringify(path);
+    const marker = `${source.path}:${span?.start}:${span?.end}:${node.type}:${pathKey}:${contextKey(environment)}`;
     if (seen.has(marker)) return [];
     const nextSeen = new Set(seen).add(marker);
     const recur = (value: Ast | undefined, nextPath = path) => trace(source, value, nextPath, nextSeen);

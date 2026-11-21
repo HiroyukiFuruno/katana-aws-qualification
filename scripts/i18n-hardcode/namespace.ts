@@ -9,6 +9,7 @@ export function namespaceSource(
   seen = new Set<string>(),
 ): Source | undefined {
   if (!node) return undefined;
+  if (node.type === 'ModuleNamespace') return source;
   const span = node.span as { start?: number } | undefined;
   const marker = `namespace:${source.path}:${span?.start}:${key(node)}`;
   if (seen.has(marker)) return undefined;

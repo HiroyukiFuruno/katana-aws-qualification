@@ -1,11 +1,13 @@
 export type Ast = { type: string; [key: string]: unknown };
 export type Binding = { expression: Ast; path: string[]; source?: Source };
+export type ModuleBinding = { source: string; imported: string };
 export type Source = {
   path: string;
   text: string;
   ast: Ast;
   bindings: Map<string, Binding[]>;
-  imports: Map<string, { source: string; imported: string }>;
+  imports: Map<string, ModuleBinding>;
+  reexports: Map<string, ModuleBinding>;
   exports: Map<string, Ast>;
   exportStars: string[];
   parents: WeakMap<Ast, Ast>;

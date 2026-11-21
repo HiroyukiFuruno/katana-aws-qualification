@@ -36,10 +36,11 @@ export function indexModule(source: Source, node: Ast) {
       const namespace = specifier.type === 'ExportNamespaceSpecifier';
       const original = ast(namespace ? specifier.name : specifier.orig);
       if (!original) continue;
-      source.exports.set(name(ast(specifier.exported)) || name(original), original);
+      const exported = name(ast(specifier.exported)) || name(original);
       const from = name(ast(node.source));
       if (from)
-        source.imports.set(key(original), { source: from, imported: namespace ? '*' : name(original) });
+        source.reexports.set(exported, { source: from, imported: namespace ? '*' : name(original) });
+      else source.exports.set(exported, original);
     }
   }
 }

@@ -47,6 +47,10 @@ export function createTrace(sources: Source[]): Trace {
         return recur(ast(node.expression));
       case 'OptionalChainingExpression':
         return recur(ast(node.base));
+      case 'ModuleNamespace': {
+        const exported = path[0] && resolveExport(sources, source, path[0]);
+        return exported ? trace(exported.source, exported.node, path.slice(1), nextSeen) : [];
+      }
       case 'Identifier': {
         const bindings =
           environment.get(environmentKey(source, key(node))) ?? source.bindings.get(key(node)) ?? [];

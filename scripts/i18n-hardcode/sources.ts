@@ -21,6 +21,7 @@ export function createSource(path: string, text: string): Source {
     ast: tree as unknown as Ast,
     bindings: new Map(),
     imports: new Map(),
+    reexports: new Map(),
     exports: new Map(),
     exportStars: [],
     parents: new WeakMap(),

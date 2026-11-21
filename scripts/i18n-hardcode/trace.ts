@@ -92,9 +92,11 @@ export function createTrace(sources: Source[]): Trace {
           if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
             return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
           if (['map', 'flatMap'].includes(method))
-            return args(node).flatMap((argument) =>
-              mappedPaths(path, method === 'flatMap').flatMap((selected) => recur(argument, selected)),
-            );
+            return args(node)
+              .slice(0, 1)
+              .flatMap((argument) =>
+                mappedPaths(path, method === 'flatMap').flatMap((selected) => recur(argument, selected)),
+              );
           if (
             [
               'filter',

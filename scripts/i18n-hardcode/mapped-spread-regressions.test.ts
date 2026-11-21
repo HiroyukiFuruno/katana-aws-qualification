@@ -72,3 +72,11 @@ test('flatMap follows array selectors through mapped arrays and array preserving
     const View=()=> <p>{rows[0].caption}</p>`),
   ).toEqual(['Please sign in']);
 });
+
+test('map and flatMap thisArg values are not returned element text', () => {
+  for (const method of ['map', 'flatMap']) {
+    expect(scan(`const View=()=> <p>{[0].${method}(() => 42, 'Diagnostic copy').join('')}</p>`)).toEqual(
+      [],
+    );
+  }
+});

@@ -54,3 +54,11 @@
 - [/] 独立fixture review P1: 失敗応答もDBのcanonicalなID/期限/状態/固定codeとの完全一致で検査し、実claim時に保管されたnonceをbrowser storage/公開応答/console/request URLへ漏らさないことを照合する。成功proofが存在しない失敗経路で、成功proof必須の検査を誤用しない。
 
 再検査: server-sdk-auth-failure-canonical-red.logの修正前8失敗と、server-sdk-prepared-authorization-red.logの修正前1失敗を保持。修正後SDK35件・171 assertion、server-sdk-authorization-privacy-final-standard.logの全工程、独立core/fixtureレビューを回収した。実DBではfailed/revision2と、置換指定なしの次leg/attempt2発行が成功し、失敗応答もcanonical値との完全一致・実nonce非露出を検査した。
+
+## 保存済みreceiptの本人照会エラー（追加レビュー）
+
+- [/] P2 / 4651496219: getUserの一時的な通信障害・5xx・408/429を本人不一致と区別し、保存済みsessionをfailed/exchange_unknownへ変更しない。交換直後・保存済み復元・promotion回復の各経路で、同じreceiptを再検証する。401・明確なUID不一致は既知の失敗として拒否する。
+- [x] 旧head aaa6d324の固定コピーで、正しいSDK形式のverifierを使う6件中4件RED。408/429も追加した修正後8件/59 assertions成功、SDK全体43件/230 assertions成功。最初のfixtureではverifierをJSON形式で保存しておらず、交換前に拒否されていたため、その記録を正式な交換後REDの根拠には使わない。
+- [ ] 修正した親PR93の全check・正式再レビュー・元thread返信/resolve・Ready・CI・公開。PR93は追加指摘を受けDraftへ戻した。
+
+証跡はtest-results/account-merge/sdk-verification-{corrected-red-source.json,corrected-canonical-red.log,unavailable-green.log,all-focused.log}。本番や実短期限JWTの操作は行っていない。

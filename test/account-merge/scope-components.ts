@@ -11,7 +11,7 @@ const components = [
   ['private-acl', 7],
 ] as const;
 
-export function verifyScopeComponents() {
+export function verifyScopeComponents(mode: 'session' | 'acl' = 'session') {
   const fixture: unknown = JSON.parse(readFileSync(`${artifacts}/smoke-proof.json`, 'utf8'));
   assert(fixture && typeof fixture === 'object' && 'issuers' in fixture);
   assert(Array.isArray(fixture.issuers) && fixture.issuers.length === 2);
@@ -25,6 +25,7 @@ export function verifyScopeComponents() {
   assert.equal(new Set(identifiers).size, 4, 'Require distinct actual OAuth users and sessions');
   const before = publicState();
   for (const [component, expectedCount] of components) {
+    if ((component === 'private-acl') !== (mode === 'acl')) continue;
     // 非公開SQL部品を専用DBだけに適用し、実sessionの入力回帰は各transactionで巻き戻す。
     if (component !== 'private-acl')
       sql(readFileSync(`supabase/account-merge/${component}.sql`, 'utf8'));

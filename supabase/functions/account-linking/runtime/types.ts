@@ -25,6 +25,8 @@ export type RuntimeRecord = {
 
 export type RuntimeRepository = {
   read(legId: string): Promise<RuntimeRecord | null>;
+  /** 終端後の消去専用。DB実装は正規phase/contextを同一TXで照合し、revisionだけを返す。 */
+  readRevisionForCleanup(legId: string, guard: RuntimeWriteGuard): Promise<number | null>;
   /** DB 実装は revision、正規 phase/発行時刻/期限、active 状態を DB 時刻で同一 TX に照合する。 */
   compareAndSwap(
     legId: string,

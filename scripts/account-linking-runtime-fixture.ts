@@ -25,6 +25,11 @@ export class MemoryRepository implements RuntimeRepository {
     return this.record;
   }
 
+  async readRevisionForCleanup(): Promise<number | null> {
+    if (this.failure) throw this.failure;
+    return this.record?.revision ?? null;
+  }
+
   async compareAndSwap(_: string, revision: number | null, next: RuntimeRecord): Promise<boolean> {
     await this.onCompare?.();
     if (this.terminal || (this.record?.revision ?? null) !== revision) return false;

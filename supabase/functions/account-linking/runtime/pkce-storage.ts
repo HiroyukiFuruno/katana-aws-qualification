@@ -1,15 +1,15 @@
-import type { RuntimeContext, RuntimeRecord, RuntimeStorageOptions } from './types.ts';
 import { RuntimeBoundary } from './boundary.ts';
-import { decryptSlots, encryptSlots } from './crypto.ts';
 import { fixedContext, writeGuard } from './context.ts';
+import { decryptSlots, encryptSlots } from './crypto.ts';
 import { RuntimeMutationQueue } from './serial.ts';
-import { allowedKey, failure, sanitize, type Slots } from './slots.ts';
+import { allowedKey, failure, type Slots, sanitize } from './slots.ts';
+import type { RuntimeContext, RuntimeRecord, RuntimeStorageOptions } from './types.ts';
 
 export {
-  RuntimeStorageError,
   type RuntimeKeyring,
   type RuntimeRecord,
   type RuntimeRepository,
+  RuntimeStorageError,
 } from './types.ts';
 
 export class EncryptedPkceStorage {
@@ -58,13 +58,13 @@ export class EncryptedPkceStorage {
   async terminate(): Promise<void> {
     return this.mutations.run(() =>
       this.boundary.run(async () => {
-        const record = await this.boundary.dependency(() =>
-          this.options.repository.read(this.context.legId),
+        const revision = await this.boundary.dependency(() =>
+          this.options.repository.readRevisionForCleanup(this.context.legId, writeGuard(this.context)),
         );
         const result = await this.boundary.dependency(() =>
           this.options.repository.deleteIfRevision(
             this.context.legId,
-            record?.revision ?? null,
+            revision,
             writeGuard(this.context),
           ),
         );

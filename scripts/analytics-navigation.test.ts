@@ -7,6 +7,7 @@ test('private lesson results, finals and account pages never enable analytics', 
     for (const page of [
       'login',
       'dashboard',
+      'account/settings',
       'auth/callback',
       'study/fundamentals/cloud-concepts/final/1',
       'study/fundamentals/cloud-concepts/result',

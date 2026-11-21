@@ -24,6 +24,7 @@ export async function signIn(page: Page, username: string) {
   await page.getByLabel('Password', { exact: true }).fill('integration-only');
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
   await expect(page).toHaveURL(/\/ja\/dashboard\/$/);
+  await page.goto('/ja/account/settings/');
 }
 
 export async function activeSession(page: Page): Promise<RealSession> {

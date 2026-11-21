@@ -27,14 +27,15 @@ KAQはSSOだけで登録・ログインする。#18はGitHubを実装し、後�
 
 ## アカウント削除の境界
 外部サービス側で認可を取り消しても、Supabaseユーザーは削除されない。
-現段階は運営者が削除依頼の本人性とuser IDを確認し、Supabase管理APIで対象Authユーザーを削除する。
-メール属性だけを根拠に削除せず、秘密鍵をブラウザへ渡さない。APIの削除結果と再取得で完了を確認する。
-#23では、認証済み本人に対するサーバー側の削除境界から関連DB・未同期データの削除まで拡張し、
-他ユーザーの削除やローカル再送による復活を防ぐ。削除済みユーザーはオンライン検証に失敗し、保護画面を表示できない。
+公開済みの退会画面は、サーバーで検証した本人のAuth userだけを公式管理APIで削除し、再取得の404まで確認する。
+メール属性やクライアント申告のUIDだけを根拠に削除せず、秘密鍵をブラウザへ渡さない。
+現在の学習データはAuth UIDへのFKで削除され、削除済みユーザーはオンライン検証に失敗する。
+#58で独立した学習ownerと複数Authへ切り替える際は、全membershipの失効・全内容削除・各Authの削除確認を揃える。非公開のlock部品だけではこの切替は完了しない。
 
 ## 検証
 - `bun run check`: 既存の全品質検査、認証契約/adapterのmock単体テストを含む。
 - `bunx playwright install chromium` の後、`bun run auth:integration`: Dockerで実Auth/Postgres/OIDCを起動して結合検証する。
+- `bun run account:integration`: Docker・Python 3標準ライブラリで実2 OIDC/DBと、別の専用GoTrue/PGによる所有境界・並行更新を検査する。後者はportを公開せず、標準composeの回収後に実行する。結果は`test-results/account-merge/integration/`へ保存する。
 - 固定のテスト用秘密・アカウントは `test/auth/` 内だけで使う。本番には適用しない。
 - 結合検証はlocalhostの5173/54331/54440/54441を使用し、専用composeプロジェクトを終了時に停止・回収する。OIDCのTLSは生成したテスト証明書だけをAuth/Chromiumで信頼し、証明書検証を一律無効にしない。
 - 検証結果は `test-results/auth/` に保存する。ここにはテスト用セッションのtraceが含まれるため一般公開しない。

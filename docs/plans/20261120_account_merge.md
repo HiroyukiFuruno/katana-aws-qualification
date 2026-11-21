@@ -120,7 +120,7 @@ Draft PR #57に競合説明・session保持/復帰・10言語と実2user回帰�
 
 ## 実施順と検証台帳
 
-- [ ] 既存PR57の競合説明/元session保持を公開mainへ合わせ、単体・実2ユーザーOIDC・10言語を確認する。これだけで#58をCloseしない。
+- [x] 既存PR57の競合説明/元session保持を公開mainへ合わせ、単体・実2ユーザーOIDC・10言語を確認する。main `f5afb976`と公開照合は後述。これだけで#58をCloseしない。
 - [ ] 上の設計を現行FK/RLS/RPC/全owner型/退会/実GoTrue版へ対応付け、DDLとAPIの具体契約・全テーブルの保持/競合一覧を固定する。
 - [ ] 追加migrationで独立owner/membership/bootstrap/束縛・session fenceを作り、既存13migrationと全既存記録を保持する。
 - [ ] proof intent・両fresh OAuth・preview/commit・onboarding・競合選択/出自を実装する。
@@ -203,3 +203,9 @@ GoTrue policyはfinal consent後の公式SDKによる各proof sessionの明示re
 内部session/readscope/bootstrap部品を標準`account:integration`の実2 OIDC検査後へ接続した。readscope/bootstrapでfence等値を許可するP1を独立レビューで検出し、`scope-strict-fence-red.log`に再現を残した。比較をstrict `>`へ揃え、account/membershipのsessionのみ等値・OAuthのみ等値・双方等値をすべて拒否する。`scope-strict-fence-green.log`は基盤172/session71/readscope148/bootstrap31/private ACL7条件と実認証1件成功（4.4s）。公開表の全schema・row hashは前後一致、専用DBを撤去した。
 
 private ACL検査は全functionを列挙し、明示REVOKE漏れやPUBLIC EXECUTEを注入したcanaryを検出する。schema default REVOKEがglobal default PUBLIC EXECUTEまで消すとは仮定しない。snapshot読取の二接続検査、全writerへのlocking resolver統合、承認済みproof grantのreceipt/fence束縛、全preview/merge/切替は別の未完条件として維持する。
+
+### locking harnessの標準化
+
+[lock契約](20261121_account_merge_locking.md)と[ブラウザーcutover契約](20261121_account_merge_client.md)へ続く。GoTrue refreshとの逆順を実`40P01`で再現し、session/AMRのNOWAIT・固定retryへ修正した。標準`account:integration`全体は実2 OIDC/基盤172/session71/readscope148/bootstrap31/snapshot60/ACL7と、別専用fixtureのPython unit7/SQL108/実競合12がexit0。deadlock0・意図外marker0・専用container残0を確認した。
+
+refresh後の差分は、実診断で特定した当該2 userのupdated_at前進と正確な4監査行、公式session/token更新だけを許可する。保護列や他user・既存監査行・学習/private状態の変更は拒否する。setup失敗時のowned ID回収、Docker内のstdout/stderr順序、CIの開発者CLI非依存も検査した。これは全caller・公開API・履歴統合の完了ではなく、Issue58をCloseしない。

@@ -6,6 +6,7 @@ import { verifyIntentHarness } from '../test/account-merge/intent-harness';
 import { verifyLockingHarness } from '../test/account-merge/locking-harness';
 import { prepareFixtures } from '../test/account-merge/prepare';
 import { publicState } from '../test/account-merge/public-state';
+import { verifyRuntimeHarness } from '../test/account-merge/runtime-harness';
 import { verifyPublicSchemaGuards } from '../test/account-merge/schema-guards';
 import { verifyScopeComponents } from '../test/account-merge/scope-components';
 import { seedPublicData } from '../test/account-merge/seed-public';
@@ -124,3 +125,4 @@ try {
 }
 await verifyLockingHarness();
 await verifyIntentHarness();
+await verifyRuntimeHarness();

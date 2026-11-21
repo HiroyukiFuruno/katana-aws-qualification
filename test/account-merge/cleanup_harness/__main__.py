@@ -17,14 +17,7 @@ def close(docker, connections, artifacts):
     if errors or any(row['stop'] or row['remove'] or row['remaining'] for row in rows): raise RuntimeError('cleanup failed')
 
 def fixture(sql, seconds):
-    result=sql(f"""with clock as (select date_trunc('milliseconds',clock_timestamp()) issued), ids as (select gen_random_uuid() intent_id,gen_random_uuid() leg_id)
-      , intent as (insert into kaq_private.account_intents(id,kind,actor_uid,actor_session_id,secret_hash,expires_at)
-        select intent_id,'add_existing',gen_random_uuid(),gen_random_uuid(),decode(repeat('11',32),'hex'),issued+interval '9 minutes' from ids,clock returning id,expires_at)
-      , leg as (insert into kaq_private.account_proof_legs(id,intent_id,side,attempt,storage_key,ingest_nonce_hash,issued_at,expires_at)
-        select ids.leg_id,intent.id,'source',1,'kaq-proof:'||intent.id||':'||ids.leg_id||':1',decode(repeat('22',32),'hex'),clock.issued,clock.issued+interval '{seconds} seconds' from ids,intent,clock returning id,intent_id,attempt,storage_key,issued_at,expires_at)
-      select jsonb_build_object('purpose','leg','intentId',leg.intent_id,'legId',leg.id,'attempt',leg.attempt,'storageKey',leg.storage_key,
-        'issuedAt',kaq_private.runtime_epoch_ms(leg.issued_at),'expiresAt',kaq_private.runtime_epoch_ms(leg.expires_at),'intentExpiresAt',kaq_private.runtime_epoch_ms(intent.expires_at)) from leg join intent on intent.id=leg.intent_id;""")
-    return json.loads(result)
+    return json.loads(sql(f"select cleanup_harness.create_fixture({seconds});"))
 
 def snapshot_install(sql):
     sql("""create schema cleanup_harness; create function cleanup_harness.snapshot() returns jsonb language plpgsql as $$
@@ -32,6 +25,15 @@ def snapshot_install(sql):
       begin for relation_record in select schemaname,tablename from pg_tables where schemaname in ('auth','public','kaq_private') order by schemaname,tablename loop
         execute format('select jsonb_build_object(''count'',count(*),''sha256'',encode(extensions.digest(coalesce(jsonb_agg(to_jsonb(row) order by to_jsonb(row)::text),''[]''::jsonb)::text,''sha256''),''hex'')) from %I.%I row',relation_record.schemaname,relation_record.tablename) into value;
         result := result || jsonb_build_object(relation_record.schemaname || '.' || relation_record.tablename,value); end loop; return result; end $$;""")
+    sql("""create function cleanup_harness.create_fixture(seconds integer) returns jsonb language sql as $$
+      with clock as (select date_trunc('milliseconds',clock_timestamp()) issued), ids as (select gen_random_uuid() intent_id,gen_random_uuid() leg_id),
+      intent as (insert into kaq_private.account_intents(id,kind,actor_uid,actor_session_id,secret_hash,expires_at)
+        select intent_id,'add_existing',gen_random_uuid(),gen_random_uuid(),decode(repeat('11',32),'hex'),issued+interval '9 minutes' from ids,clock returning id,expires_at),
+      leg as (insert into kaq_private.account_proof_legs(id,intent_id,side,attempt,storage_key,ingest_nonce_hash,issued_at,expires_at)
+        select ids.leg_id,intent.id,'source',1,'kaq-proof:'||intent.id||':'||ids.leg_id||':1',decode(repeat('22',32),'hex'),clock.issued,clock.issued+make_interval(secs=>seconds) from ids,intent,clock returning id,intent_id,attempt,storage_key,issued_at,expires_at)
+      select jsonb_build_object('purpose','leg','intentId',leg.intent_id,'legId',leg.id,'attempt',leg.attempt,'storageKey',leg.storage_key,
+        'issuedAt',kaq_private.runtime_epoch_ms(leg.issued_at),'expiresAt',kaq_private.runtime_epoch_ms(leg.expires_at),'intentExpiresAt',kaq_private.runtime_epoch_ms(intent.expires_at)) from leg join intent on intent.id=leg.intent_id;
+    $$;""")
 
 def preserve_previous(artifacts):
     previous=artifacts/'actual-results.json'
@@ -69,15 +71,14 @@ def main():
         receipt['sourceInputs'].update(apply_private_inputs(root,connections.sql,['runtime-cleanup.sql'],artifacts))
         result=json.loads(next(line for line in connections.sql((root/'test/account-merge/runtime-cleanup.sql').read_text()).splitlines() if line.startswith('{')))
         if result.get('status')!='passed' or result.get('checks')!=19: raise RuntimeError('cleanup SQL assertions failed')
-        fixtures=[fixture(connections.sql,120),fixture(connections.sql,3),fixture(connections.sql,120)]
-        env={**os.environ,'CLEANUP_CONTAINER':database,'CLEANUP_FIXTURES':json.dumps(fixtures)}
+        env={**os.environ,'CLEANUP_CONTAINER':database}
         process=subprocess.run(['bun',str(root/'test/account-merge/cleanup_harness/runtime-cleanup-sdk.ts')],cwd=root,env=env,capture_output=True,text=True)
         if has_deadlock(process,connections): raise RuntimeError('cleanup harness observed deadlock')
         if process.returncode: raise RuntimeError('SDK cleanup verification failed')
-        sdk=sdk_receipt(process.stdout); remove_fixtures(connections.sql,[red_intent,*(value['intentId'] for value in fixtures)])
+        sdk=sdk_receipt(process.stdout); fixture_ids=sdk['fixtureIntentIds']; remove_fixtures(connections.sql,[red_intent,*fixture_ids])
         final=json.loads(connections.sql('select cleanup_harness.snapshot();'))
         if final!=baseline: raise RuntimeError('cleanup fixture state was not restored')
-        receipt.update(sqlUnit=result,sdk=sdk,deadlockErrors=0,baselineSnapshot=baseline,finalSnapshot=final,baselineRestored=True,status='passed')
+        receipt.update(sqlUnit=result,sdk={key:sdk[key] for key in ['status','assertions']},fixtureIntentIds=fixture_ids,deadlockErrors=0,baselineSnapshot=baseline,finalSnapshot=final,baselineRestored=True,status='passed')
         if any(hashlib.sha256(root.joinpath(name).read_bytes()).hexdigest()!=digest for name,digest in receipt['sourceSha256'].items()): raise RuntimeError('source changed during verification')
     except Exception as error: failure=error
     finally:

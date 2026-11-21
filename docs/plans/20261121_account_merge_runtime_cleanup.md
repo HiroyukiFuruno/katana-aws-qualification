@@ -20,3 +20,9 @@
 `test-results/account-merge/cleanup-final-standard.log`は標準統合全工程で成功。新規SQL19条件と実Postgres adapter/実WebCryptoの取消し・期限切れ・stale revision・旧contextの4条件を照合した。保存後は鍵取得を例外に切り替え、cleanup時の取得回数が増えないことを検査した。旧経路のread=null/delete=conflictも実DBで再現記録を残した。
 
 最終receiptは04:36:07UTC。41入力SHA一致、auth/public/private全rowの件数とhash復元、deadlock0、専用container2個削除を確認。GoTrueはfixture起動の確認だけであり、本単位で公式OAuth交換を検証したとは扱わない。固定候補965d5249は全check699件/4112assertionとaccount型検査が成功。正式レビュー/CI/公開は未完。
+
+## PR88のfixture時刻レビュー修正
+
+短命fixtureをBun起動・先行シナリオより前に作成していたP2を採用。test-only SQL helperを共用し、各シナリオ開始直前にTSから作成する。期限切れ用issuedAtが取消しシナリオ完了のDB時刻より後であることを実検査する。3個のUUIDを検証・削除し、全snapshotを復元。実認証期限・operation timeout・本番runtime/SQLは変更しない。
+
+標準全工程`cleanup-fixture-final-standard.log`成功。最終receipt04:52:11UTC、42入力SHA一致、SQL19/実adapter4条件、baseline復元/deadlock0/専用container削除を照合。固定候補5b70a2dは全check699件/4112assertion・account型・nested adapter型・Biomeが成功。独立`cleanup-fixture-final-review.md`はP0/P1/P2なし。正式再レビュー/CI/公開は未完。

@@ -1,18 +1,15 @@
 import assert from 'node:assert/strict';
 import { EncryptedPkceStorage } from '../../../supabase/functions/account-linking/runtime/pkce-storage.ts';
 import type { RuntimeContext } from '../../../supabase/functions/account-linking/runtime/types.ts';
+import { Fixtures } from './fixtures.ts';
 import { CleanupSqlRepository, sql } from './runtime-cleanup-sql-adapter.ts';
 
-type Fixture = RuntimeContext & { intentExpiresAt: number };
 type KeyState = { active: number; resolve: number; blocked: boolean };
 
-function environment(): { container: string; fixtures: Fixture[] } {
+function environment(): string {
   const container = process.env.CLEANUP_CONTAINER;
-  const value = process.env.CLEANUP_FIXTURES;
-  if (!container || !value) throw new Error('missing cleanup fixture');
-  const parsed: unknown = JSON.parse(value);
-  if (!Array.isArray(parsed)) throw new Error('invalid cleanup fixture');
-  return { container, fixtures: parsed as Fixture[] };
+  if (!container) throw new Error('missing cleanup container');
+  return container;
 }
 
 function storage(
@@ -55,9 +52,12 @@ function statement(container: string, text: string): string {
 
 async function terminalCleanup(
   container: string,
-  context: Fixture,
+  fixtures: Fixtures,
+  seconds: 3 | 120,
   terminal: 'cancel' | 'expire',
-): Promise<boolean> {
+  notBefore?: number,
+): Promise<number> {
+  const context = fixtures.create(seconds, notBefore);
   const current = storage(container, context);
   await current.value.setItem(
     context.storageKey,
@@ -95,13 +95,17 @@ async function terminalCleanup(
     '0',
   );
   assert.deepEqual(current.keys, { ...keyCalls, blocked: true });
-  return true;
+  return Number.parseInt(
+    statement(container, 'select kaq_private.runtime_epoch_ms(clock_timestamp());'),
+    10,
+  );
 }
 
 async function fences(
   container: string,
-  context: Fixture,
+  fixtures: Fixtures,
 ): Promise<{ staleRevision: true; oldContext: true }> {
+  const context = fixtures.create(120);
   const current = storage(container, context);
   await current.value.setItem(context.storageKey, '{"access_token":"secret"}');
   const revision = statement(
@@ -134,10 +138,12 @@ async function fences(
   return { staleRevision: true, oldContext: true };
 }
 
-const { container, fixtures } = environment();
+const container = environment();
+const fixtures = new Fixtures(container);
+const cancelCompletedAt = await terminalCleanup(container, fixtures, 120, 'cancel');
 const assertions = {
-  cancel: await terminalCleanup(container, fixtures[0], 'cancel'),
-  expire: await terminalCleanup(container, fixtures[1], 'expire'),
-  ...(await fences(container, fixtures[2])),
+  cancel: true,
+  expire: Boolean(await terminalCleanup(container, fixtures, 3, 'expire', cancelCompletedAt)),
+  ...(await fences(container, fixtures)),
 };
-console.log(JSON.stringify({ status: 'passed', assertions }));
+console.log(JSON.stringify({ status: 'passed', assertions, fixtureIntentIds: fixtures.intentIds() }));

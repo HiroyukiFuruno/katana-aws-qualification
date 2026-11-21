@@ -27,7 +27,12 @@ begin
   if not found then
     raise exception using errcode = '28000', message = 'KAQ_SESSION_INVALID';
   end if;
-  select * into live_session from auth.sessions where id = session_uuid for share;
+  -- GoTrue refreshはsession UPDATEを先取りしてからuserを更新する。user SHARE保持中は待たずretryへ戻す。
+  begin
+    select * into live_session from auth.sessions where id = session_uuid for share nowait;
+  exception when lock_not_available then
+    raise exception using errcode = 'PT409', message = 'KAQ_SCOPE_RETRY';
+  end;
   if not found or live_session.user_id is distinct from user_uuid then
     raise exception using errcode = '28000', message = 'KAQ_SESSION_INVALID';
   end if;

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readdirSync, writeFileSync } from 'node:fs';
 import { run } from '../test/account-merge/commands';
+import { verifyLockingHarness } from '../test/account-merge/locking-harness';
 import { prepareFixtures } from '../test/account-merge/prepare';
 import { publicState } from '../test/account-merge/public-state';
 import { verifyPublicSchemaGuards } from '../test/account-merge/schema-guards';
@@ -120,3 +121,4 @@ try {
   writeFileSync(`${artifacts}/services.log`, `${logs.stdout ?? ''}${logs.stderr ?? ''}`);
   run('docker', [...compose, 'down', '--volumes']);
 }
+await verifyLockingHarness();

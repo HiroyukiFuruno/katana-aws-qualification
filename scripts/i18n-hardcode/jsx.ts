@@ -1,21 +1,10 @@
 import { type Ast, ast, name, nodes, type Origin, type Path } from './ast.ts';
 import { displayProp, jsxProps } from './link.ts';
+import { textualSpreadProperties } from './sink-metadata.ts';
 
 type Recur = (node: Ast | undefined, path?: Path) => Origin[];
 type Component = (opening: Ast, props: Ast) => Origin[];
 type Sink = { node: Ast | undefined; path: Path; name: string };
-
-const spreadFields = [
-  'children',
-  'label',
-  'title',
-  'placeholder',
-  'alt',
-  'aria-label',
-  'aria-description',
-  'text',
-  'message',
-];
 
 export function jsxTextSinks(opening: Ast, resolve: Recur): Sink[] {
   if (opening.type !== 'JSXOpeningElement') return [];
@@ -37,7 +26,7 @@ export function jsxTextSinks(opening: Ast, resolve: Recur): Sink[] {
   return attributes.flatMap((attribute) => {
     if (attribute.type === 'SpreadElement')
       return [
-        ...[...new Set([...spreadFields, ...values])].map((field) => ({
+        ...[...new Set([...textualSpreadProperties, ...values])].map((field) => ({
           node: ast(attribute.arguments),
           path: [field],
           name: `JSX spread ${field}`,

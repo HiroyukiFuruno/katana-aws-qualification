@@ -126,4 +126,23 @@ test('a named callback retains custom component props in its map context', () =>
       'View.tsx': `${row}const render=(item:{caption:string})=> <Row entry={item}/>;const diagnostic=[{caption:'Diagnostic copy'}].map(render);export const View=()=> <>{[{caption:42}].map(render)}</>`,
     }),
   ).toEqual([]);
+  expect(
+    scan({
+      'View.tsx': `import {usePreferences} from './preferences';const {t}=usePreferences();const items=[{caption:'Visible copy'}];function Row({entry}:{entry:{caption:string}}){return <p>{t(entry.caption)}</p>}const render=(item:typeof items[number])=> <Row entry={item}/>;export const View=()=> <>{items.map(render)}</>`,
+    }),
+  ).toEqual([]);
+});
+
+test('a named callback traces textual accessibility spread properties without translated values', () => {
+  const values = `const items=[{value:'Value copy',placeholder:'Placeholder copy',dom:'DOM value copy'}];`;
+  expect(
+    scan({
+      'View.tsx': `${values}const render=(item:typeof items[number])=> <p {...{'aria-valuetext':item.value,'aria-placeholder':item.placeholder,ariaValueText:item.dom}}/>;export const View=()=> <>{items.map(render)}</>`,
+    }),
+  ).toEqual(['Value copy', 'Placeholder copy', 'DOM value copy']);
+  expect(
+    scan({
+      'View.tsx': `import {usePreferences} from './preferences';const {t}=usePreferences();${values}const render=(item:typeof items[number])=> <p {...{'aria-valuetext':t(item.value),'aria-placeholder':t(item.placeholder),ariaValueText:t(item.dom)}}/>;export const View=()=> <>{items.map(render)}</>`,
+    }),
+  ).toEqual([]);
 });

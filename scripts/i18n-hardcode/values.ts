@@ -18,7 +18,36 @@ type Recur = (node: Ast | undefined, path: Path) => Origin[];
 
 export { arrayValues } from './array-values.ts';
 
-export function objectValues(node: Ast, path: Path, recur: Recur): Origin[] {
+export function combineOrigins(source: Source, node: Ast, left: Origin[], right: Origin[]): Origin[] {
+  return left.flatMap((first) =>
+    right.map((second) => ({ source, node, text: `${first.text}${second.text}` })),
+  );
+}
+
+export function templateValues(
+  source: Source,
+  node: Ast,
+  recur: (value: Ast | undefined, path?: Path) => Origin[],
+): Origin[] {
+  const parts: Origin[][] = [];
+  const quasis = nodes(node.quasis);
+  const expressions = nodes(node.expressions);
+  for (let index = 0; index < quasis.length; index++) {
+    parts.push(recur(quasis[index]));
+    if (index < expressions.length) parts.push(recur(expressions[index]));
+  }
+  return parts.reduce<Origin[]>(
+    (combined, part) => (combined.length ? combineOrigins(source, node, combined, part) : []),
+    [{ source, node, text: '' }],
+  );
+}
+
+export function objectValues(
+  node: Ast,
+  path: Path,
+  recur: Recur,
+  resolveScalarProperty = false,
+): Origin[] {
   let [head, ...rest] = path;
   const excluded = new Set<string>();
   while (head && typeof head !== 'string') {
@@ -32,7 +61,8 @@ export function objectValues(node: Ast, path: Path, recur: Recur): Origin[] {
     const memberKey = property(ast(member.key)) || name(member);
     if (excluded.has(memberKey)) return [];
     if (head !== '*' && head !== memberKey) return [];
-    if (!rest.length && technicalIdentifier(memberKey, ast(member.value))) return [];
+    if (!rest.length && !resolveScalarProperty && technicalIdentifier(memberKey, ast(member.value)))
+      return [];
     return recur(member.type === 'Identifier' ? member : ast(member.value), rest);
   });
 }

@@ -10,9 +10,11 @@ import {
   property,
   type Source,
   type Trace,
+  type TraceOptions,
 } from './ast.ts';
 import { callArguments, callEnvironment } from './calls.ts';
 import { concatOrigins } from './concat-fallback.ts';
+import { fixedIndex } from './concat-index.ts';
 import { knownSelectedArrayValues } from './known-array-values.ts';
 import { callable } from './link.ts';
 import { mapInputPath, mappedPaths } from './mapped-path.ts';
@@ -29,7 +31,6 @@ function selectsArray(path: Path) {
     selector
   );
 }
-
 export function traceCall(
   sources: Source[],
   source: Source,
@@ -40,30 +41,43 @@ export function traceCall(
   trace: Trace,
   environment: Map<string, Binding[]>,
   setEnvironment: (value: Map<string, Binding[]>) => void,
+  options: TraceOptions,
 ): Origin[] {
-  if (translationCall(source, node, environment))
+  if (!options.resolveComposite && translationCall(source, node, environment))
     return args(node)
       .slice(1)
       .flatMap((argument) => [...recur(argument), ...recur(argument, ['*'])]);
   const callee = ast(node.callee);
-  if (name(callee) === 'String' && errorObject(source, args(node)[0], new Set(), environment))
+  if (
+    !options.resolveComposite &&
+    name(callee) === 'String' &&
+    errorObject(source, args(node)[0], new Set(), environment)
+  )
     return [{ source, node, text: 'Untranslated String(error)', rawError: true }];
-  const direct =
-    name(callee) || (callee?.type === 'MemberExpression' ? property(ast(callee.property)) : '');
-  if (['String', 'useMemo', 'useCallback', 'useState'].includes(direct))
+  if (
+    !options.resolveComposite &&
+    ['String', 'useMemo', 'useCallback', 'useState'].includes(
+      name(callee) || (callee?.type === 'MemberExpression' ? property(ast(callee.property)) : ''),
+    )
+  )
     return args(node)
       .slice(0, 1)
       .flatMap((argument) => recur(argument));
   if (callee?.type === 'MemberExpression') {
     const method = property(ast(callee.property));
-    if (['filter', 'map', 'slice'].includes(method)) {
+    const resolveMap = method === 'map' && (!options.resolveComposite || fixedIndex(path) !== undefined);
+    if ((!options.resolveComposite || resolveMap) && ['filter', 'map', 'slice'].includes(method)) {
       const known = knownSelectedArrayValues(source, node, path, environment);
       if (known !== undefined)
-        return known.flatMap((value) => trace(value.source, value.node, [], seen));
+        return known.flatMap((value) => trace(value.source, value.node, [], seen, options));
     }
-    if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
+    if (
+      !options.resolveComposite &&
+      method === 'toString' &&
+      errorObject(source, ast(callee.object), new Set(), environment)
+    )
       return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
-    if (['map', 'flatMap'].includes(method)) {
+    if (resolveMap || (!options.resolveComposite && method === 'flatMap')) {
       const target = callable(sources, source, args(node)[0]);
       const collection = ast(callee.object);
       if (target && collection)
@@ -72,11 +86,28 @@ export function traceCall(
           const selection = method === 'map' ? mapInputPath(path) : ['*'];
           setEnvironment(callEnvironment(target, source, [collection], previous, [selection], node));
           try {
-            return trace(target.source, target.node, selected, seen);
+            return trace(
+              target.source,
+              target.node,
+              selected,
+              seen,
+              options.resolveComposite ? { ...options, invokeFunction: true } : options,
+            );
           } finally {
             setEnvironment(previous);
           }
         });
+    }
+    if (options.resolveComposite) {
+      const target = callable(sources, source, callee);
+      if (!target) return [];
+      const previous = environment;
+      setEnvironment(callEnvironment(target, source, callArguments(node), previous, [], node));
+      try {
+        return trace(target.source, target.node, path, seen, { ...options, invokeFunction: true });
+      } finally {
+        setEnvironment(previous);
+      }
     }
     if (method === 'flatMap')
       return args(node)
@@ -100,12 +131,17 @@ export function traceCall(
           : []),
       ];
   }
-  const target = callable(sources, source, callee);
-  if (!target) return recur(callee);
+  let callableNode = callee;
+  while (options.resolveComposite && callableNode?.type === 'ParenthesisExpression')
+    callableNode = ast(callableNode.expression);
+  const target = callable(sources, source, callableNode);
+  if (!target) return options.resolveComposite ? [] : recur(callee);
   const previous = environment;
   setEnvironment(callEnvironment(target, source, callArguments(node), previous, [], node));
   try {
-    return trace(target.source, target.node, path, seen);
+    if (options.resolveComposite)
+      return trace(target.source, target.node, path, seen, { ...options, invokeFunction: true });
+    return trace(target.source, target.node, path, seen, options);
   } finally {
     setEnvironment(previous);
   }

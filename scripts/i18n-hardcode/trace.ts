@@ -1,23 +1,11 @@
-import {
-  type Ast,
-  args,
-  ast,
-  type Binding,
-  key,
-  name,
-  nodes,
-  type Origin,
-  property,
-  type Source,
-  type Trace,
-} from './ast.ts';
+import { type Ast, ast, type Binding, key, nodes, type Origin, type Source, type Trace } from './ast.ts';
 import { callEnvironment, environmentKey } from './calls.ts';
 import { namespaceValues, resolveImport } from './exports.ts';
+import { jsxValues } from './jsx.ts';
 import { callable } from './link.ts';
-import { mappedPaths } from './mapped-path.ts';
 import { traceMember } from './member.ts';
-import { translationCall } from './translation.ts';
-import { arrayValues, errorObject, functionReturns, objectValues } from './values.ts';
+import { traceCall } from './trace-call.ts';
+import { arrayValues, functionReturns, objectValues } from './values.ts';
 export function createTrace(sources: Source[]): Trace {
   let environment = new Map<string, Binding[]>();
   const trace: Trace = (source, node, path = [], seen = new Set()) => {
@@ -71,77 +59,28 @@ export function createTrace(sources: Source[]): Trace {
         if (!['+', '||', '??', '&&'].includes(String(node.operator))) return [];
         return [...(node.operator === '&&' ? [] : recur(ast(node.left))), ...recur(ast(node.right))];
       }
-      case 'CallExpression': {
-        if (translationCall(source, node, environment))
-          return args(node)
-            .slice(1)
-            .flatMap((argument) => [...recur(argument), ...recur(argument, ['*'])]);
-        const callee = ast(node.callee);
-        if (name(callee) === 'String' && errorObject(source, args(node)[0], new Set(), environment)) {
-          return [{ source, node, text: 'Untranslated String(error)', rawError: true }];
-        }
-        const direct =
-          name(callee) || (callee?.type === 'MemberExpression' ? property(ast(callee.property)) : '');
-        if (['String', 'useMemo', 'useCallback', 'useState'].includes(direct))
-          return args(node)
-            .slice(0, 1)
-            .flatMap((argument) => recur(argument));
-        if (callee?.type === 'MemberExpression') {
-          const method = property(ast(callee.property));
-          if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
-            return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
-          if (['map', 'flatMap'].includes(method))
-            return args(node)
-              .slice(0, 1)
-              .flatMap((argument) =>
-                mappedPaths(path, method === 'flatMap').flatMap((selected) => recur(argument, selected)),
-              );
-          if (method === 'concat')
-            return [
-              ...recur(ast(callee.object), path),
-              ...args(node).flatMap((argument) =>
-                mappedPaths(path, true).flatMap((selected) => recur(argument, selected)),
-              ),
-            ];
-          if (
-            [
-              'filter',
-              'find',
-              'slice',
-              'join',
-              'toUpperCase',
-              'toLowerCase',
-              'trim',
-              'replace',
-            ].includes(method)
-          ) {
-            return [
-              ...recur(ast(callee.object), ['find', 'join'].includes(method) ? ['*', ...path] : path),
-              ...(['join', 'replace'].includes(method)
-                ? args(node)
-                    .slice(method === 'replace' ? 1 : 0)
-                    .flatMap((argument) => recur(argument))
-                : []),
-            ];
-          }
-        }
-        const target = callable(sources, source, callee);
-        if (target) {
-          const previous = environment;
-          environment = callEnvironment(target, source, args(node), previous);
-          try {
-            return trace(target.source, target.node, path, nextSeen);
-          } finally {
-            environment = previous;
-          }
-        }
-        return recur(callee);
-      }
+      case 'CallExpression':
+        return traceCall(sources, source, node, path, nextSeen, recur, trace, environment, (value) => {
+          environment = value;
+        });
       case 'ArrowFunctionExpression':
       case 'FunctionExpression':
       case 'FunctionDeclaration': {
         return functionReturns(node, recur);
       }
+      case 'JSXElement':
+      case 'JSXFragment':
+        return jsxValues(node, recur, (opening, props) => {
+          const target = callable(sources, source, ast(opening.name));
+          if (!target) return [];
+          const previous = environment;
+          environment = callEnvironment(target, source, [props], previous);
+          try {
+            return trace(target.source, target.node, path, nextSeen);
+          } finally {
+            environment = previous;
+          }
+        });
       default:
         return [];
     }

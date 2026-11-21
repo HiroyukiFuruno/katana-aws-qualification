@@ -53,6 +53,7 @@ test('linking a second authenticated OIDC identity preserves the account and per
   await page.getByLabel('Password', { exact: true }).fill('integration-only');
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
   await expect(page).toHaveURL(/\/ja\/dashboard\/$/);
+  await page.goto('/ja/account/settings/');
   await expect(page.getByRole('button', { name: '連携解除', exact: true })).toHaveCount(2);
   const current = await page.evaluate(
     () => JSON.parse(localStorage.getItem('kaq.auth.v1') ?? '{}').user.id,

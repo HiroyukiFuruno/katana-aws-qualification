@@ -1,4 +1,4 @@
-import { type Ast, args, ast, bind, key, nodes, property, type Source, walk } from './ast.ts';
+import { type Ast, ast, bind, key, nodes, property, type Source, walk } from './ast.ts';
 import { resolveExport } from './exports.ts';
 import { namespaceSource } from './namespace.ts';
 import { importedSource } from './sources.ts';
@@ -36,36 +36,25 @@ export function parameters(node: Ast) {
   return nodes(node.params);
 }
 
+export function jsxProps(node: Ast): Ast | undefined {
+  if (node.type !== 'JSXOpeningElement') return undefined;
+  const properties = nodes(node.attributes).flatMap((attribute) => {
+    if (attribute.type === 'SpreadElement') return [attribute];
+    if (attribute.type !== 'JSXAttribute') return [];
+    const value = ast(attribute.value);
+    return value ? [{ type: 'KeyValueProperty', key: ast(attribute.name), value }] : [];
+  });
+  return { type: 'ObjectExpression', span: node.span, properties };
+}
+
 export function linkSources(sources: Source[]) {
   for (const source of sources)
     walk(source.ast, (node) => {
-      if (node.type === 'CallExpression') {
-        const callee = ast(node.callee);
-        if (callee?.type !== 'MemberExpression' || property(ast(callee.property)) !== 'map') return;
-        const target = callable(sources, source, args(node)[0]);
-        const parameter = target && parameters(target.node)[0];
-        const collection = ast(callee.object);
-        if (target && parameter && collection) bind(target.source, parameter, collection, ['*'], source);
-        return;
-      }
       if (node.type !== 'JSXOpeningElement') return;
       const target = callable(sources, source, ast(node.name));
       const parameter = target && parameters(target.node)[0];
-      if (!target || !parameter) return;
-      const properties = nodes(node.attributes).flatMap((attribute) => {
-        if (attribute.type === 'SpreadElement') return [attribute];
-        if (attribute.type !== 'JSXAttribute') return [];
-        const value = ast(attribute.value);
-        if (!value) return [];
-        return [{ type: 'KeyValueProperty', key: ast(attribute.name), value }];
-      });
-      bind(
-        target.source,
-        parameter,
-        { type: 'ObjectExpression', span: node.span, properties },
-        [],
-        source,
-      );
+      const properties = jsxProps(node);
+      if (target && parameter && properties) bind(target.source, parameter, properties, [], source);
     });
 }
 

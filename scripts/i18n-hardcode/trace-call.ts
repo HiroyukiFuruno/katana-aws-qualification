@@ -1,0 +1,98 @@
+import {
+  type Ast,
+  args,
+  ast,
+  type Binding,
+  name,
+  type Origin,
+  type Path,
+  property,
+  type Source,
+  type Trace,
+} from './ast.ts';
+import { callEnvironment } from './calls.ts';
+import { knownArrayIndexOccupied } from './concat-index.ts';
+import { callable } from './link.ts';
+import { mappedPaths } from './mapped-path.ts';
+import { translationCall } from './translation.ts';
+import { errorObject } from './values.ts';
+
+export function traceCall(
+  sources: Source[],
+  source: Source,
+  node: Ast,
+  path: Path,
+  seen: Set<string>,
+  recur: (value: Ast | undefined, nextPath?: Path) => Origin[],
+  trace: Trace,
+  environment: Map<string, Binding[]>,
+  setEnvironment: (value: Map<string, Binding[]>) => void,
+): Origin[] {
+  if (translationCall(source, node, environment))
+    return args(node)
+      .slice(1)
+      .flatMap((argument) => [...recur(argument), ...recur(argument, ['*'])]);
+  const callee = ast(node.callee);
+  if (name(callee) === 'String' && errorObject(source, args(node)[0], new Set(), environment))
+    return [{ source, node, text: 'Untranslated String(error)', rawError: true }];
+  const direct =
+    name(callee) || (callee?.type === 'MemberExpression' ? property(ast(callee.property)) : '');
+  if (['String', 'useMemo', 'useCallback', 'useState'].includes(direct))
+    return args(node)
+      .slice(0, 1)
+      .flatMap((argument) => recur(argument));
+  if (callee?.type === 'MemberExpression') {
+    const method = property(ast(callee.property));
+    if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
+      return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
+    if (['map', 'flatMap'].includes(method)) {
+      const target = callable(sources, source, args(node)[0]);
+      const collection = ast(callee.object);
+      if (target && collection)
+        return mappedPaths(path, method === 'flatMap').flatMap((selected) => {
+          const previous = environment;
+          setEnvironment(callEnvironment(target, source, [collection], previous, [['*']]));
+          try {
+            return trace(target.source, target.node, selected, seen);
+          } finally {
+            setEnvironment(previous);
+          }
+        });
+    }
+    if (method === 'flatMap')
+      return args(node)
+        .slice(0, 1)
+        .flatMap((argument) => mappedPaths(path, true).flatMap((selected) => recur(argument, selected)));
+    if (method === 'concat')
+      return [
+        ...recur(ast(callee.object), path),
+        ...(knownArrayIndexOccupied(source, ast(callee.object), path, environment)
+          ? []
+          : args(node).flatMap((argument) =>
+              mappedPaths(path, true).flatMap((selected) => recur(argument, selected)),
+            )),
+      ];
+    if (
+      ['filter', 'find', 'slice', 'join', 'toUpperCase', 'toLowerCase', 'trim', 'replace'].includes(
+        method,
+      )
+    )
+      return [
+        ...recur(ast(callee.object), ['find', 'join'].includes(method) ? ['*', ...path] : path),
+        ...(['join', 'replace'].includes(method)
+          ? args(node)
+              .slice(method === 'replace' ? 1 : 0)
+              .flatMap((argument) => recur(argument))
+          : []),
+      ];
+  }
+  const target = callable(sources, source, callee);
+  if (!target) return recur(callee);
+  const previous = environment;
+  setEnvironment(callEnvironment(target, source, args(node), previous));
+  try {
+    return trace(target.source, target.node, path, seen);
+  } finally {
+    setEnvironment(previous);
+  }
+}

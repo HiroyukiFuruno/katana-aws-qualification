@@ -2,7 +2,7 @@ import { useHomePath } from './auth/AccountNavigation';
 import { openCookieSettings } from './CookieConsent';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
-import { SiteAd } from './SiteAd';
+import { SiteAd, SiteAdVisibilityButton } from './SiteAd';
 
 export function SiteFooter({ replaceAdOnMobile = false }: { replaceAdOnMobile?: boolean }) {
   const { t, locale } = usePreferences();
@@ -19,6 +19,7 @@ export function SiteFooter({ replaceAdOnMobile = false }: { replaceAdOnMobile?: 
           <button type="button" onClick={openCookieSettings}>
             {t('cookieTitle')}
           </button>
+          <SiteAdVisibilityButton />
           <a
             href={`https://katana-series.katana-projects.org${localePath(locale)}`}
             target="_blank"

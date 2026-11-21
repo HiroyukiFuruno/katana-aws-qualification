@@ -3,19 +3,24 @@ import { DashboardPage } from '../dashboard/DashboardPage';
 import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
 import { AccountBenefits } from './AccountBenefits';
+import { AccountSettings } from './AccountSettings';
 import { useAccount } from './AuthContext';
-import { dashboardPath } from './navigation';
+import { accountSettingsPath, dashboardPath } from './navigation';
 import { ProviderButtons } from './ProviderButtons';
 
-export function AccountPages({ page }: { page: string }) {
+export function AccountPages({ page, hash }: { page: string; hash: string }) {
   const { state, service } = useAccount();
   const { locale, t } = usePreferences();
   const loggedIn = state.status === 'ready' && state.account !== null;
   const microsoftEnabled = service?.providers.some((provider) => provider.id === 'microsoft') === true;
 
+  const legacySettings = page === 'dashboard' && hash === '#account-settings';
   useEffect(() => {
+    if (legacySettings) location.replace(accountSettingsPath(locale));
     if (page === 'login' && loggedIn) location.replace(dashboardPath(locale));
-  }, [page, loggedIn, locale]);
+  }, [legacySettings, page, loggedIn, locale]);
+
+  if (page === 'account/settings' || legacySettings) return <AccountSettings />;
 
   if (page === 'dashboard' && state.status !== 'loading' && state.status !== 'error')
     return <DashboardPage />;

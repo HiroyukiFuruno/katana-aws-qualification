@@ -1,4 +1,4 @@
-import { type Ast, type Binding, bind, type Source } from './ast.ts';
+import { type Ast, type Binding, bind, type Path, type Source } from './ast.ts';
 import { parameters } from './link.ts';
 
 export function environmentKey(source: Source, key: string) {
@@ -10,11 +10,12 @@ export function callEnvironment(
   caller: Source,
   values: Ast[],
   previous: Map<string, Binding[]>,
+  paths: Path[] = [],
 ): Map<string, Binding[]> {
   const local: Source = { ...target.source, bindings: new Map() };
   parameters(target.node).forEach((parameter, index) => {
     const argument = values[index];
-    if (argument) bind(local, parameter, argument, [], caller);
+    if (argument) bind(local, parameter, argument, paths[index] ?? [], caller);
   });
   const result = new Map(previous);
   for (const [key, bindings] of local.bindings) result.set(environmentKey(target.source, key), bindings);

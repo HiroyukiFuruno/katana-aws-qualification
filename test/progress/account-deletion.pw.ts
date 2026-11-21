@@ -14,9 +14,14 @@ test('account deletion invokes the real handler and cascades learning records', 
     await answerCurrentQuestion(page);
     await expect.poll(() => learningEvents(session).then((rows) => rows.length)).toBe(1);
     await page.goto('/ja/dashboard/');
+    await expect(page.getByRole('heading', { name: '学習ダッシュボード' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'アカウントを削除' })).toHaveCount(0);
+    await page.goto('/ja/account/settings/');
     await setRealSession(page, session);
     await page.reload();
     await acceptNecessaryCookies(page);
+    await expect(page.getByRole('heading', { name: 'アカウント設定' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '学習ダッシュボード' })).toHaveCount(0);
     await page.getByRole('button', { name: 'アカウントを削除' }).click();
     await page.getByRole('button', { name: 'アカウントを完全に削除' }).click();
     await expect(page).toHaveURL(/\/ja\/$/);

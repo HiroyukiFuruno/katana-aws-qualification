@@ -20,7 +20,7 @@ import { PreferencesProvider, usePreferences } from './preferences';
 import { GuestStorageSettings, ProgressGate } from './progress/ProgressGate';
 import { ProgressProvider } from './progress/ProgressProvider';
 import { Roadmap } from './Roadmap';
-import { routeAt } from './routes';
+import { accountPages, routeAt } from './routes';
 import { SiteAdLayout } from './SiteAd';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
@@ -88,8 +88,8 @@ function App() {
       <SiteAdLayout show={contentAds}>
         {section === 'auth' ? (
           <AuthCallback />
-        ) : section === 'login' || section === 'dashboard' ? (
-          <AccountPages page={section} />
+        ) : accountPages.includes(route.page) ? (
+          <AccountPages page={route.page} hash={currentUrl.hash} />
         ) : selected?.course ? (
           <ProgressGate>
             <CourseApp

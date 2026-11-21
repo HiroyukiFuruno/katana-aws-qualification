@@ -3,6 +3,7 @@ import { runAdapter, signIn } from './helpers';
 
 test('real OIDC sign-in, verified session, reload, refresh, home and sign-out', async ({ page }) => {
   await signIn(page);
+  await page.goto('/ja/account/settings/');
   await expect(page.getByText('learner@example.test', { exact: true })).toBeVisible();
   const account = await runAdapter<{ id: string }>(page, 'account');
   const refreshed = await runAdapter<{ id: string }>(page, 'refresh');
@@ -11,7 +12,11 @@ test('real OIDC sign-in, verified session, reload, refresh, home and sign-out', 
   await expect(page.getByText('learner@example.test', { exact: true })).toBeVisible();
   await page.locator('header a.brand').click();
   await expect(page).toHaveURL(/\/ja\/dashboard\/$/);
-  await page.getByRole('button', { name: 'ログアウト', exact: true }).click();
+  await page.getByRole('button', { name: 'アカウントメニュー' }).click();
+  await page
+    .locator('#account-menu-links')
+    .getByRole('button', { name: 'ログアウト', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/ja\/$/);
   await page.goto('/ja/dashboard/');
   await expect(page.getByText('learner@example.test', { exact: true })).toHaveCount(0);
@@ -26,6 +31,7 @@ test('the last identity cannot be removed and a different user never inherits th
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await signIn(page);
+  await page.goto('/ja/account/settings/');
   expect(await runAdapter<boolean>(page, 'unlinkLast')).toBe(true);
   const unlink = page.getByRole('button', { name: '連携解除', exact: true });
   await expect(unlink).toBeDisabled();
@@ -47,6 +53,7 @@ test('the last identity cannot be removed and a different user never inherits th
   await expect(page).toHaveURL(/\/ja\/$/);
   await page.context().clearCookies();
   await signIn(page, 'other');
+  await page.goto('/ja/account/settings/');
   await expect(page.getByText('other@example.test', { exact: true })).toBeVisible();
   await expect(page.getByText('learner@example.test', { exact: true })).toHaveCount(0);
 });
@@ -80,7 +87,7 @@ test('untrusted cached account data is not rendered when the server rejects its 
       }),
     ),
   );
-  await page.goto('/ja/dashboard/');
+  await page.goto('/ja/account/settings/');
   await expect(page.getByText('forged@example.test', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'アカウント設定' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'アカウントを削除' })).toHaveCount(0);
 });

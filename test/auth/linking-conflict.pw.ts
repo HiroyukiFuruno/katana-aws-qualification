@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import { signIn } from './helpers';
 import { authOrigin, testKey } from './settings';
 
@@ -69,7 +69,7 @@ test('a linked identity conflict keeps the existing account and offers its dashb
   ).toBe(original);
   await page.getByRole('link', { name: 'ダッシュボード' }).click();
   await expect(page).toHaveURL(/\/ja\/dashboard\/$/);
-  await expect(page.getByRole('heading', { name: 'ダッシュボード', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^(学習)?ダッシュボード$/ })).toBeVisible();
   expect(
     await page.evaluate(() => JSON.parse(localStorage.getItem('kaq.auth.v1') ?? '{}').user.id),
   ).toBe(original);

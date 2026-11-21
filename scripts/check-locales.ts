@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile, readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
 import { publishedLocalesFor, publishedPages, routeAt } from '../src/routes.ts';
+import { translationReferences } from './i18n-references.ts';
 
 function tokens(value: string) {
   return [...value.matchAll(/\{(\w+)\}/g)].map(([, name]) => name).sort();
@@ -22,12 +24,19 @@ for (const locale of locales) {
     const value = dictionary[key];
     assert(typeof value === 'string' && value.trim(), `${key} is empty or invalid in ${locale}`);
     assert.deepEqual(tokens(value), tokens(messages.ja[key]), `${key} placeholders differ in ${locale}`);
+    if (/^cert[A-Z]\w*Name$/.test(key)) {
+      assert.equal(value, messages.en[key], `${key} must retain the shared official proper name`);
+    }
   }
 }
 
-for (const file of (await readdir('src')).filter((name) => name.endsWith('.tsx'))) {
-  const content = await readFile(`src/${file}`, 'utf8');
-  for (const [, key] of content.matchAll(/\bt\(['"]([a-zA-Z]+)['"]/g)) {
+const sources = (await readdir('src', { recursive: true, withFileTypes: true }))
+  .filter((entry) => entry.isFile() && /\.tsx?$/.test(entry.name))
+  .map((entry) => join(entry.parentPath, entry.name));
+assert(sources.length > 0, 'No UI sources checked');
+for (const file of sources) {
+  const content = await readFile(file, 'utf8');
+  for (const key of translationReferences(content, file)) {
     assert(Object.hasOwn(messages.ja, key), `${file} references missing message ${key}`);
   }
 }

@@ -11,8 +11,9 @@ export function assertProofReports(
   const target = proof.find((entry) => entry.side === 'target');
   assert.ok(source && target);
   for (const entry of proof) {
-    expect(entry.state).toBe('exchanged');
+    expect(entry.state).toBe('proved');
     expect(entry.purpose).toBe('proof');
+    expect(entry.ingestNonceRemoved).toBe(true);
     expect(entry.providerTokensStripped).toBe(true);
     expect(entry.actorUid).toBe(mainUserId);
     expect(entry.actorSessionId).toBe(source.actorSessionId);

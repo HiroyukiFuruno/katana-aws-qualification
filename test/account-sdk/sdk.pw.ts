@@ -2,38 +2,10 @@ import { writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { artifacts } from '../account-merge/settings';
 import { loginMain, mainSessionSnapshot } from './browser-fixture';
+import { authenticate } from './flow';
 import { observeSdkPage } from './observations';
 import { assertProofReports } from './proof-assertions';
 import { startSdkAdapter } from './server';
-
-async function authenticate(page: import('@playwright/test').Page, side: 'source' | 'target') {
-  const started = page.waitForResponse(
-    (response) =>
-      response.url() === 'http://127.0.0.1:54534/start' && response.request().method() === 'POST',
-  );
-  await page.getByRole('button', { name: `Authenticate ${side}`, exact: true }).click();
-  const response = await started;
-  expect(response.status()).toBe(200);
-  const startedBody: unknown = await response.json();
-  expect(startedBody).toMatchObject({ state: 'issued' });
-  expect(startedBody).toHaveProperty('authorizationUrl');
-  if (!startedBody || typeof startedBody !== 'object')
-    throw new Error('Missing native authorization URL');
-  const authorizationUrl = (startedBody as Record<string, unknown>).authorizationUrl;
-  if (typeof authorizationUrl !== 'string') throw new Error('Missing native authorization URL');
-  expect(new URL(authorizationUrl).searchParams.get('redirect_to')).toBe(
-    'http://127.0.0.1:54533/test/account-sdk/callback.html',
-  );
-  await expect(page.getByRole('status')).toHaveText('authorization_ready');
-  await page.getByRole('link', { name: 'Continue to provider', exact: true }).click();
-  if (side === 'target') {
-    await page.getByLabel('Username or email').fill('sdk-second');
-    await page.getByLabel('Password', { exact: true }).fill('integration-only');
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-  }
-  await expect(page.getByRole('status')).toHaveText('exchanged');
-  expect(page.url()).not.toMatch(/[?&](code|error)=/);
-}
 
 test('native AuthClient keeps the main session and restores two sealed real-OIDC proof legs', async ({
   browser,
@@ -48,11 +20,11 @@ test('native AuthClient keeps the main session and restores two sealed real-OIDC
     await page.goto('/test/account-sdk/browser.html');
     await expect(page.getByRole('status')).toHaveText('ready');
     const before = await mainSessionSnapshot(page);
-    await authenticate(page, 'source');
+    await authenticate(page, 'source', 'awaiting_target');
     await page.goto('/test/account-sdk/browser.html');
     await expect(page.getByRole('status')).toHaveText('ready');
     expect(await mainSessionSnapshot(page)).toEqual(before);
-    await authenticate(page, 'target');
+    await authenticate(page, 'target', 'both_proved');
     await page.goto('/test/account-sdk/browser.html');
     expect(await mainSessionSnapshot(page)).toEqual(before);
     expect(observations.pageErrors).toEqual([]);
@@ -75,7 +47,7 @@ test('native AuthClient keeps the main session and restores two sealed real-OIDC
       expect(Object.keys(reply).sort()).toEqual(
         typeof reply.authorizationUrl === 'string'
           ? ['authorizationUrl', 'expiresAt', 'legId', 'state']
-          : ['expiresAt', 'legId', 'state'],
+          : ['expiresAt', 'intentId', 'legId', 'state'],
       );
     }
     await adapter.assertNoBrowserLeak([
@@ -88,9 +60,10 @@ test('native AuthClient keeps the main session and restores two sealed real-OIDC
     ]);
     const proof = await adapter.proof();
     assertProofReports(proof, before.userId);
+    const postconditions = await adapter.verifyPostAcceptance();
     writeFileSync(
       `${artifacts}/sdk-proof.json`,
-      `${JSON.stringify({ status: 'passed', mainSession: before, proof }, null, 2)}\n`,
+      `${JSON.stringify({ status: 'passed', mainSession: before, proof, postconditions }, null, 2)}\n`,
     );
   } finally {
     observations.write();

@@ -1,9 +1,45 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { AuthClient } from '@supabase/auth-js';
 import { gatewayOrigin, testKey } from '../account-merge/settings';
 import { type Actor, literal, requiredUuid, sql } from './sql';
 
 export type Body = { side?: unknown; legId?: unknown; code?: unknown };
+
+export function trackedServer(
+  handler: (request: IncomingMessage, response: ServerResponse) => Promise<void>,
+) {
+  const pending = new Set<Promise<void>>();
+  let failed = false;
+  const server = createServer((request, response) => {
+    const task = handler(request, response);
+    pending.add(task);
+    void task.then(
+      () => pending.delete(task),
+      () => {
+        failed = true;
+        pending.delete(task);
+        response.destroy();
+      },
+    );
+  });
+  return {
+    server,
+    async drain() {
+      const closed = new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+      await Promise.allSettled([...pending]);
+      await closed;
+      if (failed) throw new Error('SDK request failed before fixture cleanup');
+    },
+  };
+}
+
+export async function listen(server: Server) {
+  await new Promise<void>((resolve, reject) =>
+    server.listen(54534, '127.0.0.1', (error?: Error) => (error ? reject(error) : resolve())),
+  );
+}
 
 export function send(response: ServerResponse, status: number, value: object) {
   response.writeHead(status, {

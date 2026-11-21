@@ -1,8 +1,12 @@
 import { RuntimeBoundary } from './boundary.ts';
 import { fixedContext, writeGuard } from './context.ts';
-import { decryptSlots, encryptSlots } from './crypto.ts';
+import { decryptEnvelope, encryptEnvelope } from './crypto.ts';
+import { ensureLive } from './liveness.ts';
+import * as EnvelopeNonce from './nonce.ts';
+import { copyHash, matchHash, type NonceAccess } from './nonce.ts';
 import { RuntimeMutationQueue } from './serial.ts';
-import { allowedKey, failure, type Slots, sanitize } from './slots.ts';
+import { type Envelope, failure, sanitize, validateKey } from './slots.ts';
+import { terminateRuntime } from './termination.ts';
 import type { RuntimeContext, RuntimeRecord, RuntimeStorageOptions } from './types.ts';
 
 export {
@@ -25,19 +29,19 @@ export class EncryptedPkceStorage {
 
   async getItem(key: string): Promise<string | null> {
     return this.boundary.run(async () => {
-      this.validateKey(key);
-      return (await this.readSlots()).slots[key] ?? null;
+      validateKey(this.context, key);
+      return (await this.readEnvelope()).envelope.slots[key] ?? null;
     });
   }
 
   async setItem(key: string, value: string): Promise<void> {
     return this.mutations.run(() =>
       this.boundary.run(async () => {
-        this.validateKey(key);
-        const current = await this.readSlots();
+        validateKey(this.context, key);
+        const current = await this.readEnvelope();
         await this.write(current.record, {
-          ...current.slots,
-          [key]: sanitize(key, this.context.storageKey, value),
+          ...current.envelope,
+          slots: { ...current.envelope.slots, [key]: sanitize(key, this.context.storageKey, value) },
         });
       }),
     );
@@ -46,78 +50,86 @@ export class EncryptedPkceStorage {
   async removeItem(key: string): Promise<void> {
     return this.mutations.run(() =>
       this.boundary.run(async () => {
-        this.validateKey(key);
-        const current = await this.readSlots();
-        if (!(key in current.slots)) return;
-        const { [key]: _, ...slots } = current.slots;
-        await this.write(current.record, slots);
+        validateKey(this.context, key);
+        const current = await this.readEnvelope();
+        if (!(key in current.envelope.slots)) return;
+        const { [key]: _, ...slots } = current.envelope.slots;
+        await this.write(current.record, { ...current.envelope, slots });
       }),
     );
   }
 
   async terminate(): Promise<void> {
-    return this.mutations.run(() =>
-      this.boundary.run(async () => {
-        const revision = await this.boundary.dependency(() =>
-          this.options.repository.readRevisionForCleanup(this.context.legId, writeGuard(this.context)),
-        );
-        const result = await this.boundary.dependency(() =>
-          this.options.repository.deleteIfRevision(
-            this.context.legId,
-            revision,
-            writeGuard(this.context),
-          ),
-        );
-        if (result === 'conflict') throw failure('cas_conflict');
+    const result = await terminateRuntime({
+      legId: this.context.legId,
+      guard: writeGuard(this.context),
+      repository: this.options.repository,
+      complete: () => {
         this.terminated = true;
-      }),
-    );
+      },
+      run: (operation) => this.boundary.run(async () => this.boundary.dependency(operation)),
+      mutate: (operation) => this.mutations.run(operation),
+    });
+    if (result === 'conflict') throw failure('cas_conflict');
   }
 
-  private validateKey(key: string): void {
-    if (!allowedKey(this.context, key)) throw failure('invalid_storage_key');
+  async initialize(ingestNonce: string, expectedHash: Uint8Array): Promise<void> {
+    return EnvelopeNonce.initialize(this.nonceAccess(), ingestNonce, copyHash(expectedHash));
+  }
+
+  async getIngestNonce(expectedHash: Uint8Array): Promise<string> {
+    return EnvelopeNonce.get(this.nonceAccess(), copyHash(expectedHash));
+  }
+
+  async clearIngestNonce(expectedHash: Uint8Array): Promise<void> {
+    return EnvelopeNonce.clear(this.nonceAccess(), copyHash(expectedHash));
+  }
+
+  private nonceAccess(): NonceAccess {
+    return {
+      context: this.context,
+      run: (operation) => this.boundary.run(operation),
+      mutate: (operation) => this.mutations.run(operation),
+      read: () => this.readEnvelope(),
+      write: (record, envelope) => this.write(record, envelope),
+      matches: (nonce, expected) => matchHash(this.options.crypto, () => this.live(), nonce, expected),
+    };
   }
 
   private async live(): Promise<void> {
-    const first = this.boundary.now();
-    if (this.terminated || first >= this.context.expiresAt)
-      throw failure(this.terminated ? 'terminal' : 'expired');
-    if (await this.boundary.dependency(() => this.options.repository.isTerminal(this.context.legId)))
-      throw failure('terminal');
-    const second = this.boundary.now();
-    if (this.terminated || second >= this.context.expiresAt)
-      throw failure(this.terminated ? 'terminal' : 'expired');
+    const now = () => this.boundary.now();
+    return ensureLive(now, this.context, () => this.terminated, this.options.repository);
   }
 
-  private async readSlots(): Promise<{ record: RuntimeRecord | null; slots: Slots }> {
+  private async readEnvelope(): Promise<{ record: RuntimeRecord | null; envelope: Envelope }> {
     await this.live();
     const record = await this.boundary.dependency(() =>
       this.options.repository.read(this.context.legId),
     );
     await this.live();
-    if (!record) return { record: null, slots: {} };
+    if (!record) return { record: null, envelope: { slots: {} } };
     if (record.expiresAt !== this.context.expiresAt) throw failure('invalid_context');
     const material = await this.boundary.dependency(() =>
       this.options.keyring.resolve(record.keyVersion),
     );
     await this.live();
     if (!material) throw failure('unknown_key');
-    const slots = await decryptSlots(this.options.crypto, this.context, record, material);
+    const envelope = await decryptEnvelope(this.options.crypto, this.context, record, material);
     await this.live();
-    return { record, slots };
+    return { record, envelope };
   }
 
-  private async write(current: RuntimeRecord | null, slots: Slots): Promise<void> {
+  private async write(current: RuntimeRecord | null, envelope: Envelope): Promise<void> {
     await this.live();
     const active = await this.boundary.dependency(() => this.options.keyring.active());
     await this.live();
-    const next = await encryptSlots(
+    const next = await encryptEnvelope(
       this.options.crypto,
       this.context,
       (current?.revision ?? -1) + 1,
       active.version,
       active.bytes,
-      slots,
+      envelope,
     );
     await this.live();
     if (

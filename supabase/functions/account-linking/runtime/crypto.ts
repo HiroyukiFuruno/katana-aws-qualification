@@ -1,26 +1,8 @@
-import { failure, isSlots, localFailure, type Slots } from './slots.ts';
+import { type Envelope, failure, isEnvelope, type Slots } from './slots.ts';
 import type { RuntimeContext, RuntimeRecord } from './types.ts';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
-
-function aad(context: RuntimeContext, keyVersion: string): ArrayBuffer {
-  return bytes(
-    encoder.encode(
-      JSON.stringify([
-        'kaq-proof-runtime-v1',
-        keyVersion,
-        context.purpose,
-        context.intentId,
-        context.legId,
-        context.attempt,
-        context.storageKey,
-        context.issuedAt,
-        context.expiresAt,
-      ]),
-    ),
-  );
-}
 
 function bytes(value: Uint8Array): ArrayBuffer {
   const copy = new Uint8Array(value.byteLength);
@@ -33,25 +15,28 @@ async function key(crypto: Crypto, material: Uint8Array, usages: KeyUsage[]): Pr
   return crypto.subtle.importKey('raw', bytes(material), { name: 'AES-GCM' }, false, usages);
 }
 
-export async function decryptSlots(
+export async function decryptEnvelope(
   crypto: Crypto,
   context: RuntimeContext,
   record: RuntimeRecord,
   material: Uint8Array,
-): Promise<Slots> {
+): Promise<Envelope> {
   try {
     if (!validRecord(record)) throw failure('invalid_context');
     const plaintext = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: bytes(record.nonce), additionalData: aad(context, record.keyVersion) },
+      {
+        name: 'AES-GCM',
+        iv: bytes(record.nonce),
+        additionalData: associatedData(context, record.keyVersion),
+      },
       await key(crypto, material, ['decrypt']),
       bytes(record.ciphertext),
     );
     const parsed: unknown = JSON.parse(decoder.decode(plaintext));
-    if (typeof parsed !== 'object' || parsed === null || !('slots' in parsed) || !isSlots(parsed.slots))
-      throw failure('decrypt_failed');
-    return parsed.slots;
-  } catch (error) {
-    throw localFailure(error) ?? failure('decrypt_failed');
+    if (!isEnvelope(parsed)) throw failure('decrypt_failed');
+    return parsed;
+  } catch {
+    throw failure('decrypt_failed');
   }
 }
 
@@ -68,6 +53,46 @@ function validRecord(record: RuntimeRecord): boolean {
   );
 }
 
+export async function encryptEnvelope(
+  crypto: Crypto,
+  context: RuntimeContext,
+  revision: number,
+  keyVersion: string,
+  material: Uint8Array,
+  envelope: Envelope,
+): Promise<RuntimeRecord> {
+  try {
+    if (
+      !Number.isSafeInteger(revision) ||
+      revision < 0 ||
+      !/^[A-Za-z0-9._-]{1,64}$/.test(keyVersion) ||
+      !isEnvelope(envelope)
+    )
+      throw failure('invalid_key');
+    const nonce = crypto.getRandomValues(new Uint8Array(12));
+    const plaintext = bytes(encoder.encode(JSON.stringify(envelope)));
+    const ciphertext = new Uint8Array(
+      await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: bytes(nonce), additionalData: associatedData(context, keyVersion) },
+        await key(crypto, material, ['encrypt']),
+        plaintext,
+      ),
+    );
+    return { revision, keyVersion, nonce, ciphertext, expiresAt: context.expiresAt };
+  } catch {
+    throw failure('invalid_key');
+  }
+}
+
+export async function decryptSlots(
+  crypto: Crypto,
+  context: RuntimeContext,
+  record: RuntimeRecord,
+  material: Uint8Array,
+): Promise<Slots> {
+  return (await decryptEnvelope(crypto, context, record, material)).slots;
+}
+
 export async function encryptSlots(
   crypto: Crypto,
   context: RuntimeContext,
@@ -76,20 +101,29 @@ export async function encryptSlots(
   material: Uint8Array,
   slots: Slots,
 ): Promise<RuntimeRecord> {
-  try {
-    if (!Number.isSafeInteger(revision) || revision < 0 || !/^[A-Za-z0-9._-]{1,64}$/.test(keyVersion))
-      throw failure('invalid_key');
-    const nonce = crypto.getRandomValues(new Uint8Array(12));
-    const plaintext = bytes(encoder.encode(JSON.stringify({ slots })));
-    const ciphertext = new Uint8Array(
-      await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: bytes(nonce), additionalData: aad(context, keyVersion) },
-        await key(crypto, material, ['encrypt']),
-        plaintext,
-      ),
-    );
-    return { revision, keyVersion, nonce, ciphertext, expiresAt: context.expiresAt };
-  } catch (error) {
-    throw localFailure(error) ?? failure('invalid_key');
-  }
+  return encryptEnvelope(crypto, context, revision, keyVersion, material, { slots });
 }
+
+export async function promoteEnvelope(
+  crypto: Crypto,
+  from: RuntimeContext,
+  to: RuntimeContext,
+  record: RuntimeRecord,
+  oldMaterial: Uint8Array,
+  revision: number,
+  keyVersion: string,
+  newMaterial: Uint8Array,
+): Promise<RuntimeRecord> {
+  const [source, target] = promotionContexts(from, to, record, revision);
+  return encryptEnvelope(
+    crypto,
+    target,
+    revision,
+    keyVersion,
+    newMaterial,
+    await decryptEnvelope(crypto, source, record, oldMaterial),
+  );
+}
+
+import { promotionContexts } from './context.ts';
+import { associatedData } from './crypto-aad.ts';

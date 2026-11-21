@@ -1,6 +1,7 @@
 import { type RuntimeContext, RuntimeStorageError } from './types.ts';
 
 export type Slots = { [key: string]: string };
+export type Envelope = { slots: Slots; ingestNonce?: string };
 const localFailures = new WeakMap<RuntimeStorageError, RuntimeStorageError['code']>();
 
 export function failure(code: RuntimeStorageError['code']): RuntimeStorageError {
@@ -18,7 +19,22 @@ export function isSlots(value: unknown): value is Slots {
   return (
     typeof value === 'object' &&
     value !== null &&
+    !Array.isArray(value) &&
     Object.values(value).every((entry) => typeof entry === 'string')
+  );
+}
+
+export function isEnvelope(value: unknown): value is Envelope {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const envelope = value as { slots?: unknown; ingestNonce?: unknown };
+  if ('ingestNonce' in envelope && !Object.hasOwn(envelope, 'ingestNonce')) return false;
+  const keys = Object.keys(envelope);
+  const nonce = envelope.ingestNonce;
+  return (
+    Object.hasOwn(envelope, 'slots') &&
+    keys.every((key) => key === 'slots' || key === 'ingestNonce') &&
+    isSlots(envelope.slots) &&
+    (nonce === undefined || (typeof nonce === 'string' && /^[0-9a-f]{64}$/.test(nonce)))
   );
 }
 
@@ -31,6 +47,10 @@ export function allowedKey(context: RuntimeContext, key: string): boolean {
     key === `${base}-user` ||
     new RegExp(`^${escapePattern(base)}-flow-[A-Za-z0-9_-]{8,64}-code-verifier$`).test(key)
   );
+}
+
+export function validateKey(context: RuntimeContext, key: string): void {
+  if (!allowedKey(context, key)) throw failure('invalid_storage_key');
 }
 
 function escapePattern(value: string): string {

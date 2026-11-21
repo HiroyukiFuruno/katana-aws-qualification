@@ -66,6 +66,8 @@ export type RuntimeStorageFailure =
   | 'invalid_key'
   | 'invalid_storage_key'
   | 'malformed_value'
+  | 'nonce_mismatch'
+  | 'nonce_missing'
   | 'repository_failed'
   | 'terminal'
   | 'unknown_key';

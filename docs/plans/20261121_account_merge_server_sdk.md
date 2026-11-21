@@ -43,6 +43,14 @@
 
 ## 検証結果と公開待ち
 
-公式SDKの26 UT・128 assertionと、実2 OIDCを含む標準統合全工程が成功。新workerで同じmain UID/SIDのままsource/targetの別fresh sessionを復元し、provider tokenを受け取った2応答から保存前に除去した。既存publicとauth/private全36表のhashが復元し、追加auditは専用2 UIDの6行だけ。
+公式SDKの35 UT・171 assertionと、実2 OIDCを含む標準統合全工程が成功。新workerで同じmain UID/SIDのままsource/targetの別fresh sessionを復元し、provider tokenを受け取った2応答から保存前に除去した。既存publicとauth/private全36表のhashが復元し、正常系の追加auditは専用2 UIDの6行、失敗系は別の専用1 UIDの2行だけで、いずれも保護行のhashが復元した。
 
 検査記録はtest-results/account-merge/server-sdk-{final-focused.log,parent-standard-protected.log,core-final-review.md,fixture-final-review.md}。CIの支払い/利用上限制限は解除されておらず、公開とIssue58全体の完了は未達。
+
+## PR93のレビュー指摘への対応
+
+- [/] P2 / 4651352370: claim後の初期化・verifier保存失敗で、古いleg revisionをfailAuthorizationへ渡す。元のleg/intent/attemptを再確認して最新canonical revisionで失敗を記録し、取消し・昇格・置換後は変更しない。UTで修正前RED/修正後GREEN、実DBでは専用runtime revisionを上限へ進めてSDK書込みを実際に失敗させ、failed確定と同intentの通常の次leg発行成功を確認する。HTTP/storageのMock、実JWTの短期限化は行わない。
+- [/] 独立review P1: 準備完了COMMIT後の応答喪失では、preparedをfailedへ戻さず、既存statusと明示restartだけを返す。新しいPKCEやURLを自動発行しない。
+- [/] 独立fixture review P1: 失敗応答もDBのcanonicalなID/期限/状態/固定codeとの完全一致で検査し、実claim時に保管されたnonceをbrowser storage/公開応答/console/request URLへ漏らさないことを照合する。成功proofが存在しない失敗経路で、成功proof必須の検査を誤用しない。
+
+再検査: server-sdk-auth-failure-canonical-red.logの修正前8失敗と、server-sdk-prepared-authorization-red.logの修正前1失敗を保持。修正後SDK35件・171 assertion、server-sdk-authorization-privacy-final-standard.logの全工程、独立core/fixtureレビューを回収した。実DBではfailed/revision2と、置換指定なしの次leg/attempt2発行が成功し、失敗応答もcanonical値との完全一致・実nonce非露出を検査した。

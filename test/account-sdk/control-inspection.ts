@@ -5,11 +5,13 @@ import { literal, requiredUuid, sql } from './sql';
 
 export class SdkInspection {
   private readonly secrets = new Set<string>();
+  private codeExchangeRequests = 0;
   private providerTokenResponses = 0;
 
   constructor(private readonly operations: Map<string, Operation>) {}
 
   readonly fetch: typeof globalThis.fetch = async (input, init) => {
+    if (String(input).includes('/token?grant_type=pkce')) this.codeExchangeRequests += 1;
     const response = await globalThis.fetch(input, init);
     if (String(input).includes('/token?grant_type=pkce') && response.ok) {
       const value: unknown = await response.clone().json();
@@ -28,12 +30,23 @@ export class SdkInspection {
 
   async prepared(operation: Operation, current: ServerSdkLeg) {
     const encrypted = storage(operation.actor, current);
-    this.secrets.add(await encrypted.getIngestNonce(current.nonceHash));
+    await this.captureAuthorizationNonce(operation, current);
     const value = await encrypted.getItem(`${current.runtime.storageKey}-code-verifier`);
     if (!value) throw new Error('SDK verifier was not durably prepared');
     const verifier: unknown = JSON.parse(value);
     if (typeof verifier !== 'string' || !verifier) throw new Error('invalid SDK verifier');
     this.secrets.add(verifier.split('/')[0]);
+  }
+
+  async captureAuthorizationNonce(operation: Operation, current: ServerSdkLeg) {
+    this.secrets.add(await storage(operation.actor, current).getIngestNonce(current.nonceHash));
+  }
+
+  assertCapturedSecrets(values: string[]) {
+    if (this.secrets.size === 0)
+      throw new Error('Require actual server secrets for privacy verification');
+    if ([...this.secrets].some((secret) => values.some((value) => value.includes(secret))))
+      throw new Error('browser leaked a server SDK secret');
   }
 
   async proof() {
@@ -84,7 +97,10 @@ export class SdkInspection {
     await this.proof();
     if (this.providerTokenResponses !== 2)
       throw new Error('Require two actual provider-token responses');
-    if ([...this.secrets].some((secret) => values.some((value) => value.includes(secret))))
-      throw new Error('browser leaked a server SDK secret');
+    this.assertCapturedSecrets(values);
+  }
+
+  assertNoCodeExchange() {
+    if (this.codeExchangeRequests !== 0) throw new Error('authorization failure exchanged a code');
   }
 }

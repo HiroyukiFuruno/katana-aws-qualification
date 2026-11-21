@@ -4,6 +4,11 @@ import type {
   ServerSdkLeg,
   ServerSdkStatus,
 } from '../../supabase/functions/account-linking/server/sdk-worker.types.ts';
+import {
+  type AuthorizationFailure,
+  injectRuntimeRevisionOverflow,
+  verifyAuthorizationFailure,
+} from './authorization-failure';
 import { hex, leg, type Operation, reply, sourceIntent, targetIntent } from './control-fixture';
 import { SdkInspection } from './control-inspection';
 import { promote, SdkRepository } from './runtime';
@@ -41,12 +46,16 @@ export class SdkControl implements ServerSdkControl<Operation> {
       operation.actor,
       `select kaq_private.claim_authorization(${literal(intent.id)}::uuid,${literal(intent.secret)},${literal(current.id)}::uuid,${current.revision},${runtime.revision},decode(${literal(hex(current.nonceHash))},'hex'))::text;`,
     );
-    operation.claimId = value.claim_id;
+    if (value.claim_id) operation.claimId = value.claim_id;
+    if (value.claimed === true && value.claim_id && this.injectAuthorizationFailure) {
+      await this.inspection.captureAuthorizationNonce(operation, current);
+      injectRuntimeRevisionOverflow(current.id);
+    }
     return { claimed: value.claimed === true, ...(value.claim_id ? { claimId: value.claim_id } : {}) };
   }
 
   async completeAuthorization(current: ServerSdkLeg, claimId: string): Promise<ServerSdkLeg> {
-    const operation = this.operationByClaim(claimId);
+    const operation = this.operation(current.id);
     await this.inspection.prepared(operation, current);
     const runtime = await this.runtime(current);
     const intent = this.intent(operation);
@@ -87,6 +96,12 @@ export class SdkControl implements ServerSdkControl<Operation> {
   assertNoBrowserLeak(values: string[]) {
     return this.inspection.assertNoBrowserLeak(values);
   }
+  assertNoCodeExchange() {
+    return this.inspection.assertNoCodeExchange();
+  }
+  assertAuthorizationFailurePrivacy(values: string[]) {
+    this.inspection.assertCapturedSecrets(values);
+  }
   get fetch(): typeof globalThis.fetch {
     return this.inspection.fetch;
   }
@@ -94,15 +109,14 @@ export class SdkControl implements ServerSdkControl<Operation> {
   constructor(
     private readonly operations: Map<string, Operation>,
     private readonly inspection = new SdkInspection(operations),
+    private readonly injectAuthorizationFailure = false,
   ) {}
+  verifyAuthorizationFailure(): AuthorizationFailure {
+    return verifyAuthorizationFailure(this.operations);
+  }
   private operation(legId: string) {
     const value = this.operations.get(legId);
     if (!value) throw new Error('unknown SDK operation');
-    return value;
-  }
-  private operationByClaim(claimId: string) {
-    const value = [...this.operations.values()].find((item) => item.claimId === claimId);
-    if (!value) throw new Error('unknown authorization claim');
     return value;
   }
   private intent(operation: Operation) {

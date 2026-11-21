@@ -13,6 +13,7 @@ type CleanupInput = {
   protectedBaseline: string;
   learnerBaseline: string;
   auditBaseline: ReturnType<typeof auditSnapshot>;
+  receiptFilename?: string;
 };
 
 export async function cleanup({
@@ -22,6 +23,7 @@ export async function cleanup({
   protectedBaseline,
   learnerBaseline,
   auditBaseline,
+  receiptFilename = 'sdk-cleanup.json',
 }: CleanupInput) {
   try {
     const intentIds = [
@@ -68,7 +70,9 @@ export async function cleanup({
       learnerFinal,
       learnerUnchanged: learnerBaseline === learnerFinal,
     };
-    writeFileSync(`${artifacts}/sdk-cleanup.json`, `${JSON.stringify(receipt, null, 2)}\n`);
+    if (!/^sdk(?:-[a-z]+)*-cleanup\.json$/.test(receiptFilename))
+      throw new Error('Invalid SDK cleanup receipt filename');
+    writeFileSync(`${artifacts}/${receiptFilename}`, `${JSON.stringify(receipt, null, 2)}\n`);
     if (
       receipt.remainingIntents !== 0 ||
       !receipt.publicUnchanged ||

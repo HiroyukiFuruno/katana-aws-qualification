@@ -10,7 +10,7 @@ import {
   stored,
   usable,
 } from './sdk-worker-internal.ts';
-import { recoverExchange } from './sdk-worker-recovery.ts';
+import { recordAuthorizationFailure, recoverExchange } from './sdk-worker-recovery.ts';
 
 export type { ServerSdkControl, ServerSdkOptions, ServerSdkResult } from './sdk-worker.types.ts';
 
@@ -24,14 +24,6 @@ function indeterminate(error: unknown): boolean {
 
 export class ServerSdkWorker<Request> {
   constructor(private readonly options: ServerSdkOptions<Request>) {}
-
-  private async authorizationFailure(leg: ServerSdkLeg, claimId: string): Promise<ServerSdkResult> {
-    try {
-      return result(await this.options.control.failAuthorization(leg, claimId), 'authorization_failed');
-    } catch {
-      return result(leg, 'authorization_failed');
-    }
-  }
 
   private async exchangeFailure(leg: ServerSdkLeg, unknown: boolean): Promise<ServerSdkResult> {
     try {
@@ -78,7 +70,9 @@ export class ServerSdkWorker<Request> {
         : result(completed);
     } catch {
       if (!leg) return { legId: '', state: 'failed', expiresAt: 0, failure: 'runtime_failed' };
-      return claimId ? this.authorizationFailure(leg, claimId) : result(leg, 'runtime_failed');
+      return claimId
+        ? recordAuthorizationFailure(this.options, request, leg, claimId)
+        : result(leg, 'runtime_failed');
     }
   }
 

@@ -53,7 +53,7 @@ test('missing or mismatched source expected UID cannot promote a session', async
 });
 
 test('control failures and native SDK failures expose only fixed public failures', async () => {
-  const h = harness();
+  const h = harness(leg({ revision: 0, authorizationPrepared: false }));
   h.control.failAuthorization = async () => {
     throw new Error('authorization secret');
   };

@@ -51,6 +51,7 @@ test('a lost authorization response requires explicit restart without issuing a 
 
 test('verifier persistence failure never returns an authorization URL or marks it prepared', async () => {
   const h = harness();
+  h.current = { ...h.current, revision: 0, authorizationPrepared: false };
   let prepared = 0;
   let attempts = 0;
   h.control.completeAuthorization = async (current) => {

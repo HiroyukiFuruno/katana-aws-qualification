@@ -41,6 +41,17 @@ export function configuredProvider<Request>(options: ServerSdkOptions<Request>, 
   return Object.hasOwn(options.providers, provider) ? options.providers[provider] : undefined;
 }
 
+export function sameLeg(original: ServerSdkLeg, current: ServerSdkLeg): boolean {
+  return (
+    original.id === current.id &&
+    original.runtime.intentId === current.runtime.intentId &&
+    original.runtime.legId === current.runtime.legId &&
+    original.runtime.attempt === current.runtime.attempt &&
+    original.runtime.storageKey === current.runtime.storageKey &&
+    original.runtime.issuedAt === current.runtime.issuedAt
+  );
+}
+
 function guardedFetch(fetcher: typeof fetch | undefined): typeof fetch {
   const upstream = fetcher ?? globalThis.fetch;
   return async (input, init) => {

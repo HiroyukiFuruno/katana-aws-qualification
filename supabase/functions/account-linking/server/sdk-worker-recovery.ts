@@ -1,5 +1,5 @@
 import type { ServerSdkLeg, ServerSdkOptions, ServerSdkResult } from './sdk-worker.types.ts';
-import { client, exchangeLive, result, stored, usable } from './sdk-worker-internal.ts';
+import { client, exchangeLive, live, result, sameLeg, stored, usable } from './sdk-worker-internal.ts';
 
 export async function recoverExchange<Request>(
   options: ServerSdkOptions<Request>,
@@ -12,13 +12,7 @@ export async function recoverExchange<Request>(
   for (let inspection = 0; inspection < 2; inspection += 1) {
     try {
       current = await options.control.loadExchange(request);
-      if (
-        current.id !== original.id ||
-        current.runtime.intentId !== original.runtime.intentId ||
-        current.runtime.attempt !== original.runtime.attempt ||
-        current.runtime.storageKey !== original.runtime.storageKey
-      )
-        return result(original, 'runtime_failed');
+      if (!sameLeg(original, current)) return result(original, 'runtime_failed');
       if (!exchangeLive(current)) return result(current);
       // 2回目は応答喪失後の確定状態だけを読み、交換やpromotionを再実行しない。
       if (inspection !== 0 || current.state !== 'exchanging') continue;
@@ -30,4 +24,32 @@ export async function recoverExchange<Request>(
     } catch {}
   }
   return claimed ? fail(current, true) : result(current, 'runtime_failed');
+}
+
+export async function recordAuthorizationFailure<Request>(
+  options: ServerSdkOptions<Request>,
+  request: Request,
+  original: ServerSdkLeg,
+  claimId: string,
+): Promise<ServerSdkResult> {
+  let current = original;
+  try {
+    current = await options.control.reloadAuthorization(request);
+    if (!sameLeg(original, current))
+      return { ...result(original, 'authorization_failed'), restartRequired: true };
+    if (!live(current)) return result(current);
+    if (current.authorizationPrepared) return { ...result(current), restartRequired: true };
+    return result(await options.control.failAuthorization(current, claimId), 'authorization_failed');
+  } catch {
+    try {
+      const latest = await options.control.reloadAuthorization(request);
+      if (sameLeg(original, latest)) {
+        current = latest;
+        if (!live(latest))
+          return result(latest, latest.state === 'failed' ? 'authorization_failed' : undefined);
+        if (latest.authorizationPrepared) return { ...result(latest), restartRequired: true };
+      }
+    } catch {}
+    return { ...result(current, 'authorization_failed'), restartRequired: true };
+  }
 }

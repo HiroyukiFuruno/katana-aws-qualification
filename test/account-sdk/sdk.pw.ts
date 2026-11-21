@@ -1,29 +1,10 @@
 import { writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { artifacts } from '../account-merge/settings';
+import { loginMain, mainSessionSnapshot } from './browser-fixture';
 import { observeSdkPage } from './observations';
 import { assertProofReports } from './proof-assertions';
 import { startSdkAdapter } from './server';
-
-async function loginMain(page: import('@playwright/test').Page) {
-  await page.goto('/test/account-merge/browser.html');
-  await expect(page.getByRole('status')).toHaveText('ready');
-  await page.getByRole('button', { name: 'First issuer', exact: true }).click();
-  await page.getByLabel('Username or email').fill('sdk-first');
-  await page.getByLabel('Password', { exact: true }).fill('integration-only');
-  await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('authenticated');
-}
-
-async function snapshot(page: import('@playwright/test').Page) {
-  return page.evaluate(async () => {
-    const modulePath = '/test/account-sdk/browser.ts';
-    const module = (await import(modulePath)) as {
-      mainSessionSnapshot(): Promise<{ userId: string; storageHash: string }>;
-    };
-    return module.mainSessionSnapshot();
-  });
-}
 
 async function authenticate(page: import('@playwright/test').Page, side: 'source' | 'target') {
   const started = page.waitForResponse(
@@ -66,14 +47,14 @@ test('native AuthClient keeps the main session and restores two sealed real-OIDC
     await loginMain(page);
     await page.goto('/test/account-sdk/browser.html');
     await expect(page.getByRole('status')).toHaveText('ready');
-    const before = await snapshot(page);
+    const before = await mainSessionSnapshot(page);
     await authenticate(page, 'source');
     await page.goto('/test/account-sdk/browser.html');
     await expect(page.getByRole('status')).toHaveText('ready');
-    expect(await snapshot(page)).toEqual(before);
+    expect(await mainSessionSnapshot(page)).toEqual(before);
     await authenticate(page, 'target');
     await page.goto('/test/account-sdk/browser.html');
-    expect(await snapshot(page)).toEqual(before);
+    expect(await mainSessionSnapshot(page)).toEqual(before);
     expect(observations.pageErrors).toEqual([]);
     expect(observations.thirdPartyScripts).toEqual([]);
     expect(observations.analyticsRequests).toEqual([]);

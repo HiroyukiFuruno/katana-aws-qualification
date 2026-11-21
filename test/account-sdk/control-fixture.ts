@@ -9,6 +9,7 @@ type Reply = {
   leg_id: string;
   leg_state: string;
   leg_revision: number;
+  attempt?: number;
   guard: ServerSdkLeg['runtime'];
   authorization_prepared?: boolean;
   claimed?: boolean;

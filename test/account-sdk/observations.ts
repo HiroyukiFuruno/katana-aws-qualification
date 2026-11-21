@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 import { artifacts } from '../account-merge/settings';
 
-export function observeSdkPage(page: Page) {
+export function observeSdkPage(page: Page, receiptFilename = 'sdk-flow-observations.json') {
   const publicBodies: string[] = [];
   const consoleMessages: string[] = [];
   const pageErrors: string[] = [];
@@ -68,7 +68,7 @@ export function observeSdkPage(page: Page) {
     analyticsRequests,
     write() {
       writeFileSync(
-        `${artifacts}/sdk-flow-observations.json`,
+        `${artifacts}/${receiptFilename}`,
         `${JSON.stringify({ observedAt: new Date().toISOString(), signals }, null, 2)}\n`,
       );
     },

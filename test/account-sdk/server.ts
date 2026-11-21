@@ -11,10 +11,15 @@ import { requiredUuid, sql } from './sql';
 
 const callback = 'http://127.0.0.1:54533/test/account-sdk/callback.html';
 
-export async function startSdkAdapter() {
+type AdapterOptions = {
+  authorizationFailure?: boolean;
+  cleanupReceiptFilename?: string;
+};
+
+export async function startSdkAdapter(options: AdapterOptions = {}) {
   const operations = new Map<string, Operation>();
   const byActorAndSide = new Map<string, Operation>();
-  const control = new SdkControl(operations);
+  const control = new SdkControl(operations, undefined, options.authorizationFailure === true);
   const worker = () =>
     new ServerSdkWorker({
       control,
@@ -95,8 +100,20 @@ export async function startSdkAdapter() {
   );
   return {
     close: () =>
-      cleanup({ operations, server, baseline, protectedBaseline, learnerBaseline, auditBaseline }),
+      cleanup({
+        operations,
+        server,
+        baseline,
+        protectedBaseline,
+        learnerBaseline,
+        auditBaseline,
+        receiptFilename: options.cleanupReceiptFilename,
+      }),
     proof: () => control.proof(),
+    verifyAuthorizationFailure: () => control.verifyAuthorizationFailure(),
+    assertNoCodeExchange: () => control.assertNoCodeExchange(),
+    assertAuthorizationFailurePrivacy: (values: string[]) =>
+      control.assertAuthorizationFailurePrivacy(values),
     assertNoBrowserLeak: (values: string[]) => control.assertNoBrowserLeak(values),
   };
 }

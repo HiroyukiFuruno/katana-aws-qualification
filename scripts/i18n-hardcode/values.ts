@@ -16,6 +16,8 @@ import { technicalIdentifier } from './computed.ts';
 
 type Recur = (node: Ast | undefined, path: Path) => Origin[];
 
+export { arrayValues } from './array-values.ts';
+
 export function objectValues(node: Ast, path: Path, recur: Recur): Origin[] {
   let [head, ...rest] = path;
   const excluded = new Set<string>();
@@ -32,23 +34,6 @@ export function objectValues(node: Ast, path: Path, recur: Recur): Origin[] {
     if (head !== '*' && head !== memberKey) return [];
     if (!rest.length && technicalIdentifier(memberKey, ast(member.value))) return [];
     return recur(member.type === 'Identifier' ? member : ast(member.value), rest);
-  });
-}
-
-export function arrayValues(node: Ast, path: Path, recur: Recur): Origin[] {
-  if (!Array.isArray(node.elements)) return [];
-  let [head, ...rest] = path;
-  let start = 0;
-  while (head && typeof head !== 'string') {
-    if (head.kind !== 'array-rest') return [];
-    start += head.start;
-    [head, ...rest] = rest;
-  }
-  const selected = head === undefined || head === '*' ? '*' : String(Number(head) + start);
-  return node.elements.flatMap((entry, index) => {
-    if (index < start || (selected !== '*' && selected !== String(index))) return [];
-    if (typeof entry !== 'object' || entry === null || !('expression' in entry)) return [];
-    return recur(ast(entry.expression), rest);
   });
 }
 

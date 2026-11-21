@@ -1,4 +1,14 @@
-import { type Ast, ast, type Binding, key, nodes, type Origin, type Source, type Trace } from './ast.ts';
+import {
+  type Ast,
+  ast,
+  type Binding,
+  key,
+  nodes,
+  type Origin,
+  type Path,
+  type Source,
+  type Trace,
+} from './ast.ts';
 import { callEnvironment, environmentKey } from './calls.ts';
 import { namespaceValues, resolveImport } from './exports.ts';
 import { jsxValues } from './jsx.ts';
@@ -55,6 +65,10 @@ export function createTrace(sources: Source[]): Trace {
         return recur(ast(node.expression));
       case 'OptionalChainingExpression':
         return recur(ast(node.base));
+      case 'ContextualExpression': {
+        const selection = Array.isArray(node.path) ? (node.path as Path) : [];
+        return trace(source, ast(node.expression), [...selection, ...path], nextSeen);
+      }
       case 'ModuleNamespace': {
         return namespaceValues(sources, source, path, trace, nextSeen);
       }
@@ -95,7 +109,7 @@ export function createTrace(sources: Source[]): Trace {
           const target = callable(sources, source, ast(opening.name));
           if (!target) return [];
           const previous = environment;
-          environment = callEnvironment(target, source, [props], previous);
+          environment = callEnvironment(target, source, [props], previous, [], opening);
           try {
             return trace(target.source, target.node, path, nextSeen);
           } finally {

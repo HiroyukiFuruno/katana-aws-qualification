@@ -4,7 +4,7 @@
 
 `POST /delete-account` は空のbodyだけを受け付ける。ブラウザは確認開始時に表示中のaccount IDを捕捉し、access tokenで`getUser(token)`をオンライン検証して一致した場合だけリクエストする。serverはBearer tokenを`/auth/v1/user`で再検証し、返されたsubjectだけをservice roleでhard deleteする。期待ID、`userId`、対象identityはserverへ送らない。
 
-削除後は管理APIで同じsubjectを再取得し、404の場合だけ成功とする。成功後にブラウザはlocal scopeでsign outする。#23で追加するユーザー所有データは`auth.users(id) on delete cascade`で同じ削除に従わせる。
+削除後は管理APIで同じsubjectを再取得し、404の場合だけ成功とする。成功後にブラウザはlocal scopeでsign outする。#23で保存するクラウドのユーザー所有データは、`auth.users(id) on delete cascade`で同じ削除に従う。ゲストとして端末に残した履歴やCookie設定は別管理で、アカウント削除では自動消去しない。
 
 ## 脅威境界と配備
 

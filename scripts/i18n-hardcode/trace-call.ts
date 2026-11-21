@@ -68,7 +68,8 @@ export function traceCall(
       if (target && collection)
         return mappedPaths(path, method === 'flatMap').flatMap((selected) => {
           const previous = environment;
-          setEnvironment(callEnvironment(target, source, [collection], previous, [['*']], node));
+          const selection = method === 'map' && path.length ? path : ['*'];
+          setEnvironment(callEnvironment(target, source, [collection], previous, [selection], node));
           try {
             return trace(target.source, target.node, selected, seen, options);
           } finally {

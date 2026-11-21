@@ -21,14 +21,13 @@ export function AssessmentQuestion({
   onNext: () => void;
   saving: boolean;
 }) {
-  const { t, locale } = usePreferences();
+  const { t } = usePreferences();
   return (
     <section className="card roadmap-card" aria-busy={saving}>
       <p className="eyebrow">
         {t(skills[item.skill])} · {position + 1} / {total}
       </p>
-      <h2 lang="ja">{item.prompt}</h2>
-      {locale !== 'ja' && <p>{t('contentLanguage')}</p>}
+      <h2>{t(item.prompt)}</h2>
       <fieldset disabled={saving}>
         <legend className="sr-only">{t('choices')}</legend>
         {item.options.map((option, index) => (
@@ -39,7 +38,7 @@ export function AssessmentQuestion({
               checked={answer === index}
               onChange={() => selectAnswer(index)}
             />
-            <span lang="ja">{option}</span>
+            <span>{t(option)}</span>
           </label>
         ))}
         <label className="choice choice-wrap">

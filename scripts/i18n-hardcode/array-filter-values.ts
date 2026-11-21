@@ -26,11 +26,12 @@ export function filteredValues(node: Ast, path: Path, recur: Recur): Origin[] {
   const selector = arrayFilter(path);
   if (!selector || !Array.isArray(node.elements)) return [];
   const rest = path.slice(1);
+  const elementPath = rest[0] === '*' ? rest.slice(1) : rest;
   if (selector.predicate === 'unknown' || node.elements.some(arraySpread))
     return node.elements.flatMap((entry) => {
       const value = arrayExpression(entry);
       if (!value || (selector.predicate === 'boolean' && truth(value) === false)) return [];
-      return recur(value, arraySpread(entry) ? ['*', ...rest] : rest);
+      return recur(value, arraySpread(entry) ? ['*', ...elementPath] : elementPath);
     });
   let certain = 0;
   let possible = 0;
@@ -43,6 +44,6 @@ export function filteredValues(node: Ast, path: Path, recur: Recur): Origin[] {
       (selector.index === undefined || (certain <= selector.index && selector.index <= possible));
     if (valueTruth === true) certain++;
     if (valueTruth !== false) possible++;
-    return selected ? recur(value, rest) : [];
+    return selected ? recur(value, elementPath) : [];
   });
 }

@@ -75,3 +75,30 @@ test('keeps finite map selection through a state updater selector cycle', () => 
       return <p>{rows.map((item)=>item.caption)}</p>;}`),
   ).toEqual(['Diagnostic copy', 'Visible copy']);
 });
+
+test('consumes selected filter elements, mapped output paths, and direct slice bounds', () => {
+  expect(scan(`export const View=()=> <p>{['Please sign in'].filter(Boolean).join('')}</p>;`)).toEqual([
+    'Please sign in',
+  ]);
+  expect(
+    scan(
+      `export const View=()=> <p>{[{caption:42,debug:{caption:'Diagnostic copy'}}].filter(Boolean).map((row)=>row.caption)}</p>;`,
+    ),
+  ).toEqual([]);
+  expect(
+    scan(`export const View=()=> <p>{[0].map(()=> 'Please sign in').slice(0,1).join('')}</p>;`),
+  ).toEqual(['Please sign in']);
+  expect(
+    scan(`export const View=()=> <p>{[0].map(()=> 'Please sign in').filter(Boolean)[0]}</p>;`),
+  ).toEqual(['Please sign in']);
+  expect(
+    scan(`const rows=[{caption:'Diagnostic copy'},{caption:'Visible copy'}];
+      export const View=()=> <p>{rows.map((row)=>row.caption).slice(1,2).join('')}</p>;`),
+  ).toEqual(['Visible copy']);
+  expect(scan(`export const View=()=> <p>{['Diagnostic copy','Visible copy'].slice(1)}</p>;`)).toEqual([
+    'Visible copy',
+  ]);
+  expect(scan(`export const View=()=> <p>{['Diagnostic copy','Visible copy'].slice(0,0)}</p>;`)).toEqual(
+    [],
+  );
+});

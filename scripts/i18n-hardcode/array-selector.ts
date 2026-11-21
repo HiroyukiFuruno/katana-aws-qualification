@@ -52,6 +52,14 @@ export function slicePaths(node: Ast, path: Path): Path[] {
     const original = first + selected;
     return original >= limit ? [] : [[String(original), ...current.rest.slice(1)]];
   }
+  if (!path.length) {
+    if (first >= limit) return [];
+    return limit === Number.POSITIVE_INFINITY
+      ? first
+        ? [[{ kind: 'array-rest', start: first }]]
+        : [path]
+      : [[{ kind: 'array-range', start: first, end: limit }]];
+  }
   const head = current.rest[0];
   if (head === '*')
     return limit === Number.POSITIVE_INFINITY

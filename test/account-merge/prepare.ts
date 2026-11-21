@@ -32,6 +32,15 @@ export function prepareFixtures() {
           lastName: 'Learner',
           credentials: [{ type: 'password', value: 'integration-only', temporary: false }],
         },
+        {
+          username: `sdk-${name}`,
+          email: `sdk-${name}@account-merge.example.test`,
+          emailVerified: true,
+          enabled: true,
+          firstName: 'SDK',
+          lastName: name === 'first' ? 'Source' : 'Target',
+          credentials: [{ type: 'password', value: 'integration-only', temporary: false }],
+        },
       ],
     };
     writeFileSync(`${artifacts}/realms/merge-${name}.json`, JSON.stringify(realm, null, 2));

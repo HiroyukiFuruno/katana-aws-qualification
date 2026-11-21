@@ -12,13 +12,9 @@ import {
   walk,
 } from './ast.ts';
 import { nativeDialog } from './dialogs.ts';
-import { displayProp, linkSources } from './link.ts';
-import {
-  isTextualAriaAttribute,
-  isTextualDomProperty,
-  sinkNames,
-  textualSpreadProperties,
-} from './sink-metadata.ts';
+import { jsxTextSinks } from './jsx.ts';
+import { linkSources } from './link.ts';
+import { isTextualAriaAttribute, isTextualDomProperty, sinkNames } from './sink-metadata.ts';
 import { createTrace } from './trace.ts';
 export type Finding = {
   file: string;
@@ -70,34 +66,9 @@ export function checkSources(sources: Source[], root: string): Finding[] {
             inspect(source, child, 'JSX child');
         }
       }
-      if (node.type === 'JSXAttribute' && displayProp(name(ast(node.name)))) {
-        inspect(source, ast(node.value), `JSX ${name(ast(node.name))}`);
-      }
-      if (node.type === 'JSXAttribute' && name(ast(node.name)) === 'dangerouslySetInnerHTML') {
-        inspect(source, ast(node.value), 'JSX HTML content', ['__html']);
-      }
       if (node.type === 'JSXOpeningElement') {
-        const attributes = nodes(node.attributes);
-        const inputType = attributes.find((attribute) => name(ast(attribute.name)) === 'type');
-        if (name(ast(node.name)) === 'textarea') {
-          for (const field of ['value', 'defaultValue']) {
-            const attribute = attributes.find((item) => name(ast(item.name)) === field);
-            inspect(source, ast(attribute?.value), `textarea ${field}`);
-          }
-        }
-        if (
-          name(ast(node.name)) === 'input' &&
-          ['button', 'submit', 'reset'].includes(name(ast(inputType?.value)))
-        ) {
-          const value = attributes.find((attribute) => name(ast(attribute.name)) === 'value');
-          inspect(source, ast(value?.value), 'input button value');
-        }
-        for (const attribute of nodes(node.attributes)) {
-          if (attribute.type !== 'SpreadElement') continue;
-          for (const field of textualSpreadProperties) {
-            inspect(source, ast(attribute.arguments), `JSX spread ${field}`, [field]);
-          }
-        }
+        for (const sink of jsxTextSinks(node, (value, path) => trace(source, value, path)))
+          inspect(source, sink.node, sink.name, sink.path);
       }
       if (node.type === 'CallExpression') {
         const callee = ast(node.callee);

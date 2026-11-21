@@ -1,6 +1,6 @@
 import base64
-import hashlib
 import hmac
+import hashlib
 import json
 import re
 import tempfile
@@ -57,16 +57,16 @@ def refresh_probe(docker, auth, refresh_token):
     return {'outcome': 'success' if result.returncode == 0 else 'failed', 'httpStatus': int(status[-1]) if status else None}
 
 
-def start(docker):
-    docker.reject_existing(DATABASE_NAME, AUTH_NAME)
-    database = docker.create(DATABASE_NAME, '--network', 'none', '--tmpfs', '/var/lib/postgresql:rw,nosuid,nodev,size=256m',
+def start(docker, database_name=DATABASE_NAME, auth_name=AUTH_NAME):
+    docker.reject_existing(database_name, auth_name)
+    database = docker.create(database_name, '--network', 'none', '--tmpfs', '/var/lib/postgresql:rw,nosuid,nodev,size=256m',
         '-e', 'POSTGRES_USER=supabase_auth_admin', '-e', 'POSTGRES_PASSWORD=integration-only', '-e',
         'POSTGRES_DB=kaq_account_merge', 'postgres:18-alpine')
     docker.wait_ready(lambda: docker.run('exec', database, 'pg_isready', '-h', '127.0.0.1', '-U', 'supabase_auth_admin').returncode == 0, 'postgres TCP')
     return database
 
 
-def prepare(database, docker, sql, root):
+def prepare(database, docker, sql, root, auth_name=AUTH_NAME):
     sql((root / 'test/account-merge/init.sql').read_text())
     env = {'GOTRUE_API_HOST': '0.0.0.0', 'GOTRUE_API_PORT': '9999', 'API_EXTERNAL_URL': 'http://127.0.0.1:9999',
         'GOTRUE_SITE_URL': 'http://fixture.invalid', 'GOTRUE_DB_DRIVER': 'postgres', 'GOTRUE_DB_DATABASE_URL':
@@ -76,7 +76,7 @@ def prepare(database, docker, sql, root):
         'GOTRUE_MAILER_AUTOCONFIRM': 'true', 'GOTRUE_LOG_LEVEL': 'warn'}
     with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8') as values:
         values.write(''.join(key + '=' + value + '\n' for key, value in env.items())); values.flush()
-        auth = docker.create(AUTH_NAME, '--network', 'container:' + database, '--env-file', values.name, 'supabase/gotrue:v2.198.0')
+        auth = docker.create(auth_name, '--network', 'container:' + database, '--env-file', values.name, 'supabase/gotrue:v2.198.0')
     health = {}
     def ready():
         result = docker.run('exec', auth, 'wget', '-qO-', 'http://127.0.0.1:9999/health')
@@ -109,3 +109,25 @@ def create_users(docker, auth):
         require(auth_request(docker, auth, '/user', access_token=value)['id'] == user['id'], 'GoTrue user mismatch')
         users.append({'userId': user['id'], 'sessionId': claims['session_id'], 'refreshToken': session['refresh_token'], 'claims': {key: claims[key] for key in ['sub', 'session_id', 'role', 'aud', 'exp']}})
     return users
+
+
+def apply_private_inputs(root, sql, names, artifacts):
+    hashes = {}
+    for name in names:
+        source = (root / 'supabase/account-merge' / name).read_text()
+        (artifacts / ('input-' + name)).write_text(source)
+        hashes[name] = hashlib.sha256(source.encode()).hexdigest()
+        sql(source)
+    return hashes
+
+
+def additional_password_session(docker, auth, user):
+    email = 'locking-second@fixture.example.test'
+    session = auth_request(docker, auth, '/token?grant_type=password', {'email': email, 'password': 'integration-only-password'})
+    value = session['access_token']; unsigned, signature = value.rsplit('.', 1)
+    actual = base64.urlsafe_b64decode(signature + '=' * (-len(signature) % 4))
+    require(hmac.compare_digest(actual, hmac.new(FIXTURE_SECRET.encode(), unsigned.encode(), hashlib.sha256).digest()), 'Alternate GoTrue signature mismatch')
+    claims = json.loads(base64.urlsafe_b64decode(unsigned.split('.')[1] + '=' * (-len(unsigned.split('.')[1]) % 4)))
+    require(claims['sub'] == user['userId'] and claims['session_id'] != user['sessionId'], 'Alternate GoTrue session mismatch')
+    require(auth_request(docker, auth, '/user', access_token=value)['id'] == user['userId'], 'Alternate GoTrue user mismatch')
+    return {'sessionId': claims['session_id'], 'claims': {key: claims[key] for key in ['sub', 'session_id', 'role', 'aud', 'exp']}}

@@ -1,3 +1,4 @@
+import type { usePreferences } from '../../preferences';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardSummary } from '../summaryTypes';
 import { dashboardCategoryLabel, dashboardCertificationLabel } from './format';
@@ -7,6 +8,7 @@ export function dashboardGroupRows(
   widget: DashboardWidget,
   summary: DashboardSummary,
   label: (value: string) => string,
+  t: ReturnType<typeof usePreferences>['t'],
 ): DashboardStatRow[] {
   const named = (rows: DashboardSummary['groups']['modes']) =>
     rows.map((row) => ({ id: row.key, label: label(row.key), stats: row }));
@@ -21,7 +23,7 @@ export function dashboardGroupRows(
     case 'relationship':
       return summary.groups.categories.map((row) => ({
         id: JSON.stringify([row.certificationId, row.category, row.sourceVersion, row.questionRevision]),
-        label: dashboardCategoryLabel(row),
+        label: dashboardCategoryLabel(row, t),
         stats: row,
       }));
     case 'modes':
@@ -33,7 +35,10 @@ export function dashboardGroupRows(
     case 'revisions':
       return summary.groups.revisions.map((row) => ({
         id: JSON.stringify([row.sourceVersion, row.questionRevision]),
-        label: `${row.sourceVersion} / r${row.questionRevision}`,
+        label: t('dashboardRevisionLabel', {
+          sourceVersion: row.sourceVersion,
+          revision: row.questionRevision,
+        }),
         stats: row,
       }));
     default:

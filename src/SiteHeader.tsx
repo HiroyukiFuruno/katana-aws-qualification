@@ -58,13 +58,13 @@ export function SiteHeader({ section, subpage }: { section: string; subpage?: st
         {t('skip')}
       </a>
       <div className="shell topbar">
-        <a className="brand" href={homePath} aria-label="KatanA AWS Qualification" translate="no">
+        <a className="brand" href={homePath} aria-label={t('siteName')} translate="no">
           <img src="/katana-icon-128.png" width="40" height="40" alt="" />
           <span className="brand-name">
-            KatanA <span>AWS Qualification</span>
+            {t('brandName')} <span>{t('brandDescriptor')}</span>
           </span>
           <span className="brand-short" aria-hidden="true">
-            KAQ
+            {t('siteShortName')}
           </span>
         </a>
         <div className="account-controls">

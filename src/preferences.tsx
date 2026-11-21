@@ -1,20 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { localePath, locales, type Locale } from './locales';
-import { messages, type Message } from './messages';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { type Locale, localeForPath, localePath, locales } from './locales';
+import { type Message, messages } from './messages';
 import { routeAt } from './routes';
 
-const labels = [
-  'English',
-  '日本語',
-  '简体中文',
-  '繁體中文',
-  '한국어',
-  'Português',
-  'Français',
-  'Deutsch',
-  'Español',
-  'Italiano',
-];
 const localeKey = 'katana-site-locale';
 const themeKey = 'katana-site-theme';
 const darkPreference = '(prefers-color-scheme: dark)';
@@ -47,9 +35,12 @@ const Preferences = createContext<{
 });
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState(() => routeAt(location.pathname)?.locale ?? 'en');
+  const [locale, setLocale] = useState(
+    () => routeAt(location.pathname)?.locale ?? localeForPath(location.pathname),
+  );
   useEffect(() => {
-    const onPopState = () => setLocale(routeAt(location.pathname)?.locale ?? 'en');
+    const onPopState = () =>
+      setLocale(routeAt(location.pathname)?.locale ?? localeForPath(location.pathname));
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -111,9 +102,9 @@ export function SiteControls() {
           if (selected) changeLocale(selected);
         }}
       >
-        {locales.map((value, index) => (
+        {locales.map((value) => (
           <option key={value} value={value} lang={value}>
-            {labels[index]}
+            {messages[value].localeName}
           </option>
         ))}
       </select>

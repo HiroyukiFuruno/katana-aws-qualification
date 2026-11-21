@@ -25,11 +25,12 @@ export function SiteFooter({ replaceAdOnMobile = false }: { replaceAdOnMobile?: 
             target="_blank"
             rel="noopener"
           >
-            KatanA Website
+            {t('katanaWebsite')}
           </a>
         </nav>
         <a className="brand" href={homePath}>
-          KatanA<span> AWS Qualification</span>
+          {t('brandName')}
+          <span> {t('brandDescriptor')}</span>
         </a>
       </div>
       <div className="shell">

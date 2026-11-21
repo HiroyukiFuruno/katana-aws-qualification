@@ -25,7 +25,12 @@ function renderChart(
       { value: 'compact' },
       createElement(SeriesChart, {
         widget,
-        rows: dashboardGroupRows(widget, summary, (value) => value),
+        rows: dashboardGroupRows(
+          widget,
+          summary,
+          (value) => value,
+          (key) => messages.en[key],
+        ),
         categories: summary.groups.categories,
       }),
     ),

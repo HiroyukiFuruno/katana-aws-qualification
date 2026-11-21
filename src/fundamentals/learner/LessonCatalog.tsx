@@ -42,7 +42,7 @@ export function LessonCatalog({
   onNavigate,
 }: LessonCatalogProps) {
   const { locale, t } = usePreferences();
-  const [actionError, setActionError] = useState<string>();
+  const [actionError, setActionError] = useState<{ cause: unknown }>();
   const byUnit = new Map(summaries.map((summary) => [summary.unitId, summary]));
   const navigate = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (
@@ -57,7 +57,7 @@ export function LessonCatalog({
     event.preventDefault();
     void Promise.resolve()
       .then(() => onNavigate(href))
-      .catch((cause: unknown) => setActionError(cause instanceof Error ? cause.message : String(cause)));
+      .catch((cause: unknown) => setActionError({ cause }));
   };
   return (
     <main id="main" className="shell fundamentals-page lesson-catalog-page">
@@ -79,7 +79,7 @@ export function LessonCatalog({
       )}
       {actionError && (
         <p className="notice" role="alert">
-          {actionError}
+          {t('fundamentalsActionFailed')}
         </p>
       )}
       <div className="lesson-catalog-list">

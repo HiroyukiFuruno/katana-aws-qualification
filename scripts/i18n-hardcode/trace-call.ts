@@ -29,6 +29,14 @@ function selectsArray(path: Path) {
   );
 }
 
+function mapInputPath(path: Path): Path {
+  return path.some((part) => typeof part === 'object' && part.kind === 'array-filter')
+    ? ['*']
+    : path.length
+      ? path
+      : ['*'];
+}
+
 export function traceCall(
   sources: Source[],
   source: Source,
@@ -57,7 +65,8 @@ export function traceCall(
     const method = property(ast(callee.property));
     if (['filter', 'map', 'slice'].includes(method)) {
       const known = knownSelectedArrayValues(source, node, path, environment);
-      if (known !== undefined) return known.flatMap((value) => recur(value, []));
+      if (known !== undefined)
+        return known.flatMap((value) => trace(value.source, value.node, [], seen));
     }
     if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
       return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
@@ -67,7 +76,7 @@ export function traceCall(
       if (target && collection)
         return mappedPaths(path, method === 'flatMap').flatMap((selected) => {
           const previous = environment;
-          const selection = method === 'map' && path.length ? path : ['*'];
+          const selection = method === 'map' ? mapInputPath(path) : ['*'];
           setEnvironment(callEnvironment(target, source, [collection], previous, [selection], node));
           try {
             return trace(target.source, target.node, selected, seen);

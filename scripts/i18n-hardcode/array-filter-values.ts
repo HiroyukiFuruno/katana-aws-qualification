@@ -2,6 +2,8 @@ import { selectionRange } from './array-selector.ts';
 import { type Ast, arrayExpression, arraySpread, type Origin, type Path } from './ast.ts';
 
 type Recur = (node: Ast | undefined, path: Path) => Origin[];
+type InputRange = { start: number; end: number };
+type Element = { spread: boolean; value: Ast | undefined };
 
 export function arrayFilter(path: Path) {
   const head = path[0];
@@ -29,22 +31,51 @@ function filteredPath(path: Path) {
   return { end, rest, start };
 }
 
-export function filteredValues(node: Ast, path: Path, recur: Recur): Origin[] {
+function literalElements(node: Ast | undefined): Element[] | undefined {
+  if (node?.type !== 'ArrayExpression' || !Array.isArray(node.elements)) return undefined;
+  const elements: Element[] = [];
+  for (const entry of node.elements) {
+    const value = arrayExpression(entry);
+    if (!arraySpread(entry)) elements.push({ spread: false, value });
+    else {
+      const nested = literalElements(value);
+      if (!nested) return undefined;
+      elements.push(...nested);
+    }
+  }
+  return elements;
+}
+
+export function filteredValues(node: Ast, path: Path, recur: Recur, input?: InputRange): Origin[] {
   const selector = arrayFilter(path);
   if (!selector || !Array.isArray(node.elements)) return [];
   const rest = path.slice(1);
   const selectedPath = filteredPath(rest);
   const elementPath = selectedPath.rest;
-  if (selector.predicate === 'unknown' || node.elements.some(arraySpread))
-    return node.elements.flatMap((entry) => {
-      const value = arrayExpression(entry);
+  const literal = literalElements(node);
+  const elements =
+    literal ??
+    node.elements.map((entry) => ({ spread: arraySpread(entry), value: arrayExpression(entry) }));
+  const unknownInput = Boolean(input && !literal && elements.some((entry) => entry.spread));
+  let sourceIndex = 0;
+  if (selector.predicate === 'unknown' || elements.some((entry) => entry.spread))
+    return elements.flatMap((entry) => {
+      const selectedInput =
+        !input || unknownInput || (sourceIndex >= input.start && sourceIndex < input.end);
+      sourceIndex++;
+      if (!selectedInput) return [];
+      const value = entry.value;
       if (!value || (selector.predicate === 'boolean' && arrayElementTruth(value) === false)) return [];
-      return recur(value, arraySpread(entry) ? ['*', ...elementPath] : elementPath);
+      return recur(value, entry.spread ? ['*', ...elementPath] : elementPath);
     });
   let certain = 0;
   let possible = 0;
-  return node.elements.flatMap((entry) => {
-    const value = arrayExpression(entry);
+  return elements.flatMap((entry) => {
+    const selectedInput =
+      !input || unknownInput || (sourceIndex >= input.start && sourceIndex < input.end);
+    sourceIndex++;
+    if (!selectedInput) return [];
+    const value = entry.value;
     const valueTruth = arrayElementTruth(value);
     const minimum = certain;
     const maximum = possible;

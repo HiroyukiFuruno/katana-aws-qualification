@@ -71,6 +71,7 @@ export function arrayValues(node: Ast, path: Path, recur: Recur): Origin[] {
   const selector = pathSelector(path);
   if (!selector) return [];
   const { end, index, rest, start } = selector;
+  if (index === undefined && arrayFilter(rest)) return filteredValues(node, rest, recur, { start, end });
   let offset = 0;
   let unknownPrefix = false;
   return node.elements.flatMap((entry) => {

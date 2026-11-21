@@ -106,7 +106,7 @@ export function createTrace(sources: Source[]): Trace {
             ].includes(method)
           ) {
             return [
-              ...recur(ast(callee.object), method === 'join' ? ['*', ...path] : path),
+              ...recur(ast(callee.object), ['find', 'join'].includes(method) ? ['*', ...path] : path),
               ...(['concat', 'join', 'replace'].includes(method)
                 ? args(node)
                     .slice(method === 'replace' ? 1 : 0)

@@ -148,7 +148,7 @@ test/authの削除関数用Bun imageが1.4.4のまま残っている。packageMa
 - [x] 実2 issuerのOIDC/GoTrue/Postgres/RESTを同一の専用環境へ接続し、両方の異なるUID/live OAuth session/自己記録だけの読取を確認。従来suiteの別DB成功を統合成功として代用しない。
 - [x] 追加migration `202611210004`で非公開10tableのみ追加。全12owner表が非空の状態で、既存public schema/owner/ACL/関数/trigger/index/制約/policy/default ACLと全内容hashが適用前後で完全一致。既存18教材も不変。
 - [x] 非公開ACL・RLS・全FK・制約・proof session一回性・intent期限/attemptとAuth単体削除のaccount非cascadeを実DB172検査で確認。匿名/両JWTのprivate REST406、全public/Auth4表の全列hash復元、private空も確認。
-- [ ] Draftレビュー/必須CI/通常merge/本番DB適用/実API・公開sourceの照合を完了する。既存provider設定と実利用者の統合/削除は対象外。
+- [x] Draftレビュー/必須CI/通常merge/本番DB適用/実API・公開sourceの照合を完了する。既存provider設定と実利用者の統合/削除は対象外。
 
 この段階ではaccountのbackfillもowner cutoverも行わない。新SSO予防導線・proof endpoint・preview/commit・履歴統合・旧token/queue fence・退会は後続差分で揃え、#58はOpenを維持する。
 
@@ -165,3 +165,41 @@ test/authの削除関数用Bun imageが1.4.4のまま残っている。packageMa
 - `progress-3-shards-proof.json`: 現行165件=55/59/51、重複/漏れ/追加0。既存requiredの`progress`集約は全3shard成功が必要。
 
 ローカル検証のP1（移行前が空）とP2（schema比較の不足）を補強した。PRレビュー・CI・本番適用はまだ未完で、完了後に証跡を追記する。
+
+### PR72公開済みの照合
+
+main `2df47b3b6258e868cc5054554a8d603f3f00e2ef` / deployment `dpl_69K8Ya7RKwsvvNQMxYijRx7fR3Fr`。Auth165件、Progress55+59+51件、専用所有権・DB・教材CIすべて成功、最新headのDraft/Readyレビュー指摘0。暗号化バックアップ、実DDLのrollback試行、適用receipt保存、別プロセスの再照合で14registry/公開13表不変/非公開10表空・RLS・ACLを確認した。公開API・ダッシュボード390/1280・スライド4幅の操作と終了を確認。必要なCookieのみの確認では広告0、広告配置の強制高検査は#67の回帰証跡を維持する。Issue58コメント7052663068。実利用者の統合・削除なし。
+
+次の作業は既存checkoutの `release/account-membership`。既知統合済みlocal `release/account-merge` はupstream差の通常削除拒否を受け保持し、強制削除・remote削除・新worktree/stash作成はしていない。
+
+### 内部session検査の部品検証（公開前）
+
+非公開の下書き `supabase/account-merge/session-resolver.sql` と回帰SQLを実2issuer/GoTrue/DBへ接続し、基盤172検査に続いて71検査を通した（`session-resolver-real.json`、23:26:28UTC）。user/session所有・失効・ban/delete・固定期限・第三者OAuth・private ACL・MFA既登録時の機微操作step-upを検査し、Auth原本をrollbackで復元した。最初のfixtureはOAuth client必須列の不足で失敗し、`token_endpoint_auth_method=none`を設定して再検証した。自身の検証container/volumeは終了済み。
+
+これはmigrationにも公開APIにも未接続。hosted設定snapshotの検出・サポート条件、MFAの並行追加、機微操作との競合、owner cutover・proof・merge・旧session/queue・退会は引き続き未完である。実ユーザーの統合・削除はしていない。
+
+### 読取scopeとRLS用ACLの部品検証（公開前）
+
+`owner-scope-real.json`（23:47:27UTC）は実2issuerのAuth sessionを用い142検査成功。claims/header、account/membership/grant/epoch/fence、legacy1:1、RLS本人限定、ACL・全原本rollbackを確認した。`policy-helper-contract.md`は別の実Postgres18.7で21検査を確認し、private schema USAGEなし＋限定EXECUTEで保存済RLSが動くことと、その保護の限界を明記する。
+
+これらはSTABLEな読取snapshot専用である。writer/commitはstate lock待機後に別の最新locking resolverで再検証する必要があり、同じSTABLE関数を再呼出ししただけで競合対策済みと扱わない。Auth delete cascadeとmembership→user lockの逆順候補は未実測・未解決。owner FK/RLS切替・bootstrap/enroll/create・UIへの接続は未実装のまま。
+
+`session-policy-decision.md`には公式Auth policy判定とKAQのDB fenceを分離する案を記録した。hosted inactivityは0.1h=6minも許容されるため、proof10minだけで将来設定を包含すると仮定しない。管理PATをEdgeへコピーせず、公式refreshを限定使用する案と保証境界は、公開APIの実装前に親担当の契約判断・実境界検証が必要。
+
+### bootstrapのread-only部品検証（公開前）
+
+`supabase/account-merge/bootstrap.sql`の本人向け内部関数は、未membership・ready・再認証要求・disabledを分ける。readyだけに本人のaccount/epoch/generationを返し、失効grantへ最新scopeを再交付しない。初回はscope header未取得なのでheaderを所有者選択に使わず、署名検証済みactorとDB grantから導く。active accountのstate不在は不変条件エラーとし、新規account生成へfallbackしない。
+
+`bootstrap-real.json`（2026-11-21T00:48:17.865Z）は実2 OIDC/GoTrue/DBで22条件成功。全14migration・基盤172条件・session71条件・readscope142条件も同じrunnerで再成功し、専用containerは撤去済み。row不変・未割当時作成0・他owner header無効・旧epoch/失効grant/fence拒否を検査した。これは非公開read部品だけで、enroll/create/cutover/ブラウザー接続/全58は未実装のまま。
+
+### Auth policyとlock順の設計判断（実装・公開前）
+
+GoTrue policyはfinal consent後の公式SDKによる各proof sessionの明示refreshと、その後のSQL live/所有権判定へ分離する方針を採る。getUserだけでpolicy確認済みとはしない。leg交換3分・proof/intent最大10分は維持し、refreshで期限やOAuth freshnessを延長しない。refresh開始をCAS保存し、結果不明・credential保存失敗はcommit不可/同token再送不可として当該legをsupersedeし新PKCEからやり直す。管理PATはEdgeへ置かない。hosted設定とSQL commitの完全原子性はこの方式の保証ではなく、その達成と報告しない。single-per-user=trueはmain/proof競合のため未対応であり、設定変更には別の実互換性検証が必要。運用snapshotを毎要求のlive guardと呼ばない。`proof-policy-review.md`の方式案のうち、JS文字列の完全zeroizeやper-record DEKを達成済み/既存要件と読み替えない。暗号化・TTL・terminal失効と削除・ログ非露出の実境界検証を残す。
+
+`auth-delete-lock-contract.md`の実Postgres競合実験は、旧membership先行→Auth user SHAREがAuth DELETE cascadeと循環待機することを確認した。今後のwriter/mergeは全対象Auth UIDを先に昇順SHARE→session→state（通常SHARE/reset・mergeは最初からUPDATE）→account/membership順とし、初期候補UID集合・revisionを下位lock後に最新snapshotで再検査する。集合変更はtransactionを中止し、追加UIDを後取りしない。全writer/cascade/new member競合を含むlocking resolverの実装・統合検査は継続中であり、この最小実験だけで全競合解決済みとはしない。
+
+### 通常検査への接続とfence境界レビュー
+
+内部session/readscope/bootstrap部品を標準`account:integration`の実2 OIDC検査後へ接続した。readscope/bootstrapでfence等値を許可するP1を独立レビューで検出し、`scope-strict-fence-red.log`に再現を残した。比較をstrict `>`へ揃え、account/membershipのsessionのみ等値・OAuthのみ等値・双方等値をすべて拒否する。`scope-strict-fence-green.log`は基盤172/session71/readscope148/bootstrap31/private ACL7条件と実認証1件成功（4.4s）。公開表の全schema・row hashは前後一致、専用DBを撤去した。
+
+private ACL検査は全functionを列挙し、明示REVOKE漏れやPUBLIC EXECUTEを注入したcanaryを検出する。schema default REVOKEがglobal default PUBLIC EXECUTEまで消すとは仮定しない。snapshot読取の二接続検査、全writerへのlocking resolver統合、承認済みproof grantのreceipt/fence束縛、全preview/merge/切替は別の未完条件として維持する。

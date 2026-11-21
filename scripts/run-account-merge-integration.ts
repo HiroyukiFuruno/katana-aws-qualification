@@ -1,10 +1,11 @@
-import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readdirSync, writeFileSync } from 'node:fs';
 import { run } from '../test/account-merge/commands';
 import { prepareFixtures } from '../test/account-merge/prepare';
 import { publicState } from '../test/account-merge/public-state';
 import { verifyPublicSchemaGuards } from '../test/account-merge/schema-guards';
+import { verifyScopeComponents } from '../test/account-merge/scope-components';
 import { seedPublicData } from '../test/account-merge/seed-public';
 import { artifacts, compose } from '../test/account-merge/settings';
 import { dataMigrations } from './data-migrations';
@@ -107,6 +108,7 @@ try {
     '--config=playwright.account-merge.config.ts',
     ...process.argv.slice(2),
   ]);
+  verifyScopeComponents();
 } finally {
   const logs = spawnSync('docker', [...compose, 'logs', '--no-color'], {
     encoding: 'utf8',

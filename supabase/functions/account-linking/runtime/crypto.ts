@@ -1,5 +1,5 @@
-import { RuntimeStorageError, type RuntimeContext, type RuntimeRecord } from './types.ts';
-import { failure, isSlots, type Slots } from './slots.ts';
+import type { RuntimeContext, RuntimeRecord } from './types.ts';
+import { failure, isLocalFailure, isSlots, type Slots } from './slots.ts';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -51,7 +51,7 @@ export async function decryptSlots(
       throw failure('decrypt_failed');
     return parsed.slots;
   } catch (error) {
-    if (error instanceof RuntimeStorageError) throw error;
+    if (isLocalFailure(error)) throw error;
     throw failure('decrypt_failed');
   }
 }
@@ -91,7 +91,7 @@ export async function encryptSlots(
     );
     return { revision, keyVersion, nonce, ciphertext, expiresAt: context.expiresAt };
   } catch (error) {
-    if (error instanceof RuntimeStorageError) throw error;
+    if (isLocalFailure(error)) throw error;
     throw failure('invalid_key');
   }
 }

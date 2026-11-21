@@ -23,3 +23,7 @@
 追加レビューで、同じlegの認証段階が変わった後に古いstorageのcleanupが新しいproof記録を消し得るinterface不足を検出した。`deleteIfRevision`へ元の不変contextを必須で渡し、adapterにphase/contextとrevisionの同一transaction照合を要求する。`runtime-cleanup-red.log`→`runtime-cleanup-green.log`で、古いlegによる削除拒否と正しいproofによる削除成功を回帰化した。active/期限をcleanupの条件には追加していない。変更後の全検査・再レビューは回収して記録する。
 
 `runtime-candidate-check.log`: 固定候補tree `c59853e63019b4ee896634dcc36037598a26b437`の標準check全体が成功。692単体検査・4,068検証、うちruntimeは14件・51検証。693文言/10言語、351ソースの直書き違反0、重複0、型・教材・構造・buildも成功した。最初の標準checkが検出したテスト重複5件は、単体検査専用fixtureへ整理して解消した。検査条件と全assertionは維持した。
+
+その後の最終レビューは、本物の`RuntimeStorageError`でも注入されたrepository/keyringがmessage/codeを書き換えると秘密を伝播できるP1を検出した。`runtime-error-instance-red.log`で再現し、repositoryのread/delete/terminal/CAS・keyringのactive/resolve・clockの7境界を固定エラーへ変換した。内部で生成した検証/暗号化エラーだけをブランド化して維持する。新しい`runtime-error-instance-green.log`は追加2件・18検証を成功し、runtime全体は16件・69検証。旧SHAに束縛されたレビューを最終候補の証跡へ流用せず、全checkと独立レビューを再回収する。
+
+修正後の`runtime-final-check.log`は候補tree `2cba5f5097f39d07c531f2c9c7b17e5daa42e4ce`で全check成功（694件・4,086検証、重複0、辞書/直書き/型/教材/構造/buildも成功）。入力archiveとlockfile SHAは`runtime-final-candidate-source.json`で固定した。

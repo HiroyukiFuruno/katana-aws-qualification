@@ -1,9 +1,16 @@
 import { RuntimeStorageError, type RuntimeContext } from './types.ts';
 
 export type Slots = { [key: string]: string };
+const localFailures = new WeakSet<RuntimeStorageError>();
 
 export function failure(code: RuntimeStorageError['code']): RuntimeStorageError {
-  return new RuntimeStorageError(code);
+  const error = new RuntimeStorageError(code);
+  localFailures.add(error);
+  return error;
+}
+
+export function isLocalFailure(error: unknown): error is RuntimeStorageError {
+  return error instanceof RuntimeStorageError && localFailures.has(error);
 }
 
 export function isSlots(value: unknown): value is Slots {

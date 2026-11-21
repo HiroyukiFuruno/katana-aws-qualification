@@ -1,12 +1,7 @@
-import {
-  RuntimeStorageError,
-  type RuntimeContext,
-  type RuntimeRecord,
-  type RuntimeStorageOptions,
-} from './types.ts';
+import type { RuntimeContext, RuntimeRecord, RuntimeStorageOptions } from './types.ts';
 import { decryptSlots, encryptSlots } from './crypto.ts';
 import { checkedNow, fixedContext, writeGuard } from './context.ts';
-import { allowedKey, failure, sanitize, type Slots } from './slots.ts';
+import { allowedKey, failure, isLocalFailure, sanitize, type Slots } from './slots.ts';
 
 export {
   RuntimeStorageError,
@@ -51,11 +46,13 @@ export class EncryptedPkceStorage {
 
   async terminate(): Promise<void> {
     return this.safe(async () => {
-      const record = await this.options.repository.read(this.context.legId);
-      const result = await this.options.repository.deleteIfRevision(
-        this.context.legId,
-        record?.revision ?? null,
-        writeGuard(this.context),
+      const record = await this.dependency(() => this.options.repository.read(this.context.legId));
+      const result = await this.dependency(() =>
+        this.options.repository.deleteIfRevision(
+          this.context.legId,
+          record?.revision ?? null,
+          writeGuard(this.context),
+        ),
       );
       if (result === 'conflict') throw failure('cas_conflict');
       this.terminated = true;
@@ -66,9 +63,27 @@ export class EncryptedPkceStorage {
     try {
       return await operation();
     } catch (error) {
-      if (error instanceof RuntimeStorageError) throw error;
+      if (isLocalFailure(error)) throw error;
       throw failure('repository_failed');
     }
+  }
+
+  private async dependency<T>(operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch {
+      throw failure('repository_failed');
+    }
+  }
+
+  private now(): number {
+    let value: number;
+    try {
+      value = this.options.clock.now();
+    } catch {
+      throw failure('repository_failed');
+    }
+    return checkedNow(value);
   }
 
   private validateKey(key: string): void {
@@ -76,22 +91,23 @@ export class EncryptedPkceStorage {
   }
 
   private async live(): Promise<void> {
-    const first = checkedNow(this.options.clock.now());
+    const first = this.now();
     if (this.terminated || first >= this.context.expiresAt)
       throw failure(this.terminated ? 'terminal' : 'expired');
-    if (await this.options.repository.isTerminal(this.context.legId)) throw failure('terminal');
-    const second = checkedNow(this.options.clock.now());
+    if (await this.dependency(() => this.options.repository.isTerminal(this.context.legId)))
+      throw failure('terminal');
+    const second = this.now();
     if (this.terminated || second >= this.context.expiresAt)
       throw failure(this.terminated ? 'terminal' : 'expired');
   }
 
   private async readSlots(): Promise<{ record: RuntimeRecord | null; slots: Slots }> {
     await this.live();
-    const record = await this.options.repository.read(this.context.legId);
+    const record = await this.dependency(() => this.options.repository.read(this.context.legId));
     await this.live();
     if (!record) return { record: null, slots: {} };
     if (record.expiresAt !== this.context.expiresAt) throw failure('invalid_context');
-    const material = await this.options.keyring.resolve(record.keyVersion);
+    const material = await this.dependency(() => this.options.keyring.resolve(record.keyVersion));
     await this.live();
     if (!material) throw failure('unknown_key');
     const slots = await decryptSlots(this.options.crypto, this.context, record, material);
@@ -101,7 +117,7 @@ export class EncryptedPkceStorage {
 
   private async write(current: RuntimeRecord | null, slots: Slots): Promise<void> {
     await this.live();
-    const active = await this.options.keyring.active();
+    const active = await this.dependency(() => this.options.keyring.active());
     await this.live();
     const next = await encryptSlots(
       this.options.crypto,
@@ -113,11 +129,13 @@ export class EncryptedPkceStorage {
     );
     await this.live();
     if (
-      !(await this.options.repository.compareAndSwap(
-        this.context.legId,
-        current?.revision ?? null,
-        next,
-        writeGuard(this.context),
+      !(await this.dependency(() =>
+        this.options.repository.compareAndSwap(
+          this.context.legId,
+          current?.revision ?? null,
+          next,
+          writeGuard(this.context),
+        ),
       ))
     )
       throw failure('cas_conflict');

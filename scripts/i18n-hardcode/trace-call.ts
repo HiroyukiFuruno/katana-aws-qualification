@@ -12,7 +12,7 @@ import {
   type Trace,
 } from './ast.ts';
 import { callArguments, callEnvironment } from './calls.ts';
-import { knownArrayIndexOccupied } from './concat-index.ts';
+import { concatOrigins } from './concat-fallback.ts';
 import { knownSelectedArrayValues } from './known-array-values.ts';
 import { callable } from './link.ts';
 import { mapInputPath, mappedPaths } from './mapped-path.ts';
@@ -21,11 +21,12 @@ import { errorObject } from './values.ts';
 
 function selectsArray(path: Path) {
   const head = path[0];
+  const selector = typeof head === 'object' && head.kind !== 'object-rest';
   return (
     head === undefined ||
     head === '*' ||
     (typeof head === 'string' && /^(0|[1-9][0-9]*)$/.test(head)) ||
-    (typeof head === 'object' && ['array-filter', 'array-range', 'array-rest'].includes(head.kind))
+    selector
   );
 }
 
@@ -82,22 +83,13 @@ export function traceCall(
         .slice(0, 1)
         .flatMap((argument) => mappedPaths(path, true).flatMap((selected) => recur(argument, selected)));
     if (method === 'concat')
-      return [
-        ...recur(ast(callee.object), path),
-        ...(knownArrayIndexOccupied(source, ast(callee.object), path, environment)
-          ? []
-          : args(node).flatMap((argument) =>
-              mappedPaths(path, true).flatMap((selected) => recur(argument, selected)),
-            )),
-      ];
-    if (method === 'slice')
+      return concatOrigins(source, node, ast(callee.object), path, environment, recur);
+    if (['slice', 'filter'].includes(method)) {
+      const selections = method === 'slice' ? slicePaths : filterPaths;
       return selectsArray(path)
-        ? slicePaths(node, path).flatMap((selected) => recur(ast(callee.object), selected))
+        ? selections(node, path).flatMap((selected) => recur(ast(callee.object), selected))
         : recur(ast(callee.object), path);
-    if (method === 'filter')
-      return selectsArray(path)
-        ? filterPaths(node, path).flatMap((selected) => recur(ast(callee.object), selected))
-        : recur(ast(callee.object), path);
+    }
     if (['find', 'join', 'toUpperCase', 'toLowerCase', 'trim', 'replace'].includes(method))
       return [
         ...recur(ast(callee.object), ['find', 'join'].includes(method) ? ['*', ...path] : path),

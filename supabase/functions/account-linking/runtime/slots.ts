@@ -1,16 +1,17 @@
 import { type RuntimeContext, RuntimeStorageError } from './types.ts';
 
 export type Slots = { [key: string]: string };
-const localFailures = new WeakSet<RuntimeStorageError>();
+const localFailures = new WeakMap<RuntimeStorageError, RuntimeStorageError['code']>();
 
 export function failure(code: RuntimeStorageError['code']): RuntimeStorageError {
   const error = new RuntimeStorageError(code);
-  localFailures.add(error);
+  localFailures.set(error, code);
   return error;
 }
 
-export function isLocalFailure(error: unknown): error is RuntimeStorageError {
-  return error instanceof RuntimeStorageError && localFailures.has(error);
+export function localFailure(error: unknown): RuntimeStorageError | undefined {
+  const code = error instanceof RuntimeStorageError ? localFailures.get(error) : undefined;
+  return code === undefined ? undefined : failure(code);
 }
 
 export function isSlots(value: unknown): value is Slots {
@@ -46,8 +47,7 @@ export function sanitize(key: string, base: string, value: string): string {
     delete session.provider_token;
     delete session.provider_refresh_token;
     return JSON.stringify(session);
-  } catch (error) {
-    if (isLocalFailure(error)) throw error;
+  } catch {
     throw failure('malformed_value');
   }
 }

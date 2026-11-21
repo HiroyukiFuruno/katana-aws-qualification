@@ -31,3 +31,9 @@
 再レビューで直接exportされた復号helperの入力getterが例外秘匿範囲の外にあるP1も採用した。暗号化/復号の入力検査、context固定、JSON session検査を同じ固定エラー境界へ揃えた。`runtime-input-boundaries-red.log`→`runtime-input-boundaries-green.log`は4入力経路・8検証を回帰化し、関連全体は`runtime-final-parent-unit.log`で17件・77検証成功。最終候補の標準checkとSHA束縛レビューは別途回収する。
 
 `runtime-boundaries-check.log`: 最終入力境界修正を含む候補tree `045c357245556407875056b2173f57ad1eada791`の標準check全体成功（695件・4,094検証、重複0、10言語の辞書整合・直書き検出・型・教材・構造・build成功）。`runtime-boundaries-candidate-source.json`でarchive/lockfile SHAを保存した。
+
+PR #83のP2では、初回CAS待機中の`terminate`成功後にblobを再作成できる順序を検出した。同じstorage instanceのset/remove/terminateをFIFOにし、readは並行のまま維持した。`runtime-termination-race-red.log`→`runtime-termination-race-green.log`で、終了後のblob不在・再作成拒否・失敗後もqueueが継続することを検査した。worker間の失効は別のDB intent/leg状態とguardが担い、このqueueだけで永続的なterminalを保証しない。
+
+共通境界の抽出時に、以前返した内部エラーを外部依存が書き換えて再送するケースもREDで検出した。外部clockの例外は常に固定コードへ変換し、内部エラーもWeakMapに保持した元コードから新しいエラーを生成する。`runtime-rethrown-error-red.log`→`runtime-serialized-green.log`で旧エラー本文・改変codeの非伝播を検査した。関連全体は19件・92検証成功。`runtime-serialized-review.md`は固定SHAに対して純部品の残存P0/P1/P2なし。標準checkと最新PRレビューを回収してからReadyへ進める。
+
+`runtime-serialized-check.log`: P2修正を含む固定候補tree `74b7d72d3f6e2cbcc343d8d7626d20f1466d5079`の標準check全体が成功（697件・4,109検証、重複0、辞書/直書き/型/教材/構造/buildも成功）。archive/lockfile SHAは`runtime-serialized-candidate-source.json`に保存した。

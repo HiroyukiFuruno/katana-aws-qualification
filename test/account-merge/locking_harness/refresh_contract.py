@@ -2,17 +2,24 @@ from datetime import datetime
 import re
 
 
-SHORT_UTC_OFFSET = re.compile(r'([+-]\d{2})$')
+TIMESTAMP = re.compile(
+    r'^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(?:\.(\d{1,6}))?(Z|[+-]\d{2}(?::\d{2})?)$'
+)
 
 
 def instant(value):
     if not isinstance(value, str):
         raise AssertionError('Refresh timestamp is missing')
-    normalized = f'{value[:-1]}+00:00' if value.endswith('Z') else SHORT_UTC_OFFSET.sub(r'\1:00', value)
-    parsed = datetime.fromisoformat(normalized)
-    if parsed.tzinfo is None:
-        raise ValueError('Refresh timestamp is missing a UTC offset')
-    return parsed
+    match = TIMESTAMP.fullmatch(value)
+    if not match:
+        raise ValueError('Refresh timestamp is invalid or missing a UTC offset')
+    day, clock, fraction, offset = match.groups()
+    normalized_offset = '+0000' if offset == 'Z' else offset.replace(':', '')
+    if len(normalized_offset) == 3:
+        normalized_offset += '00'
+    normalized_fraction = f'.{fraction}' if fraction else ''
+    format_string = '%Y-%m-%d %H:%M:%S' + ('.%f' if fraction else '') + '%z'
+    return datetime.strptime(f'{day} {clock}{normalized_fraction}{normalized_offset}', format_string)
 
 
 def verify_users(before, after, first_id, third_id):

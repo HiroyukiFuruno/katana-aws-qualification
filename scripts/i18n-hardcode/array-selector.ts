@@ -65,10 +65,20 @@ export function slicePaths(node: Ast, path: Path): Path[] {
     return limit === Number.POSITIVE_INFINITY
       ? [[{ kind: 'array-rest', start: first }, '*']]
       : [[{ kind: 'array-range', start: first, end: limit }, '*']];
-  if (head === '*')
+  if (head === '*' || (typeof head === 'object' && head.kind === 'array-filter'))
     return limit === Number.POSITIVE_INFINITY
-      ? [[{ kind: 'array-rest', start: first }, ...current.rest]]
-      : [[{ kind: 'array-range', start: first, end: limit }, ...current.rest]];
+      ? [
+          [
+            { kind: 'array-rest', start: first },
+            ...(head === '*' ? current.rest : ['*', ...current.rest]),
+          ],
+        ]
+      : [
+          [
+            { kind: 'array-range', start: first, end: limit },
+            ...(head === '*' ? current.rest : ['*', ...current.rest]),
+          ],
+        ];
   if (typeof head === 'object' && head.kind === 'array-rest')
     return [[{ kind: 'array-rest', start: first + head.start }, ...current.rest.slice(1)]];
   return path.length ? all(path) : [path];

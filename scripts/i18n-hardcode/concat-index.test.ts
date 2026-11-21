@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test';
-import { type Ast, type Binding, walk } from './ast.ts';
+import { type Ast, type Binding, type Path, walk } from './ast.ts';
 import { knownArrayIndexOccupied } from './concat-index.ts';
 import { createSource } from './sources.ts';
 
-function check(expression: string, name = 'parts', path = ['0' as const]) {
+function check(expression: string, name = 'parts', path: Path = ['0']) {
   const source = createSource('/fixture/View.tsx', `const ${name}=${expression};`);
   const receiver = [...source.bindings.entries()].find(([bindingKey]) =>
     bindingKey.startsWith(`${name}:`),

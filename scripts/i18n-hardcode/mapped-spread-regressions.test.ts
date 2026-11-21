@@ -48,3 +48,14 @@ test('unused mapped copy and translated spread children are accepted', () => {
     ),
   ).toEqual([]);
 });
+
+test('flatMap never flattens object properties into rendered member paths', () => {
+  expect(
+    scan(`const rows=[0].flatMap(() => ({caption:42,debug:{caption:'Diagnostic copy'}}));
+    const View=()=> <p>{rows[0].caption}</p>`),
+  ).toEqual([]);
+  expect(
+    scan(`const row={caption:'Visible copy',debug:{caption:'Diagnostic copy'}};
+    const rows=[0].flatMap(() => [row]);const View=()=> <p>{rows[0].caption}</p>`),
+  ).toEqual(['Visible copy']);
+});

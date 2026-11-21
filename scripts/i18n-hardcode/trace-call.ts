@@ -98,7 +98,17 @@ export function traceCall(
           }
         });
     }
-    if (options.resolveComposite) return [];
+    if (options.resolveComposite) {
+      const target = callable(sources, source, callee);
+      if (!target) return [];
+      const previous = environment;
+      setEnvironment(callEnvironment(target, source, callArguments(node), previous, [], node));
+      try {
+        return trace(target.source, target.node, path, seen, { ...options, invokeFunction: true });
+      } finally {
+        setEnvironment(previous);
+      }
+    }
     if (method === 'flatMap')
       return args(node)
         .slice(0, 1)

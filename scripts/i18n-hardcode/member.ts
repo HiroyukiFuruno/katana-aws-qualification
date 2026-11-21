@@ -7,6 +7,7 @@ import {
   property,
   type Source,
   type Trace,
+  type TraceOptions,
 } from './ast.ts';
 import { narrowedKeys } from './computed.ts';
 import { errorObject, knownObjectMember } from './values.ts';
@@ -19,6 +20,7 @@ export function traceMember(
   trace: Trace,
   seen: Set<string>,
   environment: Map<string, Binding[]>,
+  options?: TraceOptions,
 ): Origin[] {
   const member = property(ast(node.property));
   const object = ast(node.object);
@@ -33,7 +35,7 @@ export function traceMember(
   if (member !== '*') return recur(object, [member, ...path]);
   const computed = ast(node.property);
   const index = computed && ast(computed.expression);
-  const candidates = index && trace(source, index, [], seen).map((origin) => origin.text);
+  const candidates = index && trace(source, index, [], seen, options).map((origin) => origin.text);
   const keys = candidates?.length ? narrowedKeys(source, node, index, candidates) : ['*'];
   return keys.flatMap((candidate) => recur(object, [candidate, ...path]));
 }

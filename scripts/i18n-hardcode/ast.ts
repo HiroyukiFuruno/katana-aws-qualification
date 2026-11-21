@@ -21,7 +21,14 @@ export type Source = {
   errors: Set<string>;
 };
 export type Origin = { source: Source; node: Ast; text: string; rawError?: boolean };
-export type Trace = (source: Source, node: Ast | undefined, path?: Path, seen?: Set<string>) => Origin[];
+export type TraceOptions = { resolveComposite?: boolean };
+export type Trace = (
+  source: Source,
+  node: Ast | undefined,
+  path?: Path,
+  seen?: Set<string>,
+  options?: TraceOptions,
+) => Origin[];
 
 export function ast(value: unknown): Ast | undefined {
   return typeof value === 'object' && value !== null && 'type' in value && typeof value.type === 'string'

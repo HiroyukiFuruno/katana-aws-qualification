@@ -11,12 +11,12 @@ import {
   type Trace,
   type TraceOptions,
 } from './ast.ts';
-import { callEnvironment } from './calls.ts';
+import { callArguments, callEnvironment } from './calls.ts';
 import { knownArrayIndexOccupied } from './concat-index.ts';
 import { callable } from './link.ts';
 import { mappedPaths } from './mapped-path.ts';
 import { translationCall } from './translation.ts';
-import { errorObject, functionReturns } from './values.ts';
+import { errorObject } from './values.ts';
 
 export function traceCall(
   sources: Source[],
@@ -57,7 +57,7 @@ export function traceCall(
       if (target && collection)
         return mappedPaths(path, method === 'flatMap').flatMap((selected) => {
           const previous = environment;
-          setEnvironment(callEnvironment(target, source, [collection], previous, [['*']]));
+          setEnvironment(callEnvironment(target, source, [collection], previous, [['*']], node));
           try {
             return trace(target.source, target.node, selected, seen, options);
           } finally {
@@ -98,10 +98,10 @@ export function traceCall(
   const target = callable(sources, source, callableNode);
   if (!target) return options.resolveComposite ? [] : recur(callee);
   const previous = environment;
-  setEnvironment(callEnvironment(target, source, args(node), previous));
+  setEnvironment(callEnvironment(target, source, callArguments(node), previous, [], node));
   try {
     if (options.resolveComposite)
-      return functionReturns(target.node, (value) => trace(target.source, value, path, seen, options));
+      return trace(target.source, target.node, path, seen, { ...options, invokeFunction: true });
     return trace(target.source, target.node, path, seen, options);
   } finally {
     setEnvironment(previous);

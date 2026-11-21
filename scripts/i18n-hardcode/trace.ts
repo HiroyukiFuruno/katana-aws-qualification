@@ -1,26 +1,22 @@
-import { type Ast, ast, type Binding, key, nodes, type Origin, type Source, type Trace } from './ast.ts';
+import {
+  type Ast,
+  ast,
+  type Binding,
+  key,
+  nodes,
+  type Origin,
+  type Path,
+  type Source,
+  type Trace,
+} from './ast.ts';
 import { callEnvironment, environmentKey } from './calls.ts';
 import { namespaceValues, resolveImport } from './exports.ts';
 import { jsxValues } from './jsx.ts';
 import { callable } from './link.ts';
 import { traceMember } from './member.ts';
 import { traceCall } from './trace-call.ts';
+import { contextKey } from './trace-context.ts';
 import { arrayValues, combineOrigins, functionReturns, objectValues, templateValues } from './values.ts';
-
-function contextKey(environment: Map<string, Binding[]>) {
-  return [...environment]
-    .map(
-      ([scope, bindings]) =>
-        `${scope}:${bindings
-          .map((binding) => {
-            const span = binding.expression.span as { start?: number; end?: number } | undefined;
-            return `${binding.source?.path ?? ''}:${span?.start}:${span?.end}:${JSON.stringify(binding.path)}`;
-          })
-          .join(',')}`,
-    )
-    .sort()
-    .join(';');
-}
 
 export function createTrace(sources: Source[]): Trace {
   let environment = new Map<string, Binding[]>();
@@ -38,6 +34,9 @@ export function createTrace(sources: Source[]): Trace {
     const recur = (value: Ast | undefined, nextPath = path) =>
       trace(source, value, nextPath, nextSeen, options);
     const emit = (text: string): Origin[] => (path.length ? [] : [{ source, node, text }]);
+    const setEnvironment = (value: Map<string, Binding[]>) => {
+      environment = value;
+    };
     switch (node.type) {
       case 'StringLiteral':
       case 'JSXText':
@@ -57,6 +56,10 @@ export function createTrace(sources: Source[]): Trace {
         return recur(ast(node.expression));
       case 'OptionalChainingExpression':
         return recur(ast(node.base));
+      case 'ContextualExpression': {
+        const selection = Array.isArray(node.path) ? (node.path as Path) : [];
+        return trace(source, ast(node.expression), [...selection, ...path], nextSeen, options);
+      }
       case 'ModuleNamespace':
         return namespaceValues(sources, source, path, trace, nextSeen, options);
       case 'Identifier': {
@@ -103,9 +106,7 @@ export function createTrace(sources: Source[]): Trace {
           recur,
           trace,
           environment,
-          (value) => {
-            environment = value;
-          },
+          setEnvironment,
           options,
         );
       case 'JSXElement':
@@ -116,7 +117,7 @@ export function createTrace(sources: Source[]): Trace {
               const target = callable(sources, source, ast(opening.name));
               if (!target) return [];
               const previous = environment;
-              environment = callEnvironment(target, source, [props], previous);
+              environment = callEnvironment(target, source, [props], previous, [], opening);
               try {
                 return trace(target.source, target.node, path, nextSeen, options);
               } finally {
@@ -126,7 +127,12 @@ export function createTrace(sources: Source[]): Trace {
       case 'ArrowFunctionExpression':
       case 'FunctionExpression':
       case 'FunctionDeclaration':
-        if (options.resolveComposite) return [];
+        if (options.resolveComposite) {
+          if (!options.invokeFunction) return [];
+          return functionReturns(node, (value) =>
+            trace(source, value, path, nextSeen, { ...options, invokeFunction: false }),
+          );
+        }
         return functionReturns(node, recur);
       default:
         return [];

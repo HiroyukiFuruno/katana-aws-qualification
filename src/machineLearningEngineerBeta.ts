@@ -1,13 +1,14 @@
 import type { Certification } from './certificationTypes';
+import { messages } from './messages.ts';
 
 const mock = 'courses/mla-c02/mock-2026-11.json';
 
 export const machineLearningEngineerBeta: Certification = {
   id: 'mla-c02',
-  name: 'Machine Learning Engineer',
+  name: messages.en.certMlaName,
   level: 'アソシエイト',
   skills: ['ai', 'data', 'operations'],
-  focus: 'モデルの構築・デプロイ・監視',
+  focus: 'certMlaFocus',
   beta: true,
   course: {
     practice: [{ path: mock, label: 'saaFull' }],

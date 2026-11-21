@@ -75,7 +75,7 @@ export function CertificationDirectory(props: DirectoryProps) {
                         <div className="certification-row-content">
                           {code}
                           <h3>{cert.name}</h3>
-                          {mode === 'certifications' && <p lang="ja">{cert.focus}</p>}
+                          {mode === 'certifications' && <p>{t(cert.focus)}</p>}
                         </div>
                         <span aria-hidden="true" className="certification-row-arrow">
                           →

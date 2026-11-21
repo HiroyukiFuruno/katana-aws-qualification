@@ -11,7 +11,7 @@ export function LandingHero() {
     <section className="landing-hero">
       <div className="shell landing-hero-grid">
         <div className="landing-hero-copy">
-          <span className="landing-kicker">KatanA AWS Qualification</span>
+          <span className="landing-kicker">{t('siteName')}</span>
           <h1>
             <span className={locale === 'ja' ? 'landing-title-phrase' : undefined}>
               {title.slice(0, offset)}
@@ -31,9 +31,9 @@ export function LandingHero() {
           </a>
         </div>
         <div className="landing-identity" aria-hidden="true">
-          <span>KAQ</span>
+          <span>{t('siteShortName')}</span>
           <span className="landing-identity-mark" />
-          <span>LEARN AT YOUR PACE</span>
+          <span>{t('landingPace')}</span>
         </div>
       </div>
     </section>
@@ -46,7 +46,7 @@ export function LandingConcept() {
     <section className="landing-concept" aria-labelledby="landing-concept-title">
       <div className="landing-concept-heading">
         <span className="landing-kicker" aria-hidden="true">
-          01 / CONCEPT
+          {t('landingConceptLabel')}
         </span>
         <h2 id="landing-concept-title">
           <LandingSectionTitle text={t('landingConceptTitle')} />

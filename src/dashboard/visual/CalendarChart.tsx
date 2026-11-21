@@ -98,7 +98,11 @@ export function CalendarChart({
             >
               <span>{index + 1}</span>
               {!outside && (
-                <strong>{metric === 'durationMs' ? `${Math.round(amount / 1000)}s` : amount}</strong>
+                <strong>
+                  {metric === 'durationMs'
+                    ? t('dashboardDurationSeconds', { seconds: Math.round(amount / 1000) })
+                    : amount}
+                </strong>
               )}
             </span>
           );

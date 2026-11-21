@@ -1,106 +1,104 @@
 import type { Locale } from './locales';
+import type { Message } from './messages';
 
 type CertificationGuide = {
-  scope: string;
+  scope: Message;
   difficulty: number;
-  why: string;
-  audience: string;
+  why: Message;
+  audience: Message;
   path: string;
 };
 
 export const certificationGuides: Record<string, CertificationGuide> = {
   'clf-c02': {
-    scope:
-      'AWSクラウドの価値、責任共有モデル、主要サービスの役割、料金とサポートを理解しているかを確認します。',
+    scope: 'guideClfScope',
     difficulty: 1,
-    why: '基本用語とサービスの使い分けが中心です。',
-    audience: 'AWSを初めて学ぶ方や、営業・企画などで開発チームとクラウドの前提をそろえたい方。',
+    why: 'guideClfWhy',
+    audience: 'guideClfAudience',
     path: 'cloud-practitioner-02',
   },
   'aif-c01': {
-    scope: 'AI・機械学習・生成AIの基本、基盤モデルの用途、責任あるAIとデータガバナンスを扱います。',
+    scope: 'guideAifScope',
     difficulty: 2,
-    why: 'モデルを実装するより、用途やリスクを説明できることが重要です。',
-    audience: 'AIを使った企画や業務改善に関わる方、AI開発を学び始めた方。',
+    why: 'guideAifWhy',
+    audience: 'guideAifAudience',
     path: 'ai-practitioner-01',
   },
   'saa-c03': {
-    scope: '安全で可用性が高く、性能とコストの要件を満たすAWSアーキテクチャの設計を扱います。',
+    scope: 'guideSaaScope',
     difficulty: 3,
-    why: '似た構成の中から、可用性・接続経路・運用負荷などの制約を満たす案を選びます。',
-    audience: 'AWSの設計を体系的に学びたいインフラエンジニア、SRE、アプリ開発者。',
+    why: 'guideSaaWhy',
+    audience: 'guideSaaAudience',
     path: 'solutions-architect-associate-03',
   },
   'dva-c03': {
-    scope: 'AWS上のアプリ開発、AI支援開発、認証と権限、テスト、デプロイ、障害調査を扱います。',
+    scope: 'guideDvaScope',
     difficulty: 3,
-    why: 'Lambdaの再試行やDynamoDBの条件付き更新など、実装時の挙動まで問われます。',
-    audience: 'AWSのマネージドサービスでバックエンドやサーバーレスアプリを作る開発者。',
+    why: 'guideDvaWhy',
+    audience: 'guideDvaAudience',
     path: 'developer-associate-03',
   },
   'soa-c03': {
-    scope: 'AWS環境の監視、信頼性、障害対応、ネットワーク、運用自動化を扱います。',
+    scope: 'guideSoaScope',
     difficulty: 3,
-    why: '症状から原因を切り分け、運用の制約に合う復旧・改善方法を選びます。',
-    audience: 'クラウド運用担当者や、監視と障害対応を体系化したいSRE。',
+    why: 'guideSoaWhy',
+    audience: 'guideSoaAudience',
     path: 'sysops-administrator-associate-03',
   },
   'dea-c01': {
-    scope: 'データの取り込み、変換、保存、パイプライン運用、アクセス管理を扱います。',
+    scope: 'guideDeaScope',
     difficulty: 3,
-    why: '処理方式ごとに、遅延、再実行、コスト、アクセス制御の違いを理解する必要があります。',
-    audience: 'ETLやデータレイク、分析基盤の構築・運用に関わる方。',
+    why: 'guideDeaWhy',
+    audience: 'guideDeaAudience',
     path: 'data-engineer-associate-01',
   },
   'mla-c01': {
-    scope: '学習データの準備、モデル開発、デプロイ、モデルと基盤の監視を扱います。',
+    scope: 'guideMlaScope',
     difficulty: 4,
-    why: '機械学習の評価指標と、AWS上での配備・運用の両方が問われます。',
-    audience: '学習済みモデルを本番に載せ、品質やコストを継続管理したいMLエンジニア。',
+    why: 'guideMlaWhy',
+    audience: 'guideMlaAudience',
     path: 'machine-learning-engineer-associate-01',
   },
   'sap-c03': {
-    scope:
-      '組織横断のクラウド設計、セキュリティとガバナンス、コスト、移行・事業継続、運用自動化を扱います。AI/MLを組み込む設計も範囲に含まれます。',
+    scope: 'guideSapScope',
     difficulty: 5,
-    why: '複数アカウントや既存システムの制約が重なる場面で、運用・コスト・復旧要件を同時に評価します。',
-    audience: '複数チームの設計をレビューするアーキテクト、クラウド移行や標準化を担うテックリード。',
+    why: 'guideSapWhy',
+    audience: 'guideSapAudience',
     path: 'solutions-architect-professional-03',
   },
   'dop-c02': {
-    scope: 'CI/CD、構成管理、監視、インシデント対応、セキュリティと可用性の自動化を扱います。',
+    scope: 'guideDopScope',
     difficulty: 5,
-    why: '複数環境への展開や異常検知後のロールバックまで、一連の運用を設計する力が必要です。',
-    audience: '複数チームのリリース基盤やクラウド運用の自動化を担うDevOpsエンジニア、SRE。',
+    why: 'guideDopWhy',
+    audience: 'guideDopAudience',
     path: 'devops-engineer-professional-02',
   },
   'aip-c01': {
-    scope: '基盤モデルを使った生成AIアプリの設計、RAG、エージェント、評価、安全性、本番運用を扱います。',
+    scope: 'guideAipScope',
     difficulty: 5,
-    why: '検索と生成の品質、アクセス制御、レイテンシー、推論コストを同時に検討します。',
-    audience: '生成AI機能を検証から本番運用まで持っていく開発者やアーキテクト。',
+    why: 'guideAipWhy',
+    audience: 'guideAipAudience',
     path: 'ai-professional-01',
   },
   'scs-c03': {
-    scope: 'IDとアクセス管理、暗号化、インフラ保護、脅威検知、調査とインシデント対応を扱います。',
+    scope: 'guideScsScope',
     difficulty: 5,
-    why: '複数アカウントのIAM・リソース・鍵のポリシーを合わせて読み、実際の許可や拒否を判断します。',
-    audience: 'クラウドのセキュリティ設計、監査、脆弱性対応を担当する方。',
+    why: 'guideScsWhy',
+    audience: 'guideScsAudience',
     path: 'security-specialty-03',
   },
   'ans-c01': {
-    scope:
-      'AWSとオンプレミスの接続、ネットワーク設計、経路制御、運用とトラブルシューティングを扱います。',
+    scope: 'guideAnsScope',
     difficulty: 5,
-    why: 'BGP経路、DNSの転送方向、複数VPC間の到達性を前提条件から追う必要があります。',
-    audience: 'Direct ConnectやTransit Gatewayを使うハイブリッド基盤を設計・運用する方。',
+    why: 'guideAnsWhy',
+    audience: 'guideAnsAudience',
     path: 'advanced-networking-specialty-01',
   },
   'ai-business-strategist': {
-    scope: 'AI投資の優先順位、事業価値の測定、リスク管理、組織への導入と定着を扱います。',
+    scope: 'guideAiBusinessScope',
     difficulty: 3,
-    why: 'AIの基本に加え、事業成果、導入準備、ガバナンスをケースごとに比較する力が必要です。',
-    audience: 'AI導入の意思決定を担う事業責任者、プロダクト責任者、コンサルタント。',
+    why: 'guideAiBusinessWhy',
+    audience: 'guideAiBusinessAudience',
     path: 'ai-business-strategist-01',
   },
 };

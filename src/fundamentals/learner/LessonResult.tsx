@@ -33,12 +33,11 @@ export function LessonResult({
   onReloadSaved,
 }: LessonResultProps) {
   const { locale, t } = usePreferences();
-  const [actionError, setActionError] = useState<string>();
+  const [actionError, setActionError] = useState<{ cause: unknown }>();
   const session = submittedSession(snapshot.sessions, sessionId);
   const catalogHref = localePath(locale, 'study/fundamentals');
   const reportError = (cause: unknown) => {
-    const message = cause instanceof Error ? cause.message : String(cause);
-    setActionError(message);
+    setActionError({ cause });
     onActionError?.(cause);
   };
   const navigate = (href: string) => {
@@ -111,7 +110,7 @@ export function LessonResult({
       )}
       {actionError && (
         <p className="notice" role="alert">
-          {actionError}
+          {t('fundamentalsActionFailed')}
         </p>
       )}
       {session && (

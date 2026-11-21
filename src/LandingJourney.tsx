@@ -16,7 +16,7 @@ export function LandingValues() {
     <section className="landing-values" aria-labelledby="landing-values-title">
       <div className="landing-section-heading">
         <span className="landing-kicker" aria-hidden="true">
-          02 / VALUE
+          {t('landingValueLabel')}
         </span>
         <h2 id="landing-values-title">
           <LandingSectionTitle text={t('landingValuesTitle')} />
@@ -45,7 +45,7 @@ export function LandingPaths() {
     <section className="landing-paths" aria-labelledby="landing-paths-title">
       <div className="landing-section-heading">
         <span className="landing-kicker" aria-hidden="true">
-          04 / YOUR NEXT STEP
+          {t('landingNextStepLabel')}
         </span>
         <h2 id="landing-paths-title">
           <LandingSectionTitle text={t('landingStartTitle')} />

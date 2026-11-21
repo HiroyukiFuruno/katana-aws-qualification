@@ -102,3 +102,47 @@ test('consumes selected filter elements, mapped output paths, and direct slice b
     [],
   );
 });
+
+test('applies slice positions after Boolean filtering', () => {
+  expect(
+    scan(
+      `export const View=()=> <p>{['Diagnostic copy','Visible copy'].filter(Boolean).slice(1,2).join('')}</p>;`,
+    ),
+  ).toEqual(['Visible copy']);
+});
+
+test('does not trace map callback output for known empty selections', () => {
+  expect(
+    scan(`export const View=()=> <p>{[0].map(()=> 'Diagnostic copy').slice(1).join('')}</p>;`),
+  ).toEqual([]);
+  expect(scan(`export const View=()=> <p>{[].map(()=> 'Diagnostic copy').join('')}</p>;`)).toEqual([]);
+});
+
+test('maps a numeric zero element as an existing callback input', () => {
+  expect(scan(`export const View=()=> <p>{[0].map(()=> 'Visible copy')[0]}</p>;`)).toEqual([
+    'Visible copy',
+  ]);
+});
+
+test('defers mutable aliases to structural tracing', () => {
+  expect(
+    scan(`const rows=[];rows.push(0);export const View=()=> <p>{rows.map(()=> 'Please sign in')}</p>;`),
+  ).toEqual(['Please sign in']);
+});
+
+test('defers downstream member paths to structural tracing', () => {
+  expect(scan(`export const View=()=> <p>{[0].map(()=> 'Diagnostic copy')[0].length}</p>;`)).toEqual([]);
+});
+
+test('keeps true elements reachable after unknown Boolean-filter predecessors', () => {
+  expect(
+    scan(
+      `export const Maybe=({possible}:{possible:unknown})=><p>{[possible,'Visible copy'].filter(Boolean)[1]}</p>;`,
+    ),
+  ).toEqual(['Visible copy']);
+  expect(
+    scan(
+      `export const Maybe=({possible}:{possible:unknown})=><p>{[possible,'Visible copy'].filter(Boolean).slice(1,2).join('')}</p>;`,
+    ),
+  ).toEqual(['Visible copy']);
+});

@@ -39,22 +39,25 @@ export function RoadmapResults({
             {items.map((item) => {
               const chosen = answers[item.id];
               const correct = chosen === item.correct;
+              const selectedOption = item.options[chosen];
               const answer =
                 chosen === item.options.length
                   ? t('unknown')
-                  : (item.options[chosen] ?? t('unanswered'));
+                  : selectedOption
+                    ? t(selectedOption)
+                    : t('unanswered');
               return (
                 <li key={item.id}>
                   <strong className={correct ? 'good-text' : 'bad-text'}>
                     {correct ? `○ ${t('correct')}` : `× ${t('incorrect')}`}
                   </strong>
-                  <p>{item.prompt}</p>
+                  <p>{t(item.prompt)}</p>
                   <p>
                     {t('yourAnswer')} · {answer}
                   </p>
                   {!correct && (
                     <p>
-                      {t('correct')} · {item.options[item.correct]}
+                      {t('correct')} · {t(item.options[item.correct])}
                     </p>
                   )}
                 </li>

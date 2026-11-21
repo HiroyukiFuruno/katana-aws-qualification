@@ -22,6 +22,7 @@ do $$
 declare
   seed_uid uuid := '__SEED_USER__'; first_uid uuid := '__FIRST_USER__';
   owners uuid[] := array[seed_uid, first_uid]; baseline jsonb; changed jsonb; expected jsonb;
+  hex_output jsonb; escape_output jsonb;
   intent_id uuid := gen_random_uuid(); receipt_id uuid := gen_random_uuid();
   case_row record; table_name text; public_tables text[]; role_name text;
 begin
@@ -50,9 +51,15 @@ begin
     encode(extensions.digest((baseline->'fingerprints')::text, 'sha256'), 'hex'));
   perform set_config('TimeZone', 'Asia/Tokyo', true);
   perform set_config('DateStyle', 'German, DMY', true);
-  perform pg_temp.snapshot_assert('caller_timezone_datestyle_invariant', kaq_private.capture_learning_snapshot(owners) = baseline);
+  perform set_config('bytea_output', 'hex', true);
+  hex_output := kaq_private.capture_learning_snapshot(owners);
+  perform set_config('bytea_output', 'escape', true);
+  escape_output := kaq_private.capture_learning_snapshot(owners);
+  perform pg_temp.snapshot_assert('caller_settings_invariant',
+    hex_output = baseline and escape_output = baseline and hex_output = escape_output);
   perform set_config('TimeZone', 'UTC', true);
   perform set_config('DateStyle', 'ISO, YMD', true);
+  perform set_config('bytea_output', 'hex', true);
   select array_agg(key order by key) into public_tables from jsonb_each(baseline->'document'->'tables')
     where key like 'public.%';
   foreach table_name in array public_tables loop

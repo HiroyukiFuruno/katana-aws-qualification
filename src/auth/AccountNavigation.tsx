@@ -3,6 +3,7 @@ import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
 import { useDismissiblePopover } from '../useDismissiblePopover';
 import { useAccount } from './AuthContext';
+import { accountSettingsPath } from './navigation';
 import './account.css';
 
 export function useHomePath() {
@@ -76,10 +77,7 @@ export function AccountNavigation() {
             <a href={localePath(locale, 'dashboard')} onClick={() => setOpen(false)}>
               {t('accountDashboard')}
             </a>
-            <a
-              href={`${localePath(locale, 'dashboard')}#account-settings`}
-              onClick={() => setOpen(false)}
-            >
+            <a href={accountSettingsPath(locale)} onClick={() => setOpen(false)}>
               {t('accountSettings')}
             </a>
             <button type="button" disabled={busy} onClick={() => void signOut()}>

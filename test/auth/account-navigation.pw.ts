@@ -27,14 +27,45 @@ test('guest avatar menu is hidden until opened and supports keyboard and outside
 test('verified account menu exposes settings and logout without guest registration offers', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page);
+  await expect(page.getByRole('heading', { name: 'アカウント設定' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '連携解除', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'アカウントを削除', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'アカウントメニュー' }).click();
   const menu = page.locator('#account-menu-links');
-  await expect(menu.getByRole('link', { name: 'アカウント設定' })).toBeVisible();
+  const settings = menu.getByRole('link', { name: 'アカウント設定' });
+  await expect(settings).toHaveAttribute('href', '/ja/account/settings/');
+  await expect(settings).toBeVisible();
+  await settings.click();
+  await expect(page).toHaveURL(/\/ja\/account\/settings\/$/);
+  await expect(page.getByRole('heading', { name: 'アカウント設定' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '学習ダッシュボード' })).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await page.getByRole('button', { name: 'アカウントメニュー' }).click();
   await expect(menu.getByRole('link', { name: '無料アカウントを作成' })).toHaveCount(0);
   await menu.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await expect(page).toHaveURL(/\/ja\/$/);
   await expect(page.getByRole('link', { name: '無料アカウントを作成' }).first()).toBeVisible();
+});
+
+test('guest settings is gated and the legacy dashboard anchor redirects to localized settings', async ({
+  page,
+}) => {
+  await page.goto('/ja/account/settings/');
+  await expect(page).toHaveURL(/\/ja\/account\/settings\/$/);
+  await expect(page.getByRole('heading', { name: 'アカウント設定' })).toBeVisible();
+  const main = page.getByRole('main');
+  await expect(main.getByRole('link', { name: 'ログイン', exact: true })).toHaveAttribute(
+    'href',
+    '/ja/login/',
+  );
+  await expect(main.getByRole('button', { name: '連携解除' })).toHaveCount(0);
+  await expect(main.getByRole('button', { name: 'アカウントを削除' })).toHaveCount(0);
+
+  await page.goto('/ja/dashboard/#account-settings');
+  await expect(page).toHaveURL(/\/ja\/account\/settings\/$/);
+  await expect(page.getByRole('heading', { name: 'アカウント設定' })).toBeVisible();
 });
 
 test('mobile light and dark layouts retain a usable avatar menu and SSO registration path', async ({

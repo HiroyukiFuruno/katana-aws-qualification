@@ -1,6 +1,7 @@
 import { type Ast, ast, bind, key, nodes, property, type Source, walk } from './ast.ts';
 import { resolveExport } from './exports.ts';
 import { namespaceSource } from './namespace.ts';
+import { isTextualAriaAttribute } from './sink-metadata.ts';
 import { importedSource } from './sources.ts';
 
 export function callable(
@@ -36,32 +37,33 @@ export function parameters(node: Ast) {
   return nodes(node.params);
 }
 
+export function jsxProps(node: Ast): Ast | undefined {
+  if (node.type !== 'JSXOpeningElement') return undefined;
+  const properties = nodes(node.attributes).flatMap((attribute) => {
+    if (attribute.type === 'SpreadElement') return [attribute];
+    if (attribute.type !== 'JSXAttribute') return [];
+    const value = ast(attribute.value);
+    return value ? [{ type: 'KeyValueProperty', key: ast(attribute.name), value }] : [];
+  });
+  return { type: 'ObjectExpression', span: node.span, properties };
+}
+
 export function linkSources(sources: Source[]) {
   for (const source of sources)
     walk(source.ast, (node) => {
       if (node.type !== 'JSXOpeningElement') return;
       const target = callable(sources, source, ast(node.name));
       const parameter = target && parameters(target.node)[0];
-      if (!target || !parameter) return;
-      const properties = nodes(node.attributes).flatMap((attribute) => {
-        if (attribute.type === 'SpreadElement') return [attribute];
-        if (attribute.type !== 'JSXAttribute') return [];
-        const value = ast(attribute.value);
-        if (!value) return [];
-        return [{ type: 'KeyValueProperty', key: ast(attribute.name), value }];
-      });
-      bind(
-        target.source,
-        parameter,
-        { type: 'ObjectExpression', span: node.span, properties },
-        [],
-        source,
-      );
+      const properties = jsxProps(node);
+      if (target && parameter && properties) bind(target.source, parameter, properties, [], source);
     });
 }
 
 export function displayProp(value: string): boolean {
-  return /^(?:aria-label|aria-description|alt|title|placeholder|label|children|text|message|description|heading|caption|subtitle|buttonLabel|emptyMessage|errorMessage)$/.test(
-    value,
+  return (
+    isTextualAriaAttribute(value) ||
+    /^(?:alt|title|placeholder|label|children|text|message|description|heading|caption|subtitle|buttonLabel|emptyMessage|errorMessage)$/.test(
+      value,
+    )
   );
 }

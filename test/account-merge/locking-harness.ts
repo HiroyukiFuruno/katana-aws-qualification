@@ -48,7 +48,11 @@ export async function verifyLockingHarness() {
     env: { ...process.env, PYTHONPATH: 'test/account-merge', PYTHONDONTWRITEBYTECODE: '1' },
     maxBuffer: 10 * 1024 * 1024,
   };
-  const unit = spawnSync('python3', ['-m', 'unittest', 'locking_harness.test_support'], options);
+  const unit = spawnSync(
+    'python3',
+    ['-m', 'unittest', 'locking_harness.test_support', 'locking_harness.test_refresh_contract'],
+    options,
+  );
   const result =
     unit.status === 0
       ? spawnSync(

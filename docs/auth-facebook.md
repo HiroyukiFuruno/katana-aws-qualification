@@ -18,9 +18,9 @@
 
 SSO registryに加え、削除UI・本人確認するEdge Function・案内ページを提供する。本番Facebook flagはMetaの公開設定とSupabaseへのcredential反映を確認するまでfalseに保つ。退会の契約と配備手順は[auth-deletion.md](auth-deletion.md)に記載する。
 
-公開する削除案内URLは`https://kaq.katana-projects.org/privacy/#account-deletion`である。外部providerで連携を解除してもKAQアカウントは消えない。利用者はログイン後にダッシュボードの「アカウントを削除」で、取り消せない操作を明示確認してから本人のアカウントを削除する。
+公開する削除案内URLは`https://kaq.katana-projects.org/privacy/#account-deletion`である。外部providerで連携を解除してもKAQアカウントは消えない。利用者はログイン後に「アカウント設定」から「アカウントを削除」を選び、取り消せない操作を明示確認する。
 
-現時点の学習履歴はゲストとしてブラウザに保存され、アカウント削除で自動削除しない。クラウド同期データとのcascade削除は#23で扱う。Metaのsigned-request deletion callbackや不正通知を受けるURLは設定しない。
+ログイン済み利用者のKAQクラウド記録は、本人確認済みのアカウント削除に伴う対象として削除する。ゲストの端末側履歴やCookieはクラウドアカウントとは別管理で、アカウント削除によって自動消去しない。端末側の削除・Cookie設定手順は既存の[auth-deletion.md](auth-deletion.md)およびプライバシー案内を参照する。Metaのsigned-request deletion callbackや不正通知を受けるURLは設定しない。
 
 ## 自動検証
 

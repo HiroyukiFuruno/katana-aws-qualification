@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useCookieConsent } from '../../CookieConsent';
 import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
-import { SiteAd, siteAdServingEnabled } from '../../SiteAd';
+import { SiteAd, SiteAdVisibilityButton, siteAdServingEnabled, useAdsCollapsed } from '../../SiteAd';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonRoute } from '../delivery/navigation';
 import type { LessonStep } from '../delivery/slideTypes';
@@ -38,6 +38,8 @@ export function LessonStepScreen({
 }: Props) {
   const { locale, t } = usePreferences();
   const consent = useCookieConsent();
+  const adsCollapsed = useAdsCollapsed();
+  const offersAdvertising = step.kind !== 'final' && siteAdServingEnabled && consent.value === 'granted';
   const active = snapshot.sessions.find(
     (session) => session.sessionId === snapshot.progress.activeFinalSessionId,
   );
@@ -116,11 +118,8 @@ export function LessonStepScreen({
       onActionError={setActionError}
       onNext={navigation.nextAllowed ? actions.next : undefined}
       nextLabel={navigation.nextLabelKey ? t(navigation.nextLabelKey, { total: 12 }) : undefined}
-      adSlot={
-        step.kind !== 'final' && siteAdServingEnabled && consent.value === 'granted' ? (
-          <SiteAd fullWidth={false} />
-        ) : undefined
-      }
+      advertisingControl={offersAdvertising ? <SiteAdVisibilityButton /> : undefined}
+      adSlot={offersAdvertising && !adsCollapsed ? <SiteAd fullWidth={false} /> : undefined}
     >
       {conflict ? (
         <button

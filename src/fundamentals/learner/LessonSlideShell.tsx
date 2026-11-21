@@ -1,4 +1,4 @@
-import { type MouseEvent, type ReactNode, useEffect, useId, useRef } from 'react';
+import { type MouseEvent, type ReactNode, useId, useLayoutEffect, useRef } from 'react';
 import { usePreferences } from '../../preferences';
 import type { LessonStep } from '../delivery/slideTypes';
 import { LessonSlideFooter } from './LessonSlideFooter';
@@ -13,6 +13,7 @@ export type LessonSlideShellProps = {
   children: ReactNode;
   previousHref?: string;
   adSlot?: ReactNode;
+  advertisingControl?: ReactNode;
   saving?: boolean;
   error?: string;
   onPrevious?: () => void | Promise<void>;
@@ -31,6 +32,7 @@ export function LessonSlideShell({
   children,
   previousHref,
   adSlot,
+  advertisingControl,
   saving = false,
   error,
   onPrevious,
@@ -42,14 +44,13 @@ export function LessonSlideShell({
   const { t } = usePreferences();
   const headingId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
-  const stage = useRef<HTMLElement>(null);
   const catalogBusy = useRef(false);
   const total = Math.max(step.totalSteps, 1);
   const position = Math.min(Math.max(step.position, 1), total);
   const minutes = Math.max(1, Math.ceil(step.estimatedSeconds / 60));
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (step.id) {
-      stage.current?.scrollTo({ top: 0 });
+      window.scrollTo(0, 0);
       heading.current?.focus({ preventScroll: true });
     }
   }, [step.id]);
@@ -102,19 +103,15 @@ export function LessonSlideShell({
         <progress aria-label={t('lessonProgress')} max={total} value={position}>
           {position} / {total}
         </progress>
+        {advertisingControl}
       </header>
-      <main id="main" ref={stage} className="lesson-slide-stage" aria-labelledby={headingId}>
+      <main id="main" className="lesson-slide-stage" aria-labelledby={headingId}>
         <div className="lesson-slide-content">
           <h1 id={headingId} ref={heading} tabIndex={-1}>
             {step.label}
           </h1>
           {children}
         </div>
-        {adSlot ? (
-          <aside className="lesson-slide-ad" aria-label={t('lessonAdvertisement')}>
-            {adSlot}
-          </aside>
-        ) : null}
       </main>
       <LessonSlideFooter
         previousHref={previousHref}
@@ -127,6 +124,11 @@ export function LessonSlideShell({
         nextLabel={nextLabel}
         onExit={onCatalog}
       />
+      {adSlot ? (
+        <aside className="lesson-slide-ad" aria-label={t('lessonAdvertisement')}>
+          {adSlot}
+        </aside>
+      ) : null}
     </section>
   );
 }

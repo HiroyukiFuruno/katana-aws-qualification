@@ -16,7 +16,7 @@ export const publishedPages = [
   ...publicLessonPageNames,
 ];
 
-export const accountPages = ['login', 'auth/callback', 'dashboard'];
+export const accountPages = ['login', 'auth/callback', 'dashboard', 'account/settings'];
 export const privateLessonPages = privateLessonPageNames;
 
 const studyLocales = new Map<string, Locale>(

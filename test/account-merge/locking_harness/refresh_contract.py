@@ -1,10 +1,18 @@
 from datetime import datetime
+import re
+
+
+SHORT_UTC_OFFSET = re.compile(r'([+-]\d{2})$')
 
 
 def instant(value):
     if not isinstance(value, str):
         raise AssertionError('Refresh timestamp is missing')
-    return datetime.fromisoformat(value.replace('Z', '+00:00'))
+    normalized = f'{value[:-1]}+00:00' if value.endswith('Z') else SHORT_UTC_OFFSET.sub(r'\1:00', value)
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None:
+        raise ValueError('Refresh timestamp is missing a UTC offset')
+    return parsed
 
 
 def verify_users(before, after, first_id, third_id):

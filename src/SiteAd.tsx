@@ -25,6 +25,49 @@ function adViewport() {
   return wide.matches ? 'wide' : 'standard';
 }
 
+const adVisibilityKey = 'kaq:ads-collapsed';
+const adVisibilityEvents = new EventTarget();
+let adsCollapsed = false;
+try {
+  adsCollapsed = sessionStorage.getItem(adVisibilityKey) === '1';
+} catch {
+  // 保存できない環境でも現在のページでは選択を維持する。
+}
+
+function subscribeAdVisibility(onChange: () => void) {
+  adVisibilityEvents.addEventListener('change', onChange);
+  return () => adVisibilityEvents.removeEventListener('change', onChange);
+}
+
+export function useAdsCollapsed() {
+  return useSyncExternalStore(subscribeAdVisibility, () => adsCollapsed);
+}
+
+export function SiteAdVisibilityButton() {
+  const { t } = usePreferences();
+  const consent = useCookieConsent();
+  const collapsed = useAdsCollapsed();
+  if (!siteAdServingEnabled || consent.value !== 'granted') return null;
+
+  return (
+    <button
+      className="site-ad-visibility"
+      type="button"
+      onClick={() => {
+        adsCollapsed = !collapsed;
+        try {
+          sessionStorage.setItem(adVisibilityKey, adsCollapsed ? '1' : '0');
+        } catch {
+          // 現在のページではメモリ上の選択を利用する。
+        }
+        adVisibilityEvents.dispatchEvent(new Event('change'));
+      }}
+    >
+      {t(collapsed ? 'showAdvertisements' : 'collapseAdvertisements')}
+    </button>
+  );
+}
+
 type Placement = 'footer' | 'inline' | 'left' | 'right';
 
 export function SiteAdLayout({ children, show }: { children: ReactNode; show: boolean }) {
@@ -50,7 +93,8 @@ export function SiteAd({
 }) {
   const consent = useCookieConsent();
   const viewport = useSyncExternalStore(subscribeViewport, adViewport);
-  if (!siteAdServingEnabled || consent.value !== 'granted') return null;
+  const collapsed = useAdsCollapsed();
+  if (!siteAdServingEnabled || consent.value !== 'granted' || collapsed) return null;
   if (placement === 'inline' && viewport !== 'mobile') return null;
   if (placement === 'footer' && replaceOnMobile && viewport === 'mobile') return null;
   if ((placement === 'left' || placement === 'right') && viewport !== 'wide') return null;

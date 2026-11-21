@@ -6,6 +6,7 @@ import {
   type Path,
   type Source,
   type Trace,
+  type TraceOptions,
 } from './ast.ts';
 import { importedSource } from './sources.ts';
 
@@ -63,6 +64,7 @@ export function namespaceValues(
   path: Path,
   trace: Trace,
   seen: Set<string>,
+  options?: TraceOptions,
 ): Origin[] {
   let [head, ...rest] = path;
   const excluded = new Set<string>();
@@ -73,5 +75,5 @@ export function namespaceValues(
   }
   if (!head || excluded.has(head)) return [];
   const exported = resolveExport(sources, source, head);
-  return exported ? trace(exported.source, exported.node, rest, seen) : [];
+  return exported ? trace(exported.source, exported.node, rest, seen, options) : [];
 }

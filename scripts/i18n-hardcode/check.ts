@@ -90,6 +90,7 @@ export function checkSources(sources: Source[], root: string): Finding[] {
         for (const attribute of nodes(node.attributes)) {
           if (attribute.type !== 'SpreadElement') continue;
           for (const field of [
+            'children',
             'label',
             'title',
             'placeholder',

@@ -117,7 +117,10 @@ export function ReviewPanel({
             cells: {
               title: href ? <a href={href}>{title(row)}</a> : title(row),
               category: row.category,
-              revision: `${row.sourceVersion} / r${row.questionRevision}`,
+              revision: t('dashboardRevisionValue', {
+                version: row.sourceVersion,
+                revision: row.questionRevision,
+              }),
               wrong: String(row.incorrectCount),
               total: String(row.answered),
               latest: new Intl.DateTimeFormat(locale, {

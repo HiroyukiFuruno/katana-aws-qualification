@@ -13,6 +13,7 @@ import {
 } from './ast.ts';
 import { callArguments, callEnvironment } from './calls.ts';
 import { knownArrayIndexOccupied } from './concat-index.ts';
+import { knownSelectedArrayValues } from './known-array-values.ts';
 import { callable } from './link.ts';
 import { mappedPaths } from './mapped-path.ts';
 import { translationCall } from './translation.ts';
@@ -54,6 +55,10 @@ export function traceCall(
       .flatMap((argument) => recur(argument));
   if (callee?.type === 'MemberExpression') {
     const method = property(ast(callee.property));
+    if (['filter', 'map', 'slice'].includes(method)) {
+      const known = knownSelectedArrayValues(source, node, path, environment);
+      if (known !== undefined) return known.flatMap((value) => recur(value, []));
+    }
     if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
       return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
     if (['map', 'flatMap'].includes(method)) {

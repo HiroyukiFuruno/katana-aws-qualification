@@ -14,7 +14,7 @@ function index(path: Path) {
 }
 
 function all(path: Path): Path[] {
-  const current = range(path);
+  const current = selectionRange(path);
   const head = current.rest[0];
   const rest = head === '*' || index(current.rest) !== undefined ? current.rest.slice(1) : current.rest;
   if (current.end !== Number.POSITIVE_INFINITY)
@@ -23,7 +23,7 @@ function all(path: Path): Path[] {
   return [['*', ...rest]];
 }
 
-function range(path: Path) {
+export function selectionRange(path: Path) {
   let rest = path;
   let start = 0;
   let end = Number.POSITIVE_INFINITY;
@@ -31,7 +31,7 @@ function range(path: Path) {
     const head = rest[0];
     if (head.kind === 'array-rest') start += head.start;
     else if (head.kind === 'array-range') {
-      end = Math.min(end, head.end);
+      end = Math.min(end, start + head.end);
       start += head.start;
     } else break;
     rest = rest.slice(1);
@@ -44,16 +44,16 @@ export function slicePaths(node: Ast, path: Path): Path[] {
   const start = startNode ? integer(startNode) : 0;
   const end = endNode ? integer(endNode) : undefined;
   if (start === undefined || start < 0 || (endNode && (end === undefined || end < 0))) return all(path);
-  const current = range(path);
+  const current = selectionRange(path);
   const selected = index(current.rest);
   const first = start + current.start;
   const limit = Math.min(end ?? Number.POSITIVE_INFINITY, start + current.end);
+  if (first >= limit) return [];
   if (selected !== undefined) {
     const original = first + selected;
     return original >= limit ? [] : [[String(original), ...current.rest.slice(1)]];
   }
   if (!path.length) {
-    if (first >= limit) return [];
     return limit === Number.POSITIVE_INFINITY
       ? first
         ? [[{ kind: 'array-rest', start: first }]]
@@ -61,6 +61,10 @@ export function slicePaths(node: Ast, path: Path): Path[] {
       : [[{ kind: 'array-range', start: first, end: limit }]];
   }
   const head = current.rest[0];
+  if (!head)
+    return limit === Number.POSITIVE_INFINITY
+      ? [[{ kind: 'array-rest', start: first }, '*']]
+      : [[{ kind: 'array-range', start: first, end: limit }, '*']];
   if (head === '*')
     return limit === Number.POSITIVE_INFINITY
       ? [[{ kind: 'array-rest', start: first }, ...current.rest]]

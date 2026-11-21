@@ -29,7 +29,7 @@ function isSpread(element: unknown) {
   );
 }
 
-function singleUseAlias(source: Source, identifier: Ast) {
+export function singleUseAlias(source: Source, identifier: Ast) {
   const identifierKey = key(identifier);
   let references = 0;
   walk(source.ast, (node) => {

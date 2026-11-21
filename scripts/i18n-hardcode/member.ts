@@ -1,12 +1,21 @@
-import { type Ast, ast, type Binding, type Origin, property, type Source, type Trace } from './ast.ts';
+import {
+  type Ast,
+  ast,
+  type Binding,
+  type Origin,
+  type Path,
+  property,
+  type Source,
+  type Trace,
+} from './ast.ts';
 import { narrowedKeys } from './computed.ts';
 import { errorObject, knownObjectMember } from './values.ts';
 
 export function traceMember(
   source: Source,
   node: Ast,
-  path: string[],
-  recur: (value: Ast | undefined, path: string[]) => Origin[],
+  path: Path,
+  recur: (value: Ast | undefined, path: Path) => Origin[],
   trace: Trace,
   seen: Set<string>,
   environment: Map<string, Binding[]>,

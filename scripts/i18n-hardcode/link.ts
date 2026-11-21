@@ -33,7 +33,7 @@ export function callable(
 }
 
 export function parameters(node: Ast) {
-  return nodes(node.params).map((parameter) => ast(parameter.pat) ?? parameter);
+  return nodes(node.params);
 }
 
 export function linkSources(sources: Source[]) {

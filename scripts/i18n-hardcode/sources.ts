@@ -3,6 +3,7 @@ import { dirname, extname, join, resolve } from 'node:path';
 import { parseSync } from '@swc/core';
 import { type Ast, args, ast, bind, key, name, nodes, property, type Source, walk } from './ast.ts';
 import { indexModule } from './modules.ts';
+import { arrayPatternElements } from './patterns.ts';
 
 export async function readSources(root: string): Promise<Source[]> {
   const entries = await readdir(root, { recursive: true, withFileTypes: true });
@@ -95,7 +96,7 @@ function indexState(source: Source) {
       'useState'
     )
       return;
-    const [value, setter] = nodes(id.elements);
+    const [value, setter] = arrayPatternElements(id);
     const initial = args(init)[0];
     if (value && initial) bind(source, value, initial);
     if (value && setter) setters.set(key(setter), value);

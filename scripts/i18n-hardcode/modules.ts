@@ -1,4 +1,5 @@
 import { type Ast, ast, key, name, nodes, type Source } from './ast.ts';
+import { patternIdentifiers } from './patterns.ts';
 
 export function indexModule(source: Source, node: Ast) {
   if (node.type === 'ExportAllDeclaration' && !node.typeOnly) {
@@ -21,8 +22,7 @@ export function indexModule(source: Source, node: Ast) {
     const declaration = ast(node.declaration);
     if (!declaration) return;
     for (const item of nodes(declaration.declarations)) {
-      const id = ast(item.id);
-      if (id) source.exports.set(name(id), id);
+      for (const id of patternIdentifiers(ast(item.id))) source.exports.set(name(id), id);
     }
     const id = ast(declaration.identifier);
     if (id) source.exports.set(name(id), id);

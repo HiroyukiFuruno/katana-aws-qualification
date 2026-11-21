@@ -1,5 +1,12 @@
+import { patternTargets } from './patterns.ts';
+
 export type Ast = { type: string; [key: string]: unknown };
-export type Binding = { expression: Ast; path: string[]; source?: Source };
+export type Path = (
+  | string
+  | { kind: 'array-rest'; start: number }
+  | { kind: 'object-rest'; excluded: string[] }
+)[];
+export type Binding = { expression: Ast; path: Path; source?: Source };
 export type ModuleBinding = { source: string; imported: string };
 export type Source = {
   path: string;
@@ -14,12 +21,7 @@ export type Source = {
   errors: Set<string>;
 };
 export type Origin = { source: Source; node: Ast; text: string; rawError?: boolean };
-export type Trace = (
-  source: Source,
-  node: Ast | undefined,
-  path?: string[],
-  seen?: Set<string>,
-) => Origin[];
+export type Trace = (source: Source, node: Ast | undefined, path?: Path, seen?: Set<string>) => Origin[];
 
 export function ast(value: unknown): Ast | undefined {
   return typeof value === 'object' && value !== null && 'type' in value && typeof value.type === 'string'
@@ -82,30 +84,15 @@ export function bind(
   source: Source,
   pattern: Ast | undefined,
   expression: Ast,
-  path: string[] = [],
+  path: Path = [],
   origin?: Source,
 ) {
-  if (!pattern) return;
-  if (pattern.type === 'Identifier') {
-    const existing = source.bindings.get(key(pattern)) ?? [];
-    existing.push({ expression, path, source: origin });
-    source.bindings.set(key(pattern), existing);
-  } else if (pattern.type === 'ObjectPattern') {
-    for (const member of nodes(pattern.properties)) {
-      const memberKey = property(ast(member.key));
-      if (member.type === 'AssignmentPatternProperty') {
-        bind(source, ast(member.key), expression, [...path, memberKey], origin);
-        const fallback = ast(member.value);
-        if (fallback) bind(source, ast(member.key), fallback, [], source);
-      } else
-        bind(source, ast(member.value) ?? ast(member.key), expression, [...path, memberKey], origin);
-    }
-  } else if (pattern.type === 'ArrayPattern') {
-    nodes(pattern.elements).forEach((element, index) => {
-      bind(source, element, expression, [...path, `${index}`], origin);
-    });
-  } else if (pattern.type === 'AssignmentPattern')
-    bind(source, ast(pattern.left), expression, path, origin);
+  for (const target of patternTargets(pattern, path)) {
+    const existing = source.bindings.get(key(target.identifier)) ?? [];
+    existing.push({ expression, path: target.path, source: origin });
+    if (target.fallback) existing.push({ expression: target.fallback, path: [], source });
+    source.bindings.set(key(target.identifier), existing);
+  }
 }
 
 export function prose(value: string): boolean {

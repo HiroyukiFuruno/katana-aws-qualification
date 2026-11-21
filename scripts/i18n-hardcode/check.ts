@@ -1,5 +1,16 @@
 import { relative } from 'node:path';
-import { type Ast, args, ast, name, nodes, property, prose, type Source, walk } from './ast.ts';
+import {
+  type Ast,
+  args,
+  ast,
+  name,
+  nodes,
+  type Path,
+  property,
+  prose,
+  type Source,
+  walk,
+} from './ast.ts';
 import { nativeDialog } from './dialogs.ts';
 import { displayProp, linkSources } from './link.ts';
 import { createTrace } from './trace.ts';
@@ -29,7 +40,7 @@ export function checkSources(sources: Source[], root: string): Finding[] {
   linkSources(sources);
   const trace = createTrace(sources);
   const findings = new Map<string, Finding>();
-  const inspect = (source: Source, node: Ast | undefined, sink: string, path: string[] = []) => {
+  const inspect = (source: Source, node: Ast | undefined, sink: string, path: Path = []) => {
     if (!node) return;
     for (const origin of trace(source, node, path)) {
       if (!origin.rawError && !prose(origin.text)) continue;

@@ -12,10 +12,9 @@ import {
   type Trace,
 } from './ast.ts';
 import { callEnvironment, environmentKey } from './calls.ts';
-import { resolveExport } from './exports.ts';
+import { namespaceValues, resolveImport } from './exports.ts';
 import { callable } from './link.ts';
 import { traceMember } from './member.ts';
-import { importedSource } from './sources.ts';
 import { translationCall } from './translation.ts';
 import { arrayValues, errorObject, functionReturns, objectValues } from './values.ts';
 
@@ -24,7 +23,7 @@ export function createTrace(sources: Source[]): Trace {
   const trace: Trace = (source, node, path = [], seen = new Set()) => {
     if (!node) return [];
     const span = node.span as { start?: number } | undefined;
-    const marker = `${source.path}:${span?.start}:${node.type}:${path.join('.')}`;
+    const marker = `${source.path}:${span?.start}:${node.type}:${JSON.stringify(path)}`;
     if (seen.has(marker)) return [];
     const nextSeen = new Set(seen).add(marker);
     const recur = (value: Ast | undefined, nextPath = path) => trace(source, value, nextPath, nextSeen);
@@ -48,8 +47,7 @@ export function createTrace(sources: Source[]): Trace {
       case 'OptionalChainingExpression':
         return recur(ast(node.base));
       case 'ModuleNamespace': {
-        const exported = path[0] && resolveExport(sources, source, path[0]);
-        return exported ? trace(exported.source, exported.node, path.slice(1), nextSeen) : [];
+        return namespaceValues(sources, source, path, trace, nextSeen);
       }
       case 'Identifier': {
         const bindings =
@@ -58,14 +56,8 @@ export function createTrace(sources: Source[]): Trace {
           trace(binding.source ?? source, binding.expression, [...binding.path, ...path], nextSeen),
         );
         const imported = source.imports.get(key(node));
-        const target = imported && importedSource(sources, source, imported.source);
-        const importedKey = imported?.imported === '*' ? path[0] : imported?.imported;
-        const importedPath = imported?.imported === '*' ? path.slice(1) : path;
-        const exported = target && importedKey && resolveExport(sources, target, importedKey);
-        return [
-          ...local,
-          ...(exported ? trace(exported.source, exported.node, importedPath, nextSeen) : []),
-        ];
+        const exported = imported && resolveImport(sources, source, imported);
+        return [...local, ...(exported ? trace(exported.source, exported.node, path, nextSeen) : [])];
       }
       case 'MemberExpression':
         return traceMember(source, node, path, recur, trace, nextSeen, environment);

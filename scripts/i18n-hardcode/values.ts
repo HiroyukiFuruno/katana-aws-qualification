@@ -6,6 +6,7 @@ import {
   name,
   nodes,
   type Origin,
+  type Path,
   property,
   type Source,
   walk,
@@ -13,25 +14,39 @@ import {
 import { environmentKey } from './calls.ts';
 import { technicalIdentifier } from './computed.ts';
 
-type Recur = (node: Ast | undefined, path: string[]) => Origin[];
+type Recur = (node: Ast | undefined, path: Path) => Origin[];
 
-export function objectValues(node: Ast, path: string[], recur: Recur): Origin[] {
-  const [head, ...rest] = path;
+export function objectValues(node: Ast, path: Path, recur: Recur): Origin[] {
+  let [head, ...rest] = path;
+  const excluded = new Set<string>();
+  while (head && typeof head !== 'string') {
+    if (head.kind !== 'object-rest') return [];
+    for (const field of head.excluded) excluded.add(field);
+    [head, ...rest] = rest;
+  }
   if (!head) return [];
   return nodes(node.properties).flatMap((member) => {
     if (member.type === 'SpreadElement') return recur(ast(member.arguments), path);
     const memberKey = property(ast(member.key)) || name(member);
+    if (excluded.has(memberKey)) return [];
     if (head !== '*' && head !== memberKey) return [];
     if (!rest.length && technicalIdentifier(memberKey, ast(member.value))) return [];
     return recur(member.type === 'Identifier' ? member : ast(member.value), rest);
   });
 }
 
-export function arrayValues(node: Ast, path: string[], recur: Recur): Origin[] {
+export function arrayValues(node: Ast, path: Path, recur: Recur): Origin[] {
   if (!Array.isArray(node.elements)) return [];
-  const [head = '*', ...rest] = path;
+  let [head, ...rest] = path;
+  let start = 0;
+  while (head && typeof head !== 'string') {
+    if (head.kind !== 'array-rest') return [];
+    start += head.start;
+    [head, ...rest] = rest;
+  }
+  const selected = head === undefined || head === '*' ? '*' : String(Number(head) + start);
   return node.elements.flatMap((entry, index) => {
-    if (head !== '*' && head !== String(index)) return [];
+    if (index < start || (selected !== '*' && selected !== String(index))) return [];
     if (typeof entry !== 'object' || entry === null || !('expression' in entry)) return [];
     return recur(ast(entry.expression), rest);
   });

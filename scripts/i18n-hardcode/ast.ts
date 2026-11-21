@@ -4,6 +4,8 @@ export type Ast = { type: string; [key: string]: unknown };
 export type Path = (
   | string
   | { kind: 'array-rest'; start: number }
+  | { kind: 'array-filter'; predicate: 'boolean' | 'unknown'; index?: number }
+  | { kind: 'array-range'; start: number; end: number }
   | { kind: 'object-rest'; excluded: string[] }
 )[];
 export type Binding = { expression: Ast; path: Path; source?: Source };
@@ -68,6 +70,16 @@ export function args(node: Ast): Ast[] {
     if (typeof value !== 'object' || value === null) return [];
     return ast('expression' in value ? value.expression : undefined) ?? [];
   });
+}
+
+export function arrayExpression(entry: unknown): Ast | undefined {
+  return typeof entry === 'object' && entry !== null && 'expression' in entry
+    ? ast(entry.expression)
+    : undefined;
+}
+
+export function arraySpread(entry: unknown): boolean {
+  return typeof entry === 'object' && entry !== null && 'spread' in entry && entry.spread !== null;
 }
 
 export function property(node: Ast | undefined): string {

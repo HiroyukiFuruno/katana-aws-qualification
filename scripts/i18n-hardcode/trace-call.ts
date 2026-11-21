@@ -1,3 +1,4 @@
+import { filterPaths, slicePaths } from './array-selector.ts';
 import {
   type Ast,
   args,
@@ -17,6 +18,16 @@ import { callable } from './link.ts';
 import { mappedPaths } from './mapped-path.ts';
 import { translationCall } from './translation.ts';
 import { errorObject } from './values.ts';
+
+function selectsArray(path: Path) {
+  const head = path[0];
+  return (
+    head === undefined ||
+    head === '*' ||
+    (typeof head === 'string' && /^(0|[1-9][0-9]*)$/.test(head)) ||
+    (typeof head === 'object' && ['array-filter', 'array-range', 'array-rest'].includes(head.kind))
+  );
+}
 
 export function traceCall(
   sources: Source[],
@@ -78,11 +89,15 @@ export function traceCall(
               mappedPaths(path, true).flatMap((selected) => recur(argument, selected)),
             )),
       ];
-    if (
-      ['filter', 'find', 'slice', 'join', 'toUpperCase', 'toLowerCase', 'trim', 'replace'].includes(
-        method,
-      )
-    )
+    if (method === 'slice')
+      return selectsArray(path)
+        ? slicePaths(node, path).flatMap((selected) => recur(ast(callee.object), selected))
+        : recur(ast(callee.object), path);
+    if (method === 'filter')
+      return selectsArray(path)
+        ? filterPaths(node, path).flatMap((selected) => recur(ast(callee.object), selected))
+        : recur(ast(callee.object), path);
+    if (['find', 'join', 'toUpperCase', 'toLowerCase', 'trim', 'replace'].includes(method))
       return [
         ...recur(ast(callee.object), ['find', 'join'].includes(method) ? ['*', ...path] : path),
         ...(['join', 'replace'].includes(method)

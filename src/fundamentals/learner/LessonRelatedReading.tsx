@@ -1,5 +1,6 @@
 import { usePreferences } from '../../preferences';
 import type { DeliveryQuestion, DeliveryUnitAsset } from '../delivery/artifactTypes';
+import { lessonFragments } from './lessonFragments';
 import './lesson-related.css';
 
 export function LessonRelatedReading({
@@ -25,8 +26,8 @@ export function LessonRelatedReading({
         {reading.map((step) => (
           <section key={step.id}>
             <h3>{step.label}</h3>
-            {step.blocks.map((block) => (
-              <p key={block.contentRef}>{block.text}</p>
+            {lessonFragments(step).map(({ block, key }) => (
+              <p key={key}>{block.text}</p>
             ))}
           </section>
         ))}

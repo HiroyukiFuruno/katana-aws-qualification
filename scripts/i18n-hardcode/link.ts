@@ -1,4 +1,4 @@
-import { type Ast, ast, bind, key, nodes, property, type Source, walk } from './ast.ts';
+import { type Ast, args, ast, bind, key, nodes, property, type Source, walk } from './ast.ts';
 import { resolveExport } from './exports.ts';
 import { namespaceSource } from './namespace.ts';
 import { importedSource } from './sources.ts';
@@ -39,6 +39,15 @@ export function parameters(node: Ast) {
 export function linkSources(sources: Source[]) {
   for (const source of sources)
     walk(source.ast, (node) => {
+      if (node.type === 'CallExpression') {
+        const callee = ast(node.callee);
+        if (callee?.type !== 'MemberExpression' || property(ast(callee.property)) !== 'map') return;
+        const target = callable(sources, source, args(node)[0]);
+        const parameter = target && parameters(target.node)[0];
+        const collection = ast(callee.object);
+        if (target && parameter && collection) bind(target.source, parameter, collection, ['*'], source);
+        return;
+      }
       if (node.type !== 'JSXOpeningElement') return;
       const target = callable(sources, source, ast(node.name));
       const parameter = target && parameters(target.node)[0];

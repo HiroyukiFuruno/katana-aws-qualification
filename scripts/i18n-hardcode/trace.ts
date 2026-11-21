@@ -18,7 +18,6 @@ import { mappedPaths } from './mapped-path.ts';
 import { traceMember } from './member.ts';
 import { translationCall } from './translation.ts';
 import { arrayValues, errorObject, functionReturns, objectValues } from './values.ts';
-
 export function createTrace(sources: Source[]): Trace {
   let environment = new Map<string, Binding[]>();
   const trace: Trace = (source, node, path = [], seen = new Set()) => {
@@ -97,12 +96,18 @@ export function createTrace(sources: Source[]): Trace {
               .flatMap((argument) =>
                 mappedPaths(path, method === 'flatMap').flatMap((selected) => recur(argument, selected)),
               );
+          if (method === 'concat')
+            return [
+              ...recur(ast(callee.object), path),
+              ...args(node).flatMap((argument) =>
+                mappedPaths(path, true).flatMap((selected) => recur(argument, selected)),
+              ),
+            ];
           if (
             [
               'filter',
               'find',
               'slice',
-              'concat',
               'join',
               'toUpperCase',
               'toLowerCase',
@@ -112,7 +117,7 @@ export function createTrace(sources: Source[]): Trace {
           ) {
             return [
               ...recur(ast(callee.object), ['find', 'join'].includes(method) ? ['*', ...path] : path),
-              ...(['concat', 'join', 'replace'].includes(method)
+              ...(['join', 'replace'].includes(method)
                 ? args(node)
                     .slice(method === 'replace' ? 1 : 0)
                     .flatMap((argument) => recur(argument))

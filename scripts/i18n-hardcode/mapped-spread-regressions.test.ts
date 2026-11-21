@@ -80,3 +80,32 @@ test('map and flatMap thisArg values are not returned element text', () => {
     );
   }
 });
+
+test('concat traces scalar and array elements through join and nested map', () => {
+  expect(
+    scan(`const parts:string[]=[];const View=()=> <p>{parts.concat('Please sign in').join('')}</p>`),
+  ).toEqual(['Please sign in']);
+  expect(
+    scan(
+      `const parts:string[]=[];const View=()=> <p>{parts.concat(['Please sign in']).map((part)=>part).join('')}</p>`,
+    ),
+  ).toEqual(['Please sign in']);
+});
+
+test('concat traces selected object properties without nested diagnostic properties', () => {
+  const object = `{caption:'Please sign in',debug:{caption:'Diagnostic copy'}}`;
+  expect(
+    scan(`const parts:unknown[]=[];const View=()=> <p>{parts.concat(${object})[0].caption}</p>`),
+  ).toEqual(['Please sign in']);
+  expect(
+    scan(`const parts:unknown[]=[];const View=()=> <p>{parts.concat([${object}])[0].caption}</p>`),
+  ).toEqual(['Please sign in']);
+});
+
+test('concat translated values remain accepted', () => {
+  expect(
+    scan(
+      `import {usePreferences} from './preferences';function View(){const {t}=usePreferences();const parts:string[]=[];return <p>{parts.concat(t('save')).join('')}</p>}`,
+    ),
+  ).toEqual([]);
+});

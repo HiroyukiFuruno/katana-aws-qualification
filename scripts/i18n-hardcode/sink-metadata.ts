@@ -25,6 +25,7 @@ const textualDomProperties = [
 ] as const;
 
 export const textualSpreadProperties = [
+  'children',
   'label',
   'title',
   'placeholder',

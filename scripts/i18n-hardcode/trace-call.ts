@@ -49,7 +49,14 @@ export function traceCall(
     const method = property(ast(callee.property));
     if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
       return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
-    if (['map', 'flatMap'].includes(method)) return args(node).flatMap((argument) => recur(argument));
+    if (['map', 'flatMap'].includes(method)) {
+      if (path.length && path[0] !== '*' && !/^\d+$/.test(String(path[0]))) return [];
+      const selected = path.length ? path.slice(1) : path;
+      return args(node).flatMap((argument) => [
+        ...recur(argument, selected),
+        ...(method === 'flatMap' ? recur(argument, ['*', ...selected]) : []),
+      ]);
+    }
     if (
       [
         'filter',

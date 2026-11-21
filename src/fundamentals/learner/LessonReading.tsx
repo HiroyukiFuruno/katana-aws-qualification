@@ -1,5 +1,6 @@
 import { usePreferences } from '../../preferences';
 import type { LessonStep } from '../delivery/slideTypes';
+import { lessonFragments } from './lessonFragments';
 import './learner-assessment.css';
 
 export function LessonReading({ step }: { step: LessonStep }) {
@@ -10,15 +11,12 @@ export function LessonReading({ step }: { step: LessonStep }) {
   );
   return (
     <article className="lesson-reading" aria-label={step.label}>
-      {step.blocks.map((block) => {
+      {lessonFragments(step).map(({ block, key }) => {
         const showLabel =
           Boolean(block.label) && block.label !== step.label && block.label !== previousLabel;
         previousLabel = block.label;
         return (
-          <section
-            className={`lesson-reading-block lesson-reading-${block.kind}`}
-            key={block.contentRef}
-          >
+          <section className={`lesson-reading-block lesson-reading-${block.kind}`} key={key}>
             {showLabel ? <h2>{block.label}</h2> : null}
             <p>{block.text}</p>
           </section>

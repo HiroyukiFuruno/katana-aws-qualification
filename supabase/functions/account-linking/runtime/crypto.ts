@@ -1,4 +1,4 @@
-import { failure, isLocalFailure, isSlots, type Slots } from './slots.ts';
+import { failure, isSlots, localFailure, type Slots } from './slots.ts';
 import type { RuntimeContext, RuntimeRecord } from './types.ts';
 
 const encoder = new TextEncoder();
@@ -51,8 +51,7 @@ export async function decryptSlots(
       throw failure('decrypt_failed');
     return parsed.slots;
   } catch (error) {
-    if (isLocalFailure(error)) throw error;
-    throw failure('decrypt_failed');
+    throw localFailure(error) ?? failure('decrypt_failed');
   }
 }
 
@@ -91,7 +90,6 @@ export async function encryptSlots(
     );
     return { revision, keyVersion, nonce, ciphertext, expiresAt: context.expiresAt };
   } catch (error) {
-    if (isLocalFailure(error)) throw error;
-    throw failure('invalid_key');
+    throw localFailure(error) ?? failure('invalid_key');
   }
 }

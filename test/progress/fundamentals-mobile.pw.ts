@@ -32,3 +32,30 @@ for (const mode of [
       );
     });
 }
+
+test('a short mobile viewport scrolls the entire lesson and starts the next slide at the top', async ({
+  page,
+}) => {
+  const asset = lessonAssets[0];
+  if (!asset) throw new Error('Missing first lesson fixture.');
+
+  await page.setViewportSize({ width: 390, height: 420 });
+  await page.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' }));
+  await acceptNecessaryCookies(page);
+  const stage = page.locator('.lesson-slide-stage');
+  await expect(stage).toBeVisible();
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '150%';
+  });
+
+  const content = page.locator('.lesson-slide-content');
+  const contentBox = await content.boundingBox();
+  if (!contentBox) throw new Error('Missing lesson content geometry.');
+  await page.mouse.move(contentBox.x + 20, contentBox.y + 10);
+  await page.mouse.wheel(0, 650);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await expect(page.getByRole('button', { name: '学習を終了', exact: true })).toBeInViewport();
+  await page.locator('.lesson-slide-actions > button.primary').click();
+  await expect(page).toHaveURL(/\/slides\/2\/$/);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});

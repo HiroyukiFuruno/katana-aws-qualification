@@ -40,7 +40,7 @@
 6. Edgeはleg別storageを復元した同じ公式SDKの `exchangeCodeForSession(code)` を実行する。ingest nonceはEdgeだけが取得できるprivate runtime recordから読む。code/verifierの任意組合せやブラウザ持込みaccess JWTは受け取らない。主sessionをproofとして転用しない。
 7. 交換結果はEdgeが署名/issuer/audience/expと `getUser(access_token)` を確認する。proof JWTをBearerにしてPostgRESTの `accept_account_proof` を呼び、同RPCはingest nonce、実 `auth.uid()/session_id`、DB session/OAuth AMR、期待UID、membership snapshotを同一transactionで検証・保存する。sourceはactor UID必須、targetは初回成立時に固定。発行元/公開鍵の検証はSDKのデコードだけで済ませない。
 8. publicのproof RPCはnonceを得られず成立しない。private runtime作成/読取/暗号化storage操作はEdgeの限定server roleだけに許可する。`prepare_account_leg` のactor側RPCはingest nonceを返さず、nonce作成/取得はEdge専用のprivate runtime操作で分離する。service-roleで「渡されたUIDを信じてproof insert」する近道は禁止。SQLのproof UIDは必ずPostgRESTが検証したproof JWTから導く。
-9. browserへは `{intent_id, leg_id, state, expires_at}` のみ返す。token/verifier/ingest nonce/相手UIDは返さない。Edge SDKのproof tokenは最終確認まで暗号化private storageへ保持し、getUser再確認にのみ使用する。外部social provider tokenは不要なので保存しない。SDKがsession JSONへ含める `provider_token/provider_refresh_token` はprivate storage adapterで永続化前に除外し、verifierやAuth access/refresh tokenのSDK形式は維持する。
+9. browserへは `{intent_id, leg_id, state, expires_at}` のみ返す。token/verifier/ingest nonce/相手UIDは返さない。Edge SDKのproof tokenは最終確認まで暗号化private storageへ保持し、検証とfinal consent後の一回の公式policy refreshに使う。外部social provider tokenは不要なので保存しない。SDKがsession JSONへ含める `provider_token/provider_refresh_token` はprivate storage adapterで永続化前に除外し、verifierやAuth access/refresh tokenのSDK形式は維持する。
 10. callback到着/POST再送は同一legの保存結果に収束する。source期待UID不一致はproof不成立、targetを一度確定後の対象変更はintent取消し→両側を最初から認証する。mainの別UID/別sessionへの切替でも既存intentを継承しない。
 
 ## 4. 交換成功後の障害・秘密の保管境界
@@ -71,9 +71,10 @@ intent系control POSTはmain Bearer＋bodyのintent secret、同origin、idempot
 ## 6. 状態・最終同意・ロック順
 
 - intentの正常遷移は `awaiting_source → awaiting_target → both_proved → previewed → committed`。新規createNewはこのintent状態機械に含めない。すべて `cancelled/expired/attempts_exhausted` へ終了可能。成功済み/終了済みをopenへ戻さない。already_linkedは所有移動なしの終了receiptを返す。
-- source完了前のtarget開始は拒否。add_existingではsourceのfresh proofにもmembershipがないこと、targetにはactive membershipがあることを確認する。merge_existingでは両側activeの別ownerが必要。想定と違う状態への自動mode変更はしない。
+- source完了前のtarget開始は拒否。add_existingではsourceのfresh proofにもmembershipがないこと、targetにはactive membershipがあることを確認する。merge_existingは既存ownerから追加を開始するflowを表し、targetが未membershipなら一時accountを作らずattach、別active ownerならmergeとなる。両proof後に確定したoperationをpreviewへ固定し、attach/mergeの内容を示す最終同意が必要。preview後のmembership状態変化でoperationを自動変更しない。同UID/既に同ownerは既存のalready_linked no-opに従う。
 - previewは両側の既存 `learning_state` 行をUUID順にUPDATE lockし、先行writer完了後にaccount→membershipを検査・lockする。未membership側にはstateを作らず、既存側だけlockする。全12表・全列・件数をstable orderでrow SHA-256化し、その順序付き集合をSHA-256化する。UUID/時刻/回答/revision/hashを除外せず、表示件数・競合・保持選択肢を同じsnapshotから生成する。部分revisionは完全digestの代用にしない。
-- commit直前にEdgeが保存済み両proof tokenのgetUserを再確認する。SQLはintent制御row→既存learning_state UUID昇順のUPDATE lock→account/membershipの一定順→proof/session ID順でlock/再検証する。owner関連lockの先頭は常にstate。全通常writerは既存require_learning_generationのstate SHARE lockへ参加し、取得後にbinding/membership/sessionを再検査する。resetはstate UPDATE、membership付替え/切離し/退会もstate→account/membership順。SHARE取得後にUPDATEへupgradeする経路を追加しない。
+- commit直前にEdgeは各proofのrefresh開始をCAS記録し、保存した同一sessionを公式SDKで各一回だけrefreshする。署名/issuer/aud/exp、sub/session ID不変、getUser成功を確認し、credentialを暗号化receiptへ保存してからpolicy_checkedとする。OAuth AMR/元のfreshness下限・TTLは更新しない。結果不明/保存失敗は当該legを使用不能にし、同token再送せず新PKCEへ戻す。GoTrue policyの確認時点とSQL commitは原子的ではない。
+- SQLはintent制御row→全対象Auth user UUID順SHARE→対象session UUID順SHARE→既存learning_state UUID順UPDATE→account/membershipの一定順でlock/再検証する。初期UID集合とrevisionを下位lock後の最新snapshotで比較し、増減時は中止し追加userを後取りしない。通常writerもAuth user/sessionを先に保護しstate SHARE後にbinding/membership/sessionを最新検査する。reset・切離し・退会はstate UPDATEを最初から選び、SHAREからupgradeしない。旧membership先行順はAuth DELETE cascadeとの40P01を実測したため採用しない。STABLE read helperの再呼出しだけで待機後最新検査としない。
 - commitはTTL/nonce消費/取消し/version/両proofのlive性/全membership epoch・構成/generation/全12表の完全preview digest/最終選択digestを再検査する。DB内のsession rowは共有lockを保持して同transaction中の削除を直列化し、session取消しが先なら不成立。GoTrue設定によるlive検査の限界は次節に明記する。
 - preview後に履歴/設定/所属が変われば `409 PREVIEW_STALE`。データ変更だけなら両proofの残TTL内でpreviewを再生成し、再度明示同意。所有者/会員構成/epoch変更やproof失効ならintent終了→両fresh proofを取り直す。裏で承認内容を書き換えない。
 - 並行A+B/A+Cはstate UPDATE lock/全membership検査/完全digestで片方だけ成功。取消し/期限切れ/不明code交換後の遅延callbackはCASで拒否。2件目が既に同ownerになっていても、未承認の内容へ自動commitしない。
@@ -93,7 +94,7 @@ intent系control POSTはmain Bearer＋bodyのintent secret、同origin、idempot
 | 優先度 | リスク / 必須の確認 |
 | --- | --- |
 | P1 | membership付替えだけでは旧JWTが相手履歴へ昇格する。全membership epoch、旧grant失効、両proof grant、統合後fresh enroll、直接SELECT/RPC共通fenceを同transaction/同releaseで揃える。 |
-| P1 | `auth.sessions`の行存在だけではGoTrueのtimebox/inactivity/low-AAL等の全判定を証明しない。not_after NULLを無期限と解釈しない。実fixture/稼働のAuth設定を読み、v2.198.0 CheckValidityに対応するSQL条件を固定し、getUserの判定が何を保証するか実検証する。未確認ならlive性を保証済みと報告せず、公開gateを止める。 |
+| P1 | `auth.sessions`の行存在/getUserだけではGoTrueのtimebox/inactivity/low-AAL等の全判定を証明しない。not_after NULLを無期限と解釈しない。公式refreshによるpolicy確認とSQL live/fence照合を分け、短い正設定・失効・結果不明・credential保存失敗の実経路で所有変更0/1回を確認する。設定/SQL commitの完全原子性は保証しない。未確認ならlive性を保証済みと報告せず、公開gateを止める。 |
 | P1 | Auth sessionの一部失効がrow削除以外の設定/最終session選別による場合、row share lockだけで完結しない。新OAuthをsession単位で検証するserver境界＋DBのKAQ fenceと、GoTrue側失効条件との整合を全機微APIで実測する。JWT有効期限まで許可する設計へ黙って弱めない。 |
 | P1 | 任意Bearer受付/ブラウザ所有verifierだけでは新sessionを当該intentのOAuthへ束縛できない。Edge保持verifier・server専用ingest nonce・global session UNIQUE・callback CASを全て必須にする。 |
 | P1 | exchangeとDB保存は原子的でない。交換結果receiptの短期暗号化保管/unknown時の新leg、最終commit transaction/receiptによる再送収束を実境界テストで確認する。 |
@@ -117,3 +118,19 @@ intent系control POSTはmain Bearer＋bodyのintent secret、同origin、idempot
 | P10 | private schema/RPC ACL、ingest nonce入手不可、service key/secret/verifier/tokenのURL/GA4/console/serverログ不在、callback query即除去、許可外origin/redirect拒否、main session保持とsignOut scopeを実検査。 |
 
 本設計の完了条件はAPI/状態/期限/障害復旧/session fence/検証入力が具体化していること。実装・実境界検証・公開の完了とは分け、P1未確認をP2へ格下げして公開しない。
+
+## 10. 未割当Auth UIDへの追加（foundationの追加migration前）
+
+公開済みfoundationの`account_intents`はtarget UIDとaccountのNULLを同値にする制約を持つ。上記attachには検証済みtarget UIDだけが存在する状態が必要なので、後続migrationで「target accountがあればUID/epoch必須、accountがなければepochなし、target UID単独はmerge_existingのproof成立後だけ許可」へ変更し、制約名/正常・異常入力を実DB検査する。既存migrationは書き換えない。
+
+targetが未割当の場合も、source/target両fresh proof、最終同意、全既存ownerのfenceとepoch更新、旧session拒否を省略しない。明示createNewとattachを並行させる場合、createNewは対象Auth userを最初にUPDATE lockし、attach側は全Auth user先行SHAREとmembership UNIQUEで直列化する。membership初期集合・proof snapshotを下位lock後に比較し、作成/他方attachが先ならstaleとして全rollbackする。余計なaccountやstateを作って統合のふりをせず、旧target sessionを新ownerへ暗黙enrollしない。
+
+bootstrapはread-onlyなので新OAuth後のgrant作成を兼ねない。`POST enroll_learning_session(expected_account, expected_epoch)`を別の明示操作としてfresh session/OAuthと現在membership/fenceからのみ登録し、成功後にbootstrapを再読する。既存の失効grantはbootstrap/refreshで復活させない。これらの追加DDL/API/競合回帰は未実装であり、bootstrap部品22条件だけをもって完了とはしない。
+
+## 11. 承認済みproof sessionとfresh sessionの区別（未実装）
+
+通常のgrant/enroll/readはsession作成時刻とOAuth時刻が両方とも最大fenceを厳密に超えることを要求する。等値も拒否する。内部read/bootstrapのreviewで境界の不足を検出し、等値拒否の回帰を追加中である。
+
+一方、commitで明示承認した両proof sessionはcommitより前に作られているため、上記fresh判定だけでは許可できない。`reason='proof'`という文字列だけの例外を加えてはいけない。後続migrationでgrantをserverが消費したproof/committed receipt・canonical account・確定後epoch・承認対象fenceに構造的に束縛し、同一session/Auth UID/intent、proof consumed、receipt committed、現在epoch/fenceとの一致を読み取り側でも確認する必要がある。receiptやproofが不一致・未commit・取消し・削除済みなら通常のfresh判定へ黙って切り替えず拒否する。
+
+現在のfoundationにはそのproof/receipt参照を持つgrantがない。非公開read/bootstrap/locking部品は通常のfresh fenceだけを扱い、reasonをproofへ書き換えても迂回させない。承認済みproofの例外は未実装で、将来merge APIの公開前に追加DDL/ACL/正常・偽receipt・別session・旧epoch・次merge/reset/退会の実検査を揃える。mainの学習再開は既定どおり新OAuth再認証であり、proof credentialをbrowserへ渡さない。

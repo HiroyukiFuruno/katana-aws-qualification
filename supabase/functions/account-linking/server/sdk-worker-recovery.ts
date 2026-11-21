@@ -23,9 +23,13 @@ export async function recoverExchange<Request>(
       if (receipt) {
         const verified = await verifySession(client(options, current), current, receipt);
         if (verified === 'unavailable') return result(current, 'runtime_failed');
-        return verified === 'verified'
-          ? result(await options.control.promote(current))
-          : fail(current, false);
+        if (verified !== 'verified') return fail(current, false);
+        try {
+          return result(await options.control.promote(current));
+        } catch {
+          // 本人確認済みの保存receiptは、promotion依存先の一時障害で破棄しない。
+          return result(current, 'runtime_failed');
+        }
       }
     } catch {}
   }

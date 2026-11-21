@@ -1,4 +1,4 @@
-import { RuntimeStorageError, type RuntimeContext } from './types.ts';
+import { type RuntimeContext, RuntimeStorageError } from './types.ts';
 
 export type Slots = { [key: string]: string };
 const localFailures = new WeakSet<RuntimeStorageError>();
@@ -47,7 +47,7 @@ export function sanitize(key: string, base: string, value: string): string {
     delete session.provider_refresh_token;
     return JSON.stringify(session);
   } catch (error) {
-    if (error instanceof RuntimeStorageError) throw error;
+    if (isLocalFailure(error)) throw error;
     throw failure('malformed_value');
   }
 }

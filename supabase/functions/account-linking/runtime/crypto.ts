@@ -1,5 +1,5 @@
-import type { RuntimeContext, RuntimeRecord } from './types.ts';
 import { failure, isLocalFailure, isSlots, type Slots } from './slots.ts';
+import type { RuntimeContext, RuntimeRecord } from './types.ts';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -39,8 +39,8 @@ export async function decryptSlots(
   record: RuntimeRecord,
   material: Uint8Array,
 ): Promise<Slots> {
-  if (!validRecord(record)) throw failure('invalid_context');
   try {
+    if (!validRecord(record)) throw failure('invalid_context');
     const plaintext = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: bytes(record.nonce), additionalData: aad(context, record.keyVersion) },
       await key(crypto, material, ['decrypt']),
@@ -77,9 +77,9 @@ export async function encryptSlots(
   material: Uint8Array,
   slots: Slots,
 ): Promise<RuntimeRecord> {
-  if (!Number.isSafeInteger(revision) || revision < 0 || !/^[A-Za-z0-9._-]{1,64}$/.test(keyVersion))
-    throw failure('invalid_key');
   try {
+    if (!Number.isSafeInteger(revision) || revision < 0 || !/^[A-Za-z0-9._-]{1,64}$/.test(keyVersion))
+      throw failure('invalid_key');
     const nonce = crypto.getRandomValues(new Uint8Array(12));
     const plaintext = bytes(encoder.encode(JSON.stringify({ slots })));
     const ciphertext = new Uint8Array(

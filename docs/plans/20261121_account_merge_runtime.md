@@ -27,3 +27,7 @@
 その後の最終レビューは、本物の`RuntimeStorageError`でも注入されたrepository/keyringがmessage/codeを書き換えると秘密を伝播できるP1を検出した。`runtime-error-instance-red.log`で再現し、repositoryのread/delete/terminal/CAS・keyringのactive/resolve・clockの7境界を固定エラーへ変換した。内部で生成した検証/暗号化エラーだけをブランド化して維持する。新しい`runtime-error-instance-green.log`は追加2件・18検証を成功し、runtime全体は16件・69検証。旧SHAに束縛されたレビューを最終候補の証跡へ流用せず、全checkと独立レビューを再回収する。
 
 修正後の`runtime-final-check.log`は候補tree `2cba5f5097f39d07c531f2c9c7b17e5daa42e4ce`で全check成功（694件・4,086検証、重複0、辞書/直書き/型/教材/構造/buildも成功）。入力archiveとlockfile SHAは`runtime-final-candidate-source.json`で固定した。
+
+再レビューで直接exportされた復号helperの入力getterが例外秘匿範囲の外にあるP1も採用した。暗号化/復号の入力検査、context固定、JSON session検査を同じ固定エラー境界へ揃えた。`runtime-input-boundaries-red.log`→`runtime-input-boundaries-green.log`は4入力経路・8検証を回帰化し、関連全体は`runtime-final-parent-unit.log`で17件・77検証成功。最終候補の標準checkとSHA束縛レビューは別途回収する。
+
+`runtime-boundaries-check.log`: 最終入力境界修正を含む候補tree `045c357245556407875056b2173f57ad1eada791`の標準check全体成功（695件・4,094検証、重複0、10言語の辞書整合・直書き検出・型・教材・構造・build成功）。`runtime-boundaries-candidate-source.json`でarchive/lockfile SHAを保存した。

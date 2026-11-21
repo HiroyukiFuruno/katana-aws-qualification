@@ -31,6 +31,7 @@ export class ServerProofWorker<Request> {
     accessToken: string,
     sessionUserId: string,
   ): Promise<ProofIdentity | null> {
+    if (original.side === 'source' && !original.expectedAuthUid) return null;
     const auth = this.options.auth(original);
     const verified = await auth.getUser(accessToken);
     const sessionId = auth.sessionId(accessToken);
@@ -41,11 +42,6 @@ export class ServerProofWorker<Request> {
     )
       return null;
     return { authUid: sessionUserId, sessionId };
-  }
-
-  private async storedIdentity(original: ProofAcceptanceLeg): Promise<ProofIdentity | null> {
-    const session = await stored(this.options.storage(original), original.runtime.storageKey);
-    return session ? this.identity(original, session.access_token, session.user.id) : null;
   }
 
   private async clearCommittedNonce(
@@ -75,10 +71,8 @@ export class ServerProofWorker<Request> {
     try {
       original = await this.options.control.loadCanonical(request);
       if (original.state === 'proved') {
-        const identity = await this.storedIdentity(original);
-        if (!identity || !matchesCommittedProof(original, identity))
-          return result(original, 'runtime_failed');
-        await this.clearCommittedNonce(request, original, identity);
+        // 認証済みcontrolの確定metadataは、best-effort cleanupやAuthの一時障害に依存させない。
+        await this.clearCommittedNonce(request, original);
         return result(original);
       }
       if (!canAccept(original)) return result(original, 'runtime_failed');

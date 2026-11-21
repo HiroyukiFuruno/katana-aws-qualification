@@ -78,7 +78,7 @@ test('getUser failures and source UID mismatch preserve the nonce before SQL acc
   }
 });
 
-test('proved SID mismatch is rejected without clearing the nonce', async () => {
+test('proved SID mismatch preserves canonical metadata and refuses nonce cleanup', async () => {
   const subject = await fixture();
   subject.repository.onCompare = async () => {
     subject.repository.onCompare = null;
@@ -86,7 +86,12 @@ test('proved SID mismatch is rejected without clearing the nonce', async () => {
   };
   await subject.worker.accept(undefined);
   subject.setCanonical({ ...subject.current, provedSessionId: '66666666-6666-4666-8666-666666666666' });
-  await expect(subject.worker.accept(undefined)).resolves.toMatchObject({ failure: 'runtime_failed' });
+  await expect(subject.worker.accept(undefined)).resolves.toEqual({
+    intentId: subject.runtime.intentId,
+    legId: subject.runtime.legId,
+    state: 'awaiting_target',
+    expiresAt: subject.runtime.expiresAt,
+  });
   expect(subject.accepted).toHaveLength(1);
   await expectNonce(subject);
 });

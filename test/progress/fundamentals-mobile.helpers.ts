@@ -23,13 +23,13 @@ export async function assertReadingGeometry(
     const content = shell.querySelector<HTMLElement>('.lesson-slide-content');
     const controls = [...shell.querySelectorAll<HTMLElement>('button, a')];
     if (!stage || !content) throw new Error('Missing lesson geometry nodes.');
-    stage.scrollTop = stage.scrollHeight;
-    const stageRect = stage.getBoundingClientRect();
+    window.scrollTo(0, document.documentElement.scrollHeight);
     const contentRect = content.getBoundingClientRect();
     return {
       documentWidth: document.documentElement.scrollWidth,
       viewportWidth: innerWidth,
-      contentReachable: contentRect.bottom <= stageRect.bottom + 2,
+      contentReachable: contentRect.bottom <= innerHeight + 2,
+      stageUsesPageScroll: getComputedStyle(stage).overflowY === 'visible',
       controls: controls.map((control) => ({
         width: control.getBoundingClientRect().width,
         height: control.getBoundingClientRect().height,
@@ -38,6 +38,7 @@ export async function assertReadingGeometry(
   });
   expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth);
   expect(metrics.contentReachable).toBe(true);
+  expect(metrics.stageUsesPageScroll).toBe(true);
   expect(metrics.controls.every(({ width, height }) => width >= 44 && height >= 44)).toBe(true);
 }
 

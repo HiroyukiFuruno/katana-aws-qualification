@@ -25,7 +25,7 @@ export async function signIn(page: Page, username = 'learner') {
   await page.getByLabel('Password', { exact: true }).fill('integration-only');
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
   await expect(page).toHaveURL(/\/ja\/dashboard\/$/);
-  await expect(page.getByRole('heading', { name: 'アカウント設定' })).toBeVisible();
+  await expect(page.locator('header a.brand')).toHaveAttribute('href', '/ja/dashboard/');
 }
 
 export async function runAdapter<T>(

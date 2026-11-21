@@ -66,7 +66,7 @@ for (const viewport of [
                 ) : undefined
               }
             >
-              <p>Read this lesson before continuing.</p>
+              <p>{'Read this lesson before continuing. '.repeat(60)}</p>
             </LessonSlideShell>,
           );
           await page.setContent(
@@ -96,7 +96,8 @@ for (const viewport of [
               ),
               previousBorder: getComputedStyle(previous).borderTopStyle,
               adHeight: ad?.getBoundingClientRect().height ?? 0,
-              adInsideStage: !ad || stage.contains(ad),
+              adAfterNavigation: !ad || ad.getBoundingClientRect().top >= bounds.bottom + 32,
+              stageUsesDocumentScroll: getComputedStyle(stage).overflowY === 'visible',
               controlsReachable: controls.every((control) => {
                 if (!control) return false;
                 const rect = control.getBoundingClientRect();
@@ -113,7 +114,7 @@ for (const viewport of [
             };
           });
           expect(metrics.footerBottom).toBeLessThanOrEqual(viewport.height);
-          expect(metrics.documentHeight).toBeLessThanOrEqual(viewport.height);
+          expect(metrics.documentHeight).toBeGreaterThan(viewport.height);
           expect(metrics.documentWidth).toBeLessThanOrEqual(viewport.width);
           expect(metrics.footerTop).toBeGreaterThanOrEqual(0);
           expect(metrics.stageHeight).toBeGreaterThan(0);
@@ -122,7 +123,19 @@ for (const viewport of [
           expect(metrics.equalHeight).toBeLessThanOrEqual(1);
           expect(metrics.previousBorder).toBe('solid');
           expect(metrics.adHeight).toBe(adHeight);
-          expect(metrics.adInsideStage).toBe(true);
+          expect(metrics.adAfterNavigation).toBe(true);
+          expect(metrics.stageUsesDocumentScroll).toBe(true);
+          await page.mouse.move(viewport.width / 2, viewport.height / 2);
+          await page.mouse.wheel(0, 500);
+          await page.waitForFunction(() => scrollY > 0);
+          const afterScroll = await page.evaluate(() => {
+            const footer = document.querySelector('.lesson-slide-actions');
+            const ad = document.querySelector('[data-unit-ad]');
+            if (!footer) throw new Error('Missing lesson footer.');
+            window.scrollTo(0, document.documentElement.scrollHeight);
+            return !ad || footer.getBoundingClientRect().bottom <= ad.getBoundingClientRect().top;
+          });
+          expect(afterScroll).toBe(true);
         } finally {
           await page.close();
         }

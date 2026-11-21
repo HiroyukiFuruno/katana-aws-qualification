@@ -16,3 +16,7 @@ export function callbackPath(locale: Locale) {
 export function dashboardPath(locale: Locale) {
   return localePath(locale, 'dashboard');
 }
+
+export function accountSettingsPath(locale: Locale) {
+  return localePath(locale, 'account/settings');
+}

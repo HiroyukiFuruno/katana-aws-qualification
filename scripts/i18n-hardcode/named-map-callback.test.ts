@@ -63,3 +63,86 @@ test('named and inline map callbacks report the same visible copy', () => {
     }),
   ).toEqual(['Please sign in']);
 });
+
+test('a named callback retains only the visible map collection', () => {
+  const callback = `const label=(item:{caption:string})=>item.caption;`;
+  expect(
+    scan({
+      'View.tsx': `${callback}const diagnostic=[{caption:'Diagnostic copy'}].map(label);export const View=()=> <p>{[{caption:42}].map(label)}</p>`,
+    }),
+  ).toEqual([]);
+  expect(
+    scan({
+      'View.tsx': `${callback}const diagnostic=[{caption:'Diagnostic copy'}].map(label);export const View=()=> <p>{[{caption:'Visible copy'}].map(label)}</p>`,
+    }),
+  ).toEqual(['Visible copy']);
+});
+
+test('a named flatMap callback retains only its visible array result', () => {
+  const callback = `const label=(item:{caption:string})=>[item.caption];`;
+  expect(
+    scan({
+      'View.tsx': `${callback}const diagnostic=[{caption:'Diagnostic copy'}].flatMap(label);export const View=()=> <p>{[{caption:42}].flatMap(label).join('')}</p>`,
+    }),
+  ).toEqual([]);
+  expect(
+    scan({
+      'View.tsx': `${callback}const diagnostic=[{caption:'Diagnostic copy'}].flatMap(label);export const View=()=> <p>{[{caption:'Visible copy'}].flatMap(label).join('')}</p>`,
+    }),
+  ).toEqual(['Visible copy']);
+  expect(
+    scan({
+      'View.tsx': `const items=[{caption:'Visible copy'}];export const View=()=> <p>{items.flatMap((item)=>[item.caption]).join('')}</p>`,
+    }),
+  ).toEqual(['Visible copy']);
+});
+
+test('a named callback traces JSX fragments and display sinks in its map context', () => {
+  expect(
+    scan({
+      'View.tsx': `const items=[{caption:'Caption copy',title:'Title copy',children:'Children copy',html:'HTML copy'}];
+      const render=(item:typeof items[number])=> <><p title={item.title}>{item.caption}</p><p {...{children:item.children}}/><div dangerouslySetInnerHTML={{__html:item.html}}/></>;
+      export const View=()=> <>{items.map(render)}</>`,
+    }),
+  ).toEqual(['Caption copy', 'Title copy', 'Children copy', 'HTML copy']);
+});
+
+test('a named callback retains custom component props in its map context', () => {
+  const row = `function Row({entry}:{entry:{caption:string}}){return <p>{entry.caption}</p>}`;
+  expect(
+    scan({
+      'View.tsx': `const items=[{caption:'Visible copy'}];${row}const render=(item:typeof items[number])=> <Row entry={item}/>;export const View=()=> <>{items.map(render)}</>`,
+    }),
+  ).toEqual(['Visible copy']);
+  expect(
+    scan({
+      'View.tsx': `import {Row} from './barrel';const items=[{caption:'Visible copy'}];const render=(item:typeof items[number])=> <Row entry={item}/>;export const View=()=> <>{items.map(render)}</>`,
+      'barrel.ts': `export {Row} from './Row';`,
+      'Row.tsx': `export ${row}`,
+    }),
+  ).toEqual(['Visible copy']);
+  expect(
+    scan({
+      'View.tsx': `${row}const render=(item:{caption:string})=> <Row entry={item}/>;const diagnostic=[{caption:'Diagnostic copy'}].map(render);export const View=()=> <>{[{caption:42}].map(render)}</>`,
+    }),
+  ).toEqual([]);
+  expect(
+    scan({
+      'View.tsx': `import {usePreferences} from './preferences';const {t}=usePreferences();const items=[{caption:'Visible copy'}];function Row({entry}:{entry:{caption:string}}){return <p>{t(entry.caption)}</p>}const render=(item:typeof items[number])=> <Row entry={item}/>;export const View=()=> <>{items.map(render)}</>`,
+    }),
+  ).toEqual([]);
+});
+
+test('a named callback traces textual accessibility spread properties without translated values', () => {
+  const values = `const items=[{value:'Value copy',placeholder:'Placeholder copy',dom:'DOM value copy'}];`;
+  expect(
+    scan({
+      'View.tsx': `${values}const render=(item:typeof items[number])=> <p {...{'aria-valuetext':item.value,'aria-placeholder':item.placeholder,ariaValueText:item.dom}}/>;export const View=()=> <>{items.map(render)}</>`,
+    }),
+  ).toEqual(['Value copy', 'Placeholder copy', 'DOM value copy']);
+  expect(
+    scan({
+      'View.tsx': `import {usePreferences} from './preferences';const {t}=usePreferences();${values}const render=(item:typeof items[number])=> <p {...{'aria-valuetext':t(item.value),'aria-placeholder':t(item.placeholder),ariaValueText:t(item.dom)}}/>;export const View=()=> <>{items.map(render)}</>`,
+    }),
+  ).toEqual([]);
+});

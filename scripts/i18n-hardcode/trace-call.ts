@@ -12,6 +12,7 @@ import {
   type TraceOptions,
 } from './ast.ts';
 import { callEnvironment } from './calls.ts';
+import { knownArrayIndexOccupied } from './concat-index.ts';
 import { callable } from './link.ts';
 import { mappedPaths } from './mapped-path.ts';
 import { translationCall } from './translation.ts';
@@ -50,18 +51,32 @@ export function traceCall(
     const method = property(ast(callee.property));
     if (method === 'toString' && errorObject(source, ast(callee.object), new Set(), environment))
       return [{ source, node, text: 'Untranslated error.toString()', rawError: true }];
-    if (['map', 'flatMap'].includes(method))
+    if (['map', 'flatMap'].includes(method)) {
+      const target = callable(sources, source, args(node)[0]);
+      const collection = ast(callee.object);
+      if (target && collection)
+        return mappedPaths(path, method === 'flatMap').flatMap((selected) => {
+          const previous = environment;
+          setEnvironment(callEnvironment(target, source, [collection], previous, [['*']]));
+          try {
+            return trace(target.source, target.node, selected, seen, options);
+          } finally {
+            setEnvironment(previous);
+          }
+        });
+    }
+    if (method === 'flatMap')
       return args(node)
         .slice(0, 1)
-        .flatMap((argument) =>
-          mappedPaths(path, method === 'flatMap').flatMap((selected) => recur(argument, selected)),
-        );
+        .flatMap((argument) => mappedPaths(path, true).flatMap((selected) => recur(argument, selected)));
     if (method === 'concat')
       return [
         ...recur(ast(callee.object), path),
-        ...args(node).flatMap((argument) =>
-          mappedPaths(path, true).flatMap((selected) => recur(argument, selected)),
-        ),
+        ...(knownArrayIndexOccupied(source, ast(callee.object), path, environment)
+          ? []
+          : args(node).flatMap((argument) =>
+              mappedPaths(path, true).flatMap((selected) => recur(argument, selected)),
+            )),
       ];
     if (
       ['filter', 'find', 'slice', 'join', 'toUpperCase', 'toLowerCase', 'trim', 'replace'].includes(

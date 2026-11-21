@@ -1,6 +1,8 @@
 import { type Ast, ast, type Binding, key, nodes, type Origin, type Source, type Trace } from './ast.ts';
-import { environmentKey } from './calls.ts';
+import { callEnvironment, environmentKey } from './calls.ts';
 import { namespaceValues, resolveImport } from './exports.ts';
+import { jsxValues } from './jsx.ts';
+import { callable } from './link.ts';
 import { traceMember } from './member.ts';
 import { traceCall } from './trace-call.ts';
 import { arrayValues, combineOrigins, functionReturns, objectValues, templateValues } from './values.ts';
@@ -85,6 +87,21 @@ export function createTrace(sources: Source[]): Trace {
           },
           options,
         );
+      case 'JSXElement':
+      case 'JSXFragment':
+        return options.resolveComposite
+          ? []
+          : jsxValues(node, recur, (opening, props) => {
+              const target = callable(sources, source, ast(opening.name));
+              if (!target) return [];
+              const previous = environment;
+              environment = callEnvironment(target, source, [props], previous);
+              try {
+                return trace(target.source, target.node, path, nextSeen, options);
+              } finally {
+                environment = previous;
+              }
+            });
       case 'ArrowFunctionExpression':
       case 'FunctionExpression':
       case 'FunctionDeclaration':

@@ -15,6 +15,7 @@ import { verifyScopeComponents } from '../test/account-merge/scope-components';
 import { seedPublicData } from '../test/account-merge/seed-public';
 import { artifacts, compose } from '../test/account-merge/settings';
 import { verifySnapshotComponent } from '../test/account-merge/snapshot-component';
+import { installSdkMetadata } from '../test/account-sdk/install';
 import { dataMigrations } from './data-migrations';
 
 function applyMigration(migration: string) {
@@ -116,6 +117,8 @@ try {
     ...process.argv.slice(2),
   ]);
   verifyScopeComponents();
+  installSdkMetadata();
+  run('bunx', ['playwright', 'test', '--config=playwright.account-sdk.config.ts']);
   await verifySnapshotComponent();
   // 追加部品をすべて作成した後に、private関数全体の権限漏れを照合する。
   verifyScopeComponents('acl');

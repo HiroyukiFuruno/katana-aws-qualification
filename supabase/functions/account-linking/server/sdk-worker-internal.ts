@@ -85,21 +85,6 @@ export function exchangeLive(leg: ServerSdkLeg): boolean {
   );
 }
 
-export async function usable(
-  auth: ServerSdkClient,
-  leg: ServerSdkLeg,
-  session: Session,
-): Promise<boolean> {
-  if (!session.access_token || !session.user?.id || (leg.side === 'source' && !leg.expectedAuthUid))
-    return false;
-  const verified = await auth.getUser(session.access_token);
-  return (
-    !verified.error &&
-    verified.data.user?.id === session.user.id &&
-    (!leg.expectedAuthUid || verified.data.user.id === leg.expectedAuthUid)
-  );
-}
-
 export async function stored(storage: EncryptedPkceStorage, key: string): Promise<Session | null> {
   const value = await storage.getItem(key);
   if (!value) return null;

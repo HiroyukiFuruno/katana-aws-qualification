@@ -8,19 +8,11 @@ import {
   nonce,
   result,
   stored,
-  usable,
 } from './sdk-worker-internal.ts';
 import { recordAuthorizationFailure, recoverExchange } from './sdk-worker-recovery.ts';
+import { indeterminateAuthError, verifySession } from './sdk-worker-verification.ts';
 
 export type { ServerSdkControl, ServerSdkOptions, ServerSdkResult } from './sdk-worker.types.ts';
-
-function indeterminate(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) return false;
-  const value = error as { name?: unknown; status?: unknown };
-  return (
-    value.name === 'AuthRetryableFetchError' || (typeof value.status === 'number' && value.status >= 500)
-  );
-}
 
 export class ServerSdkWorker<Request> {
   constructor(private readonly options: ServerSdkOptions<Request>) {}
@@ -86,10 +78,14 @@ export class ServerSdkWorker<Request> {
       await storage.getIngestNonce(leg.nonceHash);
       const auth = client(this.options, leg);
       const restored = await stored(storage, leg.runtime.storageKey);
-      if (restored)
-        return leg.state === 'exchanging' && (await usable(auth, leg, restored))
+      if (restored) {
+        if (leg.state !== 'exchanging') return this.exchangeFailure(leg, false);
+        const verified = await verifySession(auth, leg, restored);
+        if (verified === 'unavailable') return result(leg, 'runtime_failed');
+        return verified === 'verified'
           ? result(await this.options.control.promote(leg))
           : this.exchangeFailure(leg, false);
+      }
       const exchange = await this.options.control.claimExchange(leg);
       leg = exchange.leg;
       claimed = exchange.claimed;
@@ -97,11 +93,17 @@ export class ServerSdkWorker<Request> {
       if ((await auth.initialize()).error) throw new Error('initialize_failed');
       const response = await auth.exchangeCodeForSession(code);
       const receipt = await stored(storage, leg.runtime.storageKey);
-      if (receipt && (await usable(auth, leg, receipt)))
-        return result(await this.options.control.promote(leg));
-      if (response.error && indeterminate(response.error)) throw new Error('exchange_unknown');
-      if (response.error || !response.data.session || !(await usable(auth, leg, response.data.session)))
-        return this.exchangeFailure(leg, false);
+      if (receipt) {
+        const verified = await verifySession(auth, leg, receipt);
+        if (verified === 'unavailable') return result(leg, 'runtime_failed');
+        return verified === 'verified'
+          ? result(await this.options.control.promote(leg))
+          : this.exchangeFailure(leg, false);
+      }
+      if (response.error && indeterminateAuthError(response.error)) throw new Error('exchange_unknown');
+      if (response.error || !response.data.session) return this.exchangeFailure(leg, false);
+      const verified = await verifySession(auth, leg, response.data.session);
+      if (verified === 'invalid') return this.exchangeFailure(leg, false);
       throw new Error('receipt_missing');
     } catch {
       if (!leg) return { legId: '', state: 'failed', expiresAt: 0, failure: 'runtime_failed' };

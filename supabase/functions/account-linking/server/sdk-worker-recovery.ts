@@ -1,5 +1,6 @@
 import type { ServerSdkLeg, ServerSdkOptions, ServerSdkResult } from './sdk-worker.types.ts';
-import { client, exchangeLive, live, result, sameLeg, stored, usable } from './sdk-worker-internal.ts';
+import { client, exchangeLive, live, result, sameLeg, stored } from './sdk-worker-internal.ts';
+import { verifySession } from './sdk-worker-verification.ts';
 
 export async function recoverExchange<Request>(
   options: ServerSdkOptions<Request>,
@@ -19,8 +20,13 @@ export async function recoverExchange<Request>(
       const storage = options.storage(current);
       await storage.getIngestNonce(current.nonceHash);
       const receipt = await stored(storage, current.runtime.storageKey);
-      if (receipt && (await usable(client(options, current), current, receipt)))
-        return result(await options.control.promote(current));
+      if (receipt) {
+        const verified = await verifySession(client(options, current), current, receipt);
+        if (verified === 'unavailable') return result(current, 'runtime_failed');
+        return verified === 'verified'
+          ? result(await options.control.promote(current))
+          : fail(current, false);
+      }
     } catch {}
   }
   return claimed ? fail(current, true) : result(current, 'runtime_failed');

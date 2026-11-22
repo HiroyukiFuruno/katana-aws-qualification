@@ -15,7 +15,7 @@ const paths = (
   .flat()
   .sort();
 if (!paths.length) throw new Error('No unit tests found');
-const child = Bun.spawn(['rtk', 'proxy', 'bun', 'test', ...paths], {
+const child = Bun.spawn([process.execPath, 'test', ...paths], {
   stdout: 'inherit',
   stderr: 'inherit',
 });

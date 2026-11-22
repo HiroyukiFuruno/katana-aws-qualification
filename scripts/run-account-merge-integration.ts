@@ -4,14 +4,17 @@ import { readdirSync, writeFileSync } from 'node:fs';
 import { verifyCleanupHarness } from '../test/account-merge/cleanup-harness';
 import { run } from '../test/account-merge/commands';
 import { verifyExchangeHarness } from '../test/account-merge/exchange-harness';
+import { captureNativeInputs } from '../test/account-merge/input-integrity';
 import { verifyIntentHarness } from '../test/account-merge/intent-harness';
 import { verifyLegHarness } from '../test/account-merge/leg-harness';
 import { verifyLockingHarness } from '../test/account-merge/locking-harness';
 import { prepareFixtures } from '../test/account-merge/prepare';
+import { installProofComponents, removeProofWrapper } from '../test/account-merge/proof-components';
 import { publicState } from '../test/account-merge/public-state';
 import { verifyRuntimeHarness } from '../test/account-merge/runtime-harness';
 import { verifyPublicSchemaGuards } from '../test/account-merge/schema-guards';
 import { verifyScopeComponents } from '../test/account-merge/scope-components';
+import { runSdk, sdkSelection } from '../test/account-merge/sdk-selection';
 import { seedPublicData } from '../test/account-merge/seed-public';
 import { artifacts, compose } from '../test/account-merge/settings';
 import { verifySnapshotComponent } from '../test/account-merge/snapshot-component';
@@ -105,7 +108,9 @@ async function applyMigrations() {
   console.log(`Applied ${migrations.length} migrations to the dedicated account-merge database`);
 }
 
+const selection = sdkSelection(process.argv.slice(2));
 prepareFixtures();
+const verifyInputsUnchanged = captureNativeInputs(selection);
 try {
   run('docker', [...compose, 'up', '-d', '--wait', 'database', 'auth', 'kaq-merge-idp']);
   await applyMigrations();
@@ -114,11 +119,16 @@ try {
     'playwright',
     'test',
     '--config=playwright.account-merge.config.ts',
-    ...process.argv.slice(2),
+    ...selection.scopeArgs,
   ]);
   verifyScopeComponents();
   installSdkMetadata();
-  run('bunx', ['playwright', 'test', '--config=playwright.account-sdk.config.ts']);
+  installProofComponents();
+  try {
+    runSdk(selection.sdkArgs);
+  } finally {
+    removeProofWrapper();
+  }
   await verifySnapshotComponent();
   // 追加部品をすべて作成した後に、private関数全体の権限漏れを照合する。
   verifyScopeComponents('acl');
@@ -135,3 +145,4 @@ await verifyRuntimeHarness();
 await verifyLegHarness();
 await verifyCleanupHarness();
 await verifyExchangeHarness();
+verifyInputsUnchanged();

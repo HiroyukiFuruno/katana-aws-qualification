@@ -47,7 +47,7 @@ export function json<T>(statement: string): T {
   }
 }
 
-export function actorSql(actor: Actor, statement: string): string {
+export function actorStatement(actor: Actor, statement: string): string {
   requiredUuid(actor.userId);
   requiredUuid(actor.sessionId);
   if (!Number.isSafeInteger(actor.expiresAt)) throw new Error('invalid fixture session expiry');
@@ -58,10 +58,14 @@ export function actorSql(actor: Actor, statement: string): string {
     aud: 'authenticated',
     exp: actor.expiresAt,
   });
-  return sql(`begin;
+  return `begin;
 set local request.jwt.claims = ${literal(claims)};
 ${statement}
-commit;`);
+commit;`;
+}
+
+export function actorSql(actor: Actor, statement: string): string {
+  return sql(actorStatement(actor, statement));
 }
 
 export function actorJson<T>(actor: Actor, statement: string): T {

@@ -1,14 +1,18 @@
 import { writeFileSync } from 'node:fs';
-import type { Server } from 'node:http';
-import { artifacts } from '../account-merge/settings';
+import { artifacts, gatewayOrigin, testKey } from '../account-merge/settings';
 import type { Operation } from './control';
+import type { OwnedMembership } from './fixture-membership';
+import { closeRuntimeSql } from './runtime-sql';
 import { type auditSnapshot, verifyAudit } from './server-audit';
 import { fingerprint, learnerCount, protectedHash, protectedTables } from './server-snapshot';
+import type { SdkTimings } from './server-timings';
 import { literal, requiredUuid, sql } from './sql';
 
 type CleanupInput = {
   operations: Map<string, Operation>;
-  server: Server;
+  ownedMembership: OwnedMembership;
+  timings: SdkTimings;
+  drain(): Promise<void>;
   baseline: string;
   protectedBaseline: string;
   learnerBaseline: string;
@@ -18,7 +22,9 @@ type CleanupInput = {
 
 export async function cleanup({
   operations,
-  server,
+  ownedMembership,
+  timings,
+  drain,
   baseline,
   protectedBaseline,
   learnerBaseline,
@@ -26,6 +32,7 @@ export async function cleanup({
   receiptFilename = 'sdk-cleanup.json',
 }: CleanupInput) {
   try {
+    await drain();
     const intentIds = [
       ...new Set(
         [...operations.values()].flatMap((operation) =>
@@ -42,20 +49,38 @@ export async function cleanup({
       `select coalesce(json_agg(id::text order by id),'[]'::json) from auth.users where email = any(array[${emails.map(literal).join(',')}]);`,
     );
     const userIds: string[] = JSON.parse(value) as string[];
+    const ownedAccountIds = [...ownedMembership.accountIds];
+    if (ownedAccountIds.length)
+      sql(
+        `delete from kaq_private.learning_session_grants where account_id in (${ownedAccountIds.map((id) => `${literal(requiredUuid(id))}::uuid`).join(',')});
+         delete from kaq_private.learning_memberships where account_id in (${ownedAccountIds.map((id) => `${literal(requiredUuid(id))}::uuid`).join(',')});
+         delete from public.learning_state where user_id in (${ownedAccountIds.map((id) => `${literal(requiredUuid(id))}::uuid`).join(',')});
+         delete from kaq_private.learning_accounts where id in (${ownedAccountIds.map((id) => `${literal(requiredUuid(id))}::uuid`).join(',')});`,
+      );
     if (userIds.length)
       sql(
         `delete from auth.users where id in (${userIds.map((id) => `${literal(requiredUuid(id))}::uuid`).join(',')});`,
       );
+    const token = testKey('service_role');
+    for (const aliasId of ownedMembership.aliasUserIds) {
+      const response = await fetch(`${gatewayOrigin}/auth/v1/admin/users/${requiredUuid(aliasId)}`, {
+        method: 'DELETE',
+        headers: { apikey: token, Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('owner alias cleanup failed');
+    }
     const remaining = sql(
       `select count(*) from kaq_private.account_intents where id in (${intentIds.length ? intentIds.map((id) => `${literal(id)}::uuid`).join(',') : 'null::uuid'});`,
     );
     const publicHash = fingerprint();
-    const audit = verifyAudit(auditBaseline, userIds);
+    const audit = verifyAudit(auditBaseline, userIds, [...ownedMembership.aliasUserIds]);
     const protectedFinal = protectedHash();
     const learnerFinal = learnerCount();
     const receipt = {
       status: 'passed',
       ownedIntents: intentIds.length,
+      removedAccounts: ownedAccountIds.length,
+      removedOwnerAliases: ownedMembership.aliasUserIds.size,
       removedAuthUsers: userIds.length,
       remainingIntents: Number(remaining),
       publicBaselineHash: baseline,
@@ -81,8 +106,7 @@ export async function cleanup({
     )
       throw new Error('SDK fixture cleanup verification failed');
   } finally {
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
+    await closeRuntimeSql();
+    timings.write();
   }
 }

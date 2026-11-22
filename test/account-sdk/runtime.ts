@@ -7,7 +7,8 @@ import type {
 } from '../../supabase/functions/account-linking/runtime/types.ts';
 import type { ServerSdkLeg } from '../../supabase/functions/account-linking/server/sdk-worker.types.ts';
 import { keyring, record, runtimeJson } from './runtime-codec';
-import { type Actor, actorSql, literal, requiredUuid } from './sql';
+import { runtimeSql } from './runtime-sql';
+import { type Actor, literal, requiredUuid } from './sql';
 
 export class SdkRepository implements RuntimeRepository {
   constructor(
@@ -16,7 +17,7 @@ export class SdkRepository implements RuntimeRepository {
   ) {}
   async read(legId: string): Promise<RuntimeRecord | null> {
     requiredUuid(legId);
-    const value = actorSql(
+    const value = await runtimeSql(
       this.actor,
       `select coalesce(kaq_private.runtime_read(${literal(legId)}::uuid,${literal(JSON.stringify(this.context))})::text,'null');`,
     );
@@ -24,7 +25,7 @@ export class SdkRepository implements RuntimeRepository {
   }
   async readRevisionForCleanup(legId: string, guard: RuntimeWriteGuard): Promise<number | null> {
     requiredUuid(legId);
-    const value = actorSql(
+    const value = await runtimeSql(
       this.actor,
       `select coalesce(kaq_private.runtime_cleanup_revision(${literal(legId)}::uuid,${literal(JSON.stringify(guard))})::text,'');`,
     );
@@ -39,10 +40,10 @@ export class SdkRepository implements RuntimeRepository {
     requiredUuid(legId);
     const expected = revision === null ? 'null' : String(revision);
     return (
-      actorSql(
+      (await runtimeSql(
         this.actor,
         `select kaq_private.runtime_compare_and_swap(${literal(legId)}::uuid,${expected},${literal(runtimeJson(next))},${literal(JSON.stringify(guard))});`,
-      ) === 't'
+      )) === 't'
     );
   }
   async deleteIfRevision(
@@ -51,7 +52,7 @@ export class SdkRepository implements RuntimeRepository {
     guard: RuntimeWriteGuard,
   ): Promise<'deleted' | 'missing' | 'conflict'> {
     const expected = revision === null ? 'null' : String(revision);
-    const value = actorSql(
+    const value = await runtimeSql(
       this.actor,
       `select kaq_private.runtime_delete_if_revision(${literal(legId)}::uuid,${expected},${literal(JSON.stringify(guard))});`,
     );
@@ -60,15 +61,15 @@ export class SdkRepository implements RuntimeRepository {
   }
   async isTerminal(legId: string): Promise<boolean> {
     return (
-      actorSql(
+      (await runtimeSql(
         this.actor,
         `select kaq_private.runtime_is_terminal(${literal(requiredUuid(legId))}::uuid,${literal(JSON.stringify(this.context))});`,
-      ) === 't'
+      )) === 't'
     );
   }
 }
 
-export function storage(actor: Actor, leg: ServerSdkLeg): EncryptedPkceStorage {
+export function storage(actor: Actor, leg: Pick<ServerSdkLeg, 'runtime'>): EncryptedPkceStorage {
   return new EncryptedPkceStorage({
     repository: new SdkRepository(actor, leg.runtime),
     keyring: keyring(),

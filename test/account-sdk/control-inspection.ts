@@ -1,5 +1,6 @@
 import type { ServerSdkLeg } from '../../supabase/functions/account-linking/server/sdk-worker.types.ts';
 import { leg, type Operation } from './control-fixture';
+import { assertAcceptedNonceRemoved } from './nonce-inspection';
 import { SdkRepository, storage } from './runtime';
 import { literal, requiredUuid, sql } from './sql';
 
@@ -49,7 +50,12 @@ export class SdkInspection {
       throw new Error('browser leaked a server SDK secret');
   }
 
-  async proof() {
+  rememberSecret(value: string) {
+    if (!value) throw new Error('Missing captured server secret');
+    this.secrets.add(value);
+  }
+
+  async proof(options: { allowRetainedNonce?: boolean } = {}) {
     return Promise.all(
       [...this.operations.values()].map(async (operation) => {
         const current = leg(operation);
@@ -85,6 +91,11 @@ export class SdkInspection {
           actorUid: operation.actor.userId,
           actorSessionId: operation.actor.sessionId,
           expiresAt: record.expiresAt,
+          ingestNonceRemoved: await assertAcceptedNonceRemoved(
+            operation,
+            current,
+            options.allowRetainedNonce === true,
+          ),
           providerTokensStripped:
             !Object.hasOwn(session, 'provider_token') &&
             !Object.hasOwn(session, 'provider_refresh_token'),
@@ -93,10 +104,13 @@ export class SdkInspection {
     );
   }
 
-  async assertNoBrowserLeak(values: string[]) {
+  async assertNoBrowserLeak(values: string[], expectedProviderResponses: 1 | 2 = 2) {
     await this.proof();
-    if (this.providerTokenResponses !== 2)
-      throw new Error('Require two actual provider-token responses');
+    if (
+      ![1, 2].includes(expectedProviderResponses) ||
+      this.providerTokenResponses !== expectedProviderResponses
+    )
+      throw new Error('Require the expected actual provider-token responses');
     this.assertCapturedSecrets(values);
   }
 

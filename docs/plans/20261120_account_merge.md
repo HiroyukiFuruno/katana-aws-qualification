@@ -122,7 +122,7 @@ Draft PR #57に競合説明・session保持/復帰・10言語と実2user回帰�
 
 - [x] 既存PR57の競合説明/元session保持を公開mainへ合わせ、単体・実2ユーザーOIDC・10言語を確認する。main `f5afb976`と公開照合は後述。これだけで#58をCloseしない。
 - [ ] 上の設計を現行FK/RLS/RPC/全owner型/退会/実GoTrue版へ対応付け、DDLとAPIの具体契約・全テーブルの保持/競合一覧を固定する。
-- [ ] 追加migrationで独立owner/membership/bootstrap/束縛・session fenceを作り、既存13migrationと全既存記録を保持する。
+- [ ] 追加migrationで独立owner/membership/bootstrap/束縛・session fenceを作り、既存14migrationと全既存記録を保持する。
 - [ ] proof intent・両fresh OAuth・preview/commit・onboarding・競合選択/出自を実装する。
 - [ ] 旧session/queue、同名・メール入力列挙・偽UID・片側・期限切れ・取消し・再送・同時実行・途中失敗/rollbackを実GoTrue/2種OIDC/DBで検証する。
 - [ ] 両側の回答・draft/提出済み模試/final・18教材版・資格/設定・manifestを固定入力で保持/重複排除/参照一致/同じdashboardへ照合する。
@@ -209,3 +209,9 @@ private ACL検査は全functionを列挙し、明示REVOKE漏れやPUBLIC EXECUT
 [lock契約](20261121_account_merge_locking.md)と[ブラウザーcutover契約](20261121_account_merge_client.md)へ続く。GoTrue refreshとの逆順を実`40P01`で再現し、session/AMRのNOWAIT・固定retryへ修正した。標準`account:integration`全体は実2 OIDC/基盤172/session71/readscope148/bootstrap31/snapshot60/ACL7と、別専用fixtureのPython unit7/SQL108/実競合12がexit0。deadlock0・意図外marker0・専用container残0を確認した。
 
 refresh後の差分は、実診断で特定した当該2 userのupdated_at前進と正確な4監査行、公式session/token更新だけを許可する。保護列や他user・既存監査行・学習/private状態の変更は拒否する。setup失敗時のowned ID回収、Docker内のstdout/stderr順序、CIの開発者CLI非依存も検査した。これは全caller・公開API・履歴統合の完了ではなく、Issue58をCloseしない。
+
+## 2026-11-22 検証・公開条件の更新
+
+ユーザーの「CIは来月まで回復しないので、ローカルで検証して公開する」に従い、以後の未完差分は既存ローカルcheck・対象の実Auth/DB/Progress等の回帰、固定入力とsource一致、Draftレビューと指摘修正/reply/resolve、P0/P1ゼロ、通常merge、実公開照合を完了条件とする。上記の過去に成功したCI結果は歴史証跡のまま維持し、今後のActions未実行を成功と記録しない。required checksや保護を強制回避せず、実際の設定を公開直前に照合する。機能要件・検査の対象・品質基準は縮めない。
+
+source/live migrationは現14本で一致。44 public RPC signatures / 44 unique names、26 transport records / 25 RPC names、12 owner tables / 10 direct RLSを追加観測し、[owner切替計画](20261122_account_owner_cutover.md)と機械manifestへ固定する。実利用者のmerge/deleteは実行しない。

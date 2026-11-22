@@ -1,41 +1,25 @@
-import { createServer } from 'node:http';
-import { ServerSdkWorker } from '../../supabase/functions/account-linking/server/sdk-worker.ts';
-import { gatewayOrigin, testKey } from '../account-merge/settings';
 import { type Operation, SdkControl } from './control';
-import { storage } from './runtime';
+import { seedSourceMembership, seedTargetMembership } from './fixture-membership';
+import { proofRacePort, proofWorker } from './proof-port';
 import { auditSnapshot } from './server-audit';
 import { cleanup } from './server-cleanup';
-import { actor, body, send } from './server-http';
+import { actor, body, listen, send, trackedServer } from './server-http';
+import { sourceIntent, verifiedSourceScope } from './server-intent';
+import type { AdapterOptions } from './server-options';
+import { sdkWorker } from './server-sdk';
 import { fingerprint, learnerCount, protectedHash } from './server-snapshot';
+import { SdkTimings } from './server-timings';
 import { requiredUuid, sql } from './sql';
 
-const callback = 'http://127.0.0.1:54533/test/account-sdk/callback.html';
-
-type AdapterOptions = {
-  authorizationFailure?: boolean;
-  cleanupReceiptFilename?: string;
-};
-
+export type { ProofRacePort } from './proof-port';
 export async function startSdkAdapter(options: AdapterOptions = {}) {
+  const timings = new SdkTimings(options.cleanupReceiptFilename);
   const operations = new Map<string, Operation>();
   const byActorAndSide = new Map<string, Operation>();
+  const ownedMembership = { accountIds: new Set<string>(), aliasUserIds: new Set<string>() };
+  let droppedProofResponse = false;
   const control = new SdkControl(operations, undefined, options.authorizationFailure === true);
-  const worker = () =>
-    new ServerSdkWorker({
-      control,
-      storage: (leg) => {
-        const operation = operations.get(leg.id);
-        if (!operation) throw new Error('unknown SDK operation');
-        return storage(operation.actor, leg);
-      },
-      url: gatewayOrigin,
-      key: testKey(),
-      fetch: control.fetch,
-      providers: {
-        keycloak: { callback, scopes: 'openid email profile' },
-        azure: { callback, scopes: 'openid email profile' },
-      },
-    });
+  const worker = () => sdkWorker(control, operations);
   const baseline = fingerprint();
   const protectedBaseline = protectedHash();
   const auditBaseline = auditSnapshot();
@@ -48,7 +32,7 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
   )
     throw new Error('SDK users already exist before this fixture');
   const learnerBaseline = learnerCount();
-  const server = createServer(async (request, response) => {
+  const { server, drain } = trackedServer(async (request, response) => {
     if (request.method === 'OPTIONS') {
       response.writeHead(204, {
         'Access-Control-Allow-Origin': 'http://127.0.0.1:54533',
@@ -58,20 +42,35 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
       response.end();
       return;
     }
+    const mark = timings.request(request.url);
+    mark('started');
     try {
       const input = await body(request);
       const main = await actor(request);
+      mark('actor');
       if (request.method !== 'POST') throw new Error('invalid request');
       if (request.url === '/start' && (input.side === 'source' || input.side === 'target')) {
         const key = `${main.userId}:${main.sessionId}:${input.side}`;
-        const operation = byActorAndSide.get(key) ?? { actor: main, side: input.side };
+        const operation = byActorAndSide.get(key) ?? {
+          actor: main,
+          side: input.side,
+          kind: options.intentKind ?? 'add_existing',
+          provider: input.side === 'target' ? options.targetProvider : undefined,
+        };
         if (operation.actor.userId !== main.userId || operation.actor.sessionId !== main.sessionId)
           throw new Error('invalid request');
-        const result = await worker().begin(operation);
-        if (result.legId) {
-          operations.set(result.legId, operation);
-          byActorAndSide.set(key, operation);
+        if (input.side === 'target' && operation.kind === 'merge_existing')
+          operation.sourceScope = verifiedSourceScope(byActorAndSide, main);
+        if (input.side === 'source') {
+          operation.sourceScope = await seedSourceMembership(
+            main,
+            operation.kind ?? 'add_existing',
+            ownedMembership,
+          );
         }
+        const result = await worker().begin(operation);
+        if (result.legId) operations.set(result.legId, operation);
+        if (result.legId) byActorAndSide.set(key, operation);
         send(response, 200, result);
         return;
       }
@@ -87,7 +86,36 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
           operation.actor.sessionId !== main.sessionId
         )
           throw new Error('invalid request');
-        send(response, 200, await worker().exchange(operation, input.code));
+        const exchanged = await worker().exchange(operation, input.code);
+        mark('exchange');
+        const canonical = await control.loadCanonical(operation);
+        if (exchanged.state !== 'exchanged' && canonical.state !== 'proved') {
+          send(response, 200, exchanged);
+          return;
+        }
+        if (exchanged.state === 'exchanged') {
+          const port = await proofRacePort(operation, canonical, control);
+          mark('port');
+          await seedTargetMembership(
+            port,
+            ownedMembership,
+            operation.kind ?? 'add_existing',
+            main.userId,
+            operation.sourceScope,
+            options.targetSameOwner === true,
+          );
+          mark('membership');
+          if (options.beforeProofAccept) await options.beforeProofAccept(port);
+          mark('hook');
+        }
+        const accepted = await proofWorker(control, operations).accept(operation);
+        mark('proof');
+        if (options.dropProofResponse && !droppedProofResponse) {
+          droppedProofResponse = true;
+          response.destroy();
+          return;
+        }
+        send(response, 200, accepted);
         return;
       }
       throw new Error('invalid request');
@@ -95,25 +123,28 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
       send(response, 400, { error: 'invalid SDK fixture request' });
     }
   });
-  await new Promise<void>((resolve, reject) =>
-    server.listen(54534, '127.0.0.1', (error?: Error) => (error ? reject(error) : resolve())),
-  );
+  await listen(server);
   return {
     close: () =>
       cleanup({
         operations,
-        server,
+        ownedMembership,
+        timings,
+        drain,
         baseline,
         protectedBaseline,
         learnerBaseline,
         auditBaseline,
         receiptFilename: options.cleanupReceiptFilename,
       }),
-    proof: () => control.proof(),
+    proof: (options?: { allowRetainedNonce?: boolean }) => control.proof(options),
+    verifyPostAcceptance: () => control.verifyPostAcceptance(),
     verifyAuthorizationFailure: () => control.verifyAuthorizationFailure(),
     assertNoCodeExchange: () => control.assertNoCodeExchange(),
     assertAuthorizationFailurePrivacy: (values: string[]) =>
       control.assertAuthorizationFailurePrivacy(values),
-    assertNoBrowserLeak: (values: string[]) => control.assertNoBrowserLeak(values),
+    intent: () => sourceIntent(operations),
+    assertNoBrowserLeak: (values: string[], count: 1 | 2 = 2) =>
+      control.assertNoBrowserLeak(values, count),
   };
 }

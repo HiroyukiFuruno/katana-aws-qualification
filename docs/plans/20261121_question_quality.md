@@ -481,3 +481,11 @@
 - 先行公開 → 残り16バンク自然翻訳 → 最終公開のユーザー指定順序を維持する。本番Vercel権限とSupabase接続は引き続き本人の接続操作待ち。
 
 - [/] PR #108（2ecfedaa）の20 pathsも統合。新native runnerの固定18件/境界14という前提を共通migration phase helperへ置換し、既存の実registry回帰を再利用。新runnerには固定数再導入の静的guardを追加。個別5件とintent-scope型/対象Biome成功。最終統合候補の全check・最新head CIを回収する。
+
+### 教材の言語切替の追加レビュー
+
+- [/] 翻訳取得失敗を先頭alertで表示し、stable keyの教材を維持したまま専用再試行を実行する。実SPA/実404から復旧し未送信選択を保持する検査を追加、言語関連browser12件成功。thread `PRRT_kwDOVzQ52c66icYx`。
+- [/] 翻訳取得完了時はfunctional state更新で同scopeの最新snapshotへassetだけを反映。実domain型のcontrolled-promise回帰2件とscope境界拒否を検証し、production型/対象Biome成功。thread `PRRT_kwDOVzQ52c66ihY1`。
+- [/] Linux b84 CIはData/Glossary/Progress全shard/Auth成功。AccountのSQL検査は新しい61項目が成功したがreceipt側が60を期待して失敗。正しい61項目と新presentation列検査labelの存在を必須として修正、型/対象Biome成功。最新CIで全体を回収する。
+
+- 最終追加修正は独立review P0/P1/P2=0。新unitの明示型検査は一時Bun型rootsで成功、repo依存変更なし。behavioral REDは未記録であり、missing-exportによる失敗をRED証跡として扱わない。実404 browser結果と最新snapshot保持のunit、全体検査、最新Linux CIを合わせて判定する。

@@ -33,7 +33,7 @@ test('compact exam results keep legacy records accessible alongside the timeline
   const widget = dashboardDefaults('Asia/Tokyo').widgets.find(({ kind }) => kind === 'exams');
   if (!widget) throw new Error('Exam widget is missing.');
   const render = (includeLegacy: boolean) => {
-    const child = Bun.spawnSync(['rtk', 'proxy', 'bun', 'scripts/dashboard-session-render-fixture.ts'], {
+    const child = Bun.spawnSync([process.execPath, 'scripts/dashboard-session-render-fixture.ts'], {
       stdin: new TextEncoder().encode(
         JSON.stringify({
           widget,

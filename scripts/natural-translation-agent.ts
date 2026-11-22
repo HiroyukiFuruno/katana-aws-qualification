@@ -20,8 +20,6 @@ export async function runNaturalTranslationAgent(
     attempt < 2 ? (process.env.NATURAL_TRANSLATION_MODEL ?? 'gpt-5.6-luna') : 'gpt-5.6-terra';
   const child = Bun.spawn(
     [
-      'rtk',
-      'proxy',
       'codex',
       'exec',
       '--ignore-user-config',

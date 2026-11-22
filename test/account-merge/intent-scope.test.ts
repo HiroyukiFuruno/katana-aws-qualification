@@ -42,6 +42,13 @@ test('intent scope rejects stale membership, proof, expiry, and reentry', () => 
   assert.match(source, /current_generations is distinct from initial_generations/);
 });
 
+test('intent scope rechecks the discovered UID set after all lower locks', () => {
+  assert.match(
+    source,
+    /learning_session_grants where account_id = any\(account_ids\) order by session_id for update[\s\S]*into current_members[\s\S]*jsonb_array_elements\(coalesce\(current_members[\s\S]*current_member_uids is distinct from discovered_member_uids/,
+  );
+});
+
 test('intent scope binds both proof freshness records and retains inactive co-members in its snapshot', () => {
   for (const field of [
     'session_created_at',

@@ -145,6 +145,12 @@ begin
     into current_accounts from kaq_private.learning_accounts where id = any(coalesce(account_ids, '{}'::uuid[])) and status = 'active';
   select jsonb_agg(jsonb_build_object('uid',auth_user_id,'account_id',account_id,'epoch',epoch,'status',status,'fence',session_fence_at) order by auth_user_id)
     into current_members from kaq_private.learning_memberships where account_id = any(coalesce(account_ids, '{}'::uuid[]));
+  -- 下位lockの待機中に加わったAuth UIDは、初期発見集合と一致しなければ採用しない。
+  select array_agg((member ->> 'uid')::uuid order by (member ->> 'uid')::uuid) into current_member_uids
+    from jsonb_array_elements(coalesce(current_members, '[]'::jsonb)) member;
+  if current_member_uids is distinct from discovered_member_uids then
+    raise exception using errcode = 'PT409', message = 'KAQ_INTENT_SCOPE_RETRY';
+  end if;
   select jsonb_agg(jsonb_build_object('id',proof.id,'side',leg.side,'uid',proof.auth_uid,'session',proof.session_id,
     'session_created_at',proof.session_created_at,'oauth_at',proof.oauth_at,'consumed_at',proof.consumed_at,
     'account',proof.account_id,'epoch',proof.membership_epoch,'revision',proof.account_membership_revision,

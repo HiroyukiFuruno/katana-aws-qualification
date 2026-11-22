@@ -4,7 +4,7 @@ import { artifacts } from './test/account-merge/settings';
 
 export default defineConfig({
   ...merge,
-  testMatch: '**/session-grants.pw.ts',
+  testMatch: ['**/session-grants.pw.ts', '**/public-scope.pw.ts'],
   reporter: [['list'], ['json', { outputFile: `${artifacts}/grants-results.json` }]],
   outputDir: `${artifacts}/grants-browser`,
 });

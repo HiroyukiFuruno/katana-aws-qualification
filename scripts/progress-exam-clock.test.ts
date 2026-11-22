@@ -58,7 +58,7 @@ test('confirmed saves use the server timestamp in the finalization payload', asy
     async rpc(name, args) {
       calls.push({ name, args });
       if (name === 'read_learning_clock') return selectedAt;
-      if (name === 'start_exam_session')
+      if (name === 'start_exam_session_v2')
         return [{ exam_id: 'exam', deadline_at: '2026-11-20T01:00:00+00:00', revision: 2 }];
       if (name === 'save_exam_response_confirmed')
         return [{ duration_ms: 19, revision: 3, selected_at: selectedAt }];

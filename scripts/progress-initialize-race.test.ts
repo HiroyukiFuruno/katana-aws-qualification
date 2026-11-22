@@ -16,7 +16,7 @@ test('retry reload does not erase an answer acknowledged while its old read is p
   const client: ProgressRpcClient = {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name !== 'append_learning_event') return;
       if (offline) {
         offline = false;

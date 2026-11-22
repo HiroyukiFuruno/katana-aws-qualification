@@ -5,7 +5,11 @@ const mock = 'courses/aip-c01/full-mock-2026-11.json';
 export const generativeAiDeveloperCourse: Course = {
   practice: [{ path: mock, label: 'saaFull' }],
   mock,
-  archives: ['courses/aip-c01/questions.json', 'courses/aip-c01/mock-2026-11.json'],
+  archives: [
+    'courses/aip-c01/questions.json',
+    'courses/aip-c01/mock-2026-11.json',
+    'courses/aip-c01/archive-2026-11-22.json',
+  ],
   examStorageId: 'aip-c01',
   exam: {
     minutes: 180,

@@ -10,7 +10,10 @@ export function DashboardWidgetSettings({
   preferences,
   onPreferences,
   facets,
-}: Pick<DashboardViewProps, 'preferences' | 'onPreferences'> & { facets?: DashboardFacets }) {
+  lessons,
+}: Pick<DashboardViewProps, 'preferences' | 'onPreferences' | 'lessons'> & {
+  facets?: DashboardFacets;
+}) {
   const { t } = usePreferences();
   const [selected, setSelected] = useState('');
   const visible = preferences.widgets.filter((widget) => widget.visible);
@@ -36,6 +39,7 @@ export function DashboardWidgetSettings({
             key={widget.id}
             widget={widget}
             facets={facets}
+            lessons={lessons}
             preferences={preferences}
             onPreferences={onPreferences}
           />

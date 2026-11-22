@@ -1,4 +1,6 @@
+import type { Locale } from '../../locales';
 import type { DeliveryIndexAsset } from './artifactTypes';
+import { needsTranslatedDelivery, overlayDeliveryIndex, translatedDeliveryPath } from './localize';
 
 export type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 const text = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
@@ -84,8 +86,20 @@ export function parseDeliveryIndex(value: unknown): DeliveryIndexAsset {
   return value as unknown as DeliveryIndexAsset;
 }
 
-export async function loadDeliveryIndex(options: { signal?: AbortSignal; fetcher?: Fetcher } = {}) {
-  return parseDeliveryIndex(
-    await fetchDeliveryJson('/fundamentals/delivery/index.json', options.signal, options.fetcher),
+export async function loadDeliveryIndex(
+  options: { basePath?: string; fetcher?: Fetcher; locale?: Locale; signal?: AbortSignal } = {},
+) {
+  const basePath = options.basePath ?? '/fundamentals/delivery';
+  const base = parseDeliveryIndex(
+    await fetchDeliveryJson(`${basePath}/index.json`, options.signal, options.fetcher),
   );
+  if (!options.locale || !needsTranslatedDelivery(options.locale)) return base;
+  const locale = parseDeliveryIndex(
+    await fetchDeliveryJson(
+      translatedDeliveryPath(options.locale, `${basePath}/index.json`),
+      options.signal,
+      options.fetcher,
+    ),
+  );
+  return overlayDeliveryIndex(base, locale);
 }

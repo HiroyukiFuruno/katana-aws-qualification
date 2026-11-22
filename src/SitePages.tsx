@@ -30,6 +30,7 @@ export function StudyPaths() {
         <a className="entry-card" href={localePath(locale, 'study/fundamentals')}>
           <h2>{t('learnFundamentals')}</h2>
           <p>{t('fundamentalsEntry')}</p>
+          <small>{t('coursePending')}</small>
           <span className="entry-action">
             {t('learnFundamentals')} <span aria-hidden="true">→</span>
           </span>

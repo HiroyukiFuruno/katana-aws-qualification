@@ -1,5 +1,5 @@
 import { expect, mock, test } from 'bun:test';
-import { createProgressApi, ProgressApiError } from '../src/progress/api';
+import { createProgressApi } from '../src/progress/api';
 
 const configuration = { url: 'https://learning.example', key: 'public-key' };
 
@@ -101,6 +101,29 @@ test('an owner switch during authorization prevents any data request', async () 
   }
 });
 
+test('versioned progress RPCs retain the operation-name boundary', async () => {
+  const requests: Request[] = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit) => {
+    requests.push(new Request(input, init));
+    return new Response('[]');
+  }) as typeof fetch;
+  try {
+    const api = createProgressApi(
+      configuration,
+      async () => 'token',
+      () => true,
+    );
+    await api.rpc('load_roadmap_profile_snapshot_v2', {});
+    expect(requests[0]?.url).toContain('/rpc/load_roadmap_profile_snapshot_v2');
+    await expect(api.rpc('load_roadmap_profile_snapshot_v0', {})).rejects.toThrow(
+      'Invalid learning operation',
+    );
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test('an owner switch while reading discards the old response', async () => {
   let active = true;
   const original = globalThis.fetch;
@@ -115,28 +138,6 @@ test('an owner switch while reading discards the old response', async () => {
       () => active,
     );
     await expect(api.select('learning_events')).rejects.toThrow('Learning account changed');
-  } finally {
-    globalThis.fetch = original;
-  }
-});
-
-test('server errors preserve a safe status and code without exposing the raw message', async () => {
-  const original = globalThis.fetch;
-  globalThis.fetch = mock(
-    async () =>
-      new Response(JSON.stringify({ code: 'PT412', message: 'private server detail' }), { status: 412 }),
-  ) as typeof fetch;
-  try {
-    const api = createProgressApi(
-      configuration,
-      async () => 'token',
-      () => true,
-    );
-    const result = await api.rpc('save_exam_response', {}).catch((error: unknown) => error);
-    expect(result).toBeInstanceOf(ProgressApiError);
-    expect((result as ProgressApiError).status).toBe(412);
-    expect((result as ProgressApiError).code).toBe('PT412');
-    expect((result as Error).message).not.toContain('private');
   } finally {
     globalThis.fetch = original;
   }

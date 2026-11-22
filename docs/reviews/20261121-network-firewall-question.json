@@ -1,0 +1,69 @@
+{
+  "question": "sap-c03-full-arch-018",
+  "path": "courses/sap-c03/mock-2026-11.json",
+  "sourceHash": "647feddf90312179ffe80a2cbf57b745d988e7c8136144128658a8d2ac3fcec3",
+  "originalReview": {
+    "status": "needs-review",
+    "rationale": "Network FirewallとFirewall Managerの組み合わせが、マネージド検査と組織へのポリシー配布という要件に合うため、意図された正答はCです。ただし、TLS復号を含む検査がNetwork Firewallだけで要件どおり実現できるか、またFirewall Managerで新規アカウントを含めてルールとポリシーが自動配布される条件が明確ではありません。",
+    "issues": [
+      "TLS復号の実現方法と対応範囲をAWS公式資料で確認し、必要な構成要素や前提条件を設問に明記してください。",
+      "新規アカウントへの自動適用に必要なFirewall Managerの組織設定・自動修復などの条件を確認してください。"
+    ]
+  },
+  "decision": "requires-source-change",
+  "verdict": {
+    "correctC": "not-established-as-written",
+    "summary": "Cは、中央集約したNetwork FirewallとFirewall Managerの組織展開という部分では正しい。しかし、設問が必須とするTLS復号設定までをFirewall Managerポリシーで新規アカウントを含む組織へ自動配布できることは、現行のAWS公式契約では確認できない。したがって、TLS復号を残したままCを一意の正答として維持する根拠は不足する。",
+    "confirmed": [
+      "Network FirewallはTLS inspection configurationでSSL/TLSを復号し、ステートフルルールで検査してから再暗号化できる。ACMの証明書、TLS inspection configuration、新規のfirewall policyへの関連付け、firewallへの関連付けが必要である。",
+      "Firewall ManagerのNetwork Firewallポリシーには中央集約モデルがあり、単一の検査VPCに単一のNetwork Firewallを作成してOrganizations内の対象へ適用できる。",
+      "Firewall ManagerのNetwork Firewallポリシーは、既存および新規のアカウント・VPCへ共通ポリシーを強制する目的に使える。"
+    ],
+    "blockingConditions": [
+      "TLS inspection configurationは作成アカウント専用で、他アカウントと共有できない。",
+      "Network FirewallのTLS復号を有効にするには、firewall policyがTLSInspectionConfigurationArnを参照する必要がある。",
+      "AWSが公開しているFirewall ManagerのNETWORK_FIREWALL ManagedServiceDataの中央集約モデル例には、ルールグループ、既定アクション、オーケストレーション、ログの項目はあるが、TLSInspectionConfigurationArnまたはTLS inspection configurationを参照・配布する項目はない。FMSの公開APIはManagedServiceDataをJSON文字列として受け取るため、未文書の項目を使えると推定してはならない。"
+    ],
+    "scopeClarification": "TLS inspection configurationが同じ管理者アカウント内の中央ファイアウォールだけで使われるなら、アカウント間共有制約そのものは直ちに矛盾しない。しかし、FMSポリシーがその設定を作成または参照して配布できるという一次資料は見つからなかった。中央集約モデルの存在とTLS設定のFMS配布対応は別の主張として扱う。"
+  },
+  "sources": [
+    {
+      "url": "https://docs.aws.amazon.com/network-firewall/latest/developerguide/tls-inspection-configurations.html",
+      "evidence": "TLS inspection configurationは復号、stateful ruleによる検査、再暗号化を行う。利用にはACM証明書、TLS inspection configuration、新規firewall policy、firewallへの関連付けが必要。"
+    },
+    {
+      "url": "https://docs.aws.amazon.com/network-firewall/latest/developerguide/managing-tls-configuration.html",
+      "evidence": "TLS inspection configurationは作成したアカウントだけで利用でき、アカウント間で共有できない。"
+    },
+    {
+      "url": "https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_FirewallPolicy.html",
+      "evidence": "Network Firewall firewall policyのTLSInspectionConfigurationArnがTLS inspection configurationのARNを指定する。"
+    },
+    {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/network-firewall-policies.html",
+      "evidence": "FMS Network Firewall policyはOrganizations全体を対象にでき、centralizedモデルでは単一VPCに単一firewallを作成する。"
+    },
+    {
+      "url": "https://aws.amazon.com/network-firewall/faqs/",
+      "evidence": "Network FirewallとFirewall Managerを組み合わせることで、既存および新規のアカウント・VPCに必須ポリシーを自動適用できるとAWSが説明している。"
+    },
+    {
+      "url": "https://docs.aws.amazon.com/fms/2018-01-01/APIReference/API_SecurityServicePolicyData.html",
+      "evidence": "FMS APIはNETWORK_FIREWALLのサービス固有設定をManagedServiceData JSONとして受け取る。"
+    },
+    {
+      "url": "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-fms-policy.html",
+      "evidence": "AWS公開のNETWORK_FIREWALL ManagedServiceData例はrule group、default action、orchestrationを列挙するが、TLSInspectionConfigurationArnまたはTLS inspection configurationの項目を定義しない。"
+    }
+  ],
+  "minimalJapaneseRevision": {
+    "recommended": true,
+    "reason": "FMSで公式に確認できる組織規模のポリシー展開を問う問題として成立させ、TLS inspection configurationのFMS配布を暗黙に要求しないため。",
+    "prompt": "複数アカウントのプライベートサブネットからのインターネット送信を中央で許可リスト方式に制御したい。ステートフル検査とTLS SNIおよびHTTPのドメイン名ベースの制御を行い、新規アカウントを含む組織全体へルールとポリシーを自動適用したい。第三者ファイアウォールのOSやクラスタは運用したくない。最も適切な構成はどれか。",
+    "choiceC": "AWS Network Firewallを検査VPCに配置し、Firewall Managerの中央集約Network Firewallポリシーで組織へ適用する",
+    "choiceCExplanation": "Network Firewallはステートフル検査とドメイン名ベースの送信フィルタリングを提供し、Firewall ManagerはAWS Organizations内の既存および新規の対象へ一貫したNetwork Firewallポリシーを適用できる。",
+    "learningReason": "Network Firewallはマネージドなステートフル検査とドメイン名ベースの送信フィルタリングを提供し、Firewall ManagerはOrganizations全体への一貫したポリシー展開を支援する。",
+    "learningConcept": "インライン検査サービスと、複数アカウントへ設定を強制するガバナンスサービスを組み合わせて設計する。TLS復号を要件に含める場合は、ACM証明書とアカウント専用TLS inspection configurationを別途設計し、Firewall Managerでの配布対応を公式仕様で確認する。"
+  },
+  "observedAt": "2026-11-21T01:18:59Z"
+}

@@ -70,7 +70,7 @@ test('controls reject another update while the first member save is pending', as
   const client: ProgressRpcClient = {
     async rpc(name) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name !== 'save_exam_response_confirmed') throw new Error(`unexpected rpc: ${name}`);
       writes += 1;
       requested?.();

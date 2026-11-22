@@ -2,6 +2,7 @@ import { usePreferences } from '../../preferences';
 import type { LessonStep } from '../delivery/slideTypes';
 import { lessonFragments } from './lessonFragments';
 import './learner-assessment.css';
+import { sourceDocumentationUrl } from '../../sourceDocumentationUrl';
 
 export function LessonReading({ step }: { step: LessonStep }) {
   const { t } = usePreferences();
@@ -28,7 +29,7 @@ export function LessonReading({ step }: { step: LessonStep }) {
           <ul>
             {sources.map((source) => (
               <li key={source.url}>
-                <a href={source.url} target="_blank" rel="noreferrer">
+                <a href={sourceDocumentationUrl(source.url)} target="_blank" rel="noreferrer">
                   {source.label}
                 </a>
               </li>

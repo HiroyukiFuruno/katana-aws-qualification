@@ -40,10 +40,10 @@ function searchText(value: string) {
   return value.normalize('NFKC').toLowerCase();
 }
 
-export function filterGlossary(query: string, category = '', tags: string[] = []) {
+export function filterGlossary(query: string, category = '', tags: string[] = [], entries = glossary) {
   const search = searchText(query.trim());
   const words = search.split(/\s+/);
-  const candidates = glossary.filter(
+  const candidates = entries.filter(
     (entry) =>
       (!category || entry.category === category) && tags.every((tag) => entry.tags.includes(tag)),
   );

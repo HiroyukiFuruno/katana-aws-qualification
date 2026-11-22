@@ -1,7 +1,7 @@
 import type { Message } from '../../messages';
 import type { usePreferences } from '../../preferences';
+import type { DashboardDisplayLabels } from '../displayLabels';
 import type { DashboardFilters } from '../queryTypes';
-import { certificationLabel } from './dashboardFilterOptions';
 
 export const dashboardPeriodKeys = {
   '7d': 'dashboard7d',
@@ -28,14 +28,18 @@ const labels: Record<string, Parameters<Translator>[0]> = {
   'polarities:incorrect': 'dashboardPolarityIncorrect',
   'polarities:unspecified': 'dashboardPolarityUnspecified',
 };
-export function dashboardOptionLabel(key: string, value: string, t: Translator) {
-  if (key === 'certificationIds') return certificationLabel(value);
+export function dashboardOptionLabel(
+  key: string,
+  value: string,
+  t: Translator,
+  display: DashboardDisplayLabels,
+) {
+  if (key === 'certificationIds') return display.certification(value);
+  if (key === 'categories') return display.category(value);
+  if (key === 'unitIds') return display.category(value);
   if (key === 'revisions') {
     const revision = JSON.parse(value) as { sourceVersion: string; questionRevision: number };
-    return t('dashboardRevisionLabel', {
-      sourceVersion: revision.sourceVersion,
-      revision: revision.questionRevision,
-    });
+    return display.revision(revision.sourceVersion, revision.questionRevision);
   }
   const label = labels[`${key}:${value}`];
   return label ? t(label) : value;

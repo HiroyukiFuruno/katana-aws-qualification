@@ -1,0 +1,81 @@
+{
+  "producer": {
+    "thread": "01a1ff21-19cd-7551-b04d-43745010a731",
+    "model": "gpt-5.6-terra",
+    "reasoning": "high",
+    "role": "independent-code-and-native-review"
+  },
+  "decision": "changes-required-before-final-acceptance",
+  "findings": [
+    {
+      "priority": "P1",
+      "title": "形容詞を挟む通常名詞Agentの弱変化を検出しない",
+      "paths": [
+        "scripts/content-language-issues.ts:90-93",
+        "output/question-quality/de-agent-proper-name-context-native-input.json: saa-c03-perf04-core-001"
+      ],
+      "reproduction": {
+        "text": "Die Installation eines eigenen Agents ist nicht zulässig.",
+        "observed": "assertNativeLanguage('', text, 'de', 'probe') accepts the text",
+        "expected": "German Agent declension assertion; the genitive singular weak noun must be 'eines eigenen Agenten'."
+      },
+      "rootCause": "現行patternはeines/einem/einenの直後の空白だけを許可し、eigenenのような形容詞を挟むAgent/Agentsを対象にしない。verfügbarenだけを個別に許す実装は、通常名詞の弱変化を包括的に守れない。",
+      "impact": "実在するsaa-c03-perf04-core-001のドイツ語文がguardを通過したまま残る。よって20 fieldの修正は妥当でも、German Agent weak-declension全体の完了とは判定できない。",
+      "requiredFix": "固有名詞・コード識別子の除外を保ったまま、観測済みのmodifierを分類して通常名詞だけを検出できる狭い拡張を加え、eines eigenen Agentsの修正と、proper nameのSSM Agent・AgentCore・hyphen/dotted/quoted identifierが通る対照を追加する。"
+    }
+  ],
+  "p0": [],
+  "p2": [],
+  "acceptedScope": [
+    "現行guardはden/einen/einem/eines/zum/dem/desの直後、およびeinen verfügbarenの通常名詞Agent/AgentsをNFC化して検出する。",
+    "直接probeで不正な『An einen verfügbaren Agent weiterleiten.』とNFD同文はGerman Agent declensionを返し、正しいAgenten、AgentCore、Agent-Prozess、Agent.handler、backtick/double-quote code identifierは受理された。",
+    "UI translationIssuesは同じassertNativeLanguageをsource dictionaryと共に呼び、AssertionErrorのみissuesへ入れ、未知例外をrethrowする。check-localesのNode entrypointは全721 UI messageと132 quantity formsにtranslationIssuesを通す。",
+    "first Node runtime failure ERR_MODULE_NOT_FOUNDはnative-ui-node-import-first-attempt-observation.jsonに保持され、.ts runtime importsを明示した後のNode i18n check成功が記録されている。"
+  ],
+  "nativeReviewEvidence": {
+    "cohorts": [
+      {
+        "proof": "docs/reviews/20261122-de-agent-declension-native-proofread.json",
+        "edits": 8,
+        "strictReadbacks": 63,
+        "sourceGradingRevisionsUnchanged": true,
+        "otherLocaleFieldsUnchanged": true,
+        "reasonCorrection": "SAP packet capture agentは人間ではなくソフトウェアである。mainが理由だけを訂正し、弱変化の結論と翻訳文字列を維持した。"
+      },
+      {
+        "proof": "docs/reviews/20261122-de-agent-declension-expanded-native-proofread.json",
+        "edits": 12,
+        "strictReadbacks": 63,
+        "sourceGradingRevisionsUnchanged": true,
+        "otherLocaleFieldsUnchanged": true,
+        "properNamesHeld": "SSM Agent、AgentCore、API identifiersは正確に保持し、article-governed standalone Agent/AgentsのみAgentenへ変更する。"
+      }
+    ],
+    "inputContexts": "12 unique question contexts were supplied with source hash and revision; the reviewed proofs preserve source meaning, grading, and revision. This review does not claim that all 5158 source questions are complete."
+  },
+  "gateEvidence": {
+    "targetedIndependentTests": "bun test scripts/content-translation-german-terminology.test.ts scripts/translation-quality.test.ts: 8 pass, 0 fail",
+    "reportedFormalTests": "484 pass, 0 fail, 13291 expectations, 176 files; type, i18n typecheck, format, lint pass",
+    "uiNode": "check-locales validates 721 messages and 10 locale routes; quantity variants are passed to translationIssues",
+    "cacheAudit": "2985 cached questions x 9 locales = 26865 strict bindings, errors []; 2173 source questions remain pending and semanticPending is []",
+    "narrativeAndSite": "1081 narrative contexts x 9 locales plus 9 site locale files, errors 0",
+    "affectedPublishedBanks": "5 affected banks, 13698 checked locale records, cached payload/native provenance and bank source/payload hashes passed",
+    "sourceBanks": "42 source-bank content check reported successful by supplied gate evidence"
+  },
+  "unresolved": [
+    {
+      "item": "8 broad-scan contexts and 10 fields",
+      "status": "classification-and-followup-required",
+      "reason": "7 contexts are potential product/proper-name cases that must remain unchanged; one ordinary 'eines eigenen Agents' is the P1 above. A later narrow modifier extension and one-field correction must be re-reviewed."
+    },
+    {
+      "item": "whole content completion",
+      "status": "not-claimed",
+      "reason": "cache audit explicitly records 2173 pending source questions. This review only evaluates the currently cached, strict-bound content and the stated German cohorts."
+    }
+  ],
+  "scope": {
+    "productionSourceCachePublicOrGlobalEdited": false,
+    "reviewArtifactOnly": true
+  }
+}

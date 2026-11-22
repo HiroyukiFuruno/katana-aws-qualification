@@ -25,12 +25,13 @@ test('profile upload uses the atomic import RPC with the current revision', asyn
   expect(result).toEqual({ events: [], imported: 1, rejected: 0 });
   expect(calls).toEqual([
     {
-      name: 'import_roadmap_profile',
+      name: 'import_roadmap_profile_v2',
       args: {
         p_answers: { assessment: 1 },
         p_earned: ['dva-c03'],
         p_expected_revision: 4,
         p_manifest_id: 'manifest',
+        p_presentation: { optionOrders: {}, order: [] },
         p_source_row_id: 'profile',
       },
     },

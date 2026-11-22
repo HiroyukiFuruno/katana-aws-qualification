@@ -1,13 +1,16 @@
 import type { ExamDraft, ExamResponse } from './exam';
-import type { usePreferences } from './preferences';
-import type { Question } from './questions';
 import { StructuredAnswerFields } from './StructuredAnswer';
+import type { Question } from './questions';
+import { usePreferences } from './preferences';
+import { choiceLabel } from './choiceLabels';
+import { QuestionClarifications } from './QuestionClarifications';
 
 type Translate = ReturnType<typeof usePreferences>['t'];
 
 export function ExamQuestion({
   draft,
   question,
+  choiceOrder,
   response,
   expired,
   submitting,
@@ -17,6 +20,7 @@ export function ExamQuestion({
 }: {
   draft: ExamDraft;
   question: Question;
+  choiceOrder: string[];
   response: ExamResponse;
   expired: boolean;
   submitting: boolean;
@@ -24,7 +28,11 @@ export function ExamQuestion({
   heading: React.RefObject<HTMLHeadingElement | null>;
   onUpdate: (position: number, patch?: Partial<ExamResponse>) => void;
 }) {
+  const { locale } = usePreferences();
   const count = question.correct.length;
+  const choices = choiceOrder
+    .map((id) => question.choices.find((choice) => choice.id === id))
+    .filter((choice): choice is Question['choices'][number] => choice !== undefined);
   return (
     <section className="card" aria-busy={submitting}>
       <div className="question-meta">
@@ -39,15 +47,17 @@ export function ExamQuestion({
       <h2 ref={heading} tabIndex={-1} className="exam-question-title">
         {t('questionNumber', { number: draft.position + 1 })}
       </h2>
-      <p className="prompt" lang={question.locale ?? 'ja'}>
+      <p className="prompt" lang={question.locale ?? locale}>
         {question.prompt}
       </p>
+      <QuestionClarifications question={question} />
       <fieldset disabled={expired || submitting}>
         <legend className="sr-only">{t('choices')}</legend>
         {question.format ? (
           <StructuredAnswerFields
             question={question}
             selected={response.selected}
+            choiceOrder={choiceOrder}
             onChange={(selected) =>
               onUpdate(draft.position, {
                 selected,
@@ -56,7 +66,7 @@ export function ExamQuestion({
             }
           />
         ) : (
-          question.choices.map((choice) => {
+          choices.map((choice) => {
             const selected = response.selected.includes(choice.id);
             return (
               <label key={choice.id} className={`choice choice-wrap ${selected ? 'picked' : ''}`}>
@@ -77,8 +87,8 @@ export function ExamQuestion({
                     })
                   }
                 />
-                <span className="letter">{choice.id}</span>
-                <span lang={question.locale ?? 'ja'}>{choice.text}</span>
+                <span className="letter">{choiceLabel(choices, choice.id)}</span>
+                <span lang={question.locale ?? locale}>{choice.text}</span>
               </label>
             );
           })

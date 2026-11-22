@@ -6,13 +6,15 @@ import { filterGlossary, glossary, glossaryCategories, glossaryTags } from './gl
 import './glossary.css';
 import { usePreferences } from './preferences';
 import { SiteAd } from './SiteAd';
+import { useContent } from './useContent';
 
 export function GlossaryPage() {
   const { t, locale } = usePreferences();
+  const { content } = useContent();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const matches = filterGlossary(query, category, tags);
+  const matches = filterGlossary(query, category, tags, content.glossary);
   const groups = new Map<string, typeof matches>();
   for (const entry of matches) {
     const initial = entry.term[0].toUpperCase();
@@ -75,7 +77,7 @@ export function GlossaryPage() {
         {[...groups].map(([letter, entries]) => (
           <section key={letter} aria-labelledby={`glossary-letter-${letter}`}>
             <h2 id={`glossary-letter-${letter}`}>{letter}</h2>
-            <dl lang="ja">
+            <dl lang={locale}>
               {entries.map(
                 ({ term, expansion, definition, category: termCategory, tags: termTags, source }) => (
                   <div key={term} className="glossary-row">

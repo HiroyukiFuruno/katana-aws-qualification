@@ -1,8 +1,6 @@
-import { certifications } from '../../certifications';
 import type { Locale } from '../../locales';
-import type { usePreferences } from '../../preferences';
 import type { DashboardMetric } from '../preferenceTypes';
-import type { DashboardCategoryStats, DashboardStats } from '../statTypes';
+import type { DashboardStats } from '../statTypes';
 
 export function dashboardMetricValue(stats: DashboardStats, metric: DashboardMetric) {
   if (metric === 'incorrect') return stats.answered - stats.correct;
@@ -28,18 +26,4 @@ export function formatDashboardValue(
       maximumFractionDigits: 2,
     }).format(value / 1000);
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value);
-}
-export function dashboardCertificationLabel(id: string) {
-  return certifications.find((certification) => certification.id === id)?.name ?? id;
-}
-export function dashboardCategoryLabel(
-  point: DashboardCategoryStats,
-  t: ReturnType<typeof usePreferences>['t'],
-) {
-  return t('dashboardCategoryRevisionLabel', {
-    certification: point.certificationId.toUpperCase(),
-    category: point.category,
-    sourceVersion: point.sourceVersion.slice(0, 16),
-    revision: point.questionRevision,
-  });
 }

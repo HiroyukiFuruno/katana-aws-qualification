@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { studyCourses } from '../src/certifications.ts';
 import { examDomainOf, type Question, questionGroupKey, validQuestionFormat } from '../src/questions.ts';
 
 import { checkQuestionTranslations } from './check-question-translations.ts';
+import { assertPositionIndependentQuestion } from './question-position-validation.ts';
 
 const banks = new Map<string, Question[]>();
 async function load(path: string) {
@@ -14,6 +15,7 @@ async function load(path: string) {
   const ids = new Set<string>();
   for (const question of questions) {
     const context = `${path}: ${question.id}`;
+    assertPositionIndependentQuestion(question, context);
     assert(question.id && !ids.has(question.id), context);
     ids.add(question.id);
     assert(Number.isSafeInteger(question.revision) && question.revision >= 1, context);
@@ -81,6 +83,10 @@ for (const { course } of studyCourses) {
   ];
   const sources = await Promise.all(paths.map(load));
   if (course.questionTranslations) await checkQuestionTranslations(course.questionTranslations, sources);
+}
+
+for (const path of await readdir('public/courses', { recursive: true })) {
+  if (path.endsWith('.json') && !path.includes('/locales/')) await load(`courses/${path}`);
 }
 
 console.log(`Validated ${banks.size} question banks`);

@@ -1,14 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Course } from './certifications';
+import type { Locale } from './locales';
 import { usePreferences } from './preferences';
-import { loadQuestions, questionKey, type Question } from './questions';
-import {
-  applyQuestionTranslation,
-  fetchQuestionTranslation,
-  questionTranslationPath,
-} from './questionTranslations';
+import { type LoadedQuestionBank, loadQuestionBank } from './questionLocalization';
+import { questionKey } from './questions';
 
-type LoadedPractice = Omit<Course['practice'][number], 'path'> & { questions: Question[] };
+type LoadedPractice = Omit<Course['practice'][number], 'path'> & LoadedQuestionBank;
 type LoadError = 'invalidQuestionData' | 'loadQuestionError';
 
 function errorKey(error: unknown): LoadError {
@@ -19,39 +16,35 @@ function errorKey(error: unknown): LoadError {
 
 export function useCourseBanks(course: Course) {
   const { locale, t } = usePreferences();
-  const translationPath = questionTranslationPath(course.questionTranslations, locale);
-  const questionLocale = translationPath ? locale : undefined;
   const [practiceSets, setPracticeSets] = useState<LoadedPractice[]>([]);
-  const [mockBank, setMockBank] = useState<Question[]>([]);
-  const [archivedBank, setArchivedBank] = useState<Question[]>([]);
+  const [mockResult, setMockResult] = useState<LoadedQuestionBank>();
+  const [archiveResults, setArchiveResults] = useState<LoadedQuestionBank[]>([]);
   const [loadingError, setLoadingError] = useState<LoadError>();
   const [mockError, setMockError] = useState<LoadError>();
+  const [practiceLocale, setPracticeLocale] = useState<Locale>();
+  const [mockLocale, setMockLocale] = useState<Locale>();
 
   useEffect(() => {
     let cancelled = false;
-    const translation = translationPath ? fetchQuestionTranslation(translationPath) : undefined;
     setLoadingError(undefined);
     setMockError(undefined);
-    const requests = new Map<string, Promise<Question[]>>();
+    setPracticeLocale(undefined);
+    setMockLocale(undefined);
+    const requests = new Map<string, Promise<LoadedQuestionBank>>();
     function load(path: string) {
       const cached = requests.get(path);
       if (cached) return cached;
-      const source = loadQuestions(path);
-      const request =
-        translation && questionLocale
-          ? Promise.all([source, translation]).then(([bank, text]) =>
-              applyQuestionTranslation(bank, questionLocale, text),
-            )
-          : source;
+      const request = loadQuestionBank(path, locale);
       requests.set(path, request);
       return request;
     }
 
-    Promise.all(
-      course.practice.map(async ({ path, ...set }) => ({ ...set, questions: await load(path) })),
-    )
+    Promise.all(course.practice.map(async ({ path, ...set }) => ({ ...set, ...(await load(path)) })))
       .then((sets) => {
-        if (!cancelled) setPracticeSets(sets);
+        if (!cancelled) {
+          setPracticeSets(sets);
+          setPracticeLocale(locale);
+        }
       })
       .catch((error) => {
         if (!cancelled) setLoadingError(errorKey(error));
@@ -59,8 +52,9 @@ export function useCourseBanks(course: Course) {
     Promise.all([load(course.mock), Promise.all(course.archives.map(load))])
       .then(([current, archived]) => {
         if (cancelled) return;
-        setMockBank(current);
-        setArchivedBank(archived.flat());
+        setMockResult(current);
+        setArchiveResults(archived);
+        setMockLocale(locale);
       })
       .catch((error) => {
         if (!cancelled) setMockError(errorKey(error));
@@ -68,9 +62,22 @@ export function useCourseBanks(course: Course) {
     return () => {
       cancelled = true;
     };
-  }, [course, questionLocale, translationPath]);
+  }, [course, locale]);
 
-  const questions = practiceSets.flatMap((set) => set.questions);
+  const questions = useMemo(() => practiceSets.flatMap((set) => set.questions), [practiceSets]);
+  const mockBank = useMemo(() => mockResult?.questions ?? [], [mockResult]);
+  const archivedBank = useMemo(
+    () => archiveResults.flatMap((result) => result.questions),
+    [archiveResults],
+  );
+  const sourceOnlyLocales = useMemo(
+    () =>
+      [...practiceSets, mockResult, ...archiveResults]
+        .filter((result): result is LoadedQuestionBank => !!result?.pendingLocale)
+        .map((result) => result.contentLocale)
+        .filter((locale, index, locales) => locales.indexOf(locale) === index),
+    [archiveResults, mockResult, practiceSets],
+  );
   const questionSets = practiceSets.flatMap((set) => {
     const label = t(set.label);
     const size = course.setSize;
@@ -81,8 +88,19 @@ export function useCourseBanks(course: Course) {
       questions: set.questions.slice(index * size, (index + 1) * size),
     }));
   });
-  const randomBank = [
-    ...new Map(questions.map((question) => [questionKey(question), question])).values(),
-  ];
-  return { questions, questionSets, randomBank, mockBank, archivedBank, loadingError, mockError };
+  const randomBank = useMemo(
+    () => [...new Map(questions.map((question) => [questionKey(question), question])).values()],
+    [questions],
+  );
+  return {
+    questions,
+    questionSets,
+    randomBank,
+    mockBank,
+    archivedBank,
+    ready: practiceLocale === locale && mockLocale === locale,
+    loadingError,
+    mockError,
+    sourceOnlyLocales,
+  };
 }

@@ -1,4 +1,5 @@
 import type { ExamBlueprint } from './certifications';
+import { normalizeChoiceOrder } from './choiceOrder';
 import type { ExamClock } from './examClock';
 import {
   examDomainOf,
@@ -7,6 +8,7 @@ import {
   questionGroupKey,
   questionKey,
 } from './questions';
+import { shuffle } from './randomization';
 
 export type ExamResponse = {
   selected: string[];
@@ -23,6 +25,7 @@ export type ExamDraft = {
   responses: Record<string, ExamResponse>;
   revision?: number;
   clock?: ExamClock;
+  choiceOrders?: Record<string, string[]>;
 };
 
 function uniqueExamQuestions(questions: readonly Question[]) {
@@ -79,14 +82,7 @@ export function canStartExam(questions: Question[], blueprint: ExamBlueprint) {
   return selectExamQuestions(questions, blueprint).length > 0;
 }
 
-export function shuffle<T>(source: readonly T[]) {
-  const items = [...source];
-  for (let i = items.length - 1; i > 0; i--) {
-    const other = Math.floor(Math.random() * (i + 1));
-    [items[i], items[other]] = [items[other], items[i]];
-  }
-  return items;
-}
+export { shuffle } from './randomization';
 
 export function newExam(
   questions: Question[],
@@ -103,7 +99,15 @@ export function newExam(
     order,
     position: 0,
     responses: {},
+    choiceOrders: Object.fromEntries(
+      selected.map((question) => [questionKey(question), shuffle(question.choices).map(({ id }) => id)]),
+    ),
   };
+}
+
+export function examChoiceOrder(draft: ExamDraft, question: Question) {
+  const key = questionKey(question);
+  return normalizeChoiceOrder(draft.choiceOrders?.[key], question.choices);
 }
 
 export function readExam(examKey: string): ExamDraft | undefined {

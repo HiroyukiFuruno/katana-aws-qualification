@@ -1,10 +1,11 @@
 import type { Message } from '../../messages';
 import { usePreferences } from '../../preferences';
+import type { DashboardDisplayLabels } from '../displayLabels';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardCategoryStats } from '../statTypes';
 import { chartKeys, metricKeys } from '../ui/dashboardLabels';
 import { DonutChart } from './DonutChart';
-import { dashboardCategoryLabel, dashboardMetricValue, formatDashboardValue } from './format';
+import { dashboardMetricValue, formatDashboardValue } from './format';
 import { canRenderRadar, RadarChart } from './RadarChart';
 import { ScatterChart } from './ScatterChart';
 import { type DashboardStatRow, StatsTable } from './StatsTable';
@@ -14,10 +15,12 @@ export function SeriesChart({
   widget,
   rows,
   categories = [],
+  display,
 }: {
   widget: DashboardWidget;
   rows: readonly DashboardStatRow[];
   categories?: readonly DashboardCategoryStats[];
+  display: DashboardDisplayLabels;
 }) {
   const { locale, t } = usePreferences();
   const metric = t(metricKeys[widget.metric]);
@@ -54,15 +57,16 @@ export function SeriesChart({
     chart = (
       <>
         <p className="dashboard-viz-note">
-          {t('dashboardAxisX', { metric: t('dashboardMetricAnswered') })} ·{' '}
-          {t('dashboardAxisY', { metric: t('dashboardMetricAccuracy') })}
+          {t('dashboardChartAxes', { x: t('dashboardMetricAnswered'), y: t('dashboardMetricAccuracy') })}
           {widget.chart === 'bubble' && <> · {t('dashboardMetricMeanDuration')}</>}
         </p>
         <ScatterChart
           points={categories}
           bubble={widget.chart === 'bubble'}
           label={metric}
-          categoryLabel={(point) => dashboardCategoryLabel(point, t)}
+          categoryLabel={(point) =>
+            `${display.certification(point.certificationId)} · ${display.category(point.category)} · ${display.revision(point.sourceVersion, point.questionRevision)}`
+          }
         />
       </>
     );

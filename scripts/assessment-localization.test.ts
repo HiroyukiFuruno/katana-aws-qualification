@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+import { readFileSync } from 'node:fs';
 import { createElement, Fragment } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AssessmentQuestion } from '../src/AssessmentQuestion';
@@ -6,7 +7,6 @@ import { assessment } from '../src/assessment';
 import type { AssessmentItem } from '../src/assessmentTypes';
 import { locales } from '../src/locales';
 import { messages } from '../src/messages';
-import { RoadmapResults } from '../src/RoadmapResults';
 
 const originalGrading: Pick<AssessmentItem, 'id' | 'skill' | 'correct'>[] = [
   { id: 'f1', skill: 'fundamentals', correct: 1 },
@@ -26,30 +26,39 @@ const originalGrading: Pick<AssessmentItem, 'id' | 'skill' | 'correct'>[] = [
   { id: 'i1', skill: 'ai', correct: 0 },
   { id: 'i2', skill: 'ai', correct: 1 },
 ];
+const translatedItems = Object.fromEntries(
+  locales.map((locale) => [
+    locale,
+    JSON.parse(readFileSync(`public/translations/${locale}/site.json`, 'utf8'))
+      .assessment as AssessmentItem[],
+  ]),
+);
 const escaped = (text: string) => renderToStaticMarkup(createElement(Fragment, null, text));
 
 function idle() {}
 
 test('localizes all sixteen assessment prompts and choices without changing stored grading', () => {
   expect(assessment.map(({ id, skill, correct }) => ({ id, skill, correct }))).toEqual(originalGrading);
-  const keys = assessment.flatMap((item) => [item.prompt, ...item.options]);
-  expect(new Set(keys).size).toBe(64);
-  for (const item of assessment) {
-    expect(item.options).toHaveLength(3);
-    for (const locale of locales) {
-      expect(messages[locale][item.prompt].trim().length).toBeGreaterThan(0);
-      if (locale !== 'ja') expect(messages[locale][item.prompt]).not.toBe(messages.ja[item.prompt]);
-      for (const option of item.options)
-        expect(messages[locale][option].trim().length).toBeGreaterThan(0);
+  for (const locale of locales) {
+    const localized = translatedItems[locale];
+    expect(localized.map(({ id, skill, correct }) => ({ id, skill, correct }))).toEqual(originalGrading);
+    expect(new Set(localized.flatMap((item) => [item.prompt, ...item.options])).size).toBe(64);
+    for (const [index, item] of localized.entries()) {
+      expect(item.options).toHaveLength(3);
+      expect(item.prompt.trim().length).toBeGreaterThan(0);
+      if (locale !== 'ja') expect(item.prompt).not.toBe(assessment[index].prompt);
+      for (const option of item.options) expect(option.trim().length).toBeGreaterThan(0);
     }
   }
 });
 
 test('renders translated prompts and choice text in the assessment question', () => {
-  for (const [position, item] of assessment.entries()) {
+  for (const [position, item] of translatedItems.en.entries()) {
     const html = renderToStaticMarkup(
       createElement(AssessmentQuestion, {
         item,
+        skillLabel: item.skill,
+        choiceOrder: [0, 1, 2, 3],
         answer: undefined,
         position,
         total: assessment.length,
@@ -59,41 +68,36 @@ test('renders translated prompts and choice text in the assessment question', ()
         saving: false,
       }),
     );
-    expect(html).toContain(`<h2>${escaped(messages.en[item.prompt])}</h2>`);
+    expect(html).toContain(`<h2 lang="en">${escaped(item.prompt)}</h2>`);
     for (const option of item.options)
-      expect(html).toContain(`<span>${escaped(messages.en[option])}</span>`);
-    expect(html).not.toContain(item.prompt);
+      expect(html).toContain(`<span lang="en">${escaped(option)}</span>`);
+    expect(html).not.toContain(escaped(assessment[position].prompt));
     expect(html).not.toContain('lang="ja"');
   }
 });
 
 test('renders translated selected and correct choices in the assessment results', () => {
-  const first = assessment[0];
+  const items = translatedItems.en;
+  const first = items[0];
   const answers = Object.fromEntries(assessment.map((item) => [item.id, item.correct]));
   answers[first.id] = (first.correct + 1) % 3;
   answers[assessment[1].id] = assessment[1].options.length;
   answers[assessment[2].id] = 99;
-  const html = renderToStaticMarkup(
-    createElement(RoadmapResults, {
-      items: assessment,
-      earned: [],
-      answers,
-      today: '2026-11-22',
-      onStudy: idle,
-      onEdit: idle,
-      onRetake: idle,
-      saving: false,
-    }),
-  );
-  for (const item of assessment) {
-    expect(html).toContain(escaped(messages.en[item.prompt]));
+  const rendered = Bun.spawnSync({
+    cmd: ['bun', 'scripts/assessment-results-render.ts', JSON.stringify(answers)],
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+  expect(rendered.exitCode).toBe(0);
+  const html = rendered.stdout.toString();
+
+  for (const item of items) {
+    expect(html).toContain(escaped(item.prompt));
     const option = item.options[answers[item.id]];
     const expected = option
-      ? messages.en[option]
+      ? option
       : messages.en[answers[item.id] === item.options.length ? 'unknown' : 'unanswered'];
     expect(html).toContain(escaped(expected));
-    expect(html).not.toContain(item.prompt);
-    for (const choice of item.options) expect(html).not.toContain(choice);
   }
-  expect(html).toContain(escaped(messages.en[first.options[first.correct]]));
+  expect(html).toContain(escaped(first.options[first.correct]));
 });

@@ -1,10 +1,6 @@
 import { expect, test } from 'bun:test';
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { aggregateDashboard } from '../src/dashboard/aggregate';
 import { dashboardDefaults } from '../src/dashboard/preferences';
-import { DashboardDensityContext } from '../src/dashboard/visual/DashboardDensity';
-import { SessionPanel } from '../src/dashboard/visual/SessionPanel';
 import { messages } from '../src/messages';
 import { base, query, records } from './dashboard-fixture';
 
@@ -36,20 +32,20 @@ test('compact exam results keep legacy records accessible alongside the timeline
   );
   const widget = dashboardDefaults('Asia/Tokyo').widgets.find(({ kind }) => kind === 'exams');
   if (!widget) throw new Error('Exam widget is missing.');
-  const render = (includeLegacy: boolean) =>
-    renderToStaticMarkup(
-      createElement(
-        DashboardDensityContext.Provider,
-        { value: 'compact' },
-        createElement(SessionPanel, {
+  const render = (includeLegacy: boolean) => {
+    const child = Bun.spawnSync([process.execPath, 'scripts/dashboard-session-render-fixture.ts'], {
+      stdin: new TextEncoder().encode(
+        JSON.stringify({
           widget,
           summary: includeLegacy
             ? summary
             : { ...summary, exams: summary.exams.filter((exam) => exam.submittedAt !== null) },
-          lessons: [],
         }),
       ),
-    );
+    });
+    expect(child.exitCode).toBe(0);
+    return new TextDecoder().decode(child.stdout);
+  };
 
   const mixed = render(true);
   expect(mixed).toContain('dashboard-viz-svg');

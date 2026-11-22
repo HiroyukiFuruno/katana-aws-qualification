@@ -14,12 +14,42 @@ export type SessionRow = {
   deadline_at: string;
   exam_id: string;
   position: number;
+  presentation?: unknown;
   question_order: QuestionRef[];
   revision: number;
   state: string;
   started_at?: string | null;
   submitted_at?: string | null;
 };
+
+export function choiceOrders(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const orders = (value as { choiceOrders?: unknown }).choiceOrders;
+  if (!orders || typeof orders !== 'object' || Array.isArray(orders)) return {};
+  return Object.fromEntries(
+    Object.entries(orders).flatMap(([key, candidate]) =>
+      Array.isArray(candidate) && candidate.every((id) => typeof id === 'string')
+        ? [[key, candidate]]
+        : [],
+    ),
+  );
+}
+
+export function presentation(order: string[], choices: Record<string, string[]> | undefined) {
+  const permitted = new Set(order);
+  return {
+    choiceOrders: Object.fromEntries(
+      Object.entries(choices ?? {}).filter(
+        ([key, ids]) =>
+          permitted.has(key) &&
+          ids.length > 0 &&
+          ids.length <= 20 &&
+          ids.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 160) &&
+          new Set(ids).size === ids.length,
+      ),
+    ),
+  };
+}
 
 function ref(value: unknown): QuestionRef {
   if (

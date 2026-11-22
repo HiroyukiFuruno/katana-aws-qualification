@@ -19,15 +19,8 @@ export const publishedPages = [
 export const accountPages = ['login', 'auth/callback', 'dashboard', 'account/settings'];
 export const privateLessonPages = privateLessonPageNames;
 
-const studyLocales = new Map<string, Locale>(
-  studyCourses.flatMap(({ id, course }) =>
-    course?.studyLocale ? [[`study/${id}`, course.studyLocale] as const] : [],
-  ),
-);
-
-export function publishedLocalesFor(page: string): readonly Locale[] {
-  const only = studyLocales.get(page);
-  return only ? [only] : locales;
+export function publishedLocalesFor(_page: string): readonly Locale[] {
+  return locales;
 }
 
 const routes = new Map<string, { locale: Locale; page: string }>();

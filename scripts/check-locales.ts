@@ -1,16 +1,34 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { quantityVariantData, validateQuantityVariants } from '../src/locales/quantity.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
+import clarificationKeys from '../src/question-clarifications.json' with { type: 'json' };
 import { publishedLocalesFor, publishedPages, routeAt } from '../src/routes.ts';
 import { translationReferences } from './i18n-references.ts';
+import { hardcodedCssIssues, hardcodedUiIssues } from './hardcoded-ui.ts';
+import { translationIssues } from './translation-quality.ts';
 
 function tokens(value: string) {
   return [...value.matchAll(/\{(\w+)\}/g)].map(([, name]) => name).sort();
 }
 
 const keys = Object.keys(messages.ja).sort();
+validateQuantityVariants(quantityVariantData, messages);
+for (const locale of locales) {
+  const variants = quantityVariantData[locale];
+  for (const [key, variant] of Object.entries(variants ?? {}))
+    for (const [form, value] of Object.entries(variant.forms))
+      assert.deepEqual(
+        translationIssues(locale, { ...messages[locale], [key]: value }, messages.ja),
+        [],
+        `${locale} quantity translation quality: ${key}.${form}`,
+      );
+}
+for (const entries of Object.values(clarificationKeys))
+  for (const key of entries)
+    assert(Object.hasOwn(messages.ja, key), `Unknown question clarification: ${key}`);
 assert.deepEqual(
   (await readdir('src/locales')).filter((file) => file.endsWith('.json')).sort(),
   locales.map((locale) => `${locale}.json`).sort(),
@@ -19,6 +37,11 @@ assert.deepEqual(
 
 for (const locale of locales) {
   const dictionary = messages[locale];
+  assert.deepEqual(
+    translationIssues(locale, dictionary, messages.ja),
+    [],
+    `${locale} translation quality`,
+  );
   assert.deepEqual(Object.keys(dictionary).sort(), keys, `${locale} keys differ from ja`);
   for (const key of Object.keys(messages.ja) as (keyof typeof messages.ja)[]) {
     const value = dictionary[key];
@@ -30,13 +53,23 @@ for (const locale of locales) {
   }
 }
 
-const sources = (await readdir('src', { recursive: true, withFileTypes: true }))
-  .filter((entry) => entry.isFile() && /\.tsx?$/.test(entry.name))
-  .map((entry) => join(entry.parentPath, entry.name));
+const sourceFiles = await readdir('src', { recursive: true });
+for (const file of (await readdir('scripts/fundamentals-delivery')).filter((file) =>
+  file.endsWith('.ts'),
+)) {
+  const path = `scripts/fundamentals-delivery/${file}`;
+  assert.deepEqual(hardcodedUiIssues(await readFile(path, 'utf8'), path, true), [], path);
+}
+for (const file of sourceFiles.filter((name) => name.endsWith('.css')))
+  assert.deepEqual(hardcodedCssIssues(await readFile(`src/${file}`, 'utf8'), file), [], file);
+const sources = sourceFiles.filter((name) => /\.tsx?$/.test(name));
 assert(sources.length > 0, 'No UI sources checked');
 for (const file of sources) {
-  const content = await readFile(file, 'utf8');
-  for (const key of translationReferences(content, file)) {
+  const path = join('src', file);
+  const content = await readFile(path, 'utf8');
+  if (file.endsWith('.tsx'))
+    assert.deepEqual(hardcodedUiIssues(content, file), [], `${file} hardcoded display text`);
+  for (const key of translationReferences(content, path)) {
     assert(Object.hasOwn(messages.ja, key), `${file} references missing message ${key}`);
   }
 }

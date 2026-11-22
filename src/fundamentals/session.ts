@@ -1,5 +1,6 @@
 import type { Attempt } from '../attempts';
 import { questionKey } from '../questions';
+import { randomizePracticeQuestions } from '../randomization';
 import type { FundamentalsQuestion, FundamentalsUnit } from './types';
 
 export type FundamentalsSession = {
@@ -32,7 +33,12 @@ export function createSession(
   history: Attempt[],
   review: boolean,
 ): FundamentalsSession {
-  return { unitId: unit.id, review, questions: sessionQuestions(unit, history, review), index: 0 };
+  return {
+    unitId: unit.id,
+    review,
+    questions: randomizePracticeQuestions(sessionQuestions(unit, history, review)),
+    index: 0,
+  };
 }
 
 export function advanceSession(session: FundamentalsSession) {
@@ -46,5 +52,5 @@ export function sessionComplete(session: FundamentalsSession) {
 }
 
 export function hasUnansweredQuestions(unit: FundamentalsUnit, history: Attempt[]) {
-  return createSession(unit, history, false).questions.length > 0;
+  return sessionQuestions(unit, history, false).length > 0;
 }

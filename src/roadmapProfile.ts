@@ -26,9 +26,14 @@ export function loadProfile(): Profile {
           ]
         : [],
       answers: saved?.answers && typeof saved.answers === 'object' ? saved.answers : {},
+      optionOrders:
+        saved?.optionOrders && typeof saved.optionOrders === 'object' ? saved.optionOrders : {},
+      order: Array.isArray(saved?.order)
+        ? saved.order.filter((id: unknown): id is string => typeof id === 'string')
+        : [],
     };
   } catch {
-    return { earned: [], answers: {} };
+    return { earned: [], answers: {}, optionOrders: {}, order: [] };
   }
 }
 

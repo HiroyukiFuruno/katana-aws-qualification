@@ -124,7 +124,7 @@ export function retryGenerationConflictClient(
   return {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return getGeneration();
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name !== 'append_learning_event') return;
       const event = args.p_event as { event_id: string };
       writes.push({ eventId: event.event_id, generation: args.p_expected_generation as number });

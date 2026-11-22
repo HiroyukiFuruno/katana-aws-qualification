@@ -1,14 +1,16 @@
 import type { Locale } from '../../locales';
 import { usePreferences } from '../../preferences';
+import { QuestionClarifications } from '../../QuestionClarifications';
 import type { DeliveryQuestion, DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonFinalSession } from '../state/types';
-import { questionPosition, reviewPath, selectedSetMatches } from './lesson-result-helpers';
+import { reviewPath, selectedSetMatches } from './lesson-result-helpers';
 
 export function LessonResultQuestion({
   asset,
   question,
   session,
   index,
+  position,
   locale,
   contentVersion,
   onNavigate,
@@ -17,6 +19,7 @@ export function LessonResultQuestion({
   question: DeliveryQuestion;
   session: LessonFinalSession;
   index: number;
+  position: number;
   locale: Locale;
   contentVersion?: string;
   onNavigate: (href: string) => void;
@@ -29,10 +32,11 @@ export function LessonResultQuestion({
   return (
     <details className="card lesson-result-question">
       <summary>
-        {t('questionNumber', { number: questionPosition(question.id, asset) ?? index + 1 })}:{' '}
+        {t('questionNumber', { number: position })}: {question.title}
         {question.title}
       </summary>
       <p>{question.prompt}</p>
+      <QuestionClarifications question={question} />
       <p className={exact ? 'lesson-result-correct' : 'lesson-result-incorrect'}>
         {answered ? (exact ? t('correct') : t('incorrect')) : t('unanswered')}
       </p>

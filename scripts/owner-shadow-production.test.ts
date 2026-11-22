@@ -68,7 +68,7 @@ test('pins all owner, policy, private-table, and public-function inventory names
   expect(expected.ownerTables).toHaveLength(12);
   expect(expected.policies).toHaveLength(10);
   expect(expected.privateTables).toHaveLength(10);
-  expect(expected.functions).toHaveLength(44);
+  expect(expected.functions).toHaveLength(51);
   expect(
     contractMatches(
       {
@@ -98,6 +98,17 @@ test('pins all owner, policy, private-table, and public-function inventory names
         privateTables: expected.privateTables.map((name) => ({ name })),
         functions: expected.functions.map((signature) => ({ signature })),
         policies: [...expected.policies, { table: firstPolicy.table, name: 'extra_policy' }],
+      },
+      expected,
+    ),
+  ).toBe(false);
+  expect(
+    contractMatches(
+      {
+        ownerTables: expected.ownerTables.map((name) => ({ name })),
+        privateTables: expected.privateTables.map((name) => ({ name })),
+        functions: expected.functions.slice(1).map((signature) => ({ signature })),
+        policies: expected.policies,
       },
       expected,
     ),

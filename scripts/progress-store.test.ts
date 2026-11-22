@@ -55,7 +55,7 @@ test('a later cloud-load failure retains the last successful member snapshot', a
   const client: ProgressRpcClient = {
     async rpc<T>(name) {
       if (fail) throw new Error('offline');
-      return (name === 'load_roadmap_profile_snapshot' ? [] : 0) as T;
+      return (name === 'load_roadmap_profile_snapshot_v2' ? [] : 0) as T;
     },
     async select(table) {
       if (fail) throw new Error('offline');

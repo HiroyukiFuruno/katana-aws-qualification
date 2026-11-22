@@ -1,36 +1,8 @@
+import { append, draft, examKey, owner, store, wrong } from './progress-guest-consent-fixture';
 import { expect, test } from 'bun:test';
 import { historyKey } from '../src/history';
 import { createProgressStore, setGuestProgressConsent } from '../src/progress';
-import { memberAttempt, memoryStorage } from './progress-store-fixture';
-
-const owner = { generation: 1, kind: 'guest' as const };
-const examKey = 'katana.certification-exam.v1.saa-c03';
-const wrong = (stamp: string) => ({
-  ...memberAttempt,
-  answeredAt: stamp,
-  isCorrect: false,
-  questionId: 'same',
-  reward: 0,
-  selected: ['wrong'],
-});
-const draft = {
-  deadline: 1_800_000_000_000,
-  id: '00000000-0000-0000-0000-000000000001',
-  order: ['["exam",1]'],
-  position: 0,
-  responses: { '["exam",1]': { durationMs: 1, flagged: false, selected: ['a'] } },
-};
-
-function store(storage: ReturnType<typeof memoryStorage>) {
-  return createProgressStore({ isCurrent: () => true, owner, storage });
-}
-
-async function append(next: ReturnType<typeof store>, stamp: string) {
-  return next.appendAttempt('saa-c03', wrong(stamp), (attempts) => {
-    const same = attempts.filter((attempt) => attempt.questionId === 'same');
-    return { ...wrong(stamp), attemptNumber: same.length + 1, priorIncorrectCount: same.length };
-  });
-}
+import { memoryStorage } from './progress-store-fixture';
 
 test('grant reconciles disk and memory before deriving the next same-question metadata', async () => {
   const local = memoryStorage();
@@ -75,13 +47,18 @@ test('grant flushes pending profile and exam state, while corruption and denied 
   const local = memoryStorage();
   const next = store(local);
   await next.initialize();
-  await next.replaceProfile({ answers: { q: 1 }, earned: ['saa-c03'] });
+  await next.replaceProfile({ answers: { q: 1 }, earned: ['saa-c03'], optionOrders: {}, order: [] });
   await next.saveGuestExam(examKey, draft);
   setGuestProgressConsent(local, true);
   await next.initialize();
   const reloaded = store(local);
   await reloaded.initialize();
-  expect(reloaded.getSnapshot().profile).toEqual({ answers: { q: 1 }, earned: ['saa-c03'] });
+  expect(reloaded.getSnapshot().profile).toEqual({
+    answers: { q: 1 },
+    earned: ['saa-c03'],
+    optionOrders: {},
+    order: [],
+  });
   expect(reloaded.readGuestExam(examKey)).toEqual(draft);
 
   const corrupt = memoryStorage();
@@ -114,7 +91,7 @@ test('different persisted profile is not silently replaced by offline memory', a
   local.setItem('katana.certification-profile.v1', JSON.stringify({ answers: { old: 1 }, earned: [] }));
   const next = store(local);
   await next.initialize();
-  await next.replaceProfile({ answers: { new: 1 }, earned: ['saa-c03'] });
+  await next.replaceProfile({ answers: { new: 1 }, earned: ['saa-c03'], optionOrders: {}, order: [] });
   setGuestProgressConsent(local, true);
   await next.initialize();
   expect(next.getSnapshot().error).toBe('load');
@@ -123,16 +100,31 @@ test('different persisted profile is not silently replaced by offline memory', a
     { key: 'katana.certification-profile.v1', kind: 'profile' },
   ]);
   await next.resolveGuestStorageConflict('katana.certification-profile.v1', 'stored');
-  expect(next.getSnapshot().profile).toEqual({ answers: { old: 1 }, earned: [] });
+  expect(next.getSnapshot().profile).toEqual({
+    answers: { old: 1 },
+    earned: [],
+    optionOrders: {},
+    order: [],
+  });
 
   setGuestProgressConsent(local, false);
-  await next.replaceProfile({ answers: { pending: 1 }, earned: ['saa-c03'] });
+  await next.replaceProfile({
+    answers: { pending: 1 },
+    earned: ['saa-c03'],
+    optionOrders: {},
+    order: [],
+  });
   setGuestProgressConsent(local, true);
   await next.initialize();
   await next.resolveGuestStorageConflict('katana.certification-profile.v1', 'pending');
   const reloaded = store(local);
   await reloaded.initialize();
-  expect(reloaded.getSnapshot().profile).toEqual({ answers: { pending: 1 }, earned: ['saa-c03'] });
+  expect(reloaded.getSnapshot().profile).toEqual({
+    answers: { pending: 1 },
+    earned: ['saa-c03'],
+    optionOrders: {},
+    order: [],
+  });
 });
 
 test('member stores expose no guest conflicts and reject their resolution', async () => {

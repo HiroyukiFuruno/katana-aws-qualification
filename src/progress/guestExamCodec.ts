@@ -16,12 +16,14 @@ function validResponse(value: unknown) {
 export function isGuestExamDraft(value: unknown): value is ExamDraft {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const draft = value as {
+    choiceOrders?: unknown;
     deadline?: unknown;
     id?: unknown;
     order?: unknown;
     position?: unknown;
     responses?: unknown;
   };
+  const order = Array.isArray(draft.order) ? draft.order : [];
   return (
     typeof draft.id === 'string' &&
     Number.isFinite(draft.deadline) &&
@@ -34,6 +36,21 @@ export function isGuestExamDraft(value: unknown): value is ExamDraft {
     !!draft.responses &&
     typeof draft.responses === 'object' &&
     !Array.isArray(draft.responses) &&
-    Object.values(draft.responses).every(validResponse)
+    Object.values(draft.responses).every(validResponse) &&
+    (draft.choiceOrders === undefined ||
+      (typeof draft.choiceOrders === 'object' &&
+        draft.choiceOrders !== null &&
+        !Array.isArray(draft.choiceOrders) &&
+        Object.entries(draft.choiceOrders).every(
+          ([key, choices]) =>
+            order.includes(key) &&
+            Array.isArray(choices) &&
+            choices.length > 0 &&
+            choices.length <= 20 &&
+            choices.every(
+              (choice) => typeof choice === 'string' && choice.length > 0 && choice.length <= 160,
+            ) &&
+            new Set(choices).size === choices.length,
+        )))
   );
 }

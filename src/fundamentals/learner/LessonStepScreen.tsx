@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
-import { SiteAd, SiteAdLayout } from '../../SiteAd';
+import { SiteAdLayout } from '../../SiteAd';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonRoute } from '../delivery/navigation';
 import type { LessonStep } from '../delivery/slideTypes';
@@ -10,10 +10,13 @@ import type { LessonServices } from '../state/services';
 import type { LessonSnapshot } from '../state/types';
 import { useLessonRecovery } from '../state/useLessonRecovery';
 import { useSavedLessonReload } from '../state/useSavedLessonReload';
+import { LessonConflictRetry } from './LessonConflictRetry';
 import { LessonSlideShell } from './LessonSlideShell';
 import { LessonStepContent } from './LessonStepContent';
-import { useLessonActions } from './useLessonActions';
+import { stepQuestionPresentation } from './lesson-presentation';
 import { useLessonNavigation } from './lessonNavigation';
+import { useCheckpointPresentation } from './useCheckpointPresentation';
+import { useLessonActions } from './useLessonActions';
 
 type Props = {
   asset: DeliveryUnitAsset;
@@ -37,18 +40,17 @@ export function LessonStepScreen({
 }: Props) {
   const { locale, t } = usePreferences();
   const showAd = step.kind !== 'final';
-  const active = snapshot.sessions.find(
-    (session) => session.sessionId === snapshot.progress.activeFinalSessionId,
-  );
-  const position = route.stage === 'final' && route.position ? route.position - 1 : -1;
-  const question =
-    step.kind === 'final'
-      ? asset.finalQuestions[position]
-      : asset.checkpoints.find((item) => item.id === step.assessmentId);
+  const { activeFinalSessionId } = snapshot.progress;
+  const active = snapshot.sessions.find((session) => session.sessionId === activeFinalSessionId);
+  const presentationPosition = route.stage === 'final' && route.position ? route.position - 1 : -1;
+  const session = active?.sessionId;
+  const questionPresentation = stepQuestionPresentation(asset, step, session, presentationPosition);
+  const { presentedFinal, question } = questionPresentation;
   const [selected, setSelected] = useState<string[]>(
-    active?.responses[String(position)]?.selected ?? [],
+    active?.responses[String(presentedFinal?.canonicalPosition ?? -1)]?.selected ?? [],
   );
   const [feedback, setFeedback] = useState(false);
+  const checkpoint = useCheckpointPresentation(question, step.kind === 'checkpoint');
   const [actionError, setActionError] = useState<unknown>();
   const recovery = useLessonRecovery(services, asset, commit);
   const actions = useLessonActions({
@@ -58,6 +60,8 @@ export function LessonStepScreen({
     step,
     locale,
     contentVersion: route.contentVersion,
+    finalPosition: presentedFinal?.canonicalPosition,
+    presentationPosition,
     selected,
     commit,
     confirm: (result, href) => {
@@ -68,14 +72,9 @@ export function LessonStepScreen({
   const savedReload = useSavedLessonReload(actions.discard, reloadSaved, recovery.clear);
   const catalogHref = localePath(locale, 'study/fundamentals');
   const blocked =
-    actions.busy ||
-    actions.pending ||
-    recovery.busy ||
-    savedReload.busy ||
-    Boolean(recovery.error || savedReload.error);
+    [actions, recovery, savedReload].some(({ busy, error }) => busy || error) || actions.pending;
   const saveError = actions.error || recovery.error;
   const conflict = isLessonConflict(saveError);
-  const go = (href: string) => confirm(snapshot, href);
   const navigation = useLessonNavigation({
     asset,
     services,
@@ -85,13 +84,13 @@ export function LessonStepScreen({
     question,
     selectedCount: selected.length,
     feedback,
-    position,
+    position: presentationPosition,
     locale,
     contentVersion: route.contentVersion,
     catalogHref,
     blocked,
     saving: actions.busy || recovery.busy || savedReload.busy,
-    go,
+    go: (href) => confirm(snapshot, href),
   });
   return (
     <SiteAdLayout show={showAd} viewKey={step.id}>
@@ -116,21 +115,18 @@ export function LessonStepScreen({
         onActionError={setActionError}
         onNext={navigation.nextAllowed ? actions.next : undefined}
         nextLabel={navigation.nextLabelKey ? t(navigation.nextLabelKey, { total: 12 }) : undefined}
-        adSlot={showAd && <SiteAd key={step.id} placement="inline" />}
       >
         {conflict ? (
-          <button
-            type="button"
-            disabled={actions.busy || savedReload.busy}
-            onClick={() => void savedReload.retry()}
-          >
-            {t('examReloadSaved')}
-          </button>
+          <LessonConflictRetry
+            busy={actions.busy || savedReload.busy}
+            label={t('examReloadSaved')}
+            retry={() => void savedReload.retry()}
+          />
         ) : null}
         <LessonStepContent
           asset={asset}
           step={step}
-          question={question}
+          question={checkpoint.question}
           selected={selected}
           onChange={setSelected}
           activeFinal={Boolean(active)}
@@ -138,7 +134,10 @@ export function LessonStepScreen({
           blocked={blocked}
           feedback={feedback}
           checkpoint={actions.checkpoint}
-          retryCheckpoint={() => setFeedback(false)}
+          retryCheckpoint={() => {
+            setFeedback(false);
+            checkpoint.reshuffle();
+          }}
         />
       </LessonSlideShell>
     </SiteAdLayout>

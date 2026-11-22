@@ -43,9 +43,10 @@ const wrongSecond = makeAttempt([wrong], first.questions[1], ['B'], 'study', 0, 
 
 test('復習開始時のキューは回答履歴更新後も固定され、正解後も結果を表示できる', () => {
   const session = createSession(first, [wrong, wrongSecond], true);
+  const order = session.questions.map((item) => item.id);
   const answer = makeAttempt(
     [wrong, wrongSecond],
-    first.questions[0],
+    session.questions[0],
     ['A'],
     'review',
     0,
@@ -53,9 +54,10 @@ test('復習開始時のキューは回答履歴更新後も固定され、正�
   );
   const updatedHistory = [wrong, wrongSecond, answer];
   expect(updatedHistory.at(-1)?.isCorrect).toBe(true);
-  expect(session.questions.map((item) => item.id)).toEqual(['q1', 'q2']);
-  expect(session.questions[session.index]?.id).toBe('q1');
-  expect(advanceSession(session).questions[1]?.id).toBe('q2');
+  expect([...order].sort()).toEqual(['q1', 'q2']);
+  expect(session.questions.map((item) => item.id)).toEqual(order);
+  expect(session.questions[session.index]?.id).toBe(order[0]);
+  expect(advanceSession(session).questions[1]?.id).toBe(order[1]);
 });
 
 test('未回答は復習に含めず、最新回答が正解なら対象から外す', () => {
@@ -70,9 +72,9 @@ test('残問題を順に進め、最後の回答後は結果表示のため現�
   const start = createSession(first, [], false);
   const next = advanceSession(start);
   expect(next.unitId).toBe('first');
-  expect(next.questions[next.index]?.id).toBe('q2');
+  expect(next.questions[next.index]?.id).toBe(start.questions[1].id);
   const last = advanceSession(next);
-  expect(last.questions[last.index]?.id).toBe('q3');
+  expect(last.questions[last.index]?.id).toBe(start.questions[2].id);
   expect(sessionComplete(last)).toBe(true);
   expect(advanceSession(last)).toEqual(last);
 });

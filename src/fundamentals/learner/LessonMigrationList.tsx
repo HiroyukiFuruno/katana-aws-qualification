@@ -14,7 +14,7 @@ type Props = {
 };
 
 export function LessonMigrationList({ services, access, onImported }: Props) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
   const [units, setUnits] = useState<DeliveryUnitAsset[]>([]);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -24,7 +24,7 @@ export function LessonMigrationList({ services, access, onImported }: Props) {
     setFailed(false);
     if (!member || !canPersistGuestProgress(localStorage)) return;
     void services.assets
-      .editions()
+      .editions(locale)
       .then(async (editions) => {
         const pending = new Set<string>();
         for (let offset = 0; offset < localStorage.length; offset++) {
@@ -35,7 +35,7 @@ export function LessonMigrationList({ services, access, onImported }: Props) {
         for (const entry of editions.flatMap(({ index }) => index.units)) {
           const key = `${guestLessonPrefix}${entry.unitId}.${entry.contentVersion}`;
           if (pending.delete(key))
-            assets.push(await services.assets.unit(entry.unitId, entry.contentVersion));
+            assets.push(await services.assets.unit(entry.unitId, entry.contentVersion, locale));
         }
         if (current && access()?.owner.userId === member.owner.userId) {
           setUnits(assets);
@@ -48,7 +48,7 @@ export function LessonMigrationList({ services, access, onImported }: Props) {
     return () => {
       current = false;
     };
-  }, [services, access]);
+  }, [services, access, locale]);
   return (
     <>
       {failed && <p role="alert">{t('progressMigrationFailed')}</p>}

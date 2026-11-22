@@ -40,17 +40,19 @@ export function useRoadmapProfile() {
     const expectedStore = store;
     if (status !== 'ready' || !expectedStore) {
       setSaveError(true);
-      return;
+      return false;
     }
     try {
       const saved = await guard.current.run(() => saveProfile(next, expectedStore), setSaving);
-      if (!saved.accepted || !saved.current) return;
-      if (expectedStore !== getActiveProgressStore() || owner !== ownerKey(expectedStore)) return;
+      if (!saved.accepted || !saved.current) return false;
+      if (expectedStore !== getActiveProgressStore() || owner !== ownerKey(expectedStore)) return false;
       setProfile(next);
       setSaveError(false);
+      return true;
     } catch {
       if (expectedStore === getActiveProgressStore() && owner === ownerKey(expectedStore))
         setSaveError(true);
+      return false;
     }
   }
   return { persist, profile, saveError, saving };

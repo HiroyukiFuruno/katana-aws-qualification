@@ -15,13 +15,13 @@ test('exam invalidation follows explicit imports or consent changes and rejects 
   store.notifyExamSessionsChanged();
   expect(store.getSnapshot().examRefreshVersion).toBe(1);
   await store.appendAttempt('saa-c03', memberAttempt);
-  await store.replaceProfile({ earned: ['saa-c03'], answers: {} });
+  await store.replaceProfile({ earned: ['saa-c03'], answers: {}, optionOrders: {}, order: [] });
   await store.initialize();
   expect(store.getSnapshot().examRefreshVersion).toBe(1);
   setGuestProgressConsent(storage, true);
   await store.retryPending();
   expect(store.getSnapshot().examRefreshVersion).toBe(2);
-  await store.replaceProfile({ earned: [], answers: {} });
+  await store.replaceProfile({ earned: [], answers: {}, optionOrders: {}, order: [] });
   expect(store.getSnapshot().examRefreshVersion).toBe(2);
   setGuestProgressConsent(storage, false);
   await store.retryPending();

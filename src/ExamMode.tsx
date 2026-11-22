@@ -58,6 +58,7 @@ export function ExamMode({
     correctRevision,
     question,
     key,
+    choiceOrder,
     attempts,
     completed,
     expired,
@@ -79,6 +80,7 @@ export function ExamMode({
       <ExamResults
         attempts={attempts}
         byKey={byKey}
+        choiceOrders={draft?.choiceOrders}
         blueprint={blueprint}
         available={available}
         saving={busy}
@@ -106,6 +108,7 @@ export function ExamMode({
       </>
     );
   if (!correctRevision || !question) return <p role="alert">{t('cannotResume')}</p>;
+  const response = getResponse(draft, key);
   return (
     <>
       <div className={`exam-bar ${draft.deadline - now <= 300_000 ? 'ending' : ''}`}>
@@ -125,7 +128,8 @@ export function ExamMode({
       <ExamQuestion
         draft={draft}
         question={question}
-        response={getResponse(draft, key)}
+        choiceOrder={choiceOrder}
+        response={response}
         expired={expired}
         submitting={busy}
         t={t}

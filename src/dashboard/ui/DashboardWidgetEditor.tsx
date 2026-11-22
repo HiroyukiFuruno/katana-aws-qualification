@@ -13,11 +13,13 @@ export function DashboardWidgetEditor({
   preferences,
   onPreferences,
   facets,
+  lessons,
 }: {
   widget: DashboardWidget;
   preferences: DashboardViewProps['preferences'];
   onPreferences: DashboardViewProps['onPreferences'];
   facets?: DashboardFacets;
+  lessons: DashboardViewProps['lessons'];
 }) {
   const { t } = usePreferences();
   const definition = dashboardWidgetDefinition(widget.kind);
@@ -99,6 +101,7 @@ export function DashboardWidgetEditor({
         <DashboardWidgetOptions
           widget={widget}
           facets={facets}
+          lessons={lessons.status === 'ready' ? lessons.items : []}
           onChange={(next) => onPreferences(updateWidget(preferences, widget.id, next))}
         />
       </div>

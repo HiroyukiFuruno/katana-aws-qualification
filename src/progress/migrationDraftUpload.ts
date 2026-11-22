@@ -1,4 +1,5 @@
 import { isCorrectAnswer, type Question, questionKey } from '../questions';
+import { presentation } from './examRepositoryCodec';
 import { type QuestionRef, ref } from './migrationCodec';
 import type { MigrationContext, Upload } from './migrationContext';
 import { draft } from './migrationLegacy';
@@ -114,7 +115,7 @@ export async function uploadDraft(
     return { events: [], imported: 0, rejected: 1 };
   }
   if (!completed)
-    await context.repository.write<string>('import_exam_session', {
+    await context.repository.write<string>('import_exam_session_v2', {
       p_manifest_id: manifestId,
       p_source_row_id: 'draft',
       p_exam: {
@@ -140,6 +141,7 @@ export async function uploadDraft(
         selected_at: item.response.selectedAt ? new Date(item.response.selectedAt).toISOString() : null,
       })),
       p_events: [],
+      p_presentation: presentation(saved.order, saved.choiceOrders),
     });
   return { events: [], imported: 1, rejected: 0 };
 }

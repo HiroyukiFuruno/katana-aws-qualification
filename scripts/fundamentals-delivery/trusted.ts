@@ -1,30 +1,11 @@
+import { trustedQuestion } from '../../src/fundamentals/delivery/trusted';
 import type {
   DeliveryFinalPolicy,
   DeliveryQuestion,
   TrustedCatalogUnit,
   TrustedFinalQuestion,
-  TrustedQuestion,
 } from '../../src/fundamentals/delivery/artifactTypes';
 import type { LessonStep } from '../../src/fundamentals/delivery/slideTypes';
-
-function trustedQuestion(question: DeliveryQuestion, explanationRef: string): TrustedQuestion {
-  if (!question.objectiveId || !question.sectionId)
-    throw new Error(`${question.id} has no lesson reference.`);
-  return {
-    category: question.category,
-    choiceIds: question.choices.map((choice) => choice.id),
-    correctChoiceIds: question.correct,
-    explanationRef,
-    objectiveId: question.objectiveId,
-    questionId: question.id,
-    requiredChoices: question.requiredChoices,
-    revision: question.revision,
-    sectionId: question.sectionId,
-    selectionPolarity: question.selectionPolarity,
-    source: question.source,
-    sourceVersion: question.version,
-  };
-}
 
 export function trustedCatalogUnit(
   unitId: string,

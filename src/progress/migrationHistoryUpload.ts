@@ -70,7 +70,7 @@ export async function uploadHistory(
       ...rows.map(({ attempt }, index) => ({ attempt, certificationId, eventId: ids[index] })),
     );
     if (!completed)
-      await context.repository.write<string>('import_exam_session', {
+      await context.repository.write<string>('import_exam_session_v2', {
         p_manifest_id: manifestId,
         p_source_row_id: rowId,
         p_exam: {
@@ -90,6 +90,7 @@ export async function uploadHistory(
         },
         p_draft_responses: [],
         p_events: rows.map(({ attempt }, index) => payload(attempt, certificationId, ids[index])),
+        p_presentation: { choiceOrders: {} },
       });
     imported += rows.length;
   }

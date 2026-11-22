@@ -3,6 +3,7 @@ import { usePreferences } from '../../preferences';
 import type { DashboardMetric } from '../preferenceTypes';
 import type { DashboardQuery } from '../queryTypes';
 import type { DashboardDailyStats } from '../statTypes';
+import { formatDashboardValue } from './format';
 import { chartDomain } from './geometry';
 
 function monthsBetween(from: string, to: string) {
@@ -99,9 +100,7 @@ export function CalendarChart({
               <span>{index + 1}</span>
               {!outside && (
                 <strong>
-                  {metric === 'durationMs'
-                    ? t('dashboardDurationSeconds', { seconds: Math.round(amount / 1000) })
-                    : amount}
+                  {formatDashboardValue(amount, metric, locale, t('dashboardNotMeasured'))}
                 </strong>
               )}
             </span>

@@ -4,7 +4,7 @@ const consentLabel = 'ゲストの学習記録をこの端末に保存する';
 const profileKey = 'katana.certification-profile.v1';
 const consentKey = 'katana.learning-progress-consent.v1';
 const storedProfile = JSON.stringify({ earned: ['saa-c03'], answers: {} });
-const pendingProfile = JSON.stringify({ earned: ['dva-c03'], answers: {} });
+const pendingProfile = JSON.stringify({ earned: ['dva-c03'], answers: {}, optionOrders: {}, order: [] });
 
 async function seedStoredProfile(page: Page) {
   await page.goto('/ja/assessment/');

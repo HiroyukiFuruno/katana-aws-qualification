@@ -1,14 +1,13 @@
-import type { usePreferences } from '../../preferences';
+import type { DashboardDisplayLabels } from '../displayLabels';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardSummary } from '../summaryTypes';
-import { dashboardCategoryLabel, dashboardCertificationLabel } from './format';
 import type { DashboardStatRow } from './StatsTable';
 
 export function dashboardGroupRows(
   widget: DashboardWidget,
   summary: DashboardSummary,
   label: (value: string) => string,
-  t: ReturnType<typeof usePreferences>['t'],
+  display: DashboardDisplayLabels,
 ): DashboardStatRow[] {
   const named = (rows: DashboardSummary['groups']['modes']) =>
     rows.map((row) => ({ id: row.key, label: label(row.key), stats: row }));
@@ -16,14 +15,14 @@ export function dashboardGroupRows(
     case 'certifications':
       return summary.groups.certifications.map((row) => ({
         id: row.key,
-        label: dashboardCertificationLabel(row.key),
+        label: display.certification(row.key),
         stats: row,
       }));
     case 'categories':
     case 'relationship':
       return summary.groups.categories.map((row) => ({
         id: JSON.stringify([row.certificationId, row.category, row.sourceVersion, row.questionRevision]),
-        label: dashboardCategoryLabel(row, t),
+        label: `${display.certification(row.certificationId)} · ${display.category(row.category)} · ${display.revision(row.sourceVersion, row.questionRevision)}`,
         stats: row,
       }));
     case 'modes':
@@ -35,10 +34,7 @@ export function dashboardGroupRows(
     case 'revisions':
       return summary.groups.revisions.map((row) => ({
         id: JSON.stringify([row.sourceVersion, row.questionRevision]),
-        label: t('dashboardRevisionLabel', {
-          sourceVersion: row.sourceVersion,
-          revision: row.questionRevision,
-        }),
+        label: display.revision(row.sourceVersion, row.questionRevision),
         stats: row,
       }));
     default:

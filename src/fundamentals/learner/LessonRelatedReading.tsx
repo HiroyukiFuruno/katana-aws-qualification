@@ -1,7 +1,9 @@
 import { usePreferences } from '../../preferences';
+import { questionAdditionalSources } from '../../questionAdditionalSources';
 import type { DeliveryQuestion, DeliveryUnitAsset } from '../delivery/artifactTypes';
 import { lessonFragments } from './lessonFragments';
 import './lesson-related.css';
+import { sourceDocumentationUrl } from '../../sourceDocumentationUrl';
 
 export function LessonRelatedReading({
   asset,
@@ -15,9 +17,13 @@ export function LessonRelatedReading({
     (step) =>
       step.kind !== 'checkpoint' && step.kind !== 'final' && step.sectionId === question.sectionId,
   );
-  const sources = reading
-    .flatMap((step) => step.sources)
-    .filter((source, index, all) => all.findIndex((item) => item.url === source.url) === index);
+  const sources = [
+    ...reading.flatMap((step) => step.sources),
+    ...questionAdditionalSources(question).map((source) => ({
+      ...source,
+      label: t('sourceDocumentation', { name: source.label }),
+    })),
+  ].filter((source, index, all) => all.findIndex((item) => item.url === source.url) === index);
   if (!reading.length) throw new Error('The assessment has no related reading section.');
   return (
     <details className="lesson-related-reading">
@@ -34,7 +40,7 @@ export function LessonRelatedReading({
         <ul>
           {sources.map((source) => (
             <li key={source.url}>
-              <a href={source.url} target="_blank" rel="noreferrer">
+              <a href={sourceDocumentationUrl(source.url)} target="_blank" rel="noreferrer">
                 {source.label}
               </a>
             </li>

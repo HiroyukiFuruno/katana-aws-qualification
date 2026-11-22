@@ -1,0 +1,64 @@
+{
+  "reviewedAt": "2026-11-22T05:15:00+09:00",
+  "reviewerThread": "01a1ff21-19cd-7551-b04d-43745010a731",
+  "model": "gpt-5.6-terra",
+  "reasoning": "high",
+  "scope": [
+    "scripts/question-position-validation.ts",
+    "scripts/question-position-validation.test.ts"
+  ],
+  "verdict": "pass",
+  "findingCounts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0
+  },
+  "incidentEvidence": {
+    "id": "aif-c01-d3-07-005",
+    "batches": [
+      "output/question-quality/ai/natural/batches/a86de40c66cc202470c10132ef53c3f1faecb0568877d4c90c9d19cba845fbe5-4-1795290611913-0",
+      "output/question-quality/ai/natural/batches/e2b3d4e1b990a3e4e1070e88b97c2bb8b4efa133d64c9993e467b236854c616b-1-1795290937209-1"
+    ],
+    "realTexts": [
+      "如果存在長度偏差，可以考慮這種做法，但沒有證據顯示此次問題是由長度造成。",
+      "這或許適用於長度偏差，但沒有證據顯示這次問題是由回答長度造成。"
+    ],
+    "cause": "The former Japanese next-question pattern matched the 次問 substring inside legitimate Traditional Chinese 此次問題 and 這次問題."
+  },
+  "ruleAssessment": {
+    "implementation": "(?<![每此這])次問|(?<!目)前問",
+    "allowedOnly": [
+      "每次問題",
+      "此次問題",
+      "這次問題",
+      "目前問題"
+    ],
+    "stillRejected": [
+      "次問",
+      "次問題",
+      "前問",
+      "選択肢 A-E references",
+      "Japanese/English and other locale choice-letter references"
+    ],
+    "overExclusionAssessment": "The prefix whitelist changes only the three legitimate Traditional Chinese compounds. A true 次問 after any other character remains rejected, and the prior complete Japanese 次問題 match remains rejected. No locale, source, path, or data exclusion was introduced.",
+    "integration": "The recursive validator remains active in check-questions, natural merge validation, and content translation validation."
+  },
+  "regressionEvidence": {
+    "red": "output/question-quality/position-tw-current-issue-red.log: the new legitimate-compound cases fail against the former rule (2 pass, 1 fail, 15 expectations).",
+    "green": "output/question-quality/position-tw-current-issue-green.log: all 3 tests pass with 17 expectations.",
+    "focusedCurrent": "bun test scripts/question-position-validation.test.ts: 3 pass, 0 fail.",
+    "independentProbe": "此次問題, 這次問題, 每次問題, and 目前問題 allowed; 次問, 前問, 次問題, 選択肢A, and Aが正解 rejected.",
+    "actualOutput": "Both cited generated zh-TW result files contain the real permitted sentences for aif-c01-d3-07-005."
+  },
+  "verification": [
+    "bun run content:check: pass; validated 41 question banks and the translated AI business strategist bank",
+    "bun run test: 474 pass, 0 fail, 5243 expectations across 174 files",
+    "bun run typecheck: pass",
+    "bun run i18n:typecheck: pass",
+    "bun run format:check: 854 files checked, no fixes",
+    "git diff --check on scoped implementation paths: pass"
+  ],
+  "boundary": "This verdict is limited to the position-reference guard. All-content translation completion and the generator drain/restart are separate workflows and are not treated as proof for this change.",
+  "rootCollectedAt": "2026-11-21T20:02:35.837213+00:00",
+  "timestampBoundary": "reviewedAt is agent-reported metadata. rootCollectedAt, when present, is the parent-observed collection time; no verification of the agent-reported wall-clock time is claimed."
+}

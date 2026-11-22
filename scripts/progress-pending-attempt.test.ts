@@ -18,7 +18,7 @@ test('a new answer after a pending wrong answer uses the flushed attempt statist
   const client: ProgressRpcClient = {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name !== 'append_learning_event') return;
       const event = args.p_event as (typeof events)[number];
       events.push(event);
@@ -70,7 +70,7 @@ test('a partial pending flush contributes every acknowledged earlier answer to t
   const client: ProgressRpcClient = {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name !== 'append_learning_event') return;
       const event = args.p_event as (typeof accepted)[number];
       accepted.push(event);

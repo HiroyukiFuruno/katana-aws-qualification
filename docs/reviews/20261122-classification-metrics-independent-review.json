@@ -1,0 +1,106 @@
+{
+  "reviewedAt": "2026-11-22T00:00:00+09:00",
+  "reviewerThread": "01a1ff21-19cd-7551-b04d-43745010a731",
+  "model": "gpt-5.6-terra",
+  "reasoning": "high",
+  "scope": "Read-only review of the classification-accuracy terminology guard, its content validation connection, guidance, and the AIF-C01 source/translation correction evidence.",
+  "verdict": "pass",
+  "findingCounts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0
+  },
+  "guardContract": {
+    "trigger": "Japanese 正解率, a numeric percent followed by 正解 after NFKC normalization, or an explicit English accuracy source.",
+    "rejected": "PT precisão, FR précision, or ES precisión alone when the trigger is present.",
+    "allowed": [
+      "PT acurácia or exatidão",
+      "FR exactitude, justesse, taux de bonnes prédictions, or taux de prédictions correctes",
+      "ES exactitud, tasa de aciertos, or tasa de predicciones correctas",
+      "an explicit accuracy term alongside precision"
+    ],
+    "deliberateExclusions": [
+      "source with 適合率 or explicit precision",
+      "source with 正解率と適合率",
+      "不正解率",
+      "general sensor precision"
+    ],
+    "evidence": [
+      "scripts/translation-classification-metrics.ts:27-38 applies the narrow source gate before rejecting only a precision-only translation.",
+      "scripts/translation-classification-metrics.test.ts:4-44 exercises PT/FR/ES rejection and natural accuracy, explicit accuracy, precision, general precision, multiple metrics, and incorrect-rate acceptance."
+    ]
+  },
+  "integration": {
+    "contentLanguageIssues": "scripts/content-language-issues.ts:19-25 invokes assertClassificationMetrics first in assertNativeLanguage.",
+    "contentValidation": "scripts/content-translation-validation.ts:57-60 invokes assertNativeLanguage for every non-canonical translated string field.",
+    "guidance": "scripts/natural-translation-guidance.md ends with the matching accuracy-versus-precision rule and its intended exceptions.",
+    "assessment": "The guard is narrow by design. It does not classify every use of precision, and the source exclusions prevent the identified false-positive categories."
+  },
+  "aifCorrectionEvidence": {
+    "firstQuestion": {
+      "id": "aif-c01-d1-01-009",
+      "revision": 1,
+      "correct": [
+        "A"
+      ],
+      "sourceInvariants": [
+        "The Japanese source retains the 99% training and 62% unseen-validation condition.",
+        "Correct choice A remains overfitting and revision remains 1.",
+        "Choice D changed only to the same unrelated response-time distractor in nine locales."
+      ],
+      "translationPlan": "docs/reviews/20261122-aif-accuracy-latency-native-proofread.json records 21 edits: nine D texts plus title, prompt, C explanation, and D explanation for PT/FR/ES; it also records 9 strict merges, unchanged other fields, and preserved old cache."
+    },
+    "secondQuestion": {
+      "id": "aif-c01-d1-01-010",
+      "revision": 1,
+      "translationPlan": "docs/reviews/20261122-aif-second-accuracy-native-proofread.json records exactly six fields: prompt, choice C text, and learning.concept for FR and ES.",
+      "invariants": "The proof records sourceBytesUnchanged=true, gradingUnchanged=true, expectedEditPlanValidated=true, strictMerges=9, and otherLocaleFieldsUnchanged=true. PT remains acurácia and required no edit."
+    },
+    "currentTranslationEvidence": "The source-hash cache for the first question contains the corrected 9-locale D wording and PT/FR/ES accuracy wording. This review did not materialize or alter cache/public data."
+  },
+  "verification": [
+    {
+      "command": "bun test scripts/translation-classification-metrics.test.ts",
+      "result": "pass: 3 tests, 28 expectations"
+    },
+    {
+      "command": "bun run typecheck",
+      "result": "pass"
+    },
+    {
+      "command": "output/question-quality/ml-accuracy-full-unit.log",
+      "result": "pass: 471 tests, 0 failures, 5,230 expectations, 173 files"
+    },
+    {
+      "command": "output/question-quality/ml-accuracy-source-content.log",
+      "result": "pass: 41 question banks and 9 translations of 441 AIB questions"
+    },
+    {
+      "command": "output/question-quality/ml-accuracy-lessons-content.log",
+      "result": "261 materialized lesson locale files validated; 0 pending"
+    },
+    {
+      "command": "output/question-quality/ml-accuracy-architecture.log",
+      "result": "pass: 389 TypeScript files and 1,643 dependencies"
+    },
+    {
+      "command": "output/question-quality/ml-accuracy-duplicates.log",
+      "result": "pass: 0 clones"
+    },
+    {
+      "command": "output/question-quality/ml-accuracy-typecheck.log, ml-accuracy-i18n-typecheck.log, and ml-accuracy-format.log",
+      "result": "pass"
+    },
+    {
+      "command": "jq invariant queries against both AIF review proofs",
+      "result": "pass: first plan=21/strict=9; second plan=6/strict=9 with their stated source, grading, and locale invariants"
+    },
+    {
+      "command": "git diff --check -- reviewed implementation paths",
+      "result": "pass"
+    }
+  ],
+  "potentialFalsePositiveAssessment": "No new P0/P1 found. The English accuracy trigger is intentionally broad only for the named metric; precision and multiple-metric source exclusions retain legitimate translation uses. The second AIF question was a true positive, not a false positive: FR/ES mapped the explicit training-set accuracy to precision alone, while PT already used acurácia.",
+  "wholeContentBoundary": "The full lint reached 855 files, 13 pre-existing warnings, and the 720 UI check, then failed because public/translations/ja/manifest.json is missing. This is an unfinished whole-content materialization gate, is not waived, and is not represented as a success of this classification guard.",
+  "rootCollectedAt": "2026-11-21T18:07:48.617865+00:00"
+}

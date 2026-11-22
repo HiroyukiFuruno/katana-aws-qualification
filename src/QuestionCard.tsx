@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Attempt } from './history';
 import { LearningNotes } from './LearningNotes';
+import { QuestionClarifications } from './QuestionClarifications';
 import { usePreferences } from './preferences';
 import { isAnswerComplete, type Question } from './questions';
 import { StructuredAnswerFields, StructuredAnswerReview } from './StructuredAnswer';
+import { answerLabels, choiceLabel } from './choiceLabels';
 
 type Props = {
   question: Question;
@@ -12,7 +14,7 @@ type Props = {
   last: boolean;
 };
 export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
   const [selected, setSelected] = useState<string[]>([]);
   const [result, setResult] = useState<Attempt>();
   const [busy, setBusy] = useState(false);
@@ -21,7 +23,6 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
   const [error, setError] = useState(false);
   const [started] = useState(() => performance.now());
   const count = question.correct.length;
-  const lang = question.locale ?? 'ja';
   const complete = isAnswerComplete(question, selected);
   useEffect(() => {
     if (result) resultSummary.current?.focus();
@@ -43,7 +44,7 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
   return (
     <section className="card" aria-labelledby="question-title">
       <div className="question-meta">
-        <span lang={lang}>{question.category}</span>
+        <span lang={question.locale ?? locale}>{question.categoryLabel ?? question.category}</span>
         <span>
           {question.format === 'ordering'
             ? t('orderSteps')
@@ -52,12 +53,13 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
               : t('choose', { count })}
         </span>
       </div>
-      <h2 id="question-title" lang={result ? lang : undefined}>
+      <h2 id="question-title" lang={result ? (question.locale ?? locale) : locale}>
         {result ? question.title : t('question')}
       </h2>
-      <p className="prompt" lang={lang}>
+      <p className="prompt" lang={question.locale ?? locale}>
         {question.prompt}
       </p>
+      <QuestionClarifications question={question} />
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -73,7 +75,8 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
           >
             <strong>
               {result.isCorrect ? t('correct') : t('incorrect')}
-              {!question.format && ` · ${t('correct')} ${result.correct.join('・')}`}
+              {!question.format &&
+                ` · ${t('correct')} ${answerLabels(question.choices, result.correct)}`}
             </strong>
           </p>
         )}
@@ -103,6 +106,7 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
                     <input
                       type={count === 1 ? 'radio' : 'checkbox'}
                       name="answer"
+                      value={choice.id}
                       checked={checked}
                       disabled={!result && count > 1 && !checked && selected.length === count}
                       onChange={() =>
@@ -115,13 +119,13 @@ export function QuestionCard({ question, onAnswer, onNext, last }: Props) {
                         )
                       }
                     />
-                    <span className="letter">{choice.id}</span>
-                    <span lang={lang}>{choice.text}</span>
+                    <span className="letter">{choiceLabel(question.choices, choice.id)}</span>
+                    <span lang={question.locale ?? locale}>{choice.text}</span>
                   </label>
                   {result && (
                     <p className="explanation">
                       <strong>{correct ? t('correct') : t('incorrect')}</strong>{' '}
-                      <span lang={lang}>{choice.explanation}</span>
+                      <span lang={question.locale ?? locale}>{choice.explanation}</span>
                     </p>
                   )}
                 </div>

@@ -25,10 +25,16 @@ export function nextButton(page: Page) {
 
 export async function selectLessonAnswer(page: Page, question: DeliveryQuestion, selected: string[]) {
   for (const id of selected) {
-    const position = question.choices.findIndex((choice) => choice.id === id);
-    if (position < 0) throw new Error('Unknown fixture choice.');
-    await page.locator('fieldset input').nth(position).check();
+    if (!question.choices.some((choice) => choice.id === id)) throw new Error('Unknown fixture choice.');
+    await page.locator(`fieldset input[name="${question.id}"][value="${id}"]`).check();
   }
+}
+
+export async function visibleLessonQuestion(page: Page, questions: DeliveryQuestion[]) {
+  const questionId = await page.locator('fieldset input').first().getAttribute('name');
+  const question = questions.find((candidate) => candidate.id === questionId);
+  if (!question) throw new Error(`Unknown displayed lesson question: ${questionId ?? 'missing id'}.`);
+  return question;
 }
 
 export async function walkLessonReading(page: Page, asset: DeliveryUnitAsset) {
@@ -64,11 +70,16 @@ export async function finishLessonFinal(
   }
   if (options.start !== false) await nextButton(page).click();
   await expect(page.locator('fieldset')).toBeVisible();
-  for (const [position, question] of asset.finalQuestions.entries()) {
+  for (const [position] of asset.finalQuestions.entries()) {
     await expect(page).toHaveURL(new RegExp(`/final/${position + 1}/$`));
+    const question = await visibleLessonQuestion(page, asset.finalQuestions);
     const wrong = question.choices.find((choice) => !question.correct.includes(choice.id));
     if (!wrong) throw new Error('The final fixture requires a selectable incorrect answer.');
-    const selected = positions.has(position)
+    const canonicalPosition = asset.finalQuestions.findIndex(
+      (candidate) => candidate.id === question.id,
+    );
+    if (canonicalPosition < 0) throw new Error('Unknown displayed final question.');
+    const selected = positions.has(canonicalPosition)
       ? question.correct
       : [wrong.id, ...question.correct].slice(0, question.requiredChoices);
     await selectLessonAnswer(page, question, selected);

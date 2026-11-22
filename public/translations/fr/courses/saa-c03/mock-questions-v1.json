@@ -1,0 +1,3247 @@
+[
+  {
+    "id": "mock-secure-01",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Restreindre l’accès S3 à l’échelle de l’organisation",
+    "prompt": "Accordez un accès en lecture à un compartiment à l’AWS account de l’équipe d’audit. Vous souhaitez éviter d’énumérer les comptes dans la politique si les comptes membres sont remplacés par la suite. Au sein de l’organisation, seul le rôle d’audit doit être autorisé. Quelles conditions faut-il utiliser pour accorder l’accès ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser uniquement PrincipalOrgID comme condition",
+        "explanation": "Cela ne permet pas de limiter les rôles de l’organisation à ceux utilisés pour l’audit."
+      },
+      {
+        "id": "B",
+        "text": "Définir l’ID du compte de gestion de l’organisation comme Principal",
+        "explanation": "Cela ne désigne pas directement le rôle d’audit d’un compte membre."
+      },
+      {
+        "id": "C",
+        "text": "Faire correspondre aws:PrincipalOrgID et le modèle du rôle d’audit dans aws:PrincipalArn à l’aide de conditions AND",
+        "explanation": "Vous pouvez vérifier simultanément l’appartenance à l’organisation et le principal qui accède au compartiment."
+      },
+      {
+        "id": "D",
+        "text": "Faire correspondre aws:SourceOrgID et un modèle de rôle",
+        "explanation": "SourceOrgID concerne les appels entre services pris en charge et ne permet pas de vérifier l’appartenance à l’organisation pour l’accès direct d’un rôle."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Vous pouvez vérifier simultanément l’appartenance à l’organisation et le principal qui accède au compartiment.",
+      "concept": "PrincipalOrgID évalue l’appartenance du principal à l’organisation, tandis que PrincipalArn évalue son ARN. Pour une requête issue d’une session de rôle, PrincipalArn désigne l’ARN du rôle IAM d’origine.",
+      "check": {
+        "prompt": "Si un rôle du même nom est également créé sous un autre chemin dans l’organisation, quel élément faut-il restreindre davantage ?",
+        "answer": "Inclure le chemin du rôle d’audit dans le modèle PrincipalArn."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "Examen blanc SAA-C03 / 2026-11 v1",
+    "sourceLabel": "Guide officiel de certification AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-02",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Diffusion privée via CloudFront",
+    "prompt": "Vous diffusez des vidéos payantes via CloudFront. Vous souhaitez autoriser chaque spectateur à accéder à plusieurs segments pendant une heure seulement et empêcher l’accès direct via des URL S3. Quelle configuration convient ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Protéger un point de terminaison de site Web S3 avec OAC",
+        "explanation": "OAC se configure avec une origine REST S3 et ne peut pas s’appliquer à un point de terminaison de site Web."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser des cookies signés CloudFront pour contrôler les chemins concernés et l’expiration",
+        "explanation": "Ils peuvent protéger de nombreuses URL de segments selon les mêmes conditions."
+      },
+      {
+        "id": "C",
+        "text": "Rendre l’ensemble du compartiment S3 publiquement lisible et vérifier les signatures avec CloudFront WAF",
+        "explanation": "L’accès direct à S3 ne passe pas par WAF."
+      },
+      {
+        "id": "D",
+        "text": "Bloquer l’accès public à S3 et utiliser OAC ainsi qu’une politique de compartiment pour autoriser la distribution concernée",
+        "explanation": "Les spectateurs ne peuvent ainsi pas contourner directement l’origine."
+      },
+      {
+        "id": "E",
+        "text": "Activer Origin Shield",
+        "explanation": "Cette fonctionnalité réduit la charge sur l’origine, mais n’authentifie pas les spectateurs."
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Les cookies signés peuvent protéger de nombreuses URL de segments selon les mêmes conditions. Les spectateurs ne peuvent pas contourner directement l’origine.",
+      "concept": "Les cookies signés autorisent l’accès des spectateurs à CloudFront, tandis que OAC signe les requêtes de CloudFront vers une origine REST S3. Côté S3, autorisez uniquement la distribution concernée.",
+      "check": {
+        "prompt": "Que faire si le téléchargement porte sur un seul fichier et que l’utilisateur ne peut pas gérer les cookies ?",
+        "answer": "Vous pouvez utiliser une URL signée côté spectateur. Continuez à utiliser OAC pour l’origine."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "Examen blanc SAA-C03 / 2026-11 v1",
+    "sourceLabel": "Guide officiel de certification AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-03",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Accès en lecture à KMS entre comptes",
+    "prompt": "Les données S3 du compte A sont chiffrées avec une clé KMS gérée par le client. Seul un rôle ETL du compte B doit pouvoir les lire. L’autorisation de lecture S3 est déjà configurée. Quelles autorisations supplémentaires faut-il ajouter ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Autoriser le rôle ETL du compte B à déchiffrer dans la stratégie de clé du compte A.",
+        "explanation": "La confiance du compte propriétaire de la clé est nécessaire."
+      },
+      {
+        "id": "B",
+        "text": "Ajouter kms:Decrypt à la stratégie du compartiment S3.",
+        "explanation": "Une stratégie de compartiment S3 ne peut pas autoriser l’utilisation d’une clé KMS."
+      },
+      {
+        "id": "C",
+        "text": "Remplacer la clé du compte A par la clé gérée par AWS aws/s3.",
+        "explanation": "Vous ne pouvez pas modifier la stratégie de la clé aws/s3 pour autoriser un autre compte."
+      },
+      {
+        "id": "D",
+        "text": "N’autoriser que kms:GenerateDataKey pour le rôle ETL du compte B.",
+        "explanation": "La lecture d’objets existants nécessite une autorisation de déchiffrement."
+      },
+      {
+        "id": "E",
+        "text": "Autoriser kms:Decrypt sur la clé du compte A dans la stratégie IAM du rôle ETL du compte B.",
+        "explanation": "Un accès intercompte nécessite également l’autorisation correspondante du côté appelant."
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-modifying-external-accounts.html",
+      "label": "AWS公式資料 · KMSのクロスアカウントアクセス"
+    },
+    "learning": {
+      "reason": "La confiance du compte propriétaire de la clé est nécessaire. Un accès intercompte nécessite également l’autorisation correspondante du côté appelant.",
+      "concept": "Avec SSE-KMS, S3 utilise KMS pour déchiffrer la clé de données. Pour un accès intercompte, vérifiez la confiance du côté de la clé et l’autorisation IAM côté appelant. Pour lire les données, accordez kms:Decrypt.",
+      "check": {
+        "prompt": "Vous avez ajouté GetObject à la stratégie du compartiment, mais l’erreur de déchiffrement persiste. Que faut-il vérifier ensuite ?",
+        "answer": "Identifiez la clé réellement utilisée pour le chiffrement, puis vérifiez sa stratégie de clé et la stratégie IAM du rôle appelant."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Documentation officielle AWS · Accès intercompte à KMS"
+  },
+  {
+    "id": "mock-secure-04",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Limites des autorisations ECS",
+    "prompt": "Un conteneur applicatif sur ECS Fargate lit une file SQS destinée aux commandes. Il ne doit pas recevoir l’autorisation d’accéder à la file utilisée par une autre tâche du même service. ECS gère la récupération des images ECR et l’envoi des journaux. À quel rôle faut-il attribuer les autorisations ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Accorder toutes les autorisations SQS et ECR au rôle d’exécution.",
+        "explanation": "Le SDK dans le conteneur n’utilise généralement pas les identifiants du rôle d’exécution."
+      },
+      {
+        "id": "B",
+        "text": "Accorder au rôle de tâche l’accès en lecture à la file SQS concernée, et accorder au rôle d’exécution de tâche les autorisations ECR et de journalisation.",
+        "explanation": "Cela permet de limiter séparément les opérations d’API de l’application et de l’infrastructure ECS."
+      },
+      {
+        "id": "C",
+        "text": "Ajouter les autorisations SQS au profil d’instance EC2 partagé par le cluster.",
+        "explanation": "Avec Fargate, l’utilisateur ne gère pas l’infrastructure d’exécution au moyen d’un profil d’instance."
+      },
+      {
+        "id": "D",
+        "text": "Autoriser tous les principaux du même VPC dans la stratégie SQS.",
+        "explanation": "La seule frontière réseau ne permet pas d’identifier les tâches applicatives."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cela permet de limiter séparément les opérations d’API de l’application et de l’infrastructure ECS.",
+      "concept": "Le SDK de l’application récupère les identifiants du rôle de tâche. Le rôle d’exécution est utilisé pour la récupération des images sur Fargate et les opérations du pilote awslogs.",
+      "check": {
+        "prompt": "L’application doit maintenant écrire dans S3. À quel rôle faut-il ajouter l’autorisation ?",
+        "answer": "Ajoutez au rôle de tâche de la définition de tâche concernée l’autorisation d’écriture nécessaire sur le compartiment cible."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de certification AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-05",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Mise en cache CloudFront et données personnelles",
+    "prompt": "Des ressources statiques et une API de commandes personnalisées par utilisateur sont servies sous le même domaine CloudFront. L’API des commandes valide un jeton Bearer, et les réponses ne doivent pas être partagées entre utilisateurs. La mise en cache des ressources statiques doit être conservée.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser uniquement le chemin de l’URL dans la clé de cache pour tous les chemins et transférer Authorization.",
+        "explanation": "Même si le jeton parvient à l’origine, un résultat provenant du cache peut être renvoyé à un autre utilisateur."
+      },
+      {
+        "id": "B",
+        "text": "Ne pas transférer Authorization et définir uniquement Cache-Control sur private pour l’API.",
+        "explanation": "L’origine ne peut pas valider le jeton."
+      },
+      {
+        "id": "C",
+        "text": "Définir la même TTL minimale élevée pour l’API dynamique et les fichiers statiques.",
+        "explanation": "Cela peut annuler les consignes visant à ne pas mettre en cache les réponses personnalisées."
+      },
+      {
+        "id": "D",
+        "text": "Créer un comportement distinct pour l’API, désactiver la mise en cache et transférer Authorization.",
+        "explanation": "Cela conserve la mise en cache du chemin statique par défaut et transmet les informations d’authentification à l’API."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/add-origin-custom-headers.html",
+      "label": "AWS公式資料 · Authorizationヘッダーの転送"
+    },
+    "learning": {
+      "reason": "Cela conserve la mise en cache du chemin statique par défaut et transmet les informations d’authentification à l’API.",
+      "concept": "Une stratégie de cache contrôle le stockage et la clé de cache ; une stratégie de requête d’origine contrôle les autres éléments à transférer. Des comportements selon le chemin permettent de séparer les ressources statiques de l’API.",
+      "check": {
+        "prompt": "Après avoir configuré CachingDisabled, des erreurs d’authentification persistent. Que faut-il vérifier ?",
+        "answer": "Vérifiez la stratégie qui transfère Authorization à l’origine. La désactivation de la mise en cache ne transfère pas à elle seule l’en-tête d’authentification."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Documentation officielle AWS · Transfert de l’en-tête Authorization"
+  },
+  {
+    "id": "mock-secure-06",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Autorisations par Pod dans EKS",
+    "prompt": "Un fournisseur OIDC est déjà configuré dans un cluster EKS existant. Seul le Pod de paiement doit récupérer un secret précis de Secrets Manager. Vous ne voulez pas partager le rôle IAM des nœuds avec les autres Pods. Quelle configuration utiliser si vous ne pouvez pas installer d’agent supplémentaire ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Configurer IRSA pour le ServiceAccount concerné et limiter la stratégie de confiance à l’espace de noms et au ServiceAccount.",
+        "explanation": "Cette solution utilise la fédération OIDC existante et limite les identifiants au principal du Pod."
+      },
+      {
+        "id": "B",
+        "text": "Accorder les autorisations de récupération du secret au rôle IAM du nœud de travail.",
+        "explanation": "Cela ne sépare pas les autorisations des charges de travail exécutées sur le même nœud."
+      },
+      {
+        "id": "C",
+        "text": "Passer à EKS Pod Identity sans ajouter d’agent.",
+        "explanation": "Le Pod Identity Agent est nécessaire sur les nœuds de travail EC2 classiques."
+      },
+      {
+        "id": "D",
+        "text": "Accorder au ServiceAccount l’autorisation de consulter les secrets avec Kubernetes RBAC.",
+        "explanation": "Cela autorise l’accès à l’API Kubernetes ; les opérations Secrets Manager ne sont pas autorisées."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette solution utilise la fédération OIDC existante et limite les identifiants au principal du Pod.",
+      "concept": "IRSA s’intègre à l’émetteur OIDC du cluster. Dans la stratégie de confiance du rôle IAM, limitez aud et sub du ServiceAccount ; dans la stratégie d’autorisations, limitez l’accès au secret concerné.",
+      "check": {
+        "prompt": "Si la stratégie d’autorisations du rôle est limitée au secret concerné, est-il acceptable que d’autres Pods puissent assumer ce rôle ?",
+        "answer": "Non. Limiter les ressources auxquelles un rôle peut accéder et limiter les entités autorisées à utiliser ces permissions sont deux exigences distinctes."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de certification AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-07",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Accéder à S3 depuis un sous-réseau privé",
+    "prompt": "Un traitement par lots exécuté sur EC2 doit accéder à S3 dans la même région. Le routage par Internet est interdit et l’accès doit être limité à des buckets précis. Quelle combinaison choisir pour ne pas ajouter de frais horaires au chemin utilisé par le traitement ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Créer un point de terminaison d’interface S3 avec PrivateLink",
+        "explanation": "Cette solution fournit une connexion privée, mais le point de terminaison entraîne des frais horaires."
+      },
+      {
+        "id": "B",
+        "text": "Limiter les destinations de la passerelle NAT aux adresses publiques de S3",
+        "explanation": "Cela ne supprime pas le chemin Internet et augmente les frais liés à la passerelle NAT."
+      },
+      {
+        "id": "C",
+        "text": "Créer un point de terminaison de passerelle S3 et l’associer à la table de routage utilisée par le traitement",
+        "explanation": "Il permet d’accéder à S3 dans le même VPC et la même région sans passer par Internet."
+      },
+      {
+        "id": "D",
+        "text": "Limiter les buckets visés à l’aide d’une politique de point de terminaison",
+        "explanation": "Une politique de point de terminaison peut limiter les ressources S3 accessibles par ce point de terminaison."
+      },
+      {
+        "id": "E",
+        "text": "Ajouter l’ARN du bucket à un groupe de sécurité S3",
+        "explanation": "Les groupes de sécurité n’évaluent pas les ARN de ressources IAM."
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Un point de terminaison de passerelle permet d’accéder à S3 dans le même VPC et la même région sans passer par Internet. Une politique de point de terminaison peut limiter les ressources S3 accessibles par ce point de terminaison.",
+      "concept": "La route du point de terminaison de passerelle utilise la liste de préfixes gérée de S3. Une politique de point de terminaison ajoute une restriction ; elle ne remplace pas les autorisations IAM ou celles d’une politique de bucket.",
+      "check": {
+        "prompt": "Que faut-il vérifier si une erreur 403 se produit alors que le bucket visé est accessible via le point de terminaison ?",
+        "answer": "La politique de point de terminaison, à elle seule, n’accorde pas l’accès. Vérifiez les autorisations du rôle, la politique du bucket et les autorisations KMS si le chiffrement est utilisé."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-08",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Accès opérationnel sans hôte bastion",
+    "prompt": "L’équipe d’exploitation doit ouvrir un shell sur une instance EC2 privée. Aucun port entrant ne doit être ouvert, les utilisateurs doivent être contrôlés par IAM et les journaux des sessions shell doivent être conservés dans CloudWatch Logs.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Se connecter en SSH via un EC2 Instance Connect Endpoint",
+        "explanation": "Cela nécessite d’autoriser SSH entrant ; l’envoi de la sortie du shell vers CloudWatch doit aussi être configuré séparément."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser une session standard de Systems Manager Session Manager et configurer les points de terminaison VPC et la journalisation nécessaires",
+        "explanation": "IAM peut contrôler qui démarre une session, et une session standard peut enregistrer les entrées et sorties du shell."
+      },
+      {
+        "id": "C",
+        "text": "N’autoriser que les tunnels SSH via Session Manager",
+        "explanation": "Session Manager ne peut pas enregistrer le contenu d’une session de tunnel SSH chiffrée."
+      },
+      {
+        "id": "D",
+        "text": "Se connecter en SSH ou en RDP avec Client VPN",
+        "explanation": "L’accès entrant à la cible doit être autorisé et l’enregistrement des sessions nécessite une configuration distincte."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "IAM peut contrôler qui démarre une session, et une session standard peut enregistrer les entrées et sorties du shell.",
+      "concept": "Les journaux d’une session shell standard peuvent être envoyés vers CloudWatch Logs. Session Manager ne peut pas enregistrer le contenu des sessions SSH ou de transfert de port. Dans un réseau privé, vérifiez aussi les points de terminaison nécessaires à SSM et à l’envoi des journaux.",
+      "check": {
+        "prompt": "Si CloudTrail enregistre StartSession, peut-on aussi voir les commandes saisies ?",
+        "answer": "L’opération de démarrage de la session peut être suivie, mais il faut configurer séparément la journalisation d’une session shell standard pour voir les commandes et la sortie."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-09",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Prévenir l’exfiltration de données",
+    "prompt": "Dans les comptes membres d’une organisation, vous ne voulez pas que les administrateurs ordinaires désactivent le blocage de l’accès public S3. Un rôle approuvé d’exploitation de la sécurité doit bénéficier d’une exception. Quelle méthode s’applique aussi aux nouveaux comptes ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Ajouter une politique de refus à l’utilisateur IAM de chaque administrateur",
+        "explanation": "Il est difficile d’éviter les oublis pour les nouveaux rôles ou comptes."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser une règle gérée AWS Config pour enregistrer la non-conformité",
+        "explanation": "Cela détecte la modification après coup et ne bloque pas l’appel d’API qui désactive le paramètre."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser une SCP Organizations pour refuser explicitement l’opération et exclure le rôle approuvé au moyen d’une condition",
+        "explanation": "Cela impose une limite d’autorisations aux comptes membres sous l’OU et empêche les administrateurs de désactiver le paramètre."
+      },
+      {
+        "id": "D",
+        "text": "Utiliser une politique de balises Organizations pour contrôler les paramètres d’accès public",
+        "explanation": "Les politiques de balises ne contrôlent pas l’API de blocage de l’accès public S3."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Une SCP impose une limite d’autorisations aux comptes membres sous l’OU et peut empêcher les administrateurs de désactiver le paramètre.",
+      "concept": "Une SCP limite les autorisations maximales disponibles dans les comptes membres et s’applique aussi à l’utilisateur root de ces comptes. Le rôle exempté doit tout de même disposer d’autorisations IAM distinctes pour effectuer l’opération.",
+      "check": {
+        "prompt": "Le rôle peut-il effectuer l’opération dès qu’il est exclu du Deny de la SCP ?",
+        "answer": "L’exclusion supprime uniquement le refus de la SCP. Vérifiez aussi que le rôle dispose des autorisations nécessaires."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-10",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Private API Gateway",
+    "prompt": "Plusieurs services d’un VPC appellent une API REST API Gateway. Vous voulez empêcher tout appel depuis un point de terminaison non autorisé, même si des identifiants sont volés.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Définir le type de point de terminaison de l’API REST sur private et utiliser un point de terminaison d’interface execute-api",
+        "explanation": "Cela permet d’atteindre l’API sans utiliser de route publique."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser une API Regional et configurer CloudFront OAC pour son origine",
+        "explanation": "Cela ne limite pas les appels directs à l’API à des points de terminaison VPC précis."
+      },
+      {
+        "id": "C",
+        "text": "Autoriser le CIDR du VPC dans CORS",
+        "explanation": "CORS contrôle les origines du navigateur et ne peut pas imposer l’utilisation d’un point de terminaison."
+      },
+      {
+        "id": "D",
+        "text": "Dans la politique de ressources de l’API, refuser explicitement les requêtes lorsque aws:SourceVpce ne figure pas dans la liste d’autorisation",
+        "explanation": "Cela peut refuser l’accès depuis un point de terminaison non prévu même si IAM autorise la requête."
+      },
+      {
+        "id": "E",
+        "text": "Utiliser l’adresse IP Elastic de la passerelle NAT du VPC comme méthode d’authentification",
+        "explanation": "Une adresse IP source ne lie pas à un point de terminaison VPC les appels effectués par un autre chemin avec des identifiants volés."
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Une API privée évite les routes publiques. La politique de ressources peut refuser l’accès depuis un point de terminaison non prévu même si IAM autorise la requête.",
+      "concept": "Un point de terminaison d’interface fournit un chemin réseau. La comparaison de aws:SourceVpce dans la politique de ressources de l’API permet d’exclure un autre point de terminaison du même VPC.",
+      "check": {
+        "prompt": "Si les points de terminaison autorisé et non autorisé se trouvent dans le même VPC, SourceVpc permet-il de les distinguer ?",
+        "answer": "Non. Ils ont le même ID de VPC ; utilisez donc SourceVpce."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-11",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Journaux d’audit immuables",
+    "prompt": "Empêchez même les administrateurs d’exploitation de supprimer les journaux d’audit pendant sept ans. Amazon S3 doit imposer une durée de conservation contre les remplacements et les suppressions d’une version précise effectués par les administrateurs de l’organisation.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser uniquement S3 Versioning et des règles de cycle de vie standard",
+        "explanation": "Un principal disposant d’autorisations suffisantes peut supprimer une version précise."
+      },
+      {
+        "id": "B",
+        "text": "Définir une durée de conservation en mode conformité avec S3 Object Lock",
+        "explanation": "Cela empêche strictement la suppression des versions protégées et la réduction de leur durée de conservation avant son expiration."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser le mode gouvernance et accorder BypassGovernanceRetention aux administrateurs",
+        "explanation": "Les administrateurs disposant de l’autorisation de contournement peuvent passer outre la conservation."
+      },
+      {
+        "id": "D",
+        "text": "Transférer les objets vers S3 Glacier Deep Archive",
+        "explanation": "Une classe de stockage ne verrouille pas les opérations de suppression."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cela empêche strictement la suppression des versions protégées et la réduction de leur durée de conservation avant son expiration.",
+      "concept": "Le mode conformité de S3 Object Lock empêche la suppression des versions protégées jusqu’à l’expiration de leur durée de conservation. Une suppression normale peut ajouter un marqueur de suppression, mais la version protégée est conservée.",
+      "check": {
+        "prompt": "Comment vérifier qu’une version antérieure est conservée si elle n’apparaît pas dans une requête GET ?",
+        "answer": "Listez les versions de l’objet et vérifiez les paramètres de conservation de la version concernée. Même si la version la plus récente est un marqueur de suppression, une version antérieure peut subsister."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-12",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Rotation des secrets Lambda",
+    "prompt": "Une fonction Lambda se connecte à RDS PostgreSQL. Les identifiants doivent être modifiés régulièrement, et la fonction doit utiliser les nouvelles valeurs sans être redéployée. La base de données se trouve dans un sous-réseau privé.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Stocker le mot de passe dans une variable d’environnement chiffrée et faire tourner régulièrement la clé KMS",
+        "explanation": "La rotation d’une clé KMS ne modifie pas le mot de passe de la base de données."
+      },
+      {
+        "id": "B",
+        "text": "Stocker le mot de passe dans SSM SecureString et définir uniquement une politique d’expiration de la valeur",
+        "explanation": "L’expiration ne synchronise pas la modification du mot de passe avec l’utilisateur de la base de données."
+      },
+      {
+        "id": "C",
+        "text": "Faire tourner les identifiants RDS avec Secrets Manager et faire récupérer le secret par Lambda à l’exécution",
+        "explanation": "Dès que la base de données visée par la rotation est accessible, la valeur peut être mise à jour sans redéployer l’application."
+      },
+      {
+        "id": "D",
+        "text": "Stocker la valeur dans un objet SSE-KMS dans S3 et activer le versioning",
+        "explanation": "Le chiffrement au repos et le versioning ne modifient pas, à eux seuls, les identifiants de la base de données."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Dès que la base de données visée par la rotation est accessible, la valeur peut être mise à jour sans redéployer l’application.",
+      "concept": "La rotation de Secrets Manager doit également définir la nouvelle valeur dans la base de données. L’application récupère AWSCURRENT et, si les identifiants mis en cache sont périmés, récupère à nouveau le secret avant de se connecter.",
+      "check": {
+        "prompt": "La rotation de la seule clé KMS empêchera-t-elle l’accès avec l’ancien mot de passe de la base de données ?",
+        "answer": "Non. La rotation de la clé KMS et la modification du mot de passe de la base de données sont des opérations indépendantes."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-13",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Séparation des autorisations CloudTrail",
+    "prompt": "Regroupez les événements de gestion de toutes les Régions et de tous les comptes membres dans un compartiment S3 du compte d’archivage des journaux. Incluez automatiquement les nouveaux comptes et empêchez les administrateurs des comptes membres d’arrêter la journalisation.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Activer l’historique des événements dans chaque compte et enregistrer manuellement des fichiers CSV lors des audits",
+        "explanation": "Cette solution n’assure pas l’agrégation continue ni la prise en compte automatique des nouveaux comptes."
+      },
+      {
+        "id": "B",
+        "text": "Créer une piste CloudTrail distincte pour chaque compte membre",
+        "explanation": "Les administrateurs du compte membre peuvent souvent modifier cette configuration."
+      },
+      {
+        "id": "C",
+        "text": "Configurer uniquement un agrégateur d’organisation AWS Config",
+        "explanation": "Il regroupe des informations de configuration et de conformité, et non des pistes d’événements d’API."
+      },
+      {
+        "id": "D",
+        "text": "Créer une piste organisationnelle CloudTrail multirégionale et envoyer les journaux vers le compartiment S3 d’archivage",
+        "explanation": "La piste enregistre et regroupe les événements à l’échelle de l’organisation, et les administrateurs des comptes membres ne peuvent pas la modifier."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La piste enregistre et regroupe les événements à l’échelle de l’organisation, et les administrateurs des comptes membres ne peuvent pas la modifier.",
+      "concept": "La portée organisationnelle d’une piste et son paramétrage multirégional répondent à deux besoins distincts. Pour envoyer les journaux vers un compartiment S3 d’un autre compte, autorisez leur livraison par cette piste dans la politique du compartiment.",
+      "check": {
+        "prompt": "Une piste organisationnelle qui enregistre uniquement les événements de gestion peut-elle aussi enregistrer S3 GetObject ?",
+        "answer": "GetObject est un événement de données. Configurez les événements de données pour les compartiments concernés selon les exigences d’audit."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-14",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Protection d’une application HTTP derrière un ALB",
+    "prompt": "Une application HTTP s’exécute derrière un ALB public. Contrôlez les fréquences de requêtes anormalement élevées par adresse IP et les injections SQL avant que les requêtes n’atteignent l’application. Des exceptions doivent également pouvoir être définies par URL.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Associer AWS WAF à l’ALB et configurer des règles basées sur le débit et des règles d’inspection SQLi",
+        "explanation": "Le service peut évaluer le contenu des requêtes HTTP et les critères d’agrégation, tout en limitant les règles aux chemins sélectionnés."
+      },
+      {
+        "id": "B",
+        "text": "Limiter la fréquence des requêtes avec le groupe de sécurité de l’ALB",
+        "explanation": "Un groupe de sécurité n’inspecte ni la fréquence des requêtes ni les charges utiles HTTP."
+      },
+      {
+        "id": "C",
+        "text": "Activer uniquement AWS Shield Advanced et lui faire évaluer la syntaxe SQL",
+        "explanation": "Les règles WAF réalisent l’inspection SQLi au niveau applicatif."
+      },
+      {
+        "id": "D",
+        "text": "Regrouper les résultats de GuardDuty dans Security Hub",
+        "explanation": "Les résultats de sécurité peuvent être regroupés, mais les requêtes individuelles ne sont pas bloquées avant d’atteindre l’application."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Le service peut évaluer le contenu des requêtes HTTP et les critères d’agrégation, tout en limitant les règles aux chemins sélectionnés.",
+      "concept": "Une règle WAF basée sur le débit regroupe les requêtes selon la clé spécifiée. Utilisez des instructions de réduction du périmètre pour limiter les chemins inclus dans l’agrégation. Limitez également l’inspection SQLi à ces mêmes chemins.",
+      "check": {
+        "prompt": "Si la clé d’agrégation WAF est commune à toutes les adresses IP, peut-on limiter uniquement le débit élevé d’un seul utilisateur ?",
+        "answer": "Non. Pour appliquer une limite par adresse IP, il faut effectuer l’agrégation par adresse IP."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-15",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Téléversements S3 entre comptes",
+    "prompt": "Le rôle AWS d’un partenaire doit déposer des fichiers dans un compartiment S3 de réception. Le compte destinataire doit automatiquement devenir propriétaire des objets déposés, et le partenaire ne doit être autorisé à rien faire d’autre que les téléverser. Quelle configuration n’est pas tributaire des différences d’ACL ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Conserver le paramètre Object Writer et accorder un accès en lecture via l’ACL du compartiment",
+        "explanation": "En général, l’auteur de l’écriture possède les objets, et la configuration reste tributaire des ACL."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser Bucket owner preferred et rendre l’en-tête ACL facultatif",
+        "explanation": "Cela ne garantit pas la propriété des objets qui ne comportent pas bucket-owner-full-control."
+      },
+      {
+        "id": "C",
+        "text": "Choisir Bucket owner enforced et autoriser le rôle du partenaire à utiliser PutObject uniquement sur un préfixe précis",
+        "explanation": "Les ACL sont désactivées, le compte propriétaire du compartiment possède les objets et les autorisations peuvent être limitées à l’opération nécessaire."
+      },
+      {
+        "id": "D",
+        "text": "Accorder au partenaire un point d’accès en lecture et en écriture au compartiment S3 de réception",
+        "explanation": "Cela autorise aussi la lecture, alors que seule la livraison est requise."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La désactivation des ACL permet au compte propriétaire du compartiment de posséder les objets, et les autorisations peuvent être limitées à l’opération nécessaire.",
+      "concept": "Avec Bucket owner enforced, les ACL sont désactivées et le compte propriétaire du compartiment possède les objets. L’autorisation Allow pour PutObject peut être limitée à un préfixe précis du compartiment.",
+      "check": {
+        "prompt": "L’autorisation PutObject suffit-elle pour permettre au même partenaire de répertorier des objets ?",
+        "answer": "La liste nécessite une autorisation s3:ListBucket distincte. Ne l’accordez pas à ce rôle réservé aux dépôts."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-16",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Restriction de l’utilisation des clés hors de l’organisation",
+    "prompt": "Un rôle métier peut générer des clés de données. Après avoir limité ses autorisations à la clé KMS cible, vous voulez empêcher ce rôle d’appeler directement KMS et autoriser l’utilisation uniquement via S3.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Autoriser le CIDR privé du VPC avec aws:SourceIp",
+        "explanation": "Cela ne permet pas de déterminer si l’appel à KMS est passé par S3."
+      },
+      {
+        "id": "B",
+        "text": "Définir le nom du service S3 de la région cible dans kms:ViaService",
+        "explanation": "Cela permet de limiter les requêtes à celles qui passent par un service compatible."
+      },
+      {
+        "id": "C",
+        "text": "Définir kms:KeyOrigin sur AWS_KMS",
+        "explanation": "Cela limite l’origine du matériel de clé, pas le chemin de l’appel."
+      },
+      {
+        "id": "D",
+        "text": "Définir aws:PrincipalServiceName sur S3 uniquement",
+        "explanation": "Utilisez ViaService pour identifier les opérations KMS exécutées par un service au nom de l’appelant."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cela permet de limiter les requêtes à celles qui passent par un service compatible.",
+      "concept": "kms:ViaService est une condition applicable lorsqu’un service compatible utilise KMS au nom d’un principal. Un Allow soumis à une condition propre à S3 ne s’applique ni aux autres services ni aux requêtes directes vers KMS.",
+      "check": {
+        "prompt": "Vous avez ajouté un Allow conditionné par ViaService, mais une autre politique autorise aussi les appels directs à KMS. Que faut-il vérifier ?",
+        "answer": "Évaluez l’application des deux politiques et supprimez l’autorisation inconditionnelle d’accès direct. Un Allow conditionnel n’annule pas un autre Allow."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-17",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Authentification des utilisateurs et STS",
+    "prompt": "Les utilisateurs mobiles se connectent avec un IdP OIDC existant. Vous voulez fournir aux utilisateurs connectés des informations d’identification AWS temporaires pour accéder à leur propre espace de stockage dans S3. Conservez l’IdP existant.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser directement le jeton d’ID d’un groupe d’utilisateurs Cognito pour signer les requêtes S3 avec Signature Version 4",
+        "explanation": "Le jeton d’ID seul ne fournit pas les clés de signature nécessaires aux requêtes d’API AWS."
+      },
+      {
+        "id": "B",
+        "text": "Distribuer des URL signées CloudFront à tous les utilisateurs et autoriser n’importe quelle opération S3",
+        "explanation": "Une URL signée ne constitue pas une information d’identification temporaire pour des requêtes arbitraires d’API AWS."
+      },
+      {
+        "id": "C",
+        "text": "Créer un utilisateur IAM par personne et distribuer des clés à long terme à l’application mobile",
+        "explanation": "Cette solution ne répond pas à l’exigence d’utiliser des informations d’identification temporaires."
+      },
+      {
+        "id": "D",
+        "text": "Associer l’IdP OIDC à un groupe d’identités Cognito et configurer un rôle IAM qui limite chaque identité à son préfixe S3",
+        "explanation": "Cette solution utilise l’authentification existante et fournit des informations d’identification AWS temporaires aux autorisations limitées."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette solution utilise l’authentification existante et fournit des informations d’identification AWS temporaires aux autorisations limitées.",
+      "concept": "Un groupe d’identités Cognito utilise la fédération pour fournir des informations d’identification AWS temporaires. Utilisez un rôle IAM pour limiter chaque utilisateur à son propre préfixe S3. Les groupes d’utilisateurs gèrent principalement les jetons d’authentification des applications.",
+      "check": {
+        "prompt": "Peut-on utiliser le SDK S3 standard avec le seul jeton d’ID d’un groupe d’utilisateurs ?",
+        "answer": "Non. Il faut obtenir séparément des informations d’identification AWS temporaires pour signer les requêtes du SDK S3."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-18",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Accès à S3 depuis un site sur site",
+    "prompt": "Un serveur d’audit sur site se connecte à S3 via un Site-to-Site VPN et un VPC. Il ne doit pas acheminer le trafic vers les adresses IP publiques de S3, et vous voulez une connexion à une adresse IP privée qui demande le moins d’efforts opérationnels possible.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Placer un point de terminaison d’interface S3 dans le VPC et résoudre son nom DNS privé depuis le site sur site via le VPN",
+        "explanation": "Un point de terminaison d’interface est accessible via le VPN et ne nécessite pas de route Internet publique vers S3."
+      },
+      {
+        "id": "B",
+        "text": "Annoncer le point de terminaison de passerelle S3 du VPC via le VPN",
+        "explanation": "Un hôte sur site ne peut pas utiliser un point de terminaison de passerelle par l’intermédiaire d’un VPN."
+      },
+      {
+        "id": "C",
+        "text": "Acheminer le trafic du site sur site via la passerelle NAT du VPC vers le point de terminaison public de S3",
+        "explanation": "Cette solution ne respecte pas l’exigence d’éviter les adresses IP publiques."
+      },
+      {
+        "id": "D",
+        "text": "Désactiver le Block Public Access du compartiment S3 et appeler son URL publique via le VPN",
+        "explanation": "Modifier le paramètre d’accès ne permet pas d’éviter les adresses IP publiques."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Un point de terminaison d’interface est accessible via le VPN et ne nécessite pas de route Internet publique vers S3.",
+      "concept": "Un point de terminaison d’interface fournit une ENI dotée d’une adresse IP privée dans un sous-réseau du VPC. Vérifiez la route depuis le VPN, la résolution DNS et le groupe de sécurité du point de terminaison.",
+      "check": {
+        "prompt": "La résolution de noms fonctionne, mais la connexion HTTPS via le VPN expire. Que faut-il vérifier ?",
+        "answer": "Vérifiez le chemin entre le site sur site et l’ENI du point de terminaison, ainsi que l’autorisation de trafic entrant sur le port TCP 443 du point de terminaison."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-secure-19",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Fournir un service entre plusieurs VPC",
+    "prompt": "Un service partagé doit être fourni à plusieurs comptes AWS. Les plages CIDR des VPC consommateurs chevauchent celle du VPC fournisseur, et les consommateurs ne doivent pas pouvoir acheminer du trafic vers les autres sous-réseaux du fournisseur. Seul le port TCP utilisé par l’application doit être exposé.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Établir un VPC Peering et annoncer l’ensemble de la plage CIDR des deux côtés",
+        "explanation": "La connexion ne peut pas être établie avec des plages CIDR qui se chevauchent, et le partage s’effectue au niveau du réseau."
+      },
+      {
+        "id": "B",
+        "text": "Connecter les deux côtés à un Transit Gateway et propager les plages CIDR qui se chevauchent dans les deux sens",
+        "explanation": "Cette conception ne convient pas lorsque les routes se chevauchent et ne permet pas d’exposer un service de façon isolée."
+      },
+      {
+        "id": "C",
+        "text": "Exposer le NLB du fournisseur comme service d’endpoint PrivateLink et créer un endpoint d’interface côté consommateur",
+        "explanation": "L’accès est limité à un service TCP précis et fonctionne même si les plages CIDR se chevauchent."
+      },
+      {
+        "id": "D",
+        "text": "Déplacer le service vers un ALB accessible depuis Internet",
+        "explanation": "Cette solution ne permet pas d’accéder uniquement au service TCP du fournisseur sans passer par l’Internet public."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "L’accès est limité à un service TCP précis et fonctionne même si les plages CIDR se chevauchent.",
+      "concept": "PrivateLink permet aux consommateurs d’accéder à un service derrière le NLB du fournisseur via un endpoint d’interface dans leur VPC, sans créer de routes vers tous les sous-réseaux des deux côtés.",
+      "check": {
+        "prompt": "Un consommateur peut-il utiliser cette connexion pour se connecter directement en SSH à une autre instance EC2 du VPC fournisseur ?",
+        "answer": "Non. Il s’agit d’un point d’entrée vers le service exposé, et non d’un mécanisme de routage vers des sous-réseaux arbitraires."
+      }
+    },
+    "categoryLabel": "Sécurité",
+    "examDomainLabel": "Sécurité",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-01",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Événements S3 en double et dans le désordre",
+    "prompt": "Des événements concernant des mises à jour de la même clé S3 servent à mettre à jour un index de recherche. Ils peuvent arriver dans le désordre ou en double. Que faut-il faire pour empêcher un ancien événement de remplacer le résultat de la mise à jour la plus récente ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Arrondir à la minute l’heure de création de l’événement et traiter dans leur ordre d’arrivée ceux qui surviennent pendant la même minute",
+        "explanation": "Cela ne gère ni plusieurs mises à jour distinctes dans la même minute ni les livraisons dans le désordre."
+      },
+      {
+        "id": "B",
+        "text": "Normaliser et comparer le sequencer S3 pour une même clé, puis accepter de façon conditionnelle uniquement les mises à jour plus récentes que la valeur enregistrée",
+        "explanation": "Cela permet de comparer l’ordre des événements de création et de suppression d’un objet pour une même clé ; les mises à jour conditionnelles évitent les conflits de traitement simultané."
+      },
+      {
+        "id": "C",
+        "text": "Envoyer les événements d’EventBridge vers une file SQS standard et supposer qu’ils seront reçus dans l’ordre FIFO",
+        "explanation": "Une file SQS standard ne garantit pas l’ordre et ne corrige pas les événements déjà arrivés dans le désordre en amont."
+      },
+      {
+        "id": "D",
+        "text": "Comparer les valeurs VersionId de S3 comme des chaînes et choisir celle qui semble la plus récente",
+        "explanation": "La comparaison lexicographique de VersionId ne garantit pas l’ordre chronologique."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "L’ordre des événements de création et de suppression d’un objet pour une même clé peut être comparé, et les mises à jour conditionnelles évitent les conflits de traitement simultané.",
+      "concept": "Le sequencer d’une notification S3 ne peut être comparé que pour une même clé d’objet. Si les valeurs ont des longueurs différentes, complétez la plus courte à gauche avec des zéros avant de les comparer.",
+      "check": {
+        "prompt": "Peut-on comparer deux événements portant sur des clés différentes à partir de la valeur de leur sequencer ?",
+        "answer": "Non. Un autre mécanisme est nécessaire pour déterminer l’ordre entre des clés différentes."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-02",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Traitement des paiements en double",
+    "prompt": "Les commandes sont traitées depuis SQS et réessayées en cas de délai d’expiration. L’API de paiement accepte l’ID de commande comme clé d’idempotence. Comment éviter plusieurs débits pour une même commande tout en permettant de réessayer en cas d’échec ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Augmenter uniquement le délai de visibilité de SQS",
+        "explanation": "Cela n’empêche ni une nouvelle livraison après un échec de traitement ni un échec après la réussite du paiement mais avant la suppression du message."
+      },
+      {
+        "id": "B",
+        "text": "Supprimer le message de SQS avant le paiement",
+        "explanation": "Une commande dont le paiement n’a pas abouti ne serait pas réessayée."
+      },
+      {
+        "id": "C",
+        "text": "Transmettre la même clé d’idempotence à chaque tentative pour une même commande et supprimer le message seulement après confirmation du résultat du paiement",
+        "explanation": "Les tentatives sont traitées comme le même paiement, tandis qu’une commande inachevée peut être traitée à nouveau après la nouvelle livraison."
+      },
+      {
+        "id": "D",
+        "text": "S’appuyer uniquement sur la déduplication SQS FIFO et générer un nouvel ID de paiement à chaque tentative",
+        "explanation": "La déduplication à l’envoi n’élimine pas les nouvelles tentatives pendant le traitement par le consommateur."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "L’API traite les nouvelles tentatives comme le même paiement, tandis qu’une commande inachevée peut être traitée à nouveau après sa nouvelle livraison.",
+      "concept": "La déduplication des messages à l’envoi avec FIFO ne garantit pas qu’un effet secondaire dans une API externe ne se produira qu’une fois. Supprimez le message seulement après confirmation du résultat du paiement.",
+      "check": {
+        "prompt": "Que se passe-t-il si une nouvelle clé d’idempotence est générée à chaque délai d’expiration ?",
+        "answer": "L’API considère chaque tentative pour la même commande comme une opération distincte ; cela n’empêche donc pas les doubles débits."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-03",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Disponibilité et reprise après sinistre",
+    "prompt": "Un système composé d’EC2 et de RDS doit atteindre un RPO de quelques minutes et un RTO de 30 minutes en cas de panne régionale. Il faut réduire au minimum la capacité applicative en fonctionnement dans la Région de secours, tout en permettant des vérifications d’état en conditions normales.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Répliquer des instantanés chaque jour et créer tous les services après une panne",
+        "explanation": "Cette approche a peu de chances de respecter un RPO de quelques minutes et ne permet pas de vérifier à l’avance l’état de l’application."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser une configuration Multi-AZ dans une seule Région",
+        "explanation": "Cela répond à une panne de zone de disponibilité, mais pas à une panne de toute la Région."
+      },
+      {
+        "id": "C",
+        "text": "Faire fonctionner dès le départ les deux Régions en permanence avec toute la capacité de production",
+        "explanation": "Cela ne respecte pas la condition de maintenir une capacité de secours minimale."
+      },
+      {
+        "id": "D",
+        "text": "Réplication continue de la base de données entre les Régions, exécution d’une configuration applicative réduite dans la Région de secours et automatisation du basculement et de la montée en capacité",
+        "explanation": "Une veille tiède permet les contrôles opérationnels en temps normal et une reprise rapide."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Une veille tiède permet les contrôles opérationnels en temps normal et une reprise rapide.",
+      "concept": "Une veille tiède exécute un environnement réduit, qui est promu et renforcé en cas de panne. Le RPO est la période de données susceptible d’être perdue ; le RTO est le temps accordé à la reprise.",
+      "check": {
+        "prompt": "Si le retard de réplication est de 8 minutes, peut-on dire qu’un RPO de 5 minutes est respecté ?",
+        "answer": "Non. Mesurez séparément le retard de réplication et le temps nécessaire à la promotion et au basculement."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-04",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Ordre au sein des groupes et traitement parallèle",
+    "prompt": "Une API de réception doit traiter les instructions de modification dans le bon ordre pour chaque ID de contrat. Il n’est pas nécessaire de respecter l’ordre entre les contrats, et le traitement lent d’un contrat ne doit pas empêcher celui des autres d’avancer.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser une file SQS FIFO avec l’ID du contrat comme MessageGroupId et traiter les messages séquentiellement au sein du même groupe.",
+        "explanation": "L’ordre est ainsi préservé dans chaque groupe, tandis que des groupes différents peuvent être traités en parallèle."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser le même MessageGroupId pour tous les contrats.",
+        "explanation": "Le traitement parallèle des différents contrats devient impossible."
+      },
+      {
+        "id": "C",
+        "text": "Ajouter l’ID du contrat aux messages d’une file SQS standard et appliquer les mises à jour uniquement dans l’ordre de réception.",
+        "explanation": "Une file standard ne garantit pas l’ordre de livraison des messages d’un même contrat."
+      },
+      {
+        "id": "D",
+        "text": "Utiliser l’ID de l’événement comme MessageGroupId et l’ID du contrat comme DeduplicationId.",
+        "explanation": "L’ordre au sein d’un contrat n’est pas préservé, et des modifications distinctes risquent d’être considérées comme des doublons."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "L’ordre est ainsi préservé dans chaque groupe, tandis que des groupes différents peuvent être traités en parallèle.",
+      "concept": "Dans une file FIFO, MessageGroupId définit le groupe d’ordonnancement. DeduplicationId sert à dédupliquer les envois ; il ne détermine pas l’ordre des instructions.",
+      "check": {
+        "prompt": "Que se passe-t-il si tous les contrats utilisent le même MessageGroupId ?",
+        "answer": "L’ordre s’applique alors à un périmètre plus large, mais le traitement lent d’un contrat peut bloquer les autres et réduire le parallélisme."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "Simulation SAA-C03 / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (contenu de l’examen)"
+  },
+  {
+    "id": "mock-resilience-05",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Échecs partiels dans les lots SQS",
+    "prompt": "Une fonction Lambda traite une file SQS standard. Si une seule des 10 messages échoue, il faut éviter à la fois de retraiter les 9 messages réussis et de perdre le message en échec.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Intercepter les exceptions de la fonction et toujours renvoyer une réponse vide.",
+        "explanation": "Tous les messages sont alors considérés comme réussis, et le message en échec peut aussi être supprimé."
+      },
+      {
+        "id": "B",
+        "text": "Activer ReportBatchItemFailures dans le mappage de source d’événement et renvoyer l’ID du message en échec.",
+        "explanation": "Cela signale l’échec partiel, ce qui permet de supprimer les messages réussis et de ne relancer que celui qui a échoué."
+      },
+      {
+        "id": "C",
+        "text": "Réduire le délai de visibilité et faire échouer tout le lot en levant une exception.",
+        "explanation": "Tout le lot est réessayé, et pas seulement le message en échec."
+      },
+      {
+        "id": "D",
+        "text": "Supprimer les 10 messages reçus avant de les traiter.",
+        "explanation": "Le message en échec ne peut alors plus être traité à nouveau depuis la file."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cela signale l’échec partiel, ce qui permet de supprimer les messages réussis et de ne relancer que celui qui a échoué.",
+      "concept": "Utiliser les réponses partielles par lot pour le mappage de source d’événement SQS. Les files SQS standard assurent une livraison au moins une fois ; l’idempotence reste donc nécessaire, même lors du traitement d’échecs partiels.",
+      "check": {
+        "prompt": "Que deviennent les enregistrements réussis du lot si l’exception de la fonction remonte jusqu’à l’appelant ?",
+        "answer": "Le lot entier est considéré comme ayant échoué. Traiter les exceptions pour chaque enregistrement et renvoyer la liste des ID en échec."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "Simulation SAA-C03 / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (contenu de l’examen)"
+  },
+  {
+    "id": "mock-resilience-06",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Sortie vers Internet lors d’une panne de zone de disponibilité",
+    "prompt": "Des workers Web situés dans des sous-réseaux privés de trois zones de disponibilité maintiennent des connexions aux API externes. Il faut éviter qu’une panne d’une zone interrompe également le trafic des autres zones et éviter les frais de transfert interzones. Utiliser des passerelles NAT zonales.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Provisionner une passerelle NAT zonale et la partager entre les trois zones de disponibilité.",
+        "explanation": "Cela crée une dépendance envers cette zone et cette passerelle NAT, et le trafic des autres zones entraîne un transfert interzone."
+      },
+      {
+        "id": "B",
+        "text": "Placer une passerelle NAT dans chaque zone, mais faire pointer les routes de tous les sous-réseaux vers une seule passerelle NAT.",
+        "explanation": "Même si des passerelles NAT existent dans les autres zones, les routes normales concentrent le trafic dans une seule zone."
+      },
+      {
+        "id": "C",
+        "text": "Configurer un point de terminaison de passerelle S3 pour les API externes.",
+        "explanation": "Cette solution ne fournit pas de routes vers des API Internet externes quelconques."
+      },
+      {
+        "id": "D",
+        "text": "Placer une passerelle NAT zonale dans chaque zone et acheminer chaque sous-réseau privé vers la passerelle NAT de la même zone.",
+        "explanation": "Cela évite de dépendre d’une seule zone et les chemins interzones jusqu’aux passerelles NAT."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cela évite de dépendre d’une seule zone et les chemins interzones jusqu’aux passerelles NAT.",
+      "concept": "Dans une architecture zonale, les tables de routage des sous-réseaux de chaque zone envoient le trafic vers une passerelle NAT située dans cette même zone. L’adresse IP source visible par les services externes est l’EIP attribuée à chaque passerelle NAT.",
+      "check": {
+        "prompt": "Que se passe-t-il si trois passerelles NAT sont provisionnées, mais que tous les sous-réseaux pointent vers la même ?",
+        "answer": "La sortie est en pratique concentrée dans une seule zone. Vérifier la route de chaque sous-réseau privé, et pas seulement l’emplacement des passerelles."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "Simulation SAA-C03 / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (contenu de l’examen)"
+  },
+  {
+    "id": "mock-resilience-07",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Déploiements ECS sécurisés",
+    "prompt": "Un service HTTP ECS doit maintenir les connexions existantes et ne pas acheminer de trafic vers les nouvelles tâches tant qu’elles ne sont pas prêtes à traiter les requêtes. Si un déploiement défectueux est détecté, le service doit revenir automatiquement à la dernière version déployée avec succès. Utiliser des mises à jour progressives ECS.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Ajuster les contrôles d’état de l’ALB et le délai de désenregistrement.",
+        "explanation": "Le trafic peut être envoyé vers les cibles prêtes, tout en laissant aux requêtes en cours sur les anciennes tâches le temps de se terminer."
+      },
+      {
+        "id": "B",
+        "text": "Définir le pourcentage minimal de tâches saines à 0 %.",
+        "explanation": "Toutes les anciennes tâches peuvent alors être arrêtées en premier, ce qui complique le maintien des connexions."
+      },
+      {
+        "id": "C",
+        "text": "Activer le retour arrière du disjoncteur de déploiement ECS.",
+        "explanation": "Il peut détecter un déploiement qui n’atteint pas un état stable et revenir au déploiement réussi précédent."
+      },
+      {
+        "id": "D",
+        "text": "Décider du déploiement uniquement en fonction des résultats critiques de l’analyse des images ECR.",
+        "explanation": "Les résultats statiques de l’image ne permettent pas de déterminer si l’application démarre ou réussit les contrôles d’état."
+      },
+      {
+        "id": "E",
+        "text": "Augmenter uniquement le TTL de Route 53.",
+        "explanation": "Cela n’a aucun effet sur l’état de préparation des cibles ni sur le résultat du déploiement derrière le même ALB."
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Le trafic peut être envoyé vers les cibles prêtes, tout en laissant aux requêtes en cours sur les anciennes tâches le temps de se terminer. Un déploiement qui n’atteint pas un état stable peut être détecté et annulé au profit de la dernière version réussie.",
+      "concept": "Les contrôles d’état et le délai de désenregistrement de l’ALB gèrent le trafic. Le disjoncteur de déploiement ECS détecte les échecs et effectue le retour arrière vers une version déployée avec succès.",
+      "check": {
+        "prompt": "Un contrôle d’état qui renvoie HTTP 200 dès le démarrage du processus est-il suffisant ?",
+        "answer": "Non, si l’application n’est pas encore prête à traiter les requêtes métier. Le contrôle doit refléter son état de préparation."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "Simulation SAA-C03 / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (contenu de l’examen)"
+  },
+  {
+    "id": "mock-resilience-08",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Écarter une cible DNS non saine",
+    "prompt": "Utilisez la région A comme région principale et la région B comme région de secours. En temps normal, n’envoyez pas le trafic utilisateur vers B ; si l’ALB de A devient non sain, basculez vers B.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Publier A et B avec le routage basé sur la latence",
+        "explanation": "B pourrait être sélectionnée même en temps normal."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser le routage de basculement de Route 53 et configurer l’évaluation de l’état des cibles de l’ALB",
+        "explanation": "La région principale peut être renvoyée en temps normal, puis une région secondaire saine lorsque la principale est non saine."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser le routage géographique pour associer le monde entier à A",
+        "explanation": "Cette méthode ne définit pas à elle seule le basculement vers la région de secours en cas de panne."
+      },
+      {
+        "id": "D",
+        "text": "Définir un TTL extrêmement long pour l’enregistrement DNS et ajouter A et B au même enregistrement",
+        "explanation": "Cette méthode ne convient pas pour conserver la région principale en temps normal et basculer rapidement en cas de panne."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La région principale peut être renvoyée en temps normal, puis une région secondaire saine lorsque la principale est non saine.",
+      "concept": "Le routage de basculement de Route 53 modifie la destination renvoyée par la réponse DNS. Les réponses DNS déjà mises en cache par les clients et les connexions existantes ne changent pas immédiatement.",
+      "check": {
+        "prompt": "Pourquoi certains utilisateurs peuvent-ils encore se connecter à l’ancien ALB après le basculement ?",
+        "answer": "Des caches DNS ou des connexions existantes peuvent persister. Il faut distinguer les nouvelles réponses DNS des connexions réellement établies par les clients."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de certification AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-09",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Basculement Redis",
+    "prompt": "Une forte hausse des défauts de cache peut entraîner l’arrêt de la base de données ; évitez donc une architecture qui bascule vers un cache vide en cas de panne du nœud principal. Utilisez la promotion automatique entre zones de disponibilité avec ElastiCache for Valkey.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser uniquement un nœud principal et créer des instantanés quotidiens",
+        "explanation": "Cela ne permet pas la promotion synchrone d’un nœud de secours lors d’une panne de zone de disponibilité, et le cache deviendra obsolète."
+      },
+      {
+        "id": "B",
+        "text": "Placer un cache client dans l’application de la même zone de disponibilité",
+        "explanation": "Il subira la même panne de zone de disponibilité et ne fournit pas de serveur de cache de secours."
+      },
+      {
+        "id": "C",
+        "text": "Activer Multi-AZ et le basculement automatique dans un groupe de réplication dont le réplica se trouve dans une autre zone de disponibilité",
+        "explanation": "La promotion du réplica peut préserver le cache existant dans la mesure du possible."
+      },
+      {
+        "id": "D",
+        "text": "Copier les sauvegardes dans une autre région et les restaurer manuellement à chaque fois",
+        "explanation": "Cela ne répond pas aux exigences de promotion automatique dans la même région et de basculement rapide."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La promotion du réplica peut préserver le cache existant dans la mesure du possible.",
+      "concept": "Le basculement automatique d’ElastiCache promeut un réplica. La réplication étant asynchrone, il n’est pas garanti que toutes les mises à jour du cache effectuées juste avant une panne soient conservées.",
+      "check": {
+        "prompt": "L’ajout d’un réplica dans la même zone de disponibilité permettrait-il de résister à une panne de toute la zone ?",
+        "answer": "Non. Pour faire face à une panne de zone de disponibilité, placez le réplica dans une autre zone."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de certification AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-10",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Redondance de la connectivité sur site",
+    "prompt": "La connexion principale utilise AWS Direct Connect, et le réseau sur site se connecte aux VPC derrière un Transit Gateway. Vous ne pouvez pas provisionner une deuxième connexion dédiée, mais devez pouvoir atteindre le même réseau même si la connexion dédiée tombe en panne.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Créer une deuxième VIF sur la même connexion physique Direct Connect",
+        "explanation": "Cela ne fournit pas de redondance en cas de panne de cette même connexion physique."
+      },
+      {
+        "id": "B",
+        "text": "Faire dépendre le VPN uniquement du même chemin physique que Direct Connect",
+        "explanation": "Il serait affecté par la même panne que la connexion principale."
+      },
+      {
+        "id": "C",
+        "text": "Ajouter une deuxième passerelle NAT",
+        "explanation": "Cela ne fournit pas de route redondante depuis le réseau sur site."
+      },
+      {
+        "id": "D",
+        "text": "Connecter un VPN Site-to-Site au TGW via une connexion Internet indépendante et configurer le routage dynamique",
+        "explanation": "Cela fournit un chemin distinct et permet de basculer vers le VPN lorsque la route principale est retirée."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cela fournit un chemin distinct et permet de basculer vers le VPN lorsque la route principale est retirée.",
+      "concept": "Configurez le VPN Site-to-Site sur une connexion indépendante et utilisez le routage dynamique, par exemple BGP, pour contrôler la préférence en temps normal et le basculement après le retrait de la route.",
+      "check": {
+        "prompt": "L’ajout d’une VIF sur le même Direct Connect protège-t-il contre une coupure ?",
+        "answer": "Cela peut ajouter une route au niveau de la configuration, mais ne fournit pas de redondance contre la panne physique de la connexion."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de certification AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-11",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Continuer les écritures en cas de panne régionale",
+    "prompt": "Les applications de deux régions lisent et écrivent des profils utilisateur en temps normal. Si la région qui reçoit les écritures devient indisponible, vous voulez continuer à écrire en redirigeant la connexion vers l’autre région. Vous acceptez la règle du dernier écrivain gagnant en cas de conflit. AWS doit gérer la réplication bidirectionnelle et la résolution des conflits.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Configurer une table globale DynamoDB avec une cohérence éventuelle multirégion",
+        "explanation": "Chaque réplica peut accepter des écritures, et les conflits sont résolus selon la règle du dernier écrivain gagnant."
+      },
+      {
+        "id": "B",
+        "text": "Activer la restauration ponctuelle (PITR) de DynamoDB et envoyer toutes les requêtes vers une seule région",
+        "explanation": "Cela ne fournit ni des écritures simultanées dans une autre région ni un basculement immédiat."
+      },
+      {
+        "id": "C",
+        "text": "Traiter les réplicas en lecture ordinaires d’Aurora comme des écrivains indépendants dans les deux régions",
+        "explanation": "Les réplicas en lecture ne peuvent pas être traités simultanément comme des écrivains indépendants."
+      },
+      {
+        "id": "D",
+        "text": "Copier uniquement les modifications interrégionales de DynamoDB Streams vers des tables indépendantes",
+        "explanation": "Il faudrait gérer soi-même la prévention des boucles de réplication et la résolution des conflits. Les tables globales répondent à ces exigences en tant que service géré."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Chaque réplica peut accepter des écritures, et les conflits sont résolus selon la règle du dernier écrivain gagnant.",
+      "concept": "Avec les tables globales DynamoDB en mode MREC, chaque région accepte les écritures, les réplique de façon asynchrone et résout les conflits. Les mises à jour simultanées ne sont pas fusionnées par l’application.",
+      "check": {
+        "prompt": "Juste après une écriture dans une autre région, toutes les régions renverront-elles toujours la même valeur ?",
+        "answer": "MREC ne le garantit pas. Vérifiez que l’architecture peut tolérer un délai de réplication."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de certification AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-12",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Nouvelle tentative dans un flux de travail à plusieurs étapes",
+    "prompt": "Une commande suit les étapes suivantes : autoriser le paiement, réserver le stock, puis confirmer l’expédition. Si la confirmation de l’expédition échoue, le stock doit être libéré. Les erreurs temporaires doivent être réessayées avec un délai exponentiel. L’historique d’exécution doit aussi permettre d’identifier l’étape en échec.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Créer une règle EventBridge distincte pour chaque opération et suivre l’ordre d’achèvement uniquement à l’aide de la surveillance",
+        "explanation": "Les chemins d’échec et l’ordre des actions compensatoires ne peuvent pas être gérés de manière centralisée."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser Step Functions Standard avec Retry et Catch, puis diriger l’exécution vers une tâche de compensation en cas d’échec",
+        "explanation": "La solution conserve l’état et l’historique d’exécution et permet de définir les nouvelles tentatives et les compensations pour chaque étape."
+      },
+      {
+        "id": "C",
+        "text": "Implémenter toutes les opérations dans Lambda et réexécuter systématiquement toute la fonction depuis le début",
+        "explanation": "Il est difficile de gérer les nouvelles tentatives à l’échelle d’une étape ou de compenser des étapes déjà terminées."
+      },
+      {
+        "id": "D",
+        "text": "Se contenter d’envoyer des notifications d’échec à l’aide d’alarmes CloudWatch",
+        "explanation": "Cela ne relance pas les étapes et ne libère pas le stock."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La solution conserve l’état et l’historique d’exécution et permet de définir les nouvelles tentatives et les compensations pour chaque étape.",
+      "concept": "Standard prend en charge les exécutions de longue durée et leur historique. Retry gère les nouvelles tentatives, tandis que Catch effectue la transition vers le traitement des erreurs ; une tâche de compensation définie explicitement libère le stock.",
+      "check": {
+        "prompt": "Si l’expédition échoue après la réservation du stock, Step Functions libère-t-il automatiquement le stock ?",
+        "answer": "Non. Implémentez la libération du stock dans la cible de transition de Catch."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-13",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Relecture des données Kinesis",
+    "prompt": "Plusieurs consommateurs traitent des événements en conservant chacun leur propre historique de traitement. Après le déploiement d’une nouvelle logique d’agrégation, vous souhaitez retraiter les événements d’origine jusqu’à 7 jours en arrière, tout en conservant les points de contrôle du traitement normal.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser SQS standard pour rendre à nouveau visibles les messages déjà supprimés",
+        "explanation": "Les messages supprimés ne peuvent pas être récupérés."
+      },
+      {
+        "id": "B",
+        "text": "Conserver la rétention Kinesis à 24 heures et définir uniquement la position de départ sur TRIM_HORIZON",
+        "explanation": "Cela ne permet pas de récupérer les données au-delà de la période de rétention."
+      },
+      {
+        "id": "C",
+        "text": "Définir une rétention d’au moins 7 jours pour Kinesis Data Streams et utiliser un autre consommateur pour relire les données à partir de l’heure pertinente",
+        "explanation": "Les données conservées peuvent être relues indépendamment de la progression des consommateurs existants."
+      },
+      {
+        "id": "D",
+        "text": "Modifier uniquement le filtre d’EventBridge Pipes",
+        "explanation": "Cela ne crée pas les enregistrements des 7 jours de données déjà perdus."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Les données conservées peuvent être relues indépendamment de la progression des consommateurs existants.",
+      "concept": "Les consommateurs peuvent relire les enregistrements conservés dans Kinesis Data Streams. Les données déjà expirées ne peuvent pas être récupérées en prolongeant la période de rétention après coup.",
+      "check": {
+        "prompt": "Si vous faites passer aujourd’hui la rétention de 24 heures à 7 jours, pouvez-vous lire les données de la semaine dernière ?",
+        "answer": "Non. Les données déjà expirées ne peuvent pas être lues. Configurez à l’avance la période de rétention requise."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-14",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Protection et récupération S3",
+    "prompt": "Vous devez pouvoir récupérer les anciennes versions supprimées à la suite d’une erreur opérationnelle et accéder aux données depuis une autre région en cas de perte d’une région. Les objets existants doivent également être inclus, et les marqueurs de suppression erronés ne doivent pas être appliqués à la destination.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Activer le versionnement S3 sur les buckets source et de destination, puis configurer la CRR en désactivant la réplication des marqueurs de suppression",
+        "explanation": "La réplication des nouveaux objets est assurée sans appliquer à la destination les marqueurs de suppression visés."
+      },
+      {
+        "id": "B",
+        "text": "Passer les objets à S3 One Zone-IA",
+        "explanation": "Il s’agit d’une classe de stockage à zone de disponibilité unique, qui ne crée pas de réplique dans une autre région."
+      },
+      {
+        "id": "C",
+        "text": "Copier les objets sous un autre préfixe du même bucket dans la même région",
+        "explanation": "Cette solution ne protège pas contre une panne régionale."
+      },
+      {
+        "id": "D",
+        "text": "Configurer uniquement la CRR en direct ; les objets existants seront répliqués automatiquement",
+        "explanation": "Les objets antérieurs à la configuration nécessitent un processus distinct, tel que Batch Replication."
+      },
+      {
+        "id": "E",
+        "text": "Utiliser S3 Batch Replication pour répliquer les objets existants",
+        "explanation": "Cette opération peut compléter la réplication en incluant des données existantes qui n’étaient pas couvertes par la réplication en direct."
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La réplication des nouveaux objets est assurée sans appliquer à la destination les marqueurs de suppression visés. Les données existantes non couvertes par la réplication en direct peuvent être ajoutées par une réplication par lots.",
+      "concept": "La CRR nécessite le versionnement sur les deux buckets. Utilisez Batch Replication pour compléter la réplication des objets existants et contrôlez la réplication des marqueurs de suppression dans la configuration de réplication.",
+      "check": {
+        "prompt": "La réplication d’un nouvel objet de test suffit-elle à conclure que la migration des objets existants est terminée ?",
+        "answer": "Non. Vérifiez séparément les résultats du traitement par lots et l’inventaire des objets concernés."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-15",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Point de restauration RDS",
+    "prompt": "Une mise à jour erronée a eu lieu à midi sur une base de données RDS PostgreSQL dans la même région. Vous souhaitez restaurer les données de juste avant l’incident dans une instance distincte pour les vérifier, puis les comparer tout en laissant la base de données de production en fonctionnement.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Revenir sur l’instance standby Multi-AZ à un moment antérieur à midi",
+        "explanation": "L’instance standby synchrone reflète elle aussi les mises à jour erronées et ne permet pas une restauration à un instant arbitraire."
+      },
+      {
+        "id": "B",
+        "text": "Écraser sur place la base de données de production avec un instantané pris juste avant la mise à jour",
+        "explanation": "La base de données de production doit rester en fonctionnement ; la restauration ne l’écrase pas sur place."
+      },
+      {
+        "id": "C",
+        "text": "Promouvoir uniquement un réplica en lecture",
+        "explanation": "La promotion ne restaure pas la base à un instant spécifié, et la mise à jour a peut-être déjà été transmise au réplica."
+      },
+      {
+        "id": "D",
+        "text": "Effectuer une restauration ponctuelle à partir d’une sauvegarde automatique RDS afin de créer une nouvelle base de données",
+        "explanation": "Les journaux des transactions permettent de créer une base de données distincte à l’instant spécifié, tout en préservant la base de production."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Les journaux des transactions permettent de créer une base de données distincte à l’instant spécifié, tout en préservant la base de production.",
+      "concept": "La restauration PITR de RDS crée une nouvelle base de données à un instant donné compris dans la période de rétention. Les instances standby et les réplicas reflètent généralement les mises à jour ; ils ne remplacent donc pas une restauration à un instant choisi.",
+      "check": {
+        "prompt": "Si la mise à jour erronée a également été transmise au réplica, sa promotion peut-elle annuler cette mise à jour ?",
+        "answer": "Non. Effectuez une restauration PITR à un instant antérieur à la mise à jour erronée."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-16",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Échecs de remise avec EventBridge",
+    "prompt": "Des événements d’audit sont remis par EventBridge à une cible de traitement. Si un problème d’autorisations persiste au-delà de la période de nouvelle tentative, les événements non remis doivent être conservés afin d’en rechercher la cause et de les traiter à nouveau.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Régler uniquement le nombre de nouvelles tentatives de la cible au maximum",
+        "explanation": "Aucun emplacement ne permet de conserver les événements une fois les tentatives épuisées."
+      },
+      {
+        "id": "B",
+        "text": "Configurer une file standard SQS comme DLQ de la cible et autoriser EventBridge à envoyer des messages au moyen de la politique de file",
+        "explanation": "La DLQ peut conserver les événements qui n’ont pas pu être remis ainsi que les informations d’erreur."
+      },
+      {
+        "id": "C",
+        "text": "Configurer uniquement une notification d’échec après la réussite d’un appel asynchrone à Lambda",
+        "explanation": "Cela ne capture pas les échecs survenant lorsque EventBridge tente de remettre l’événement à la cible."
+      },
+      {
+        "id": "D",
+        "text": "Conserver uniquement les métriques CloudWatch",
+        "explanation": "Le nombre d’échecs est visible, mais les données des événements ne peuvent pas être retraitées."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Une DLQ peut conserver les événements qui n’ont pas pu être remis ainsi que les informations d’erreur.",
+      "concept": "La DLQ d’une cible EventBridge conserve les événements non remis et les informations d’erreur. La destination d’échec asynchrone de Lambda traite les échecs qui surviennent après que Lambda a accepté un appel.",
+      "check": {
+        "prompt": "EventBridge ne peut pas appeler Lambda faute d’autorisations. Que se passe-t-il si seule Lambda dispose d’une destination d’échec ?",
+        "answer": "L’échec survient avant que Lambda accepte l’appel ; l’événement n’y est donc pas envoyé. Configurez une DLQ sur la cible EventBridge."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-resilience-17",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Diffusion de contenu statique lors d’un basculement de région",
+    "prompt": "Le même site statique a été répliqué à l’avance dans deux régions derrière CloudFront. Si l’origine REST S3 principale renvoie un code d’état 5xx spécifié, CloudFront doit acheminer les requêtes GET vers l’origine de secours sans modifier l’URL utilisée par les utilisateurs.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Créer un groupe d’origines CloudFront et définir les codes d’état 5xx comme critères de basculement",
+        "explanation": "Une même distribution peut basculer vers une origine secondaire lorsqu’une requête utilisant une méthode spécifiée échoue."
+      },
+      {
+        "id": "B",
+        "text": "Ajouter l’URL S3 à la clé de cache avec une politique de requête d’origine CloudFront",
+        "explanation": "Les paramètres de transfert des en-têtes ou des chaînes de requête ne permettent pas de basculer en cas d’erreur."
+      },
+      {
+        "id": "C",
+        "text": "Autoriser l’accès des deux régions dans la politique du compartiment S3",
+        "explanation": "Les autorisations ne déterminent pas l’origine à laquelle CloudFront se connecte."
+      },
+      {
+        "id": "D",
+        "text": "Envoyer les événements S3 à SNS",
+        "explanation": "Les notifications d’événements d’objet ne fournissent pas de basculement HTTP pour les requêtes de lecture."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Une même distribution peut basculer vers une origine secondaire lorsqu’une requête utilisant une méthode spécifiée échoue.",
+      "concept": "Le basculement d’un groupe d’origines se produit lorsqu’une erreur configurée survient. Les méthodes prises en charge sont GET, HEAD et OPTIONS ; ce mécanisme ne convient pas à des opérations d’écriture arbitraires.",
+      "check": {
+        "prompt": "Une écriture POST bascule-t-elle automatiquement vers une autre destination du même groupe ?",
+        "answer": "Non. Le basculement des opérations d’écriture doit être conçu séparément."
+      }
+    },
+    "categoryLabel": "Résilience",
+    "examDomainLabel": "Résilience",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-01",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Pic de connexions RDS",
+    "prompt": "Des milliers de fonctions Lambda démarrent en peu de temps et RDS PostgreSQL atteint le nombre maximal de connexions. Le SQL existant doit rester inchangé ; les informations d’identification doivent être gérées et les connexions réutilisées. Le stockage et le processeur disposent encore de capacité.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Ajouter un réplica en lecture et y envoyer toutes les écritures",
+        "explanation": "Les écritures doivent être envoyées à l’instance d’écriture, et un réplica en lecture ne permet pas non plus de réutiliser les connexions."
+      },
+      {
+        "id": "B",
+        "text": "Augmenter les IOPS d’EBS",
+        "explanation": "Cela ne résout pas directement la limite du nombre de connexions simultanées."
+      },
+      {
+        "id": "C",
+        "text": "Ajouter RDS Proxy entre Lambda et RDS",
+        "explanation": "Il regroupe les connexions à la base de données et dissocie la forte concurrence de Lambda du nombre de connexions à la base."
+      },
+      {
+        "id": "D",
+        "text": "Utiliser uniquement le cache d’API Gateway",
+        "explanation": "Cela n’empêche pas les pics de connexions pour les appels non mis en cache, comme les opérations de mise à jour."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Il regroupe les connexions à la base de données et dissocie la forte concurrence de Lambda du nombre de connexions à la base.",
+      "concept": "RDS Proxy regroupe les connexions à la base de données sous-jacente et peut les réutiliser entre clients lorsque les conditions le permettent. L’état de session qui entraîne l’épinglage des connexions et les transactions longues peuvent réduire l’efficacité de cette réutilisation.",
+      "check": {
+        "prompt": "Avec un proxy, le nombre de connexions à la base de données reste-t-il toujours fixe ?",
+        "answer": "Non. L’épinglage des connexions ou le nombre de transactions simultanées peut nécessiter de nombreuses connexions à la base de données."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-02",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Déséquilibre des écritures dans DynamoDB",
+    "prompt": "Des événements de commande sont écrits dans DynamoDB. Un volume élevé et régulier d’écritures pour un locataire donné se concentre sur une seule clé de partition, ce qui entraîne une limitation de débit alors que la table dispose encore d’une capacité excédentaire. Une modification permettant d’interroger plusieurs fragments lors des lectures est acceptable.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Ajouter un suffixe de distribution à l’identifiant du locataire pour répartir les écritures entre plusieurs clés de partition",
+        "explanation": "Cette conception élimine la concentration des écritures sur une seule clé très sollicitée."
+      },
+      {
+        "id": "B",
+        "text": "Augmenter uniquement la capacité de la table",
+        "explanation": "La capacité excédentaire de l’ensemble de la table ne suffit pas à résoudre la limite de traitement d’une seule partition physique."
+      },
+      {
+        "id": "C",
+        "text": "Ajouter DAX pour accélérer les écritures",
+        "explanation": "DAX est principalement un cache de lecture à faible latence et ne répartit pas les écritures persistantes d’une clé très sollicitée."
+      },
+      {
+        "id": "D",
+        "text": "Réutiliser le même identifiant de locataire comme clé de partition dans un GSI",
+        "explanation": "La concentration reste présente dans la table de base et peut aussi créer un déséquilibre dans l’index."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette conception élimine la concentration des écritures sur une seule clé très sollicitée.",
+      "concept": "L’ajout d’une valeur de distribution à la clé grâce au partitionnement des écritures peut réduire le déséquilibre. Pour lire tous les éléments d’un locataire, il faut exécuter une opération Query sur chaque fragment, puis regrouper les résultats.",
+      "check": {
+        "prompt": "Quel est l’inconvénient d’augmenter le nombre de fragments ?",
+        "answer": "La récupération de tous les éléments exige d’interroger davantage de destinations. Il faut choisir le nombre de fragments en équilibrant la répartition des écritures et le coût de lecture."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-03",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "IOPS soutenues d’EBS",
+    "prompt": "Une base de données de 800 GiB est stockée sur un seul volume. Elle nécessite 32 000 IOPS soutenues, sans dépendre des performances en rafale, ainsi qu’une faible latence stable. L’instance respecte les exigences de bande passante de chaque option. Quelle configuration choisir si une durabilité du volume de 99,999 % est également requise ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser gp2 avec 800 GiB",
+        "explanation": "Les performances de base à cette capacité sont inférieures aux exigences."
+      },
+      {
+        "id": "B",
+        "text": "Provisionner io2 Block Express pour au moins 32 000 IOPS",
+        "explanation": "Cette option convient aux charges de travail qui nécessitent un nombre élevé d’IOPS provisionnées et une faible latence."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser st1 et compter sur de courtes rafales",
+        "explanation": "Il s’agit d’un volume HDD destiné au débit séquentiel, qui ne convient pas à des IOPS aléatoires élevées et soutenues."
+      },
+      {
+        "id": "D",
+        "text": "Utiliser le stockage d’instance comme volume persistant",
+        "explanation": "Il ne garantit pas la persistance des données après l’arrêt de l’instance ou une défaillance de l’hôte."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/sql-server-ec2-ha-dr/appendix.html",
+      "label": "AWS公式資料 · EBS SSDタイプの比較"
+    },
+    "learning": {
+      "reason": "Ce cas d’usage nécessite un nombre élevé d’IOPS provisionnées et une faible latence.",
+      "concept": "io2 Block Express offre des IOPS soutenues élevées et une durabilité conçue à 99,999 %. Vérifiez aussi les limites de bande passante EBS et d’IOPS de l’instance EC2, en plus des paramètres du volume.",
+      "check": {
+        "prompt": "Si les performances mesurées ne s’améliorent pas après le réglage des IOPS requises, que faut-il vérifier ?",
+        "answer": "Vérifiez les limites EBS de l’instance, le débit déterminé par la taille des E/S, la profondeur de la file d’attente et d’autres facteurs pertinents."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Documentation officielle AWS · Comparaison des types de SSD EBS"
+  },
+  {
+    "id": "mock-performance-04",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Fichiers partagés pour Linux",
+    "prompt": "Des instances EC2 Linux réparties dans plusieurs zones de disponibilité évoluent à la hausse ou à la baisse selon la charge et mettent à jour simultanément un ensemble de fichiers partagé. L’application existante utilise les autorisations POSIX et le verrouillage de fichiers. La capacité ne peut pas être déterminée à l’avance.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser directement S3 depuis l’application et acquérir les verrous POSIX existants",
+        "explanation": "S3 utilise une API d’objets et ne peut pas conserver les verrous de fichiers POSIX existants."
+      },
+      {
+        "id": "B",
+        "text": "Attacher le même volume EBS gp3 aux instances EC2 de toutes les zones de disponibilité",
+        "explanation": "EBS est une ressource limitée à une zone de disponibilité et gp3 ne prend pas en charge Multi-Attach."
+      },
+      {
+        "id": "C",
+        "text": "Placer un volume EBS local dans chaque zone de disponibilité et exécuter rsync la nuit",
+        "explanation": "Cette option ne permet ni les mises à jour simultanées ni le verrouillage partagé."
+      },
+      {
+        "id": "D",
+        "text": "Utiliser EFS Regional et placer une cible de montage dans chaque zone de disponibilité",
+        "explanation": "Les clients Linux de plusieurs zones de disponibilité peuvent utiliser un système de fichiers NFS partagé sans préallouer de capacité."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Les clients Linux répartis dans plusieurs zones de disponibilité peuvent utiliser un stockage NFS partagé sans préallouer de capacité.",
+      "concept": "EFS Regional fournit un système de fichiers NFS partagé et stocke les données et les métadonnées dans plusieurs zones de disponibilité. Les cibles de montage sont les points d’accès permettant de se connecter au système de fichiers depuis chaque zone.",
+      "check": {
+        "prompt": "Si un système de fichiers EFS One Zone est accessible depuis une autre zone de disponibilité, ses données sont-elles stockées dans plusieurs zones ?",
+        "answer": "Non. Les zones depuis lesquelles le système de fichiers est accessible et la zone où les données des fichiers sont stockées sont deux choses différentes."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-05",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Téléversements vers S3 depuis le monde entier",
+    "prompt": "Des utilisateurs téléversent de grandes vidéos depuis tous les continents vers S3 dans une seule région. Choisissez une conception qui améliore le temps de transfert sur les longues distances et évite de renvoyer le fichier entier en cas d’échec.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Augmenter le TTL du cache GET dans CloudFront",
+        "explanation": "Les paramètres de cache des téléchargements n’améliorent ni le transfert des téléversements ni leur nouvelle tentative."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser S3 Intelligent-Tiering et fixer les objets au niveau FA",
+        "explanation": "Il s’agit d’un niveau de stockage applicable après l’enregistrement des objets, et non d’un moyen d’améliorer les transferts sur de longues distances."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser un point de terminaison S3 Transfer Acceleration",
+        "explanation": "Le transfert peut passer par un point de présence proche et par le réseau AWS."
+      },
+      {
+        "id": "D",
+        "text": "Configurer S3 Cross-Region Replication vers la destination",
+        "explanation": "Cette fonction réplique les objets après leur réception par S3 et n’améliore pas le chemin du téléversement initial."
+      },
+      {
+        "id": "E",
+        "text": "Utiliser le téléversement partitionné S3 et réessayer les parties individuellement",
+        "explanation": "Seules les parties en échec doivent être renvoyées, et les parties peuvent être transférées en parallèle."
+      }
+    ],
+    "correct": [
+      "C",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Transfer Acceleration peut utiliser un chemin de transfert passant par un point de présence proche et le réseau AWS. Le téléversement partitionné permet de renvoyer uniquement les parties en échec et de les transférer en parallèle.",
+      "concept": "Transfer Acceleration fournit un chemin passant par des points de présence. Avec le téléversement partitionné, gérez l’UploadId et le résultat de chaque partie, réessayez uniquement les parties en échec, puis terminez le téléversement.",
+      "check": {
+        "prompt": "Transfer Acceleration seul permet-il de reprendre un PUT unique là où il s’est interrompu ?",
+        "answer": "Non. Il améliore le chemin de transfert ; le téléversement partitionné est nécessaire pour limiter la quantité de données à renvoyer."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-06",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Mise à l’échelle en lecture d’Aurora",
+    "prompt": "La charge de lecture sur le nœud d’écriture Aurora a augmenté, ce qui ralentit les écritures de commandes. Vous souhaitez délester la charge de lecture de l’application vers plusieurs réplicas, dans la limite acceptable du retard des réplicas de lecture. Le nombre de réplicas doit augmenter ou diminuer automatiquement en fonction de la charge.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Déployer Aurora Global Database et changer la région d’écriture",
+        "explanation": "Ce n’est pas son objectif principal pour répartir dynamiquement les lectures au sein d’une même région."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser Aurora Auto Scaling pour ajuster le nombre de réplicas de lecture et utiliser le point de terminaison du lecteur pour les connexions de lecture",
+        "explanation": "Le point de terminaison du lecteur choisit les cibles des connexions, et la capacité de lecture peut être ajustée."
+      },
+      {
+        "id": "C",
+        "text": "Configurer tous les clients pour utiliser le point de terminaison de l’instance de lecteur",
+        "explanation": "Les nouvelles connexions ne peuvent pas être réparties vers les réplicas ajoutés par la suite."
+      },
+      {
+        "id": "D",
+        "text": "Mettre en pool les connexions SQL au nœud d’écriture avec RDS Proxy et envoyer toutes les requêtes SQL à ce nœud",
+        "explanation": "Cette option réduit la charge de gestion des connexions, mais la charge d’exécution des requêtes reste sur le nœud d’écriture et le nombre de réplicas n’est pas ajusté automatiquement."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Le point de terminaison du lecteur choisit les cibles des connexions, tandis que le nombre de réplicas de lecture peut être ajusté selon la demande.",
+      "concept": "Aurora Auto Scaling ajuste le nombre de réplicas de lecture. Le point de terminaison du lecteur répartit les nouvelles connexions ; une connexion de longue durée unique ne répartit donc pas les requêtes SQL entre les réplicas.",
+      "check": {
+        "prompt": "Pourquoi les requêtes de rapports peuvent-elles se concentrer sur un seul réplica alors qu’il y en a quatre ?",
+        "answer": "Le pool de connexions des rapports peut réutiliser la même connexion. Vérifiez la durée de vie et le nombre de connexions."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-07",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Mise en cache pour une API fortement sollicitée et fréquemment mise à jour",
+    "prompt": "L’API de détails des produits reçoit un grand nombre de lectures concentrées sur le même SKU. Un bref décalage après une mise à jour du prix est acceptable, et la base de données est consultée en cas de cache manqué. L’architecture doit préserver les mises à jour de la base de données même si le cache est perdu lors d’une panne.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser le modèle cache-aside avec ElastiCache, conserver la base de données comme source durable de vérité et configurer un TTL ou l’invalidation lors des mises à jour",
+        "explanation": "Valider les mises à jour dans la base de données et servir les lectures répétées depuis le cache."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser uniquement le cache comme source durable de vérité pour les prix, sans écrire dans la base de données",
+        "explanation": "La persistance des mises à jour des prix ne peut pas être garantie en cas de perte du cache."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser un cache local sur chaque instance EC2 sans expiration",
+        "explanation": "Les mises à jour ne sont pas propagées aux autres nœuds ; la contrainte de bref décalage ne peut donc pas être respectée."
+      },
+      {
+        "id": "D",
+        "text": "Réexporter tous les SKU vers S3 par lot à chaque lecture",
+        "explanation": "Cela entraîne un surcroît important de traitement pour les lectures répétées du même SKU."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Valider les mises à jour dans la base de données et servir les lectures répétées depuis le cache.",
+      "concept": "Avec le modèle cache-aside, un cache manqué entraîne une lecture de la base de données, puis le résultat est placé dans le cache. Un TTL court ou l’invalidation lors d’une mise à jour permet de gérer la fraîcheur des données ; la surcharge de la base de données en cas de panne du cache doit être traitée séparément.",
+      "check": {
+        "prompt": "Quel risque présente une architecture qui conserve la dernière valeur uniquement dans le cache avant de l’écrire plus tard dans la base de données ?",
+        "answer": "Une panne avant l’écriture peut faire perdre une mise à jour qui semblait avoir été validée."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-08",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Lectures isolées dans Kinesis",
+    "prompt": "Cinq consommateurs Kinesis lisent le même shard. Le consommateur existant de détection en temps réel ne doit pas être affecté par les lectures intensives d’un autre consommateur. L’affectation des shards côté producteur ne peut pas être modifiée.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Prolonger uniquement la période de conservation des enregistrements",
+        "explanation": "Cela ne résout pas le partage du débit de lecture."
+      },
+      {
+        "id": "B",
+        "text": "Faire écrire cinq fois le même événement par le producteur",
+        "explanation": "La charge d’écriture augmente, mais les consommateurs partagent toujours la capacité de lecture du même shard."
+      },
+      {
+        "id": "C",
+        "text": "Enregistrer le consommateur de détection avec Enhanced Fan-Out",
+        "explanation": "Un consommateur enregistré dispose d’un débit de lecture dédié pour chaque shard."
+      },
+      {
+        "id": "D",
+        "text": "Allonger l’intervalle de mise à jour des points de contrôle de tous les consommateurs",
+        "explanation": "Cela ne permet pas d’isoler la bande passante de lecture."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Un consommateur enregistré dispose d’un débit de lecture dédié pour chaque shard.",
+      "concept": "Les consommateurs enregistrés avec Enhanced Fan-Out utilisent un débit de lecture dédié pour chaque shard. Modifier la période de conservation n’augmente pas la capacité de lecture.",
+      "check": {
+        "prompt": "Prolonger la période de conservation pour effectuer un backfill isolerait-il la bande passante du consommateur de détection ?",
+        "answer": "Non. La conservation détermine pendant combien de temps les données peuvent être relues ; Enhanced Fan-Out sépare la capacité de lecture."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-09",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Latence d’initialisation de Lambda",
+    "prompt": "Une API de production utilise un alias d’une fonction Lambda en Java. La période de pointe est connue à l’avance et un certain nombre d’environnements d’exécution initialisés doivent être disponibles au début de cette période.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Configurer uniquement Reserved Concurrency",
+        "explanation": "Cette capacité réserve ou limite la concurrence, mais ne garantit pas que les environnements d’exécution sont initialisés."
+      },
+      {
+        "id": "B",
+        "text": "Augmenter le délai d’expiration de la fonction",
+        "explanation": "Cela ne supprime pas la latence d’initialisation des requêtes."
+      },
+      {
+        "id": "C",
+        "text": "Ajouter des URL de fonction et supprimer les allocations par alias",
+        "explanation": "L’ajout de points de terminaison n’initialise pas les environnements d’exécution à l’avance."
+      },
+      {
+        "id": "D",
+        "text": "Planifier Provisioned Concurrency pour l’alias, avec un démarrage peu avant la pointe",
+        "explanation": "Le nombre spécifié d’environnements initialisés peut être prêt à l’heure planifiée."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Le nombre spécifié d’environnements initialisés peut être prêt à l’heure planifiée.",
+      "concept": "Reserved Concurrency réserve ou limite la concurrence. Provisioned Concurrency réserve des environnements initialisés pour une version ou un alias spécifique et entraîne des frais pendant toute la période de réservation, même en l’absence d’utilisation.",
+      "check": {
+        "prompt": "Définir Reserved Concurrency sur 200 élimine-t-il les démarrages à froid ?",
+        "answer": "Non. Cela réserve seulement une capacité de concurrence et ne garantit pas que les environnements sont initialisés."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-10",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Augmenter la capacité avant l’arrivée du trafic",
+    "prompt": "Une application EC2 Auto Scaling subit une faible charge chaque jour jusqu’à peu avant midi, puis un pic prévisible à midi exactement. Les nouvelles instances mettent 8 minutes à commencer à traiter les requêtes. L’objectif est de réduire au minimum l’accumulation initiale dans la file d’attente.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Créer une action planifiée pour augmenter la capacité nécessaire suffisamment à l’avance",
+        "explanation": "L’initialisation peut se terminer avant l’arrivée du trafic."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser la mise à l’échelle dynamique habituelle après le dépassement du seuil du processeur à midi",
+        "explanation": "La capacité n’augmente qu’après le délai de démarrage des instances."
+      },
+      {
+        "id": "C",
+        "text": "Définir uniquement la période de warmup des instances à 8 minutes",
+        "explanation": "Cela ajuste l’évaluation des métriques après le lancement de nouvelles instances, mais ne planifie pas leur démarrage à l’avance."
+      },
+      {
+        "id": "D",
+        "text": "Effectuer des contrôles d’état à des intervalles plus courts que le temps de démarrage des instances",
+        "explanation": "Cela n’augmente pas à l’avance la capacité disponible."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "L’initialisation peut se terminer avant l’arrivée du trafic.",
+      "concept": "Une action planifiée modifie la capacité à une heure donnée. La période de warmup influe sur la manière dont les métriques des nouvelles instances sont traitées, mais elle ne les démarre pas plus tôt.",
+      "check": {
+        "prompt": "Que faire si l’heure de début est inconnue, mais qu’une demande cyclique à long terme a été observée ?",
+        "answer": "La mise à l’échelle prédictive peut être envisagée si les données sont suffisantes. Une planification horaire convient à un événement ponctuel connu."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-11",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Réduire le volume lu par les requêtes analytiques",
+    "prompt": "Avec Athena, lisez uniquement certaines colonnes des journaux JSON de la dernière journée stockés dans Amazon S3. Il n’est pas nécessaire de récupérer tous les champs de chaque enregistrement. Choisissez les modifications qui réduisent le volume analysé et la durée d’exécution des requêtes.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Regrouper tous les journaux dans un seul fichier JSON compressé avec gzip",
+        "explanation": "Cette solution ne convient ni à la sélection de colonnes ni à l’exclusion de données par date."
+      },
+      {
+        "id": "B",
+        "text": "Convertir les journaux au format Parquet",
+        "explanation": "Un format en colonnes permet à Athena d’analyser principalement les colonnes nécessaires."
+      },
+      {
+        "id": "C",
+        "text": "Omettre la clause WHERE dans chaque requête",
+        "explanation": "Cela empêche d’exclure des données en fonction de la date."
+      },
+      {
+        "id": "D",
+        "text": "Partitionner les journaux par date et filtrer sur la clé de date dans la requête",
+        "explanation": "Seule la partition de la date concernée doit être analysée."
+      },
+      {
+        "id": "E",
+        "text": "Répliquer les données S3 concernées à l’aide de Versioning",
+        "explanation": "La gestion des versions ne réduit pas le volume lu par Athena."
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Un format en colonnes permet à Athena d’analyser principalement les colonnes nécessaires. Seule la partition de la date concernée doit être analysée.",
+      "concept": "Dans Athena, inclure une partition de date dans la condition de requête limite le volume analysé. Le format en colonnes de Parquet réduit la lecture des colonnes inutiles.",
+      "check": {
+        "prompt": "Le simple fait de compresser du JSON avec gzip permet-il à Athena de lire physiquement uniquement les colonnes nécessaires ?",
+        "answer": "Non. La compression réduit l’espace de stockage, tandis qu’un format en colonnes permet d’ignorer certaines colonnes."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-12",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Point d’entrée TCP mondial",
+    "prompt": "Une application TCP personnalisée s’exécute dans deux Régions. Le pare-feu d’un partenaire autorise les connexions vers un petit nombre d’adresses IPv4 fixes, et vous ne souhaitez pas que le basculement en cas de panne d’une Région dépende du cache DNS.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Publier un NLB uniquement à l’aide d’un enregistrement Route 53 à TTL faible",
+        "explanation": "Cette solution dépend des caches DNS des clients et ne fournit pas d’adresse IP d’entrée fixe et commune."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser un groupe d’origine CloudFront",
+        "explanation": "CloudFront ne sert pas de relais transparent pour du trafic TCP personnalisé arbitraire."
+      },
+      {
+        "id": "C",
+        "text": "Configurer les NLB des deux Régions comme points de terminaison dans Global Accelerator",
+        "explanation": "Global Accelerator reçoit le trafic sur des adresses IP Anycast fixes et peut acheminer le trafic TCP vers des points de terminaison sains."
+      },
+      {
+        "id": "D",
+        "text": "Configurer en dur un EIP propre à chaque Région sur chaque client",
+        "explanation": "Aucun point d’entrée commun ne permet alors le basculement entre les Régions."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Global Accelerator reçoit le trafic sur des adresses IP Anycast fixes et peut acheminer le trafic TCP vers des points de terminaison sains.",
+      "concept": "Global Accelerator reçoit le trafic sur des adresses IP Anycast fixes et le transfère en TCP vers des points de terminaison sains, tels que des NLB dans les Régions opérationnelles. Il ne garantit pas le transfert des connexions existantes sans interruption en cas de panne.",
+      "check": {
+        "prompt": "Un TTL Route 53 plus faible fournit-il un point d’entrée fixe équivalent ?",
+        "answer": "Non. Cela dépend d’une nouvelle résolution DNS par les clients et ne fournit pas de point d’entrée Anycast fixe commun."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-13",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Compatibilité SMB",
+    "prompt": "Une application métier exécutée sur des instances Windows EC2 accède à des fichiers partagés. SMB, les groupes Active Directory existants et les ACL Windows sont obligatoires, et un basculement doit avoir lieu en cas de panne d’une AZ.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Déployer Amazon FSx for Windows File Server en configuration Multi-AZ et le joindre à Active Directory",
+        "explanation": "Le service peut rester disponible entre AZ tout en utilisant SMB et les ACL Windows."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser directement Amazon EFS Regional comme partage SMB pour les clients Windows",
+        "explanation": "EFS est un service NFS et ne répond pas aux exigences existantes de SMB et des ACL Windows."
+      },
+      {
+        "id": "C",
+        "text": "Configurer directement S3 comme chemin UNC",
+        "explanation": "Une application métier ne peut pas utiliser l’API objet de S3 comme SMB."
+      },
+      {
+        "id": "D",
+        "text": "Exposer SMB sur une seule instance Windows EC2 et ne répliquer que les snapshots EBS",
+        "explanation": "Cette solution ne fournit pas de basculement Multi-AZ géré en cas de panne."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Le service peut rester disponible entre AZ tout en utilisant SMB et les ACL Windows.",
+      "concept": "FSx for Windows File Server prend en charge les ACL Windows. En configuration Multi-AZ, il bascule vers un serveur de fichiers en attente dans une autre AZ.",
+      "check": {
+        "prompt": "Une sauvegarde Single-AZ offre-t-elle le même résultat ?",
+        "answer": "Elle permet de récupérer les données, mais ne remplace pas un basculement automatique : il faut restaurer les données dans un nouvel environnement."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-14",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Espace de travail temporaire pour le HPC",
+    "prompt": "Des centaines de nœuds de calcul Linux doivent lire et écrire en parallèle des fichiers de travail partagés tout en utilisant des données de référence dans S3. Un débit parallèle élevé est indispensable, et les résultats doivent être renvoyés dans S3 après le traitement. La gestion des transferts de fichiers doit également être assurée par une fonctionnalité gérée.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Répartir les résultats sur le stockage d’instance de chaque nœud et les traiter comme des fichiers partagés",
+        "explanation": "Les disques locaux individuels ne fournissent pas d’espace de noms partagé."
+      },
+      {
+        "id": "B",
+        "text": "Associer FSx for Lustre à un référentiel de données S3",
+        "explanation": "Cette solution fournit un système de fichiers parallèle pour le HPC et une intégration avec un référentiel de données."
+      },
+      {
+        "id": "C",
+        "text": "Monter EFS Regional et utiliser l’AWS CLI sur chaque nœud pour synchroniser dans les deux sens avec S3",
+        "explanation": "Cette solution fournit un stockage POSIX partagé, mais ne réunit pas Lustre, adapté aux E/S parallèles élevées, et l’intégration native à un référentiel de données S3."
+      },
+      {
+        "id": "D",
+        "text": "Connecter le volume EBS d’une seule instance EC2 comme périphérique local sur tous les nœuds",
+        "explanation": "Cela ne fournit pas un système de fichiers partagé pour le HPC sur de nombreux nœuds."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette solution fournit un système de fichiers parallèle pour le HPC et une intégration avec un référentiel de données.",
+      "concept": "FSx for Lustre est conçu pour les E/S parallèles. Son association à un référentiel de données S3 permet de gérer les importations et les exportations entre les objets S3 et le système de fichiers.",
+      "check": {
+        "prompt": "Chaque nœud peut-il copier les données depuis S3 indépendamment pour obtenir la même architecture ?",
+        "answer": "Non. Il n’y aurait pas d’espace de noms partagé et la synchronisation de chaque nœud serait à gérer séparément."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-15",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Modèles de requête dans DynamoDB",
+    "prompt": "La clé primaire de DynamoDB est l’ID de commande. Le personnel chargé des livraisons recherche fréquemment des commandes par ID d’entrepôt et par plage de dates limites d’expédition. La clé primaire existante doit être conservée et la cohérence éventuelle est acceptable. Quelle approche évite un balayage complet de la table ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Ajouter un FilterExpression pour l’ID d’entrepôt et la date limite à un Scan",
+        "explanation": "Le filtre est appliqué après la lecture des éléments ; le balayage reste donc nécessaire."
+      },
+      {
+        "id": "B",
+        "text": "Créer un LSI qui conserve l’ID de commande comme clé de partition et utilise uniquement l’ID d’entrepôt comme clé de tri",
+        "explanation": "Une requête sur un LSI exige toujours de spécifier l’ID de commande."
+      },
+      {
+        "id": "C",
+        "text": "Déplacer le Scan vers DAX et ne créer aucun index",
+        "explanation": "La mise en cache ne fournit pas une structure de clés adaptée aux critères de recherche."
+      },
+      {
+        "id": "D",
+        "text": "Créer un GSI avec l’ID d’entrepôt comme clé de partition et la date limite d’expédition comme clé de tri, puis utiliser Query",
+        "explanation": "Cette approche recherche directement la plage nécessaire selon l’entrepôt et la date limite."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette approche recherche directement la plage nécessaire selon l’entrepôt et la date limite.",
+      "concept": "Un GSI peut utiliser une clé de partition différente de celle de la table de base. Utilisez Query avec l’ID d’entrepôt et la date limite. Un filtre est appliqué après la lecture des éléments.",
+      "check": {
+        "prompt": "Que se passe-t-il si vous ajoutez un filtre sur la date limite à un GSI dont la seule clé est l’ID d’entrepôt ?",
+        "answer": "Vous évitez Scan, mais les éléments de cet entrepôt hors de la plage de dates limites sont quand même lus avant d’être exclus."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-performance-16",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Efficacité du cache CloudFront",
+    "prompt": "Un paramètre de requête version ne change que lorsque le contenu de l’image change. Les paramètres utm d’analyse ont de nombreuses valeurs, mais n’ont aucune incidence sur le contenu de l’image. Vous souhaitez distinguer les anciennes et les nouvelles versions tout en améliorant le taux de succès du cache.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Appliquer une politique de cache qui inclut uniquement version dans la clé de cache",
+        "explanation": "La séparation repose uniquement sur le paramètre qui modifie le contenu ; les requêtes avec des valeurs utm différentes peuvent donc utiliser la même entrée de cache."
+      },
+      {
+        "id": "B",
+        "text": "Inclure tous les paramètres de requête dans la clé de cache",
+        "explanation": "Les différences de valeurs utm répartissent la même image entre plusieurs entrées."
+      },
+      {
+        "id": "C",
+        "text": "N’inclure aucun paramètre de requête et définir un TTL long",
+        "explanation": "Les anciennes et les nouvelles versions du même chemin auraient la même clé de cache."
+      },
+      {
+        "id": "D",
+        "text": "Désactiver la mise en cache pour toutes les requêtes",
+        "explanation": "Les versions peuvent être récupérées, mais cette solution ne répond pas à l’exigence d’améliorer le taux de succès du cache."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La séparation repose uniquement sur le paramètre qui modifie le contenu ; les requêtes avec des valeurs utm différentes peuvent donc utiliser la même entrée de cache.",
+      "concept": "Les valeurs incluses dans la clé de cache et celles transmises à l’origine peuvent être configurées séparément. Les paramètres de requête inclus dans la clé de cache sont également transmis à l’origine.",
+      "check": {
+        "prompt": "Que se passe-t-il si version est transmis à l’origine, mais n’est pas inclus dans la clé de cache ?",
+        "answer": "La réponse peut être correcte en cas d’échec du cache, mais une réponse correspondant à une autre version peut être renvoyée depuis le cache existant."
+      }
+    },
+    "categoryLabel": "Performances",
+    "examDomainLabel": "Performances",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-01",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Accès imprévisible aux données dans S3",
+    "prompt": "Les ressources vidéo à stocker font au moins 4 MiB. La fréquence d’accès varie considérablement selon les projets ; déplacer les objets vers un niveau d’accès peu fréquent après un nombre fixe de jours rend les frais de récupération imprévisibles. Toutes les ressources doivent pouvoir être récupérées en quelques millisecondes à tout moment.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Déplacer systématiquement les objets vers Standard-IA 30 jours après leur création et les récupérer comme d’habitude",
+        "explanation": "Les variations d’accès peuvent entraîner des frais de récupération."
+      },
+      {
+        "id": "B",
+        "text": "Déplacer les objets vers S3 Glacier Deep Archive immédiatement après leur création et les restaurer au besoin",
+        "explanation": "Cette solution ne répond pas à l’exigence de lecture immédiate."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser S3 Intelligent-Tiering sans activer les niveaux d’archivage asynchrones facultatifs",
+        "explanation": "Les objets sont déplacés entre les niveaux selon les habitudes d’accès, tout en conservant un accès en quelques millisecondes sans frais de récupération."
+      },
+      {
+        "id": "D",
+        "text": "Déplacer toutes les données utilisées pour des projets spécifiques vers One Zone-IA",
+        "explanation": "Un niveau fixe d’accès peu fréquent ne s’adapte pas aux variations des habitudes d’accès et entraîne aussi des frais de récupération."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Les objets sont déplacés entre les niveaux selon les habitudes d’accès, tout en conservant un accès en quelques millisecondes sans frais de récupération.",
+      "concept": "S3 Intelligent-Tiering déplace les objets entre les niveaux en fonction des habitudes d’accès. Des frais de surveillance et d’automatisation s’appliquent. Les objets des niveaux d’archivage asynchrones facultatifs doivent être restaurés avant récupération.",
+      "check": {
+        "prompt": "Peut-on activer Deep Archive Access tout en conservant une récupération immédiate ?",
+        "answer": "Non. Les objets transférés vers ce niveau doivent d’abord être restaurés ; ne l’activez donc pas si cette exigence s’applique."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-02",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Coûts d’EC2 et de Fargate",
+    "prompt": "Vous souhaitez continuer à couvrir l’utilisation minimale d’EC2 avec une remise fondée sur un engagement. Une partie des charges de travail doit migrer vers Fargate dans les six prochains mois, et la famille d’instances EC2 doit également changer. Limitez l’engagement à la dépense minimale prévisible.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Acheter des EC2 Instance Savings Plans pour la famille actuelle",
+        "explanation": "Ils ne couvrent ni les changements au-delà du périmètre de cette famille ni Fargate."
+      },
+      {
+        "id": "B",
+        "text": "Acheter des Compute Savings Plans uniquement à hauteur de la dépense minimale",
+        "explanation": "Ils s’adaptent aux changements d’utilisation EC2 éligibles et s’appliquent aussi à Fargate."
+      },
+      {
+        "id": "C",
+        "text": "Acheter des Reserved Instances zonales pour l’utilisation EC2 actuelle à hauteur de la capacité maximale",
+        "explanation": "Elles ne suivent pas la migration vers Fargate et l’engagement dépasse l’utilisation minimale."
+      },
+      {
+        "id": "D",
+        "text": "Créer une On-Demand Capacity Reservation pour la capacité minimale",
+        "explanation": "Elle réserve de la capacité, mais ne fournit pas à elle seule de remise à long terme."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Ils s’adaptent aux changements d’utilisation EC2 éligibles et s’appliquent aussi à Fargate.",
+      "concept": "Compute Savings Plans impliquent un engagement de dépense horaire et peuvent s’appliquer à l’utilisation éligible d’EC2, de Fargate et de Lambda. Les EC2 Instance Savings Plans ont un périmètre plus restreint.",
+      "check": {
+        "prompt": "Pourquoi s’engager sur l’utilisation minimale stable plutôt que sur la pointe ?",
+        "answer": "Vous payez aussi la part d’engagement inutilisée. Si vous vous engagez sur la part variable, une partie risque de rester inutilisée lorsque la demande baisse."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-03",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Exécuter des traitements par lots en toute sécurité avec Spot",
+    "prompt": "Le traitement nocturne peut enregistrer des points de reprise dans S3 et respecter le délai acceptable même s’il est interrompu. Vous souhaitez utiliser la capacité excédentaire d’EC2 à tarif réduit tout en évitant qu’un manque de capacité pour un seul type d’instance n’interrompe l’ensemble du traitement.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Configurer plusieurs familles d’instances et plusieurs zones de disponibilité comme options de capacité Spot",
+        "explanation": "Cela augmente le nombre de pools Spot disponibles et réduit la dépendance à un pool donné."
+      },
+      {
+        "id": "B",
+        "text": "Limiter Spot à un seul type d’instance dans une seule zone de disponibilité",
+        "explanation": "Le traitement dépend alors d’un seul pool de capacité."
+      },
+      {
+        "id": "C",
+        "text": "Enregistrer les points de reprise uniquement sur le stockage temporaire de l’instance",
+        "explanation": "Après l’interruption d’une instance, une autre instance ne peut pas y accéder."
+      },
+      {
+        "id": "D",
+        "text": "Utiliser une stratégie d’allocation Spot qui tient compte du prix et de la capacité, puis reprendre le traitement à partir de points de reprise persistants",
+        "explanation": "Cela réduit le risque d’interruption et permet de reprendre le traitement sur une autre instance."
+      },
+      {
+        "id": "E",
+        "text": "Acheter des EC2 Instance Savings Plans et les appliquer aux frais Spot",
+        "explanation": "Les Savings Plans ne s’appliquent pas aux frais d’utilisation de Spot."
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cela augmente le nombre de pools Spot disponibles et réduit la dépendance à un pool donné. Cela réduit également le risque d’interruption et permet de reprendre le traitement sur une autre instance.",
+      "concept": "Un pool Spot associe un type d’instance et une zone de disponibilité. Utilisez des options de capacité de remplacement et une stratégie d’allocation qui tient compte du prix et de la capacité. Les points de reprise permettent de reprendre la charge de travail après une interruption.",
+      "check": {
+        "prompt": "Des points de reprise persistants peuvent-ils empêcher les interruptions Spot elles-mêmes ?",
+        "answer": "Non. Ils aident à limiter le travail perdu et à reprendre le traitement sur une autre capacité après une interruption."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-04",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Éviter les frais de traitement NAT inutiles",
+    "prompt": "Une instance EC2 privée transfère chaque jour plusieurs To vers S3 dans la même Région. Elle utilise également la même passerelle NAT pour accéder à des API externes ; il n’est donc pas possible de supprimer cette passerelle NAT. Vous souhaitez éliminer les frais de traitement NAT attribuables aux transferts S3. L’accès se fait depuis le même VPC, et vous souhaitez également éviter de nouveaux frais de traitement des points de terminaison.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Acheminer tout le trafic via un point de terminaison d’interface S3",
+        "explanation": "Cela évite NAT, mais les points de terminaison d’interface entraînent des frais horaires et des frais de traitement des données. Pour un accès depuis le même VPC, un point de terminaison de passerelle gratuit coûte moins cher."
+      },
+      {
+        "id": "B",
+        "text": "Ajouter plusieurs adresses Elastic IP à la passerelle NAT",
+        "explanation": "Cela peut atténuer les limites de connexions, mais le trafic S3 continuera de passer par NAT et d’entraîner des frais de traitement."
+      },
+      {
+        "id": "C",
+        "text": "Ajouter un point de terminaison de passerelle S3 à la table de routage utilisée par EC2",
+        "explanation": "Seul le trafic destiné au préfixe S3 est détourné de NAT ; les appels aux API externes peuvent continuer à utiliser NAT."
+      },
+      {
+        "id": "D",
+        "text": "Utiliser une distribution CloudFront comme destination des téléversements",
+        "explanation": "Cela ne résout pas le problème du trafic de l’instance EC2 privée vers le point de présence public qui passe par NAT."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Seul le trafic destiné au préfixe S3 est détourné de NAT ; les appels aux API externes peuvent continuer à utiliser NAT.",
+      "concept": "Pour un point de terminaison de passerelle S3 dans la même Région, ajoutez une route pour le préfixe de destination S3. Les points de terminaison de passerelle n’entraînent pas de frais horaires ni de frais de traitement des données.",
+      "check": {
+        "prompt": "Peut-on supprimer NAT après avoir modifié la route vers S3 ?",
+        "answer": "Non. Dans ces conditions, les appels aux API externes continuent d’utiliser NAT."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-05",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Dissocier capacité et performances EBS",
+    "prompt": "Vous utilisez un volume gp2 de 2 TiB, mais les données occupent 800 GiB. Vous avez choisi une capacité plus importante pour obtenir 6 000 IOPS. Vous souhaitez conserver les performances requises tout en réduisant le coût de la capacité inutilisée.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser ModifyVolume sur le volume gp2 existant pour réduire uniquement sa taille à 1 TiB",
+        "explanation": "EBS ne permet pas de réduire ainsi la taille d’un volume existant, et les IOPS de base de gp2 dépendent également de sa capacité."
+      },
+      {
+        "id": "B",
+        "text": "Créer un volume gp3 plus petit avec les IOPS et le débit requis, migrer les données, puis basculer vers ce volume",
+        "explanation": "Avec gp3, la capacité et les performances peuvent être configurées indépendamment."
+      },
+      {
+        "id": "C",
+        "text": "Restaurer directement l’instantané existant sur un volume gp3 de 1 TiB",
+        "explanation": "Un instantané ne peut pas être restauré directement sur un volume plus petit que le volume d’origine."
+      },
+      {
+        "id": "D",
+        "text": "Passer le volume à st1 et utiliser les performances en rafale pour les E/S aléatoires",
+        "explanation": "st1 ne convient pas aux besoins soutenus en E/S aléatoires à IOPS élevées."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Avec gp3, la capacité et les performances peuvent être configurées indépendamment.",
+      "concept": "Avec gp3, les performances peuvent être spécifiées indépendamment de la capacité. Il est impossible de réduire un volume EBS existant, et un instantané ne peut pas être restauré directement sur un volume plus petit que l’original.",
+      "check": {
+        "prompt": "Un simple changement sur place de gp2 vers gp3 permet-il de diviser par deux les frais de capacité ?",
+        "answer": "Non. La capacité reste identique. Il faut migrer les données vers un nouveau volume plus petit."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-06",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Coût du stockage des journaux à long terme",
+    "prompt": "Les journaux d’audit sont consultés fréquemment pendant les 30 premiers jours, puis environ une fois par an. À partir du 31e jour, un délai de récupération de 48 heures est acceptable, et ils doivent être conservés pendant 7 ans. Les objets font au moins plusieurs MiB.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser S3 Standard pendant toute la période de conservation",
+        "explanation": "Cette classe coûte plus que nécessaire pour un stockage à long terme rarement consulté."
+      },
+      {
+        "id": "B",
+        "text": "Passer à S3 Standard-IA après 30 jours et conserver les journaux dans cette classe",
+        "explanation": "Un accès en quelques millisecondes n’est pas nécessaire, et une classe d’archivage moins coûteuse est disponible pour la longue période de conservation."
+      },
+      {
+        "id": "C",
+        "text": "Passer à S3 Glacier Deep Archive dès la création",
+        "explanation": "Cette classe ne convient pas aux lectures fréquentes des 30 premiers jours."
+      },
+      {
+        "id": "D",
+        "text": "Passer de S3 Standard à S3 Glacier Deep Archive après 30 jours",
+        "explanation": "Cette transition préserve l’accès immédiat au début, puis offre un tarif de stockage plus faible avec un délai de récupération de 48 heures."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette transition préserve l’accès immédiat au début, puis offre un tarif de stockage plus faible avec un délai de récupération de 48 heures.",
+      "concept": "Un objet S3 Glacier Deep Archive doit être restauré avant une requête GET normale. Les délais habituels varient selon l’option de récupération ; la récupération Bulk prend généralement jusqu’à 48 heures.",
+      "check": {
+        "prompt": "Que faire si les journaux doivent aussi être récupérables immédiatement après le 30e jour ?",
+        "answer": "Deep Archive ne convient pas. Comparez les frais de stockage et de récupération des classes permettant un accès immédiat."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-07",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Trafic irrégulier dans DynamoDB",
+    "prompt": "Un nouveau service utilisant DynamoDB connaît parfois de brèves pointes de trafic, mais reçoit très peu de requêtes la plupart du temps. Il est impossible de prévoir les pics à l’avance ou d’ajuster la capacité manuellement. On suppose que le taux d’augmentation reste dans la plage de mise à l’échelle à la demande.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Utiliser le mode de capacité à la demande",
+        "explanation": "La facturation se fait par requête, et ce mode s’adapte aux variations de la demande sans capacité préallouée."
+      },
+      {
+        "id": "B",
+        "text": "Toujours provisionner une capacité correspondant au pic",
+        "explanation": "La capacité provisionnée est facturée même pendant les périodes creuses."
+      },
+      {
+        "id": "C",
+        "text": "Définir une faible capacité provisionnée et un long délai avant la mise à l’échelle",
+        "explanation": "Le throttling est alors plus probable au début d’une pointe soudaine."
+      },
+      {
+        "id": "D",
+        "text": "Remplacer la table par DAX",
+        "explanation": "DAX ne remplace pas le stockage persistant de DynamoDB et entraîne des frais de cluster distincts."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La facturation se fait par requête, et ce mode s’adapte aux variations de la demande sans capacité préallouée.",
+      "concept": "Le mode à la demande de DynamoDB facture selon le volume de requêtes. Un trafic hors de sa plage de mise à l’échelle peut tout de même être limité, par exemple lors d’une hausse soudaine très supérieure au pic précédent.",
+      "check": {
+        "prompt": "Le passage au mode à la demande permet-il d’absorber sans limite toute hausse, quelle que soit son ampleur ?",
+        "answer": "Non. Il faut vérifier le pic précédent, les quotas, la distribution des clés et d’autres facteurs."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Domaine d’examen : optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (plan du contenu de l’examen)"
+  },
+  {
+    "id": "mock-cost-08",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Requêtes et conservation des journaux",
+    "prompt": "Les journaux utilisés pour l’analyse des incidents s’accumulent indéfiniment dans CloudWatch Logs. La recherche immédiate ne concerne que les 14 derniers jours. La réglementation impose une conservation d’un an, mais les journaux plus anciens ne sont consultés que quelques fois par an, et le chemin d’ingestion ne doit pas changer.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Définir uniquement à 14 jours la période de conservation de CloudWatch Logs",
+        "explanation": "Sans archive distincte, les données historiques exigées par la réglementation seraient également perdues."
+      },
+      {
+        "id": "B",
+        "text": "Acheminer en continu les journaux nécessaires vers S3 et transférer les anciens journaux vers un niveau de stockage moins coûteux",
+        "explanation": "Cette approche sépare le stockage des journaux pour la période où la recherche immédiate n’est pas nécessaire."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser largement CloudWatch Logs Insights pour réduire les frais de stockage",
+        "explanation": "L’exécution de requêtes ne modifie ni la période de conservation ni le volume stocké."
+      },
+      {
+        "id": "D",
+        "text": "Remplacer la recherche immédiate des 14 derniers jours dans CloudWatch Logs par la seule restauration depuis Glacier",
+        "explanation": "Une restauration étant nécessaire, cette option ne répond pas au besoin de recherche immédiate au quotidien."
+      },
+      {
+        "id": "E",
+        "text": "Vérifier que les journaux existants ont été transférés vers S3, puis définir à 14 jours la période de conservation de CloudWatch Logs",
+        "explanation": "Cela réduit les coûts de stockage des journaux consultables immédiatement sans perdre l’historique à conserver pendant un an."
+      }
+    ],
+    "correct": [
+      "B",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette approche sépare le stockage des journaux pour la période où la recherche immédiate n’est pas nécessaire. Elle réduit les coûts de stockage des journaux consultables immédiatement sans perdre l’historique à conserver pendant un an.",
+      "concept": "Les abonnements permettent d’acheminer en continu les nouveaux journaux, tandis que l’exportation vers S3 peut servir à transférer les journaux existants. Avant de modifier la conservation, vérifiez que la transition ne comporte ni lacune ni doublon.",
+      "check": {
+        "prompt": "La création d’un abonnement maintenant transférera-t-elle aussi les journaux datant de six mois ?",
+        "answer": "Non. Il faut planifier séparément un transfert rétrospectif."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Domaine d’examen : optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (plan du contenu de l’examen)"
+  },
+  {
+    "id": "mock-cost-09",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Téléversements S3 incomplets",
+    "prompt": "Avec une connexion instable, des clients abandonnent des téléversements multipart avant leur achèvement. Le volume stocké dans S3 augmente donc de façon disproportionnée par rapport au nombre d’objets terminés. Les téléversements normaux s’achèvent en moins de 24 heures.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Faire expirer les objets actuels au bout de deux jours",
+        "explanation": "Ce paramètre s’applique aux objets terminés ; une règle dédiée doit être utilisée pour supprimer les parties incomplètes."
+      },
+      {
+        "id": "B",
+        "text": "Supprimer les marqueurs de suppression S3",
+        "explanation": "Les parties incomplètes ne sont pas liées aux marqueurs de suppression."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser une règle de cycle de vie pour interrompre les téléversements multipart incomplets démarrés depuis plus de deux jours",
+        "explanation": "Cette règle supprime les parties des anciens téléversements incomplets tout en laissant aux téléversements normaux le temps de s’achever."
+      },
+      {
+        "id": "D",
+        "text": "Configurer S3 Intelligent-Tiering pour déplacer les parties incomplètes",
+        "explanation": "Le passage des objets d’une classe de stockage à une autre ne permet pas de supprimer les parties incomplètes."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette règle supprime les parties des anciens téléversements incomplets tout en laissant aux téléversements normaux le temps de s’achever.",
+      "concept": "L’action de cycle de vie AbortIncompleteMultipartUpload interrompt les téléversements incomplets après le nombre de jours spécifié depuis leur démarrage. Elle est distincte de l’expiration des objets terminés.",
+      "check": {
+        "prompt": "Si un téléversement normal dure trois jours, peut-on l’interrompre sans risque au bout de deux jours ?",
+        "answer": "Les téléversements normaux risquent eux aussi d’être interrompus. Définissez un seuil supérieur à la durée nécessaire au traitement normal."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Domaine d’examen : optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (plan du contenu de l’examen)"
+  },
+  {
+    "id": "mock-cost-10",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Coûts liés à l’inactivité d’un environnement analytique",
+    "prompt": "De petites analyses SQL sont exécutées quelques fois par semaine. Les données sources sont au format Parquet dans S3, les requêtes utilisent le SQL standard et un délai de démarrage des tâches est acceptable. Il faut supprimer les coûts des serveurs toujours actifs et définir une limite de volume analysé pour chaque service.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Exécuter Presto en continu sur EC2 et le partager entre les services",
+        "explanation": "Même pour des traitements ponctuels, EC2 entraîne des coûts pendant les périodes d’inactivité."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser les requêtes à la demande d’Athena et définir un groupe de travail et une limite de volume analysé pour chaque service",
+        "explanation": "Cette solution évite de maintenir des serveurs provisionnés en permanence et contrôle le volume analysé par requête."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser en continu un cluster Redshift provisionné",
+        "explanation": "La capacité du cluster est facturée même lorsqu’il est inactif."
+      },
+      {
+        "id": "D",
+        "text": "Intégrer du SQL standard aux tâches AWS Glue Spark et utiliser un pool d’exécution commun aux services",
+        "explanation": "Cette solution peut éviter les coûts d’inactivité, mais une implémentation supplémentaire est nécessaire pour satisfaire l’exigence de limite de volume analysé équivalente à celle d’Athena."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Cette solution évite de maintenir des serveurs provisionnés en permanence et contrôle le volume analysé par requête.",
+      "concept": "Athena lit directement les données de S3 avec SQL. Pour les requêtes à la demande, le volume de données analysé est un facteur de coût majeur ; une limite par requête définie dans un groupe de travail peut interrompre les requêtes qui la dépassent.",
+      "check": {
+        "prompt": "Peut-on considérer la limite par requête d’un groupe de travail comme un plafond de dépenses mensuel pour un service ?",
+        "answer": "Non. Une limite par requête est distincte du suivi des coûts ou de l’utilisation cumulés sur le mois."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Domaine d’examen : optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (plan du contenu de l’examen)"
+  },
+  {
+    "id": "mock-cost-11",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Gestion des générations d’images",
+    "prompt": "Un grand nombre d’images sont envoyées vers ECR, une par commit. Les images de publication doivent être conservées pendant 90 jours pour permettre les retours arrière en production ; parmi les tags CI générés à chaque exécution, seuls les 10 plus récents doivent être conservés. Chaque image porte un seul tag indiquant son usage.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Supprimer automatiquement les anciennes images lors des analyses ECR",
+        "explanation": "L’analyse des images détecte les vulnérabilités, mais ne gère pas les générations d’images à conserver."
+      },
+      {
+        "id": "B",
+        "text": "Supprimer les images dès que le dépôt en contient plus de 10",
+        "explanation": "Cela pourrait compromettre involontairement la conservation des images de publication en production pendant 90 jours."
+      },
+      {
+        "id": "C",
+        "text": "Répliquer toutes les images CI et de publication dans des comptes distincts",
+        "explanation": "Cela ne répond pas aux exigences de conservation et consomme davantage de stockage."
+      },
+      {
+        "id": "D",
+        "text": "Créer une stratégie de cycle de vie ECR pour chaque préfixe de tag indiquant l’usage",
+        "explanation": "Les images CI peuvent être supprimées selon leur nombre, et les images de publication selon leur ancienneté."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Les images CI peuvent être supprimées selon leur nombre, et les images de publication selon leur ancienneté.",
+      "concept": "Les stratégies de cycle de vie ECR combinent des critères de tag avec un seuil de nombre ou d’ancienneté. Les règles ciblent les images ; si une image peut porter plusieurs tags, vérifiez également les résultats de l’évaluation.",
+      "check": {
+        "prompt": "Que se passe-t-il si les tags CI et de publication sont associés à la même image ?",
+        "answer": "L’hypothèse actuelle ne tient plus. Vérifiez à nouveau si l’image de publication est concernée, ainsi que la priorité des règles et les résultats de l’aperçu."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-12",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Conteneur de longue durée exécuté selon un calendrier",
+    "prompt": "Une charge de travail en conteneur s’exécute pendant deux heures, quelques fois par mois seulement. L’objectif est de ne pas gérer les hôtes et de ne payer les ressources de calcul que pendant l’exécution. Le démarrage doit avoir lieu à une heure fixe, et la récupération de capacité Spot pendant le traitement n’est pas acceptable.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Appeler ECS RunTask depuis EventBridge Scheduler et exécuter la tâche sur la capacité Fargate standard",
+        "explanation": "La tâche ne s’exécute qu’une fois lancée, aucun hôte n’est à gérer et la solution ne dépend pas de capacité Spot susceptible d’être récupérée."
+      },
+      {
+        "id": "B",
+        "text": "Exécuter le conteneur pendant deux heures dans une seule invocation Lambda",
+        "explanation": "Une invocation Lambda unique peut durer au maximum 15 minutes."
+      },
+      {
+        "id": "C",
+        "text": "Placer le conteneur sur une instance EC2 toujours active et le démarrer avec cron",
+        "explanation": "Les frais EC2 continuent pendant les périodes d’inactivité et la gestion de l’hôte reste nécessaire."
+      },
+      {
+        "id": "D",
+        "text": "Planifier une tâche Fargate Spot",
+        "explanation": "La récupération de capacité peut mettre fin à la tâche avant son achèvement."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La tâche ne s’exécute qu’une fois lancée, aucun hôte n’est à gérer et la solution ne dépend pas de capacité Spot susceptible d’être récupérée.",
+      "concept": "EventBridge Scheduler appelle ECS RunTask à l’heure spécifiée. Avec la capacité Fargate standard, il n’est pas nécessaire de gérer les instances EC2 sous-jacentes ni de maintenir en permanence un nombre minimal de tâches de service.",
+      "check": {
+        "prompt": "Le lancement réussi d’une tâche signifie-t-il qu’elle se terminera également avec succès ?",
+        "answer": "Non. Le traitement peut échouer même après l’acceptation de RunTask ; il faut donc observer l’état final de la tâche."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  },
+  {
+    "id": "mock-cost-13",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Réduire les frais NAT pour accéder à un service",
+    "prompt": "Des workers exécutés dans plusieurs sous-réseaux privés communiquent uniquement avec DynamoDB au sein d’AWS. La feuille de route ne prévoit pas non plus de connectivité externe, et le VPC traite plusieurs To. Les workers et la table se trouvent dans la même région AWS.",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Conserver une passerelle NAT publique et la déplacer dans la même AZ que les workers",
+        "explanation": "Cela peut réduire les frais inter-AZ, mais les frais horaires et de traitement des données de la NAT subsistent."
+      },
+      {
+        "id": "B",
+        "text": "Associer un point de terminaison de passerelle DynamoDB et supprimer les passerelles NAT sans autre usage",
+        "explanation": "La connectivité est maintenue tout en supprimant les frais NAT devenus inutiles."
+      },
+      {
+        "id": "C",
+        "text": "Créer DynamoDB Accelerator et rediriger vers DAX tous les accès passant par la NAT",
+        "explanation": "DAX ajoute des frais de nœud et ne vise pas à remplacer le chemin de toutes les opérations DynamoDB."
+      },
+      {
+        "id": "D",
+        "text": "Migrer le réseau vers des instances NAT",
+        "explanation": "Les frais d’instance et la charge opérationnelle subsistent ; cette solution est plus contraignante qu’un point de terminaison dédié au service qui répond aux exigences."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "La connectivité est maintenue tout en supprimant les frais NAT devenus inutiles.",
+      "concept": "Un point de terminaison de passerelle DynamoDB est associé aux tables de routage d’un VPC. Il n’est pas possible d’utiliser de manière transitive, via un TGW, le point de terminaison de passerelle d’un VPC partagé.",
+      "check": {
+        "prompt": "Que se passe-t-il si les passerelles NAT sont simplement déplacées dans les VPC des workers ?",
+        "answer": "Les frais TGW peuvent être évités, mais les frais de traitement NAT pour le trafic DynamoDB subsistent."
+      }
+    },
+    "categoryLabel": "Optimisation des coûts",
+    "examDomainLabel": "Optimisation des coûts",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "Guide officiel de l’examen AWS (périmètre de l’examen)"
+  }
+]

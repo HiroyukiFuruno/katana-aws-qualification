@@ -8,14 +8,19 @@ import {
   readHistory,
   resetHistory,
   saveAttempt,
-  statsFor,
 } from './history';
 import type { Message } from './messages';
 import { usePreferences } from './preferences';
 import { useLearningHistory } from './progress/useLearningHistory';
-import { type Question, questionKey } from './questions';
+import { questionKey, type Question } from './questions';
+import { randomizePracticeQuestions } from './randomization';
 
-export type PracticeSession = { questions: Question[]; index: number; correct: number };
+import {
+  localizePracticeSession,
+  practiceMetrics,
+  practiceQuestion,
+  type PracticeSession,
+} from './practiceSession';
 
 export function useCourseProgress(
   certificationId: string,
@@ -36,17 +41,12 @@ export function useCourseProgress(
   const [busy, setBusy] = useState(false);
   const known = new Map(questions.map((item) => [questionKey(item), item]));
   const current = session?.questions[session.index];
-  const question = current && (known.get(questionKey(current)) ?? current);
-  const courseIds = new Set([...known.values(), ...archivedBank].map((item) => item.id));
-  const courseHistory = history.filter((attempt) => courseIds.has(attempt.questionId));
-  const review = [...known.values()]
-    .map((item) => ({ question: item, ...statsFor(courseHistory, item) }))
-    .filter((stats) => stats.wrong > 0)
-    .sort((a, b) => b.wrong - a.wrong);
-  const answerCount = courseHistory.length;
-  const rate = answerCount
-    ? `${Math.round((100 * courseHistory.filter((attempt) => attempt.isCorrect).length) / answerCount)}%`
-    : '—';
+  const question = practiceQuestion(current, known);
+  const { courseIds, review, answerCount, rate } = practiceMetrics(
+    history,
+    [...known.values()],
+    archivedBank,
+  );
 
   useEffect(() => {
     if (historyError) setNotice('historyFailed');
@@ -55,13 +55,19 @@ export function useCourseProgress(
     if (resetVersion > 0) setSession(undefined);
   }, [resetVersion]);
 
+  useEffect(() => {
+    if (!questions.length) return;
+    setSession((current) => localizePracticeSession(current, questions));
+  }, [questions]);
+
   function navigate(next: CoursePage) {
     if (page === next) return;
     setPage(next);
     setSession(undefined);
     setNotice('');
   }
-  const start = (items: Question[]) => setSession({ questions: items, index: 0, correct: 0 });
+  const start = (items: Question[]) =>
+    setSession({ questions: randomizePracticeQuestions(items), index: 0, correct: 0 });
   const close = () => setSession(undefined);
   const next = () => setSession((current) => current && { ...current, index: current.index + 1 });
 
@@ -122,6 +128,9 @@ export function useCourseProgress(
     page,
     session,
     question,
+    translationError: Boolean(
+      session?.translationError || session?.questions.some((item) => !known.has(questionKey(item))),
+    ),
     notice,
     busy,
     review,

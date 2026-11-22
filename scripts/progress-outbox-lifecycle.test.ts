@@ -57,7 +57,7 @@ test('disposing a member store discards an owner outbox it did not load', async 
   const client: ProgressRpcClient = {
     async rpc(name) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
     },
     async select() {
       return [];

@@ -462,3 +462,12 @@
 - [ ] 全5158完成後、rescan-german-agent-contexts.ts --checkを実行する。現在partial2985/5158で7propername contexts/9fields全てsource+locale+fullobject+field-pathの承認に一致、未対応0。完全生成を条件にした--checkを省略しない。candidate entity側の別finalrescan、棄却意味履歴の全量再棚卸し、43+17+16browser/check/buildも維持。
 
 - [x] 2026-11-22T06:22:36.501398+00:00: CLF sec05b-agent002のMFA key欠如疑義をIAM公式Allow+Bool+true例で検証。missing/falseではpositive grantが成立せず、sourceは特定IAM user/他grantなし/対応session/MFA確認できるrequestだけに限定済み。federated全対応やAllow+BoolIfExists+trueを主張しない。source/正答B/rev1保持/全9prompt/B/reason実読/9strict、判断245。CLF末尾cohortの独立確認へ含める。
+
+## PR #107 追加レビュー指摘（公開前に修正）
+- [/] 資格設定変更時に残存する選択肢順と空の問題順が不整合になり、会員の保存が失敗する。元DoDの保存互換性へ含まれるため採用して修正する。thread `PRRT_kwDOVzQ52c66h1i_`。
+- [/] 旧基礎学習セッションに新しい問題順を当てると未回答を飛ばす。旧順序の再開と新規セッションのランダム化を明示的に区別する。元DoDの途中再開・採点維持へ含まれるため採用して修正する。thread `PRRT_kwDOVzQ52c66h1jD`。
+- 先行CIで見つかったrtk依存は `25401c45` で修正し1111件を再検証。翻訳データ単独変更のCI起動条件は `65abde55` で結線。
+
+- 追加レビュー2点は実装・回帰検証済み。単体1116件成功、実filterからの会員RPC保存の実DB検査成功、旧版再開・言語切替・offline再採点・guest競合の実DB/browser集中6件成功。独立highレビューP0/P1/P2=0。
+- account検査は起動中のIdPコンテナにSIGTERM/削除が入り、ローカルでは検査0件で環境失敗。品質条件は変えず、既存の独立Linux CIで全account検査を実行して確認する。元の11拒否条件は同じassertionsを保ち個別ケースへ分割し、timeout延長はしない。
+- [ ] 最終候補の全check・ブラウザ回帰、修正commit/push、指摘threadへの返信/resolve、最新headのCI/review回収、Ready化、接続とDB適用確認後のmerge/Production確認を完了する。

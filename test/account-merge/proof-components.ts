@@ -25,6 +25,11 @@ export function installProofComponents() {
         'kaq_private.account_protocol_settings','SELECT,INSERT,UPDATE,DELETE')`),
       'f',
     );
+    assert.equal(
+      sql(`select has_function_privilege('${role}',
+        'public.fixture_issue_learning_session_grant(text,uuid,uuid)','EXECUTE')`),
+      role === 'authenticated' ? 't' : 'f',
+    );
   }
   installed = true;
   let query = readFileSync('test/account-merge/proof-accept.sql', 'utf8');
@@ -60,7 +65,9 @@ export function installProofComponents() {
 
 export function removeProofWrapper() {
   if (!installed) return;
-  sql('drop function public.fixture_accept_account_proof(uuid,uuid,bytea,bigint)');
+  sql(`drop function public.fixture_accept_account_proof(uuid,uuid,bytea,bigint);
+    drop function public.fixture_issue_learning_session_grant(text,uuid,uuid);
+    drop function public.fixture_resolve_current_learning_grant()`);
   assert.equal(
     sql("select to_regprocedure('public.fixture_accept_account_proof(uuid,uuid,bytea,bigint)') is null"),
     't',

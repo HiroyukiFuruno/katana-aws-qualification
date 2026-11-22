@@ -8,11 +8,25 @@ begin
   end if;
   insert into bootstrap_checks values(label);
 end $$;
-create function pg_temp.mutate_bootstrap(label text, statement text, expected jsonb) returns void language plpgsql as $$
+create function pg_temp.mutate_bootstrap(label text, statement text, expected jsonb, expected_constraint text default null)
+returns void language plpgsql as $$
+declare actual_state text; actual_constraint text; constraint_rejected boolean := false;
 begin
   begin
-    execute statement;
-    perform pg_temp.check_bootstrap(label, expected);
+    begin
+      execute statement;
+    exception when foreign_key_violation then
+      get stacked diagnostics actual_state = returned_sqlstate, actual_constraint = constraint_name;
+      if expected_constraint is null or actual_state <> '23503' or actual_constraint <> expected_constraint then
+        raise exception 'Bootstrap % expected 23503/constraint %, received %/%', label,
+          expected_constraint, actual_state, actual_constraint;
+      end if;
+      constraint_rejected := true;
+    end;
+    if not constraint_rejected then
+      if expected_constraint is not null then raise exception 'Bootstrap mutation accepted invalid input: %', label; end if;
+      perform pg_temp.check_bootstrap(label, expected);
+    end if;
     raise sqlstate 'ZX001';
   exception when sqlstate 'ZX001' then null;
   end;
@@ -23,8 +37,11 @@ declare
   first_uid uuid := '__FIRST_USER__'; second_uid uuid := '__SECOND_USER__';
   first_session uuid := '__FIRST_SESSION__'; second_session uuid := '__SECOND_SESSION__';
   ready jsonb; first_created timestamptz; case_row record;
-  before_snapshot jsonb; after_snapshot jsonb;
+  before_snapshot jsonb; after_snapshot jsonb; has_grant_member_account_fk boolean;
 begin
+  select exists(select 1 from pg_constraint
+    where conrelid = 'kaq_private.learning_session_grants'::regclass
+      and conname = 'learning_session_grants_member_account_fkey' and contype = 'f') into has_grant_member_account_fk;
   if not exists(select 1 from auth.mfa_amr_claims where session_id = first_session and authentication_method = 'oauth')
     or not exists(select 1 from auth.mfa_amr_claims where session_id = second_session and authentication_method = 'oauth') then
     raise exception 'Actual OAuth sessions required';
@@ -62,14 +79,27 @@ begin
     ('missing_grant', format('delete from kaq_private.learning_session_grants where session_id = %L', first_session)),
     ('revoked_grant', format('update kaq_private.learning_session_grants set revoked_at = clock_timestamp() where session_id = %L', first_session)),
     ('old_epoch', format('update kaq_private.learning_memberships set epoch = 1 where auth_user_id = %L', first_uid)),
-    ('wrong_account_grant', format('update kaq_private.learning_session_grants set account_id = %L where session_id = %L', second_uid, first_session)),
-    ('wrong_actor_grant', format('update kaq_private.learning_session_grants set auth_user_id = %L where session_id = %L', second_uid, first_session)),
     ('new_account_fence', format('update kaq_private.learning_accounts set session_fence_at = clock_timestamp() where id = %L', first_uid)),
     ('new_membership_fence', format('update kaq_private.learning_memberships set session_fence_at = clock_timestamp() where auth_user_id = %L', first_uid)),
     ('invalid_fence', format('update kaq_private.learning_accounts set session_fence_at = ''infinity'' where id = %L', first_uid))
   ) inputs(label, statement) loop
     perform pg_temp.mutate_bootstrap(case_row.label, case_row.statement, '{"state":"reauthentication_required"}');
   end loop;
+  if has_grant_member_account_fk then
+    perform pg_temp.mutate_bootstrap('wrong_account_grant', format(
+      'update kaq_private.learning_session_grants set account_id = %L where session_id = %L', second_uid, first_session), null,
+      'learning_session_grants_member_account_fkey');
+    perform pg_temp.mutate_bootstrap('wrong_actor_grant', format(
+      'update kaq_private.learning_session_grants set auth_user_id = %L where session_id = %L', second_uid, first_session), null,
+      'learning_session_grants_member_account_fkey');
+  else
+    perform pg_temp.mutate_bootstrap('wrong_account_grant', format(
+      'update kaq_private.learning_session_grants set account_id = %L where session_id = %L', second_uid, first_session),
+      '{"state":"reauthentication_required"}');
+    perform pg_temp.mutate_bootstrap('wrong_actor_grant', format(
+      'update kaq_private.learning_session_grants set auth_user_id = %L where session_id = %L', second_uid, first_session),
+      '{"state":"reauthentication_required"}');
+  end if;
   perform pg_temp.mutate_bootstrap('fresh_after_fence_existing_grant', format(
     'update kaq_private.learning_accounts set session_fence_at = %L where id = %L', first_created - interval '1 second', first_uid), ready);
   for case_row in select * from (values
@@ -96,9 +126,11 @@ begin
       first_created - interval '1 second', first_uid, case_row.statement), '{"state":"reauthentication_required"}');
   end loop;
   perform pg_temp.mutate_bootstrap('shared_account_requires_no_extra_learning_account', format(
-    'update kaq_private.learning_memberships set account_id = %L, epoch = 3 where auth_user_id = %L;
-     update kaq_private.learning_session_grants set account_id = %L, membership_epoch = 3, reason = ''proof'' where session_id = %L',
-    second_uid, first_uid, second_uid, first_session), jsonb_build_object('state', 'ready', 'account_id', second_uid,
+    'delete from kaq_private.learning_session_grants where session_id = %L;
+     update kaq_private.learning_memberships set account_id = %L, epoch = 3 where auth_user_id = %L;
+     insert into kaq_private.learning_session_grants(session_id, auth_user_id, account_id, membership_epoch, reason)
+       values(%L, %L, %L, 3, ''reauthenticated'')',
+    first_session, second_uid, first_uid, first_session, first_uid, second_uid), jsonb_build_object('state', 'ready', 'account_id', second_uid,
       'membership_epoch', 3, 'generation', (select generation from public.learning_state where user_id = second_uid)));
   begin
     delete from public.learning_state where user_id = first_uid;

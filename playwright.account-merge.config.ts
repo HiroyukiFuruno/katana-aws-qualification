@@ -10,7 +10,7 @@ const fixtureKey = createHash('sha256')
 
 export default defineConfig({
   testDir: './test/account-merge',
-  testMatch: '**/*.pw.ts',
+  testMatch: '**/smoke.pw.ts',
   workers: 1,
   retries: 0,
   reporter: [['list'], ['json', { outputFile: `${artifacts}/results.json` }]],

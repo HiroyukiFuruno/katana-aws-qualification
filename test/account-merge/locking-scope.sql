@@ -10,29 +10,41 @@ end $$;
 create function pg_temp.case_lock_scope(
   label text, statement text, expected_state text default 'PT403', expected_message text default 'KAQ_SCOPE_INVALID',
   mode text default 'writer', generation bigint default 0, targets uuid[] default null,
-  sessions uuid[] default '{}', accepted boolean default false
+  sessions uuid[] default '{}', accepted boolean default false, expected_constraint text default null
 ) returns void language plpgsql as $$
-declare result jsonb; actual_state text; actual_message text;
+declare result jsonb; actual_state text; actual_message text; actual_constraint text; constraint_rejected boolean := false;
 begin
   begin
-    execute statement;
-    if accepted then
-      result := kaq_private.lock_learning_scope(mode, generation, targets, sessions);
-      if result ->> 'state_mode' is distinct from mode
-        or (result ->> 'generation')::bigint is distinct from generation then
-        raise exception 'Unexpected locking context: %', result;
+    begin
+      execute statement;
+    exception when foreign_key_violation or check_violation then
+      get stacked diagnostics actual_state = returned_sqlstate, actual_constraint = constraint_name;
+      if expected_constraint is null or actual_state <> expected_state or actual_constraint <> expected_constraint then
+        raise exception 'Locking scope % expected %/constraint %, received %/%', label,
+          expected_state, expected_constraint, actual_state, actual_constraint;
       end if;
-    else
-      begin
-        perform kaq_private.lock_learning_scope(mode, generation, targets, sessions);
-        raise exception 'Locking scope accepted invalid input: %', label;
-      exception when others then
-        get stacked diagnostics actual_state = returned_sqlstate, actual_message = message_text;
-        if actual_state <> expected_state or actual_message <> expected_message then
-          raise exception 'Locking scope % expected %/%, received %/%', label,
-            expected_state, expected_message, actual_state, actual_message;
+      constraint_rejected := true;
+    end;
+    if not constraint_rejected then
+      if expected_constraint is not null then raise exception 'Locking scope mutation accepted invalid input: %', label; end if;
+      if accepted then
+        result := kaq_private.lock_learning_scope(mode, generation, targets, sessions);
+        if result ->> 'state_mode' is distinct from mode
+          or (result ->> 'generation')::bigint is distinct from generation then
+          raise exception 'Unexpected locking context: %', result;
         end if;
-      end;
+      else
+        begin
+          perform kaq_private.lock_learning_scope(mode, generation, targets, sessions);
+          raise exception 'Locking scope accepted invalid input: %', label;
+        exception when others then
+          get stacked diagnostics actual_state = returned_sqlstate, actual_message = message_text;
+          if actual_state <> expected_state or actual_message <> expected_message then
+            raise exception 'Locking scope % expected %/%, received %/%', label,
+              expected_state, expected_message, actual_state, actual_message;
+          end if;
+        end;
+      end if;
     end if;
     -- 成功caseも全lockと一時変更を解放し、次のcaseでlock upgradeを発生させない。
     raise sqlstate 'ZX001';
@@ -46,7 +58,11 @@ declare
   first_session uuid := '__FIRST_SESSION__'; second_session uuid := '__SECOND_SESSION__'; third_session uuid := '__THIRD_SESSION__';
   claims jsonb; headers jsonb; case_record record; relation_record record; contents_after jsonb;
   grant_update text; account_update text; member_update text; role_name text; function_record record;
+  has_grant_member_account_fk boolean;
 begin
+  select exists(select 1 from pg_constraint
+    where conrelid = 'kaq_private.learning_session_grants'::regclass
+      and conname = 'learning_session_grants_member_account_fkey' and contype = 'f') into has_grant_member_account_fk;
   perform pg_temp.check_lock_scope('three_real_gotrue_sessions', (
     select count(*) = 3 from auth.sessions session join auth.mfa_amr_claims amr on amr.session_id = session.id
     where ((session.id = first_session and session.user_id = first_uid)
@@ -103,11 +119,21 @@ begin
   perform pg_temp.case_lock_scope('null_session_item_refused', 'select 1', 'PT400', 'KAQ_SCOPE_ARGUMENT_INVALID', sessions => array[null::uuid]);
   perform pg_temp.case_lock_scope('old_epoch_grant_refused', format(member_update, 'epoch = 1'), 'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
   for case_record in select * from (values
-    ('revoked_grant', 'revoked_at = clock_timestamp()'), ('wrong_grant_epoch', 'membership_epoch = 1'),
-    ('wrong_grant_user', format('auth_user_id = %L', second_uid)), ('wrong_grant_account', format('account_id = %L', second_uid))
+    ('revoked_grant', 'revoked_at = clock_timestamp()'), ('wrong_grant_epoch', 'membership_epoch = 1')
   ) cases(label, patch) loop
     perform pg_temp.case_lock_scope(case_record.label, format(grant_update, case_record.patch), 'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
   end loop;
+  if has_grant_member_account_fk then
+    perform pg_temp.case_lock_scope('wrong_grant_user', format(grant_update, format('auth_user_id = %L', second_uid)),
+      '23503', null, expected_constraint => 'learning_session_grants_member_account_fkey');
+    perform pg_temp.case_lock_scope('wrong_grant_account', format(grant_update, format('account_id = %L', second_uid)),
+      '23503', null, expected_constraint => 'learning_session_grants_member_account_fkey');
+  else
+    perform pg_temp.case_lock_scope('wrong_grant_user', format(grant_update, format('auth_user_id = %L', second_uid)),
+      'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
+    perform pg_temp.case_lock_scope('wrong_grant_account', format(grant_update, format('account_id = %L', second_uid)),
+      'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
+  end if;
   perform pg_temp.case_lock_scope('missing_grant', format('delete from kaq_private.learning_session_grants where session_id = %L', first_session),
     'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
   perform pg_temp.case_lock_scope('old_session_account_fence_refused', format(account_update,
@@ -128,8 +154,14 @@ begin
        (select created_at from auth.sessions where id=%L) where session_id=%L and authentication_method=''password'';
        update auth.sessions set created_at=created_at+interval ''1 microsecond'' where id=%L',
     first_session, first_session, first_session), 'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
-  perform pg_temp.case_lock_scope('proof_reason_does_not_bypass_fence', format(grant_update, 'reason=''proof''') || ';' ||
-    format(account_update, 'session_fence_at=clock_timestamp()+interval ''1 hour'''), 'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
+  if has_grant_member_account_fk then
+    perform pg_temp.case_lock_scope('bare_proof_reason_rejected', format(grant_update, 'reason=''proof'''),
+      '23514', null, expected_constraint => 'learning_session_grants_proof_shape_check');
+  else
+    perform pg_temp.case_lock_scope('bare_proof_reason_rejected',
+      format(account_update, 'session_fence_at=clock_timestamp()+interval ''1 hour''') || ';' ||
+      format(grant_update, 'reason=''proof'''), 'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
+  end if;
   perform pg_temp.case_lock_scope('revoked_old_session_not_reenrolled', format(grant_update, 'revoked_at = clock_timestamp()') || ';' ||
     format('select set_config(''request.jwt.claims'', %L, true)', (claims || jsonb_build_object('iat', floor(extract(epoch from clock_timestamp()))))::text),
     'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');

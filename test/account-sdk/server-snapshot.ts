@@ -3,6 +3,7 @@ import { publicState } from '../account-merge/public-state';
 import { sql } from './sql';
 
 const privateTables = [
+  'account_committed_proof_bindings',
   'account_intents',
   'account_merge_archives',
   'account_merge_id_maps',
@@ -12,9 +13,12 @@ const privateTables = [
   'account_proofs',
   'account_protocol_settings',
   'learning_accounts',
+  'learning_account_creation_receipts',
   'learning_memberships',
   'learning_session_grants',
-].map((name) => `kaq_private.${name}`);
+]
+  .map((name) => `kaq_private.${name}`)
+  .sort();
 
 export function fingerprint() {
   return createHash('sha256').update(JSON.stringify(publicState())).digest('hex');

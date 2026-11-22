@@ -43,7 +43,7 @@
 - `delete_certification_milestone(p_id,p_expected_revision,p_expected_generation)` は本人の行だけをCAS削除しtrueを返す。予定の6項目を消去し、同じ表にID・所有者・改訂・削除日時だけを残す。既に削除済みの再送はtrue、別の改訂が存在すればPT412。存在しないIDの削除も最小の削除記録を作り、作成との競合を同じ主キーで直列化する。
 - 削除済み行はRLSとlistから除外し、saveはPT412で拒否する。削除記録も退会時にcascade削除する。別の所有者モデル、再送キュー、別の削除記録テーブルは作らない。
 - 名称はtrim済み1〜120文字、資格IDは現行catalogのID、種別は上記4値、completedはboolean。targetは日付のみ・completed=false。予定は有効な日付又は時刻のどちらか一方。SQLとclientの検証を固定入力で照合する。
-- 適用済み17件は変更せず、次は `202611220006_certification_milestones.sql`。dashboardの新kind/表示方式の許可は後続の追加migrationで行い、既存配置や改訂を上書きしない。
+- 開始時の適用済み17件を維持し、`202611220006_certification_milestones.sql` と `202611220007_milestone_dashboard.sql` を追加した。既存配置や改訂を上書きせず、新kind/表示方式を許可する。
 - 既存dashboard servicesへ本人用repositoryを接続する。予定読取・改訂・エラーは回答集計と分ける。新たな所有者・汎用同期モデルは作らない。
 - 予定ウィジェットには資格の絞り込みとtimezoneだけを適用し、回答期間・カテゴリ・回答形式などの統計フィルターは適用しないことを表示する。月カレンダーと一覧を切り替えられるようにする。
 
@@ -54,14 +54,14 @@
 
 ## 検証・公開の完了条件
 
-- [ ] 取得目標と3種予定の登録・編集・削除、資格間の表示、次の予定・目標日・残り期間を固定入力で検証する。
-- [ ] 日付のみ、時刻付き、今日・過去・未来、日跨ぎ、IANA timezoneとDSTを検証する。
-- [ ] 実Auth/DBの2ユーザーと別browser contextで、永続化、復元、RLS、所有者切替、保存失敗・再送・競合を検証する。
-- [ ] 予定を実績へ誤集計せず、学習・模試への遷移と取消し・削除時の整合を検証する。
-- [ ] ウィジェットの追加・表示・配置、全10言語、両テーマ、mobile、keyboard、文字ラベルと代替一覧を検証する。
-- [ ] 既存check・150行・重複・依存ゲートを維持する。IT/E2EのMock・固定待機・timeout延長を追加しない。
-- [ ] Draft→review回収・修正・reply/resolve→P0/P1ゼロ→Ready→実required設定確認→通常merge→DB適用→公開source確認まで完了する。
-- [ ] 正式証跡を保存し、今回使い終わった再生成可能な検証用コピー・出力は削除する。
+- [x] 取得目標と3種予定の登録・編集・削除、資格間の表示、次の予定・目標日・残り期間を固定入力で検証する。
+- [x] 日付のみ、時刻付き、今日・過去・未来、日跨ぎ、IANA timezoneとDSTを検証する。
+- [x] 実Auth/DBの2ユーザーと別browser contextで、永続化、復元、RLS、所有者切替、保存失敗・再送・競合を検証する。
+- [x] 予定を実績へ誤集計せず、学習・模試への遷移と取消し・削除時の整合を検証する。
+- [x] ウィジェットの追加・表示・配置、全10言語、両テーマ、mobile、keyboard、文字ラベルと代替一覧を検証する。
+- [x] 既存check・150行・重複・依存ゲートを維持する。IT/E2EのMock・固定待機・timeout延長を追加しない。
+- [x] Draft→review回収・修正・reply/resolve→P0/P1ゼロ→Ready→実required設定確認→通常merge→DB適用→公開source確認まで完了する。
+- [x] 正式証跡を保存し、今回使い終わった再生成可能な検証用コピー・出力は削除する。
 - [/] PR114のP2: 作成→削除→同じ作成要求の遅延再送で復活しない。未知IDの削除との競合、他人と同じID、削除後payload消去・非表示も実DBで検証する。
 
 本人の試験申込み・受験・実機確認をClose条件には含めない。Facebookの外部設定待ちで本Issueを止めない。
@@ -70,7 +70,16 @@
 
 - [/] 8ロケールの新規54キーが英語コピーだったP1を修正。既存802値を保持し、432値を翻訳・意味確認した。キー/placeholder一致だけを翻訳完了と扱わない。
 - [/] 通常のcheck-localesへ英語文章コピー検出を接続。公式名称・自然に同綴となる短語は保持し、未翻訳の英語文章を拒否する。修正前実辞書8ロケールの拒否と、検出前RED→検出後GREENを記録した。
-- [ ] 実際の最終翻訳文で10ロケール×両テーマのmobile操作を再検証して公開する。
+- [x] 実際の最終翻訳文で10ロケール×両テーマのmobile操作を再検証して公開する。
 
-- [ ] PR115 P2: 別端末で登録された重複時刻の後半UTCを、日時未変更の名称/完了編集で維持する。実UTC/NY browserで修正前の1時間ずれを再現済み。
-- [ ] 過去のfoundation検査は現行dashboard defaultsへ結合せず、003契約の固定fixtureで12 owner table全行維持を検査する。
+- [/] PR115 P2: 別端末で登録された重複時刻の後半UTCを、日時未変更の名称/完了編集で維持する。実UTC/NY browserで修正前の1時間ずれを再現済み。
+- [/] 過去のfoundation検査は現行dashboard defaultsへ結合せず、003契約の固定fixtureで12 owner table全行維持を検査する。
+
+## 公開完了（2026-11-23 JST）
+
+- [Issue60](https://github.com/HiroyukiFuruno/katana-aws-qualification/issues/60) は担当範囲の実装・自動検証・公開を完了してClose。保存基盤はPR114、画面と設定はPR115。公開版は `bdf3bd6148bb9b1020febe0f8cdd9c1af97b0e84`、tree `7d41359b8239a596457ec1ffda6078c6d0459ff4`。
+- [本番ダッシュボード](https://kaq.katana-projects.org/ja/dashboard/) の「学習の予定」で利用できる。既存配置を保存済みの場合は設定から「資格取得目標と予定」を追加する。
+- 全check975、型、実browserは既存192と最終18の210シナリオを記録した検査で成功。最終18は全10言語の実翻訳・両テーマの375/390px、CRUD/復元/失敗/競合/実DBロック中のowner切替、DST/UTC保持、遷移/配置/keyboardを含みskip/flaky0。英語文章コピーは通常のlocale検査で拒否し、旧実辞書8ロケールの拒否とRED→GREENを確認。
+- 実GoTrue/PostgRESTのPG17/18でデータ契約と過去foundationを検証。本番は全19migrationのsource hash/ACL、calendar/table許可と不正override拒否を確認。最終headの補助CIも8/8成功。
+- deployment `dpl_BbZ1RbAiRAGgZ2rGwou25LjcPKR5` はREADY。公開先のcommit/tree、新bundle、全10言語のcanonical dashboardと関連3URLのHTTP200、日本語/ドイツ語390pxの導線・theme・横はみ出しなしを確認。会員CRUD/所有者境界は実サービスによるローカル検査で確認した。
+- 正式証跡は `test-results/milestones/ui-final-verified-summary.json`、`production-dashboard-applied-verified.json`、`production-ui-publication-verified.json`、`production-public-browser-verified.json`、`publication-state.json` に保持。使用済みの検証/公開用コピーはsource/rawのSHA照合後に削除済み。本人実機待ちはClose条件に含めない。

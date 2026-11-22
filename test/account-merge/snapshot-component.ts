@@ -28,7 +28,8 @@ export async function verifySnapshotComponent() {
     assert.equal(result.status, 'passed');
     assert(Array.isArray(result.checks));
     assert(result.checks.every((check: unknown) => typeof check === 'string'));
-    assert.equal(result.checks.length, 60);
+    assert.equal(result.checks.length, 61);
+    assert(result.checks.includes('presentation_columns_in_snapshot'));
     assert.equal(new Set(result.checks).size, result.checks.length);
     writeFileSync(
       `${artifacts}/learning-snapshot-proof.json`,

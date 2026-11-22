@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 import { learningEventRows } from './api';
 import { openMemberCourse, startStudy } from './course';
 import { createSessions } from './sessions';
@@ -38,14 +38,14 @@ async function currentPlan(page: Page): Promise<QuestionPlan> {
 }
 
 async function select(page: Page, plan: QuestionPlan, selected: string[]) {
-  const inputs = page.locator('input[name="answer"]');
+  const inputFor = (choiceId: string) => page.locator(`input[name="answer"][value="${choiceId}"]`);
   if (plan.correct.length > 1) {
-    for (let index = 0; index < plan.choices.length; index++) {
-      const input = inputs.nth(index);
+    for (const choiceId of plan.choices) {
+      const input = inputFor(choiceId);
       if (await input.isChecked()) await input.uncheck();
     }
   }
-  for (const choice of selected) await inputs.nth(plan.choices.indexOf(choice)).check();
+  for (const choiceId of selected) await inputFor(choiceId).check();
 }
 
 test('an offline wrong answer followed by a corrected answer preserves both member events', async ({

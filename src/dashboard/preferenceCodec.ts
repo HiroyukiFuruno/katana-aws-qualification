@@ -26,6 +26,12 @@ function readWidget(value: unknown): DashboardWidget {
   const metric = dashboardEnum(row.metric, dashboardChartMetrics(definition, chart));
   const dimension = dashboardEnum(row.dimension, ['default', 'polarity']);
   if (dimension === 'polarity' && kind !== 'formats') throw new Error('Invalid widget dimension.');
+  const overrides = readDashboardOverrides(row.overrides);
+  if (
+    kind === 'milestones' &&
+    Object.keys(overrides).some((key) => key !== 'certificationIds' && key !== 'timezone')
+  )
+    throw new Error('Invalid schedule display filters.');
   return {
     id,
     kind,
@@ -34,7 +40,7 @@ function readWidget(value: unknown): DashboardWidget {
     chart,
     metric,
     dimension,
-    overrides: readDashboardOverrides(row.overrides),
+    overrides,
   };
 }
 

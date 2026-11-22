@@ -117,6 +117,7 @@ export function DashboardReady({
     );
   return (
     <DashboardView
+      milestoneApi={session.services.milestones}
       storageControl={storageControl}
       owner={snapshot.owner.kind}
       consented

@@ -38,8 +38,8 @@ describe('dashboard query and preferences contracts', () => {
     expect(buildDashboardQuery(overridden, 1000).certificationIds).toBeNull();
     expect(buildDashboardQuery(prefs.filters, 1000).certificationIds).toEqual(['saa-c03']);
     expect(readDashboardPreferences(prefs)).toEqual(prefs);
-    expect(prefs.widgets.filter((widget) => widget.visible)).toHaveLength(9);
-    expect(prefs.widgets).toHaveLength(14);
+    expect(prefs.widgets.filter((widget) => widget.visible)).toHaveLength(10);
+    expect(prefs.widgets).toHaveLength(15);
   });
 
   test('rejects incompatible charts, duplicate instances and unknown settings', () => {

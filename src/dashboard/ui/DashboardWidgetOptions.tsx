@@ -6,7 +6,7 @@ import type { DashboardLessonData } from '../viewTypes';
 import { DashboardOverrideSelect } from './DashboardOverrideSelect';
 import { dashboardFilterOptions } from './dashboardFilterOptions';
 import { dashboardPeriodKeys } from './dashboardOptionLabels';
-import { type DashboardOverrideKey, updateWidgetOverride } from './dashboardWidgetOverrides';
+import { dashboardOverrideKeys, updateWidgetOverride } from './dashboardWidgetOverrides';
 
 type Props = {
   widget: DashboardWidget;
@@ -86,20 +86,7 @@ export function DashboardWidgetOptions({ widget, facets, lessons, onChange }: Pr
           </select>
         </label>
       )}
-      {(
-        [
-          'period',
-          'timezone',
-          'certificationIds',
-          'categories',
-          'modes',
-          'contexts',
-          'formats',
-          'polarities',
-          'revisions',
-          'unitIds',
-        ] as DashboardOverrideKey[]
-      ).map((key) =>
+      {dashboardOverrideKeys(widget.kind).map((key) =>
         key === 'timezone' ? (
           <label key={key}>
             {t('dashboardTimezone')}

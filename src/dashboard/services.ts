@@ -1,5 +1,6 @@
 import type { LessonAssets } from '../fundamentals/delivery/assets';
 import type { Locale } from '../locales';
+import { createMilestoneService } from '../milestones/dashboardService';
 import { ProgressApiError } from '../progress/api';
 import type { BrowserStorage } from '../progress/guest';
 import type { LegacyQuestionResolver } from '../progress/migrationTypes';
@@ -55,6 +56,7 @@ export function createDashboardServices(input: Input) {
     };
     return {
       ...changes.observer,
+      milestones: createMilestoneService(input.client, ready, read),
       async syncStatus() {
         const generation = await ready();
         if (!input.isCurrent()) throw new Error('Dashboard owner changed.');
@@ -98,6 +100,7 @@ export function createDashboardServices(input: Input) {
   };
   return {
     ...changes.observer,
+    milestones: null,
     async syncStatus() {
       return { pending: false, unreadable: false };
     },

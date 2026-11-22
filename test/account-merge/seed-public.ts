@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { dashboardDefaults } from '../../src/dashboard/preferences';
 import { sql } from './commands';
+import { foundationDashboardSettings } from './foundation-dashboard-settings';
 import { gatewayOrigin, testKey } from './settings';
 
 const seedEmail = 'migration-seed@account-merge.example.test';
@@ -69,7 +69,7 @@ export async function seedPublicData() {
     verifyCascade(userId);
   };
   try {
-    const settings = JSON.stringify(dashboardDefaults('UTC')).replaceAll("'", "''");
+    const settings = JSON.stringify(foundationDashboardSettings).replaceAll("'", "''");
     const statement = readFileSync(new URL('./seed-public.sql', import.meta.url), 'utf8')
       .replaceAll('__SEED_USER_ID__', userId)
       .replaceAll('__DASHBOARD_SETTINGS__', settings);

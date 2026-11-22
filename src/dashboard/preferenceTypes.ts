@@ -21,7 +21,8 @@ export type DashboardChart =
   | 'histogram'
   | 'box'
   | 'table'
-  | 'ring';
+  | 'ring'
+  | 'calendar';
 export type DashboardWidgetKind =
   | 'overview'
   | 'trend'
@@ -36,7 +37,8 @@ export type DashboardWidgetKind =
   | 'relationship'
   | 'reviews'
   | 'exams'
-  | 'lessons';
+  | 'lessons'
+  | 'milestones';
 
 export type DashboardWidget = {
   id: string;

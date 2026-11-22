@@ -17,6 +17,7 @@ export const titleKeys: Record<DashboardWidget['kind'], LocaleKey> = {
   reviews: 'dashboardWidgetReviews',
   exams: 'dashboardWidgetExams',
   lessons: 'dashboardWidgetLessons',
+  milestones: 'dashboardMilestones',
 };
 export const chartKeys: Record<DashboardChart, LocaleKey> = {
   metrics: 'dashboardChartMetrics',
@@ -33,6 +34,7 @@ export const chartKeys: Record<DashboardChart, LocaleKey> = {
   box: 'dashboardChartBox',
   table: 'dashboardChartTable',
   ring: 'dashboardChartRing',
+  calendar: 'dashboardChartCalendar',
 };
 export const metricKeys: Record<DashboardMetric, LocaleKey> = {
   answered: 'dashboardMetricAnswered',

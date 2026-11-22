@@ -23,6 +23,7 @@ export const dashboardSections: readonly {
   { id: 'timing', label: 'dashboardSectionTime', kinds: ['durations', 'relationship'] },
   { id: 'results', label: 'dashboardSectionResults', kinds: ['exams', 'reviews'] },
   { id: 'lessons', label: 'dashboardSectionLessons', kinds: ['lessons'] },
+  { id: 'planning', label: 'dashboardSectionPlanning', kinds: ['milestones'] },
 ];
 
 export const dashboardDensityStorageKey = 'katana-dashboard-density';

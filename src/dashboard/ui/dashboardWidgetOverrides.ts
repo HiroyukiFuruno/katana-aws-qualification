@@ -2,6 +2,22 @@ import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardDimensions, DashboardFilters } from '../queryTypes';
 
 export type DashboardOverrideKey = 'period' | 'timezone' | keyof DashboardDimensions;
+export function dashboardOverrideKeys(kind: DashboardWidget['kind']): readonly DashboardOverrideKey[] {
+  return kind === 'milestones'
+    ? ['certificationIds', 'timezone']
+    : [
+        'period',
+        'timezone',
+        'certificationIds',
+        'categories',
+        'modes',
+        'contexts',
+        'formats',
+        'polarities',
+        'revisions',
+        'unitIds',
+      ];
+}
 export function updateWidgetOverride<K extends DashboardOverrideKey>(
   widget: DashboardWidget,
   key: K,

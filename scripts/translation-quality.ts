@@ -6,6 +6,13 @@ type Dictionary = Record<string, string>;
 const formatKeys = ['examFormatShort', 'examFormatMedium', 'examFormatFull', 'examFormatCustom'];
 const unsupportedPromises =
   /free forever|gr[aá]tis (?:para |per )?s(?:empre|iempre)|永久[免無]料|永久免费|永久免費|dauerhaft kostenlos/i;
+const sharedOfficialNames = new Set([
+  'siteName',
+  'assessmentF2Option1',
+  'assessmentF2Option2',
+  'assessmentF2Option3',
+  'assessmentO2Option2',
+]);
 
 const periodOnlyInheritance: Partial<Record<Locale, string>> = {
   en: 'Use dashboard date range',
@@ -23,10 +30,19 @@ export function translationIssues(
   locale: Locale,
   dictionary: Dictionary,
   sourceDictionary: Dictionary = {},
+  englishDictionary: Dictionary = {},
 ) {
   const issues: string[] = [];
   for (const [key, value] of Object.entries(dictionary)) {
     const context = `${locale}.${key}`;
+    if (
+      locale !== 'en' &&
+      value === englishDictionary[key] &&
+      !sharedOfficialNames.has(key) &&
+      !/^cert[A-Z]\w*Name$/.test(key) &&
+      (value.replace(/\{\w+\}/g, '').match(/[A-Za-z]+/g)?.length ?? 0) >= 3
+    )
+      issues.push(`${context}: untranslated English sentence`);
     try {
       assertNativeLanguage(sourceDictionary[key] ?? '', value, locale, context);
     } catch (error) {

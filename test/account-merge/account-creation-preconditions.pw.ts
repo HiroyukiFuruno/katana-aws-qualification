@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import {
+  type CreationActor,
   createRpc,
   creationSnapshot,
   quote,
-  type CreationActor,
   withCreationActor,
 } from './account-creation-fixture';
 import { sql } from './commands';
@@ -73,10 +73,10 @@ const inputs: SyntheticInput[] = [
   },
 ];
 
-test('synthetic reserved/private and legacy-state inputs reject fresh create without side effects', async ({
-  browser,
-}) => {
-  await withCreationActor(browser, async (actor) => {
-    for (const input of inputs) await rejectsSynthetic(actor, input);
+for (const input of inputs) {
+  test(`fresh create rejects ${input.name} without side effects`, async ({ browser }) => {
+    await withCreationActor(browser, async (actor) => {
+      await rejectsSynthetic(actor, input);
+    });
   });
-});
+}

@@ -1,7 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { readdirSync, writeFileSync } from 'node:fs';
-import { verifyFoundationBoundary } from './account-foundation-boundary';
+import {
+  installAccountCreationFixture,
+  removeAccountCreationFixture,
+} from '../test/account-merge/account-creation-components';
 import { run } from '../test/account-merge/commands';
+import { verifyDeleteJobsCore } from '../test/account-merge/delete-jobs-core';
 import { captureNativeInputs } from '../test/account-merge/input-integrity';
 import { verifyOwnerShadowMigration } from '../test/account-merge/owner-shadow';
 import { verifyOwnerShadowProductionOps } from '../test/account-merge/owner-shadow-production-ops';
@@ -12,12 +16,10 @@ import { runSdk, sdkSelection } from '../test/account-merge/sdk-selection';
 import { artifacts, compose } from '../test/account-merge/settings';
 import { verifySnapshotComponent } from '../test/account-merge/snapshot-component';
 import { installSdkMetadata } from '../test/account-sdk/install';
-import {
-  installAccountCreationFixture,
-  removeAccountCreationFixture,
-} from '../test/account-merge/account-creation-components';
+import { verifyFoundationBoundary } from './account-foundation-boundary';
 import { verifyAccountMergeHarnesses } from './account-merge-harnesses';
 import { dataMigrations } from './data-migrations';
+
 const ownerShadowMigration = '202611220001_learning_owner_shadow.sql';
 const contextHelpersMigration = '202611220002_learning_context_helpers.sql';
 const sessionGrantsMigration = '202611220003_learning_session_grants.sql';
@@ -87,6 +89,7 @@ try {
   applyMigration(contextHelpersMigration);
   applyMigration(sessionGrantsMigration);
   applyMigration('202611220004_learning_account_creation.sql');
+  writeFileSync(`${artifacts}/delete-job-core.json`, JSON.stringify(verifyDeleteJobsCore(), null, 2));
   verifyScopeComponents('session', true);
   installSdkMetadata();
   installProofComponents();

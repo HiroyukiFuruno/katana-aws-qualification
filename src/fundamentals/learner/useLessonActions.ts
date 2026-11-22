@@ -8,6 +8,7 @@ import type { LessonServices } from '../state/services';
 import type { LessonSnapshot } from '../state/types';
 import { useLessonMutation } from '../state/useLessonMutation';
 import { finalizeLessonCommand } from './finalizeLessonCommand';
+import { createRandomizedFinalSessionId } from './lesson-presentation';
 
 type Input = {
   services: LessonServices;
@@ -57,7 +58,10 @@ export function useLessonActions({
       {
         ...base(),
         kind: 'startFinal',
-        input: { sessionId: crypto.randomUUID(), expectedRevision: snapshot.progress.revision },
+        input: {
+          sessionId: createRandomizedFinalSessionId(),
+          expectedRevision: snapshot.progress.revision,
+        },
       },
       (result) =>
         confirm(

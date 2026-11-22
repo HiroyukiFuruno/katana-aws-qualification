@@ -2,6 +2,13 @@ import { type RandomSource, shuffle } from '../../randomization';
 import type { DeliveryQuestion, DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonStep } from '../delivery/slideTypes';
 
+const randomizedPresentationVersion = '8';
+
+export function createRandomizedFinalSessionId() {
+  const id = crypto.randomUUID();
+  return `${id.slice(0, 14)}${randomizedPresentationVersion}${id.slice(15)}`;
+}
+
 export function stepQuestionPresentation(
   asset: DeliveryUnitAsset,
   step: LessonStep,
@@ -53,6 +60,9 @@ export function finalPresentation(
   asset: DeliveryUnitAsset,
   sessionId: string,
 ): PresentedFinalQuestion[] {
+  if (!usesRandomizedPresentation(sessionId)) {
+    return asset.finalQuestions.map((question, canonicalPosition) => ({ canonicalPosition, question }));
+  }
   const positions = shuffle(
     asset.finalQuestions.map((_, position) => position),
     seededRandom(`${asset.contentVersion}:${sessionId}:questions`),
@@ -65,4 +75,9 @@ export function finalPresentation(
       question: presentedQuestion(question, `${asset.contentVersion}:${sessionId}:${question.id}`),
     };
   });
+}
+
+function usesRandomizedPresentation(sessionId: string) {
+  // UUIDv8 は提示方式v1を永続的に表す。将来方式は別のマーカーを使い、既存v8を再解釈しない。
+  return sessionId[14] === randomizedPresentationVersion && /^[89ab]$/i.test(sessionId[19] ?? '');
 }

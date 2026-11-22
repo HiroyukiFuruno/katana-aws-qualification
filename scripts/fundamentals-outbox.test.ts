@@ -30,6 +30,23 @@ test('keeps an immutable command across a transient failure and reload retry', a
   expect(store.getItem(lessonOutboxKey(userId))).toBeNull();
 });
 
+test('retains a UUIDv8 presentation marker through member outbox reload', async () => {
+  const store = storage();
+  const offline = repository(async () => emptyLessonSnapshot());
+  offline.value.startFinal = async () => {
+    throw new TypeError('offline');
+  };
+  const command = startCommand('10000000-0000-8000-8000-000000000008');
+  const initial = outbox(store, offline.value);
+  await initial.initialize();
+  await expect(initial.execute(lessonAsset, command)).rejects.toThrow('offline');
+
+  const restored = outbox(store, repository(async () => emptyLessonSnapshot()).value);
+  await restored.initialize();
+  expect(restored.hasPending()).toBe(true);
+  expect(JSON.parse(store.getItem(lessonOutboxKey(userId)) ?? '').commands).toEqual([command]);
+});
+
 test('merges distinct tab commands and retains corrupt storage', async () => {
   const store = storage();
   const offline = repository(async () => {

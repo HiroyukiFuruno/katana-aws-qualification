@@ -18,11 +18,7 @@ const name = (file: string) => {
 
 export function expectedLedger() {
   const migrationIndex = dataMigrations.indexOf(migrationFile);
-  if (
-    migrationIndex < 0 ||
-    dataMigrations[migrationIndex + 1] !== '202611220002_learning_context_helpers.sql' ||
-    new Set(dataMigrations).size !== dataMigrations.length
-  )
+  if (migrationIndex < 0 || new Set(dataMigrations).size !== dataMigrations.length)
     throw new Error('Owner-shadow migration registry is not canonical');
   return dataMigrations.slice(0, migrationIndex + 1).map(name);
 }

@@ -75,7 +75,8 @@ export function installProofComponents() {
 
 export function removeProofWrapper() {
   if (!installed) return;
-  sql(`drop function public.fixture_read_account_intent(uuid,text);
+  sql(`drop function if exists public.fixture_prepare_account_merge_preview(uuid,text,bigint);
+    drop function public.fixture_read_account_intent(uuid,text);
     drop function public.fixture_lock_account_intent_scope(uuid,text,bigint);
     drop function public.fixture_accept_account_proof(uuid,uuid,bytea,bigint);
     drop function public.fixture_issue_learning_session_grant(text,uuid,uuid);
@@ -89,4 +90,29 @@ export function removeProofWrapper() {
     `${JSON.stringify({ status: 'passed', wrapperRemoved: true }, null, 2)}\n`,
   );
   installed = false;
+}
+
+export function installPreviewFixture() {
+  sql(readFileSync('supabase/account-merge/preview-authority.sql', 'utf8'));
+  sql(readFileSync('test/account-merge/preview-wrapper.sql', 'utf8'));
+  for (const role of ['anon', 'authenticated', 'service_role'])
+    assert.equal(
+      sql(`select has_function_privilege('${role}',
+        'public.fixture_prepare_account_merge_preview(uuid,text,bigint)','EXECUTE')`),
+      role === 'authenticated' ? 't' : 'f',
+    );
+  const privateFunctions = [
+    'kaq_private.prepare_account_merge_preview(uuid,text,bigint)',
+    'kaq_private.lock_account_intent_scope(uuid,text,bigint)',
+  ];
+  for (const role of ['anon', 'authenticated', 'service_role'])
+    for (const signature of privateFunctions)
+      assert.equal(sql(`select has_function_privilege('${role}','${signature}','EXECUTE')`), 'f');
+  assert.equal(
+    sql(`select count(*) from pg_proc proc_row
+      cross join lateral aclexplode(coalesce(proc_row.proacl,acldefault('f',proc_row.proowner))) acl
+      where proc_row.oid in (${privateFunctions.map((name) => `'${name}'::regprocedure`).join(',')})
+        and acl.privilege_type='EXECUTE' and acl.grantee=0`),
+    '0',
+  );
 }

@@ -3,6 +3,7 @@ import type { ProofRacePort } from './proof-port';
 
 export const callback = 'http://127.0.0.1:54533/test/account-sdk/callback.html';
 export type AdapterOptions = {
+  additionalPrivateTables?: readonly string[];
   authorizationFailure?: boolean;
   cleanupReceiptFilename?: string;
   beforeProofAccept?: (port: ProofRacePort) => Promise<void>;

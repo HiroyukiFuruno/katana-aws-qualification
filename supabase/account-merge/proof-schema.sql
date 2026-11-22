@@ -25,5 +25,5 @@ alter table kaq_private.account_intents
     (target_uid is null and target_account_id is null and target_membership_epoch is null)
     or (target_uid is not null and target_account_id is not null and target_membership_epoch is not null)
     or (kind = 'merge_existing' and target_uid is not null and target_account_id is null
-      and target_membership_epoch is null and state in ('both_proved', 'cancelled', 'expired'))
+      and target_membership_epoch is null and state in ('both_proved', 'previewed', 'cancelled', 'expired'))
   );

@@ -17,6 +17,7 @@ type CleanupInput = {
   protectedBaseline: string;
   learnerBaseline: string;
   auditBaseline: ReturnType<typeof auditSnapshot>;
+  additionalPrivateTables?: readonly string[];
   receiptFilename?: string;
 };
 
@@ -29,6 +30,7 @@ export async function cleanup({
   protectedBaseline,
   learnerBaseline,
   auditBaseline,
+  additionalPrivateTables = [],
   receiptFilename = 'sdk-cleanup.json',
 }: CleanupInput) {
   try {
@@ -74,7 +76,7 @@ export async function cleanup({
     );
     const publicHash = fingerprint();
     const audit = verifyAudit(auditBaseline, userIds, [...ownedMembership.aliasUserIds]);
-    const protectedFinal = protectedHash();
+    const protectedFinal = protectedHash(additionalPrivateTables);
     const learnerFinal = learnerCount();
     const receipt = {
       status: 'passed',
@@ -89,7 +91,7 @@ export async function cleanup({
       protectedBaseline,
       protectedFinal,
       protectedUnchanged: protectedBaseline === protectedFinal,
-      protectedTables: protectedTables(),
+      protectedTables: protectedTables(additionalPrivateTables),
       audit,
       learnerBaseline,
       learnerFinal,

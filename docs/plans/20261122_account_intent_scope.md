@@ -4,6 +4,10 @@
 
 この部品は、署名済み main request context と intent ID/secret/expected revision から、preview/commit が後で使う一貫した private scope snapshot を作る。所有移動、learning data の書込み、preview digest、choice、receipt 作成、公開 RPC/REST、production migration は実装しない。
 
+## preview authority source candidate
+
+`prepare_account_merge_preview(intent_id, secret, expected_revision)` はこの scope helper を一回だけ呼び、既存 owner が一つ又は二つの operation について、combined v2 snapshot と owner ごとの v2 snapshot を同一 SQL statement で materialize する。raw document は private intent にのみ残し、test-only signed wrapper は preview ID、revision、digest、expiry、非識別件数だけを返す。preview は intent/proof/leg と now + 2 minutes の最短 TTL を使い、re-preview は新 UUID と CAS revision を必要とする。公開 route、commit、migration registry はこの source candidate に含めない。
+
 入力に UID、account ID、session ID、target selector は置かない。actor advisory → intent row → initial proof/snapshot → 全対象 Auth UID → proof を含む session/AMR → `learning_state` → account/membership の順を固定し、下位 lock 後の UID 増加は追加 lock で補わず `KAQ_INTENT_SCOPE_RETRY` で中止する。source/target proof の session は相互に distinct かつ main session と異なり、保存済み session created/OAuth AMR/leg state・issue・expiry・consumption を lower lock 後に再照合する。
 
 ## 入出力

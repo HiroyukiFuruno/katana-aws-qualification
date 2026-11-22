@@ -21,7 +21,7 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
   const control = new SdkControl(operations, undefined, options.authorizationFailure === true);
   const worker = () => sdkWorker(control, operations);
   const baseline = fingerprint();
-  const protectedBaseline = protectedHash();
+  const protectedBaseline = protectedHash(options.additionalPrivateTables ?? []);
   const auditBaseline = auditSnapshot();
   if (
     Number(
@@ -134,6 +134,7 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
         drain,
         baseline,
         protectedBaseline,
+        additionalPrivateTables: options.additionalPrivateTables,
         learnerBaseline,
         auditBaseline,
         receiptFilename: options.cleanupReceiptFilename,
@@ -144,7 +145,6 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
     assertNoCodeExchange: () => control.assertNoCodeExchange(),
     assertAuthorizationFailurePrivacy: control.assertAuthorizationFailurePrivacy.bind(control),
     intent: () => sourceIntent(operations),
-    assertNoBrowserLeak: (values: string[], count: 1 | 2 = 2) =>
-      control.assertNoBrowserLeak(values, count),
+    assertNoBrowserLeak: control.assertNoBrowserLeak.bind(control),
   };
 }

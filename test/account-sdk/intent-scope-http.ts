@@ -38,7 +38,8 @@ async function scopeRpc(page: Page, name: string, body: Record<string, unknown>,
         },
         body: JSON.stringify(body),
       });
-      return { status: response.status, body: (await response.json()) as unknown };
+      const responseBody: unknown = await response.json();
+      return { status: response.status, body: responseBody };
     },
     { gateway: gatewayOrigin, apiKey: testKey(), name, body, binding },
   );
@@ -66,6 +67,21 @@ export function lockScope(
       p_intent_secret: secret,
       p_expected_revision: revision,
     },
+    binding,
+  );
+}
+
+export function prepareScopePreview(
+  page: Page,
+  intentId: string,
+  secret: string,
+  revision: number,
+  binding?: Binding,
+) {
+  return scopeRpc(
+    page,
+    'fixture_prepare_account_merge_preview',
+    { p_intent_id: intentId, p_intent_secret: secret, p_expected_revision: revision },
     binding,
   );
 }

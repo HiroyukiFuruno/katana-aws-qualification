@@ -24,21 +24,31 @@ export function fingerprint() {
   return createHash('sha256').update(JSON.stringify(publicState())).digest('hex');
 }
 
-export function protectedTables() {
+function expectedPrivateTables(additionalPrivateTables: readonly string[]) {
+  if (
+    additionalPrivateTables.some((name) => !/^[a-z_]+$/.test(name)) ||
+    new Set(additionalPrivateTables).size !== additionalPrivateTables.length
+  )
+    throw new Error('Invalid additional SDK private-table inventory');
+  return [...privateTables, ...additionalPrivateTables.map((name) => `kaq_private.${name}`)].sort();
+}
+
+export function protectedTables(additionalPrivateTables: readonly string[] = []) {
+  const expected = expectedPrivateTables(additionalPrivateTables);
   const tables = sql(
     "select schemaname||'.'||tablename from pg_tables where schemaname in ('auth','kaq_private') and not(schemaname='auth' and tablename='audit_log_entries') order by schemaname,tablename;",
   ).split('\n');
   if (
     JSON.stringify(tables.filter((name) => name.startsWith('kaq_private.'))) !==
-      JSON.stringify(privateTables) ||
+      JSON.stringify(expected) ||
     tables.some((name) => !/^(?:auth|kaq_private)\.[a-z_]+$/.test(name))
   )
     throw new Error('Unexpected SDK protected-table inventory');
   return tables;
 }
 
-export function protectedHash() {
-  const tables = protectedTables();
+export function protectedHash(additionalPrivateTables: readonly string[] = []) {
+  const tables = protectedTables(additionalPrivateTables);
   const parts = tables.map(
     (table) =>
       `select '${table}' relation,encode(extensions.digest(coalesce(jsonb_agg(to_jsonb(row) order by to_jsonb(row)::text),'[]'::jsonb)::text,'sha256'),'hex') digest from ${table} row`,

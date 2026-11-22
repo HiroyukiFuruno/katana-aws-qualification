@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useSyncExternalStore } from 'react';
+import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { useCookieConsent } from './CookieConsent';
 import { usePreferences } from './preferences';
@@ -6,7 +6,7 @@ import './site-ad.css';
 
 const publisher = 'ca-pub-6906125453421012';
 const slot = '1732021005';
-export const siteAdServingEnabled = import.meta.env.PROD && import.meta.env.VITE_ADSENSE_SERVING === '1';
+const siteAdServingEnabled = import.meta.env.PROD && import.meta.env.VITE_ADSENSE_SERVING === '1';
 
 const mobile = window.matchMedia('(width < 768px)');
 const wide = window.matchMedia('(width >= 1520px)');
@@ -25,83 +25,52 @@ function adViewport() {
   return wide.matches ? 'wide' : 'standard';
 }
 
-const adVisibilityKey = 'kaq:ads-collapsed';
-const adVisibilityEvents = new EventTarget();
-let adsCollapsed = false;
-try {
-  adsCollapsed = sessionStorage.getItem(adVisibilityKey) === '1';
-} catch {
-  // 保存できない環境でも現在のページでは選択を維持する。
-}
+type Placement = 'bottom' | 'inline' | 'left' | 'right';
 
-function subscribeAdVisibility(onChange: () => void) {
-  adVisibilityEvents.addEventListener('change', onChange);
-  return () => adVisibilityEvents.removeEventListener('change', onChange);
-}
-
-export function useAdsCollapsed() {
-  return useSyncExternalStore(subscribeAdVisibility, () => adsCollapsed);
-}
-
-export function SiteAdVisibilityButton() {
-  const { t } = usePreferences();
-  const consent = useCookieConsent();
-  const collapsed = useAdsCollapsed();
-  if (!siteAdServingEnabled || consent.value !== 'granted') return null;
-
-  return (
-    <button
-      className="site-ad-visibility"
-      type="button"
-      onClick={() => {
-        adsCollapsed = !collapsed;
-        try {
-          sessionStorage.setItem(adVisibilityKey, adsCollapsed ? '1' : '0');
-        } catch {
-          // 現在のページではメモリ上の選択を利用する。
-        }
-        adVisibilityEvents.dispatchEvent(new Event('change'));
-      }}
-    >
-      {t(collapsed ? 'showAdvertisements' : 'collapseAdvertisements')}
-    </button>
-  );
-}
-
-type Placement = 'footer' | 'inline' | 'left' | 'right';
-
-export function SiteAdLayout({ children, show }: { children: ReactNode; show: boolean }) {
-  if (!show) return children;
-
-  return (
-    <div className="site-ad-layout">
-      {children}
-      <SiteAd placement="left" />
-      <SiteAd placement="right" />
-    </div>
-  );
-}
-
-export function SiteAd({
-  placement = 'footer',
-  fullWidth = true,
-  replaceOnMobile = false,
+export function SiteAdLayout({
+  children,
+  show,
+  viewKey = '',
 }: {
-  placement?: Placement;
-  fullWidth?: boolean;
-  replaceOnMobile?: boolean;
+  children: ReactNode;
+  show: boolean;
+  viewKey?: string;
 }) {
+  return (
+    <>
+      <div className="site-ad-layout">
+        <div className="site-ad-content">{children}</div>
+        {show && <SiteAd key={`left:${viewKey}`} placement="left" />}
+        {show && <SiteAd key={`right:${viewKey}`} placement="right" />}
+      </div>
+      {show && <SiteAd key={viewKey} placement="bottom" />}
+    </>
+  );
+}
+
+export function SiteAd({ placement }: { placement: Placement }) {
   const consent = useCookieConsent();
   const viewport = useSyncExternalStore(subscribeViewport, adViewport);
-  const collapsed = useAdsCollapsed();
-  if (!siteAdServingEnabled || consent.value !== 'granted' || collapsed) return null;
-  if (placement === 'inline' && viewport !== 'mobile') return null;
-  if (placement === 'footer' && replaceOnMobile && viewport === 'mobile') return null;
-  if ((placement === 'left' || placement === 'right') && viewport !== 'wide') return null;
-  return <AdSenseUnit placement={placement} fullWidth={fullWidth} />;
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    function restoreVisit(event: PageTransitionEvent) {
+      if (event.persisted) setDismissed(false);
+    }
+    window.addEventListener('pageshow', restoreVisit);
+    return () => window.removeEventListener('pageshow', restoreVisit);
+  }, []);
+
+  if (!siteAdServingEnabled || consent.value !== 'granted' || dismissed) return null;
+
+  const targetViewport =
+    placement === 'inline' ? 'mobile' : placement === 'bottom' ? 'standard' : 'wide';
+  if (viewport !== targetViewport) return null;
+
+  return <AdSenseUnit placement={placement} onClose={() => setDismissed(true)} />;
 }
 
-function AdSenseUnit({ placement, fullWidth }: { placement: Placement; fullWidth: boolean }) {
+function AdSenseUnit({ placement, onClose }: { placement: Placement; onClose: () => void }) {
   const { t } = usePreferences();
   const requested = useRef(false);
   useEffect(() => {
@@ -121,25 +90,30 @@ function AdSenseUnit({ placement, fullWidth }: { placement: Placement; fullWidth
     document.head.appendChild(script);
   }, []);
 
-  const footer = placement === 'footer';
+  const bottom = placement === 'bottom';
   const size =
     placement === 'inline' ? { width: 'min(100%, 320px)', height: 90 } : { width: 160, height: 600 };
 
   const unit = (
     <ins
       className="adsbygoogle"
-      style={footer ? { display: 'block', marginBlockStart: '1rem' } : { display: 'block', ...size }}
+      style={bottom ? { display: 'block' } : { display: 'block', ...size }}
       data-ad-client={publisher}
       data-ad-slot={slot}
-      data-ad-format={footer ? 'auto' : undefined}
-      data-full-width-responsive={footer ? String(fullWidth) : undefined}
+      data-ad-format={bottom ? 'auto' : undefined}
+      data-full-width-responsive={bottom ? 'false' : undefined}
     />
   );
-  if (footer) return unit;
-
   return (
     <div className={`site-ad site-ad--${placement}`}>
-      <span className="site-ad-label">{t('advertisement')}</span>
+      <button
+        className="site-ad-close"
+        type="button"
+        aria-label={t('closeAdvertisement')}
+        onClick={onClose}
+      >
+        <span aria-hidden="true">×</span>
+      </button>
       {unit}
     </div>
   );

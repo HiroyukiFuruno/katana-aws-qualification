@@ -38,6 +38,7 @@ export function CertificationPages({ id }: { id?: string }) {
         </p>
         <h1>{certification.name}</h1>
       </div>
+      <SiteAd placement="inline" />
       <section className="card">
         <h2>{t('certFee')}</h2>
         <p>
@@ -56,7 +57,6 @@ export function CertificationPages({ id }: { id?: string }) {
       <p className="cert-fee-note">
         {t('certExchangeNote', { conversion: price.conversion, rate: price.rate })}
       </p>
-      <SiteAd placement="inline" />
       <article className="card">
         <h2>{t('certScope')}</h2>
         <p>{t(guide.scope)}</p>

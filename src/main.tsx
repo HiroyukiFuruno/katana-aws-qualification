@@ -68,7 +68,9 @@ function App() {
     return (
       <>
         {!lesson && <SiteHeader section={section} subpage={courseId} />}
-        <LessonExperience />
+        <SiteAdLayout show={!lesson}>
+          <LessonExperience />
+        </SiteAdLayout>
         {!lesson && <SiteFooter />}
         <CookieConsent />
       </>
@@ -85,7 +87,7 @@ function App() {
   return (
     <>
       <SiteHeader section={section} subpage={courseId} />
-      <SiteAdLayout show={contentAds}>
+      <SiteAdLayout show={contentAds} viewKey={currentUrl.pathname}>
         {section === 'auth' ? (
           <AuthCallback />
         ) : accountPages.includes(route.page) ? (
@@ -122,7 +124,7 @@ function App() {
           <Home />
         )}
       </SiteAdLayout>
-      <SiteFooter replaceAdOnMobile={contentAds} />
+      <SiteFooter />
       <CookieConsent />
     </>
   );

@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useCookieConsent } from '../../CookieConsent';
 import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
-import { SiteAd, SiteAdVisibilityButton, siteAdServingEnabled, useAdsCollapsed } from '../../SiteAd';
+import { SiteAdLayout } from '../../SiteAd';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonRoute } from '../delivery/navigation';
 import type { LessonStep } from '../delivery/slideTypes';
@@ -40,9 +39,7 @@ export function LessonStepScreen({
   commit,
 }: Props) {
   const { locale, t } = usePreferences();
-  const consent = useCookieConsent();
-  const adsCollapsed = useAdsCollapsed();
-  const offersAdvertising = step.kind !== 'final' && siteAdServingEnabled && consent.value === 'granted';
+  const showAd = step.kind !== 'final';
   const { activeFinalSessionId } = snapshot.progress;
   const active = snapshot.sessions.find((session) => session.sessionId === activeFinalSessionId);
   const presentationPosition = route.stage === 'final' && route.position ? route.position - 1 : -1;
@@ -96,53 +93,53 @@ export function LessonStepScreen({
     go: (href) => confirm(snapshot, href),
   });
   return (
-    <LessonSlideShell
-      step={step}
-      unitTitle={asset.unit.title}
-      catalogHref={catalogHref}
-      onCatalog={navigation.catalog}
-      previousHref={navigation.previousHref}
-      onPrevious={navigation.previous}
-      saving={navigation.saving}
-      error={saveError || actionError || savedReload.error ? t('progressCloudSaveFailed') : undefined}
-      onRetry={
-        savedReload.error
-          ? savedReload.retry
-          : conflict
-            ? undefined
-            : recovery.error
-              ? recovery.retry
-              : actions.retry
-      }
-      onActionError={setActionError}
-      onNext={navigation.nextAllowed ? actions.next : undefined}
-      nextLabel={navigation.nextLabelKey ? t(navigation.nextLabelKey, { total: 12 }) : undefined}
-      advertisingControl={offersAdvertising ? <SiteAdVisibilityButton /> : undefined}
-      adSlot={offersAdvertising && !adsCollapsed ? <SiteAd fullWidth={false} /> : undefined}
-    >
-      {conflict ? (
-        <LessonConflictRetry
-          busy={actions.busy || savedReload.busy}
-          label={t('examReloadSaved')}
-          retry={() => void savedReload.retry()}
-        />
-      ) : null}
-      <LessonStepContent
-        asset={asset}
+    <SiteAdLayout show={showAd} viewKey={step.id}>
+      <LessonSlideShell
         step={step}
-        question={checkpoint.question}
-        selected={selected}
-        onChange={setSelected}
-        activeFinal={Boolean(active)}
-        requiredScore={asset.finalPolicy.passCorrect}
-        blocked={blocked}
-        feedback={feedback}
-        checkpoint={actions.checkpoint}
-        retryCheckpoint={() => {
-          setFeedback(false);
-          checkpoint.reshuffle();
-        }}
-      />
-    </LessonSlideShell>
+        unitTitle={asset.unit.title}
+        catalogHref={catalogHref}
+        onCatalog={navigation.catalog}
+        previousHref={navigation.previousHref}
+        onPrevious={navigation.previous}
+        saving={navigation.saving}
+        error={saveError || actionError || savedReload.error ? t('progressCloudSaveFailed') : undefined}
+        onRetry={
+          savedReload.error
+            ? savedReload.retry
+            : conflict
+              ? undefined
+              : recovery.error
+                ? recovery.retry
+                : actions.retry
+        }
+        onActionError={setActionError}
+        onNext={navigation.nextAllowed ? actions.next : undefined}
+        nextLabel={navigation.nextLabelKey ? t(navigation.nextLabelKey, { total: 12 }) : undefined}
+      >
+        {conflict ? (
+          <LessonConflictRetry
+            busy={actions.busy || savedReload.busy}
+            label={t('examReloadSaved')}
+            retry={() => void savedReload.retry()}
+          />
+        ) : null}
+        <LessonStepContent
+          asset={asset}
+          step={step}
+          question={checkpoint.question}
+          selected={selected}
+          onChange={setSelected}
+          activeFinal={Boolean(active)}
+          requiredScore={asset.finalPolicy.passCorrect}
+          blocked={blocked}
+          feedback={feedback}
+          checkpoint={actions.checkpoint}
+          retryCheckpoint={() => {
+            setFeedback(false);
+            checkpoint.reshuffle();
+          }}
+        />
+      </LessonSlideShell>
+    </SiteAdLayout>
   );
 }

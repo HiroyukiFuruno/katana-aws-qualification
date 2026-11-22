@@ -1,5 +1,6 @@
 import { type MouseEvent, useState } from 'react';
 import { usePreferences } from '../../preferences';
+import { SiteAd } from '../../SiteAd';
 import type { DeliveryIndexAsset } from '../delivery/artifactTypes';
 import { lessonPath } from '../delivery/navigation';
 import type { LessonSummary } from '../state/memberTypes';
@@ -66,6 +67,7 @@ export function LessonCatalog({
         <h1>{t('fundamentalsCatalogTitle')}</h1>
         <p>{t('fundamentalsCatalogIntro')}</p>
       </div>
+      <SiteAd placement="inline" />
       {loading && <p role="status">{t('fundamentalsLoading')}</p>}
       {error && (
         <div className="notice" role="alert">

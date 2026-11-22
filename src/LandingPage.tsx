@@ -13,8 +13,8 @@ export function LandingPage() {
     <main id="main" className="landing">
       <LandingHero />
       <div className="shell layout-stack landing-content">
-        <LandingConcept />
         <SiteAd placement="inline" />
+        <LandingConcept />
         <LandingValues />
         <LandingAccount />
         <LandingPaths />

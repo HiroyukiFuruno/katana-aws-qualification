@@ -15,7 +15,4 @@ export const dataMigrations = [
   '202611210004_learning_account_foundation.sql',
   '202611210005_presentation_storage.sql',
   '202611220001_learning_owner_shadow.sql',
-  '202611220002_learning_context_helpers.sql',
-  '202611220003_learning_session_grants.sql',
-  '202611220004_learning_account_creation.sql',
 ] as const;

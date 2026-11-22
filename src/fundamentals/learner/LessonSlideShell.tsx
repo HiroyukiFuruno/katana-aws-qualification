@@ -13,7 +13,6 @@ export type LessonSlideShellProps = {
   children: ReactNode;
   previousHref?: string;
   adSlot?: ReactNode;
-  advertisingControl?: ReactNode;
   saving?: boolean;
   error?: string;
   onPrevious?: () => void | Promise<void>;
@@ -32,7 +31,6 @@ export function LessonSlideShell({
   children,
   previousHref,
   adSlot,
-  advertisingControl,
   saving = false,
   error,
   onPrevious,
@@ -103,13 +101,13 @@ export function LessonSlideShell({
         <progress aria-label={t('lessonProgress')} max={total} value={position}>
           {position} / {total}
         </progress>
-        {advertisingControl}
       </header>
       <main id="main" className="lesson-slide-stage" aria-labelledby={headingId}>
         <div className="lesson-slide-content">
           <h1 id={headingId} ref={heading} tabIndex={-1}>
             {step.kind === 'checkpoint' ? t('lessonAssessment') : step.label}
           </h1>
+          {adSlot}
           {children}
         </div>
       </main>
@@ -124,11 +122,6 @@ export function LessonSlideShell({
         nextLabel={nextLabel}
         onExit={onCatalog}
       />
-      {adSlot ? (
-        <aside className="lesson-slide-ad" aria-label={t('lessonAdvertisement')}>
-          {adSlot}
-        </aside>
-      ) : null}
     </section>
   );
 }

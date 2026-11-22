@@ -65,6 +65,15 @@ test('fails closed for same accounts, missing data, unknown columns, and invalid
   for (const build of cases) expect(() => projectMergePreview(build())).toThrow();
 });
 
+test('accepts persisted presentation snapshot fields and still rejects excess fields', () => {
+  expect(() => projectMergePreview(goldenInput())).not.toThrow();
+  const excess = goldenInput();
+  first(
+    excess.source.snapshot.document.tables['public.roadmap_profiles'] as Record<string, unknown>[],
+  ).unexpected = true;
+  expect(() => projectMergePreview(excess)).toThrow();
+});
+
 test('rejects duplicate snapshot identities and an unbacked fundamentals pass', () => {
   const duplicate = goldenInput();
   const events = duplicate.target.snapshot.document.tables['public.learning_events'] as Record<

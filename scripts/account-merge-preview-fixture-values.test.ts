@@ -34,6 +34,7 @@ function overrides(table: PublicTable, suffix: string): RawRow {
         submitted_at: null,
         submitted_received_at: null,
         submission_hash: null,
+        presentation: { choiceOrders: {} },
       };
     case 'exam_responses':
       return {
@@ -70,9 +71,10 @@ function overrides(table: PublicTable, suffix: string): RawRow {
         payload_hash: '\\xaa',
         outcome: 'accepted',
         reason_code: null,
+        presentation_hash: `\\x${'a'.repeat(64)}`,
       };
     case 'roadmap_profiles':
-      return { revision: Number(suffix) };
+      return { revision: Number(suffix), presentation: { optionOrders: {}, order: [] } };
     case 'dashboard_settings':
       return {
         revision,

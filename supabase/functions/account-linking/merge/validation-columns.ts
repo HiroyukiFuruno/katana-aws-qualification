@@ -46,6 +46,7 @@ export const rawColumns: Record<PublicTable, readonly string[]> = {
     'submitted_at',
     'submitted_received_at',
     'submission_hash',
+    'presentation',
   ],
   exam_responses: [
     'user_id',
@@ -80,8 +81,9 @@ export const rawColumns: Record<PublicTable, readonly string[]> = {
     'payload_hash',
     'outcome',
     'reason_code',
+    'presentation_hash',
   ],
-  roadmap_profiles: ['user_id', 'revision'],
+  roadmap_profiles: ['user_id', 'revision', 'presentation'],
   dashboard_settings: ['user_id', 'revision', 'settings', 'updated_at'],
   fundamentals_unit_progress: [
     'user_id',

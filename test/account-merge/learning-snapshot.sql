@@ -47,6 +47,10 @@ begin
   perform pg_temp.snapshot_assert('stable_repeated_capture', kaq_private.capture_learning_snapshot(owners) = baseline);
   perform pg_temp.snapshot_assert('owner_order_canonical', kaq_private.capture_learning_snapshot(array[first_uid, seed_uid]) = baseline);
   perform pg_temp.snapshot_assert('complete_table_inventory', (select count(*) = 17 from jsonb_object_keys(baseline->'document'->'tables')));
+  perform pg_temp.snapshot_assert('presentation_columns_in_snapshot',
+    (baseline->'document'->'tables'->'public.roadmap_profiles'->0) ? 'presentation'
+    and (baseline->'document'->'tables'->'public.exam_sessions'->0) ? 'presentation'
+    and (baseline->'document'->'tables'->'public.migration_items'->0) ? 'presentation_hash');
   perform pg_temp.snapshot_assert('digest_uses_row_hash_collection', baseline->>'digest' =
     encode(extensions.digest((baseline->'fingerprints')::text, 'sha256'), 'hex'));
   perform set_config('TimeZone', 'Asia/Tokyo', true);

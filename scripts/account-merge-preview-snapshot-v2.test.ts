@@ -77,3 +77,11 @@ test('v1 remains valid and v2 rejects unknown document, lineage, and final state
   (rows as Array<Record<string, unknown>>)[0].state = 'submitted';
   expect(() => projectMergePreview(invalidFinal)).toThrow();
 });
+
+test('v2 accepts persisted presentation snapshot fields and rejects excess fields', () => {
+  expect(() => projectMergePreview(v2Input())).not.toThrow();
+  const excess = v2Input();
+  const profiles = excess.source.snapshot.document.tables['public.roadmap_profiles'];
+  (profiles as Array<Record<string, unknown>>)[0].unexpected = true;
+  expect(() => projectMergePreview(excess)).toThrow();
+});

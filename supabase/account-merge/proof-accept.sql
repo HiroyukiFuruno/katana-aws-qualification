@@ -45,11 +45,75 @@ revoke all on function kaq_private.proof_claim_context() from public, anon, auth
 create function kaq_private.proof_accept_result(
   intent kaq_private.account_intents, leg kaq_private.account_proof_legs, proof kaq_private.account_proofs
 ) returns jsonb language sql stable security definer set search_path = pg_catalog, kaq_private as $$
-  select jsonb_build_object('intent_id', intent.id, 'intent_state', intent.state,
+  select jsonb_strip_nulls(jsonb_build_object('intent_id', intent.id, 'intent_state', intent.state,
     'intent_revision', intent.revision, 'leg_id', leg.id, 'leg_state', leg.state,
-    'leg_revision', leg.revision, 'side', leg.side, 'expires_at', kaq_private.runtime_epoch_ms(intent.expires_at), 'proof_id', proof.id)
+    'leg_revision', leg.revision, 'side', leg.side, 'expires_at', kaq_private.runtime_epoch_ms(intent.expires_at), 'proof_id', proof.id,
+    'commit_receipt_id', (select receipt.id from kaq_private.account_merge_receipts receipt where receipt.intent_id = intent.id)))
 $$;
 revoke all on function kaq_private.proof_accept_result(kaq_private.account_intents,kaq_private.account_proof_legs,kaq_private.account_proofs)
+  from public, anon, authenticated, service_role;
+
+create function kaq_private.record_already_linked_receipt(
+  p_intent_id uuid, p_canonical_account_id uuid, p_source_proof_id uuid, p_target_proof_id uuid,
+  p_source_uid uuid, p_target_uid uuid, p_same_auth_user boolean
+) returns uuid language plpgsql volatile security definer
+set search_path = pg_catalog, kaq_private, extensions
+as $$
+declare
+  receipt_id uuid; evidence jsonb; expected_result jsonb;
+  source_proof kaq_private.account_proofs%rowtype; target_proof kaq_private.account_proofs%rowtype;
+  terminal_intent kaq_private.account_intents%rowtype;
+begin
+  if p_intent_id is null or p_canonical_account_id is null or p_source_proof_id is null
+    or p_target_proof_id is null or p_source_uid is null or p_target_uid is null or p_same_auth_user is null then
+    raise exception using errcode = 'PT400', message = 'KAQ_PROOF_RECEIPT_ARGUMENT_INVALID';
+  end if;
+  select * into terminal_intent from kaq_private.account_intents intent
+    where intent.id = p_intent_id and intent.state = 'already_linked' for update;
+  if terminal_intent.id is null or terminal_intent.source_account_id is distinct from p_canonical_account_id then
+    raise exception using errcode = 'PT409', message = 'KAQ_PROOF_RECEIPT_CONFLICT';
+  end if;
+  select * into source_proof from kaq_private.account_proofs proof where proof.id = p_source_proof_id
+    and proof.intent_id = p_intent_id and proof.auth_uid = p_source_uid;
+  select * into target_proof from kaq_private.account_proofs proof where proof.id = p_target_proof_id
+    and proof.intent_id = p_intent_id and proof.auth_uid = p_target_uid;
+  if p_same_auth_user is distinct from (p_source_uid = p_target_uid)
+    or source_proof.id is null or target_proof.id is null
+    or source_proof.account_id is distinct from p_canonical_account_id
+    or target_proof.account_id is distinct from p_canonical_account_id
+    or source_proof.membership_epoch is null or target_proof.membership_epoch is null
+    or source_proof.account_membership_revision is null or target_proof.account_membership_revision is null then
+    raise exception using errcode = 'PT409', message = 'KAQ_PROOF_RECEIPT_CONFLICT';
+  end if;
+  evidence := jsonb_build_object('domain', 'kaq.account-merge.already-linked.evidence.v1',
+    'intent_id', p_intent_id, 'canonical_account_id', p_canonical_account_id,
+    'source_proof_id', p_source_proof_id, 'target_proof_id', p_target_proof_id,
+    'source_auth_uid', p_source_uid, 'target_auth_uid', p_target_uid,
+    'source_membership_epoch', source_proof.membership_epoch,
+    'target_membership_epoch', target_proof.membership_epoch,
+    'source_account_membership_revision', source_proof.account_membership_revision,
+    'target_account_membership_revision', target_proof.account_membership_revision,
+    'same_auth_user', p_same_auth_user);
+  expected_result := jsonb_build_object('operation', 'already_linked', 'consent_required', false,
+    'no_ownership_change', true, 'evidence_domain', evidence->>'domain',
+    'same_auth_user', p_same_auth_user);
+  insert into kaq_private.account_merge_receipts(intent_id, canonical_account_id, algorithm_version,
+    consent_hash, before_scopes, choices, result)
+    values(p_intent_id, p_canonical_account_id, 1, extensions.digest(evidence::text, 'sha256'),
+      '[]'::jsonb, '{}'::jsonb, expected_result)
+    on conflict (intent_id) do nothing returning id into receipt_id;
+  if receipt_id is null then
+    select id into receipt_id from kaq_private.account_merge_receipts
+      where intent_id = p_intent_id and canonical_account_id = p_canonical_account_id
+        and algorithm_version = 1 and consent_hash = extensions.digest(evidence::text, 'sha256')
+        and before_scopes = '[]'::jsonb and choices = '{}'::jsonb and result = expected_result;
+    if receipt_id is null then
+      raise exception using errcode = 'PT409', message = 'KAQ_PROOF_RECEIPT_CONFLICT';
+    end if;
+  end if;
+  return receipt_id;
+end $$;
+revoke all on function kaq_private.record_already_linked_receipt(uuid,uuid,uuid,uuid,uuid,uuid,boolean)
   from public, anon, authenticated, service_role;
 
 create function kaq_private.accept_account_proof(
@@ -68,6 +132,7 @@ declare
   proof_oauth_at timestamptz; source_oauth_at timestamptz; locked_users uuid[]; locked_accounts uuid[]; locked_sessions uuid[];
   initial_source_member jsonb; initial_proof_member jsonb; initial_source_account jsonb; initial_proof_account jsonb;
   item uuid; locked_count bigint; target_is_unassigned boolean := false; proof_is_unassigned boolean := false;
+  same_auth_user_noop boolean := false;
 begin
   if p_intent_id is null or p_leg_id is null or p_ingest_nonce is null or octet_length(p_ingest_nonce) <> 32
     or p_expected_leg_revision is null or p_expected_leg_revision < 0
@@ -221,7 +286,6 @@ begin
       raise exception using errcode = 'PT401', message = 'KAQ_PROOF_REAUTHENTICATION_REQUIRED';
     end if;
   else
-    if proof_uid = intent.actor_uid then raise exception using errcode = 'PT403', message = 'KAQ_PROOF_SUBJECT_INVALID'; end if;
     if source_proof.id is null or source_leg.id is null or source_proof.auth_uid is distinct from intent.actor_uid
       or source_proof.expires_at <= clock_timestamp() or source_session.created_at is distinct from source_proof.session_created_at
       or source_session.created_at < source_leg.issued_at or source_proof.oauth_at < source_leg.issued_at then
@@ -242,7 +306,19 @@ begin
       or source_proof.membership_epoch is not null or source_proof.account_membership_revision is not null then
       raise exception using errcode = 'PT401', message = 'KAQ_PROOF_REAUTHENTICATION_REQUIRED';
     end if;
-    if not target_is_unassigned and (proof_member.auth_user_id is null or proof_member.status <> 'active' or proof_account.status <> 'active') then
+    if proof_uid = intent.actor_uid then
+      if intent.kind <> 'merge_existing' or proof_member.auth_user_id is null then
+        raise exception using errcode = 'PT409', message = 'KAQ_PROOF_SAME_AUTH_USER';
+      end if;
+      if proof_member.status <> 'active' or proof_account.status <> 'active'
+        or source_member.auth_user_id is null or source_member.status <> 'active' or source_account.status <> 'active'
+        or proof_member.account_id is distinct from source_member.account_id
+        or proof_member.epoch is distinct from source_member.epoch
+        or proof_account.membership_revision is distinct from source_account.membership_revision then
+        raise exception using errcode = 'PT409', message = 'KAQ_PROOF_SAME_AUTH_USER';
+      end if;
+      same_auth_user_noop := true;
+    elsif not target_is_unassigned and (proof_member.auth_user_id is null or proof_member.status <> 'active' or proof_account.status <> 'active') then
       raise exception using errcode = 'PT403', message = 'KAQ_ACCOUNT_DISABLED';
     end if;
   end if;
@@ -257,11 +333,17 @@ begin
   if leg.side = 'source' then
     update kaq_private.account_intents set state = 'awaiting_target', revision = revision + 1 where id = intent.id returning * into intent;
   else
-    update kaq_private.account_intents set target_uid = proof_uid,
-      target_account_id = case when target_is_unassigned then null else proof_member.account_id end,
-      target_membership_epoch = case when target_is_unassigned then null else proof_member.epoch end,
-      state = case when not target_is_unassigned and proof_member.account_id = source_member.account_id then 'already_linked' else 'both_proved' end,
+    update kaq_private.account_intents set
+      target_uid = case when same_auth_user_noop then null else proof_uid end,
+      target_account_id = case when same_auth_user_noop or target_is_unassigned then null else proof_member.account_id end,
+      target_membership_epoch = case when same_auth_user_noop or target_is_unassigned then null else proof_member.epoch end,
+      state = case when same_auth_user_noop or (not target_is_unassigned and proof_member.account_id = source_member.account_id)
+        then 'already_linked' else 'both_proved' end,
       revision = revision + 1 where id = intent.id returning * into intent;
+    if intent.state = 'already_linked' then
+      perform kaq_private.record_already_linked_receipt(intent.id, source_member.account_id, source_proof.id, proof.id,
+        source_proof.auth_uid, proof.auth_uid, same_auth_user_noop);
+    end if;
   end if;
   return kaq_private.proof_accept_result(intent, leg, proof);
 end $$;

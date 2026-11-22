@@ -4,6 +4,7 @@ import { proofRacePort, proofWorker } from './proof-port';
 import { auditSnapshot } from './server-audit';
 import { cleanup } from './server-cleanup';
 import { actor, body, listen, send, trackedServer } from './server-http';
+import { sourceIntent, verifiedSourceScope } from './server-intent';
 import type { AdapterOptions } from './server-options';
 import { sdkWorker } from './server-sdk';
 import { fingerprint, learnerCount, protectedHash } from './server-snapshot';
@@ -11,7 +12,6 @@ import { SdkTimings } from './server-timings';
 import { requiredUuid, sql } from './sql';
 
 export type { ProofRacePort } from './proof-port';
-
 export async function startSdkAdapter(options: AdapterOptions = {}) {
   const timings = new SdkTimings(options.cleanupReceiptFilename);
   const operations = new Map<string, Operation>();
@@ -59,6 +59,8 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
         };
         if (operation.actor.userId !== main.userId || operation.actor.sessionId !== main.sessionId)
           throw new Error('invalid request');
+        if (input.side === 'target' && operation.kind === 'merge_existing')
+          operation.sourceScope = verifiedSourceScope(byActorAndSide, main);
         if (input.side === 'source') {
           operation.sourceScope = await seedSourceMembership(
             main,
@@ -67,10 +69,8 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
           );
         }
         const result = await worker().begin(operation);
-        if (result.legId) {
-          operations.set(result.legId, operation);
-          byActorAndSide.set(key, operation);
-        }
+        if (result.legId) operations.set(result.legId, operation);
+        if (result.legId) byActorAndSide.set(key, operation);
         send(response, 200, result);
         return;
       }
@@ -89,7 +89,6 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
         const exchanged = await worker().exchange(operation, input.code);
         mark('exchange');
         const canonical = await control.loadCanonical(operation);
-        mark('canonical');
         if (exchanged.state !== 'exchanged' && canonical.state !== 'proved') {
           send(response, 200, exchanged);
           return;
@@ -102,6 +101,8 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
             ownedMembership,
             operation.kind ?? 'add_existing',
             main.userId,
+            operation.sourceScope,
+            options.targetSameOwner === true,
           );
           mark('membership');
           if (options.beforeProofAccept) await options.beforeProofAccept(port);
@@ -142,6 +143,7 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
     assertNoCodeExchange: () => control.assertNoCodeExchange(),
     assertAuthorizationFailurePrivacy: (values: string[]) =>
       control.assertAuthorizationFailurePrivacy(values),
+    intent: () => sourceIntent(operations),
     assertNoBrowserLeak: (values: string[], count: 1 | 2 = 2) =>
       control.assertNoBrowserLeak(values, count),
   };

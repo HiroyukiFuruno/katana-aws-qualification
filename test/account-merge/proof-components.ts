@@ -37,9 +37,9 @@ export function installProofComponents() {
   );
   assert(result && typeof result === 'object' && 'status' in result && 'checks' in result);
   assert.equal(result.status, 'passed');
-  assert(Array.isArray(result.checks) && result.checks.length === 45);
+  assert(Array.isArray(result.checks) && result.checks.length === 49);
   assert(result.checks.every((name: unknown) => typeof name === 'string'));
-  assert.equal(new Set(result.checks).size, 45);
+  assert.equal(new Set(result.checks).size, 49);
   assert('fixedGucNegativesOnly' in result && result.fixedGucNegativesOnly === true);
   writeFileSync(`${artifacts}/proof-fixed-guc-negatives.json`, `${JSON.stringify(result, null, 2)}\n`);
   writeFileSync(

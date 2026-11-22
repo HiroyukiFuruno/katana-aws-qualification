@@ -70,7 +70,7 @@ intent系control POSTはmain Bearer＋bodyのintent secret、同origin、idempot
 
 ## 6. 状態・最終同意・ロック順
 
-- intentの正常遷移は `awaiting_source → awaiting_target → both_proved → previewed → committed`。新規createNewはこのintent状態機械に含めない。すべて `cancelled/expired/attempts_exhausted` へ終了可能。成功済み/終了済みをopenへ戻さない。already_linkedは所有移動なしの終了receiptを返す。
+- intentの正常遷移は `awaiting_source → awaiting_target → both_proved → previewed → committed`。新規createNewはこのintent状態機械に含めない。すべて `cancelled/expired/attempts_exhausted` へ終了可能。成功済み/終了済みをopenへ戻さない。already_linkedは所有移動なしの終了receiptを返す。receiptは最終merge同意を流用せず、`kaq.account-merge.already-linked.evidence.v1` のdomain-separated evidence digest、`consent_required:false`、`no_ownership_change:true` を記録する。同intentの再送は同じreceiptだけを返す。
 - source完了前のtarget開始は拒否。add_existingではsourceのfresh proofにもmembershipがないこと、targetにはactive membershipがあることを確認する。merge_existingは既存ownerから追加を開始するflowを表し、targetが未membershipなら一時accountを作らずattach、別active ownerならmergeとなる。両proof後に確定したoperationをpreviewへ固定し、attach/mergeの内容を示す最終同意が必要。preview後のmembership状態変化でoperationを自動変更しない。同UID/既に同ownerは既存のalready_linked no-opに従う。
 - previewは両側の既存 `learning_state` 行をUUID順にUPDATE lockし、先行writer完了後にaccount→membershipを検査・lockする。未membership側にはstateを作らず、既存側だけlockする。全12表・全列・件数をstable orderでrow SHA-256化し、その順序付き集合をSHA-256化する。UUID/時刻/回答/revision/hashを除外せず、表示件数・競合・保持選択肢を同じsnapshotから生成する。部分revisionは完全digestの代用にしない。
 - commit直前にEdgeは各proofのrefresh開始をCAS記録し、保存した同一sessionを公式SDKで各一回だけrefreshする。署名/issuer/aud/exp、sub/session ID不変、getUser成功を確認し、credentialを暗号化receiptへ保存してからpolicy_checkedとする。OAuth AMR/元のfreshness下限・TTLは更新しない。結果不明/保存失敗は当該legを使用不能にし、同token再送せず新PKCEへ戻す。GoTrue policyの確認時点とSQL commitは原子的ではない。

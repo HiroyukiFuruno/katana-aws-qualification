@@ -17,7 +17,7 @@ function observe<T>(pending: Promise<T>) {
 export async function authenticate(
   page: Page,
   side: 'source' | 'target',
-  expectedState: 'awaiting_target' | 'both_proved',
+  expectedState: 'awaiting_target' | 'both_proved' | 'already_linked',
   sameSourceProvider = false,
 ) {
   const started = observe(

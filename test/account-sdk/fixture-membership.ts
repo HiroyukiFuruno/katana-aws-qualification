@@ -96,7 +96,23 @@ export async function seedTargetMembership(
   owned: OwnedMembership,
   kind: IntentKind,
   actorUid: string,
+  source: SourceScope | undefined,
+  sameOwner: boolean,
 ) {
-  if (port.side !== 'target' || kind !== 'add_existing' || port.proofAuthUid === actorUid) return;
+  if (port.side !== 'target' || port.proofAuthUid === actorUid) return;
+  if (kind === 'merge_existing' && sameOwner) {
+    if (!source || !owned.accountIds.has(source.accountId))
+      throw new Error('same-owner source scope is not fixture-owned');
+    const existing = sql(
+      `select exists(select 1 from kaq_private.learning_memberships where auth_user_id=${literal(port.proofAuthUid)}::uuid);`,
+    );
+    if (existing !== 'f') throw new Error('same-owner target membership fixture is not isolated');
+    sql(
+      `insert into kaq_private.learning_memberships(auth_user_id,account_id)
+       values(${literal(port.proofAuthUid)}::uuid,${literal(source.accountId)}::uuid);`,
+    );
+    return;
+  }
+  if (kind !== 'add_existing') return;
   await seedMembership(port.proofAuthUid, owned);
 }

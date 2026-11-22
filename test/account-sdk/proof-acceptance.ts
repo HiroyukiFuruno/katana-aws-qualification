@@ -11,6 +11,7 @@ type ProofReceipt = {
   leg_state: 'proved';
   expires_at: number;
   proof_id: string;
+  commit_receipt_id?: string;
 };
 
 export class FixtureProofError extends Error {
@@ -27,7 +28,8 @@ function receipt(value: unknown): value is ProofReceipt {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const item = value as Record<string, unknown>;
   return (
-    Object.keys(item).length === 9 &&
+    Object.keys(item).length >= 9 &&
+    Object.keys(item).length <= 10 &&
     Object.keys(item).every((key) =>
       [
         'intent_id',
@@ -39,6 +41,7 @@ function receipt(value: unknown): value is ProofReceipt {
         'leg_state',
         'expires_at',
         'proof_id',
+        'commit_receipt_id',
       ].includes(key),
     ) &&
     typeof item.intent_id === 'string' &&
@@ -49,7 +52,8 @@ function receipt(value: unknown): value is ProofReceipt {
     Number.isSafeInteger(item.leg_revision) &&
     item.leg_state === 'proved' &&
     Number.isSafeInteger(item.expires_at) &&
-    typeof item.proof_id === 'string'
+    typeof item.proof_id === 'string' &&
+    (item.commit_receipt_id === undefined || typeof item.commit_receipt_id === 'string')
   );
 }
 

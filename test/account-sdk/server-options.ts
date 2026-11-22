@@ -9,4 +9,5 @@ export type AdapterOptions = {
   dropProofResponse?: boolean;
   intentKind?: IntentKind;
   targetProvider?: 'keycloak' | 'azure';
+  targetSameOwner?: boolean;
 };

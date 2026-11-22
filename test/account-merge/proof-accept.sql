@@ -44,7 +44,9 @@ declare
   source_account uuid := gen_random_uuid(); intent_id uuid := gen_random_uuid(); leg_id uuid := gen_random_uuid();
   target_intent uuid := gen_random_uuid(); proof_intent uuid := gen_random_uuid(); proof_leg_one uuid := gen_random_uuid();
   proof_leg_two uuid := gen_random_uuid(); nonce bytea := decode(repeat('ab', 32), 'hex'); issuer text; claims jsonb;
-  before jsonb; settings jsonb;
+  before jsonb; settings jsonb; noop_intent uuid := gen_random_uuid(); noop_receipt_one uuid; noop_receipt_two uuid;
+  noop_source_leg uuid := gen_random_uuid(); noop_target_leg uuid := gen_random_uuid();
+  noop_source_proof uuid := gen_random_uuid(); noop_target_proof uuid := gen_random_uuid();
 begin
   select auth_issuer into strict issuer from kaq_private.account_protocol_settings where id;
   perform pg_temp.proof_accept_assert('settings_singleton', (select count(*) = 1 from kaq_private.account_protocol_settings));
@@ -57,6 +59,9 @@ begin
     not has_function_privilege('anon', 'kaq_private.accept_account_proof(uuid,uuid,bytea,bigint)', 'EXECUTE')
     and not has_function_privilege('authenticated', 'kaq_private.accept_account_proof(uuid,uuid,bytea,bigint)', 'EXECUTE')
     and not has_function_privilege('service_role', 'kaq_private.accept_account_proof(uuid,uuid,bytea,bigint)', 'EXECUTE'));
+  perform pg_temp.proof_accept_assert('noop_receipt_helper_private',
+    not has_function_privilege('authenticated',
+      'kaq_private.record_already_linked_receipt(uuid,uuid,uuid,uuid,uuid,uuid,boolean)', 'EXECUTE'));
 
   insert into kaq_private.learning_accounts(id) values(source_account);
   insert into kaq_private.account_intents(id, kind, actor_uid, actor_session_id, secret_hash,
@@ -87,10 +92,49 @@ begin
     'insert into kaq_private.account_proofs(intent_id,leg_id,auth_uid,session_id,session_created_at,oauth_at,account_id,expires_at) values(%L,%L,%L,%L,clock_timestamp(),clock_timestamp(),%L,clock_timestamp()+interval ''9 minutes'')',
     proof_intent, proof_leg_two, actor_uid, gen_random_uuid(), source_account),
     'new row for relation "account_proofs" violates check constraint "account_proofs_membership_snapshot_check"');
-  perform pg_temp.proof_accept_expect('proof_same_intent_uid_rejected', format(
-    'insert into kaq_private.account_proofs(intent_id,leg_id,auth_uid,session_id,session_created_at,oauth_at,expires_at) values(%L,%L,%L,%L,clock_timestamp(),clock_timestamp(),clock_timestamp()+interval ''9 minutes'')',
-    proof_intent, proof_leg_two, target_auth_uid, gen_random_uuid()), 'duplicate key value violates unique constraint "account_proofs_intent_auth_uid_unique"');
+  insert into kaq_private.account_proofs(intent_id,leg_id,auth_uid,session_id,session_created_at,oauth_at,expires_at)
+    values(proof_intent, proof_leg_two, target_auth_uid, gen_random_uuid(), clock_timestamp(), clock_timestamp(),
+      clock_timestamp() + interval '9 minutes');
+  perform pg_temp.proof_accept_assert('proof_same_intent_uid_distinct_leg_allowed',
+    (select count(*) = 2 from kaq_private.account_proofs as proofs
+      where proofs.intent_id = proof_intent and proofs.auth_uid = target_auth_uid));
   update kaq_private.account_intents set state = 'cancelled' where id = proof_intent;
+
+  insert into kaq_private.account_intents(id, kind, actor_uid, actor_session_id, secret_hash,
+    source_account_id, source_membership_epoch, state, expires_at)
+    values(noop_intent, 'merge_existing', actor_uid, actor_session, decode(repeat('16', 32), 'hex'), source_account, 0,
+      'already_linked', clock_timestamp() + interval '9 minutes');
+  insert into kaq_private.account_proof_legs(id,intent_id,side,attempt,storage_key,ingest_nonce_hash,expires_at)
+    values(noop_source_leg,noop_intent,'source',1,'proof-noop-source:' || noop_intent,nonce,clock_timestamp() + interval '2 minutes'),
+      (noop_target_leg,noop_intent,'target',1,'proof-noop-target:' || noop_intent,nonce,clock_timestamp() + interval '2 minutes');
+  insert into kaq_private.account_proofs(id,intent_id,leg_id,auth_uid,session_id,session_created_at,oauth_at,
+    account_id,membership_epoch,account_membership_revision,expires_at)
+    values(noop_source_proof,noop_intent,noop_source_leg,actor_uid,gen_random_uuid(),clock_timestamp(),clock_timestamp(),
+      source_account,0,0,clock_timestamp() + interval '9 minutes'),
+      (noop_target_proof,noop_intent,noop_target_leg,actor_uid,gen_random_uuid(),clock_timestamp(),clock_timestamp(),
+      source_account,0,0,clock_timestamp() + interval '9 minutes');
+  noop_receipt_one := kaq_private.record_already_linked_receipt(noop_intent, source_account, noop_source_proof,
+    noop_target_proof, actor_uid, actor_uid, true);
+  noop_receipt_two := kaq_private.record_already_linked_receipt(noop_intent, source_account, noop_source_proof,
+    noop_target_proof, actor_uid, actor_uid, true);
+  perform pg_temp.proof_accept_assert('noop_receipt_is_stable_one_per_intent', noop_receipt_one = noop_receipt_two
+    and (select count(*) = 1 from kaq_private.account_merge_receipts as receipts
+      where receipts.intent_id = noop_intent));
+  perform pg_temp.proof_accept_assert('noop_receipt_is_domain_evidence_not_consent', exists(
+    select 1 from kaq_private.account_merge_receipts receipt where receipt.id = noop_receipt_one
+      and receipt.consent_hash = extensions.digest(jsonb_build_object('domain', 'kaq.account-merge.already-linked.evidence.v1',
+        'intent_id', noop_intent, 'canonical_account_id', source_account, 'source_proof_id', noop_source_proof,
+        'target_proof_id', noop_target_proof, 'source_auth_uid', actor_uid, 'target_auth_uid', actor_uid,
+        'source_membership_epoch', 0, 'target_membership_epoch', 0,
+        'source_account_membership_revision', 0, 'target_account_membership_revision', 0,
+        'same_auth_user', true)::text, 'sha256')
+      and receipt.before_scopes = '[]'::jsonb and receipt.choices = '{}'::jsonb
+      and receipt.result = jsonb_build_object('operation', 'already_linked', 'consent_required', false,
+        'no_ownership_change', true, 'evidence_domain', 'kaq.account-merge.already-linked.evidence.v1',
+        'same_auth_user', true)));
+  perform pg_temp.proof_accept_assert('noop_same_uid_keeps_target_snapshot_empty', exists(
+    select 1 from kaq_private.account_intents where id = noop_intent and target_uid is null
+      and target_account_id is null and target_membership_epoch is null));
 
   insert into kaq_private.account_intents(id, kind, actor_uid, actor_session_id, secret_hash,
     source_account_id, source_membership_epoch, expires_at)

@@ -13,8 +13,10 @@ alter table kaq_private.account_proofs
   add constraint account_proofs_membership_snapshot_check check (
     (account_id is null and membership_epoch is null and account_membership_revision is null)
     or (account_id is not null and membership_epoch is not null and account_membership_revision is not null)
-  ),
-  add constraint account_proofs_intent_auth_uid_unique unique (intent_id, auth_uid);
+  );
+
+-- 同一UIDでも別sessionのtarget proofは必要になる。leg_id/session_idの一意性は維持し、
+-- same UIDをtwo-party proofとして扱わない判定はissuerでactive same-ownerだけに限定する。
 
 -- merge_existingだけが成立済み未所属target UIDを保持でき、他のkindや非終端stateでは許可しない。
 alter table kaq_private.account_intents

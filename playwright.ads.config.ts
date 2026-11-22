@@ -8,7 +8,7 @@ export default defineConfig({
   webServer: {
     command: 'VITE_ADSENSE_SERVING=1 bun run build && bunx vite preview --host 127.0.0.1 --port 4193 --strictPort',
     url: 'http://127.0.0.1:4193',
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 300000,
   },
 });

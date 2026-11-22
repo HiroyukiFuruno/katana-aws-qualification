@@ -1,16 +1,19 @@
 import { usePreferences } from './preferences';
 import type { StructuredQuestion } from './questions';
+import { choiceLabel } from './choiceLabels';
 
 export function StructuredAnswerFields({
   question,
   selected,
+  choiceOrder,
   onChange,
 }: {
   question: StructuredQuestion;
   selected: string[];
+  choiceOrder?: string[];
   onChange: (selected: string[]) => void;
 }) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
   const slots =
     question.format === 'matching'
       ? question.prompts
@@ -18,11 +21,18 @@ export function StructuredAnswerFields({
           id: String(index + 1),
           text: t('answerStep', { number: index + 1 }),
         }));
+  const choices =
+    choiceOrder
+      ?.map((id) => question.choices.find((choice) => choice.id === id))
+      .filter((choice): choice is StructuredQuestion['choices'][number] => choice !== undefined) ??
+    question.choices;
   return (
     <div className="structured-answer-fields">
       {slots.map((slot, index) => (
         <label key={slot.id} className="structured-answer-field">
-          <span lang={question.format === 'matching' ? 'ja' : undefined}>{slot.text}</span>
+          <span lang={question.format === 'matching' ? (question.locale ?? locale) : undefined}>
+            {slot.text}
+          </span>
           <select
             value={selected[index] ?? ''}
             onChange={(event) => {
@@ -34,14 +44,14 @@ export function StructuredAnswerFields({
             }}
           >
             <option value="">{t('none')}</option>
-            {question.choices.map((choice) => (
+            {choices.map((choice) => (
               <option
                 key={choice.id}
                 value={choice.id}
-                lang="ja"
+                lang={question.locale ?? locale}
                 disabled={selected.some((id, position) => id === choice.id && position !== index)}
               >
-                {choice.id} · {choice.text}
+                {choiceLabel(choices, choice.id)} · {choice.text}
               </option>
             ))}
           </select>
@@ -58,7 +68,7 @@ export function StructuredAnswerReview({
   question: StructuredQuestion;
   selected: string[];
 }) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
   const choices = new Map(question.choices.map((choice) => [choice.id, choice]));
   const distractors = question.choices.filter((choice) => !question.correct.includes(choice.id));
   return (
@@ -70,20 +80,22 @@ export function StructuredAnswerReview({
           const slot = question.prompts?.[index];
           return (
             <li key={slot?.id ?? id} className={actual?.id === id ? 'right' : 'wrong'}>
-              <strong lang={slot ? 'ja' : undefined}>
+              <strong lang={slot ? (question.locale ?? locale) : undefined}>
                 {slot?.text ?? t('answerStep', { number: index + 1 })}
               </strong>
               <dl>
                 <div>
                   <dt>{t('selected')}</dt>
-                  <dd lang={actual ? 'ja' : undefined}>{actual?.text ?? t('none')}</dd>
+                  <dd lang={actual ? (question.locale ?? locale) : undefined}>
+                    {actual?.text ?? t('none')}
+                  </dd>
                 </div>
                 <div>
                   <dt>{t('correct')}</dt>
-                  <dd lang="ja">{expected?.text}</dd>
+                  <dd lang={question.locale ?? locale}>{expected?.text}</dd>
                 </div>
               </dl>
-              <p className="explanation" lang="ja">
+              <p className="explanation" lang={question.locale ?? locale}>
                 {expected?.explanation}
               </p>
             </li>
@@ -93,11 +105,11 @@ export function StructuredAnswerReview({
       {distractors.length > 0 && (
         <details>
           <summary>{t('optionExplanations')}</summary>
-          <ul lang="ja">
+          <ul lang={question.locale ?? locale}>
             {distractors.map((choice) => (
               <li key={choice.id}>
                 <strong>
-                  {choice.id} · {choice.text}
+                  {choiceLabel(question.choices, choice.id)} · {choice.text}
                 </strong>
                 <p>{choice.explanation}</p>
               </li>

@@ -1,4 +1,5 @@
 import { usePreferences } from '../../preferences';
+import { useDashboardDisplayLabels } from '../displayLabels';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardSummary } from '../summaryTypes';
 import { metricKeys, titleKeys } from '../ui/dashboardLabels';
@@ -16,11 +17,14 @@ import './visual.css';
 export function DashboardVisual({
   widget,
   summary,
+  lessons,
 }: {
   widget: DashboardWidget;
   summary: DashboardSummary;
+  lessons: Parameters<typeof useDashboardDisplayLabels>[0];
 }) {
   const { locale, t } = usePreferences();
+  const display = useDashboardDisplayLabels(lessons);
   if (widget.kind === 'durations') return <DurationPanel widget={widget} duration={summary.duration} />;
   if (widget.kind === 'trend' || widget.kind === 'calendar') {
     const daily = dashboardCalendarDays(summary.daily, summary.query);
@@ -59,8 +63,9 @@ export function DashboardVisual({
   return (
     <SeriesChart
       widget={widget}
-      rows={dashboardGroupRows(widget, summary, (value) => dashboardDimensionLabel(value, t), t)}
+      rows={dashboardGroupRows(widget, summary, (value) => dashboardDimensionLabel(value, t), display)}
       categories={summary.groups.categories}
+      display={display}
     />
   );
 }

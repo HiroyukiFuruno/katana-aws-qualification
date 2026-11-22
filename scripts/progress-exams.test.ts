@@ -9,7 +9,7 @@ test('exam writes include generation, revision, and the immutable question refer
     async rpc(name, args) {
       calls.push({ name, args });
       if (name === 'read_learning_clock') return '2026-11-20T00:00:00.123456+00:00';
-      if (name === 'start_exam_session')
+      if (name === 'start_exam_session_v2')
         return [{ exam_id: 'e', deadline_at: '2026-12-01T00:00:00Z', revision: 2 }];
       if (name === 'save_exam_response_confirmed')
         return [{ duration_ms: 2, revision: 3, selected_at: '2026-11-20T00:00:00.123456+00:00' }];
@@ -37,9 +37,13 @@ test('exam writes include generation, revision, and the immutable question refer
   });
   const finalization = new ExamFinalizationCache().getOrCreate([], 'saa-c03', saved, [examQuestion], 0);
   await repo.finalize(saved, finalization.events);
-  expect(calls.find((call) => call.name === 'start_exam_session')).toMatchObject({
-    name: 'start_exam_session',
-    args: { p_expected_generation: 7, p_question_order: [{ question_id: 'q', question_revision: 1 }] },
+  expect(calls.find((call) => call.name === 'start_exam_session_v2')).toMatchObject({
+    name: 'start_exam_session_v2',
+    args: {
+      p_expected_generation: 7,
+      p_presentation: { choiceOrders: {} },
+      p_question_order: [{ question_id: 'q', question_revision: 1 }],
+    },
   });
   expect(calls.find((call) => call.name === 'save_exam_response_confirmed')).toMatchObject({
     name: 'save_exam_response_confirmed',

@@ -1,0 +1,3247 @@
+[
+  {
+    "id": "mock-secure-01",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "限制組織範圍內的 S3 存取",
+    "prompt": "將儲存貯體的讀取權授予稽核團隊的 AWS 帳戶。即使日後替換成員帳戶，也希望避免在政策中逐一列出帳戶。在組織內，只允許稽核角色存取。應使用哪些條件授權？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "僅以 PrincipalOrgID 作為條件",
+        "explanation": "無法將組織內角色的存取範圍限縮至稽核用途。"
+      },
+      {
+        "id": "B",
+        "text": "將組織管理帳戶 ID 設為 Principal",
+        "explanation": "無法直接表示成員帳戶中的稽核角色。"
+      },
+      {
+        "id": "C",
+        "text": "以 AND 條件同時比對 aws:PrincipalOrgID 與 aws:PrincipalArn 中的稽核角色模式",
+        "explanation": "可同時驗證組織成員資格與存取主體。"
+      },
+      {
+        "id": "D",
+        "text": "比對 aws:SourceOrgID 與角色模式",
+        "explanation": "SourceOrgID 適用於受支援的服務對服務呼叫，不適用於驗證直接角色存取是否屬於該組織。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "可同時驗證組織成員資格與存取主體。",
+      "concept": "PrincipalOrgID 評估主體所屬的組織，PrincipalArn 評估主體的 ARN。由角色工作階段發出的請求中，PrincipalArn 指的是原始 IAM 角色的 ARN。",
+      "check": {
+        "prompt": "如果組織中不同路徑下也建立了同名角色，應進一步限縮哪一項？",
+        "answer": "在 PrincipalArn 模式中納入稽核角色的路徑。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 模擬題 / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-02",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "透過 CloudFront 私有傳遞",
+    "prompt": "您透過 CloudFront 傳遞付費影片。您希望每位觀眾只能在 1 小時內存取多個片段，並防止透過 S3 URL 直接存取。哪種組態合適？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "使用 OAC 保護 S3 網站端點",
+        "explanation": "OAC 是為 S3 REST 原始伺服器設定的，無法套用於網站端點。"
+      },
+      {
+        "id": "B",
+        "text": "使用 CloudFront 簽章 Cookie 控制目標路徑與到期時間",
+        "explanation": "可依相同條件保護多個片段 URL。"
+      },
+      {
+        "id": "C",
+        "text": "將整個 S3 儲存貯體設為公開讀取，並使用 CloudFront WAF 驗證簽章",
+        "explanation": "直接存取 S3 不會經過 WAF。"
+      },
+      {
+        "id": "D",
+        "text": "封鎖 S3 公開存取，並透過 OAC 和儲存貯體政策僅允許目標分佈",
+        "explanation": "可防止觀眾直接繞過原始伺服器。"
+      },
+      {
+        "id": "E",
+        "text": "啟用 Origin Shield",
+        "explanation": "此功能可降低原始伺服器負載，但不會驗證觀眾身分。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "簽章 Cookie 可依相同條件保護多個片段 URL。觀眾無法直接繞過原始伺服器。",
+      "concept": "簽章 Cookie 用來授權觀眾存取 CloudFront；OAC 則會簽署 CloudFront 傳送至 S3 REST 原始伺服器的請求。S3 端只允許目標分佈存取。",
+      "check": {
+        "prompt": "如果下載目標是單一檔案，且使用者無法處理 Cookie，該怎麼辦？",
+        "answer": "可對觀眾使用簽章 URL。原始伺服器仍使用 OAC。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 模擬題 / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-03",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "跨帳戶 KMS 讀取權限",
+    "prompt": "帳戶 A 的 S3 資料使用客戶管理的 KMS 金鑰加密。僅允許帳戶 B 中的 ETL 角色讀取這些資料。S3 讀取權限已設定。還需要設定哪一組權限？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在帳戶 A 的金鑰政策中允許帳戶 B 的 ETL 角色解密。",
+        "explanation": "需要由金鑰所屬帳戶建立信任。"
+      },
+      {
+        "id": "B",
+        "text": "在 S3 儲存貯體政策中新增 kms:Decrypt。",
+        "explanation": "S3 儲存貯體政策無法授予使用 KMS 金鑰的權限。"
+      },
+      {
+        "id": "C",
+        "text": "將帳戶 A 的金鑰切換為 AWS 受管金鑰 aws/s3。",
+        "explanation": "無法編輯 aws/s3 金鑰政策以授權其他帳戶存取。"
+      },
+      {
+        "id": "D",
+        "text": "僅允許帳戶 B 的 ETL 角色使用 kms:GenerateDataKey。",
+        "explanation": "讀取現有物件需要解密權限。"
+      },
+      {
+        "id": "E",
+        "text": "在帳戶 B 的 ETL 角色 IAM 政策中，允許其對帳戶 A 的金鑰使用 kms:Decrypt。",
+        "explanation": "跨帳戶存取也需要在呼叫端設定相應權限。"
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-modifying-external-accounts.html",
+      "label": "AWS公式資料 · KMSのクロスアカウントアクセス"
+    },
+    "learning": {
+      "reason": "需要由金鑰所屬帳戶建立信任。跨帳戶存取也需要在呼叫端設定相應權限。",
+      "concept": "使用 SSE-KMS 時，S3 會透過 KMS 解密資料金鑰。跨帳戶存取時，需同時檢查金鑰端的信任政策與呼叫端的 IAM 權限。讀取操作需要授予 kms:Decrypt。",
+      "check": {
+        "prompt": "在儲存貯體政策中新增 GetObject 後，解密錯誤仍然存在。接下來應檢查什麼？",
+        "answer": "確認加密時實際使用的金鑰，接著檢查其金鑰政策與呼叫角色的 IAM 政策。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方文件 · KMS 跨帳戶存取"
+  },
+  {
+    "id": "mock-secure-04",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "ECS 權限邊界",
+    "prompt": "ECS Fargate 上的業務容器需要讀取訂單 SQS 佇列。不得授予該容器存取同一服務中其他任務所用佇列的權限。ECR 映像檔擷取與日誌傳送由 ECS 負責。應將權限指派給哪個角色？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將所有 SQS 與 ECR 權限授予執行角色。",
+        "explanation": "容器內的 SDK 通常不會使用執行角色認證資料。"
+      },
+      {
+        "id": "B",
+        "text": "將目標 SQS 佇列的讀取權限授予任務角色，並將 ECR 和日誌權限授予任務執行角色。",
+        "explanation": "如此可分別限制應用程式與 ECS 基礎設施的 API 操作。"
+      },
+      {
+        "id": "C",
+        "text": "將 SQS 權限新增至叢集共用的 EC2 執行個體描述檔。",
+        "explanation": "使用 Fargate 時，使用者不會透過執行個體描述檔管理執行基礎設施。"
+      },
+      {
+        "id": "D",
+        "text": "在 SQS 政策中允許相同 VPC 內的所有主體存取。",
+        "explanation": "僅靠網路邊界無法識別不同的業務任務。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "如此可分別限制應用程式與 ECS 基礎設施的 API 操作。",
+      "concept": "應用程式 SDK 會從任務角色取得認證資料。Fargate 擷取映像檔及 awslogs 驅動程式執行操作時，會使用任務執行角色。",
+      "check": {
+        "prompt": "現在應用程式需要寫入 S3。應將新增權限授予哪個角色？",
+        "answer": "在相關任務定義使用的任務角色中，新增對目標儲存貯體的必要寫入權限。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方認證考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-05",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "CloudFront 快取與個人資料",
+    "prompt": "靜態資產與個人化訂單 API 使用同一個 CloudFront 網域提供服務。訂單 API 會驗證 Bearer 權杖，且不得在不同使用者之間共用回應。靜態資產仍需維持快取。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "所有路徑的快取金鑰都只使用 URL 路徑，並轉送 Authorization。",
+        "explanation": "即使權杖已傳送至來源站，快取命中時仍可能向其他使用者傳回相同回應。"
+      },
+      {
+        "id": "B",
+        "text": "不轉送 Authorization，只將 API 的 Cache-Control 設為 private。",
+        "explanation": "來源站無法驗證權杖。"
+      },
+      {
+        "id": "C",
+        "text": "為動態 API 與靜態檔案設定相同的較長最小 TTL。",
+        "explanation": "這可能會覆寫禁止快取個人化回應的指示。"
+      },
+      {
+        "id": "D",
+        "text": "為 API 設定個別行為，停用快取並轉送 Authorization。",
+        "explanation": "如此可保留預設靜態路徑的快取，並將認證資料傳送至 API。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/add-origin-custom-headers.html",
+      "label": "AWS公式資料 · Authorizationヘッダーの転送"
+    },
+    "learning": {
+      "reason": "如此可保留預設靜態路徑的快取，並將認證資料傳送至 API。",
+      "concept": "快取政策會控制儲存和快取金鑰；來源請求政策則控制其他要轉送的內容。可使用依路徑區分的行為，將靜態資產與 API 分開。",
+      "check": {
+        "prompt": "設定 CachingDisabled 後仍出現驗證錯誤，應檢查什麼？",
+        "answer": "檢查將 Authorization 轉送至來源站的政策。停用快取本身不會轉送驗證標頭。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方文件 · Authorization 標頭轉送"
+  },
+  {
+    "id": "mock-secure-06",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EKS Pod 個別權限",
+    "prompt": "現有的 EKS 叢集已設定 OIDC 提供者。只有付款 Pod 需要取得 Secrets Manager 中的特定機密。你不希望節點 IAM 角色與其他 Pod 共用。在無法安裝額外代理程式時，應採用哪種設定？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "為目標 ServiceAccount 設定 IRSA，並將信任政策限制在指定的命名空間與 ServiceAccount。",
+        "explanation": "此設定會使用現有的 OIDC 聯合身分驗證，並將認證資料限定於 Pod 的主體。"
+      },
+      {
+        "id": "B",
+        "text": "將取得機密的權限授予工作節點 IAM 角色。",
+        "explanation": "這無法隔離同一節點上各工作負載的權限。"
+      },
+      {
+        "id": "C",
+        "text": "改用 EKS Pod Identity，但不新增代理程式。",
+        "explanation": "一般的 EC2 工作節點需要 Pod Identity Agent。"
+      },
+      {
+        "id": "D",
+        "text": "透過 Kubernetes RBAC 授予 ServiceAccount 取得機密的權限。",
+        "explanation": "這授予的是存取 Kubernetes API 的權限，無法授權 Secrets Manager 操作。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "此設定會使用現有的 OIDC 聯合身分驗證，並將認證資料限定於 Pod 的主體。",
+      "concept": "IRSA 會與叢集的 OIDC 發行者整合。在 IAM 角色的信任政策中，將 aud 與 ServiceAccount 的 sub 限定為目標值，並在權限政策中限定目標機密。",
+      "check": {
+        "prompt": "如果角色的權限政策只允許存取目標機密，讓其他 Pod 也能擔任該角色可以接受嗎？",
+        "answer": "不可以。限制角色可存取的資源，以及限制誰能使用這些權限，是兩項不同的要求。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方認證考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-07",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "從私有子網存取 S3",
+    "prompt": "EC2 上的批次處理需要存取同一個區域的 S3。禁止使用網際網路路由，而且只允許存取指定儲存貯體。要如何選擇組合，才能避免增加批次處理所用路徑的每小時費用？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "使用 PrivateLink 建立 S3 介面端點",
+        "explanation": "這會提供私有連線，但端點會產生每小時費用。"
+      },
+      {
+        "id": "B",
+        "text": "將 NAT 閘道的目的地限制為 S3 公用位址",
+        "explanation": "這並未排除網際網路路徑，而且會增加 NAT 費用。"
+      },
+      {
+        "id": "C",
+        "text": "建立 S3 閘道端點，並將它關聯至批次處理使用的路由表",
+        "explanation": "無須經過網際網路，即可存取相同 VPC 和區域中的 S3。"
+      },
+      {
+        "id": "D",
+        "text": "使用端點政策限制目標儲存貯體",
+        "explanation": "端點政策可限制經由該端點可存取的 S3 資源。"
+      },
+      {
+        "id": "E",
+        "text": "將儲存貯體 ARN 加入 S3 安全群組",
+        "explanation": "安全群組不會評估 IAM 資源 ARN。"
+      }
+    ],
+    "correct": [
+      "C",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "閘道端點無須經過網際網路，即可存取相同 VPC 和區域中的 S3。端點政策可限制經由該端點可存取的 S3 資源。",
+      "concept": "閘道端點路由會使用 S3 的受管前綴清單。端點政策會增加限制，不能取代 IAM 或儲存貯體政策中的許可。",
+      "check": {
+        "prompt": "如果目標儲存貯體可經由端點存取，但仍收到 403，應檢查什麼？",
+        "answer": "端點政策本身不會授予存取權。請檢查角色許可、儲存貯體政策，以及使用加密時所需的 KMS 許可。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-08",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "無需堡壘主機的維運存取",
+    "prompt": "維運人員需要在私有 EC2 執行個體上開啟 shell。不得開啟輸入連接埠，使用者必須透過 IAM 控制，而且 shell 工作階段記錄必須保留在 CloudWatch Logs。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "透過 EC2 Instance Connect Endpoint 使用 SSH 連線",
+        "explanation": "這需要允許輸入 SSH，而且還要另外設定將 shell 輸出傳送至 CloudWatch。"
+      },
+      {
+        "id": "B",
+        "text": "使用 Systems Manager Session Manager 標準工作階段，並設定所需的 VPC 端點和記錄功能",
+        "explanation": "可透過 IAM 控制誰能啟動工作階段，標準工作階段也能記錄 shell 輸入和輸出。"
+      },
+      {
+        "id": "C",
+        "text": "只允許透過 Session Manager 建立 SSH 通道",
+        "explanation": "Session Manager 無法記錄加密 SSH 通道工作階段的內容。"
+      },
+      {
+        "id": "D",
+        "text": "使用 Client VPN 連線 SSH 或 RDP",
+        "explanation": "目標執行個體必須允許輸入連線，而且工作階段記錄也需要另外設定。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "可透過 IAM 控制誰能啟動工作階段，標準工作階段也能記錄 shell 輸入和輸出。",
+      "concept": "標準 shell 工作階段的記錄可以傳送至 CloudWatch Logs。Session Manager 無法記錄 SSH 或連接埠轉送工作階段的內容。在私有網路中，也要檢查 SSM 和記錄傳送所需的端點。",
+      "check": {
+        "prompt": "如果 CloudTrail 記錄了 StartSession，是否也能查看輸入的命令？",
+        "answer": "工作階段啟動操作可供追蹤，但若要查看命令和輸出，必須另外設定標準 shell 工作階段記錄。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-09",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "防止資料外洩",
+    "prompt": "在組織的成員帳戶中，不希望一般管理員停用 S3 封鎖公開存取，但要允許核准的安全維運角色例外。哪種方法也適用於新帳戶？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "為每位管理員的 IAM 使用者新增拒絕政策",
+        "explanation": "這難以避免遺漏新的角色或帳戶。"
+      },
+      {
+        "id": "B",
+        "text": "使用 AWS Config 受管規則記錄不符合規範的狀態",
+        "explanation": "這只能事後偵測，不能阻止停用設定的 API 呼叫。"
+      },
+      {
+        "id": "C",
+        "text": "使用 Organizations SCP 明確拒絕該操作，並以條件排除核准的角色",
+        "explanation": "這會為 OU 下的成員帳戶設定權限上限，並防止管理員停用該設定。"
+      },
+      {
+        "id": "D",
+        "text": "使用 Organizations 標籤政策控制公開存取設定",
+        "explanation": "標籤政策無法控制 S3 封鎖公開存取 API。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "SCP 可為 OU 下的成員帳戶設定權限上限，並防止管理員停用該設定。",
+      "concept": "SCP 會限制成員帳戶可用的最高權限，也適用於這些帳戶的 root 使用者。例外角色仍需要另外取得 IAM 許可才能執行操作。",
+      "check": {
+        "prompt": "將該角色排除於 SCP 的 Deny 之外後，它就能執行操作嗎？",
+        "answer": "排除只會移除 SCP 的拒絕。還要確認該角色具有所需許可。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-10",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Private API Gateway",
+    "prompt": "VPC 中的多個服務需要呼叫 API Gateway REST API。即使憑證遭竊，也要確保只有獲准的 VPC 端點能呼叫該 API。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將 REST API 的端點類型設為 private，並使用 execute-api 介面端點",
+        "explanation": "可不透過公用路由存取 API。"
+      },
+      {
+        "id": "B",
+        "text": "使用 Regional API，並為其來源設定 CloudFront OAC",
+        "explanation": "這無法將直接 API 呼叫限制為來自指定 VPC 端點。"
+      },
+      {
+        "id": "C",
+        "text": "在 CORS 中允許 VPC CIDR",
+        "explanation": "CORS 控制瀏覽器來源，無法強制使用指定端點。"
+      },
+      {
+        "id": "D",
+        "text": "在 API 資源政策中明確拒絕 aws:SourceVpce 不在允許清單中的請求",
+        "explanation": "即使 IAM 允許請求，也能拒絕來自非預期端點的存取。"
+      },
+      {
+        "id": "E",
+        "text": "將 VPC NAT 閘道的 Elastic IP 用作驗證方式",
+        "explanation": "來源 IP 無法確保使用遭竊憑證經其他路徑發出的呼叫受 VPC 端點限制。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "私有 API 不使用公用路由。即使 IAM 允許請求，資源政策仍可拒絕來自非預期端點的存取。",
+      "concept": "介面端點提供網路路徑。在 API 資源政策中比對 aws:SourceVpce，可排除同一 VPC 中的其他端點。",
+      "check": {
+        "prompt": "如果獲准和未獲准的端點位於同一 VPC，僅靠 SourceVpc 能區分它們嗎？",
+        "answer": "不能。兩者的 VPC ID 相同，因此要使用 SourceVpce。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-11",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "不可變更的稽核日誌",
+    "prompt": "確保包括營運管理員在內的任何人都無法在 7 年內刪除稽核日誌。需要由 Amazon S3 對組織內管理員的覆寫和指定版本刪除強制執行保留期限。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "僅使用 S3 Versioning 和一般生命週期規則",
+        "explanation": "具備足夠權限的主體可以刪除指定版本。"
+      },
+      {
+        "id": "B",
+        "text": "為 S3 Object Lock 設定合規模式保留期限",
+        "explanation": "在保留期限到期前，嚴格禁止刪除受保護版本或縮短其保留期限。"
+      },
+      {
+        "id": "C",
+        "text": "使用治理模式，並授予管理員 BypassGovernanceRetention",
+        "explanation": "具備略過權限的管理員可以繞過保留限制。"
+      },
+      {
+        "id": "D",
+        "text": "將物件轉移至 S3 Glacier Deep Archive",
+        "explanation": "儲存層級不會鎖定刪除操作。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "在保留期限到期前，嚴格禁止刪除受保護版本或縮短其保留期限。",
+      "concept": "S3 Object Lock 合規模式會在保留期限到期前防止刪除受保護版本。一般刪除可能會新增刪除標記，但受保護版本仍會保留。",
+      "check": {
+        "prompt": "如果 GET 要求中看不到舊版本，如何確認該版本是否仍受保留？",
+        "answer": "列出物件版本，並檢查相關版本的保留設定。即使最新版本是刪除標記，較早的版本仍可能存在。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-12",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "輪換 Lambda 密鑰",
+    "prompt": "Lambda 函式會連線至 RDS PostgreSQL。憑證必須定期變更，而且函式必須在不重新部署的情況下使用新值。資料庫位於私有子網路。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將密碼儲存在加密環境變數中，並定期輪換 KMS 金鑰",
+        "explanation": "輪換 KMS 金鑰不會變更資料庫密碼。"
+      },
+      {
+        "id": "B",
+        "text": "將密碼儲存在 SSM SecureString 中，且只設定值的到期政策",
+        "explanation": "到期時間不會與資料庫使用者的密碼變更同步。"
+      },
+      {
+        "id": "C",
+        "text": "使用 Secrets Manager 輪換 RDS 憑證，並讓 Lambda 在執行時擷取密鑰",
+        "explanation": "只要輪換目標資料庫可連線，就能在不重新部署應用程式的情況下更新值。"
+      },
+      {
+        "id": "D",
+        "text": "將值儲存在 S3 SSE-KMS 物件中，並啟用版本控制",
+        "explanation": "靜態加密和版本控制本身不會變更資料庫憑證。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "只要輪換目標資料庫可連線，就能在不重新部署應用程式的情況下更新值。",
+      "concept": "Secrets Manager 輪換也必須在資料庫中設定新值。應用程式會擷取 AWSCURRENT；如果快取的憑證已過期，就在連線前重新擷取密鑰。",
+      "check": {
+        "prompt": "只輪換 KMS 金鑰就能讓舊的資料庫密碼失效嗎？",
+        "answer": "不能。KMS 金鑰輪換和變更資料庫密碼是彼此獨立的操作。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-13",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "分離 CloudTrail 權限",
+    "prompt": "將所有區域和所有成員帳戶的管理事件彙整至日誌封存帳戶中的 S3 儲存貯體。自動納入新帳戶，並防止成員管理員停止記錄。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在每個帳戶啟用事件記錄，並在稽核時手動儲存 CSV 檔案",
+        "explanation": "這無法持續彙整，也無法自動涵蓋新帳戶。"
+      },
+      {
+        "id": "B",
+        "text": "為每個成員帳戶建立獨立的 CloudTrail 軌跡",
+        "explanation": "成員帳戶端的管理員通常可以變更這種設計。"
+      },
+      {
+        "id": "C",
+        "text": "只設定 AWS Config 組織彙總工具",
+        "explanation": "它彙總組態與合規資訊，而非 API 事件軌跡。"
+      },
+      {
+        "id": "D",
+        "text": "建立 CloudTrail 多區域組織軌跡，並將日誌傳送至日誌封存 S3 儲存貯體",
+        "explanation": "組織軌跡會在整個組織中記錄並彙整事件，成員管理員無法變更該軌跡。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "組織軌跡會在整個組織中記錄並彙整事件，成員管理員無法變更該軌跡。",
+      "concept": "組織軌跡和多區域設定處理的是不同事項。若要將日誌傳送至其他帳戶的 S3 儲存貯體，請在儲存貯體政策中允許該軌跡傳送日誌。",
+      "check": {
+        "prompt": "僅記錄管理事件的組織軌跡也能記錄 S3 GetObject 嗎？",
+        "answer": "GetObject 是資料事件。請依稽核需求為相關儲存貯體設定資料事件。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-14",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "保護 ALB 後方的 HTTP 應用程式",
+    "prompt": "HTTP 應用程式部署在公開 ALB 後方。需要在要求送達應用程式之前，控制每個 IP 位址的異常高頻要求和 SQL 注入，並能依 URL 指定例外。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將 AWS WAF 與 ALB 建立關聯，並設定速率型規則和 SQLi 檢查規則",
+        "explanation": "它可以檢查 HTTP 要求內容和彙整條件，並將規則範圍限定在選定路徑。"
+      },
+      {
+        "id": "B",
+        "text": "使用 ALB 安全群組限制要求速率",
+        "explanation": "安全群組不會檢查要求速率或 HTTP 承載內容。"
+      },
+      {
+        "id": "C",
+        "text": "只啟用 AWS Shield Advanced，並讓它判斷 SQL 語法",
+        "explanation": "應用程式層的 SQLi 檢查由 WAF 規則執行。"
+      },
+      {
+        "id": "D",
+        "text": "將 GuardDuty 發現項目彙整至 Security Hub",
+        "explanation": "可以彙整安全調查結果，但不會在個別要求送達應用程式前封鎖要求。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "它可以檢查 HTTP 要求內容和彙整條件，並將規則範圍限定在選定路徑。",
+      "concept": "WAF 速率型規則會依指定金鑰彙整要求。使用 scope-down 陳述式可限制納入彙整的路徑。SQLi 檢查也應限制在相同路徑。",
+      "check": {
+        "prompt": "如果 WAF 的彙整金鑰對所有 IP 位址都相同，能只限制某個使用者的高要求速率嗎？",
+        "answer": "不能。若要依 IP 限制，必須依 IP 位址彙整。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-15",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "跨帳戶 S3 上傳",
+    "prompt": "合作夥伴的 AWS 角色必須將交付檔案上傳至接收端的 S3 儲存貯體。接收端必須自動擁有交付的物件，而合作夥伴只能上傳，不能執行其他操作。哪種設定不受 ACL 差異影響？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "保留 Object Writer 設定，並透過儲存貯體 ACL 授予讀取權限",
+        "explanation": "通常由寫入端擁有物件，而且設定仍依賴 ACL。"
+      },
+      {
+        "id": "B",
+        "text": "使用 Bucket owner preferred，並讓 ACL 標頭成為選填項目",
+        "explanation": "無法保證接收端擁有未附帶 bucket-owner-full-control 的物件。"
+      },
+      {
+        "id": "C",
+        "text": "選擇 Bucket owner enforced，並只允許合作夥伴角色對指定前綴執行 PutObject",
+        "explanation": "ACL 會停用，儲存貯體所屬帳戶會擁有物件，權限也可限縮至必要操作。"
+      },
+      {
+        "id": "D",
+        "text": "授予合作夥伴接收用 S3 儲存貯體的讀寫存取點",
+        "explanation": "這也允許讀取，與僅交付檔案的限制不符。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "停用 ACL 後，儲存貯體所屬帳戶會擁有物件，權限也可限縮至必要操作。",
+      "concept": "使用 Bucket owner enforced 時，ACL 會停用，儲存貯體所屬帳戶會擁有物件。PutObject 的 Allow 可以限縮到儲存貯體中的特定前綴。",
+      "check": {
+        "prompt": "若要讓同一位合作夥伴列出物件，只授予 PutObject 就足夠嗎？",
+        "answer": "列出物件還需要另外授予 s3:ListBucket。不要將此權限授予僅負責交付的角色。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-16",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "限制組織外部的金鑰使用",
+    "prompt": "某業務角色可以產生資料金鑰。在將權限限縮到目標 KMS 金鑰後，你希望排除該角色直接呼叫 KMS 的路徑，並且只允許透過 S3 使用。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "透過 aws:SourceIp 允許 VPC 的私有 CIDR",
+        "explanation": "這無法判斷 KMS 呼叫是否經過 S3。"
+      },
+      {
+        "id": "B",
+        "text": "在 kms:ViaService 中指定目標區域的 S3 服務名稱",
+        "explanation": "這可以將請求限縮為透過支援服務送出的請求。"
+      },
+      {
+        "id": "C",
+        "text": "將 kms:KeyOrigin 設為 AWS_KMS",
+        "explanation": "這是限制金鑰材料的來源，而非呼叫路徑。"
+      },
+      {
+        "id": "D",
+        "text": "只將 aws:PrincipalServiceName 設為 S3",
+        "explanation": "要識別服務代表呼叫者執行的 KMS 操作，請使用 ViaService。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這可以將請求限縮為透過支援服務送出的請求。",
+      "concept": "kms:ViaService 是在支援服務代表主體使用 KMS 時套用的條件。帶有 S3 專屬條件的 Allow 不適用於其他服務，或直接傳送至 KMS 的請求。",
+      "check": {
+        "prompt": "你新增了含 ViaService 條件的 Allow，但另一項政策也允許直接呼叫 KMS。應檢查什麼？",
+        "answer": "評估兩項政策的整體適用結果，並移除無條件的直接存取許可。含條件的 Allow 不會抵銷另一項 Allow。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-17",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "使用者驗證與 STS",
+    "prompt": "行動裝置使用者透過既有的 OIDC IdP 登入。你要提供短期 AWS 憑證，讓已登入的使用者存取各自在 S3 中的儲存區域。保留既有 IdP。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "直接使用 Cognito 使用者集區 ID 權杖，透過 Signature Version 4 簽署 S3 要求",
+        "explanation": "只有 ID 權杖並無法取得簽署 AWS API 要求所需的金鑰。"
+      },
+      {
+        "id": "B",
+        "text": "將 CloudFront 簽章 URL 發給所有使用者，並允許任意 S3 操作",
+        "explanation": "簽章 URL 不是可用於任意 AWS API 要求的臨時憑證。"
+      },
+      {
+        "id": "C",
+        "text": "為每位使用者建立一個 IAM 使用者，並將長期金鑰發給行動應用程式",
+        "explanation": "這不符合使用臨時憑證的條件。"
+      },
+      {
+        "id": "D",
+        "text": "將 OIDC IdP 與 Cognito 身分集區建立關聯，並設定 IAM 角色，依每個身分限制其 S3 前綴",
+        "explanation": "此作法會使用既有的使用者驗證，並提供權限受限的臨時 AWS 憑證。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "此作法會使用既有的使用者驗證，並提供權限受限的臨時 AWS 憑證。",
+      "concept": "Cognito 身分集區透過聯合身分驗證傳回臨時 AWS 憑證。使用 IAM 角色將每位使用者限制在自己的 S3 前綴。使用者集區主要處理應用程式的驗證權杖。",
+      "check": {
+        "prompt": "只靠使用者集區 ID 權杖就能使用標準 S3 SDK 嗎？",
+        "answer": "不行。還必須另外取得臨時 AWS 憑證，才能為 S3 SDK 要求簽章。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-18",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "從內部部署環境連線至 S3",
+    "prompt": "內部部署的稽核伺服器透過 Site-to-Site VPN 和 VPC 連線至 S3。不得將流量路由至 S3 公有 IP 位址，並希望以最低的營運負擔連線到私有 IP 位址。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在 VPC 中配置 S3 介面端點，並讓內部部署環境透過 VPN 解析其私有 DNS 名稱",
+        "explanation": "介面端點可透過 VPN 到達，且不需要使用通往 S3 的公有網際網路路徑。"
+      },
+      {
+        "id": "B",
+        "text": "透過 VPN 宣告 VPC 的 S3 閘道端點",
+        "explanation": "內部部署主機無法透過 VPN 使用閘道端點。"
+      },
+      {
+        "id": "C",
+        "text": "從內部部署環境經由 VPC NAT 閘道連線至 S3 公有端點",
+        "explanation": "這不符合避免連線至公有 IP 位址的要求。"
+      },
+      {
+        "id": "D",
+        "text": "停用 S3 儲存貯體的 Block Public Access，並透過 VPN 呼叫其公有 URL",
+        "explanation": "變更存取設定仍無法避免使用公有 IP 位址。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "介面端點可透過 VPN 到達，且不需要使用通往 S3 的公有網際網路路徑。",
+      "concept": "介面端點會在 VPC 子網路中建立具有私有 IP 位址的 ENI。請檢查 VPN 的路由、DNS 解析，以及端點的安全群組。",
+      "check": {
+        "prompt": "名稱解析正常，但透過 VPN 的 HTTPS 連線逾時。應檢查什麼？",
+        "answer": "檢查從內部部署環境到端點 ENI 的路徑，以及端點對 TCP 連接埠 443 的輸入規則。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-secure-19",
+    "revision": 1,
+    "category": "セキュリティ",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "跨 VPC 提供服務",
+    "prompt": "需要向多個 AWS 帳戶提供一項共用服務。使用方 VPC 與提供方 VPC 的 CIDR 範圍重疊，而且不希望使用方能路由至提供方的其他子網路。只公開業務使用的 TCP 連接埠。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "建立 VPC Peering，並在雙方公告整個 CIDR 範圍",
+        "explanation": "CIDR 範圍重疊時無法建立連線，而且這種方式是在網路層級共用連線。"
+      },
+      {
+        "id": "B",
+        "text": "將雙方連接至 Transit Gateway，並向彼此傳播重疊的 CIDR 範圍",
+        "explanation": "這種設計不適合路由重疊的情況，也無法依服務範圍公開存取。"
+      },
+      {
+        "id": "C",
+        "text": "將提供方的 NLB 公開為 PrivateLink 端點服務，並在使用方建立介面端點",
+        "explanation": "存取範圍可限制為特定 TCP 服務，即使 CIDR 範圍重疊也能使用。"
+      },
+      {
+        "id": "D",
+        "text": "將服務移至面向 Internet 的 ALB",
+        "explanation": "這無法在不經過公用網際網路的情況下，只連線至提供方的 TCP 服務。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "存取範圍可限制為特定 TCP 服務，即使 CIDR 範圍重疊也能使用。",
+      "concept": "PrivateLink 讓使用方透過其 VPC 中的介面端點，存取提供方 NLB 後方的服務，無須為雙方所有子網路建立路由。",
+      "check": {
+        "prompt": "使用方能否透過此連線直接 SSH 至提供方 VPC 中的其他 EC2 執行個體？",
+        "answer": "不能。這只提供通往已公開服務的入口，不會路由至任意子網路。"
+      }
+    },
+    "categoryLabel": "安全性",
+    "examDomainLabel": "安全性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-01",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "S3 事件重複與亂序",
+    "prompt": "透過事件接收對同一 S3 金鑰的更新，並據此更新搜尋索引。事件可能亂序抵達，也可能重複抵達。應如何避免舊事件覆寫最新更新的結果？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將事件建立時間精確至分鐘，並讓同一分鐘內的事件依抵達順序處理",
+        "explanation": "這無法處理同一分鐘內的多次更新，也無法因應亂序傳遞。"
+      },
+      {
+        "id": "B",
+        "text": "正規化並比較同一金鑰的 S3 sequencer，只以條件式更新接受比已儲存值更新的事件",
+        "explanation": "這可比較同一金鑰之物件建立與刪除事件的順序，而條件式更新可避免並行處理衝突。"
+      },
+      {
+        "id": "C",
+        "text": "透過 EventBridge 將事件傳送至標準 SQS 佇列，並假設會依 FIFO 順序接收",
+        "explanation": "標準 SQS 佇列不保證順序，也不會修正上游已亂序的事件。"
+      },
+      {
+        "id": "D",
+        "text": "將 S3 VersionId 當成字串比較，並採用看起來較新的值",
+        "explanation": "VersionId 的字典順序不保證代表時間先後。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "可比較同一金鑰之物件建立與刪除事件的順序，並透過條件式更新避免並行處理衝突。",
+      "concept": "S3 通知中的 sequencer 只能在同一物件金鑰內比較。若值的長度不同，請在較短值左側補零後再比較。",
+      "check": {
+        "prompt": "能否根據 sequencer 的大小比較兩個不同金鑰的事件？",
+        "answer": "不能。跨金鑰判斷順序需要使用其他機制。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-02",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "重複處理付款",
+    "prompt": "從 SQS 處理訂單，並在逾時時重試。付款 API 接受訂單 ID 作為冪等金鑰。如何同時避免一筆訂單被多次扣款，並在失敗時允許重試？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "只延長 SQS 可見性逾時",
+        "explanation": "這無法避免處理失敗後的重新傳遞，也無法避免付款成功但刪除訊息前發生故障。"
+      },
+      {
+        "id": "B",
+        "text": "在付款前從 SQS 刪除訊息",
+        "explanation": "付款未完成的訂單將無法重試。"
+      },
+      {
+        "id": "C",
+        "text": "同一訂單的每次嘗試都使用相同的冪等金鑰，並在確認付款結果後才刪除訊息",
+        "explanation": "重試會被付款 API 視為同一筆付款，而未完成的訂單可在訊息重新傳遞後繼續處理。"
+      },
+      {
+        "id": "D",
+        "text": "只依賴 SQS FIFO 的重複資料刪除功能，並為每次嘗試產生新的付款 ID",
+        "explanation": "傳送端的重複資料刪除無法消除消費端處理時的重試。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "重試會被付款 API 視為同一筆付款，而未完成的訂單可在訊息重新傳遞後繼續處理。",
+      "concept": "FIFO 的傳送端重複資料刪除無法保證外部 API 的副作用只發生一次。請在確認付款結果後才刪除訊息。",
+      "check": {
+        "prompt": "如果每次逾時都產生新的冪等金鑰，會怎樣？",
+        "answer": "API 會將同一訂單的每次嘗試視為不同操作，因此無法避免重複扣款。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-03",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "可用性與災難復原",
+    "prompt": "由 EC2 和 RDS 組成的系統，要求在區域故障時達到數分鐘的 RPO 與 30 分鐘的 RTO。備援區域中持續運作的應用程式容量應盡可能精簡，同時須能在正常運作期間進行運作狀態檢查。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "每天複製快照，並在故障後建立所有服務",
+        "explanation": "這很難達到數分鐘的 RPO，也無法事先檢查應用程式的運作狀態。"
+      },
+      {
+        "id": "B",
+        "text": "採用單一區域的 Multi-AZ 組態",
+        "explanation": "這可因應可用區故障，但無法因應整個區域故障。"
+      },
+      {
+        "id": "C",
+        "text": "從一開始就在兩個區域以完整正式環境容量持續運作",
+        "explanation": "這不符合以最少備援容量運作的要求。"
+      },
+      {
+        "id": "D",
+        "text": "持續進行跨區域資料庫複寫，在備援區域執行縮減後的應用程式組態，並將切換與擴充自動化",
+        "explanation": "暖待命可支援正常情況下的運作檢查，並實現快速復原。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "暖待命可支援正常情況下的運作檢查，並實現快速復原。",
+      "concept": "暖待命會執行縮減後的環境，故障時再提升並擴充。RPO 是可能遺失資料的時間範圍；RTO 是允許的復原時間。",
+      "check": {
+        "prompt": "如果複寫延遲為 8 分鐘，能否說已達到 5 分鐘的 RPO？",
+        "answer": "不能。應分別測量複寫延遲，以及提升和切換所需的時間。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-04",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "群組內順序與平行處理",
+    "prompt": "受理 API 必須依照合約 ID 的正確順序處理變更指示。不同合約之間不需要維持順序，而且某個合約處理緩慢時，不應妨礙其他合約的處理。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "使用 SQS FIFO 佇列，將合約 ID 設為 MessageGroupId，並在同一群組內依序處理訊息。",
+        "explanation": "這樣可以維持群組內的順序，同時平行處理不同群組。"
+      },
+      {
+        "id": "B",
+        "text": "所有合約都使用相同的 MessageGroupId。",
+        "explanation": "這會失去平行處理不同合約的能力。"
+      },
+      {
+        "id": "C",
+        "text": "將合約 ID 附加在標準 SQS 佇列的訊息上，並只依接收順序套用更新。",
+        "explanation": "標準佇列無法保證同一合約訊息的傳遞順序。"
+      },
+      {
+        "id": "D",
+        "text": "將事件 ID 設為 MessageGroupId，並將合約 ID 設為 DeduplicationId。",
+        "explanation": "這無法維持合約內的順序，而且不同變更也可能被視為重複訊息。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這樣可以維持群組內的順序，同時平行處理不同群組。",
+      "concept": "在 FIFO 佇列中，MessageGroupId 定義排序群組。DeduplicationId 用來去除重複傳送，不會決定指示順序。",
+      "check": {
+        "prompt": "如果所有合約都使用相同的 MessageGroupId，會發生什麼情況？",
+        "answer": "排序範圍會擴大至所有合約，但處理緩慢的合約可能阻礙其他合約，降低平行處理能力。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 模擬題 / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-05",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "SQS 批次的部分失敗",
+    "prompt": "使用 Lambda 處理標準 SQS 佇列。如果 10 則訊息中只有 1 則處理失敗，必須同時避免重新處理成功的 9 則訊息，以及遺失失敗的訊息。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "攔截函式例外，並一律傳回空白回應。",
+        "explanation": "所有訊息都會被視為成功，因此失敗的訊息也可能遭到刪除。"
+      },
+      {
+        "id": "B",
+        "text": "在事件來源對應中啟用 ReportBatchItemFailures，並傳回失敗訊息的 ID。",
+        "explanation": "這會回報部分失敗，讓成功的訊息遭到刪除，並只重試失敗的訊息。"
+      },
+      {
+        "id": "C",
+        "text": "縮短可見性逾時，並以例外讓整個批次失敗。",
+        "explanation": "整個批次都會重試，而不只是失敗的訊息。"
+      },
+      {
+        "id": "D",
+        "text": "在處理前刪除收到的全部 10 則訊息。",
+        "explanation": "失敗的訊息將無法再從佇列重試。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這會回報部分失敗，讓成功的訊息遭到刪除，並只重試失敗的訊息。",
+      "concept": "使用 SQS 事件來源對應的部分批次回應。標準 SQS 佇列採用至少一次傳遞，因此即使處理部分失敗，仍須確保冪等性。",
+      "check": {
+        "prompt": "如果函式擲出的例外未經攔截而傳回呼叫端，批次中已成功的記錄會如何處理？",
+        "answer": "整個批次都會被視為失敗。應逐筆處理例外，並傳回失敗 ID 清單。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 模擬題 / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-06",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "AZ 故障時的網際網路出口",
+    "prompt": "三個 AZ 的私有子網中有 Web 工作節點，會持續連線至外部 API。必須避免某個 AZ 故障時，其他 AZ 的流量也跟著中斷，並避免跨 AZ 資料傳輸費用。請使用分區式 NAT 閘道。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "佈建一個分區式 NAT 閘道，供三個 AZ 共用。",
+        "explanation": "這會造成對該 AZ 和 NAT 閘道的依賴，而且來自其他 AZ 的流量會產生跨 AZ 資料傳輸。"
+      },
+      {
+        "id": "B",
+        "text": "在每個 AZ 部署 NAT 閘道，但讓所有子網路路由都指向同一個 NAT 閘道。",
+        "explanation": "即使其他 AZ 也已部署 NAT 閘道，正常路由仍會使流量集中到單一 AZ。"
+      },
+      {
+        "id": "C",
+        "text": "為外部 API 設定 S3 閘道端點。",
+        "explanation": "這無法提供通往任意外部網際網路 API 的路由。"
+      },
+      {
+        "id": "D",
+        "text": "在每個 AZ 部署分區式 NAT 閘道，並將各私有子網路的流量路由至同一 AZ 的 NAT 閘道。",
+        "explanation": "這可避免依賴單一 AZ，也能避免通往 NAT 閘道的跨 AZ 路徑。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這可避免依賴單一 AZ，也能避免通往 NAT 閘道的跨 AZ 路徑。",
+      "concept": "在分區式架構中，每個 AZ 內子網路的路由表都會將流量傳送至同一 AZ 的 NAT 閘道。外部服務看到的來源 IP，是指派給各 NAT 閘道的 EIP。",
+      "check": {
+        "prompt": "即使佈建了三個 NAT 閘道，如果所有子網路都指向同一個 NAT 閘道，會如何？",
+        "answer": "出口流量實際上會集中在單一 AZ。除了 NAT 閘道的位置，也要檢查每個私有子網路的路由。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 模擬題 / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-07",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "ECS 安全部署",
+    "prompt": "ECS HTTP 服務必須維持現有連線，並避免在新任務準備好處理請求前將流量導向新任務。如果偵測到不良部署，服務應自動回復至上一個成功版本。請使用 ECS 滾動更新。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "調整 ALB 的運作狀態檢查和取消註冊延遲。",
+        "explanation": "可將流量導向已就緒的目標，並讓舊任務上的進行中請求有時間完成。"
+      },
+      {
+        "id": "B",
+        "text": "將最低運作狀態百分比設為 0%。",
+        "explanation": "所有舊任務可能會先停止，因此不容易維持連線。"
+      },
+      {
+        "id": "C",
+        "text": "啟用 ECS 部署斷路器的復原功能。",
+        "explanation": "此功能可偵測未達穩定狀態的部署，並回復至上一個成功的部署。"
+      },
+      {
+        "id": "D",
+        "text": "只依據 ECR 映像掃描中的重大發現來決定是否部署。",
+        "explanation": "映像的靜態檢查結果無法判斷應用程式能否啟動或通過運作狀態檢查。"
+      },
+      {
+        "id": "E",
+        "text": "只延長 Route 53 的 TTL。",
+        "explanation": "這不會影響同一 ALB 後方目標的就緒狀態或部署結果。"
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "可將流量導向已就緒的目標，並讓舊任務上的進行中請求有時間完成。未達穩定狀態的部署可以被偵測，並回復至上一個成功版本。",
+      "concept": "ALB 運作狀態檢查和取消註冊延遲負責流量處理；ECS 部署斷路器負責偵測部署失敗，並回復至已完成的版本。",
+      "check": {
+        "prompt": "如果檢查在程序啟動後立即回傳 HTTP 200，這樣就足夠了嗎？",
+        "answer": "如果應用程式尚未準備好處理業務請求，就不夠。運作狀態檢查必須反映應用程式是否已就緒。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 模擬題 / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-08",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "透過 DNS 排除異常的端點",
+    "prompt": "將區域 A 設為主要區域，區域 B 設為待命區域。正常情況下不將使用者流量傳送至 B；若 A 中的 ALB 狀態異常，則切換至 B。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "使用延遲路由同時發布 A 和 B",
+        "explanation": "正常情況下也可能選到 B。"
+      },
+      {
+        "id": "B",
+        "text": "使用 Route 53 故障轉移路由，並設定 ALB 的目標運作狀態評估",
+        "explanation": "正常情況下可回傳主要區域；主要區域異常時則回傳健康的待命區域。"
+      },
+      {
+        "id": "C",
+        "text": "使用地理位置路由，將全球都指派至 A",
+        "explanation": "單靠這種方式無法定義故障時的待命切換。"
+      },
+      {
+        "id": "D",
+        "text": "將 DNS 記錄的 TTL 設得極長，並在同一筆記錄中加入 A 和 B",
+        "explanation": "這不適合在正常情況下固定使用主要區域，並在故障時快速切換。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "正常情況下可回傳主要區域；主要區域異常時則回傳健康的待命區域。",
+      "concept": "Route 53 故障轉移路由會變更 DNS 回應的目的地。用戶端已快取的 DNS 回應和既有連線不會立即變更。",
+      "check": {
+        "prompt": "為什麼切換後仍可能有使用者連到舊的 ALB？",
+        "answer": "DNS 快取或既有連線可能仍存在。請區分新的 DNS 回應與用戶端實際建立的連線。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-09",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Redis 故障轉移",
+    "prompt": "快取未命中突然增加可能導致資料庫停止服務，因此應避免主要節點故障後切換到空快取的設計。使用 ElastiCache for Valkey 跨 AZ 自動提升副本。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "僅使用主要節點的組態，並每天建立快照",
+        "explanation": "這無法在 AZ 故障期間同步提升待命節點，而且快取會變舊。"
+      },
+      {
+        "id": "B",
+        "text": "在同一個 AZ 的應用程式中放置用戶端快取",
+        "explanation": "它會受到同一個 AZ 故障的影響，也無法提供待命快取伺服器。"
+      },
+      {
+        "id": "C",
+        "text": "在副本位於另一個 AZ 的複寫群組中啟用 Multi-AZ 和自動故障轉移",
+        "explanation": "提升副本可盡可能保留既有快取。"
+      },
+      {
+        "id": "D",
+        "text": "將備份複製到另一個區域，並在每次故障時手動還原",
+        "explanation": "這無法滿足同一區域內自動提升和快速切換的需求。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "提升副本可盡可能保留既有快取。",
+      "concept": "ElastiCache 自動故障轉移會提升副本。由於採用非同步複寫，無法保證故障前最後一刻的所有快取更新都能保留。",
+      "check": {
+        "prompt": "若增加一個位於同一個 AZ 的副本，是否能承受整個 AZ 中斷？",
+        "answer": "不能。若要因應 AZ 故障，應將副本放在另一個 AZ。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-10",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "內部部署網路的備援連線",
+    "prompt": "主要連線使用 AWS Direct Connect，內部部署網路透過 Transit Gateway 連線至其下的 VPC。無法新增第二條專用連線，但專用連線故障時仍須能連線至同一個網路。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在同一條 Direct Connect 實體連線上建立第二個 VIF",
+        "explanation": "這無法針對同一條實體連線故障提供備援。"
+      },
+      {
+        "id": "B",
+        "text": "讓 VPN 只依賴與 Direct Connect 相同的實體路徑",
+        "explanation": "它會受到與主要連線相同的故障影響。"
+      },
+      {
+        "id": "C",
+        "text": "新增第二個 NAT 閘道",
+        "explanation": "這不會為來自內部部署網路的路由提供備援。"
+      },
+      {
+        "id": "D",
+        "text": "透過獨立的網際網路連線將 Site-to-Site VPN 連至 TGW，並設定動態路由",
+        "explanation": "這會提供獨立路徑；主要路由撤除後即可切換至 VPN。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這會提供獨立路徑；主要路由撤除後即可切換至 VPN。",
+      "concept": "透過獨立連線設定 Site-to-Site VPN，並使用 BGP 等動態路由控制正常運作時的優先順序，以及路由撤除後的切換。",
+      "check": {
+        "prompt": "在同一條 Direct Connect 上新增 VIF，是否能防止連線中斷？",
+        "answer": "這可能會在組態層級增加一條路由，但無法針對實體連線故障提供備援。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-11",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "區域故障期間持續寫入",
+    "prompt": "兩個區域中的應用程式在正常運作時會讀寫使用者設定檔。若接收寫入的區域無法使用，希望透過變更連線至另一個區域來繼續寫入。可接受發生衝突時由最後寫入者優先。希望由 AWS 管理雙向複寫和衝突解決。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將 DynamoDB 全域資料表設為多區域最終一致性",
+        "explanation": "每個副本都可以接受寫入，並以最後寫入者優先解決衝突。"
+      },
+      {
+        "id": "B",
+        "text": "啟用 DynamoDB 時間點復原（PITR），並將所有要求傳送至單一區域",
+        "explanation": "這無法提供另一個區域的並行寫入或立即切換。"
+      },
+      {
+        "id": "C",
+        "text": "將 Aurora 一般唯讀複本視為兩個區域中可獨立寫入的節點",
+        "explanation": "不能同時將唯讀複本視為可獨立寫入的節點。"
+      },
+      {
+        "id": "D",
+        "text": "只透過 DynamoDB Streams 將跨區域變更複製到彼此獨立的資料表",
+        "explanation": "這需要自行防止複寫迴圈並解決衝突。全域資料表可透過受管服務滿足這些需求。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "每個副本都可以接受寫入，並以最後寫入者優先解決衝突。",
+      "concept": "DynamoDB 全域資料表使用 MREC 時，每個區域都能接受寫入，並以非同步方式複寫及解決衝突。它不會在應用程式中合併並行更新。",
+      "check": {
+        "prompt": "在另一個區域寫入後，所有區域是否一定會立即回傳相同值？",
+        "answer": "MREC 不保證如此。請確認設計是否能容忍複寫延遲。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-12",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "多步驟業務重試",
+    "prompt": "訂單依序處理付款授權、保留庫存及確認出貨。如果出貨確認失敗，必須釋放庫存；暫時性錯誤則應採用指數退避重試。也要能從執行歷程得知失敗的步驟。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "為每項操作個別建立 EventBridge 規則，並只透過監控追蹤完成順序",
+        "explanation": "無法集中管理失敗路徑及補償操作的順序。"
+      },
+      {
+        "id": "B",
+        "text": "使用 Step Functions Standard 設定 Retry 和 Catch，並在失敗時轉至補償任務",
+        "explanation": "它會保留執行狀態和歷程，並能針對各步驟定義重試與補償操作。"
+      },
+      {
+        "id": "C",
+        "text": "在 Lambda 中實作所有操作，每次都從頭重新執行整個函式",
+        "explanation": "難以管理步驟層級的重試，也難以補償已完成的步驟。"
+      },
+      {
+        "id": "D",
+        "text": "只用 CloudWatch 警示傳送失敗通知",
+        "explanation": "這不會重試步驟，也不會釋放庫存。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "它會保留執行狀態和歷程，並能針對各步驟定義重試與補償操作。",
+      "concept": "Standard 支援長時間執行和執行歷程。Retry 用於重試，Catch 會轉至錯誤處理；庫存釋放則由明確定義的補償任務執行。",
+      "check": {
+        "prompt": "保留庫存後出貨失敗時，Step Functions 會自動釋放庫存嗎？",
+        "answer": "不會。必須在 Catch 的轉移目標中實作庫存釋放。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-13",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "重播 Kinesis 資料",
+    "prompt": "多個消費者分別處理事件，並各自保留處理歷程。部署新的彙總邏輯後，想重新處理最多可回溯 7 天的原始事件，同時保留一般處理的檢查點。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "使用標準 SQS 讓已刪除的訊息重新顯示",
+        "explanation": "已刪除的訊息無法再次取得。"
+      },
+      {
+        "id": "B",
+        "text": "將 Kinesis 的保留時間維持在 24 小時，並將起始位置設為 TRIM_HORIZON",
+        "explanation": "無法取得超出保留期限的資料。"
+      },
+      {
+        "id": "C",
+        "text": "將 Kinesis Data Streams 的保留時間設為至少 7 天，並使用另一個消費者從相關時間重新讀取資料",
+        "explanation": "可以重播仍在保留期間內的資料，不會影響現有消費者的處理進度。"
+      },
+      {
+        "id": "D",
+        "text": "只變更 EventBridge Pipes 的篩選條件",
+        "explanation": "這無法建立已遺失的 7 天資料紀錄。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "可以重播仍在保留期間內的資料，不會影響現有消費者的處理進度。",
+      "concept": "消費者可重新讀取 Kinesis Data Streams 保留期間內的記錄。資料過期後，即使延長保留時間也無法還原。",
+      "check": {
+        "prompt": "如果今天將 24 小時的保留時間延長為 7 天，還能讀取上週的資料嗎？",
+        "answer": "不能。已過期的資料無法讀取。應事先設定所需的保留時間。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-14",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "S3 保護與復原",
+    "prompt": "需要復原因操作失誤而刪除的舊版本，並在區域喪失時從另一個區域存取資料。也必須涵蓋既有物件，且不得將錯誤的刪除標記套用至目的地。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "為來源和目的地的 S3 儲存貯體啟用版本控制，並設定停用刪除標記複製的 CRR",
+        "explanation": "這會複製新物件，但不會在目的地套用指定的刪除標記。"
+      },
+      {
+        "id": "B",
+        "text": "將物件轉換為 S3 One Zone-IA",
+        "explanation": "這是單一可用區域的儲存類別，不會在另一個區域建立複本。"
+      },
+      {
+        "id": "C",
+        "text": "將物件複製到同一區域、同一儲存貯體中的另一個前綴",
+        "explanation": "這無法因應區域故障。"
+      },
+      {
+        "id": "D",
+        "text": "只設定即時 CRR，既有物件便會自動複製",
+        "explanation": "設定前已存在的物件需要透過 Batch Replication 等個別程序處理。"
+      },
+      {
+        "id": "E",
+        "text": "使用 S3 Batch Replication 複製既有物件",
+        "explanation": "這可回填未納入即時複製的既有資料。"
+      }
+    ],
+    "correct": [
+      "A",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這會複製新物件，但不會在目的地套用指定的刪除標記。即時複製未涵蓋的既有資料可透過批次複製回填。",
+      "concept": "CRR 需要在兩個儲存貯體啟用版本控制。使用 Batch Replication 回填既有物件，並透過複製組態控制是否複製刪除標記。",
+      "check": {
+        "prompt": "如果一個新的範例物件已複製，能據此判定既有物件也都已遷移完成嗎？",
+        "answer": "不能。必須另外檢查批次結果和範圍內物件的清單。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-15",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "RDS 還原時間點",
+    "prompt": "同一個區域中的 RDS PostgreSQL 資料庫在正午發生誤更新。需要將故障前的資料還原至另一個執行個體以供驗證，並在維持正式環境資料庫運作的同時進行比較。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將 Multi-AZ 備用執行個體回復至正午之前的時間點",
+        "explanation": "同步備用執行個體也會反映誤更新，因此無法用於還原至任意時間點。"
+      },
+      {
+        "id": "B",
+        "text": "使用更新前不久的快照就地覆寫正式環境資料庫",
+        "explanation": "需求是維持正式環境資料庫運作，而且還原不是就地覆寫。"
+      },
+      {
+        "id": "C",
+        "text": "只提升唯讀複本",
+        "explanation": "提升複本不會還原至指定時間點，而且更新可能已傳到複本。"
+      },
+      {
+        "id": "D",
+        "text": "從 RDS 自動備份執行時間點還原，建立新的資料庫",
+        "explanation": "系統會使用交易日誌，在指定時間點建立另一個資料庫，並維持正式環境資料庫不變。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "系統會使用交易日誌，在指定時間點建立另一個資料庫，並維持正式環境資料庫不變。",
+      "concept": "RDS PITR 會在保留期間內的指定時間點建立新的資料庫。備用執行個體和複本通常也會反映更新，因此不同於還原至指定時間點。",
+      "check": {
+        "prompt": "如果誤更新也已傳到複本，提升複本能復原這次更新嗎？",
+        "answer": "不能。應使用 PITR 還原至誤更新前的指定時間點。"
+      }
+    },
+    "categoryLabel": "韌性",
+    "examDomainLabel": "韌性",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-16",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EventBridge 傳遞失敗",
+    "prompt": "將稽核事件從 EventBridge 傳遞至處理目標。若權限問題持續超過重試期間，必須保留傳遞失敗的事件，以便調查原因並重新處理。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "只將目標的重試次數設為最大值",
+        "explanation": "重試耗盡後，沒有可保留事件的位置。"
+      },
+      {
+        "id": "B",
+        "text": "將 SQS 標準佇列設為目標的 DLQ，並透過佇列政策允許 EventBridge 傳送訊息",
+        "explanation": "DLQ 可以保留無法傳遞的事件及其錯誤資訊。"
+      },
+      {
+        "id": "C",
+        "text": "只設定 Lambda 非同步叫用成功後的失敗通知",
+        "explanation": "這無法捕捉 EventBridge 無法將事件傳遞至目標的情況。"
+      },
+      {
+        "id": "D",
+        "text": "只保留 CloudWatch 指標",
+        "explanation": "雖然能看到失敗次數，但無法重新處理事件本文。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "DLQ 可以保留無法傳遞的事件及其錯誤資訊。",
+      "concept": "EventBridge 目標的 DLQ 會保留未傳遞的事件和錯誤資訊。Lambda 的非同步失敗目的地處理的是 Lambda 接受叫用後發生的失敗。",
+      "check": {
+        "prompt": "EventBridge 因權限不足而無法叫用 Lambda。如果只有 Lambda 設定失敗目的地，會怎樣？",
+        "answer": "失敗發生在 Lambda 接受叫用之前，因此不會送到該目的地。應在 EventBridge 目標設定 DLQ。"
+      }
+    },
+    "categoryLabel": "復原能力",
+    "examDomainLabel": "復原能力",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-resilience-17",
+    "revision": 1,
+    "category": "レジリエンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "區域切換期間的靜態內容傳遞",
+    "prompt": "CloudFront 後方有兩個區域，且相同的靜態網站已預先複寫到這兩個區域。若主要 S3 REST 來源傳回指定的 5xx 狀態碼，希望 CloudFront 在不變更使用者 URL 的情況下，將 GET 要求轉送至待命來源。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "建立 CloudFront 來源群組，並將 5xx 狀態碼設為容錯移轉條件",
+        "explanation": "相同的分佈可在指定方法的要求失敗時切換至次要來源。"
+      },
+      {
+        "id": "B",
+        "text": "使用 CloudFront 來源請求政策將 S3 URL 新增至快取金鑰",
+        "explanation": "設定要轉送的標頭或查詢字串，無法在發生錯誤時切換來源。"
+      },
+      {
+        "id": "C",
+        "text": "在 S3 儲存貯體政策中允許兩個區域存取",
+        "explanation": "權限設定無法選擇 CloudFront 要連線的來源。"
+      },
+      {
+        "id": "D",
+        "text": "將 S3 事件傳送至 SNS",
+        "explanation": "物件事件通知無法為讀取要求提供 HTTP 容錯移轉。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "相同的分佈可在指定方法的要求失敗時切換至次要來源。",
+      "concept": "來源群組會在發生已設定的錯誤時容錯移轉。支援的方法為 GET、HEAD 和 OPTIONS；此機制不適用於任意寫入操作。",
+      "check": {
+        "prompt": "同一群組中的 POST 寫入會自動切換至其他目的地嗎？",
+        "answer": "不會。寫入操作的容錯移轉必須另外設計。"
+      }
+    },
+    "categoryLabel": "復原能力",
+    "examDomainLabel": "復原能力",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-01",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "RDS 連線暴增",
+    "prompt": "數千個 Lambda 在短時間內啟動，RDS PostgreSQL 達到最大連線數。維持現有 SQL 不變、管理憑證並重複使用連線。儲存空間和 CPU 都有餘裕。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "新增唯讀複本，並將所有寫入送至該複本",
+        "explanation": "寫入操作仍須送至寫入器，而且唯讀複本無法重複使用連線。"
+      },
+      {
+        "id": "B",
+        "text": "增加 EBS IOPS",
+        "explanation": "這無法直接解決同時連線數上限問題。"
+      },
+      {
+        "id": "C",
+        "text": "在 Lambda 與 RDS 之間新增 RDS Proxy",
+        "explanation": "它會為資料庫連線建立集區，將 Lambda 高並行與資料庫連線數分開管理。"
+      },
+      {
+        "id": "D",
+        "text": "只使用 API Gateway 快取",
+        "explanation": "這無法防止未被快取的呼叫（例如更新操作）造成連線集中。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "它會為資料庫連線建立集區，將 Lambda 高並行與資料庫連線數分開管理。",
+      "concept": "RDS Proxy 會為底層資料庫連線建立集區，並可在條件允許時供不同用戶端重複使用。造成固定連線的工作階段狀態和較長的交易會降低重複使用效率。",
+      "check": {
+        "prompt": "加入 Proxy 後，資料庫連線數是否一定維持固定？",
+        "answer": "不一定。固定連線或同時進行的交易數量可能需要許多資料庫連線。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-02",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "DynamoDB 寫入偏斜",
+    "prompt": "將訂單事件寫入 DynamoDB。特定租戶的大量穩定寫入都集中在單一分割區索引鍵上，即使整個資料表仍有多餘容量，也會發生節流。允許修改讀取方式以查詢多個分片。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在租戶 ID 加上分散式尾碼，讓寫入分散至多個分割區索引鍵",
+        "explanation": "此設計可消除寫入集中至單一熱點索引鍵的問題。"
+      },
+      {
+        "id": "B",
+        "text": "只增加資料表容量",
+        "explanation": "僅增加資料表整體的多餘容量，無法解決單一實體分割區的處理量上限。"
+      },
+      {
+        "id": "C",
+        "text": "新增 DAX 以加快寫入處理",
+        "explanation": "DAX 主要是低延遲讀取快取，不會分散熱點索引鍵的持久寫入。"
+      },
+      {
+        "id": "D",
+        "text": "在 GSI 中再次將相同的租戶 ID 設為分割區索引鍵",
+        "explanation": "這會保留基礎資料表的寫入集中情形，也可能造成索引偏斜。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "此設計可消除寫入集中至單一熱點索引鍵的問題。",
+      "concept": "透過寫入分片在索引鍵加入分散值可降低偏斜。若要讀取某租戶的所有項目，必須對每個分片執行 Query，並合併結果。",
+      "check": {
+        "prompt": "增加分片數量有什麼缺點？",
+        "answer": "擷取所有項目時需要查詢更多目的地。應權衡寫入分散程度與讀取成本來決定分片數量。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-03",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EBS 持續 IOPS",
+    "prompt": "單一磁碟區上有一個包含 800 GiB 資料的資料庫。它需要持續達到 32,000 IOPS，而非仰賴突發效能，並要求延遲穩定且偏低。執行個體符合各選項的頻寬條件。若也需要磁碟區具備 99.999% 的耐久性，應採用哪種組態？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "使用 800 GiB 的 gp2",
+        "explanation": "此容量下的基準效能低於需求。"
+      },
+      {
+        "id": "B",
+        "text": "為 io2 Block Express 設定至少 32,000 IOPS",
+        "explanation": "適合需要高佈建 IOPS 與低延遲的工作負載。"
+      },
+      {
+        "id": "C",
+        "text": "使用 st1 並仰賴短暫突發效能",
+        "explanation": "這是面向循序輸送量的 HDD 磁碟區，不適合持續提供高隨機 IOPS。"
+      },
+      {
+        "id": "D",
+        "text": "將執行個體儲存用作持久性磁碟區",
+        "explanation": "執行個體停止或主機故障時，無法確保持久性。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/sql-server-ec2-ha-dr/appendix.html",
+      "label": "AWS公式資料 · EBS SSDタイプの比較"
+    },
+    "learning": {
+      "reason": "此使用案例需要高佈建 IOPS 和低延遲。",
+      "concept": "io2 Block Express 可提供高持續 IOPS 和 99.999% 的設計耐久性。除了磁碟區設定，也要確認 EC2 執行個體的 EBS 頻寬與 IOPS 上限。",
+      "check": {
+        "prompt": "設定所需 IOPS 後，實測效能仍未提升，應檢查什麼？",
+        "answer": "檢查執行個體的 EBS 上限、由 I/O 大小決定的輸送量、佇列深度等因素。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方資料 · EBS SSD 類型比較"
+  },
+  {
+    "id": "mock-performance-04",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Linux 共用檔案",
+    "prompt": "多個可用區中的 Linux EC2 執行個體會隨負載擴縮，並行更新同一組共用檔案。現有應用程式使用 POSIX 權限和檔案鎖。無法事先確定所需容量。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "讓應用程式直接使用 S3，並取得現有的 POSIX 檔案鎖",
+        "explanation": "S3 使用物件 API，無法保留現有的 POSIX 檔案鎖。"
+      },
+      {
+        "id": "B",
+        "text": "將同一個 EBS gp3 磁碟區連接至每個可用區中的 EC2 執行個體",
+        "explanation": "EBS 是可用區範圍內的資源，gp3 也不支援 Multi-Attach。"
+      },
+      {
+        "id": "C",
+        "text": "在每個可用區放置本機 EBS 磁碟區，並在夜間執行 rsync",
+        "explanation": "這無法提供並行更新或共用鎖定。"
+      },
+      {
+        "id": "D",
+        "text": "使用 EFS Regional，並在每個可用區設定掛載目標",
+        "explanation": "多個可用區中的 Linux 用戶端可以使用共用 NFS 檔案系統，且不必事先配置容量。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "多個可用區中的 Linux 用戶端可使用共用 NFS 儲存空間，且不必事先配置容量。",
+      "concept": "EFS Regional 提供共用 NFS 檔案系統，並將資料與中繼資料儲存在多個可用區。掛載目標是從各可用區連線至檔案系統的存取點。",
+      "check": {
+        "prompt": "若可從另一個可用區存取 EFS One Zone，是否代表資料也儲存在多個可用區？",
+        "answer": "不是。可從哪些可用區存取檔案系統，與檔案資料實際儲存在哪個可用區是兩回事。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-05",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "來自世界各地的 S3 上傳",
+    "prompt": "使用者從各大洲將大型影片上傳至單一區域中的 S3。請選擇一種能改善長距離路徑的傳輸時間，並在失敗時避免重新傳送整個檔案的設計。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "增加 CloudFront 的 GET 快取 TTL",
+        "explanation": "下載快取設定無法改善上傳傳輸或重試。"
+      },
+      {
+        "id": "B",
+        "text": "使用 S3 Intelligent-Tiering，並將物件固定在 FA 階層",
+        "explanation": "這是物件儲存後的儲存階層，並非改善長距離傳輸的方法。"
+      },
+      {
+        "id": "C",
+        "text": "使用 S3 Transfer Acceleration 端點",
+        "explanation": "它可透過鄰近的邊緣節點和 AWS 網路傳輸資料。"
+      },
+      {
+        "id": "D",
+        "text": "設定 S3 Cross-Region Replication，將物件複製到目的地",
+        "explanation": "這項功能會在 S3 收到物件後進行複製，無法改善首次上傳的路徑。"
+      },
+      {
+        "id": "E",
+        "text": "使用 S3 多段上傳，並逐段重試",
+        "explanation": "只需重新傳送失敗的部分，也可以平行傳輸各部分。"
+      }
+    ],
+    "correct": [
+      "C",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Transfer Acceleration 可透過鄰近的邊緣節點和 AWS 網路改善傳輸路徑。多段上傳可讓用戶端只重新傳送失敗的部分，並能平行傳輸各部分。",
+      "concept": "Transfer Acceleration 提供經由邊緣節點的傳輸路徑。使用多段上傳時，請管理 UploadId 和各段的結果，只重試失敗的部分，最後再完成上傳。",
+      "check": {
+        "prompt": "只使用 Transfer Acceleration，就能從中斷處繼續單一 PUT 嗎？",
+        "answer": "不能。它改善的是傳輸路徑；若要減少重新傳送的資料量，必須使用多段上傳。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-06",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Aurora 讀取擴展",
+    "prompt": "Aurora 寫入器上的讀取負載增加，導致訂單寫入變慢。希望在可接受的唯讀複本延遲範圍內，將應用程式的讀取負載分散至多個複本。複本數量應隨負載自動增減。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "部署 Aurora Global Database，並變更寫入區域",
+        "explanation": "它的主要用途不是在同一個區域內動態分散讀取負載。"
+      },
+      {
+        "id": "B",
+        "text": "使用 Aurora Auto Scaling 調整唯讀複本數量，並讓讀取連線使用讀取器端點",
+        "explanation": "由讀取器端點選擇連線目標，並可調整讀取容量。"
+      },
+      {
+        "id": "C",
+        "text": "將所有用戶端固定連線到讀取器執行個體端點",
+        "explanation": "無法將新連線分散至後續新增的複本。"
+      },
+      {
+        "id": "D",
+        "text": "使用 RDS Proxy 將 SQL 連線集區化至寫入器，並將所有 SQL 傳送至該寫入器",
+        "explanation": "這會減少連線管理負擔，但查詢執行負載仍留在寫入器上，也不會自動調整複本數量。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "讀取器端點會選擇連線目標，同時可依需求調整唯讀複本數量。",
+      "concept": "Aurora Auto Scaling 會調整唯讀複本數量。讀取器端點會分散新的連線；如果持續使用同一個長連線，SQL 陳述式不會因此分散到多個複本。",
+      "check": {
+        "prompt": "明明有 4 台複本，為什麼報表查詢可能仍集中在其中一台？",
+        "answer": "報表連線集區可能持續重用同一個連線。請檢查連線的存留時間和連線數量。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-07",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "高頻更新 API 的快取",
+    "prompt": "商品詳細 API 對同一 SKU 的讀取請求高度集中。價格更新後可容許短暫延遲，快取未命中時會查詢資料庫。設計必須確保即使快取因故障遺失，也不會遺失資料庫中的更新。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "使用 ElastiCache 實作 cache-aside，以資料庫作為持久化資料來源，並設定 TTL 或在更新時使快取失效",
+        "explanation": "先在資料庫確認更新，再由快取處理重複讀取請求。"
+      },
+      {
+        "id": "B",
+        "text": "僅以快取作為價格的持久化資料來源，不寫入資料庫",
+        "explanation": "快取遺失時，無法保證價格更新仍然存在。"
+      },
+      {
+        "id": "C",
+        "text": "在每個 EC2 執行個體上使用沒有到期時間的本機快取",
+        "explanation": "更新不會傳播到其他節點，因此無法符合短暫延遲的要求。"
+      },
+      {
+        "id": "D",
+        "text": "每次讀取時都透過批次處理將所有 SKU 重新匯出至 S3",
+        "explanation": "這會為同一 SKU 的重複讀取增加大量處理負擔。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "先在資料庫確認更新，再由快取處理重複讀取請求。",
+      "concept": "cache-aside 模式會在快取未命中時讀取資料庫，並將結果放入快取。可透過較短的 TTL 或在更新時使快取失效來管理資料新鮮度；快取故障時資料庫過載的問題需要另外規劃。",
+      "check": {
+        "prompt": "若最新值只存在快取中，之後才寫回資料庫，這種設計有什麼風險？",
+        "answer": "如果在寫回前發生故障，看似已提交的更新可能會遺失。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-08",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Kinesis 的獨立讀取",
+    "prompt": "5 個 Kinesis 消費者讀取同一個分片。既有的即時偵測消費者不得受到另一個消費者大量讀取的影響。無法變更傳送端的分片分配方式。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "只延長記錄保留期間",
+        "explanation": "這無法解決讀取輸送量由多個消費者共用的問題。"
+      },
+      {
+        "id": "B",
+        "text": "讓生產者將同一事件寫入 5 次",
+        "explanation": "這會增加寫入負載，但同一分片的讀取容量仍由消費者共用。"
+      },
+      {
+        "id": "C",
+        "text": "為偵測消費者註冊 Enhanced Fan-Out",
+        "explanation": "已註冊的消費者可以取得每個分片專用的讀取輸送量。"
+      },
+      {
+        "id": "D",
+        "text": "延長所有消費者更新檢查點的間隔",
+        "explanation": "這不會隔離讀取頻寬。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "已註冊的消費者可以取得每個分片專用的讀取輸送量。",
+      "concept": "已註冊的 Enhanced Fan-Out 消費者可使用每個分片專用的讀取輸送量。變更資料保留期間不會增加讀取容量。",
+      "check": {
+        "prompt": "為了回填資料而延長保留期間，會讓偵測消費者的頻寬獨立嗎？",
+        "answer": "不會。保留期間決定資料可重新讀取的時間；Enhanced Fan-Out 用於隔離讀取容量。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-09",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "Lambda 初始化延遲",
+    "prompt": "正式環境 API 使用 Java Lambda 函數的別名。高峰時段可事先預知，且需要在高峰開始時確保一定數量的已初始化執行環境可用。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "僅設定 Reserved Concurrency",
+        "explanation": "它會保留或限制並行數量，但不保證執行環境已完成初始化。"
+      },
+      {
+        "id": "B",
+        "text": "延長函數逾時時間",
+        "explanation": "這無法消除請求的初始化延遲。"
+      },
+      {
+        "id": "C",
+        "text": "增加函數 URL，並取消按別名進行的配置",
+        "explanation": "增加端點不會預先初始化執行環境。"
+      },
+      {
+        "id": "D",
+        "text": "為該別名設定 Provisioned Concurrency，並安排在高峰前啟用",
+        "explanation": "到預定時間時，可以準備好指定數量的已初始化環境。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "到預定時間時，可以準備好指定數量的已初始化環境。",
+      "concept": "Reserved Concurrency 用於保留或限制並行數量。Provisioned Concurrency 會為特定版本或別名保留已初始化的環境；即使未使用，只要仍在保留期間就會產生費用。",
+      "check": {
+        "prompt": "將 Reserved Concurrency 設為 200 會消除冷啟動嗎？",
+        "answer": "不會。它只保留並行容量，不保證執行環境已完成初始化。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-10",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "在流量到來前擴充容量",
+    "prompt": "EC2 Auto Scaling 應用程式每天中午前負載都很低，但正午時會出現可預測的流量暴增。新執行個體需要 8 分鐘才能開始處理請求。目標是盡量減少初期的佇列積壓。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "建立排程動作，在指定時刻前預留充足時間增加所需容量",
+        "explanation": "可在流量到來前完成初始化。"
+      },
+      {
+        "id": "B",
+        "text": "等到正午 CPU 超過閾值後再使用一般動態擴展",
+        "explanation": "必須經過執行個體啟動延遲後，容量才會增加。"
+      },
+      {
+        "id": "C",
+        "text": "僅將執行個體暖機期間設為 8 分鐘",
+        "explanation": "這會調整新執行個體啟動後的指標評估方式，但不會安排提前啟動執行個體。"
+      },
+      {
+        "id": "D",
+        "text": "以短於執行個體啟動時間的間隔執行運作狀態檢查",
+        "explanation": "這不會提前增加可用容量。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "可在流量到來前完成初始化。",
+      "concept": "排程動作會在指定時間調整容量。暖機期間會影響新執行個體指標的處理方式，但不會讓執行個體提早啟動。",
+      "check": {
+        "prompt": "如果無法確定開始時間，但已觀察到長期的週期性需求，該怎麼做？",
+        "answer": "資料足夠時可以考慮預測式擴展。對於已知的單次事件，適合使用依時間安排的排程。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-11",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "減少分析查詢的讀取量",
+    "prompt": "使用 Athena 讀取 Amazon S3 上最近一天的 JSON 日誌，但只讀取部分資料欄。無需取得每筆記錄的所有欄位。請選擇能減少掃描量和查詢執行時間的變更。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將所有日誌合併為一個 gzip 壓縮的 JSON 檔案",
+        "explanation": "這種方式不適合依資料欄選取，也不利於依日期略過資料。"
+      },
+      {
+        "id": "B",
+        "text": "將日誌轉換為 Parquet",
+        "explanation": "欄式格式可讓 Athena 主要掃描所需的資料欄。"
+      },
+      {
+        "id": "C",
+        "text": "在每次查詢中省略 WHERE 子句",
+        "explanation": "如此一來，便無法依日期略過資料。"
+      },
+      {
+        "id": "D",
+        "text": "依日期分割日誌，並在查詢中依日期索引鍵篩選",
+        "explanation": "只需掃描相關日期的分割區。"
+      },
+      {
+        "id": "E",
+        "text": "使用 Versioning 複製目標 S3 資料",
+        "explanation": "版本控制不會縮小 Athena 的讀取範圍。"
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "欄式格式可讓 Athena 主要掃描所需的資料欄。只需掃描相關日期的分割區。",
+      "concept": "在 Athena 中，將日期分割區納入查詢條件可縮小掃描範圍。Parquet 的欄式格式可減少讀取不必要資料欄的情況。",
+      "check": {
+        "prompt": "只將 JSON 以 gzip 壓縮，能讓 Athena 在實體層只讀取所需資料欄嗎？",
+        "answer": "不能。壓縮可減少儲存空間，而欄式格式才能略過不必要的資料欄。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-12",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "全球 TCP 流量入口",
+    "prompt": "自訂 TCP 應用程式在兩個區域執行。合作夥伴的防火牆只允許連線至少數固定 IPv4 位址，且不希望區域故障時的切換依賴 DNS 快取。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "只使用低 TTL 的 Route 53 記錄公開 NLB",
+        "explanation": "這依賴用戶端的 DNS 快取，也無法提供共用的固定入口 IP。"
+      },
+      {
+        "id": "B",
+        "text": "使用 CloudFront 原始伺服器群組",
+        "explanation": "CloudFront 不適合用來透明轉送任意的自訂 TCP 流量。"
+      },
+      {
+        "id": "C",
+        "text": "將兩個區域中的 NLB 設定為 Global Accelerator 的端點",
+        "explanation": "Global Accelerator 透過固定 Anycast IP 接收流量，並可將 TCP 流量路由至運作正常的端點。"
+      },
+      {
+        "id": "D",
+        "text": "在用戶端分別固定設定各區域的 EIP",
+        "explanation": "這樣沒有可用於區域切換的共用入口。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "Global Accelerator 透過固定 Anycast IP 接收流量，並可將 TCP 流量路由至運作正常的端點。",
+      "concept": "Global Accelerator 透過固定 Anycast IP 接收流量，並將 TCP 流量轉送至運作正常區域中的端點，例如 NLB。它不保證故障時能不中斷地轉移現有連線。",
+      "check": {
+        "prompt": "縮短 Route 53 TTL 能提供同等的固定入口嗎？",
+        "answer": "不能。這仍依賴用戶端重新解析 DNS，也不會提供共用的固定 Anycast 入口。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-13",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "SMB 相容性",
+    "prompt": "Windows EC2 執行個體上的業務應用程式會存取共用檔案。必須使用 SMB、現有的 Active Directory 群組和 Windows ACL，並且在 AZ 故障時進行容錯移轉。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將 Amazon FSx for Windows File Server 部署為 Multi-AZ 組態，並加入 Active Directory",
+        "explanation": "此方案可在使用 SMB 和 Windows ACL 的同時跨 AZ 維持服務。"
+      },
+      {
+        "id": "B",
+        "text": "將 Amazon EFS Regional 直接當作 Windows 用戶端的 SMB 共用",
+        "explanation": "EFS 是 NFS 服務，不符合現有 SMB 和 Windows ACL 的需求。"
+      },
+      {
+        "id": "C",
+        "text": "將 S3 直接設定為 UNC 路徑",
+        "explanation": "業務應用程式無法將 S3 物件 API 當成 SMB 使用。"
+      },
+      {
+        "id": "D",
+        "text": "在單一 Windows EC2 執行個體上提供 SMB，並只複製 EBS 快照",
+        "explanation": "此方案不提供受管理的 Multi-AZ 容錯移轉。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "此方案可在使用 SMB 和 Windows ACL 的同時跨 AZ 維持服務。",
+      "concept": "FSx for Windows File Server 支援 Windows ACL。Multi-AZ 組態會容錯移轉至另一個 AZ 的待命檔案伺服器。",
+      "check": {
+        "prompt": "Single-AZ 備份能提供相同的效果嗎？",
+        "answer": "可用來還原資料，但這不等同於自動容錯移轉；必須還原至新的環境。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-14",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "HPC 暫存工作區",
+    "prompt": "數百個 Linux 運算節點需要使用 S3 中的參考資料，並行讀寫共用工作檔案。高並行輸送量是必要條件，處理完成後還要將成果送回 S3。檔案傳輸管理也必須交由受管理的功能處理。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將成果分散到各節點的執行個體儲存中，並將其當作共用檔案使用",
+        "explanation": "各節點的本機磁碟不會提供共用命名空間。"
+      },
+      {
+        "id": "B",
+        "text": "將 FSx for Lustre 與 S3 資料儲存庫建立關聯",
+        "explanation": "此方案提供適用於 HPC 的平行檔案系統，並能與資料儲存庫整合。"
+      },
+      {
+        "id": "C",
+        "text": "掛載 EFS Regional，並在每個節點上使用 AWS CLI 與 S3 雙向同步",
+        "explanation": "此方案提供共用 POSIX 儲存空間，但無法同時提供適用於高並行 I/O 的 Lustre，以及與 S3 資料儲存庫的原生整合。"
+      },
+      {
+        "id": "D",
+        "text": "將單一 EC2 執行個體的 EBS 磁碟區連接為所有節點的本機裝置",
+        "explanation": "此方案無法為多個節點提供適用於 HPC 的共用檔案系統。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "此方案提供適用於 HPC 的平行檔案系統，並能與資料儲存庫整合。",
+      "concept": "FSx for Lustre 專為平行 I/O 設計。與 S3 資料儲存庫建立關聯後，可管理 S3 物件與檔案系統之間的匯入與匯出。",
+      "check": {
+        "prompt": "讓每個節點各自從 S3 複製資料，能建立相同的架構嗎？",
+        "answer": "不能。這樣沒有共用命名空間，而且必須自行管理各節點的同步。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-15",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "DynamoDB 查詢模式",
+    "prompt": "DynamoDB 的主索引鍵是訂單 ID。配送人員經常依倉庫 ID 和出貨期限範圍搜尋。必須保留現有主索引鍵，且可接受最終一致性。哪種方法可以避免全表掃描？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在 Scan 中加入依倉庫 ID 和期限篩選的 FilterExpression",
+        "explanation": "篩選是在讀取項目後才套用，因此仍然需要掃描。"
+      },
+      {
+        "id": "B",
+        "text": "建立保留訂單 ID 為分割區索引鍵、僅以倉庫 ID 作為排序索引鍵的 LSI",
+        "explanation": "使用 LSI 查詢時仍須指定訂單 ID。"
+      },
+      {
+        "id": "C",
+        "text": "將 Scan 移至 DAX，不建立索引",
+        "explanation": "快取無法提供符合搜尋條件的索引鍵結構。"
+      },
+      {
+        "id": "D",
+        "text": "建立以倉庫 ID 為分割區索引鍵、出貨期限為排序索引鍵的 GSI，然後使用 Query",
+        "explanation": "這可直接依倉庫和期限搜尋所需範圍。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這可直接依倉庫和期限搜尋所需範圍。",
+      "concept": "GSI 可以使用與基礎資料表不同的分割區索引鍵。使用 Query 依倉庫 ID 和期限搜尋。篩選條件會在讀取項目後才套用。",
+      "check": {
+        "prompt": "如果在只有倉庫 ID 作為索引鍵的 GSI 上加入期限篩選條件，會怎樣？",
+        "answer": "雖然可以避免 Scan，但仍會先讀取該倉庫中期限範圍以外的項目，再將其排除。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-performance-16",
+    "revision": 1,
+    "category": "パフォーマンス",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "CloudFront 快取效率",
+    "prompt": "只有在影像內容變更時，version 查詢參數才會改變。用於分析的 utm 參數有許多不同值，但不會影響影像內容。需要區分舊版和新版，同時提高快取命中率。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "套用僅將 version 納入快取金鑰的快取政策",
+        "explanation": "只依會變更內容的參數區分快取，utm 值不同的請求仍可使用同一個快取項目。"
+      },
+      {
+        "id": "B",
+        "text": "將所有查詢參數都納入快取金鑰",
+        "explanation": "utm 值不同會讓相同影像分散成不同項目。"
+      },
+      {
+        "id": "C",
+        "text": "不納入任何查詢參數，並設定較長的 TTL",
+        "explanation": "相同路徑的舊版和新版會使用相同的快取金鑰。"
+      },
+      {
+        "id": "D",
+        "text": "停用所有請求的快取",
+        "explanation": "雖然仍可取得各版本，但不符合提高快取命中率的需求。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "只依會變更內容的參數區分快取，utm 值不同的請求仍可使用同一個快取項目。",
+      "concept": "納入快取金鑰的值與轉送至來源的值可以分開設定。納入快取金鑰的查詢參數也會轉送至來源。",
+      "check": {
+        "prompt": "如果將 version 轉送至來源，但未納入快取金鑰，會怎樣？",
+        "answer": "快取未命中時可能會取得正確版本，但也可能從現有快取中收到其他版本的回應。"
+      }
+    },
+    "categoryLabel": "效能",
+    "examDomainLabel": "效能",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-01",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "無法預測存取模式的 S3 資料",
+    "prompt": "要儲存的影片素材至少為 4 MiB。不同專案的存取頻率差異很大，若在固定天數後將物件移至低頻存取層，擷取費用便難以預測。所有素材都必須能隨時以毫秒速度擷取。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在建立滿 30 天時固定將物件移至 Standard-IA，並照常擷取",
+        "explanation": "存取模式變動可能會產生擷取費用。"
+      },
+      {
+        "id": "B",
+        "text": "建立後立即將物件移至 S3 Glacier Deep Archive，需要時再還原",
+        "explanation": "這不符合立即讀取的需求。"
+      },
+      {
+        "id": "C",
+        "text": "使用 S3 Intelligent-Tiering，但不啟用選用的非同步封存層",
+        "explanation": "它會依存取模式在各層間移動物件，並在不收取擷取費用的情況下維持毫秒級存取。"
+      },
+      {
+        "id": "D",
+        "text": "將特定專案使用的所有資料移至 One Zone-IA",
+        "explanation": "固定的低頻存取層無法因應變動的存取模式，而且也會產生擷取費用。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "它會依存取模式在各層間移動物件，並在不收取擷取費用的情況下維持毫秒級存取。",
+      "concept": "S3 Intelligent-Tiering 會依存取模式在各層間移動物件。監控與自動化會產生費用。物件進入選用的非同步封存層後，必須先還原才能擷取。",
+      "check": {
+        "prompt": "若啟用 Deep Archive Access，還能維持立即擷取嗎？",
+        "answer": "不行。物件移至該層後必須先還原，因此有此需求時不要啟用。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-02",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "EC2 與 Fargate 費用",
+    "prompt": "希望今後繼續以承諾型折扣涵蓋 EC2 的最低穩定用量。計畫在六個月內將部分工作負載移轉至 Fargate，也計畫更換 EC2 執行個體系列。承諾額度僅限於可預測的最低支出。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "針對目前的執行個體系列購買 EC2 Instance Savings Plans",
+        "explanation": "它無法涵蓋超出該系列適用範圍的變更，也不適用於 Fargate。"
+      },
+      {
+        "id": "B",
+        "text": "僅按最低支出對應的金額購買 Compute Savings Plans",
+        "explanation": "它能因應符合資格的 EC2 用量變化，也適用於 Fargate。"
+      },
+      {
+        "id": "C",
+        "text": "按尖峰容量為目前的 EC2 用量購買指定可用區的 Reserved Instances",
+        "explanation": "它無法配合移轉至 Fargate，且承諾額度超過最低用量。"
+      },
+      {
+        "id": "D",
+        "text": "按最低容量建立 On-Demand Capacity Reservation",
+        "explanation": "它可以保留容量，但本身不提供長期折扣。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "它能因應符合資格的 EC2 用量變化，也適用於 Fargate。",
+      "concept": "Compute Savings Plans 承諾每小時支出，可套用於符合資格的 EC2、Fargate 和 Lambda 用量。EC2 Instance Savings Plans 的適用範圍較窄。",
+      "check": {
+        "prompt": "為什麼要按穩定的最低用量而非尖峰用量承諾？",
+        "answer": "未使用的承諾額度仍須付費。若連變動用量也固定承諾，需求下降時就可能留下未使用的額度。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-03",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "使用 Spot 安全執行批次處理",
+    "prompt": "夜間處理可以將檢查點儲存到 S3，即使發生中斷，仍能在可接受的期限內完成。您希望以折扣價使用 EC2 閒置容量，同時避免因某一種執行個體類型容量不足而導致整個處理停止。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將多個執行個體系列和多個可用區設為 Spot 容量選項",
+        "explanation": "這會增加可用的 Spot 容量集區，降低對單一集區的依賴。"
+      },
+      {
+        "id": "B",
+        "text": "將 Spot 限定在單一可用區中的單一執行個體類型",
+        "explanation": "這會使處理依賴單一容量集區。"
+      },
+      {
+        "id": "C",
+        "text": "只將檢查點寫入執行個體暫存儲存空間",
+        "explanation": "執行個體中斷後，其他執行個體無法存取這些檢查點。"
+      },
+      {
+        "id": "D",
+        "text": "使用同時考量價格與容量的 Spot 配置策略，並從持久化檢查點繼續處理",
+        "explanation": "這能降低中斷風險，並讓處理工作可在其他執行個體上繼續。"
+      },
+      {
+        "id": "E",
+        "text": "購買 EC2 Instance Savings Plans 並將其套用至 Spot 費用",
+        "explanation": "Savings Plans 不適用於 Spot 使用費用。"
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這會增加可用的 Spot 容量集區，降低對單一集區的依賴；同時也能降低中斷風險，並讓處理工作可在其他執行個體上繼續。",
+      "concept": "Spot 容量集區是執行個體類型與可用區的組合。使用替代容量選項，並採用同時考量價格與容量的配置策略。檢查點可讓工作負載在中斷後繼續執行。",
+      "check": {
+        "prompt": "持久化檢查點能否阻止 Spot 本身中斷？",
+        "answer": "不能。檢查點可減少中斷造成的工作損失，並在中斷後使用其他容量繼續處理。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-04",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "避免不必要的 NAT 處理費用",
+    "prompt": "私人 EC2 執行個體每天會將數 TB 資料傳輸至同一 AWS 區域中的 S3。它也透過相同的 NAT 閘道存取外部 API，因此無法移除該 NAT 閘道。您希望免除 S3 傳輸所產生的 NAT 處理費用。存取來自同一個 VPC，且您也希望避免新增端點處理費用。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "將所有流量導向 S3 介面端點",
+        "explanation": "這可避開 NAT，但介面端點會收取每小時及資料處理費用；從同一 VPC 存取時，免費的閘道端點成本較低。"
+      },
+      {
+        "id": "B",
+        "text": "為 NAT 閘道增加多個彈性 IP 位址",
+        "explanation": "這可能放寬連線數限制，但 S3 流量仍會經過 NAT 閘道並產生處理費用。"
+      },
+      {
+        "id": "C",
+        "text": "將 S3 閘道端點新增至 EC2 使用的路由表",
+        "explanation": "這只會讓目的地為 S3 前綴的流量避開 NAT，外部 API 呼叫仍可使用 NAT。"
+      },
+      {
+        "id": "D",
+        "text": "將 CloudFront 發佈套用為上傳目的地",
+        "explanation": "這無法解決私人 EC2 傳輸至公用邊緣位置的流量仍經過 NAT 的問題。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這只會讓目的地為 S3 前綴的流量避開 NAT，外部 API 呼叫仍可使用 NAT。",
+      "concept": "在同一 AWS 區域使用 S3 閘道端點時，應為 S3 目的地前綴新增路由。閘道端點本身不收取每小時或資料處理費用。",
+      "check": {
+        "prompt": "變更 S3 路由後，是否可以移除 NAT？",
+        "answer": "不可以。在這些條件下，外部 API 呼叫仍須使用 NAT。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-05",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "將 EBS 容量與效能分開設定",
+    "prompt": "您使用 2 TiB 的 gp2 磁碟區，但資料量為 800 GiB。選擇較大的容量是為了取得 6,000 IOPS。您希望維持所需效能，同時降低不必要容量的費用。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "對現有 gp2 磁碟區使用 ModifyVolume，只將大小縮小至 1 TiB",
+        "explanation": "EBS 無法透過這項操作縮小現有磁碟區，而且 gp2 的基準 IOPS 也取決於磁碟區大小。"
+      },
+      {
+        "id": "B",
+        "text": "建立較小的 gp3 磁碟區，設定所需的 IOPS 和輸送量，移轉資料後切換使用",
+        "explanation": "gp3 可將容量與效能分開設定。"
+      },
+      {
+        "id": "C",
+        "text": "將現有快照直接還原成 1 TiB 的 gp3 磁碟區",
+        "explanation": "無法將快照直接還原至小於原始磁碟區的大小。"
+      },
+      {
+        "id": "D",
+        "text": "將磁碟區變更為 st1，並使用突增效能處理隨機 I/O",
+        "explanation": "st1 不適用於需要持續高 IOPS 的隨機 I/O 工作負載。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "gp3 可將容量與效能分開設定。",
+      "concept": "gp3 可獨立於容量指定效能。現有 EBS 磁碟區無法縮小，快照也無法直接還原至小於原始磁碟區的大小。",
+      "check": {
+        "prompt": "只要就地將 gp2 變更為 gp3，就能讓容量費用減半嗎？",
+        "answer": "不能。容量不會改變。您必須將資料移轉至新的較小磁碟區。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-06",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "降低長期日誌儲存費用",
+    "prompt": "稽核日誌在最初 30 天需要頻繁讀取，之後大約每年讀取一次。自第 31 天起，只要能在 48 小時內取回即可，且必須保留 7 年。物件大小至少有數 MiB。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "整個保留期間都使用 S3 Standard",
+        "explanation": "對於存取頻率低的長期儲存，這會產生不必要的費用。"
+      },
+      {
+        "id": "B",
+        "text": "30 天後轉換為 S3 Standard-IA，並繼續保留",
+        "explanation": "不需要毫秒級存取，而且長期保留可使用費用更低的封存儲存類別。"
+      },
+      {
+        "id": "C",
+        "text": "建立後立即轉換為 S3 Glacier Deep Archive",
+        "explanation": "這不適合最初 30 天頻繁讀取的需求。"
+      },
+      {
+        "id": "D",
+        "text": "30 天後從 S3 Standard 轉換為 S3 Glacier Deep Archive",
+        "explanation": "這會先維持即時存取，之後利用 48 小時的取回期限取得較低的儲存費率。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "這會先維持即時存取，之後利用 48 小時的取回期限取得較低的儲存費率。",
+      "concept": "一般 GET 請求之前，必須先復原 S3 Glacier Deep Archive 中的物件。各種取回選項的通常耗時不同；大量取回通常以 48 小時內為目標。",
+      "check": {
+        "prompt": "如果第 30 天後也必須立即取得日誌，該怎麼辦？",
+        "answer": "Deep Archive 不適用。請比較可立即存取之儲存類別的儲存費用與取回費用。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-07",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "DynamoDB 的不規則流量",
+    "prompt": "新的 DynamoDB 服務偶爾會出現短暫流量暴增，但平時幾乎沒有存取。無法事先預測尖峰，也無法手動調整容量。假設成長速率在隨需擴展範圍內。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "使用隨需容量模式",
+        "explanation": "按請求計費，無須事先配置容量即可因應負載變化。"
+      },
+      {
+        "id": "B",
+        "text": "一律依尖峰設定佈建容量",
+        "explanation": "閒置時仍須支付佈建容量的費用。"
+      },
+      {
+        "id": "C",
+        "text": "設定較低的佈建容量與較長的擴展緩衝時間",
+        "explanation": "突發流量剛開始時更容易發生節流。"
+      },
+      {
+        "id": "D",
+        "text": "以 DAX 取代資料表",
+        "explanation": "DAX 不會取代 DynamoDB 的持久性儲存，也會產生額外的叢集費用。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "按請求計費，無須事先配置容量即可因應負載變化。",
+      "concept": "DynamoDB 隨需模式依請求量計費。若流量超出擴展範圍（例如突然大幅超過先前的尖峰），仍可能遭到節流。",
+      "check": {
+        "prompt": "改用隨需模式後，是否任何幅度的流量成長都能無限制承受？",
+        "answer": "不能。還要檢查先前尖峰、配額、索引鍵分布等因素。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-08",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "日誌查詢與保留",
+    "prompt": "用於故障分析的日誌正無限期累積在 CloudWatch Logs 中。只需立即搜尋最近 14 天的日誌。法規要求保留 1 年，但舊日誌每年只會查詢幾次，而且不希望變更日誌擷取路徑。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "只將 CloudWatch Logs 的保留期限設為 14 天",
+        "explanation": "若沒有其他封存方式，也會失去法規要求保留的歷史資料。"
+      },
+      {
+        "id": "B",
+        "text": "持續將所需日誌傳送至 S3，並將較舊的日誌轉至成本較低的儲存層",
+        "explanation": "可將不需要立即搜尋期間的資料分開儲存。"
+      },
+      {
+        "id": "C",
+        "text": "大量使用 CloudWatch Logs Insights 以降低儲存成本",
+        "explanation": "執行查詢不會改變保留期限或儲存資料量。"
+      },
+      {
+        "id": "D",
+        "text": "只靠從 Glacier 還原，取代 CloudWatch Logs 最近 14 天的立即搜尋",
+        "explanation": "由於需要先還原資料，無法滿足日常立即搜尋的需求。"
+      },
+      {
+        "id": "E",
+        "text": "確認既有日誌已回填至 S3 後，將 CloudWatch Logs 的保留期限設為 14 天",
+        "explanation": "可降低立即搜尋資料的儲存成本，同時保留法規要求的一年歷史資料。"
+      }
+    ],
+    "correct": [
+      "B",
+      "E"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "可將不需要立即搜尋期間的資料分開儲存。可降低立即搜尋資料的儲存成本，同時保留法規要求的一年歷史資料。",
+      "concept": "訂閱可持續傳送新日誌，而 S3 匯出可用於遷移既有日誌。變更保留設定前，應確認轉換過程沒有資料缺漏或重複。",
+      "check": {
+        "prompt": "現在建立訂閱，也會搬移半年前的日誌嗎？",
+        "answer": "不會。必須另外規劃回溯傳輸。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-09",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "S3 未完成的上傳",
+    "prompt": "用戶端在不穩定的網路連線下進行分段上傳時，可能會中途放棄，因此 S3 儲存量相較於已完成的物件數量成長過快。正常的上傳會在 24 小時內完成。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在兩天後讓目前的物件到期",
+        "explanation": "此設定適用於已完成的物件；刪除未完成的分段應使用專用規則。"
+      },
+      {
+        "id": "B",
+        "text": "刪除 S3 刪除標記",
+        "explanation": "未完成的分段與刪除標記無關。"
+      },
+      {
+        "id": "C",
+        "text": "使用生命週期規則，中止啟動超過兩天的未完成分段上傳",
+        "explanation": "可刪除已開始一段時間但仍未完成的上傳分段，同時讓正常上傳有足夠時間完成。"
+      },
+      {
+        "id": "D",
+        "text": "設定 S3 Intelligent-Tiering 來移動未完成的分段",
+        "explanation": "無法藉由物件的儲存層轉換來刪除未完成的分段。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "可刪除已開始一段時間但仍未完成的上傳分段，同時讓正常上傳有足夠時間完成。",
+      "concept": "生命週期動作 AbortIncompleteMultipartUpload 會中止開始後超過指定天數的未完成上傳。這與已完成物件的到期設定不同。",
+      "check": {
+        "prompt": "如果正常上傳需要 3 天，在 2 天後中止是否安全？",
+        "answer": "正常上傳也可能被中止。閾值應長於正常處理所需的時間。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-10",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "分析環境的閒置成本",
+    "prompt": "每週會進行幾次小規模的 SQL 分析。來源資料是 S3 中的 Parquet，查詢使用標準 SQL，也可以接受作業啟動前的等待時間。必須消除常駐伺服器費用，並為各部門設定掃描量上限。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在 EC2 上持續執行 Presto，供各部門共用",
+        "explanation": "即使工作負載是間歇性的，EC2 閒置時仍會產生費用。"
+      },
+      {
+        "id": "B",
+        "text": "使用 Athena 隨需查詢，並為各部門設定工作群組和掃描量限制",
+        "explanation": "無須持續佈建伺服器，還可控制每次查詢的掃描量。"
+      },
+      {
+        "id": "C",
+        "text": "持續使用佈建的 Redshift 叢集",
+        "explanation": "叢集閒置時仍須支付容量費用。"
+      },
+      {
+        "id": "D",
+        "text": "將標準 SQL 整合至 AWS Glue Spark 任務，並由各部門共用執行資源池",
+        "explanation": "或許能避免閒置費用，但若要滿足相當於 Athena 掃描量限制的需求，仍需額外實作。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "無須持續佈建伺服器，還可控制每次查詢的掃描量。",
+      "concept": "Athena 直接以 SQL 讀取 S3 資料。隨需查詢的主要費用因素是掃描資料量，工作群組可設定每次查詢的限制，並停止超過限制的查詢。",
+      "check": {
+        "prompt": "可將工作群組的單次查詢上限視為部門的月度支出上限嗎？",
+        "answer": "不行。單次查詢限制與監控每月累計費用或用量是不同的事。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-11",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "映像檔世代管理",
+    "prompt": "大量映像檔會按提交逐一推送至 ECR。為了在正式環境中復原，需要將發布映像檔保留 90 天；對於每次產生的 CI 標籤，只保留最近 10 個。每個映像檔只有一個用來標示用途的標籤。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在 ECR 掃描時自動刪除舊映像檔",
+        "explanation": "映像檔掃描用於偵測漏洞，不會管理保留的映像檔世代。"
+      },
+      {
+        "id": "B",
+        "text": "當整個儲存庫的映像檔數量超過 10 個時刪除映像檔",
+        "explanation": "這可能會無意間違反正式環境發布映像檔保留 90 天的要求。"
+      },
+      {
+        "id": "C",
+        "text": "將所有 CI 和發布映像檔分別複製到不同帳戶",
+        "explanation": "這無法符合保留政策，還會額外耗用儲存空間。"
+      },
+      {
+        "id": "D",
+        "text": "依用途標籤前綴建立 ECR 生命週期政策",
+        "explanation": "CI 映像檔可依數量刪除，發布映像檔則可依存放時間刪除。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "CI 映像檔可依數量刪除，發布映像檔則可依存放時間刪除。",
+      "concept": "ECR 生命週期政策會結合標籤條件與數量或存放時間門檻。規則以映像檔為目標；若映像檔可能有多個標籤，也應檢查政策評估結果。",
+      "check": {
+        "prompt": "如果 CI 標籤和發布標籤都附加在同一個映像檔上，會怎樣？",
+        "answer": "目前的前提便不再成立。請重新確認發布映像檔是否會納入規則，以及規則優先順序和預覽結果。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-12",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "依排程執行的長時間容器工作",
+    "prompt": "某容器工作每月只執行幾次，每次執行兩小時。希望無須管理主機，且只在工作執行期間產生運算費用。工作必須在固定時間啟動，並且不接受處理期間 Spot 容量遭回收。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "透過 EventBridge Scheduler 呼叫 ECS RunTask，並使用 Fargate 標準容量執行",
+        "explanation": "工作只會在啟動後執行，無須管理主機，也不依賴可能遭回收的 Spot 容量。"
+      },
+      {
+        "id": "B",
+        "text": "將容器作為單次 Lambda 執行作業，連續執行兩小時",
+        "explanation": "單次 Lambda 執行最長為 15 分鐘。"
+      },
+      {
+        "id": "C",
+        "text": "將容器放在持續執行的 EC2 執行個體上，並透過 cron 啟動",
+        "explanation": "EC2 在閒置期間仍會產生費用，而且仍須管理主機。"
+      },
+      {
+        "id": "D",
+        "text": "排程執行 Fargate Spot 工作",
+        "explanation": "容量可能遭回收，導致工作尚未完成便終止。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "工作只會在啟動後執行，無須管理主機，也不依賴可能遭回收的 Spot 容量。",
+      "concept": "EventBridge Scheduler 會在指定時間呼叫 ECS RunTask。使用 Fargate 標準容量時，無須管理底層 EC2 執行個體，也不必讓服務維持最低工作數。",
+      "check": {
+        "prompt": "工作成功啟動是否就等於工作成功完成？",
+        "answer": "不等於。即使 RunTask 已受理，工作仍可能失敗，因此要監控工作的最終狀態。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  },
+  {
+    "id": "mock-cost-13",
+    "revision": 1,
+    "category": "コスト最適化",
+    "version": "SAA-C03 mock / 2026-11 v1",
+    "title": "降低服務連線的 NAT 費用",
+    "prompt": "在多個私有子網路中執行的工作者只會與 AWS 內的 DynamoDB 通訊。路線圖也不包含外部連線，而且該 VPC 每次會處理數 TB 資料。工作者和資料表位於相同 AWS 區域。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "保留公用 NAT 閘道，並將其移至與工作者相同的可用區",
+        "explanation": "這可減少跨可用區費用，但 NAT 的每小時費用和資料處理費用仍會產生。"
+      },
+      {
+        "id": "B",
+        "text": "關聯 DynamoDB 閘道端點，並刪除沒有其他用途的 NAT 閘道",
+        "explanation": "在維持連線的同時，移除不再需要的 NAT 費用。"
+      },
+      {
+        "id": "C",
+        "text": "建立 DynamoDB Accelerator，並將所有經 NAT 的存取改由 DAX 處理",
+        "explanation": "DAX 會增加節點費用，也不適合用來取代所有 DynamoDB 操作的存取路徑。"
+      },
+      {
+        "id": "D",
+        "text": "將網路改為使用 NAT 執行個體",
+        "explanation": "執行個體費用和維運工作仍然存在；對於專用服務端點已能滿足的需求，這種作法負擔更重。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html",
+      "label": "AWS公式試験ガイド（出題範囲）"
+    },
+    "learning": {
+      "reason": "在維持連線的同時，移除不再需要的 NAT 費用。",
+      "concept": "DynamoDB 閘道端點會關聯至 VPC 中的路由表。共用 VPC 的閘道端點無法透過 TGW 以轉送方式使用。",
+      "check": {
+        "prompt": "如果只是把 NAT 閘道移至各工作者的 VPC，會怎樣？",
+        "answer": "雖然可以避免 TGW 費用，但 DynamoDB 流量的 NAT 資料處理費用仍會存在。"
+      }
+    },
+    "categoryLabel": "成本最佳化",
+    "examDomainLabel": "成本最佳化",
+    "versionLabel": "SAA-C03 mock / 2026-11 v1",
+    "sourceLabel": "AWS 官方考試指南（考試範圍）"
+  }
+]

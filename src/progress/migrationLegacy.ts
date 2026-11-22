@@ -1,8 +1,12 @@
+import { profile } from './migrationLegacyProfile';
+export { profile } from './migrationLegacyProfile';
+export type { LegacyProfile } from './migrationLegacyProfile';
 import type { Attempt } from '../attempts';
 import type { LegacySourceName } from './migrationTypes';
 
 export type LegacyAttempt = Attempt & { mode: 'study' | 'review' | 'exam' };
 export type LegacyDraft = {
+  choiceOrders?: Record<string, string[]>;
   id: string;
   deadline: number;
   order: string[];
@@ -12,7 +16,6 @@ export type LegacyDraft = {
     { selected: string[]; flagged: boolean; durationMs: number; selectedAt?: number }
   >;
 };
-export type LegacyProfile = { earned: string[]; answers: Record<string, number> };
 
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -87,23 +90,21 @@ export function draft(raw: string): LegacyDraft | undefined {
       )
     )
       return undefined;
-    return parsed as LegacyDraft;
-  } catch {
-    return undefined;
-  }
-}
-export function profile(raw: string): LegacyProfile | undefined {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (
-      !object(parsed) ||
-      !Array.isArray(parsed.earned) ||
-      !object(parsed.answers) ||
-      !parsed.earned.every((value) => typeof value === 'string') ||
-      !Object.values(parsed.answers).every(Number.isInteger)
-    )
-      return undefined;
-    return { earned: parsed.earned as string[], answers: parsed.answers as Record<string, number> };
+    const order = parsed.order as string[];
+    const choiceOrders =
+      object(parsed.choiceOrders) &&
+      Object.entries(parsed.choiceOrders).every(
+        ([key, value]) =>
+          order.includes(key) &&
+          Array.isArray(value) &&
+          value.length > 0 &&
+          value.length <= 20 &&
+          value.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 160) &&
+          new Set(value).size === value.length,
+      )
+        ? (parsed.choiceOrders as Record<string, string[]>)
+        : undefined;
+    return { ...(parsed as LegacyDraft), ...(choiceOrders ? { choiceOrders } : {}) };
   } catch {
     return undefined;
   }

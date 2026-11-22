@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { certifications } from '../src/certifications.ts';
+import { studyCourses } from '../src/certifications.ts';
 import { parseCheckpointQuestions } from '../src/fundamentals/checkpointQuestions.ts';
 import { parseQuestions, questionKey } from '../src/questions.ts';
 
@@ -29,7 +29,7 @@ async function includeIfPresent(certificationId: string, path: string) {
   }
 }
 
-for (const certification of certifications) {
+for (const certification of studyCourses) {
   const course = certification.course;
   if (!course) continue;
   for (const path of new Set([

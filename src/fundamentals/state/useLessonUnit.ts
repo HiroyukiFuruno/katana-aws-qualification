@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { Locale } from '../../locales';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import { guestLessonPrefix } from './guestStorage';
 import type { LessonServices } from './services';
@@ -11,11 +12,18 @@ type Loaded = {
   version: number;
 };
 
-export function useLessonUnit(services: LessonServices | null, unitId: string, contentVersion?: string) {
+export function useLessonUnit(
+  services: LessonServices | null,
+  unitId: string,
+  locale: Locale,
+  contentVersion?: string,
+) {
   const [loaded, setLoaded] = useState<Loaded>();
   const [asset, setAsset] = useState<DeliveryUnitAsset>();
   const [error, setError] = useState<unknown>();
   const [version, setVersion] = useState(0);
+  const latest = useRef<Loaded | undefined>(undefined);
+  latest.current = loaded;
   useEffect(() => {
     const guest = services?.guest;
     if (!guest) return;
@@ -36,15 +44,28 @@ export function useLessonUnit(services: LessonServices | null, unitId: string, c
   }, [services, unitId]);
   useEffect(() => {
     let current = true;
+    const retained = latest.current;
+    const keepSnapshot =
+      retained?.services === services &&
+      retained.asset.unit.id === unitId &&
+      retained.version === version &&
+      (contentVersion === undefined || retained.asset.contentVersion === contentVersion);
     setError(undefined);
-    setLoaded(undefined);
-    setAsset(undefined);
+    if (!keepSnapshot) {
+      setLoaded(undefined);
+      setAsset(undefined);
+    }
     if (services) {
       void services.assets
-        .unit(unitId, contentVersion)
+        .unit(unitId, contentVersion, locale)
         .then(async (asset) => {
           if (current) setAsset(asset);
-          return { asset, snapshot: await services.load(asset), services, version };
+          return {
+            asset,
+            snapshot: keepSnapshot && retained ? retained.snapshot : await services.load(asset),
+            services,
+            version,
+          };
         })
         .then((result) => {
           if (current) setLoaded(result);
@@ -56,7 +77,7 @@ export function useLessonUnit(services: LessonServices | null, unitId: string, c
     return () => {
       current = false;
     };
-  }, [services, unitId, version, contentVersion]);
+  }, [services, unitId, locale, version, contentVersion]);
   return {
     loaded:
       loaded?.services === services && loaded.asset.unit.id === unitId && loaded.version === version

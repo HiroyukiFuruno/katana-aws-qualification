@@ -9,7 +9,7 @@ import { LessonLoaded } from './LessonLoaded';
 
 export function LessonUnit({ services, route }: { services: LessonServices; route: LessonRoute }) {
   const { locale, t } = usePreferences();
-  const unit = useLessonUnit(services, route.unitId, route.contentVersion);
+  const unit = useLessonUnit(services, route.unitId, locale, route.contentVersion);
   const [actionError, setActionError] = useState<unknown>();
   const [busy, setBusy] = useState(false);
   async function resolve(choice: 'pending' | 'stored') {

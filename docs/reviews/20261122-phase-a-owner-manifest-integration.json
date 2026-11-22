@@ -1,0 +1,94 @@
+{
+  "reviewed_at": "2026-11-22",
+  "scope": "owner-cutover transport evidence reconciliation and read-only presentation migration ordering audit",
+  "transport_reconciliation": {
+    "scanner": "scripts/account-owner-cutover-transports.ts",
+    "current_callsite_count": 35,
+    "manifest_topology_preserved": {
+      "primary_entries": 26,
+      "primary_distinct_names": 25,
+      "aliases": 10
+    },
+    "updated_to_current_callsites": [
+      "src/progress/member.ts:76 rpc initialize_learning_state",
+      "src/progress/member.ts:81 rpc initialize_learning_state",
+      "src/progress/member.ts:85 write append_learning_event",
+      "src/progress/member.ts:98 rpc initialize_learning_state",
+      "src/progress/member.ts:105 rpc load_roadmap_profile_snapshot_v2",
+      "src/progress/member.ts:116 write replace_roadmap_profile_v2",
+      "src/progress/member.ts:123 write reset_my_learning_data",
+      "src/progress/examRepository.ts:60 rpc start_exam_session_v2",
+      "src/progress/examRepository.ts:77 rpc save_exam_response_confirmed",
+      "src/progress/examRepository.ts:105 rpc finalize_exam_session",
+      "src/progress/migrationOtherUpload.ts:23 write import_roadmap_profile_v2",
+      "src/progress/migrationOtherUpload.ts:51 write accept_migration_row",
+      "src/progress/migrationDraftUpload.ts:118 write import_exam_session_v2",
+      "src/progress/migrationHistoryUpload.ts:73 write import_exam_session_v2"
+    ],
+    "result": "No transport was added or removed; stale names and line evidence now match the scanner output."
+  },
+  "new_presentation_function_surfaces": [
+    {
+      "signature": "import_exam_session_v2(bigint,uuid,text,jsonb,jsonb,jsonb,jsonb)",
+      "source": "202611210005_presentation_storage.sql:92",
+      "roles": ["authenticated"]
+    },
+    {
+      "signature": "import_roadmap_profile_v2(bigint,uuid,text,bigint,jsonb,jsonb,jsonb)",
+      "source": "202611210005_presentation_storage.sql:147",
+      "roles": ["authenticated"]
+    },
+    {
+      "signature": "load_roadmap_profile_snapshot_v2()",
+      "source": "202611210005_presentation_storage.sql:119",
+      "roles": ["authenticated"]
+    },
+    {
+      "signature": "replace_roadmap_profile_v2(jsonb,jsonb,bigint,bigint,jsonb)",
+      "source": "202611210005_presentation_storage.sql:133",
+      "roles": ["authenticated"]
+    },
+    {
+      "signature": "start_exam_session_v2(uuid,text,text,jsonb,integer,bigint,jsonb)",
+      "source": "202611210005_presentation_storage.sql:67",
+      "roles": ["authenticated"]
+    },
+    {
+      "signature": "valid_exam_presentation(jsonb,jsonb)",
+      "source": "202611210005_presentation_storage.sql:40",
+      "roles": []
+    },
+    {
+      "signature": "valid_profile_presentation(jsonb)",
+      "source": "202611210005_presentation_storage.sql:11",
+      "roles": []
+    }
+  ],
+  "classification_action": "Approved integration classification mirrors the existing RPC semantics: v2 start/import/replace functions are write plus owner-bound, the v2 profile snapshot is read plus owner-bound, and presentation validators are internal plus read.",
+  "manifest_audit_after_reconciliation": {
+    "definitionCount": 56,
+    "functionCount": 51,
+    "ownerTableCount": 12,
+    "rlsPolicyCount": 10,
+    "transportCount": 26,
+    "transportNameCount": 25
+  },
+  "presentation_migration_compatibility": {
+    "migration_order": "scripts/data-migrations.ts:16-20 applies 202611210005 before owner-shadow 202611220001 through account-creation 202611220004.",
+    "later_override_check": "The source audit resolves all five v2 public functions to 202611210005; none is redefined by 202611220001-202611220004.",
+    "owner_shadow_boundary": "202611220001 states that the public owner boundary remains Auth UID during shadow/backfill, so it does not supersede the v2 RPC contracts.",
+    "sql_modified": false,
+    "candidate_integration_test_risks": [
+      "A fresh ordered migration run must prove the presentation columns exist before each v2 RPC is created.",
+      "A post-shadow call to each v2 RPC must retain its authenticated EXECUTE grant and presentation payload validation.",
+      "A post-account-creation call must verify that the v2 RPCs continue to use the existing public Auth-UID owner boundary until the dedicated public cutover migration changes it."
+    ]
+  },
+  "verification": {
+    "passed": [
+      "scripts/presentation-storage.test.ts",
+      "scripts/progress-store-exam-generation.test.ts"
+    ],
+    "manifest_test_status": "The coverage assertions still expect pre-presentation counts (49 definitions and 44 functions). The audit is otherwise complete at 56 definitions and 51 functions; that test file was outside this task's authorized edit scope."
+  }
+}

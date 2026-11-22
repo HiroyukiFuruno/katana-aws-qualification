@@ -1,0 +1,454 @@
+[
+  {
+    "id": "dva-c02-practice-01",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "部分批次重试",
+    "prompt": "Lambda 从标准 SQS 队列接收了 10 条消息。它捕获到其中一条消息的格式错误，并成功保存了其余 9 条。你希望 Lambda 不调用队列删除 API，将成功的消息视为已完成，并只重试失败的消息，直到该消息进入 DLQ。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "启用 ReportBatchItemFailures，并返回失败消息的 ID",
+        "explanation": "Lambda 可以识别具体失败的条目。"
+      },
+      {
+        "id": "B",
+        "text": "减小批次大小和窗口",
+        "explanation": "这可以减少失败造成的连带影响，但不会在响应中区分成功与失败。"
+      },
+      {
+        "id": "C",
+        "text": "将一条消息的失败作为未处理异常抛出",
+        "explanation": "整个批次都会被视为失败。"
+      },
+      {
+        "id": "D",
+        "text": "缩短可见性超时",
+        "explanation": "此做法不会报告每条消息的成败；如果超时时间短于处理时间，还容易造成重复处理。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "Lambda 可以识别具体失败的条目。",
+      "concept": "部分批次响应并不意味着 SQS 可实现端到端的 Exactly Once。写入操作应设计为幂等。"
+    },
+    "categoryLabel": "应用程序开发、部署与调试",
+    "examDomainLabel": "应用程序开发、部署与调试",
+    "versionLabel": "原创模拟考试 2026-11",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-02",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "回滚到上一版本",
+    "prompt": "多个客户端引用同一个 Lambda 别名 ARN。更改库后，你想只将一部分流量发送到新代码，并能够手动立即恢复到原版本。如何在不添加其他路由器或发布服务的情况下实现？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "设置 Lambda 函数的预留并发",
+        "explanation": "该设置控制并发数，不会改变新旧版本之间的流量比例。"
+      },
+      {
+        "id": "B",
+        "text": "每次覆盖 $LATEST 中的代码",
+        "explanation": "此方式无法表示部分流量回退到旧版本，也无法将调用固定到某个版本。"
+      },
+      {
+        "id": "C",
+        "text": "为每个版本创建函数 URL，并由客户端进行路由",
+        "explanation": "这需要修改客户端的路由逻辑，无法保持使用同一个 ARN。"
+      },
+      {
+        "id": "D",
+        "text": "发布版本，并为别名配置加权路由",
+        "explanation": "别名可以管理两个已发布版本之间的流量分配。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "别名可以管理两个已发布版本之间的流量分配。",
+      "concept": "结合 CodeDeploy，可以自动执行通过别名进行的金丝雀发布，并根据警报自动回滚。"
+    },
+    "categoryLabel": "应用程序开发、部署与调试",
+    "examDomainLabel": "应用程序开发、部署与调试",
+    "versionLabel": "原创模拟考试 2026-11",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-03",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "条件注册",
+    "prompt": "具有相同订单 ID 的支付回调会并发到达。你需要仅首次向 DynamoDB 注册初始状态，并防止后续重试覆盖已处理订单的状态。如何在不使用额外锁表的情况下实现？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "为 PutItem 设置 attribute_not_exists 条件",
+        "explanation": "条件检查和写入会作为一个操作执行。"
+      },
+      {
+        "id": "B",
+        "text": "使用 UpdateItem 无条件地将状态设为初始值",
+        "explanation": "重试会覆盖现有状态。"
+      },
+      {
+        "id": "C",
+        "text": "先用 GetItem 检查是否存在，再无条件调用 PutItem",
+        "explanation": "在检查和写入之间，其他处理可能会注册该项目。"
+      },
+      {
+        "id": "D",
+        "text": "先执行强一致性 Scan",
+        "explanation": "即使读取了最新状态，也无法避免随后写入时发生竞争。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "条件检查和写入会作为一个操作执行。",
+      "concept": "在数据存储的写入端评估唯一性条件，可以避免依赖应用程序侧的预先检查。"
+    },
+    "categoryLabel": "应用程序开发、部署和调试",
+    "examDomainLabel": "应用程序开发、部署和调试",
+    "versionLabel": "原创模拟考试 2026-11",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-04",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "从浏览器直接上传",
+    "prompt": "一个接收商品图片的 API 由后端确定会员身份和一个上传目标键。要求浏览器通过签名请求直接执行 PUT，不获取凭证，并在 10 分钟后失去上传权限。应采用哪种方案？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在存储桶策略中允许所有人执行 PutObject",
+        "explanation": "这会允许未经身份验证的用户上传对象，包括上传到指定键以外的键。"
+      },
+      {
+        "id": "B",
+        "text": "只修改 S3 的 CORS 规则",
+        "explanation": "这能处理浏览器的源站限制，但不能授权 S3 API 请求。"
+      },
+      {
+        "id": "C",
+        "text": "由后端为指定键签发预签名 PUT URL",
+        "explanation": "这可以在限定时间内委托指定操作。"
+      },
+      {
+        "id": "D",
+        "text": "签发带有效期的预签名 GET URL",
+        "explanation": "签名与 HTTP 操作绑定，不会授予 PUT 权限。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "这可以在限定时间内委托指定操作。",
+      "concept": "预签名 URL 在有效期内可能被获得它的任何人使用。应限制预期使用者、键和有效期。"
+    },
+    "categoryLabel": "应用开发、部署与调试",
+    "examDomainLabel": "应用开发、部署与调试",
+    "versionLabel": "原创模拟试题 2026-11",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-05",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "SDK 权限",
+    "prompt": "同一集群中的支付 Fargate 任务需要能够写入 DynamoDB，而另一个报表任务不得写入。两个任务目前都能拉取同一个私有 ECR 镜像。不在 SDK 中配置静态密钥时，应在哪里授予新的写入权限？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "为应用任务角色添加 DynamoDB 权限",
+        "explanation": "这会控制任务内应用可用的凭证。"
+      },
+      {
+        "id": "B",
+        "text": "将静态访问密钥作为环境变量注入任务",
+        "explanation": "应用可以使用这些密钥，但这不符合使用任务短期凭证的要求。"
+      },
+      {
+        "id": "C",
+        "text": "修改 ECR 存储库策略",
+        "explanation": "这会控制对镜像的访问，但不会授予 DynamoDB 写入权限。"
+      },
+      {
+        "id": "D",
+        "text": "只修改任务执行角色",
+        "explanation": "该角色主要供 ECS 代理执行启动准备工作使用，不会向任务内应用授予权限。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "这会控制任务内应用可用的凭证。",
+      "concept": "应区分启动任务时使用的权限与任务启动后应用使用的权限。"
+    },
+    "categoryLabel": "应用开发、部署与调试",
+    "examDomainLabel": "应用开发、部署与调试",
+    "versionLabel": "原创模拟试题 2026-11",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-06",
+    "revision": 2,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "重试与重复扣款",
+    "prompt": "支付服务商会将键和请求内容均相同的请求视为同一操作。支付成功后，响应丢失了。即使工作线程重启，也需要重试；初次发送和重试可能由不同进程执行。应采用哪种方案？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "仅在收到响应时保存已处理标记",
+        "explanation": "如果支付成功后响应丢失，就不会设置该标记。"
+      },
+      {
+        "id": "B",
+        "text": "在调用支付服务商之前删除 SQS 消息",
+        "explanation": "这能减少重复处理，但如果调用失败，业务操作本身也会丢失。"
+      },
+      {
+        "id": "C",
+        "text": "每笔订单在所有重试中使用相同的幂等键",
+        "explanation": "支付服务商可以据此识别这些请求属于同一操作。"
+      },
+      {
+        "id": "D",
+        "text": "为每个请求生成新的幂等键",
+        "explanation": "支付服务商会将每个请求视为独立操作。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "支付服务商可以据此识别这些请求属于同一操作。",
+      "concept": "外部 API 超时并不意味着操作已确定失败。重试时应保持请求标识不变。"
+    },
+    "categoryLabel": "应用开发、部署与调试",
+    "examDomainLabel": "应用开发、部署与调试",
+    "versionLabel": "原创模拟试题 2026-11",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-07",
+    "revision": 1,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "故障后的恢复位置",
+    "prompt": "一个 Lambda 函数从 Kinesis 读取数据，并按顺序处理每个批次。如果处理第 4 条记录时发生故障，需要能够至少从第 4 条记录重新处理，并避免重新处理已成功处理的前 3 条记录。应采用哪种方案？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "捕获错误并返回成功",
+        "explanation": "这样检查点会越过处理失败的记录。"
+      },
+      {
+        "id": "B",
+        "text": "启用 ReportBatchItemFailures，并返回失败记录的序列号",
+        "explanation": "对于流处理，最小的失败序列号会被用作重试位置。"
+      },
+      {
+        "id": "C",
+        "text": "使整个批次失败",
+        "explanation": "重试会从批次开头开始，因此不符合要求。"
+      },
+      {
+        "id": "D",
+        "text": "在失败响应中返回 SQS 消息 ID",
+        "explanation": "对于 Kinesis，必须返回记录的序列号。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "对于流处理，最小的失败序列号会被用作重试位置。",
+      "concept": "SQS 与 Kinesis 的部分失败响应所用标识符和重试范围不同。"
+    },
+    "categoryLabel": "应用开发、部署与调试",
+    "examDomainLabel": "应用开发、部署与调试",
+    "versionLabel": "原创模拟试题 2026-11",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-08",
+    "revision": 1,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "version": "オリジナル模試 2026-11",
+    "title": "写入数据并发布事件",
+    "prompt": "订单服务将订单写入 DynamoDB，并向下游服务传递事件。需要防止进程在写入后立即崩溃导致事件丢失，同时尽量减少接收方的重复处理。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "写入后由同一应用发送通知；如果通知失败，就删除订单",
+        "explanation": "进程停止时，补偿操作不会执行。"
+      },
+      {
+        "id": "B",
+        "text": "使用 DynamoDB Streams 获取已提交变更，并使接收方具备幂等性",
+        "explanation": "事件源与已提交的变更关联，也能应对重新投递。"
+      },
+      {
+        "id": "C",
+        "text": "每分钟重新发送一次完整 Scan 的结果",
+        "explanation": "这种方式无法区分变更事件，并且需要重发所有项目。"
+      },
+      {
+        "id": "D",
+        "text": "先发布事件，再写入订单",
+        "explanation": "如果写入失败，就会向下游发送一条针对不存在订单的事件。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "事件源与已提交的变更关联，也能应对重新投递。",
+      "concept": "双重写入可能只有一侧成功。即使采用读取已提交变更的方式，消费者仍需具备幂等性。"
+    },
+    "categoryLabel": "应用开发、部署与调试",
+    "examDomainLabel": "应用开发、部署与调试",
+    "versionLabel": "原创模拟试题 2026-11",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-09",
+    "revision": 1,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "similarityGroup": "diagnose-throttling",
+    "version": "オリジナル模試 2026-11 拡充版",
+    "title": "区分端到端延迟与 API 调用",
+    "prompt": "一个包含多个服务（包括 Lambda）的订单 API，其 p99 延迟有所恶化。你需要针对同一个采样请求，识别从入口响应到下游 SDK 调用之间哪个环节耗时较长。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "为每项服务添加监测，并传播跟踪上下文，然后在 X-Ray 中检查跟踪记录",
+        "explanation": "可以按服务和下游调用的各个环节，追踪单个请求的耗时。"
+      },
+      {
+        "id": "B",
+        "text": "只检查 CloudTrail 管理事件",
+        "explanation": "它不会按环节记录应用程序的处理耗时。"
+      },
+      {
+        "id": "C",
+        "text": "比较所有函数的平均 Duration",
+        "explanation": "无法追踪异常值，也无法追溯跨请求环节的因果关系。"
+      },
+      {
+        "id": "D",
+        "text": "只比较各函数的告警触发时间",
+        "explanation": "无法关联同一个请求经过的路径。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "可以按服务和下游调用的各个环节，追踪单个请求的耗时。",
+      "concept": "指标适合掌握影响范围和发生时间；分布式跟踪适合定位单个请求的瓶颈。"
+    },
+    "categoryLabel": "应用开发、部署与调试",
+    "examDomainLabel": "应用开发、部署与调试",
+    "versionLabel": "原创模拟试题 2026-11 扩充版",
+    "sourceLabel": "AWS 官方考试指南"
+  },
+  {
+    "id": "dva-c02-practice-10",
+    "revision": 1,
+    "category": "アプリ開発、デプロイ、デバッグ",
+    "similarityGroup": "dynamodb-version-condition",
+    "version": "オリジナル模試 2026-11 拡充版",
+    "title": "使用乐观锁检测冲突",
+    "prompt": "两名编辑者读取同一个 DynamoDB 项目，修改内容后再保存。需要防止最后保存的人悄无声息地覆盖较早的修改，并在发生冲突时提示重新读取。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "仅当项目版本号与读取时的版本号一致时才更新，然后将其设置为最新版本号",
+        "explanation": "条件检查和更新会以原子方式执行。"
+      },
+      {
+        "id": "B",
+        "text": "更新后读取版本号，如果不同就通知用户",
+        "explanation": "覆盖发生后，已无法保护较早的修改。"
+      },
+      {
+        "id": "C",
+        "text": "写入前延长项目的 TTL",
+        "explanation": "有效期设置不会控制编辑顺序。"
+      },
+      {
+        "id": "D",
+        "text": "使用强一致性读取，然后无条件更新",
+        "explanation": "读取后仍可能发生另一项更新。"
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/aws-certification/latest/developer-associate-02.html",
+      "label": "AWS公式試験ガイド"
+    },
+    "learning": {
+      "reason": "条件检查和更新会以原子方式执行。",
+      "concept": "条件写入可用于唯一性创建，也可用于比较现有版本以检测冲突；这是两种不同的用途。"
+    },
+    "categoryLabel": "应用开发、部署与调试",
+    "examDomainLabel": "应用开发、部署与调试",
+    "versionLabel": "原创模拟试题 2026-11 扩充版",
+    "sourceLabel": "AWS 官方考试指南"
+  }
+]

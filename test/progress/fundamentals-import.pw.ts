@@ -6,6 +6,7 @@ import {
   lessonPrefix,
   nextButton,
   selectLessonAnswer,
+  visibleLessonQuestion,
   walkLessonReading,
 } from './fundamentals.helpers';
 import { createSessions, setRealSession } from './sessions';
@@ -29,8 +30,7 @@ for (const submitted of [true, false]) {
       await page.getByRole('link', { name: '基礎学習の目次', exact: true }).click();
     } else {
       await nextButton(page).click();
-      const question = asset.finalQuestions[0];
-      if (!question) throw new Error('Missing fixture final question.');
+      const question = await visibleLessonQuestion(page, asset.finalQuestions);
       await selectLessonAnswer(page, question, question.correct);
       await nextButton(page).click();
       await expect(page).toHaveURL(/\/final\/2\/$/);
@@ -57,16 +57,15 @@ for (const submitted of [true, false]) {
       await expect(page).toHaveURL(/\/final\/2\/$/);
       await page.getByRole('link', { name: '前へ', exact: true }).click();
       await expect(page).toHaveURL(/\/final\/1\/$/);
-      await expect(page.locator('fieldset input:checked')).toHaveCount(
-        asset.finalQuestions[0]?.requiredChoices ?? 0,
-      );
+      const question = await visibleLessonQuestion(page, asset.finalQuestions);
+      await expect(page.locator('fieldset input:checked')).toHaveCount(question.requiredChoices);
     }
     await page.reload();
     if (submitted) await expect(page.locator('.lesson-result-pass')).toBeVisible();
-    else
-      await expect(page.locator('fieldset input:checked')).toHaveCount(
-        asset.finalQuestions[0]?.requiredChoices ?? 0,
-      );
+    else {
+      const question = await visibleLessonQuestion(page, asset.finalQuestions);
+      await expect(page.locator('fieldset input:checked')).toHaveCount(question.requiredChoices);
+    }
     expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
     expect(await learningEvents(session)).toHaveLength(submitted ? 16 : 4);
   });

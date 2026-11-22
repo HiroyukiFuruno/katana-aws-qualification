@@ -3,7 +3,6 @@ import { aiBusinessStrategistCourse } from './aiBusinessStrategistCourse.ts';
 import type { Certification, Course } from './certificationTypes';
 import { generativeAiDeveloperCourse } from './generativeAiDeveloperCourse.ts';
 import { machineLearningEngineerCourse } from './machineLearningEngineerCourse.ts';
-import { messages } from './messages.ts';
 import { securitySpecialtyCourse } from './securitySpecialtyCourse.ts';
 
 const starterCourseIds = new Set(['clf-c02', 'sap-c03']);
@@ -13,7 +12,11 @@ const developerMock = 'courses/dva-c03/mock-2026-11.json';
 export const developerCourse: Course = {
   practice: [{ path: developerMock, label: 'saaFull' }],
   mock: developerMock,
-  archives: ['courses/dva-c02/questions.json', 'courses/dva-c02/mock-2026-11.json'],
+  archives: [
+    'courses/dva-c02/questions.json',
+    'courses/dva-c02/mock-2026-11.json',
+    'courses/dva-c03/archive-2026-11-21.json',
+  ],
   examStorageId: 'dva-c02',
   exam: {
     minutes: 130,
@@ -101,7 +104,10 @@ function starterCourse(certification: Certification): Course {
   return {
     practice: [{ path: mock, label: professional ? 'saaFull' : 'shortExam' }],
     mock,
-    archives: [`courses/${legacyId}/questions.json`],
+    archives: [
+      `courses/${legacyId}/questions.json`,
+      ...(professional ? ['courses/sap-c03/archive-2026-11-21.json'] : []),
+    ],
     examStorageId: legacyId,
     exam: professional
       ? {
@@ -114,7 +120,7 @@ function starterCourse(certification: Certification): Course {
             '運用上の優秀性・自動化': 15,
           },
         }
-      : { minutes: count * 2, distribution: { [messages.ja[certification.focus]]: count } },
+      : { minutes: count * 2, distribution: { [certification.focus]: count } },
     fixedExamFromBlueprint: professional,
     reviewedMock: professional ? true : undefined,
     setSize: 4,

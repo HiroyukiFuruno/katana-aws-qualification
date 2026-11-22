@@ -1,0 +1,140 @@
+[
+  {
+    "id": "sap-c03-full-arch-018",
+    "revision": 1,
+    "category": "クラウドアーキテクチャ",
+    "similarityGroup": "centralized-egress-policy",
+    "version": "オリジナル模試 2026-11",
+    "title": "Filtrage des sorties à l’échelle de l’organisation",
+    "prompt": "Vous souhaitez contrôler de manière centralisée le trafic Internet sortant des sous-réseaux privés de plusieurs comptes à l’aide d’une liste d’autorisation. Vous avez besoin d’une inspection avec état, y compris le déchiffrement TLS, et d’un contrôle fondé sur les noms de domaine. Vous souhaitez également déployer automatiquement des règles et des politiques dans toute l’organisation, y compris pour les nouveaux comptes. Vous ne voulez pas exploiter le système d’exploitation ni le cluster d’un pare-feu tiers. Quelle architecture convient le mieux ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Écrire des règles FQDN dans les groupes de sécurité de chaque instance EC2",
+        "explanation": "Les groupes de sécurité ne fournissent ni filtrage sortant par nom de domaine ni inspection TLS."
+      },
+      {
+        "id": "B",
+        "text": "Stocker les VPC Flow Logs dans S3",
+        "explanation": "Cela fournit une visibilité a posteriori, mais ne permet pas d’autoriser ou de bloquer le trafic sortant."
+      },
+      {
+        "id": "C",
+        "text": "Déployer AWS Network Firewall dans un VPC d’inspection et distribuer les politiques à l’organisation avec Firewall Manager",
+        "explanation": "Network Firewall fournit une inspection gérée, et Firewall Manager aide à déployer des politiques dans AWS Organizations."
+      },
+      {
+        "id": "D",
+        "text": "Supprimer les routes vers l’Internet Gateway",
+        "explanation": "Cela arrête tout le trafic sortant et ne permet pas les communications requises selon une liste d’autorisation."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/fms-starting.html",
+      "label": "AWS Firewall Manager 開発者ガイド"
+    },
+    "learning": {
+      "reason": "Network Firewall fournit une inspection avec état gérée, tandis que Firewall Manager facilite le déploiement de politiques cohérentes dans l’ensemble de l’organisation.",
+      "concept": "Concevez ensemble les services d’inspection en ligne et les services de gouvernance qui imposent la configuration à plusieurs comptes."
+    },
+    "categoryLabel": "Architecture cloud",
+    "examDomainLabel": "Architecture cloud",
+    "versionLabel": "Examen blanc original 2026-11",
+    "sourceLabel": "Guide du développeur AWS Firewall Manager"
+  },
+  {
+    "id": "sap-c03-full-res3-018",
+    "revision": 1,
+    "category": "レジリエンス・移行・事業継続",
+    "similarityGroup": "sqs-dlq-redrive-rate-compatible-queue",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "Rediriger les messages en échec à faible débit vers une destination distincte",
+    "prompt": "Un bogue dans un worker qui agrège des données d’équipement a été corrigé. Les messages en échec de la DLQ SQS Standard doivent être envoyés tels quels vers une file distincte destinée au retraitement historique, sans être mélangés à la file active des données les plus récentes. La base de données de destination dispose de peu de capacité disponible ; le premier redrive doit donc commencer à un faible débit fixe. Le corps des messages n’a pas besoin d’être transformé et l’équipe veut réduire le code de polling personnalisé. Quelle opération choisir ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Redriver la DLQ vers la file active des données les plus récentes au débit optimisé par le système, puis ne distinguer les messages que dans le worker de retraitement.",
+        "explanation": "Les messages seraient mélangés à la file des nouvelles données les plus récentes, et le débit ne serait pas fixé à une faible valeur."
+      },
+      {
+        "id": "B",
+        "text": "Utiliser le redrive de DLQ pour désigner une autre file Standard et définir un faible débit maximal personnalisé.",
+        "explanation": "Cette option évite la file des données les plus récentes et limite le débit initial du redrive."
+      },
+      {
+        "id": "C",
+        "text": "Utiliser une file FIFO comme destination de retraitement et lancer le redrive intégré depuis la DLQ Standard.",
+        "explanation": "Les files source et destination du redrive doivent être du même type."
+      },
+      {
+        "id": "D",
+        "text": "Prolonger le délai de visibilité de la DLQ et supposer que les messages seront transférés lentement vers une autre file de retraitement.",
+        "explanation": "Le délai de visibilité contrôle le moment où un message reçu redevient visible ; il ne le transfère pas vers une autre file et ne limite pas le débit du redrive."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-dead-letter-queue-redrive.html",
+      "label": "Amazon SQS — DLQからのリドライブ"
+    },
+    "learning": {
+      "reason": "Choisissez comme destination une file Standard de retraitement du même type et définissez un faible débit maximal personnalisé.",
+      "concept": "Le redrive intégré peut transférer des messages vers une file du même type. Un traitement distinct est nécessaire pour filtrer ou modifier le corps de messages individuels."
+    },
+    "categoryLabel": "Résilience, migration et continuité d’activité",
+    "examDomainLabel": "Résilience, migration et continuité d’activité",
+    "versionLabel": "Examen blanc original SAP-C03 2026-11",
+    "sourceLabel": "Amazon SQS — Redrive des messages d’une DLQ"
+  },
+  {
+    "id": "sap-c03-full-ops7-009",
+    "revision": 1,
+    "category": "運用上の優秀性・自動化",
+    "similarityGroup": "database-insights-advanced-postgresql-lock-chain",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "Identifier la session qui détient le verrou pour analyser une attente brève",
+    "prompt": "À la fin de chaque mois, la latence des transactions sur Aurora PostgreSQL dure quelques minutes seulement. L’utilisation moyenne du CPU est faible et les verrous ont été libérés au moment de l’enquête. En prévision du prochain incident, vous voulez retracer dans la console de gestion CloudWatch les relations de blocage entre les sessions ainsi que les requêtes SQL associées à ce moment-là. Comment faire sans ajouter un agent de surveillance connecté en permanence ?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Afficher la charge de la base de données par événement d’attente dans le mode Standard de Database Insights, puis ouvrir l’arborescence des verrous à partir du graphique.",
+        "explanation": "La répartition de la charge est visible, mais l’analyse de l’arborescence des verrous nécessite le mode Advanced."
+      },
+      {
+        "id": "B",
+        "text": "Régler la surveillance améliorée RDS sur un intervalle d’une seconde et déduire les relations d’attente à partir du CPU et de la mémoire des processus du système d’exploitation.",
+        "explanation": "Cette option fournit des statistiques sur les processus du système d’exploitation, mais n’affiche pas les relations de verrouillage entre transactions."
+      },
+      {
+        "id": "C",
+        "text": "Afficher sur le même tableau de bord le nombre de connexions à la base de données et le nombre de blocages intertransactions dans CloudWatch.",
+        "explanation": "Ces métriques montrent l’évolution des nombres, mais ne permettent pas de reconstituer quelle session en a bloqué une autre."
+      },
+      {
+        "id": "D",
+        "text": "Activer le mode Advanced de CloudWatch Database Insights et ouvrir l’analyse des verrous de l’instance de base de données pour l’heure concernée.",
+        "explanation": "Cette analyse affiche de manière hiérarchique les attentes dues aux verrous natifs de la base, ce qui permet d’examiner les sessions qui détiennent les verrous et celles qui attendent."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "label": "CloudWatch Database Insights — PostgreSQLのロック分析",
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Database-Insights-Lock-Analysis.html"
+    },
+    "learning": {
+      "reason": "Utilisez le mode Advanced de Database Insights pour examiner l’arborescence des verrous pendant la période concernée.",
+      "concept": "Les métriques agrégées d’attente de verrouillage indiquent le type de charge. Pour examiner la hiérarchie des sessions bloquantes et en attente, utilisez l’analyse des verrous."
+    },
+    "categoryLabel": "Excellence opérationnelle et automatisation",
+    "examDomainLabel": "Excellence opérationnelle et automatisation",
+    "versionLabel": "Examen blanc original SAP-C03 2026-11",
+    "sourceLabel": "CloudWatch Database Insights — Analyse des verrous PostgreSQL"
+  }
+]

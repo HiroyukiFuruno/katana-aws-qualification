@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import content from '../public/translations/en/site.json';
 import { aggregateDashboard } from '../src/dashboard/aggregate';
+import { createDashboardDisplayLabels } from '../src/dashboard/displayLabels';
 import { dashboardDefaults } from '../src/dashboard/preferences';
 import type { DashboardWidget } from '../src/dashboard/preferenceTypes';
 import type { DashboardSummary } from '../src/dashboard/summaryTypes';
@@ -29,7 +31,7 @@ function renderChart(
           widget,
           summary,
           (value) => value,
-          (key) => messages.en[key],
+          createDashboardDisplayLabels(content, (key) => messages.en[key], []),
         ),
         categories: summary.groups.categories,
       }),

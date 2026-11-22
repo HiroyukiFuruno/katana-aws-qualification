@@ -1,0 +1,87 @@
+{
+  "producer": {
+    "thread": "01a1ff21-19cd-7551-b04d-43745010a731",
+    "model": "gpt-5.6-terra",
+    "reasoning": "high",
+    "role": "independent-code-review"
+  },
+  "scope": {
+    "reviewed": [
+      "scripts/translation-numbers.ts",
+      "scripts/translation-quantity-units.ts",
+      "scripts/translation-numbers.test.ts"
+    ],
+    "sourceOrCacheEdited": false,
+    "reviewArtifactOnly": true
+  },
+  "decision": "changes-requested",
+  "summaryJA": "異次元の明示数量を次元別に比較する変更と、8割を80%へ正規化するaliasは、aib-c01-d2-082の『月末2日間/8割』を80%と綴りの二日で自然に訳した場合の誤検知を解消し、単一の2→3日、8割→90%、1GB→2GBの改変も検出します。ただし、数量配列をSetで重複排除した後に個数を比較しているため、同じ次元内で値が重複する翻訳では、明示値の実個数が同じでも変更を見逃します。設計で要求する「明示値の個数が一致する各次元内だけを比較」を値の種類数でなく出現個数に対して実装する必要があります。",
+  "findings": [
+    {
+      "priority": "P1",
+      "title": "同一値の重複により同一次元の数値改変を見逃す",
+      "paths": [
+        "scripts/translation-numbers.ts:51",
+        "scripts/translation-numbers.ts:71-75"
+      ],
+      "reproduction": {
+        "source": "1GBと2GBを保存する。",
+        "translation": "Store 1 GB and 1 GB.",
+        "locale": "en",
+        "observed": "changedTranslationNumbers(...) returns []",
+        "expected": "bytes:2000000000 を変更として返す"
+      },
+      "rootCause": "quantities() が [...new Set(values)] を返すため、sourceのbytes:1000000000とbytes:2000000000は2件、translationのbytes:1000000000の重複は1件として扱われる。rawの出現個数はいずれも2件なのに、Set後の個数不一致で比較をskipする。",
+      "impact": "容量、時間、割合など同一次元の複数の制約を含む教材で、片方の数値をもう片方へ誤変更してもlintが通る。これは個数を保持して比較する今回の設計目的に反する。",
+      "requiredFix": "quantities()で値の出現回数を保持し、各次元のraw出現個数が同じときに多重集合として比較する。重複した値を消すSetは比較後の重複排除にのみ使うか、使わない。上記再現に加え、source『1GBと1GB』→translation『1 GB and 2 GB』も回帰テストに入れる。"
+    },
+    {
+      "priority": "P2",
+      "title": "新しいpercent scaleの負例は日本語の1組だけである",
+      "paths": [
+        "scripts/translation-numbers.test.ts:130-136"
+      ],
+      "observation": "80%↔8割、9割→80%、bytesの改変は確認しているが、混在文の各target localeで8割/80%を起点にした割合改変を検証していない。現状の正例10locale matrixはaib-c01-d2-082の誤検知防止を十分に示す。",
+      "impact": "現実のlocale aliasを将来追加・変更した際の回帰を検知しにくい。現時点でP1の機能不良ではない。",
+      "recommendedFix": "P1修正時に、JA sourceの8割とtargetの80%を含む混在文について、少なくとも1つのtarget localeで80%→90%を検出する回帰を残す。"
+    }
+  ],
+  "positiveEvidence": [
+    {
+      "claim": "異次元の混在を比較しないため、2日間が綴り数詞のdeux joursになっても、80%との異次元比較によるfalse rejectを起こさない。",
+      "evidence": "translation-numbers.ts:57-75でdimensionごとにgroup化し、translation-numbers.test.ts:86-104で10 localeの『2日間/8割』相当を全て受理する。"
+    },
+    {
+      "claim": "8割はpercent:80として正規化され、割合・期間・容量の単一数値改変は検出される。",
+      "evidence": "translation-quantity-units.ts:8-9、translation-numbers.test.ts:106-136、およびreview実行のchangedTranslationNumbersで80%→90%はpercent:80、1GB→2GBはbytes:1000000000を返した。"
+    },
+    {
+      "claim": "個別qid除外、lint無効化、sourceLocale依存の例外はない。",
+      "evidence": "review対象2実装ファイルにqid参照・除外リストはなく、sourceは英語固定の量抽出でも日本語の『割』aliasを同じquantity tableで認識する。"
+    }
+  ],
+  "unresolved": [
+    {
+      "item": "明示数量の出現個数が原文と翻訳で異なる場合は比較をskipする既存ポリシー",
+      "status": "intentional-boundary",
+      "reason": "今回の要件どおり、綴り数詞・clock表記・構文上の数え方の相違はsemantic reviewへ委ねる境界である。ただしP1の重複値はraw個数が一致するため、この境界ではない。"
+    },
+    {
+      "item": "正式な全test suite",
+      "status": "external-worker-running",
+      "reason": "別workerがbun run testを実行中。本reviewでは対象テスト9件のみを実行し、成功を確認した。"
+    }
+  ],
+  "verification": {
+    "commands": [
+      "bun test scripts/translation-numbers.test.ts"
+    ],
+    "results": [
+      "9 pass, 0 fail",
+      "80%→90%: [percent:80]",
+      "1GB→2GB: [bytes:1000000000]",
+      "1GBと2GB→1GBと1GB: [] (P1 reproduction)"
+    ],
+    "reviewedAt": "2026-11-22"
+  }
+}

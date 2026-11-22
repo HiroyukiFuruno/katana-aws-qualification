@@ -70,11 +70,11 @@ Lambdaはコンピューティング＋サーバーレス・イベント駆動�
 - [x] 最新mainを基準とするクリーンなチェックアウトに今回の差分だけを取り込む。
 - [x] 直接・推移依存とlockfileを確認し、最新互換版を評価する。
 - [x] 全checkと用語集E2Eを公開対象のソースで実行する。
-- [ ] Draft PRを作成し、@codex reviewと3観点の自己レビューを実施する。
-- [ ] レビュー結果を回収し、指摘へ対応・reply/resolveしてP0/P1が0件であることを確認する。
-- [ ] Ready化後にrequired checksを確認し、通常マージする。
-- [ ] 本番deploymentのコミットと公開URLで101語・分類・フィルター動作を確認する。
-- [ ] branch-hygieneで今回作業のブランチ・使用中worktree・stashを確認する。
+- [x] Draft PRを作成し、@codex reviewと3観点の自己レビューを実施する。
+- [x] レビュー結果を回収し、指摘へ対応・reply/resolveしてP0/P1が0件であることを確認する。
+- [x] Ready化後にrequired checksを確認し、通常マージする。
+- [x] 本番deploymentのコミットと公開URLで101語・分類・フィルター動作を確認する。
+- [x] branch-hygieneで今回作業のブランチ・使用中worktree・stashを確認する。
 
 ## 公開対象の追加検査
 
@@ -93,3 +93,17 @@ Lambdaはコンピューティング＋サーバーレス・イベント駆動�
   Bedrockの関連リンクも専用項目へ向ける。追加後は既存57語＋44語で101語。
 - 回帰テスト「Control TowerのGuardrailとBedrock Guardrailsを別の概念として分類する」で修正前の失敗を確認。
 - 両方のカテゴリ・タグによる検索と、BedrockからAI向けガードレールへの関連リンクをE2Eに追加。
+
+## 公開完了の証跡
+
+- PR：https://github.com/HiroyukiFuruno/katana-aws-qualification/pull/52 （MERGED）
+- レビュー修正：95fd06c、P2の1件へ返信・resolve。最新HEADのCodex再レビューはcompleted、追加指摘なし。
+- GitHub Actions：Glossary 44628876336、Auth integration 44628876298、両方success。
+- 本番コミット：e2bab8ca5db61fbd32c5ac1be0862c2378928c3f。
+- 本番deployment：dpl_82JYu7AuQvbVrVV4qSr5LPQ35hqs、READY、production。
+- 公開URL：https://kaq.katana-projects.org/ja/glossary/
+- 本番ビルドの全checkは73単体テスト・0失敗を含め成功。PRの71件との差は、並行してmainへ入ったMLA-C01の2件。
+- 本番URLのE2Eは6件すべて成功。101語、カテゴリ・複数タグ・検索・解除、関連リンク、全10言語・320px、キーボード、Guardrailの概念分離を確認。
+- 詳細：test-results/glossary/production-deployment-evidence.json、production-build.log、production-results.json、final-review-summary.json。
+- 整理：公開用cloneのmainはcleanでorigin/mainと一致。今回作成したローカルrelease/glossary-filtersを削除。
+  リモートブランチは保持。既存3worktreeは他作業の差分があるため保持し、新規worktreeは未作成。stashは0件。

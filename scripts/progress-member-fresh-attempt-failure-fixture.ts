@@ -40,7 +40,7 @@ export function client(
   return {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name !== 'append_learning_event') return;
       const event = args.p_event as Record<string, unknown>;
       writes.push(event);

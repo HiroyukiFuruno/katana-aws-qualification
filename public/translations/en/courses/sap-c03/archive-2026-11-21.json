@@ -1,0 +1,140 @@
+[
+  {
+    "id": "sap-c03-full-arch-018",
+    "revision": 1,
+    "category": "クラウドアーキテクチャ",
+    "similarityGroup": "centralized-egress-policy",
+    "version": "オリジナル模試 2026-11",
+    "title": "Organization-Wide Egress Filtering",
+    "prompt": "You want to centrally control internet egress from private subnets in multiple accounts using an allowlist. You need stateful inspection, including TLS decryption, and domain-name-based controls, and you want rules and policies automatically deployed across the organization, including to new accounts. Which architecture is most appropriate without operating a third-party firewall OS or cluster?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Write FQDN rules in the security groups of each EC2 instance",
+        "explanation": "Security groups do not provide domain-name-based egress filtering or TLS inspection."
+      },
+      {
+        "id": "B",
+        "text": "Store VPC Flow Logs in S3",
+        "explanation": "This provides retrospective visibility; it does not allow or block egress traffic."
+      },
+      {
+        "id": "C",
+        "text": "Deploy AWS Network Firewall in an inspection VPC and distribute policies across the organization with Firewall Manager",
+        "explanation": "Network Firewall provides managed inspection, and Firewall Manager helps deploy policies across AWS Organizations."
+      },
+      {
+        "id": "D",
+        "text": "Delete the routes to the internet gateway",
+        "explanation": "This stops all egress and cannot permit the required traffic based on an allowlist."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/fms-starting.html",
+      "label": "AWS Firewall Manager 開発者ガイド"
+    },
+    "learning": {
+      "reason": "Network Firewall provides managed stateful inspection, while Firewall Manager helps deploy consistent policies across an organization.",
+      "concept": "Design inline inspection services together with governance services that enforce configuration across multiple accounts."
+    },
+    "categoryLabel": "Cloud Architecture",
+    "examDomainLabel": "Cloud Architecture",
+    "versionLabel": "Original Practice Exam 2026-11",
+    "sourceLabel": "AWS Firewall Manager Developer Guide"
+  },
+  {
+    "id": "sap-c03-full-res3-018",
+    "revision": 1,
+    "category": "レジリエンス・移行・事業継続",
+    "similarityGroup": "sqs-dlq-redrive-rate-compatible-queue",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "Safely redrive failed messages at a controlled rate to a separate destination",
+    "prompt": "A bug in a worker that aggregates equipment data has been fixed. The failed messages in an SQS Standard DLQ must be sent as-is to a separate queue for historical reprocessing, without mixing them into the live queue for the latest data. The destination database has little spare capacity, so the initial redrive should start at a low fixed rate. The message bodies do not need to be transformed, and the goal is to reduce custom polling code. Which operation should be chosen?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Redrive the DLQ to the live queue for the latest data at the system-optimized rate, distinguishing the messages only in the reprocessing worker.",
+        "explanation": "The messages would be mixed into the queue for new, latest data, and the redrive rate would not be a fixed low rate."
+      },
+      {
+        "id": "B",
+        "text": "Use DLQ redrive to specify a separate Standard queue and set a low custom maximum rate.",
+        "explanation": "This avoids the queue for new, latest data and limits the initial redrive rate."
+      },
+      {
+        "id": "C",
+        "text": "Make the reprocessing destination a FIFO queue and use built-in redrive from the Standard DLQ.",
+        "explanation": "The source and destination queues for redrive must be the same queue type."
+      },
+      {
+        "id": "D",
+        "text": "Extend the DLQ visibility timeout and assume that messages will move slowly to a separate reprocessing queue.",
+        "explanation": "The visibility timeout controls when a received message becomes visible again; it does not move messages to another queue or limit the redrive rate."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-dead-letter-queue-redrive.html",
+      "label": "Amazon SQS — DLQからのリドライブ"
+    },
+    "learning": {
+      "reason": "Choose a reprocessing Standard queue of the same type as the redrive destination and set a low custom maximum rate.",
+      "concept": "Built-in redrive can move messages to a queue of the same type. Separate processing is needed to filter or modify individual message bodies."
+    },
+    "categoryLabel": "Resilience, Migration, and Business Continuity",
+    "examDomainLabel": "Resilience, Migration, and Business Continuity",
+    "versionLabel": "SAP-C03 Original Practice Exam 2026-11",
+    "sourceLabel": "Amazon SQS — Redriving messages from a DLQ"
+  },
+  {
+    "id": "sap-c03-full-ops7-009",
+    "revision": 1,
+    "category": "運用上の優秀性・自動化",
+    "similarityGroup": "database-insights-advanced-postgresql-lock-chain",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "Investigating a Brief Wait by Tracing It to the Lock Holder",
+    "prompt": "Transaction latency in Aurora PostgreSQL occurs for only a few minutes at month-end. Average CPU utilization is low, and the locks have already cleared by the time you investigate. For the next occurrence, you want to trace the blocking relationships between sessions and the related SQL in the CloudWatch management console. How can you do this without adding a continuously connected monitoring agent?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Use Standard mode in Database Insights to display DB load by wait event, then open the lock tree from the graph.",
+        "explanation": "This can display the load breakdown, but lock tree analysis requires Advanced mode."
+      },
+      {
+        "id": "B",
+        "text": "Set RDS Enhanced Monitoring to a one-second interval and infer wait relationships from OS process CPU and memory.",
+        "explanation": "This provides OS process statistics but does not show lock relationships between transactions."
+      },
+      {
+        "id": "C",
+        "text": "Display CloudWatch DB connection counts and deadlock counts on the same dashboard.",
+        "explanation": "These metrics show trends in counts but cannot reconstruct which session blocked another."
+      },
+      {
+        "id": "D",
+        "text": "Enable Advanced mode in CloudWatch Database Insights and open lock analysis for the relevant time on the DB instance.",
+        "explanation": "It displays database-native lock waits hierarchically so you can investigate the holding and waiting sessions."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "label": "CloudWatch Database Insights — PostgreSQLのロック分析",
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Database-Insights-Lock-Analysis.html"
+    },
+    "learning": {
+      "reason": "Use Advanced mode in Database Insights to investigate the lock tree for the relevant time period.",
+      "concept": "Aggregated lock-wait metrics indicate the type of load. Use lock analysis to inspect the hierarchy of blocking and waiting sessions."
+    },
+    "categoryLabel": "Operational Excellence and Automation",
+    "examDomainLabel": "Operational Excellence and Automation",
+    "versionLabel": "SAP-C03 Original Practice Exam 2026-11",
+    "sourceLabel": "CloudWatch Database Insights — PostgreSQL lock analysis"
+  }
+]

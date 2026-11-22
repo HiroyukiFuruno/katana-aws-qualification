@@ -1,8 +1,8 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { verifyConfirmedExamPostgrest } from './verify-exam-clock-rest';
 
-const authUrl = 'http://127.0.0.1:54430';
-const restUrl = 'http://127.0.0.1:54431';
+const authUrl = `http://127.0.0.1:${process.env.KAQ_DATA_AUTH_PORT ?? '54430'}`;
+const restUrl = `http://127.0.0.1:${process.env.KAQ_DATA_REST_PORT ?? '54431'}`;
 const jwtSecret = 'kaq-data-integration-jwt-secret-not-for-production';
 
 export type AuthSession = { access_token: string; user: { id: string } };

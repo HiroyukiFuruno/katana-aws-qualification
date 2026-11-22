@@ -2,9 +2,10 @@ import { useId } from 'react';
 import { usePreferences } from './preferences';
 import { QuestionSources } from './QuestionSources';
 import type { Question } from './questions';
+import { choiceLabel } from './choiceLabels';
 
 export function LearningNotes({ question, selected }: { question: Question; selected: string[] }) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
   const heading = useId();
   const notes = question.learning;
   const selectedWrong = question.choices.filter(
@@ -34,9 +35,10 @@ export function LearningNotes({ question, selected }: { question: Question; sele
             {feedback.map(({ choice, label }) => (
               <li key={choice.id}>
                 <strong>
-                  {label} {choice.id} · <span lang={question.locale ?? 'ja'}>{choice.text}</span>
+                  {label} {choiceLabel(question.choices, choice.id)} ·{' '}
+                  <span lang={question.locale ?? locale}>{choice.text}</span>
                 </strong>
-                <p lang={question.locale ?? 'ja'}>{choice.explanation}</p>
+                <p lang={question.locale ?? locale}>{choice.explanation}</p>
               </li>
             ))}
           </ul>
@@ -44,17 +46,17 @@ export function LearningNotes({ question, selected }: { question: Question; sele
       )}
       <dl>
         <dt>{t('reason')}</dt>
-        <dd lang={question.locale ?? 'ja'}>{notes.reason}</dd>
+        <dd lang={question.locale ?? locale}>{notes.reason}</dd>
         <dt>{t('concept')}</dt>
-        <dd lang={question.locale ?? 'ja'}>{notes.concept}</dd>
+        <dd lang={question.locale ?? locale}>{notes.concept}</dd>
       </dl>
       {notes.check && (
         <details>
           <summary>{t('knowledgeCheck')}</summary>
-          <p>{notes.check.prompt}</p>
+          <p lang={question.locale ?? locale}>{notes.check.prompt}</p>
           <details className="learning-answer">
             <summary>{t('reasoning')}</summary>
-            <p>{notes.check.answer}</p>
+            <p lang={question.locale ?? locale}>{notes.check.answer}</p>
           </details>
         </details>
       )}

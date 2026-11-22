@@ -1,6 +1,9 @@
+import type { Locale } from '../../locales';
 import { parseQuestions } from '../../questions';
 import type { DeliveryIndexAsset, DeliveryUnitAsset } from './artifactTypes';
 import { type Fetcher, fetchDeliveryJson } from './loadIndex';
+import { needsTranslatedDelivery, overlayDeliveryUnit, translatedDeliveryPath } from './localize';
+import { verifyTrustedDeliveryUnit } from './trusted';
 
 const text = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -107,16 +110,28 @@ export function parseDeliveryUnit(
 export async function loadDeliveryUnit(
   index: DeliveryIndexAsset,
   unitId: string,
-  options: { signal?: AbortSignal; fetcher?: Fetcher; basePath?: string } = {},
+  options: { basePath?: string; fetcher?: Fetcher; locale?: Locale; signal?: AbortSignal } = {},
 ) {
   const entry = index.units.find((unit) => unit.unitId === unitId);
   if (!entry) throw new Error(`Unknown fundamentals delivery unit: ${unitId}`);
-  return parseDeliveryUnit(
+  const basePath = options.basePath ?? '/fundamentals/delivery';
+  const sourcePath = `${basePath}/${entry.slug}.json`;
+  const base = parseDeliveryUnit(
+    await fetchDeliveryJson(sourcePath, options.signal, options.fetcher),
+    entry,
+  );
+  verifyTrustedDeliveryUnit(
+    await fetchDeliveryJson(`${basePath}/trustedCatalog.json`, options.signal, options.fetcher),
+    base,
+  );
+  if (!options.locale || !needsTranslatedDelivery(options.locale)) return base;
+  const locale = parseDeliveryUnit(
     await fetchDeliveryJson(
-      `${options.basePath ?? '/fundamentals/delivery'}/${entry.slug}.json`,
+      translatedDeliveryPath(options.locale, sourcePath),
       options.signal,
       options.fetcher,
     ),
     entry,
   );
+  return overlayDeliveryUnit(base, locale);
 }

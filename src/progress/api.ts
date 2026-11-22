@@ -70,7 +70,7 @@ export function createProgressApi(
 
   return {
     async rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
-      if (!/^[a-z_]+$/.test(name)) throw new Error('Invalid learning operation');
+      if (!/^[a-z_]+(?:_v[1-9][0-9]*)?$/.test(name)) throw new Error('Invalid learning operation');
       const result = await request(`rpc/${name}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

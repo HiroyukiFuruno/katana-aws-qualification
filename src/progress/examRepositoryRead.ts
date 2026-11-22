@@ -1,6 +1,7 @@
 import type { ExamDraft } from '../exam';
 import { createExamClock } from '../examClock';
 import {
+  choiceOrders,
   questionKey,
   type ResponseRow,
   type SessionRow,
@@ -35,6 +36,7 @@ export async function readExamSession(
   }
   const draft = {
     clock: createExamClock(serverISO),
+    choiceOrders: choiceOrders(session.presentation),
     id: session.exam_id,
     deadline: Date.parse(session.deadline_at),
     order: session.question_order.map(questionKey),

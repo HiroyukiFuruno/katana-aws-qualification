@@ -1,107 +1,16 @@
+import sourceContent from './content/ja.json' with { type: 'json' };
 import type { Locale } from './locales';
-import type { Message } from './messages';
+import { sourceDocumentationUrl } from './sourceDocumentationUrl';
 
 type CertificationGuide = {
-  scope: Message;
+  scope: string;
   difficulty: number;
-  why: Message;
-  audience: Message;
+  why: string;
+  audience: string;
   path: string;
 };
 
-export const certificationGuides: Record<string, CertificationGuide> = {
-  'clf-c02': {
-    scope: 'guideClfScope',
-    difficulty: 1,
-    why: 'guideClfWhy',
-    audience: 'guideClfAudience',
-    path: 'cloud-practitioner-02',
-  },
-  'aif-c01': {
-    scope: 'guideAifScope',
-    difficulty: 2,
-    why: 'guideAifWhy',
-    audience: 'guideAifAudience',
-    path: 'ai-practitioner-01',
-  },
-  'saa-c03': {
-    scope: 'guideSaaScope',
-    difficulty: 3,
-    why: 'guideSaaWhy',
-    audience: 'guideSaaAudience',
-    path: 'solutions-architect-associate-03',
-  },
-  'dva-c03': {
-    scope: 'guideDvaScope',
-    difficulty: 3,
-    why: 'guideDvaWhy',
-    audience: 'guideDvaAudience',
-    path: 'developer-associate-03',
-  },
-  'soa-c03': {
-    scope: 'guideSoaScope',
-    difficulty: 3,
-    why: 'guideSoaWhy',
-    audience: 'guideSoaAudience',
-    path: 'sysops-administrator-associate-03',
-  },
-  'dea-c01': {
-    scope: 'guideDeaScope',
-    difficulty: 3,
-    why: 'guideDeaWhy',
-    audience: 'guideDeaAudience',
-    path: 'data-engineer-associate-01',
-  },
-  'mla-c01': {
-    scope: 'guideMlaScope',
-    difficulty: 4,
-    why: 'guideMlaWhy',
-    audience: 'guideMlaAudience',
-    path: 'machine-learning-engineer-associate-01',
-  },
-  'sap-c03': {
-    scope: 'guideSapScope',
-    difficulty: 5,
-    why: 'guideSapWhy',
-    audience: 'guideSapAudience',
-    path: 'solutions-architect-professional-03',
-  },
-  'dop-c02': {
-    scope: 'guideDopScope',
-    difficulty: 5,
-    why: 'guideDopWhy',
-    audience: 'guideDopAudience',
-    path: 'devops-engineer-professional-02',
-  },
-  'aip-c01': {
-    scope: 'guideAipScope',
-    difficulty: 5,
-    why: 'guideAipWhy',
-    audience: 'guideAipAudience',
-    path: 'ai-professional-01',
-  },
-  'scs-c03': {
-    scope: 'guideScsScope',
-    difficulty: 5,
-    why: 'guideScsWhy',
-    audience: 'guideScsAudience',
-    path: 'security-specialty-03',
-  },
-  'ans-c01': {
-    scope: 'guideAnsScope',
-    difficulty: 5,
-    why: 'guideAnsWhy',
-    audience: 'guideAnsAudience',
-    path: 'advanced-networking-specialty-01',
-  },
-  'ai-business-strategist': {
-    scope: 'guideAiBusinessScope',
-    difficulty: 3,
-    why: 'guideAiBusinessWhy',
-    audience: 'guideAiBusinessAudience',
-    path: 'ai-business-strategist-01',
-  },
-};
+export const certificationGuides: Record<string, CertificationGuide> = sourceContent.guides;
 
 // AWS sometimes serves English content under a localized URL. These editions
 // were checked against the language of the guide itself.
@@ -138,6 +47,8 @@ export function officialGuideLink(path: string, locale: Locale) {
   const prefix = awsDocsLocales[language];
   return {
     language,
-    href: `https://docs.aws.amazon.com/${prefix ? `${prefix}/` : ''}aws-certification/latest/${path}/${path}.html`,
+    href: sourceDocumentationUrl(
+      `https://docs.aws.amazon.com/${prefix ? `${prefix}/` : ''}aws-certification/latest/${path}/${path}.html`,
+    ),
   };
 }

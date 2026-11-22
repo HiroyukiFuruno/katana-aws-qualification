@@ -19,8 +19,8 @@ async function sourceCopy() {
 
 test('classifies every owner-cutover source and transport surface exactly once', async () => {
   const audit = await auditOwnerCutoverManifest(root);
-  expect(audit.definitionCount).toBe(49);
-  expect(audit.functionCount).toBe(44);
+  expect(audit.definitionCount).toBe(56);
+  expect(audit.functionCount).toBe(51);
   expect(audit.functions.every((entry) => entry.classification?.length)).toBe(true);
   expect(
     audit.functions.filter((entry) => entry.classification?.includes('owner-bound')).length,

@@ -1,4 +1,5 @@
 import type { DeliveryQuestion } from '../../src/fundamentals/delivery/artifactTypes';
+import labels from '../../src/fundamentals/delivery-labels.json' with { type: 'json' };
 import type { FundamentalsUnit } from '../../src/fundamentals/types';
 import { addSectionSteps } from './planSection';
 import { addSlides, assessmentSeconds, complete, type RawStep, timings } from './planSupport';
@@ -7,24 +8,24 @@ import type { TextWarning } from './text';
 function addIntroSteps(target: RawStep[], warnings: TextWarning[], unit: FundamentalsUnit) {
   addSlides(target, warnings, unit, {
     blocks: [
-      { contentRef: 'unit:summary', kind: 'summary', label: '概要', text: unit.summary },
-      { contentRef: 'unit:objective', kind: 'objective', label: '到達目標', text: unit.objective },
+      { contentRef: 'unit:summary', kind: 'summary', label: labels.summary, text: unit.summary },
+      { contentRef: 'unit:objective', kind: 'objective', label: labels.objective, text: unit.objective },
     ],
     id: `${unit.id}:intro:orientation`,
     kind: 'intro',
-    label: '単元の概要',
+    label: labels.unitOverview,
     style: 'normal',
   });
   addSlides(target, warnings, unit, {
     blocks: (unit.learningObjectives ?? []).map((objective) => ({
       contentRef: `objective:${objective.id}`,
       kind: 'objective' as const,
-      label: '学習目標',
+      label: labels.learningObjectives,
       text: objective.text,
     })),
     id: `${unit.id}:intro:objectives`,
     kind: 'intro',
-    label: '学習目標',
+    label: labels.learningObjectives,
     style: 'normal',
   });
 }
@@ -37,7 +38,7 @@ function addFinalSteps(target: RawStep[], unit: FundamentalsUnit, finals: Delive
       estimatedSeconds: assessmentSeconds(question, 40),
       id: `${unit.id}:final:${question.id}`,
       kind: 'final',
-      label: '最終確認',
+      label: labels.finalReview,
       objectiveIds: question.objectiveId ? [question.objectiveId] : [],
       sectionId: question.sectionId,
       sources: [],

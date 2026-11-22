@@ -35,24 +35,22 @@ export async function expectLocalizedLayout(page: Page, locale: Locale, width: n
   const text = messages[locale];
   const overview = await showDashboardWidget(page, text.dashboardWidgetOverview, locale);
   await expect(page.getByText(text.progressGuestSource, { exact: true })).toBeVisible();
+  const metric = (label: string) =>
+    overview.locator('.dashboard-viz-metric').filter({
+      has: page.getByText(label, { exact: true }),
+    });
   await expect(
-    overview.locator('.dashboard-viz-metric > span').filter({ hasText: text.dashboardMetricAnswered }),
+    metric(text.dashboardMetricAnswered).getByText(text.dashboardMetricAnswered, {
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
-    overview.locator('.dashboard-viz-metric > span').filter({ hasText: text.dashboardMetricAccuracy }),
+    metric(text.dashboardMetricAccuracy).getByText(text.dashboardMetricAccuracy, {
+      exact: true,
+    }),
   ).toBeVisible();
-  await expect(
-    overview
-      .locator('.dashboard-viz-metric')
-      .filter({ hasText: text.dashboardMetricAnswered })
-      .locator('strong'),
-  ).toHaveText('2');
-  await expect(
-    overview
-      .locator('.dashboard-viz-metric')
-      .filter({ hasText: text.dashboardMetricAccuracy })
-      .locator('strong'),
-  ).toHaveText(/50\s*%/);
+  await expect(metric(text.dashboardMetricAnswered).locator('strong')).toHaveText('2');
+  await expect(metric(text.dashboardMetricAccuracy).locator('strong')).toHaveText(/50\s*%/);
   const trend = await showDashboardWidget(page, text.dashboardWidgetTrend, locale);
   await expect(trend.locator('table')).toBeHidden();
   await expect(

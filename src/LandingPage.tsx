@@ -18,6 +18,7 @@ export function LandingPage() {
         <LandingValues />
         <LandingAccount />
         <LandingPaths />
+        <SiteAd placement="inline" />
         <details className="landing-account disclosure">
           <summary>{t('accountPrivacyTitle')}</summary>
           <AccountBenefits context="home" />

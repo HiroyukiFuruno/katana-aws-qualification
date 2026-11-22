@@ -1,4 +1,5 @@
 import { usePreferences } from '../preferences';
+import { sourceDocumentationUrl } from '../sourceDocumentationUrl';
 import type { FundamentalsSection as Section } from './types';
 
 export function FundamentalsSection({ section }: { section: Section }) {
@@ -32,7 +33,7 @@ export function FundamentalsSection({ section }: { section: Section }) {
           <li key={item}>{item}</li>
         ))}
       </ul>
-      <a href={section.source.url} target="_blank" rel="noreferrer">
+      <a href={sourceDocumentationUrl(section.source.url)} target="_blank" rel="noreferrer">
         {section.source.label}
       </a>
     </section>

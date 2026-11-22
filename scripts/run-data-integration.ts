@@ -34,6 +34,8 @@ function psql(userA: string, userB: string) {
     '-f',
     '/verification/verify-exam-clock.sql',
     '-f',
+    '/verification/verify-presentation.sql',
+    '-f',
     '/verification/verify-cascade.sql',
     '-f',
     '/verification/verify-fundamentals.sql',

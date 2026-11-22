@@ -1,14 +1,18 @@
 import { expect, test } from '@playwright/test';
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
 import { learningEvents } from './api';
-import { lessonAssets, nextButton, selectLessonAnswer, walkLessonReading } from './fundamentals.helpers';
+import {
+  lessonAssets,
+  nextButton,
+  selectLessonAnswer,
+  visibleLessonQuestion,
+  walkLessonReading,
+} from './fundamentals.helpers';
 import { createSessions, setRealSession } from './sessions';
 
 test('a stale member final reloads canonical selections before another save', async ({ browser }) => {
   const asset = lessonAssets[0];
-  const question = asset?.finalQuestions[0];
-  const wrong = question?.choices.find((choice) => !question.correct.includes(choice.id));
-  if (!asset || !question || !wrong) throw new Error('Missing conflict fixture.');
+  if (!asset) throw new Error('Missing conflict fixture.');
   const [session] = await createSessions();
   const contexts = await Promise.all([browser.newContext(), browser.newContext()]);
   try {
@@ -23,6 +27,9 @@ test('a stale member final reloads canonical selections before another save', as
     await walkLessonReading(first, asset);
     await nextButton(first).click();
     await expect(first.locator('fieldset')).toBeVisible();
+    const question = await visibleLessonQuestion(first, asset.finalQuestions);
+    const wrong = question.choices.find((choice) => !question.correct.includes(choice.id));
+    if (!wrong) throw new Error('Missing conflict fixture choice.');
     await second.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'final', position: 1 }));
     await expect(second.locator('fieldset')).toBeVisible();
     await selectLessonAnswer(first, question, question.correct);
@@ -33,8 +40,10 @@ test('a stale member final reloads canonical selections before another save', as
     const reload = second.getByRole('button', { name: '保存済みの回答を再読み込み', exact: true });
     await expect(reload).toBeVisible();
     await reload.click();
-    for (const [position, choice] of question.choices.entries()) {
-      await expect(second.locator('fieldset input').nth(position)).toBeChecked({
+    for (const choice of question.choices) {
+      await expect(
+        second.locator(`fieldset input[name="${question.id}"][value="${choice.id}"]`),
+      ).toBeChecked({
         checked: question.correct.includes(choice.id),
       });
     }

@@ -1,4 +1,5 @@
 import type { AuthProvider } from './types';
+import definitions from './providers.json';
 
 export function authConfiguration(input: { url?: string; key?: string }) {
   if (!input.url && !input.key) return null;
@@ -26,11 +27,7 @@ export function authConfiguration(input: { url?: string; key?: string }) {
 export function configuredProviders(
   enabled: Partial<Record<'github' | 'google' | 'microsoft' | 'facebook', boolean>>,
 ): readonly AuthProvider[] {
-  const providers = [
-    { id: 'github', backend: 'github', name: 'GitHub', scopes: 'read:user user:email' },
-    { id: 'google', backend: 'google', name: 'Google', scopes: 'openid profile email' },
-    { id: 'microsoft', backend: 'azure', name: 'Microsoft', scopes: 'openid profile email' },
-    { id: 'facebook', backend: 'facebook', name: 'Facebook', scopes: 'email public_profile' },
-  ] as const satisfies readonly AuthProvider[];
-  return providers.filter((provider) => enabled[provider.id] === true);
+  const providers = definitions as readonly AuthProvider[];
+  const flags = new Map(Object.entries(enabled));
+  return providers.filter((provider) => flags.get(provider.id) === true);
 }

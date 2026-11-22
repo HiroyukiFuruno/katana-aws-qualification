@@ -24,7 +24,7 @@ export function LessonExperience() {
     let current = true;
     if (!services || !legacyUnit) return;
     void services.assets
-      .unit(legacyUnit)
+      .unit(legacyUnit, undefined, locale)
       .then((asset) => {
         if (!current) return;
         const first = asset.steps[0];

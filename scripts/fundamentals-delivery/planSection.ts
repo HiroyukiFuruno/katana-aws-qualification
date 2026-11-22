@@ -1,4 +1,5 @@
 import type { DeliveryQuestion } from '../../src/fundamentals/delivery/artifactTypes';
+import labels from '../../src/fundamentals/delivery-labels.json' with { type: 'json' };
 import type { FundamentalsSection, FundamentalsUnit } from '../../src/fundamentals/types';
 import { addSlides, assessmentSeconds, objectiveIds, type RawStep } from './planSupport';
 import type { TextWarning } from './text';
@@ -30,26 +31,26 @@ export function addSectionSteps(
       {
         contentRef: `section:${section.id}:scenario`,
         kind: 'scenario',
-        label: '状況',
+        label: labels.scenario,
         text: section.example.scenario,
       },
       ...section.example.steps.map((text, index) => ({
         contentRef: `section:${section.id}:step:${index}`,
         kind: 'steps' as const,
-        label: `手順 ${index + 1}`,
+        label: labels.step.replace('{index}', String(index + 1)),
         text,
       })),
       {
         contentRef: `section:${section.id}:outcome`,
         kind: 'outcome',
-        label: '結論',
+        label: labels.outcome,
         text: section.example.outcome,
       },
     ],
     complexity: 6,
     id: `${unit.id}:section:${section.id}:example`,
     kind: 'example',
-    label: '具体例',
+    label: labels.example,
     objectiveIds: ids,
     sectionId: section.id,
     style: 'normal',
@@ -59,20 +60,20 @@ export function addSectionSteps(
       {
         contentRef: `section:${section.id}:misconception:claim`,
         kind: 'misconception',
-        label: 'これは誤り',
+        label: labels.misconception,
         text: section.misconception.claim,
       },
       {
         contentRef: `section:${section.id}:misconception:correction`,
         kind: 'correction',
-        label: '訂正',
+        label: labels.correction,
         text: section.misconception.correction,
       },
     ],
     complexity: 6,
     id: `${unit.id}:section:${section.id}:misconception`,
     kind: 'misconception',
-    label: 'これは誤りと訂正',
+    label: labels.misconceptionAndCorrection,
     objectiveIds: ids,
     sectionId: section.id,
     style: 'misconception',
@@ -81,13 +82,13 @@ export function addSectionSteps(
     blocks: section.takeaways.map((text, index) => ({
       contentRef: `section:${section.id}:takeaway:${index}`,
       kind: 'takeaway' as const,
-      label: '要点',
+      label: labels.takeaway,
       text,
     })),
     complexity: 4,
     id: `${unit.id}:section:${section.id}:takeaway`,
     kind: 'takeaway',
-    label: '要点',
+    label: labels.takeaway,
     objectiveIds: ids,
     sectionId: section.id,
     sources: [section.source],
@@ -101,7 +102,8 @@ export function addSectionSteps(
     estimatedSeconds: assessmentSeconds(checkpoint, 35),
     id: `${unit.id}:checkpoint:${checkpoint.id}`,
     kind: 'checkpoint',
-    label: 'checkpoint',
+    // 公開済み教材のハッシュ互換性を保ち、表示名はUI辞書で解決する。
+    label: labels.checkpoint,
     objectiveIds: ids,
     sectionId: section.id,
     sources: [],

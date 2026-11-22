@@ -135,7 +135,6 @@ function AdSenseUnit({ placement, fullWidth }: { placement: Placement; fullWidth
       data-full-width-responsive={footer ? String(fullWidth) : undefined}
     />
   );
-  if (footer) return unit;
 
   return (
     <div className={`site-ad site-ad--${placement}`}>

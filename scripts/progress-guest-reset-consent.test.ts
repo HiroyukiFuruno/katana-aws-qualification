@@ -13,7 +13,7 @@ function memberClient(): ProgressRpcClient {
   return {
     async rpc(name) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name === 'reset_my_learning_data') return 2;
       throw new Error(`unexpected rpc: ${name}`);
     },

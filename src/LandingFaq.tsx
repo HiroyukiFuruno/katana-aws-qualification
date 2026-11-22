@@ -30,6 +30,9 @@ export function LandingFaq() {
           open={item.question === 'freeStudyQuestion'}
         >
           <summary>
+            <span className="landing-faq-marker" aria-hidden="true">
+              {t('faqQuestionMarker')}
+            </span>
             <span>{t(item.question)}</span>
           </summary>
           <div className="layout-stack disclosure-content landing-faq-answer">

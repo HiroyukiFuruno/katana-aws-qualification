@@ -18,7 +18,7 @@ test('retry reloads the committed reset after its response is lost', async () =>
   const client: ProgressRpcClient = {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return generation;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name === 'reset_my_learning_data') {
         generation = 1;
         events = [];
@@ -45,15 +45,15 @@ test('retry reloads the committed reset after its response is lost', async () =>
 });
 
 test('retry reloads a committed profile before the next profile save', async () => {
-  let generation = 0;
+  const generation = 0;
   let profile = { answers: {} as Record<string, number>, earned: [] as string[], revision: 0 };
   const expectedRevisions: unknown[] = [];
   let responseLost = true;
   const client: ProgressRpcClient = {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return generation;
-      if (name === 'load_roadmap_profile_snapshot') return [profile];
-      if (name === 'replace_roadmap_profile') {
+      if (name === 'load_roadmap_profile_snapshot_v2') return [profile];
+      if (name === 'replace_roadmap_profile_v2') {
         expectedRevisions.push(args.p_expected_revision);
         profile = {
           answers: args.p_answers as Record<string, number>,
@@ -80,7 +80,12 @@ test('retry reloads a committed profile before the next profile save', async () 
 
   await store.retryPending();
   expect(store.getSnapshot().profileRevision).toBe(1);
-  expect(store.getSnapshot().profile).toEqual({ answers: { first: 1 }, earned: ['saa-c03'] });
+  expect(store.getSnapshot().profile).toEqual({
+    answers: { first: 1 },
+    earned: ['saa-c03'],
+    optionOrders: {},
+    order: [],
+  });
   await store.replaceProfile({ answers: { second: 2 }, earned: ['dva-c03'] });
   expect(expectedRevisions).toEqual([0, 1]);
   expect(store.getSnapshot().profileRevision).toBe(2);

@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AnalyticsSettings, initializeAnalytics } from './AnalyticsSettings';
-import { analyticsAllowedForPath } from './analyticsNavigation';
+import { AnalyticsSettings } from './AnalyticsSettings';
 import { AccountPages } from './auth/AccountPages';
 import { AccountPrivacy } from './auth/AccountPrivacy';
 import { AuthCallback } from './auth/AuthCallback';
@@ -25,37 +24,21 @@ import { SiteAdLayout } from './SiteAd';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
 import { Home, NotFound, StudyDirectory, StudyPaths } from './SitePages';
+import { ContentProvider, useContent } from './useContent';
+import { usePageTitle } from './usePageTitle';
+import { useSiteAnalytics } from './useSiteAnalytics';
 import './style.css';
 
 function App() {
   const { t, locale } = usePreferences();
+  const { content } = useContent();
   const consent = useCookieConsent();
   const currentUrl = useLessonLocation();
   const route = routeAt(currentUrl.pathname);
   const lesson = lessonRouteAt(currentUrl.pathname, currentUrl.search);
   const { state } = useAccount();
-  useEffect(() => {
-    initializeAnalytics(analyticsAllowedForPath(currentUrl.pathname, consent.value === 'granted'));
-  }, [currentUrl.pathname, consent]);
-  useEffect(() => {
-    const beforeNavigation = (event: Event) => {
-      if (!(event instanceof CustomEvent) || typeof event.detail !== 'string') return;
-      initializeAnalytics(
-        analyticsAllowedForPath(
-          new URL(event.detail, location.origin).pathname,
-          consent.value === 'granted',
-        ),
-      );
-    };
-    const beforeHistory = () =>
-      initializeAnalytics(analyticsAllowedForPath(location.pathname, consent.value === 'granted'));
-    window.addEventListener('kaq:lesson-navigation', beforeNavigation);
-    window.addEventListener('popstate', beforeHistory, true);
-    return () => {
-      window.removeEventListener('kaq:lesson-navigation', beforeNavigation);
-      window.removeEventListener('popstate', beforeHistory, true);
-    };
-  }, [consent.value]);
+  useSiteAnalytics(currentUrl.pathname, consent.value === 'granted');
+  usePageTitle(route?.page, locale, content.certifications, Boolean(lesson));
   useEffect(() => {
     if (route?.page === '' && state.status === 'ready' && state.account) {
       location.replace(dashboardPath(locale));
@@ -95,7 +78,7 @@ function App() {
             <CourseApp
               key={selected.id}
               id={selected.id}
-              name={selected.name}
+              name={content.certifications[selected.id]?.name ?? t('loadContentError')}
               course={selected.course}
             />
           </ProgressGate>
@@ -134,7 +117,9 @@ createRoot(root).render(
   <PreferencesProvider>
     <AuthProvider>
       <ProgressProvider>
-        <App />
+        <ContentProvider>
+          <App />
+        </ContentProvider>
       </ProgressProvider>
     </AuthProvider>
   </PreferencesProvider>,

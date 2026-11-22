@@ -1087,3 +1087,58 @@ AWSの試験案内は75問・180分、試験ガイドの配分は31・26・20・
 - [AWSのMLA-C01試験ガイド](https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html)
 - [AWSの試験案内](https://aws.amazon.com/jp/certification/certified-machine-learning-engineer-associate/)
 - [AWSのMLA-C01対象サービス](https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/mla-01-in-scope-services.html)と[対象外サービス](https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/mla-01-out-of-scope-services.html)も照合し、未公開の7問を差し替えた。
+
+## 2026-11-21 全問題のランダム化と多言語品質の点検
+
+対象は互換用の公開旧版5件を含む41バンク・5,157レコード。現行模試の問題数は維持し、選択肢と固定出題の表示順はcanonical IDと採点・途中再開の対応を保ってランダム化する。全量の自然翻訳と最終検査は継続中で、完了済みとは扱わない。
+
+- [技術的な指摘と個別判断](docs/reviews/20261121-semantic-issue-resolutions.json)に、元のAI指摘、公式資料、採否理由を保持する。
+- [Cognitoの改訂2と公開改訂1の保全](docs/reviews/20261121-cognito-published-revision-migration.json)。成立条件の変更を同じ改訂番号で上書きせず、旧版の本文・採点を保ち10言語の訂正注記を表示する。
+- [Auroraの誤答解説の明確化](docs/reviews/20261121-aurora-reader-explanation-clarification.json)。書き込み転送の例外を無視した一般化を削除し、接続先変更では昇格優先順位を設定できないという判断根拠を維持する。
+- [Global Acceleratorの割合と方向](docs/reviews/20261121-ga-traffic-fraction-native-proofread.json)、[CloudFrontの新URL条件](docs/reviews/20261121-cloudfront-new-url-native-proofread.json)の翻訳脱落・逆転を修正し、実データの再発検出を翻訳lintへ追加する。
+- [出典URLの点検と表示先の補正](docs/reviews/20261121-source-reference-corrections.json)。有効な転送と目的の資料を開けないURLを分け、公開旧版のhashを変更せず公式資料へ案内する。
+
+- 追加の公開条件変更3問は現行rev2とexact旧rev1に分離。最新母数41banks/5157records（互換5設問）、詳細: `docs/reviews/20261121-additional-published-revision-migrations.json`。旧DatabaseInsightsの独語1秒間隔は原文不変で既承認native訳へ統一、全4関連bank×9の本文/由来結合を検証。全量自然翻訳・最終検査は継続中。
+
+- 追加のCloudTrail選択肢句点補完は意味/正答/改訂/全9訳本文不変（`docs/reviews/20261121-cloudtrail-validation-punctuation.json`）。Redshift RG、EC2課金割当、RDS DLV、SQS pollers、DynamoDB warm throughput、ARC assertionは現行公式仕様と照合し原文維持。根拠は `docs/reviews/20261121-semantic-issue-resolutions.json`。
+
+- IAM role自然表現5fieldと誤関連初稿の拒否: [校正証跡](docs/reviews/20261121-role-native-terminology-proofread.json)。スペイン語の低サンプル数表現: [校正証跡](docs/reviews/20261122-spanish-low-sample-native-proofread.json)。
+
+- Config組織配布の解説補完: [原文・9言語校正](docs/reviews/20261122-org-conformance-explanation-clarification.json)。Distributed Mapの見出し誤字補正: [照合証跡](docs/reviews/20261122-distributed-map-title-typo.json)。
+
+- 追加UI78キー×9言語の自然校正: [6修正と検証](docs/reviews/20261122-added-ui-78-native-proofread.json)。[720キー全体のレビュー範囲](docs/reviews/20261122-ui-native-coverage-720.json)。
+
+- Configの従来IAMリソース種別を3言語で明確化: [自然校正証跡](docs/reviews/20261122-config-legacy-iam-resource-types-native-proofread.json)。
+
+- [数量別132訳のmain実読](docs/reviews/20261122-ui-quantity-native-main-read.json)、[独立再査読](docs/reviews/20261122-ui-quantity-independent-review.json)、[最終採用/検査](docs/reviews/20261122-ui-quantity-main-acceptance.json): 20キー、6言語132訳、720基本辞書SHA保持、全6言語の複数operand回帰と必須lint接続。全問題翻訳完了を意味しない。
+
+- [AIF正解率・D文言の明確化](docs/reviews/20261122-aif-accuracy-latency-native-proofread.json)、[次問のaccuracy6訳修正](docs/reviews/20261122-aif-second-accuracy-native-proofread.json)、[分類指標lint独立レビュー](docs/reviews/20261122-classification-metrics-independent-review.json): 適合率と正解率を区別し、一般語・複数指標を禁止しない狭い回帰検査。
+
+- [RAG引用API識別子の明確化](docs/reviews/20261122-rag-citation-fields-native-proofread.json): 非streamingのretrievedReferences/locationを9自然訳へ。
+- [TW問題マーカーの誤検知修正](docs/reviews/20261122-position-tw-boundary-main-acceptance.json)、[独立レビュー](docs/reviews/20261122-position-tw-boundary-independent-review.json): 每次問題/目前問題を許容し実際の前問/次問/選択肢letter参照拒否を維持。
+- [Prompt cacheの解説/実再利用条件](docs/reviews/20261122-prompt-cache-learning-native-proofread.json)、[main実読・適用後照合](docs/reviews/20261122-prompt-cache-main-acceptance.json):18自然訳、原文prompt/全choice text/正答D/rev1を維持。
+- [LoRA低ランクのPT自然訳と限定lint](docs/reviews/20261122-portuguese-lora-rank-main-acceptance.json): 組織の階級と行列のrankを区別。原文・正答A・rev1を保ち、既存引用語や実際の組織表現を許容する回帰検査。
+- [棄却バッチ履歴の独立監査とmain採用](docs/reviews/20261122-rejected-batch-history-main-acceptance.json): 13問＋新MCP指摘を照合し、[Access Analyzer旧review理由の訂正](docs/reviews/20261122-access-analyzer-historical-proof-correction.json)を記録。全量後にも履歴を再棚卸しする。
+- [Quick製品の現行表示名4箇所と18自然訳の校正](docs/reviews/20261122-quick-current-product-brand-native-proofread.json): AWS Quick/AWS Quick Sightへ編集。正答・条件・revision1とSDK/API名を維持し、未生成DEA2訳は全量処理へ残す。
+- AIF326問の全9訳を配信データへ反映し、`output/question-quality/aif-ready-bank-bindings.json`で2,934件の原文・配信・キャッシュ・由来を照合。全体は17/41バンクで、残りの生成と最終検査は継続中。
+- [AIP初回8件の独立内容確認とmain採用](docs/reviews/20261122-aip-first-eight-semantic-main-acceptance.json): 原文・正答の一意性を公式資料で再照合し、追加修正0件。現行原文/改訂/hash/cacheとの8件一致も確認。全375問や9訳の再読とは区別する。
+
+- 2026-11-22: AIP Model Registry KMS解説2fields/9言語18fieldsを公式grant経路を含め明確化（`docs/reviews/20261122-model-registry-kms-explanation-native-proofread.json`）。AIP Map失敗閾値設問は手段選択として原文を維持（`output/question-quality/distributed-map-failure-threshold-independent-assessment.json`）。全5157問の生成・最終検査は継続中。
+
+- 2026-11-22: AIP Runtime JWTの解説2fields/9言語18fieldsで、inbound検証とAuthorization allowlist転送を区別。全18読了と用語5fields followup、9strict/9readback/41bankcontent成功（`docs/reviews/20261122-runtime-jwt-claims-native-proofread.json`）。内容判断204–211の8件は別担当の独立再検証へ依頼済み。
+
+- 2026-11-22: AIP追加8判断のP2 Map Catch配置をD解説のみで明確化し、独立最終P0/P1/P2=0、8source/72strict bindingsを受入（`docs/reviews/20261122-aip-second-eight-semantic-main-acceptance.json`）。Data Captureの3JA/27nativeではDiskUtilizationをendpoint host metricと明確化し、9言語で因果・容量表現を再校正（`docs/reviews/20261122-endpoint-disk-metric-native-proofread.json`）。
+
+- 2026-11-22: AIP source判断213–218の独立6件を全件accept/P0P1P2=0で受入（`docs/reviews/20261122-aip-third-six-semantic-main-acceptance.json`）。DataSync NONEの説明1JA/9nativeを転送中/転送後の違いが明確になる形へ改善（`docs/reviews/20261122-datasync-none-explanation-native-proofread.json`）。全5157問と最終検査は継続中。
+
+- 2026-11-22: SCIM同期/既存セッション境界18訳、RCP member-account resource境界9訳を解説へ明示。Backupは監視用trusted accessとpolicy配布の混同を改訂し、公開rev1をexact archiveへ保全、rev2を45自然訳/10言語注記付きで検証（[改訂と検査](docs/reviews/20261122-backup-policy-published-revision-migration.json)）。3unit/112expectと実ブラウザ旧draft/採点1件成功。AIP391+history1×9=3528bindings成功、21/42banks反映済。全体5158recordsの生成と最終43browser検査は継続中。
+
+- 2026-11-22: AIB初回2件（shadow比較/単一確定先、先行習熟指標）を公式資料で確認し、学習ノート1JA/9nativeのみ明確化。[独立確認とmain受入](docs/reviews/20261122-aib-first-two-semantic-main-acceptance.json)はP0P1P2=0、2source/cache+18strict一致。全441問の独立全文再読とは区別する。
+
+- 2026-11-22: AIB契約評価ノートの未提示の固定契約帰属を削り、提示試算の損失額と各契約のシナリオ比較へ1JA/9nativeを明確化。[main受入](docs/reviews/20261122-aib-contract-downside-scenario-main-acceptance.json)は独立P0P1P2=0、現source/cache+9strict一致。純便益の負値と損失上限を取り違えない表現へ再校正し、正答A/rev1を保持。
+
+- 2026-11-22: [数量lintの次元分離と多重集合比較](docs/reviews/20261122-quantity-dimensions-main-acceptance.json)。自然な綴り数詞を割合と誤比較するfalsepositiveと、重複値の見逃しをTDD/独立P1再修正で解消。全478unit/5292expect、2561cached×9=23049strict成功。q082は原稿を変えず回収、全5158生成/最終43browser等は継続中。
+
+- CLF判断232–237とFrench grammar lint: [main acceptance](docs/reviews/20261122-clf-first-six-semantic-main-acceptance.json)、[independent review](docs/reviews/20261122-clf-first-six-semantic-independent-review.json)。6source/54native binding、P0/P1/P2=0。全42banksの最終検証は継続中。
+
+- German Agent ordinary-noun grammarとUI共通native lint: [main acceptance](docs/reviews/20261122-german-agent-declension-main-acceptance.json)、[initial P1](docs/reviews/20261122-german-agent-declension-independent-review.json)、[resolved follow-up](docs/reviews/20261122-german-agent-declension-followup-review.json)。全5158完成後のbroad native-context rescanは別の必須検証として継続。

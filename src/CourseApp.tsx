@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { AccountBenefits } from './auth/AccountBenefits';
 import { CourseNavigation, CourseOverview } from './CourseNavigation';
 import { CoursePractice } from './CoursePractice';
@@ -7,15 +8,29 @@ import { ExamMode } from './ExamMode';
 import { selectExamQuestions } from './exam';
 import { examKeyFor } from './history';
 import { usePreferences } from './preferences';
+import { QuestionTranslationNotice } from './QuestionTranslationNotice';
 import { useCourseBanks } from './useCourseBanks';
 import { useCourseProgress } from './useCourseProgress';
 
 export function CourseApp({ id, name, course }: { id: string; name: string; course: Course }) {
   const { t } = usePreferences();
   const banks = useCourseBanks(course);
-  const { questions, questionSets, randomBank, mockBank, archivedBank, loadingError, mockError } = banks;
-  const progress = useCourseProgress(id, [...questions, ...mockBank], archivedBank);
+  const {
+    questions,
+    questionSets,
+    randomBank,
+    mockBank,
+    archivedBank,
+    loadingError,
+    mockError,
+    sourceOnlyLocales,
+    ready: banksReady,
+  } = banks;
+  const progressQuestions = useMemo(() => [...questions, ...mockBank], [questions, mockBank]);
+  const progress = useCourseProgress(id, progressQuestions, archivedBank);
   const { answerCount, rate, review, notice, busy, page, navigate } = progress;
+  const ready = banksReady && !progress.translationError;
+  const contentError = progress.translationError ? 'invalidQuestionData' : (loadingError ?? mockError);
 
   function section() {
     if (page === 'settings') {
@@ -25,7 +40,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
     }
     if (page === 'exam') {
       const error = mockError ?? loadingError;
-      if (error) return <p role="alert">{t(error)}</p>;
+      if (error && !mockBank.length) return <p role="alert">{t(error)}</p>;
       if (!mockBank.length || !questions.length) return <p role="status">{t('loadingExam')}</p>;
       return (
         <ExamMode
@@ -40,7 +55,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
         />
       );
     }
-    if (loadingError) {
+    if (loadingError && !questions.length) {
       return (
         <p className="notice" role="alert">
           {t(loadingError)}
@@ -81,9 +96,15 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
           rate={rate}
           wrongCount={review.length}
           notice={notice}
-          hasQuestionTranslations={!!course.questionTranslations}
+          contentLocalized={banksReady && sourceOnlyLocales.length === 0}
         />
-        {section()}
+        {banksReady && <QuestionTranslationNotice sourceLocales={sourceOnlyLocales} />}
+        {!ready && (
+          <p role={contentError ? 'alert' : 'status'}>{t(contentError ?? 'loadingQuestions')}</p>
+        )}
+        <div style={{ display: ready ? 'contents' : 'none' }} inert={!ready}>
+          {section()}
+        </div>
         {page !== 'exam' && !progress.session && <AccountBenefits context="study" showAction />}
       </main>
     </>

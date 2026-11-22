@@ -67,7 +67,7 @@ export function createMemberDashboard(client: ProgressRpcClient, isCurrent: () =
       return readDashboardSummary(await request('dashboard_summary', { p_query: query }), query);
     },
     async lessons(assets: LessonAssets, locale: Locale) {
-      const index = await assets.index();
+      const index = await assets.index(locale);
       current();
       const units = index.units.map(({ unitId, contentVersion }) => ({ unitId, contentVersion }));
       const summaries = readLessonSummaries(

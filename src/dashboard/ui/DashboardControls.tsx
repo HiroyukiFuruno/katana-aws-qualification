@@ -27,7 +27,6 @@ export function DashboardControls(props: Props) {
   const filters = props.preferences.filters;
   const update = (patch: Partial<typeof filters>) =>
     props.onPreferences({ ...props.preferences, filters: { ...filters, ...patch } });
-
   return (
     <details className="card dashboard-controls">
       <summary>{t('dashboardSettings')}</summary>
@@ -86,7 +85,12 @@ export function DashboardControls(props: Props) {
                       />
                     </label>
                   </div>
-                  <DashboardFilterFields filters={filters} facets={props.facets} onChange={update} />
+                  <DashboardFilterFields
+                    filters={filters}
+                    facets={props.facets}
+                    lessons={props.lessons.status === 'ready' ? props.lessons.items : []}
+                    onChange={update}
+                  />
                 </>
               ) : (
                 <div className="dashboard-filter-grid">

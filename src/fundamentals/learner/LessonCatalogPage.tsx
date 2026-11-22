@@ -8,8 +8,8 @@ import { guestLessonPrefix } from '../state/guestStorage';
 import type { LessonMigrationAccess } from '../state/importTypes';
 import type { LessonSummary } from '../state/memberTypes';
 import type { LessonServices } from '../state/services';
-import { LessonCatalog } from './LessonCatalog';
 import { LessonArchivedRecords } from './LessonArchivedRecords';
+import { LessonCatalog } from './LessonCatalog';
 import { LessonMigrationList } from './LessonMigrationList';
 
 type LessonCatalogPageProps = {
@@ -18,7 +18,7 @@ type LessonCatalogPageProps = {
 };
 
 export function LessonCatalogPage({ services, migrationAccess }: LessonCatalogPageProps) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
   const [index, setIndex] = useState<DeliveryIndexAsset>();
   const [summaries, setSummaries] = useState<LessonSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export function LessonCatalogPage({ services, migrationAccess }: LessonCatalogPa
     setSummaryFailed(false);
     setIndex(undefined);
     void services.assets
-      .index()
+      .index(locale)
       .then(async (nextIndex) => {
         if (current && requestVersion.current === request) setIndex(nextIndex);
         try {
@@ -71,7 +71,7 @@ export function LessonCatalogPage({ services, migrationAccess }: LessonCatalogPa
       unsubscribe?.();
       window.removeEventListener('storage', onStorage);
     };
-  }, [services, reloadToken]);
+  }, [services, locale, reloadToken]);
   return (
     <ProgressGate>
       {migrationAccess && (

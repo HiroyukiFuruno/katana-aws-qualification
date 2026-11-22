@@ -27,8 +27,8 @@ export async function loadGuestDashboard(input: Input) {
       throw new Error('Guest dashboard access changed.');
   };
   current();
-  const index = await input.assets.index();
-  const editions = await input.assets.editions();
+  const index = await input.assets.index(input.locale);
+  const editions = await input.assets.editions(input.locale);
   current();
   const currentVersions = new Map(index.units.map((entry) => [entry.unitId, entry.contentVersion]));
   const known = new Map<string, (typeof index.units)[number]>();

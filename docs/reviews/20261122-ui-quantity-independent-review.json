@@ -1,0 +1,270 @@
+{
+  "reviewedAt": "2026-11-22T00:00:00+09:00",
+  "reviewerThread": "01a1ff21-19cd-7551-b04d-43745010a731",
+  "model": "gpt-5.6-terra",
+  "reasoning": "high",
+  "head": "ebbf7940979ea084d537d7d4527166b7c0e96bbc",
+  "scope": "UI quantity variants only; existing locale JSON has unrelated worktree changes and was not reviewed as this change.",
+  "verdict": "pass",
+  "findingCounts": {
+    "P0": 0,
+    "P1": 2,
+    "P2": 0
+  },
+  "findings": [
+    {
+      "id": "quantity-form-schema-is-not-closed-or-reachability-safe",
+      "priority": "P1",
+      "locations": [
+        "src/locales/quantity.ts:93-99",
+        "src/locales/quantity.ts:118-143",
+        "scripts/quantity-localization.test.ts:59-105"
+      ],
+      "problem": "The validator requires declared forms but does not reject a surplus form. Its numeric-form regex also accepts noncanonical exact values that the formatter can never produce.",
+      "reproduction": [
+        "Clone quantityVariantData; add en.countLabel.forms['count:other'] = '{count} questions'; validateQuantityVariants succeeds.",
+        "Adding en.countLabel.forms['count:01'], ['count:1.0'], or ['count:-0'] also succeeds. matchingForm serializes a numeric operand with JavaScript string interpolation, so it emits count:1 or count:0, never those forms."
+      ],
+      "impact": "A later data-only edit can introduce unreviewed form behavior, including an exact zero override despite the stated base-preserving zero policy, or dead form data. This violates the required rejection of surplus/unreachable forms and leaves a silent runtime fallback or override path outside the declared schema.",
+      "requiredFix": "Make each variant.forms key set exactly equal to the declared requirement unless explicitly supported exact forms are added to the requirements. If exact forms remain supported, validate every numeric token canonically (String(Number(token)) === token and finite) and add negative tests for extra category, 01, 1.0, and -0 forms."
+    },
+    {
+      "id": "quantity-regression-matrix-does-not-prove-the-documented-all-locale-contract",
+      "priority": "P1",
+      "locations": [
+        "docs/plans/20261122_ui_pluralization.md:9-11",
+        "scripts/quantity-localization.test.ts:22-56"
+      ],
+      "problem": "The test title claims every language covers singular and plural, but only English asserts both countLabel 1 and 2. Japanese, Chinese (simplified), Korean, Portuguese, French, German, Spanish, and Italian assert only one of 1 or 2; zero is asserted only for English and French. Multi-operand rendering is checked only in English (plus two French single-operand selections).",
+      "impact": "The documented all-10-locale 0/1/2 and independent-operand contract is not regression-protected. A locale-to-variant wiring or base-form regression can pass the current unit suite while violating the claimed coverage.",
+      "requiredFix": "Use a compact table-driven test over all ten locales for countLabel and lessonStepsRemaining at 0/1/2, with expected rendered strings or explicit base-template expectations. Cover all six variant locales for the three lessonFinalRules combinations and retain the existing real-browser English-to-Spanish picker regression."
+    }
+  ],
+  "intermediateFindingDisposition": [
+    {
+      "id": "quantity-locale-folder-invariant",
+      "state": "resolved",
+      "evidence": "Variant data is src/quantity-variants.json, while scripts/check-locales.ts:30-34 still requires exactly the ten locale JSON files under src/locales."
+    },
+    {
+      "id": "quantity-required-shape",
+      "state": "partially-resolved",
+      "evidence": "Required locale/key/form presence and CJK inheritance are enforced in src/locales/quantity.ts:67-99, but surplus forms and noncanonical unreachable exact forms remain accepted (P1 above)."
+    },
+    {
+      "id": "quantity-residual-language-lint",
+      "state": "resolved",
+      "evidence": "scripts/check-locales.ts:16-25 validates the variants and passes every variant value through translationIssues."
+    },
+    {
+      "id": "quantity-form-reachability",
+      "state": "not-resolved",
+      "evidence": "The reproduction above was executed against the current formatter and validator."
+    },
+    {
+      "id": "quantity-empty-message-cast",
+      "state": "resolved",
+      "evidence": "src/locales/quantity.ts:118-144 validates runtime form values before formatter selection; the formatter returns the validated string without a Message cast."
+    }
+  ],
+  "confirmedBehavior": [
+    "src/preferences.tsx:64-69 applies the formatter before the existing placeholder replacement and preserves the Translation signature.",
+    "src/dashboard/ui/DashboardWidgetState.tsx:67-70 now supplies excludedRecords as count instead of post-format replacement.",
+    "Every live targeted t() call found by source search supplies the required numeric operand; progressPending has no live TypeScript/TSX caller in the reviewed tree.",
+    "Missing and non-finite required operands throw TypeError for variant and CJK/base locales (covered by unit tests and formatter implementation).",
+    "The current SHA-256 values of all ten src/locales/*.json files equal the candidate's recorded baseline values, so the 720 basic dictionaries were not changed by this quantity change."
+  ],
+  "verification": [
+    {
+      "command": "bun test scripts/quantity-localization.test.ts",
+      "result": "pass: 6 tests"
+    },
+    {
+      "command": "bun run i18n:check",
+      "result": "pass: Validated 720 messages and 10 locale routes"
+    },
+    {
+      "command": "bun run typecheck",
+      "result": "pass"
+    },
+    {
+      "command": "bunx playwright test test/questions/quantity-localization.pw.ts --config=test/questions/playwright.config.ts",
+      "result": "pass: 1 test; real SAA-C03 picker checks English 1/2 then Spanish after locale switch"
+    },
+    {
+      "command": "bun run i18n:content",
+      "result": "known unrelated failure: en/courses/dop-c02/full-mock-2026-11.json source hash differs from manifest; not treated as a UI quantity pass"
+    },
+    {
+      "command": "git diff --check -- <reviewed quantity paths>",
+      "result": "pass"
+    }
+  ],
+  "rootRecheck": [
+    "Do not mark the quantity DoD complete until both P1 findings have tests and a green rerun of the targeted suite plus i18n:check.",
+    "Keep the DOP content-source-hash failure separate from this UI result; it remains an unfinished whole-content gate and must not be disabled or reclassified as passing."
+  ],
+  "reReview": {
+    "reviewedAt": "2026-11-22T00:00:00+09:00",
+    "reviewerThread": "01a1ff21-19cd-7551-b04d-43745010a731",
+    "model": "gpt-5.6-terra",
+    "reasoning": "high",
+    "head": "ebbf7940979ea084d537d7d4527166b7c0e96bbc",
+    "verdict": "changes-requested",
+    "activeFindingCounts": {
+      "P0": 0,
+      "P1": 1,
+      "P2": 1
+    },
+    "priorFindingResolution": [
+      {
+        "id": "quantity-form-schema-is-not-closed-or-reachability-safe",
+        "state": "resolved",
+        "evidence": [
+          "src/locales/quantity.ts:88-98 requires actualForms to equal the required form set, so every unrequested category or numeric form is rejected before form parsing.",
+          "Independent reproduction: added en.countLabel count:other and count:01 forms were both rejected as unexpected quantity form; a CJK entry was rejected by the inherited-base policy; an added known message key was rejected as an unexpected quantity variant.",
+          "The formatter no longer has exact-number selection: src/locales/quantity.ts:26-35 maps every nonzero Intl 'one' to one and all other categories (including zero) to other."
+        ]
+      },
+      {
+        "id": "quantity-regression-matrix-does-not-prove-the-documented-all-locale-contract",
+        "state": "partially-resolved",
+        "evidence": [
+          "scripts/quantity-localization.test.ts:22-77 now asserts countLabel and lessonStepsRemaining at 0/1/2 for all ten locales.",
+          "The remaining all-six operand coverage gap is retained as active P1 below."
+        ]
+      }
+    ],
+    "activeFindings": [
+      {
+        "id": "quantity-multi-operand-regression-does-not-cover-all-six-variant-locales",
+        "priority": "P1",
+        "locations": [
+          "scripts/quantity-operands.test.ts:42-60",
+          "docs/reviews/20261122-ui-quantity-pluralization-candidate.json:40"
+        ],
+        "problem": "The stated completion contract says all six variant locales have four lessonFinalRules combinations plus selected/glossary regressions. The actual loop omits pt (it lists en, fr, de, es, it), and selectedCount/glossaryCount assertions exist only for fr.",
+        "impact": "The 20-key/132-form schema proves presence but does not prove formatter selection and expected natural output for the omitted Portuguese multi-operand path or the other locales' selected/glossary one-vs-other paths. This leaves the documented all-six regression DoD unmet.",
+        "requiredFix": "Use one table-driven six-locale matrix. Assert lessonFinalRules for 1/1, 1/2, 2/1, and 2/2, plus selectedCount and glossaryCount at their one/other boundaries, with expected rendered values for en, pt, fr, de, es, and it."
+      },
+      {
+        "id": "quantity-candidate-describes-removed-numeric-form-behavior",
+        "priority": "P2",
+        "locations": [
+          "docs/reviews/20261122-ui-quantity-pluralization-candidate.json:8",
+          "docs/reviews/20261122-ui-quantity-pluralization-candidate.json:28"
+        ],
+        "problem": "The candidate still says numeric forms can explicitly override zero and says 18 keys were audited. The implementation rejects any unrequired numeric form and now has 20 keys.",
+        "impact": "The candidate is a misleading future-maintenance and release proof, although the current runtime is safe.",
+        "requiredFix": "Update the candidate wording to the closed one/other-only form policy and the 20-key audit before final release evidence is published."
+      }
+    ],
+    "confirmed": [
+      "validateQuantityVariants accepted the actual six-locale data and a direct shape check confirmed 20 keys and 22 forms per variant locale, totaling 132 forms.",
+      "All ten current locale JSON SHA-256 values match the candidate baseline, preserving the 720 basic dictionaries.",
+      "The formatter validates required finite number operands before variant lookup, including CJK base-inheritance locales; live score/choose callers provide correct/count values and TypeScript typecheck passes.",
+      "package.json lint invokes i18n:typecheck and i18n:check; i18n:typecheck includes scripts/check-locales.ts."
+    ],
+    "verification": [
+      {
+        "command": "bun test scripts/quantity-localization.test.ts scripts/quantity-operands.test.ts",
+        "result": "pass: 8 tests across 2 files"
+      },
+      {
+        "command": "bun run i18n:check",
+        "result": "pass: Validated 720 messages and 10 locale routes"
+      },
+      {
+        "command": "bun run i18n:typecheck",
+        "result": "pass"
+      },
+      {
+        "command": "bun run typecheck",
+        "result": "pass"
+      },
+      {
+        "command": "bun run format:check",
+        "result": "pass: 850 files, no fixes"
+      },
+      {
+        "command": "bunx playwright test test/questions/quantity-localization.pw.ts --config=test/questions/playwright.config.ts",
+        "result": "pass: real SAA-C03 picker, English 1/2 then Spanish locale switch"
+      },
+      {
+        "command": "output/question-quality/ui-quantity-unit-all.log",
+        "result": "candidate log: 468 pass, 0 fail, 172 files"
+      }
+    ],
+    "wholeContentGate": "Not used as UI success evidence. The prior candidate log records a DOP source-hash failure; the parent reports public-data materialization has since progressed, so content lint must be rerun and assessed independently of this UI review.",
+    "rootRecheck": [
+      "Keep the P1 all-six multi-operand/selected/glossary coverage requirement open until the specified matrix exists and passes.",
+      "Correct the P2 candidate proof before final publication.",
+      "Run and separately report the current whole-content lint; do not infer it from these UI-only checks."
+    ]
+  },
+  "finalReReview": {
+    "reviewedAt": "2026-11-22T00:00:00+09:00",
+    "reviewerThread": "01a1ff21-19cd-7551-b04d-43745010a731",
+    "model": "gpt-5.6-terra",
+    "reasoning": "high",
+    "head": "ebbf7940979ea084d537d7d4527166b7c0e96bbc",
+    "verdict": "pass",
+    "activeFindingCounts": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 0
+    },
+    "resolvedSincePriorReview": [
+      {
+        "id": "quantity-multi-operand-regression-does-not-cover-all-six-variant-locales",
+        "state": "resolved",
+        "evidence": "scripts/quantity-operands.test.ts:42-109 now table-drives en, pt, fr, de, es, and it through all lessonFinalRules 1/1, 1/2, 2/1, and 2/2 combinations with independent total and correct expected phrases, and asserts selectedCount/glossaryCount one/other values for all six locales."
+      },
+      {
+        "id": "quantity-candidate-describes-removed-numeric-form-behavior",
+        "state": "resolved",
+        "evidence": "docs/reviews/20261122-ui-quantity-pluralization-candidate.json:8 now documents the closed one/other-only form selection with numeric overrides rejected; :28 records the 20-key audit."
+      }
+    ],
+    "noNewP0OrP1": true,
+    "contractEvidence": [
+      "All six variant locales contain exactly 20 keys and 22 forms each, for 132 forms; validateQuantityVariants accepts the real data.",
+      "Independent mutations adding an extra category form, numeric exact form, CJK variant entry, and an extra known-message key were all rejected.",
+      "All ten current locale JSON SHA-256 values equal the candidate baseline, preserving the 720 basic dictionaries.",
+      "The main native-language evidence docs/reviews/20261122-ui-quantity-native-main-read.json records review of all 132 variant translations against their Japanese source and call context.",
+      "The isolated lint proof output/question-quality/ui-quantity-lint-cli-proof.json shows translationIssues rejects a Japanese residual quantity form while retaining its placeholder."
+    ],
+    "verification": [
+      {
+        "command": "bun run test",
+        "result": "pass: 468 tests, 0 failures, 5,202 expectations, 172 files"
+      },
+      {
+        "command": "bun run i18n:check",
+        "result": "pass: Validated 720 messages and 10 locale routes"
+      },
+      {
+        "command": "bun run i18n:typecheck",
+        "result": "pass"
+      },
+      {
+        "command": "bun run typecheck",
+        "result": "pass"
+      },
+      {
+        "command": "bun run format:check",
+        "result": "pass: 850 files, no fixes"
+      },
+      {
+        "command": "bunx playwright test test/questions/quantity-localization.pw.ts --config=test/questions/playwright.config.ts",
+        "result": "pass: 1 real-browser SAA-C03 locale-switch test"
+      },
+      {
+        "command": "output/question-quality/ui-quantity-main-build.log",
+        "result": "main build evidence: vite production build and route checks passed"
+      }
+    ],
+    "scopeBoundary": "Whole-content translation lint remains an independent, unfinished public-data task. It was not run or represented as a UI quantity success condition in this review."
+  },
+  "rootCollectedAt": "2026-11-21T17:53:04.463879+00:00"
+}

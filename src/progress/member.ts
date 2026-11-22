@@ -6,7 +6,34 @@ import { assertCurrentProgressOwner } from './types';
 
 export type { MemberEvent } from './memberEventCodec';
 
-type ProfileSnapshotRow = { earned: string[]; answers: Record<string, number>; revision: number };
+type ProfileSnapshotRow = {
+  earned: string[];
+  answers: Record<string, number>;
+  presentation?: unknown;
+  revision: number;
+};
+
+function profilePresentation(value: unknown): Pick<Profile, 'optionOrders' | 'order'> {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    return { optionOrders: {}, order: [] };
+  const presentation = value as { optionOrders?: unknown; order?: unknown };
+  const order = Array.isArray(presentation.order)
+    ? presentation.order.filter((item): item is string => typeof item === 'string')
+    : [];
+  const optionOrders =
+    presentation.optionOrders &&
+    typeof presentation.optionOrders === 'object' &&
+    !Array.isArray(presentation.optionOrders)
+      ? Object.fromEntries(
+          Object.entries(presentation.optionOrders).flatMap(([key, candidate]) =>
+            Array.isArray(candidate) && candidate.every((item) => Number.isSafeInteger(item))
+              ? [[key, candidate]]
+              : [],
+          ),
+        )
+      : {};
+  return { optionOrders, order };
+}
 
 export type MemberProgressRepository = {
   readonly owner: MemberProgressOwner;
@@ -75,19 +102,21 @@ export function createMemberProgressRepository(
       return rows.map(eventFromRow);
     },
     async loadProfile() {
-      const [snapshot] = await rpc<ProfileSnapshotRow[]>('load_roadmap_profile_snapshot', {});
+      const [snapshot] = await rpc<ProfileSnapshotRow[]>('load_roadmap_profile_snapshot_v2', {});
       return {
         profile: {
           earned: snapshot?.earned ?? [],
           answers: snapshot?.answers ?? {},
+          ...profilePresentation(snapshot?.presentation),
         },
         revision: snapshot?.revision ?? 0,
       };
     },
     replaceProfile: (profile, expectedRevision) =>
-      write<number>('replace_roadmap_profile', {
+      write<number>('replace_roadmap_profile_v2', {
         p_earned: profile.earned,
         p_answers: profile.answers,
+        p_presentation: { optionOrders: profile.optionOrders, order: profile.order },
         p_expected_revision: expectedRevision,
       }),
     async reset() {

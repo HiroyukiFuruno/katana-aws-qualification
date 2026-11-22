@@ -2,6 +2,9 @@ import { readFileSync } from 'node:fs';
 import { defineConfig, type HtmlTagDescriptor, loadEnv } from 'vite';
 import { catalogStats } from './scripts/catalog-stats.ts';
 import { certifications, studyCourses } from './src/certifications.ts';
+import { messages } from './src/messages.ts';
+import { pageTitle } from './src/pageTitles.ts';
+import { routeAt } from './src/routes.ts';
 
 export default defineConfig(({ command, isPreview, mode }) => {
   const env = loadEnv(mode, process.cwd());
@@ -15,6 +18,20 @@ export default defineConfig(({ command, isPreview, mode }) => {
       __KAQ_CATALOG_STATS__: JSON.stringify({ certifications: certificationCount, questions }),
     },
     plugins: [
+      {
+        name: 'localized-document-metadata',
+        transformIndexHtml(html, context) {
+          const route = routeAt((context.originalUrl ?? '/').split('?')[0]);
+          const locale = route?.locale ?? 'en';
+          const id = route?.page.split('/')[1];
+          const name = certifications.find((cert) => cert.id === id)?.name;
+          const escapeMetadata = (text: string) =>
+            text.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+          return html
+            .replace('__PAGE_TITLE__', escapeMetadata(pageTitle(route?.page ?? '', locale, name)))
+            .replace('__PAGE_DESCRIPTION__', escapeMetadata(messages[locale].landingIntro));
+        },
+      },
       {
         name: 'google-site-integrations',
         transformIndexHtml() {

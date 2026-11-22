@@ -20,13 +20,18 @@ test('AIP-C01 provides five disjoint 75-question mocks and preserves archived sc
     examStorageId: 'aip-c01',
     fixedExamFromBlueprint: true,
     reviewedMock: true,
-    archives: ['courses/aip-c01/questions.json', 'courses/aip-c01/mock-2026-11.json'],
+    archives: [
+      'courses/aip-c01/questions.json',
+      'courses/aip-c01/mock-2026-11.json',
+      'courses/aip-c01/archive-2026-11-22.json',
+    ],
   });
   const bank = readBank(course.mock);
   const archived = course.archives.flatMap(readBank);
   expect(bank).toHaveLength(375);
+  expect(archived).toHaveLength(17);
   expect(new Set(bank.map(questionGroupKey)).size).toBe(375);
-  expect(new Set([...bank, ...archived].map(questionKey)).size).toBe(391);
+  expect(new Set([...bank, ...archived].map(questionKey)).size).toBe(392);
   expect(archived.every((question) => isCorrectAnswer(question, question.correct))).toBe(true);
 
   let remaining = bank;

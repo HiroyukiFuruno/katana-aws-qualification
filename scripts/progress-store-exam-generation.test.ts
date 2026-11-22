@@ -30,18 +30,18 @@ function clientFor(
     finalize: 'finalize_exam_session',
     load: 'read_learning_clock',
     save: 'save_exam_response_confirmed',
-    start: 'start_exam_session',
+    start: 'start_exam_session_v2',
   }[boundary];
   return {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return server.generation;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       const generation = args.p_expected_generation as number;
       calls.push({ generation, name });
       if (name === failingRpc && generation !== server.generation)
         throw new ProgressApiError(409, 'PT409');
       if (name === 'read_learning_clock') return '2026-11-20T00:00:00.000Z';
-      if (name === 'start_exam_session')
+      if (name === 'start_exam_session_v2')
         return [{ deadline_at: '2026-11-20T00:01:00.000Z', exam_id: draft.id, revision: 0 }];
       if (name === 'save_exam_response_confirmed')
         return [{ duration_ms: 0, revision: 1, selected_at: null }];
@@ -101,7 +101,7 @@ test('each member exam boundary refreshes generation once but never replays the 
             finalize: 'finalize_exam_session',
             load: 'read_learning_clock',
             save: 'save_exam_response_confirmed',
-            start: 'start_exam_session',
+            start: 'start_exam_session_v2',
           }[boundary],
       ),
     ).toHaveLength(1);
@@ -119,7 +119,7 @@ test('non-generation exam errors do not reload or invalidate the draft', async (
   const client: ProgressRpcClient = {
     async rpc(name) {
       if (name === 'initialize_learning_state') return initialized++;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       throw new ProgressApiError(400, '22023');
     },
     async select() {

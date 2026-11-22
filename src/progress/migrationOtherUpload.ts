@@ -15,15 +15,18 @@ export async function uploadProfile(
   const normalized = {
     earned: [...new Set(saved.earned.map(normalizeCertificationId))],
     answers: saved.answers,
+    optionOrders: saved.optionOrders,
+    order: saved.order,
   };
   if (!completed) {
     const current = await context.repository.loadProfile();
-    await context.repository.write<number>('import_roadmap_profile', {
+    await context.repository.write<number>('import_roadmap_profile_v2', {
       p_manifest_id: manifestId,
       p_source_row_id: 'profile',
       p_expected_revision: current.revision,
       p_earned: normalized.earned,
       p_answers: normalized.answers,
+      p_presentation: { optionOrders: normalized.optionOrders, order: normalized.order },
     });
   }
   return { events: [], imported: 1, rejected: 0 };

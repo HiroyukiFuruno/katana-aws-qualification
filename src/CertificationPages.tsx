@@ -1,15 +1,17 @@
 import { CertificationDirectory } from './CertificationDirectory';
-import { certificationGuides, officialGuideLink } from './certificationGuides';
+import { officialGuideLink } from './certificationGuides';
 import { examPrices, pricingUrl } from './certificationPricing';
 import { certifications, levelMessage } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
 import { SiteAd } from './SiteAd';
+import { useContent } from './useContent';
 
 export function CertificationPages({ id }: { id?: string }) {
   const { locale, t } = usePreferences();
+  const { content } = useContent();
   const certification = certifications.find((entry) => entry.id === id);
-  const guide = certification && certificationGuides[certification.id];
+  const guide = certification && content.guides[certification.id];
 
   if (!certification || !guide) {
     return (
@@ -36,7 +38,7 @@ export function CertificationPages({ id }: { id?: string }) {
           {certification.id.toUpperCase()} · {t(levelMessage[certification.level])}
           {certification.beta ? ` · ${t('beta')}` : ''}
         </p>
-        <h1>{certification.name}</h1>
+        <h1>{content.certifications[certification.id].name}</h1>
       </div>
       <section className="card">
         <h2>{t('certFee')}</h2>
@@ -59,7 +61,7 @@ export function CertificationPages({ id }: { id?: string }) {
       <SiteAd placement="inline" />
       <article className="card">
         <h2>{t('certScope')}</h2>
-        <p>{t(guide.scope)}</p>
+        <p>{guide.scope}</p>
         <h2>{t('certDifficulty')}</h2>
         <div
           className="difficulty-rating"
@@ -75,9 +77,9 @@ export function CertificationPages({ id }: { id?: string }) {
             ★★★★★
           </span>
         </div>
-        <p>{t(guide.why)}</p>
+        <p>{guide.why}</p>
         <h2>{t('certAudience')}</h2>
-        <p>{t(guide.audience)}</p>
+        <p>{guide.audience}</p>
         <div className="exam-actions">
           {certification.course && (
             <a className="entry-action" href={localePath(locale, `study/${certification.id}`)}>

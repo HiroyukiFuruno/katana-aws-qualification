@@ -1,0 +1,38 @@
+{
+  "reviewed_at": "2026-11-22",
+  "scope": "owner-shadow production contract inventory after presentation function classification",
+  "change": {
+    "functions": {
+      "before": 44,
+      "after": 51
+    },
+    "ownerTables": 12,
+    "rlsPolicies": 10,
+    "source": "scripts/account-owner-cutover-manifest.json"
+  },
+  "protected_surfaces_added": [
+    "valid_profile_presentation(jsonb)",
+    "valid_exam_presentation(jsonb,jsonb)",
+    "start_exam_session_v2(uuid,text,text,jsonb,integer,bigint,jsonb)",
+    "import_exam_session_v2(bigint,uuid,text,jsonb,jsonb,jsonb,jsonb)",
+    "load_roadmap_profile_snapshot_v2()",
+    "replace_roadmap_profile_v2(jsonb,jsonb,bigint,bigint,jsonb)",
+    "import_roadmap_profile_v2(bigint,uuid,text,bigint,jsonb,jsonb,jsonb)"
+  ],
+  "previous_receipt_assessment": {
+    "result": "No compatibility bypass was added.",
+    "reason": "The owner-shadow ledger validates only its immutable migration-source receipt, while every preflight recomputes the complete live public-function contract and requires an exact inventory match before ledgerState can return applied.",
+    "ordered_migration_evidence": "The canonical local ledger places presentation 202611210005 before owner-shadow 202611220001. Ordered local integration passed with all seven functions present. Actual historical production ordering is unverified; no claim is made that a prior production owner-shadow run included presentation.",
+    "mismatch_behavior": "A database missing, adding, or altering any protected function changes contractMatches or the contract fingerprint and remains rejected; the update only corrects the expected inventory from the manifest's complete 51 functions."
+  },
+  "tests": {
+    "added_guard": "owner-shadow-production.test.ts now rejects a contract snapshot that omits any expected function.",
+    "root_results": {
+      "scripts/owner-shadow-production.test.ts": "5 passed",
+      "scripts/account-owner-cutover-manifest.test.ts": "4 passed",
+      "scripts/presentation-storage.test.ts": "2 passed"
+    },
+    "runner_note": "bun test also discovered a stale copied candidate under output/question-quality/phase-a-candidate-c6de4d8ff0/scripts. Its four owner-shadow assertions still expect 44 functions and failed; that generated snapshot is outside this task scope and is not evidence against the root test files."
+  },
+  "mainReview": "Exact live inventory, ACL/body/schema fingerprint and immutable migration receipt checks remain enforced; a production database without the seven presentation functions is rejected until the reviewed presentation migration is applied."
+}

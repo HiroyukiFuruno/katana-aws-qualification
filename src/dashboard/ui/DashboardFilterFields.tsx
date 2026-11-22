@@ -1,16 +1,20 @@
 import { usePreferences } from '../../preferences';
+import { useDashboardDisplayLabels } from '../displayLabels';
 import type { DashboardFilters } from '../queryTypes';
 import type { DashboardFacets } from '../summaryTypes';
-import { certificationLabel, dashboardFilterOptions } from './dashboardFilterOptions';
+import type { DashboardLessonData } from '../viewTypes';
+import { dashboardFilterOptions } from './dashboardFilterOptions';
 import { dashboardOptionLabel } from './dashboardOptionLabels';
 
 type Props = {
   filters: DashboardFilters;
   facets?: DashboardFacets;
+  lessons: readonly DashboardLessonData[];
   onChange: (patch: Partial<DashboardFilters>) => void;
 };
-export function DashboardFilterFields({ filters, facets, onChange }: Props) {
+export function DashboardFilterFields({ filters, facets, lessons, onChange }: Props) {
   const { t } = usePreferences();
+  const display = useDashboardDisplayLabels(lessons);
   const options = dashboardFilterOptions(facets, filters);
   const select = (
     label: string,
@@ -42,7 +46,7 @@ export function DashboardFilterFields({ filters, facets, onChange }: Props) {
       </button>
     </div>
   );
-  const enumLabel = (key: string) => (value: string) => dashboardOptionLabel(key, value, t);
+  const enumLabel = (key: string) => (value: string) => dashboardOptionLabel(key, value, t, display);
   return (
     <div className="dashboard-filter-grid dashboard-filter-dimensions">
       {select(
@@ -50,10 +54,14 @@ export function DashboardFilterFields({ filters, facets, onChange }: Props) {
         options.certificationIds,
         filters.certificationIds,
         (next) => onChange({ certificationIds: next }),
-        certificationLabel,
+        display.certification,
       )}
-      {select(t('dashboardCategory'), options.categories, filters.categories, (next) =>
-        onChange({ categories: next }),
+      {select(
+        t('dashboardCategory'),
+        options.categories,
+        filters.categories,
+        (next) => onChange({ categories: next }),
+        display.category,
       )}
       {select(
         t('dashboardMode'),
@@ -90,7 +98,13 @@ export function DashboardFilterFields({ filters, facets, onChange }: Props) {
         (next) => onChange({ revisions: next?.map((item) => JSON.parse(item)) ?? null }),
         enumLabel('revisions'),
       )}
-      {select(t('dashboardUnit'), options.units, filters.unitIds, (next) => onChange({ unitIds: next }))}
+      {select(
+        t('dashboardUnit'),
+        options.units,
+        filters.unitIds,
+        (next) => onChange({ unitIds: next }),
+        display.category,
+      )}
     </div>
   );
 }

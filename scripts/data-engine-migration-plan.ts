@@ -1,6 +1,6 @@
 import { dataMigrations } from './data-migrations';
 
-const foundationMigration = '202611210004_learning_account_foundation.sql';
+const ownerShadowStartMigration = '202611220001_learning_owner_shadow.sql';
 const ownerShadowMigrations = [
   '202611220001_learning_owner_shadow.sql',
   '202611220002_learning_context_helpers.sql',
@@ -9,10 +9,10 @@ const ownerShadowMigrations = [
 ];
 
 export function dataEngineMigrationPhases() {
-  const foundationIndex = dataMigrations.indexOf(foundationMigration);
-  if (foundationIndex === -1) throw new Error('Missing learning-account foundation migration');
-  const beforeShadow = dataMigrations.slice(0, foundationIndex + 1);
-  const ownerShadow = dataMigrations.slice(foundationIndex + 1);
+  const ownerShadowIndex = dataMigrations.indexOf(ownerShadowStartMigration);
+  if (ownerShadowIndex === -1) throw new Error('Missing learning-owner shadow migration');
+  const beforeShadow = dataMigrations.slice(0, ownerShadowIndex);
+  const ownerShadow = dataMigrations.slice(ownerShadowIndex);
   if (ownerShadow.join(',') !== ownerShadowMigrations.join(','))
     throw new Error('Owner shadow migration sequence changed');
   return { beforeShadow, ownerShadow };

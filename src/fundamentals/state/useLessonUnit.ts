@@ -5,12 +5,37 @@ import { guestLessonPrefix } from './guestStorage';
 import type { LessonServices } from './services';
 import type { LessonSnapshot } from './types';
 
-type Loaded = {
+export type Loaded = {
   asset: DeliveryUnitAsset;
   snapshot: LessonSnapshot;
   services: LessonServices;
   version: number;
 };
+
+type AssetScope = {
+  contentVersion?: string;
+  services: LessonServices;
+  unitId: string;
+  version: number;
+};
+
+export function replaceLoadedAsset(
+  current: Loaded | undefined,
+  asset: DeliveryUnitAsset,
+  scope: AssetScope,
+): Loaded | undefined {
+  if (
+    !current ||
+    current.services !== scope.services ||
+    current.asset.unit.id !== scope.unitId ||
+    asset.unit.id !== scope.unitId ||
+    current.version !== scope.version ||
+    current.asset.contentVersion !== asset.contentVersion ||
+    (scope.contentVersion !== undefined && current.asset.contentVersion !== scope.contentVersion)
+  )
+    return current;
+  return { ...current, asset };
+}
 
 export function useLessonUnit(
   services: LessonServices | null,
@@ -22,8 +47,11 @@ export function useLessonUnit(
   const [asset, setAsset] = useState<DeliveryUnitAsset>();
   const [error, setError] = useState<unknown>();
   const [version, setVersion] = useState(0);
+  const [assetRequest, setAssetRequest] = useState(0);
   const latest = useRef<Loaded | undefined>(undefined);
+  const latestAssetRequest = useRef(assetRequest);
   latest.current = loaded;
+  latestAssetRequest.current = assetRequest;
   useEffect(() => {
     const guest = services?.guest;
     if (!guest) return;
@@ -44,6 +72,7 @@ export function useLessonUnit(
   }, [services, unitId]);
   useEffect(() => {
     let current = true;
+    const request = assetRequest;
     const retained = latest.current;
     const keepSnapshot =
       retained?.services === services &&
@@ -59,25 +88,30 @@ export function useLessonUnit(
       void services.assets
         .unit(unitId, contentVersion, locale)
         .then(async (asset) => {
-          if (current) setAsset(asset);
-          return {
-            asset,
-            snapshot: keepSnapshot && retained ? retained.snapshot : await services.load(asset),
-            services,
-            version,
-          };
-        })
-        .then((result) => {
-          if (current) setLoaded(result);
+          if (!current || latestAssetRequest.current !== request) return;
+          setAsset(asset);
+          if (
+            keepSnapshot &&
+            retained?.asset.unit.id === asset.unit.id &&
+            retained.asset.contentVersion === asset.contentVersion
+          ) {
+            setLoaded((current) =>
+              replaceLoadedAsset(current, asset, { services, unitId, version, contentVersion }),
+            );
+            return;
+          }
+          const snapshot = await services.load(asset);
+          if (current && latestAssetRequest.current === request)
+            setLoaded({ asset, snapshot, services, version });
         })
         .catch((cause: unknown) => {
-          if (current) setError(cause);
+          if (current && latestAssetRequest.current === request) setError(cause);
         });
     }
     return () => {
       current = false;
     };
-  }, [services, unitId, locale, version, contentVersion]);
+  }, [services, unitId, locale, version, contentVersion, assetRequest]);
   return {
     loaded:
       loaded?.services === services && loaded.asset.unit.id === unitId && loaded.version === version
@@ -86,6 +120,7 @@ export function useLessonUnit(
     error,
     asset: asset?.unit.id === unitId ? asset : undefined,
     reload: () => setVersion((current) => current + 1),
+    retry: () => setAssetRequest((current) => current + 1),
     update: (snapshot: LessonSnapshot) =>
       setLoaded((current) =>
         current?.services === services &&

@@ -38,7 +38,19 @@ export function LessonUnit({ services, route }: { services: LessonServices; rout
     }
   }
   if (unit.loaded) {
-    return <LessonLoaded {...unit.loaded} route={route} update={unit.update} />;
+    return (
+      <>
+        {unit.error ? (
+          <div className="shell">
+            <p role="alert">{t('fundamentalsLoadError')}</p>
+            <button type="button" onClick={unit.retry}>
+              {t('fundamentalsReload')}
+            </button>
+          </div>
+        ) : null}
+        <LessonLoaded key="lesson-loaded" {...unit.loaded} route={route} update={unit.update} />
+      </>
+    );
   }
   const error = unit.error || actionError;
   const conflict = unit.error instanceof GuestLessonConflictError;
@@ -70,7 +82,7 @@ export function LessonUnit({ services, route }: { services: LessonServices; rout
           {t('examReloadSaved')}
         </button>
       ) : error ? (
-        <button type="button" onClick={unit.reload}>
+        <button type="button" onClick={unit.retry}>
           {t('fundamentalsReload')}
         </button>
       ) : null}

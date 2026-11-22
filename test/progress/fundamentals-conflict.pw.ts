@@ -32,8 +32,11 @@ test('a stale member final reloads canonical selections before another save', as
     if (!wrong) throw new Error('Missing conflict fixture choice.');
     await second.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'final', position: 1 }));
     await expect(second.locator('fieldset')).toBeVisible();
+    await expect(second.locator(`fieldset input[name="${question.id}"]`).first()).toBeVisible();
+    await expect(nextButton(second)).toBeDisabled();
+    const incorrectSelection = [wrong.id, ...question.correct].slice(0, question.requiredChoices);
     await selectLessonAnswer(first, question, question.correct);
-    await selectLessonAnswer(second, question, [wrong.id]);
+    await selectLessonAnswer(second, question, incorrectSelection);
     await nextButton(first).click();
     await expect(first).toHaveURL(/\/final\/2\/$/);
     await nextButton(second).click();

@@ -1,19 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { messages } from '../../src/messages';
-import { addMilestone, openMemberMilestones } from './milestones.helpers';
+import { addMilestone, openMemberMilestones, openMilestoneEditor } from './milestones.helpers';
 import { createSessions } from './sessions';
-
-async function openMilestoneEditor(page: Parameters<typeof openMemberMilestones>[0]) {
-  const text = messages.ja;
-  const controls = page.locator('.dashboard-controls');
-  if ((await controls.getAttribute('open')) === null) await controls.locator(':scope > summary').click();
-  await controls.getByRole('button', { name: text.dashboardSettingsAdvanced, exact: true }).click();
-  await controls.getByRole('tab', { name: text.dashboardSettingsDisplay, exact: true }).click();
-  await controls
-    .getByRole('combobox', { name: text.dashboardSectionWidget, exact: true })
-    .selectOption({ label: text.dashboardMilestones });
-  return controls.locator('.dashboard-widget-editor');
-}
 
 test('default planning widget is calendar-based and the settings picker restores a new table widget', async ({
   browser,

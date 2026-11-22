@@ -58,6 +58,18 @@ export async function addMilestone(panel: Locator, locale: Locale, draft: Milest
   await expect(panel.getByRole('status')).toContainText(text.milestoneSaved);
 }
 
+export async function openMilestoneEditor(page: Page, locale: Locale = 'ja') {
+  const text = messages[locale];
+  const controls = page.locator('.dashboard-controls');
+  if ((await controls.getAttribute('open')) === null) await controls.locator(':scope > summary').click();
+  await controls.getByRole('button', { name: text.dashboardSettingsAdvanced, exact: true }).click();
+  await controls.getByRole('tab', { name: text.dashboardSettingsDisplay, exact: true }).click();
+  await controls
+    .getByRole('combobox', { name: text.dashboardSectionWidget, exact: true })
+    .selectOption({ label: text.dashboardMilestones });
+  return controls.locator('.dashboard-widget-editor');
+}
+
 export async function deleteMilestone(panel: Locator, locale: Locale, title: string) {
   const text = messages[locale];
   const row = panel.locator('.milestone-row').filter({ hasText: title });

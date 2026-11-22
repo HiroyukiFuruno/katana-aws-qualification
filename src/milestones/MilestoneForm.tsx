@@ -43,7 +43,15 @@ export function MilestoneForm({ model, row, kind, certifications, onCancel, onSa
   const [error, setError] = useState<string>();
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const plannedAt = draft.allDay ? null : draft.plannedAt ? parseLocalDateTime(draft.plannedAt) : null;
+    const originalInstant = row?.plannedAt;
+    // 日時欄が同じなら再解釈せず、夏時間の重複時刻や秒の精度を保つ。
+    const plannedAt = draft.allDay
+      ? null
+      : originalInstant && draft.plannedAt === localDateTimeInput(originalInstant)
+        ? originalInstant
+        : draft.plannedAt
+          ? parseLocalDateTime(draft.plannedAt)
+          : null;
     if (draft.plannedAt && !plannedAt) return setError(labels.t('milestoneInvalidTime'));
     const input: MilestoneInput = {
       id: draft.id,

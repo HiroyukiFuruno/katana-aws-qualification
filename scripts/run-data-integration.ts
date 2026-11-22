@@ -1,8 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { createSessions, verifyPostgrest, waitForRest } from '../test/data/rest-client.ts';
 import { verifyAssessmentPresentationPostgrest } from '../test/data/verify-assessment-presentation-rest.ts';
+import { verifyCertificationMilestonesPostgrest } from '../test/data/verify-certification-milestones-rest.ts';
 import { verifyConcurrentRevisions } from '../test/data/verify-concurrency.ts';
 import { verifyDashboardPostgrest } from '../test/data/verify-dashboard-rest.ts';
+import { verifyMilestoneClient } from '../test/data/verify-milestone-client.ts';
 import { verifySitePreferencesPostgrest } from '../test/data/verify-site-preferences-rest.ts';
 import { dataMigrations } from './data-migrations.ts';
 
@@ -47,6 +49,8 @@ function psql(userA: string, userB: string) {
     '/verification/verify-dashboard.sql',
     '-f',
     '/verification/verify-site-preferences.sql',
+    '-f',
+    '/verification/verify-certification-milestones.sql',
   ]);
 }
 
@@ -82,6 +86,8 @@ try {
   await verifyDashboardPostgrest();
   await verifySitePreferencesPostgrest();
   await verifyAssessmentPresentationPostgrest();
+  await verifyCertificationMilestonesPostgrest();
+  await verifyMilestoneClient();
 } finally {
   run('docker', [...compose, 'down', '--volumes']);
 }

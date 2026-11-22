@@ -471,3 +471,11 @@
 - 追加レビュー2点は実装・回帰検証済み。単体1116件成功、実filterからの会員RPC保存の実DB検査成功、旧版再開・言語切替・offline再採点・guest競合の実DB/browser集中6件成功。独立highレビューP0/P1/P2=0。
 - account検査は起動中のIdPコンテナにSIGTERM/削除が入り、ローカルでは検査0件で環境失敗。品質条件は変えず、既存の独立Linux CIで全account検査を実行して確認する。元の11拒否条件は同じassertionsを保ち個別ケースへ分割し、timeout延長はしない。
 - [ ] 最終候補の全check・ブラウザ回帰、修正commit/push、指摘threadへの返信/resolve、最新headのCI/review回収、Ready化、接続とDB適用確認後のmerge/Production確認を完了する。
+
+### 本流 PR #106 統合後の追加検証
+
+- [/] 実migration一覧に表示順保存が入るとdata-engine適用フェーズ判定が停止する問題を修正。実registryの分割・全件性・重複なしを回帰検査し、全体1138件成功。thread `PRRT_kwDOVzQ52c66iPEO`。commit/push後に返信・解決する。
+- [/] private merge snapshotのv1/v2許可列・fixtureへ表示順3列を追加し、余分列拒否を維持。実DB snapshot検査にも列存在条件を追加。thread `PRRT_kwDOVzQ52c66iPES`。最終CIで実DB検査を回収する。
+- [/] Linux auth CIで発見したFAQ本文selectorと、単独analytics拒否後のaccept-all再同意の同期を最小修正。実ブラウザ16/16成功（0skip/0unexpected/0flaky）、既存同意条件・10言語layout assertions維持。最終Linux CIも回収する。
+- [/] Linux progress shard1の競合再開timeoutは、ランダム先頭が複数選択でも旧testが誤答1つしか選ばない前提が原因。必要選択数を満たす誤答と保存済みsession同期に修正し、実backendで独立2回成功。競合・canonical回答・outbox・event assertions、30秒上限は維持。最終Linux全shardも回収する。
+- 先行公開 → 残り16バンク自然翻訳 → 最終公開のユーザー指定順序を維持する。本番Vercel権限とSupabase接続は引き続き本人の接続操作待ち。

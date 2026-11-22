@@ -1,12 +1,6 @@
-import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import {
-  createRpc,
-  creationSnapshot,
-  quote,
-  type CreationActor,
-  withCreationActor,
-} from './account-creation-fixture';
+import { createRpc, quote, withCreationActor } from './account-creation-fixture';
+import { creationRejections } from './account-creation-rejections';
 import { sql } from './commands';
 import { ProofConnection } from './proof-connection';
 
@@ -14,17 +8,6 @@ const rejected = (result: Awaited<ReturnType<typeof createRpc>>) => {
   expect(result.ok).toBe(false);
   expect([400, 401, 403, 409]).toContain(result.status);
 };
-
-async function rejectWithoutCreation(actor: CreationActor, mutation: string, restore: string) {
-  try {
-    sql(mutation);
-    const mutated = creationSnapshot();
-    rejected(await createRpc(actor));
-    expect(creationSnapshot()).toEqual(mutated);
-  } finally {
-    sql(restore);
-  }
-}
 
 test.describe('private createNew with real OAuth and PostgREST', () => {
   test.describe.configure({ mode: 'serial' });
@@ -48,63 +31,11 @@ test.describe('private createNew with real OAuth and PostgREST', () => {
     });
   });
 
-  test('rejects invalid live OAuth context and legacy public ownership before creation', async ({
-    browser,
-  }) => {
-    await withCreationActor(browser, async (actor) => {
-      const uid = quote(actor.userId);
-      const sid = quote(actor.sessionId);
-      rejected(await createRpc(actor, false));
-      rejected(await createRpc(actor, null));
-      rejected(await createRpc(actor, true, null));
-      rejected(await createRpc(actor, true, '00000000-0000-0000-0000-000000000000'));
-      await rejectWithoutCreation(
-        actor,
-        `update auth.users set banned_until=clock_timestamp()+interval '1 hour' where id=${uid}`,
-        `update auth.users set banned_until=null where id=${uid}`,
-      );
-      await rejectWithoutCreation(
-        actor,
-        `update auth.users set deleted_at=clock_timestamp() where id=${uid}`,
-        `update auth.users set deleted_at=null where id=${uid}`,
-      );
-      const amr = sql(
-        `select to_jsonb(a)::text from auth.mfa_amr_claims a where session_id=${sid} and authentication_method='oauth'`,
-      );
-      await rejectWithoutCreation(
-        actor,
-        `delete from auth.mfa_amr_claims where session_id=${sid}`,
-        `insert into auth.mfa_amr_claims select * from jsonb_populate_record(null::auth.mfa_amr_claims,${quote(amr)}::jsonb)`,
-      );
-      await rejectWithoutCreation(
-        actor,
-        `update auth.mfa_amr_claims set updated_at=clock_timestamp()+interval '1 hour' where session_id=${sid}`,
-        `update auth.mfa_amr_claims set updated_at=(jsonb_populate_record(null::auth.mfa_amr_claims,${quote(amr)}::jsonb)).updated_at where session_id=${sid}`,
-      );
-      await rejectWithoutCreation(
-        actor,
-        `update auth.mfa_amr_claims set updated_at='infinity' where session_id=${sid}`,
-        `update auth.mfa_amr_claims set updated_at=(jsonb_populate_record(null::auth.mfa_amr_claims,${quote(amr)}::jsonb)).updated_at where session_id=${sid}`,
-      );
-      const client = quote(randomUUID());
-      const originalClient = sql(
-        `select coalesce(to_jsonb(oauth_client_id),'null'::jsonb)::text from auth.sessions where id=${sid}`,
-      );
-      await rejectWithoutCreation(
-        actor,
-        `insert into auth.oauth_clients(id,registration_type,client_type,redirect_uris,grant_types,token_endpoint_auth_method)
-          values(${client},'manual','public','https://fixture.invalid/callback','authorization_code','none');
-          update auth.sessions set oauth_client_id=${client} where id=${sid}`,
-        `update auth.sessions set oauth_client_id=(${quote(originalClient)}::jsonb #>> '{}')::uuid where id=${sid};
-          delete from auth.oauth_clients where id=${client}`,
-      );
-      await rejectWithoutCreation(
-        actor,
-        `insert into public.learning_state(user_id,generation) values(${uid},0)`,
-        `delete from public.learning_state where user_id=${uid}`,
-      );
+  for (const rejection of creationRejections) {
+    test(`rejects ${rejection.name} before creation`, async ({ browser }) => {
+      await withCreationActor(browser, (actor) => rejection.run(actor));
     });
-  });
+  }
 
   test('serializes Auth UPDATE and concurrent same-SID requests to one receipt', async ({ browser }) => {
     await withCreationActor(browser, async (actor) => {

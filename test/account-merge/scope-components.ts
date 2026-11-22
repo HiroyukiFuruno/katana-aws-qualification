@@ -1,17 +1,21 @@
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { dataMigrations } from '../../scripts/data-migrations';
 import { sql } from './commands';
 import { publicState } from './public-state';
 import { artifacts } from './settings';
 
+// binding表の追加後は、その全行不変検査も既存148条件に加わる。
+const hasCommittedBindings = dataMigrations.includes('202611220003_learning_session_grants.sql');
+const hasCreationReceipts = dataMigrations.includes('202611220004_learning_account_creation.sql');
 const components = [
   ['session-resolver', 71],
-  ['owner-scope', 148],
+  ['owner-scope', hasCommittedBindings ? (hasCreationReceipts ? 150 : 149) : 148],
   ['bootstrap', 31],
   ['private-acl', 7],
 ] as const;
 
-export function verifyScopeComponents(mode: 'session' | 'acl' = 'session') {
+export function verifyScopeComponents(mode: 'session' | 'acl' = 'session', installed = false) {
   const fixture: unknown = JSON.parse(readFileSync(`${artifacts}/smoke-proof.json`, 'utf8'));
   assert(fixture && typeof fixture === 'object' && 'issuers' in fixture);
   assert(Array.isArray(fixture.issuers) && fixture.issuers.length === 2);
@@ -27,7 +31,7 @@ export function verifyScopeComponents(mode: 'session' | 'acl' = 'session') {
   for (const [component, expectedCount] of components) {
     if ((component === 'private-acl') !== (mode === 'acl')) continue;
     // 非公開SQL部品を専用DBだけに適用し、実sessionの入力回帰は各transactionで巻き戻す。
-    if (component !== 'private-acl')
+    if (component !== 'private-acl' && !installed)
       sql(readFileSync(`supabase/account-merge/${component}.sql`, 'utf8'));
     const query = readFileSync(`test/account-merge/${component}.sql`, 'utf8')
       .replaceAll('__FIRST_USER__', identifiers[0])
@@ -45,6 +49,10 @@ export function verifyScopeComponents(mode: 'session' | 'acl' = 'session') {
     assert(result.checks.every((check: unknown) => typeof check === 'string'));
     assert.equal(result.checks.length, expectedCount);
     assert.equal(new Set(result.checks).size, expectedCount, 'Do not count duplicated checks');
+    if (component === 'owner-scope' && hasCommittedBindings)
+      assert(result.checks.includes('unchanged_kaq_private_account_committed_proof_bindings'));
+    if (component === 'owner-scope' && hasCreationReceipts)
+      assert(result.checks.includes('unchanged_kaq_private_learning_account_creation_receipts'));
     assert.deepEqual(publicState(), before, `${component} changed public schema or data`);
     writeFileSync(
       `${artifacts}/${component}-proof.json`,

@@ -17,6 +17,8 @@ const files = [
   'scripts/run-account-merge-integration.ts',
   'scripts/data-migrations.ts',
   'playwright.account-merge.config.ts',
+  'playwright.account-grants.config.ts',
+  'playwright.account-creation.config.ts',
   'playwright.account-sdk.config.ts',
   'package.json',
   'bun.lock',

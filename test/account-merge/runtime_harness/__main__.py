@@ -1,7 +1,7 @@
 import argparse, hashlib, json
 from pathlib import Path
 from locking_harness.connections import Connections
-from locking_harness.fixture import apply_private_inputs, create_users, prepare, quote, start
+from locking_harness.fixture import apply_private_inputs, create_users, migration_inventory, prepare, quote, start
 from locking_harness.support import Docker, utc_now, write_json
 from .scenarios import concurrent_initial, revision_race
 from .phase_races import cleanup_after_promotion, promotion_once, stale_context_race
@@ -27,7 +27,7 @@ def snapshot_install(sql):
 def main():
     p=argparse.ArgumentParser(); p.add_argument('--repo-root',required=True); p.add_argument('--artifact-dir',required=True); a=p.parse_args(); root=Path(a.repo_root).resolve(); artifacts=Path(a.artifact_dir).resolve(); artifacts.mkdir(parents=True,exist_ok=True)
     docker= Docker(); connections=None; receipt={'status':'running','observedAt':utc_now(),'shortJwtCasesExecuted':False}; failure=None
-    paths=[*sorted((root/'supabase/migrations').glob('*.sql')),*(root/'supabase/account-merge'/n for n in ['session-resolver.sql','owner-scope.sql','locking-scope.sql','runtime-schema.sql','runtime-storage.sql']),root/'test/account-merge/runtime-storage.sql',*sorted((root/'test/account-merge/runtime_harness').glob('*.py')),
+    paths=[*migration_inventory(root),*(root/'supabase/account-merge'/n for n in ['session-resolver.sql','owner-scope.sql','locking-scope.sql','runtime-schema.sql','runtime-storage.sql']),root/'test/account-merge/runtime-storage.sql',*sorted((root/'test/account-merge/runtime_harness').glob('*.py')),
         *(root/'test/account-merge/locking_harness'/name for name in ['fixture.py','connections.py','support.py']),
         root/'test/account-merge/runtime-harness.ts',root/'scripts/run-account-merge-integration.ts']
     receipt['sourceSha256']={str(x.relative_to(root)):hashlib.sha256(x.read_bytes()).hexdigest() for x in paths}

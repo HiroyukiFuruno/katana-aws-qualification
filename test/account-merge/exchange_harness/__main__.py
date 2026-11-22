@@ -3,7 +3,7 @@ from pathlib import Path
 
 from intent_harness.redaction import contains_secret, discover_secrets, redact
 from locking_harness.connections import Connections
-from locking_harness.fixture import additional_password_session, apply_private_inputs, context_sql, create_users, prepare, quote, start
+from locking_harness.fixture import additional_password_session, apply_private_inputs, context_sql, create_users, migration_inventory, prepare, quote, start
 from locking_harness.support import Docker, utc_now, write_json
 from .scenarios import run
 
@@ -55,7 +55,7 @@ def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--repo-root',required=True); parser.add_argument('--artifact-dir',required=True); args=parser.parse_args()
     root,artifacts=Path(args.repo_root).resolve(),Path(args.artifact_dir).resolve(); artifacts.mkdir(parents=True,exist_ok=True)
     docker,connections,secrets,failure=Docker(),None,set(),None
-    paths=[*sorted((root/'supabase/migrations').glob('*.sql')),*(root/'supabase/account-merge'/x for x in ['session-resolver.sql','owner-scope.sql','locking-scope.sql','intent-control-schema.sql','intent-control.sql','runtime-schema.sql','runtime-storage.sql','leg-schema.sql','leg-control.sql','exchange-control-schema.sql','authorization-control.sql','exchange-control.sql']),root/'test/account-merge/exchange-control.sql',root/'test/account-merge/exchange-boundaries.sql',root/'test/account-merge/exchange-harness.ts',root/'scripts/run-account-merge-integration.ts',*sorted((root/'test/account-merge/exchange_harness').glob('*.py')),* (root/'test/account-merge/locking_harness'/x for x in ['fixture.py','connections.py','support.py']),root/'test/account-merge/intent_harness/redaction.py']
+    paths=[*migration_inventory(root),*(root/'supabase/account-merge'/x for x in ['session-resolver.sql','owner-scope.sql','locking-scope.sql','intent-control-schema.sql','intent-control.sql','runtime-schema.sql','runtime-storage.sql','leg-schema.sql','leg-control.sql','exchange-control-schema.sql','authorization-control.sql','exchange-control.sql']),root/'test/account-merge/exchange-control.sql',root/'test/account-merge/exchange-boundaries.sql',root/'test/account-merge/exchange-harness.ts',root/'scripts/run-account-merge-integration.ts',*sorted((root/'test/account-merge/exchange_harness').glob('*.py')),* (root/'test/account-merge/locking_harness'/x for x in ['fixture.py','connections.py','support.py']),root/'test/account-merge/intent_harness/redaction.py']
     receipt={'status':'running','observedAt':utc_now(),'sourceSha256':{str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},'shortJwtCasesExecuted':False}
     try:
         database=start(docker,DB_NAME,AUTH_NAME); connections=Connections(database,docker,quote,context_sql); sql=connections.sql; auth,health=prepare(database,docker,sql,root,AUTH_NAME)

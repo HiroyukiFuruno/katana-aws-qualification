@@ -1,26 +1,27 @@
-import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readdirSync, writeFileSync } from 'node:fs';
-import { verifyCleanupHarness } from '../test/account-merge/cleanup-harness';
+import { verifyFoundationBoundary } from './account-foundation-boundary';
 import { run } from '../test/account-merge/commands';
-import { verifyExchangeHarness } from '../test/account-merge/exchange-harness';
 import { captureNativeInputs } from '../test/account-merge/input-integrity';
-import { verifyIntentHarness } from '../test/account-merge/intent-harness';
-import { verifyLegHarness } from '../test/account-merge/leg-harness';
-import { verifyLockingHarness } from '../test/account-merge/locking-harness';
+import { verifyOwnerShadowMigration } from '../test/account-merge/owner-shadow';
+import { verifyOwnerShadowProductionOps } from '../test/account-merge/owner-shadow-production-ops';
 import { prepareFixtures } from '../test/account-merge/prepare';
 import { installProofComponents, removeProofWrapper } from '../test/account-merge/proof-components';
-import { publicState } from '../test/account-merge/public-state';
-import { verifyRuntimeHarness } from '../test/account-merge/runtime-harness';
-import { verifyPublicSchemaGuards } from '../test/account-merge/schema-guards';
 import { verifyScopeComponents } from '../test/account-merge/scope-components';
 import { runSdk, sdkSelection } from '../test/account-merge/sdk-selection';
-import { seedPublicData } from '../test/account-merge/seed-public';
 import { artifacts, compose } from '../test/account-merge/settings';
 import { verifySnapshotComponent } from '../test/account-merge/snapshot-component';
 import { installSdkMetadata } from '../test/account-sdk/install';
+import {
+  installAccountCreationFixture,
+  removeAccountCreationFixture,
+} from '../test/account-merge/account-creation-components';
+import { verifyAccountMergeHarnesses } from './account-merge-harnesses';
 import { dataMigrations } from './data-migrations';
-
+const ownerShadowMigration = '202611220001_learning_owner_shadow.sql';
+const contextHelpersMigration = '202611220002_learning_context_helpers.sql';
+const sessionGrantsMigration = '202611220003_learning_session_grants.sql';
+const accountGrantsConfig = '--config=playwright.account-grants.config.ts';
 function applyMigration(migration: string) {
   run('docker', [
     ...compose,
@@ -28,6 +29,7 @@ function applyMigration(migration: string) {
     '-T',
     'database',
     'psql',
+    '--set=VERBOSITY=verbose',
     '-v',
     'ON_ERROR_STOP=1',
     '-U',
@@ -38,57 +40,6 @@ function applyMigration(migration: string) {
     `/migrations/${migration}`,
   ]);
 }
-
-async function verifyFoundationMigration(migration: string) {
-  run('docker', [...compose, 'up', '-d', '--wait', 'gateway']);
-  const seed = await seedPublicData();
-  try {
-    verifyPublicSchemaGuards();
-    const before = publicState();
-    const owners = before.tables.filter((table) => table.name !== 'published_fundamentals_catalogs');
-    assert.equal(owners.length, 12);
-    assert.ok(
-      owners.every((table) => table.rows > 0),
-      'Populate all existing owner tables before migration',
-    );
-    applyMigration(migration);
-    const after = publicState();
-    assert.deepEqual(after, before, 'The private foundation changed existing public schema or data');
-    writeFileSync(
-      `${artifacts}/foundation-boundary.json`,
-      JSON.stringify(
-        {
-          status: 'passed',
-          migration,
-          observedAt: new Date().toISOString(),
-          populatedOwnerTables: owners.length,
-          before,
-          after,
-        },
-        null,
-        2,
-      ),
-    );
-  } finally {
-    await seed.cleanup();
-    writeFileSync(
-      `${artifacts}/foundation-seed-cleanup.json`,
-      JSON.stringify(
-        {
-          status: 'passed',
-          observedAt: new Date().toISOString(),
-          syntheticUserId: seed.userId,
-          authRemaining: 0,
-          ownerRowsRemaining: 0,
-          confirmation: 'Admin DELETE/GET404 and all 12 table checks',
-        },
-        null,
-        2,
-      ),
-    );
-  }
-}
-
 async function applyMigrations() {
   const names = readdirSync('supabase/migrations').filter((name) => /^\d{12}_[a-z_]+\.sql$/.test(name));
   for (const name of dataMigrations) {
@@ -101,13 +52,22 @@ async function applyMigrations() {
     throw new Error('Migration inventory differs from the declared application order');
   const migrations = [...dataMigrations];
   for (const migration of migrations) {
-    if (migration === '202611210004_learning_account_foundation.sql')
-      await verifyFoundationMigration(migration);
+    if (migration === '202611210004_learning_account_foundation.sql') {
+      run('docker', [...compose, 'up', '-d', '--wait', 'gateway']);
+      await verifyFoundationBoundary(applyMigration, migration);
+    } else if (
+      [
+        ownerShadowMigration,
+        contextHelpersMigration,
+        sessionGrantsMigration,
+        '202611220004_learning_account_creation.sql',
+      ].includes(migration)
+    )
+      continue;
     else applyMigration(migration);
   }
   console.log(`Applied ${migrations.length} migrations to the dedicated account-merge database`);
 }
-
 const selection = sdkSelection(process.argv.slice(2));
 prepareFixtures();
 const verifyInputsUnchanged = captureNativeInputs(selection);
@@ -121,17 +81,26 @@ try {
     '--config=playwright.account-merge.config.ts',
     ...selection.scopeArgs,
   ]);
-  verifyScopeComponents();
+  if (process.env.KAQ_ACCOUNT_POSTGRES_IMAGE?.startsWith('postgres:17'))
+    await verifyOwnerShadowProductionOps();
+  await verifyOwnerShadowMigration(() => applyMigration(ownerShadowMigration));
+  applyMigration(contextHelpersMigration);
+  applyMigration(sessionGrantsMigration);
+  applyMigration('202611220004_learning_account_creation.sql');
+  verifyScopeComponents('session', true);
   installSdkMetadata();
   installProofComponents();
+  installAccountCreationFixture();
   try {
+    run('bunx', ['playwright', 'test', accountGrantsConfig]);
+    run('bunx', ['playwright', 'test', '--config=playwright.account-creation.config.ts']);
     runSdk(selection.sdkArgs);
   } finally {
+    removeAccountCreationFixture();
     removeProofWrapper();
   }
   await verifySnapshotComponent();
-  // 追加部品をすべて作成した後に、private関数全体の権限漏れを照合する。
-  verifyScopeComponents('acl');
+  verifyScopeComponents('acl', true);
 } finally {
   const logs = spawnSync('docker', [...compose, 'logs', '--no-color'], {
     encoding: 'utf8',
@@ -139,10 +108,5 @@ try {
   writeFileSync(`${artifacts}/services.log`, `${logs.stdout ?? ''}${logs.stderr ?? ''}`);
   run('docker', [...compose, 'down', '--volumes']);
 }
-await verifyLockingHarness();
-await verifyIntentHarness();
-await verifyRuntimeHarness();
-await verifyLegHarness();
-await verifyCleanupHarness();
-await verifyExchangeHarness();
+await verifyAccountMergeHarnesses();
 verifyInputsUnchanged();

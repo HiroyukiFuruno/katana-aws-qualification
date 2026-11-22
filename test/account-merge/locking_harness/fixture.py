@@ -11,6 +11,7 @@ from .support import require
 DATABASE_NAME = 'kaq-locking-scope-probe-db'
 AUTH_NAME = 'kaq-locking-scope-probe-auth'
 FIXTURE_SECRET = 'kaq-account-merge-only-jwt-secret-not-for-production'
+MIGRATION = re.compile(r"^\s*'(\d{12}_[a-z_]+\.sql)',?\s*$")
 
 
 def quote(value):
@@ -66,6 +67,22 @@ def start(docker, database_name=DATABASE_NAME, auth_name=AUTH_NAME):
     return database
 
 
+def migration_inventory(root):
+    registry = root / 'scripts/data-migrations.ts'
+    names = [match.group(1) for line in registry.read_text().splitlines() if (match := MIGRATION.match(line))]
+    require(names, 'Migration registry is empty')
+    require(len(names) == len(set(names)), 'Migration registry contains duplicate entries')
+    require(names == sorted(names), 'Migration registry is not in lexical order')
+    actual = sorted(path.name for path in (root / 'supabase/migrations').glob('*.sql'))
+    require(actual == names, f'Migration registry and SQL inventory differ: {names!r} != {actual!r}')
+    by_day = {}
+    for name in names:
+        by_day.setdefault(name[:8], []).append(int(name[8:12]))
+    for day, numbers in by_day.items():
+        require(numbers == list(range(1, len(numbers) + 1)), f'Migration registry has a gap on {day}')
+    return [root / 'supabase/migrations' / name for name in names]
+
+
 def prepare(database, docker, sql, root, auth_name=AUTH_NAME):
     sql((root / 'test/account-merge/init.sql').read_text())
     env = {'GOTRUE_API_HOST': '0.0.0.0', 'GOTRUE_API_PORT': '9999', 'API_EXTERNAL_URL': 'http://127.0.0.1:9999',
@@ -85,12 +102,23 @@ def prepare(database, docker, sql, root, auth_name=AUTH_NAME):
             return True
         return False
     docker.wait_ready(ready, 'GoTrue health')
-    migrations = sorted((root / 'supabase/migrations').glob('*.sql'))
-    require(len(migrations) == 14, f'Expected 14 migrations, found {len(migrations)}')
+    migrations = migration_inventory(root)
     for migration in migrations:
         sql(migration.read_text())
-    for name in ['session-resolver.sql', 'owner-scope.sql', 'locking-scope.sql']:
-        sql((root / 'supabase/account-merge' / name).read_text())
+    context_helpers = '202611220002_learning_context_helpers.sql'
+    if context_helpers in [migration.name for migration in migrations]:
+        signatures = sql("""select count(*) from (values
+          (to_regprocedure('kaq_private.assert_live_session(uuid,uuid,boolean)')),
+          (to_regprocedure('kaq_private.read_actor_session()')),
+          (to_regprocedure('kaq_private.read_learning_account()')),
+          (to_regprocedure('kaq_private.read_account_bootstrap()')),
+          (to_regprocedure('kaq_private.lock_request_context()')),
+          (to_regprocedure('kaq_private.lock_learning_scope(text,bigint,uuid[],uuid[])'))
+        ) as helpers(procedure) where procedure is not null;""")
+        require(signatures == '6', 'Context helper migration did not install all six exact signatures')
+    else:
+        for name in ['session-resolver.sql', 'owner-scope.sql', 'locking-scope.sql']:
+            sql((root / 'supabase/account-merge' / name).read_text())
     return auth, health
 
 

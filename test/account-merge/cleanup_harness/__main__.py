@@ -1,7 +1,7 @@
 import argparse, hashlib, json, os, subprocess
 from pathlib import Path
 from locking_harness.connections import Connections
-from locking_harness.fixture import apply_private_inputs, prepare, quote, start
+from locking_harness.fixture import apply_private_inputs, migration_inventory, prepare, quote, start
 from locking_harness.support import Docker, utc_now, write_json
 from .support import has_deadlock, sdk_receipt
 
@@ -56,7 +56,7 @@ def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--repo-root',required=True); parser.add_argument('--artifact-dir',required=True); args=parser.parse_args()
     root=Path(args.repo_root).resolve(); artifacts=Path(args.artifact_dir).resolve(); artifacts.mkdir(parents=True,exist_ok=True); preserve_previous(artifacts)
     docker=Docker(); connections=None; receipt={'status':'running','observedAt':utc_now(),'realWebCrypto':True,'memoryRepositoryUsed':False}; failure=None
-    paths=[*sorted((root/'supabase/migrations').glob('*.sql')),*(root/'supabase/account-merge'/name for name in ['session-resolver.sql','owner-scope.sql','locking-scope.sql','runtime-schema.sql','runtime-storage.sql','runtime-cleanup.sql']),*sorted((root/'supabase/functions/account-linking/runtime').glob('*.ts')),root/'scripts/account-linking-runtime-fixture.ts',root/'scripts/account-linking-runtime.cleanup-revision.test.ts',root/'scripts/run-account-merge-integration.ts',root/'test/account-merge/runtime-cleanup.sql',root/'test/account-merge/cleanup-harness.ts',*(root/'test/account-merge/locking_harness'/name for name in ['fixture.py','connections.py','support.py']),*(path for path in sorted((root/'test/account-merge/cleanup_harness').glob('*')) if path.is_file())]
+    paths=[*migration_inventory(root),*(root/'supabase/account-merge'/name for name in ['session-resolver.sql','owner-scope.sql','locking-scope.sql','runtime-schema.sql','runtime-storage.sql','runtime-cleanup.sql']),*sorted((root/'supabase/functions/account-linking/runtime').glob('*.ts')),root/'scripts/account-linking-runtime-fixture.ts',root/'scripts/account-linking-runtime.cleanup-revision.test.ts',root/'scripts/run-account-merge-integration.ts',root/'test/account-merge/runtime-cleanup.sql',root/'test/account-merge/cleanup-harness.ts',*(root/'test/account-merge/locking_harness'/name for name in ['fixture.py','connections.py','support.py']),*(path for path in sorted((root/'test/account-merge/cleanup_harness').glob('*')) if path.is_file())]
     receipt['sourceSha256']={str(path.relative_to(root)):hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
     try:
         database=start(docker,DB_NAME,AUTH_NAME); connections=Connections(database,docker,quote,lambda *_:'')

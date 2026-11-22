@@ -10,4 +10,22 @@ revoke all on function public.fixture_accept_account_proof(uuid,uuid,bytea,bigin
   from public, anon, authenticated, service_role;
 grant execute on function public.fixture_accept_account_proof(uuid,uuid,bytea,bigint)
   to authenticated;
+
+create function public.fixture_issue_learning_session_grant(
+  p_reason text, p_proof_id uuid default null, p_receipt_id uuid default null
+) returns jsonb language sql security definer set search_path = '' as $$
+  select kaq_private.issue_learning_session_grant(p_reason, p_proof_id, p_receipt_id)
+$$;
+revoke all on function public.fixture_issue_learning_session_grant(text,uuid,uuid)
+  from public, anon, authenticated, service_role;
+grant execute on function public.fixture_issue_learning_session_grant(text,uuid,uuid)
+  to authenticated;
+
+create function public.fixture_resolve_current_learning_grant() returns jsonb
+language sql security definer set search_path = '' as $$
+  select kaq_private.resolve_current_learning_grant()
+$$;
+revoke all on function public.fixture_resolve_current_learning_grant()
+  from public, anon, authenticated, service_role;
+grant execute on function public.fixture_resolve_current_learning_grant() to authenticated;
 notify pgrst, 'reload schema';

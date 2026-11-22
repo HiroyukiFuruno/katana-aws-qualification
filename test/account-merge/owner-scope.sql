@@ -28,19 +28,31 @@ begin
 end $$;
 create function pg_temp.mutate_scope(
   label text, statement text, expected_state text default 'PT403', expected_message text default 'KAQ_SCOPE_INVALID',
-  accepted_uuid uuid default null, actor_only boolean default false
+  accepted_uuid uuid default null, actor_only boolean default false, expected_constraint text default null
 ) returns void language plpgsql as $$
-declare resolved uuid;
+declare resolved uuid; actual_state text; actual_constraint text; constraint_rejected boolean := false;
 begin
   -- 各caseのAuth/private表/GUC変更をrollbackし、読み取りresolverがgrantを更新しないことも最後に照合する。
   begin
-    execute statement;
-    if expected_state = '00000' then
-      if actor_only then resolved := (kaq_private.read_actor_session()).id;
-      else resolved := kaq_private.read_learning_account(); end if;
-      if resolved is distinct from accepted_uuid then raise exception 'Owner scope % returned %', label, resolved; end if;
-    else
-      perform pg_temp.reject_scope(label, expected_state, expected_message, actor_only);
+    begin
+      execute statement;
+    exception when foreign_key_violation then
+      get stacked diagnostics actual_state = returned_sqlstate, actual_constraint = constraint_name;
+      if expected_constraint is null or actual_state <> expected_state or actual_constraint <> expected_constraint then
+        raise exception 'Owner scope % expected %/constraint %, received %/%', label,
+          expected_state, expected_constraint, actual_state, actual_constraint;
+      end if;
+      constraint_rejected := true;
+    end;
+    if not constraint_rejected then
+      if expected_constraint is not null then raise exception 'Owner scope mutation accepted invalid input: %', label; end if;
+      if expected_state = '00000' then
+        if actor_only then resolved := (kaq_private.read_actor_session()).id;
+        else resolved := kaq_private.read_learning_account(); end if;
+        if resolved is distinct from accepted_uuid then raise exception 'Owner scope % returned %', label, resolved; end if;
+      else
+        perform pg_temp.reject_scope(label, expected_state, expected_message, actor_only);
+      end if;
     end if;
     raise sqlstate 'ZX001';
   exception when sqlstate 'ZX001' then null;
@@ -54,8 +66,11 @@ declare
   third_account uuid := gen_random_uuid(); client_id uuid := gen_random_uuid(); factor_id uuid := gen_random_uuid();
   claims jsonb; headers jsonb; case_record record; relation_record record; contents_after jsonb;
   session_update text; user_update text; grant_update text; account_update text; membership_update text;
-  first_created timestamptz; fence_statement text;
+  first_created timestamptz; fence_statement text; has_grant_member_account_fk boolean;
 begin
+  select exists(select 1 from pg_constraint
+    where conrelid = 'kaq_private.learning_session_grants'::regclass
+      and conname = 'learning_session_grants_member_account_fkey' and contype = 'f') into has_grant_member_account_fk;
   perform pg_temp.check_scope('real_distinct_oauth_sessions', first_uid <> second_uid and first_session <> second_session and (
     select count(*) = 2 from auth.sessions session join auth.mfa_amr_claims amr on amr.session_id = session.id
     where ((session.id = first_session and session.user_id = first_uid)
@@ -176,12 +191,21 @@ begin
      update auth.sessions set aal = ''aal1'' where id = %L', factor_id, first_uid, first_session), '00000', null, first_uid);
 
   for case_record in select * from (values
-    ('wrong_grant_user', format('auth_user_id = %L', second_uid)),
-    ('wrong_grant_account', format('account_id = %L', second_uid)),
     ('wrong_grant_epoch', 'membership_epoch = 1'), ('revoked_grant', 'revoked_at = statement_timestamp()')
   ) cases(label, patch) loop
     perform pg_temp.mutate_scope(case_record.label, format(grant_update, case_record.patch), 'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
   end loop;
+  if has_grant_member_account_fk then
+    perform pg_temp.mutate_scope('wrong_grant_user', format(grant_update, format('auth_user_id = %L', second_uid)),
+      '23503', null, expected_constraint => 'learning_session_grants_member_account_fkey');
+    perform pg_temp.mutate_scope('wrong_grant_account', format(grant_update, format('account_id = %L', second_uid)),
+      '23503', null, expected_constraint => 'learning_session_grants_member_account_fkey');
+  else
+    perform pg_temp.mutate_scope('wrong_grant_user', format(grant_update, format('auth_user_id = %L', second_uid)),
+      'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
+    perform pg_temp.mutate_scope('wrong_grant_account', format(grant_update, format('account_id = %L', second_uid)),
+      'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
+  end if;
   perform pg_temp.mutate_scope('missing_grant', format('delete from kaq_private.learning_session_grants where session_id = %L', first_session),
     'PT401', 'KAQ_REAUTHENTICATION_REQUIRED');
   perform pg_temp.mutate_scope('unassigned_onboarding', format('delete from kaq_private.learning_memberships where auth_user_id = %L', first_uid),
@@ -198,13 +222,17 @@ begin
   perform pg_temp.mutate_scope('unbound_changed_account', format(account_update, 'membership_revision = 1') ||
     '; select set_config(''request.headers'', ''{}'', true)');
   perform pg_temp.mutate_scope('unbound_shared_account', format(
-    'update kaq_private.learning_memberships set account_id = %L where auth_user_id = %L;
-     select set_config(''request.headers'', ''{}'', true)', first_uid, second_uid));
+    'delete from kaq_private.learning_session_grants where session_id = %L;
+     update kaq_private.learning_memberships set account_id = %L where auth_user_id = %L;
+     select set_config(''request.headers'', ''{}'', true)', second_session, first_uid, second_uid));
   perform pg_temp.mutate_scope('explicit_new_owner_scope', format(
     'insert into kaq_private.learning_accounts(id, membership_revision) values(%L, 1);
+     delete from kaq_private.learning_session_grants where session_id = %L;
      update kaq_private.learning_memberships set account_id = %L where auth_user_id = %L;
-     update kaq_private.learning_session_grants set account_id = %L, reason = ''reauthenticated'' where session_id = %L;
-     select set_config(''request.headers'', %L, true)', third_account, third_account, first_uid, third_account, first_session,
+     insert into kaq_private.learning_session_grants(session_id, auth_user_id, account_id, membership_epoch, reason)
+       values(%L, %L, %L, 0, ''reauthenticated'');
+     select set_config(''request.headers'', %L, true)', third_account, first_session, third_account, first_uid,
+    first_session, first_uid, third_account,
     jsonb_build_object('x-kaq-account-id', third_account::text, 'x-kaq-membership-epoch', '0')::text), '00000', null, third_account);
 
   fence_statement := format(account_update, format('session_fence_at = %L', first_created - interval '1 second'));

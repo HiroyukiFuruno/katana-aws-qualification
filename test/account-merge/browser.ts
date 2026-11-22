@@ -18,6 +18,12 @@ export async function verifiedSession() {
   return { accessToken: data.session.access_token, userId: verified.data.user.id };
 }
 
+export async function refreshVerifiedSession() {
+  const { error } = await client.refreshSession();
+  if (error) throw error;
+  return (await verifiedSession()).accessToken;
+}
+
 async function ready() {
   const status = document.querySelector('[role="status"]');
   if (!status) throw new Error('Missing smoke status');

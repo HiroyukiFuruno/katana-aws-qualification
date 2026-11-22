@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dataMigrations } from '../../scripts/data-migrations';
 import { artifacts } from './settings';
+
+// migration 17 binding と migration 18 creation receipt は rollback 後の全行不変を追加で守る。
+const expectedUnitChecks = dataMigrations.includes('202611220004_learning_account_creation.sql')
+  ? 110
+  : dataMigrations.includes('202611220003_learning_session_grants.sql')
+    ? 109
+    : 108;
 
 type Result = {
   status: string;
@@ -76,7 +84,7 @@ export async function verifyLockingHarness() {
   assert(isResult(actual), 'locking harness receipt has an invalid shape');
   const receipt = actual;
   assert.equal(receipt.status, 'passed');
-  assert.equal(receipt.unitChecks, 108);
+  assert.equal(receipt.unitChecks, expectedUnitChecks);
   assert.equal(receipt.scenarioCount, 12);
   assert.equal(receipt.deadlockErrors, 0);
   assert.equal(receipt.unintendedWrites, 0);

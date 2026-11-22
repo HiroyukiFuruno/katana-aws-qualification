@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from locking_harness.connections import Connections
-from locking_harness.fixture import additional_password_session, apply_private_inputs, context_sql, create_users, prepare, quote, start
+from locking_harness.fixture import additional_password_session, apply_private_inputs, context_sql, create_users, migration_inventory, prepare, quote, start
 from locking_harness.support import Docker, utc_now, write_json
 from intent_harness.redaction import contains_secret, discover_secrets, redact
 from .scenarios import run
@@ -54,7 +54,7 @@ def main():
     parser = argparse.ArgumentParser(); parser.add_argument('--repo-root', required=True); parser.add_argument('--artifact-dir', required=True)
     args = parser.parse_args(); root = Path(args.repo_root).resolve(); artifacts = Path(args.artifact_dir).resolve(); artifacts.mkdir(parents=True, exist_ok=True)
     docker, connections, failure, secrets = Docker(), None, None, set()
-    paths = [*sorted((root / 'supabase/migrations').glob('*.sql')),
+    paths = [*migration_inventory(root),
              *(root / 'supabase/account-merge' / name for name in ['session-resolver.sql', 'owner-scope.sql', 'locking-scope.sql', 'intent-control-schema.sql', 'intent-control.sql', 'runtime-schema.sql', 'runtime-storage.sql', 'leg-schema.sql', 'leg-control.sql']),
              root / 'test/account-merge/leg-control.sql', *sorted((root / 'test/account-merge/leg_harness').glob('*.py')),
              root / 'test/account-merge/leg-harness.ts', root / 'scripts/run-account-merge-integration.ts',

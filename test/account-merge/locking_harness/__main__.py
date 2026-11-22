@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from .connections import Connections
-from .fixture import AUTH_NAME, DATABASE_NAME, context_sql, create_users, lock_sql, prepare, quote, start
+from .fixture import AUTH_NAME, DATABASE_NAME, context_sql, create_users, lock_sql, migration_inventory, prepare, quote, start
 from .refresh_case import refresh_conflict_case
 from .scenarios import core_cases, expiry_cases
 from .scope_cases import candidate_cases, contract_cases
@@ -42,7 +42,12 @@ def main():
     artifacts.mkdir(parents=True, exist_ok=True)
     docker, connections = Docker(), None
     receipt = {'status': 'running', 'observedAt': utc_now(), 'fixture': {'database': DATABASE_NAME, 'auth': AUTH_NAME, 'portsPublished': False, 'tmpfs': True}, 'scenarios': {}}
-    inputs = [*sorted((root / 'supabase/migrations').glob('*.sql')),
+    migrations = migration_inventory(root)
+    has_committed_bindings = any(path.name == '202611220003_learning_session_grants.sql' for path in migrations)
+    has_creation_receipts = any(path.name == '202611220004_learning_account_creation.sql' for path in migrations)
+    # migration 17 binding と migration 18 receipt は rollback 後の全行不変を各1件追加する。
+    expected_unit_checks = 110 if has_creation_receipts else (109 if has_committed_bindings else 108)
+    inputs = [*migrations,
         *(root / 'supabase/account-merge' / name for name in ['session-resolver.sql', 'owner-scope.sql', 'locking-scope.sql']),
         root / 'test/account-merge/locking-scope.sql']
     source_hashes = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in inputs}
@@ -61,14 +66,19 @@ def main():
         unit = (root / 'test/account-merge/locking-scope.sql').read_text()
         for index, name in enumerate(['FIRST', 'SECOND', 'THIRD']): unit = unit.replace('__' + name + '_USER__', users[index]['userId']).replace('__' + name + '_SESSION__', users[index]['sessionId'])
         before = json.loads(sql('select locking_scope_probe.snapshot();')); output = sql(unit); result = json.loads(next(line for line in output.splitlines() if line.startswith('{')))
-        if result.get('status') != 'passed' or len(result.get('checks', [])) != 108 or json.loads(sql('select locking_scope_probe.snapshot();')) != before: raise RuntimeError('108 locking SQL checks failed or changed fixture state')
+        checks = result.get('checks', [])
+        binding_protected = not has_committed_bindings or 'unchanged_kaq_private_account_committed_proof_bindings' in checks
+        receipt_protected = not has_creation_receipts or 'unchanged_kaq_private_learning_account_creation_receipts' in checks
+        state_unchanged = json.loads(sql('select locking_scope_probe.snapshot();')) == before
+        if result.get('status') != 'passed' or len(checks) != expected_unit_checks or not binding_protected or not receipt_protected or not state_unchanged:
+            raise RuntimeError(f'{expected_unit_checks} locking SQL checks, protected rollback rows, or fixture state verification failed')
         for actor in users[:2]: sql(f"insert into kaq_private.learning_accounts(id) values({quote(actor['userId'])}); insert into kaq_private.learning_memberships(auth_user_id,account_id) values({quote(actor['userId'])},{quote(actor['userId'])}); insert into public.learning_state(user_id) values({quote(actor['userId'])}); insert into kaq_private.learning_session_grants(session_id,auth_user_id,account_id,membership_epoch,reason) values({quote(actor['sessionId'])},{quote(actor['userId'])},{quote(actor['userId'])},0,'legacy');")
         baseline = json.loads(sql('select locking_scope_probe.snapshot();'))
         env = {'connections': connections, 'sql': sql, 'snapshot': lambda: json.loads(sql('select locking_scope_probe.snapshot();')), 'quote': quote, 'users': users, 'baseline': baseline, 'context': context_sql, 'lock': lambda actor, mode='writer': lock_sql(users, actor, mode), 'docker': docker, 'auth': auth, 'artifacts': artifacts}
         for group in [core_cases, expiry_cases, candidate_cases, contract_cases]: receipt['scenarios'].update(group(env))
         receipt['scenarios']['gotrue_refresh_session_conflict'] = refresh_conflict_case(env)
         if any('40P01' in line for item in connections.items for line in item.lines) or sql('select count(*) from locking_scope_probe.writes') != '0': raise RuntimeError('Deadlock or unintended write observed')
-        receipt.update(status='passed', unitChecks=108, scenarioCount=len(receipt['scenarios']), deadlockErrors=0, unintendedWrites=0, baselineSnapshot=baseline, finalSnapshot=env['snapshot']())
+        receipt.update(status='passed', unitChecks=expected_unit_checks, scenarioCount=len(receipt['scenarios']), deadlockErrors=0, unintendedWrites=0, baselineSnapshot=baseline, finalSnapshot=env['snapshot']())
         if receipt['scenarioCount'] != 12: raise RuntimeError('Expected 12 concurrency scenarios')
         if any(hashlib.sha256((root / name).read_bytes()).hexdigest() != expected for name, expected in source_hashes.items()):
             raise RuntimeError('Locking harness source changed during verification')

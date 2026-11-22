@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from locking_harness.connections import Connections
-from locking_harness.fixture import additional_password_session, apply_private_inputs, context_sql, create_users, prepare, quote, start
+from locking_harness.fixture import additional_password_session, apply_private_inputs, context_sql, create_users, migration_inventory, prepare, quote, start
 from locking_harness.support import Docker, utc_now, write_json
 
 from .controls import install
@@ -57,7 +57,7 @@ def main():
     args = arguments(); root, artifacts = Path(args.repo_root).resolve(), Path(args.artifact_dir).resolve(); artifacts.mkdir(parents=True, exist_ok=True)
     docker, connections, failure = Docker(), None, None
     secrets = set(); receipt = {'status': 'running', 'observedAt': utc_now(), 'scenarios': {}, 'shortJwtCasesExecuted': False}
-    source_paths = [*sorted((root / 'supabase/migrations').glob('*.sql')),
+    source_paths = [*migration_inventory(root),
         *(root / 'supabase/account-merge' / name for name in ['session-resolver.sql', 'owner-scope.sql', 'locking-scope.sql', 'intent-control-schema.sql', 'intent-control.sql']),
         root / 'test/account-merge/intent-control.sql', *sorted((root / 'test/account-merge/intent_harness').glob('*.py')),
         *(root / 'test/account-merge/locking_harness' / name for name in ['fixture.py', 'connections.py', 'support.py'])]

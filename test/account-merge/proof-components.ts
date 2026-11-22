@@ -4,7 +4,7 @@ import { sql } from './commands';
 import { fixedProofInputs } from './proof-inputs';
 import { artifacts, gatewayOrigin } from './settings';
 
-const components = ['proof-schema.sql', 'proof-accept.sql'] as const;
+const components = ['proof-schema.sql', 'proof-accept.sql', 'intent-scope.sql'] as const;
 let installed = false;
 
 export function installProofComponents() {
@@ -18,6 +18,16 @@ export function installProofComponents() {
     assert.equal(
       sql(`select has_function_privilege('${role}',
         'public.fixture_accept_account_proof(uuid,uuid,bytea,bigint)','EXECUTE')`),
+      role === 'authenticated' ? 't' : 'f',
+    );
+    assert.equal(
+      sql(`select has_function_privilege('${role}',
+        'public.fixture_lock_account_intent_scope(uuid,text,bigint)','EXECUTE')`),
+      role === 'authenticated' ? 't' : 'f',
+    );
+    assert.equal(
+      sql(`select has_function_privilege('${role}',
+        'public.fixture_read_account_intent(uuid,text)','EXECUTE')`),
       role === 'authenticated' ? 't' : 'f',
     );
     assert.equal(
@@ -65,7 +75,9 @@ export function installProofComponents() {
 
 export function removeProofWrapper() {
   if (!installed) return;
-  sql(`drop function public.fixture_accept_account_proof(uuid,uuid,bytea,bigint);
+  sql(`drop function public.fixture_read_account_intent(uuid,text);
+    drop function public.fixture_lock_account_intent_scope(uuid,text,bigint);
+    drop function public.fixture_accept_account_proof(uuid,uuid,bytea,bigint);
     drop function public.fixture_issue_learning_session_grant(text,uuid,uuid);
     drop function public.fixture_resolve_current_learning_grant()`);
   assert.equal(

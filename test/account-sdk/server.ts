@@ -103,6 +103,7 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
             main.userId,
             operation.sourceScope,
             options.targetSameOwner === true,
+            options.targetExisting === true,
           );
           mark('membership');
           if (options.beforeProofAccept) await options.beforeProofAccept(port);
@@ -141,8 +142,7 @@ export async function startSdkAdapter(options: AdapterOptions = {}) {
     verifyPostAcceptance: () => control.verifyPostAcceptance(),
     verifyAuthorizationFailure: () => control.verifyAuthorizationFailure(),
     assertNoCodeExchange: () => control.assertNoCodeExchange(),
-    assertAuthorizationFailurePrivacy: (values: string[]) =>
-      control.assertAuthorizationFailurePrivacy(values),
+    assertAuthorizationFailurePrivacy: control.assertAuthorizationFailurePrivacy.bind(control),
     intent: () => sourceIntent(operations),
     assertNoBrowserLeak: (values: string[], count: 1 | 2 = 2) =>
       control.assertNoBrowserLeak(values, count),

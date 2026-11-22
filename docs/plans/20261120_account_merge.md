@@ -1,5 +1,7 @@
 # #58 アカウントの分離防止と安全な統合
 
+> 2026-11-22: 本書の独自統合・分離予防・履歴マージの計画は劣後する。今回の実行範囲は [As-Is / To-Be](20261122_account_flow_asis_tobe.md) と更新後の Issue #58 に従う。以下は検討経緯として残し、未完了の作業を現在の必須条件として実装しない。
+
 Issue: https://github.com/HiroyukiFuruno/katana-aws-qualification/issues/58
 
 親Issue: #17

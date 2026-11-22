@@ -3,6 +3,14 @@ begin;
 set local timezone = 'UTC';
 create temporary table deleted_auth_preimage on commit drop as
   select * from auth.users where id = %ACCOUNT%;
+create function pg_temp.restore_deleted_auth_preimage() returns void language plpgsql as $$
+declare v_columns text;
+begin
+  select string_agg(quote_ident(attname),',' order by attnum) into v_columns
+    from pg_attribute where attrelid='auth.users'::regclass and attnum>0 and not attisdropped
+      and attgenerated='' and attidentity='';
+  execute format('insert into auth.users (%1$s) select %1$s from deleted_auth_preimage',v_columns);
+end $$;
 delete from kaq_private.learning_session_grants where auth_user_id in (%ACCOUNT%,%ANCHOR%);
 delete from kaq_private.account_committed_proof_bindings where auth_user_id in (%ACCOUNT%,%ANCHOR%);
 delete from kaq_private.learning_memberships where auth_user_id in (%ACCOUNT%,%ANCHOR%);
@@ -12,7 +20,7 @@ insert into kaq_private.learning_memberships(auth_user_id,account_id,status,sess
 values (%ACCOUNT%,%ACCOUNT%,'disabled','2099-01-01T00:00:00Z'),
   (%ANCHOR%,%ACCOUNT%,'disabled','2099-01-01T00:00:00Z');
 do $fixture$
-declare job uuid; receipt uuid; lease uuid; target uuid; anchor_target boolean; restore_columns text;
+declare job uuid; receipt uuid; lease uuid; target uuid; anchor_target boolean;
 begin
   insert into kaq_private.account_delete_jobs(authority_state,authority_approved_at,
     scope_account_id,scope_fence_at,scope_commitment,content_erased_at,content_commitment,
@@ -42,6 +50,18 @@ begin
   if target is distinct from %ACCOUNT%::uuid then raise exception 'recovery target missing'; end if;
   if not kaq_private.confirm_account_delete_target_absent(lease,target)
     then raise exception 'absent recovered target not confirmed'; end if;
+  perform pg_temp.restore_deleted_auth_preimage();
+  if exists(select 1 from kaq_private.next_account_delete_target(lease))
+    then raise exception 'recreated confirmed UID allowed another target'; end if;
+  if not exists(select 1 from auth.users where id=%ANCHOR%)
+    then raise exception 'anchor disappeared after invalid scope'; end if;
+  if not exists(select 1 from kaq_private.account_delete_jobs where id=job
+      and state='retryable_failure' and last_failure='scope_invalid' and lease_id is null)
+    then raise exception 'invalid recreated UID scope did not defer'; end if;
+  delete from auth.users where id=%ACCOUNT%;
+  update kaq_private.account_delete_jobs set next_attempt_at=clock_timestamp()-interval '1 second' where id=job;
+  select lease_id into lease from kaq_private.claim_account_delete_job();
+  if lease is null then raise exception 'recreated UID cleanup did not recover'; end if;
   perform kaq_private.defer_account_delete_job(lease,'auth_unavailable');
   if exists(select 1 from kaq_private.claim_account_delete_job())
     then raise exception 'retry ignored backoff'; end if;
@@ -54,10 +74,7 @@ begin
   if not kaq_private.confirm_account_delete_target_absent(lease,target)
     then raise exception 'anchor absence not confirmed'; end if;
   -- 全targetを404相当として確認した後にUIDを再作成し、未処理anchorによる偽陰性を避ける。
-  select string_agg(quote_ident(attname),',' order by attnum) into restore_columns
-    from pg_attribute where attrelid='auth.users'::regclass and attnum>0 and not attisdropped
-      and attgenerated='' and attidentity='';
-  execute format('insert into auth.users (%1$s) select %1$s from deleted_auth_preimage',restore_columns);
+  perform pg_temp.restore_deleted_auth_preimage();
   if kaq_private.complete_account_delete_job(lease)
     then raise exception 'recreated Auth UID allowed completion'; end if;
   delete from auth.users where id=%ACCOUNT%;

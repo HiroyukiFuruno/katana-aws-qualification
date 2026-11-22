@@ -114,18 +114,15 @@ test.describe('private public-scope proposal with real OAuth and PostgREST', () 
       ok: true,
       value: { outer: { state_mode: 'reset' }, inner: { state_mode: 'reset' } },
     });
-    expect(
-      await scopeRpc(
-        first,
-        'nested_public_learning_scope',
-        {
-          p_outer: 'writer',
-          p_inner: 'reset',
-          p_generation: 0,
-        },
-        headers,
-      ),
-    ).toMatchObject({ ok: false, status: 409 });
+    for (const p_outer of ['writer', 'writer_missing_mode', 'writer_null_mode'])
+      expect(
+        await scopeRpc(
+          first,
+          'nested_public_learning_scope',
+          { p_outer, p_inner: 'reset', p_generation: 0 },
+          headers,
+        ),
+      ).toMatchObject({ ok: false, status: 409 });
     expect(await scopeRpc(first, 'public_learning_scope_cache_probe', {}, headers)).toMatchObject({
       ok: true,
       value: false,

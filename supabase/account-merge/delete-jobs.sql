@@ -54,6 +54,10 @@ begin
   select * into job from kaq_private.account_delete_jobs where id = p_job_id;
   if not found or job.authority_state <> 'approved' or job.content_erased_at is null
     or job.scope_commitment is null or job.content_commitment is null then return false; end if;
+  -- 確認済みUIDの再作成を無視して残りのAuthを削除しない。
+  if exists(select 1 from kaq_private.account_delete_job_targets target
+    join auth.users auth_user on auth_user.id=target.auth_uid
+    where target.job_id=job.id and target.absent_at is not null) then return false; end if;
   if not exists(select 1 from kaq_private.learning_accounts account where account.id = job.scope_account_id
     and account.status = 'deleting' and account.session_fence_at is not distinct from job.scope_fence_at) then return false; end if;
   if (select count(*) from kaq_private.account_delete_job_targets where job_id = job.id) <> job.target_count

@@ -27,8 +27,8 @@ begin
       raise exception using errcode = 'PT409', message = 'KAQ_SCOPE_CACHE_INVALID';
     end if;
     scope := cached->'scope';
-    if scope->>'state_mode' is distinct from p_state_mode
-      and not (scope->>'state_mode' = 'reset' and p_state_mode = 'writer') then
+    if scope->>'state_mode' is null or (scope->>'state_mode' is distinct from p_state_mode
+      and not (scope->>'state_mode' = 'reset' and p_state_mode = 'writer')) then
       raise exception using errcode = 'PT409', message = 'KAQ_SCOPE_MODE_UPGRADE';
     end if;
     current_grant := kaq_private.resolve_current_learning_grant();

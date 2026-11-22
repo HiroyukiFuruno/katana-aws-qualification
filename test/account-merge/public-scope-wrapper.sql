@@ -16,7 +16,16 @@ end $$;
 create function public.fixture_nested_public_learning_scope(
   p_outer text, p_inner text, p_generation bigint
 ) returns jsonb language plpgsql security definer set search_path = pg_catalog, kaq_private as $$
+declare cached jsonb;
 begin
+  if p_outer in ('writer_missing_mode','writer_null_mode') then
+    perform kaq_private.open_public_learning_scope('writer',p_generation);
+    cached := current_setting('kaq.public_learning_scope')::jsonb;
+    cached := case when p_outer='writer_missing_mode' then cached#-'{scope,state_mode}'
+      else jsonb_set(cached,'{scope,state_mode}','null'::jsonb) end;
+    perform set_config('kaq.public_learning_scope',cached::text,true);
+    return kaq_private.open_public_learning_scope(p_inner,p_generation);
+  end if;
   return jsonb_build_object('outer',kaq_private.open_public_learning_scope(p_outer,p_generation),
     'inner',kaq_private.open_public_learning_scope(p_inner,p_generation));
 end $$;

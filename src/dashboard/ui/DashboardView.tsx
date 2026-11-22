@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { localePath } from '../../locales';
+import { PageIntro } from '../../PageIntro';
 import { usePreferences } from '../../preferences';
 import type { DashboardViewProps } from '../viewTypes';
 import { DashboardDensityContext } from '../visual/DashboardDensity';
@@ -28,17 +29,19 @@ export function DashboardView(props: DashboardViewProps) {
   const allowed = props.owner === 'member' || props.consented;
   return (
     <main id="main" className="shell dashboard-page">
-      <header className="dashboard-heading">
-        <h1>{t('dashboardTitle')}</h1>
-        <div className="dashboard-identity-row">
-          <p className="dashboard-source">
-            {props.owner === 'member' ? t('progressAccountSource') : t('progressGuestSource')}
-          </p>
-          {props.owner === 'guest' && !props.consented && (
-            <a href={localePath(locale, 'login')}>{t('accountCreateCta')}</a>
-          )}
-        </div>
-      </header>
+      <PageIntro>
+        <header className="dashboard-heading">
+          <h1>{t('dashboardTitle')}</h1>
+          <div className="dashboard-identity-row">
+            <p className="dashboard-source">
+              {props.owner === 'member' ? t('progressAccountSource') : t('progressGuestSource')}
+            </p>
+            {props.owner === 'guest' && !props.consented && (
+              <a href={localePath(locale, 'login')}>{t('accountCreateCta')}</a>
+            )}
+          </div>
+        </header>
+      </PageIntro>
       {!props.consented && props.owner === 'guest' && (
         <section className="notice dashboard-consent">
           <p>{t('dashboardConsent')}</p>

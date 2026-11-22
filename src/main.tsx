@@ -67,6 +67,9 @@ function App() {
   const contentAds =
     section === '' ||
     section === 'glossary' ||
+    section === 'assessment' ||
+    route.page === 'dashboard' ||
+    route.page === 'account/settings' ||
     section === 'certifications' ||
     route.page === 'study' ||
     route.page === 'study/questions';

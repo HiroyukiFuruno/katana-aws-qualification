@@ -11,6 +11,7 @@ import {
 } from './assessmentOptionOrder';
 import type { AssessmentItem } from './assessmentTypes';
 import { AccountBenefits } from './auth/AccountBenefits';
+import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';
 import { RoadmapHeader } from './RoadmapHeader';
 import { RoadmapQuestion } from './RoadmapQuestion';
@@ -82,10 +83,12 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
 
   return (
     <main className="shell" id="main" aria-busy={saving}>
-      <RoadmapHeader
-        showEstimate={phase === 'setup' && !complete && items.length > 0}
-        estimate={estimate}
-      />
+      <PageIntro>
+        <RoadmapHeader
+          showEstimate={phase === 'setup' && !complete && items.length > 0}
+          estimate={estimate}
+        />
+      </PageIntro>
       {phase !== 'questions' && <AccountBenefits context="assessment" showAction />}
       {saveError && (
         <p className="notice" role="alert">

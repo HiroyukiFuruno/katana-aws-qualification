@@ -1,3 +1,4 @@
+import { PageIntro } from '../PageIntro';
 import { usePreferences } from '../preferences';
 import { useProgress } from '../progress/ProgressProvider';
 import type { ProgressStore } from '../progress/storeTypes';
@@ -15,7 +16,9 @@ export function DashboardPage() {
   const { t } = usePreferences();
   return progress.status !== 'ready' || !progress.store ? (
     <main id="main" className="shell account-page">
-      <h1>{t('accountDashboard')}</h1>
+      <PageIntro>
+        <h1>{t('accountDashboard')}</h1>
+      </PageIntro>
       <p role={progress.status === 'error' ? 'alert' : 'status'}>
         {t(progress.status === 'error' ? 'dashboardError' : 'accountLoading')}
       </p>

@@ -63,9 +63,8 @@ export function SiteAd({ placement }: { placement: Placement }) {
 
   if (!siteAdServingEnabled || consent.value !== 'granted' || dismissed) return null;
 
-  const targetViewport =
-    placement === 'inline' ? 'mobile' : placement === 'bottom' ? 'standard' : 'wide';
-  if (viewport !== targetViewport) return null;
+  const targetViewport = placement === 'bottom' ? 'standard' : 'wide';
+  if (placement !== 'inline' && viewport !== targetViewport) return null;
 
   return <AdSenseUnit placement={placement} onClose={() => setDismissed(true)} />;
 }

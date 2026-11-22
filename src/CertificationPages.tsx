@@ -3,8 +3,8 @@ import { officialGuideLink } from './certificationGuides';
 import { examPrices, pricingUrl } from './certificationPricing';
 import { certifications, levelMessage } from './certifications';
 import { localePath } from './locales';
+import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';
-import { SiteAd } from './SiteAd';
 import { useContent } from './useContent';
 
 export function CertificationPages({ id }: { id?: string }) {
@@ -16,8 +16,9 @@ export function CertificationPages({ id }: { id?: string }) {
   if (!certification || !guide) {
     return (
       <main id="main" className="shell study-directory">
-        <h1>{t('certGuides')}</h1>
-        <SiteAd placement="inline" />
+        <PageIntro>
+          <h1>{t('certGuides')}</h1>
+        </PageIntro>
         <CertificationDirectory mode="certifications" />
       </main>
     );
@@ -30,17 +31,18 @@ export function CertificationPages({ id }: { id?: string }) {
   );
   return (
     <main id="main" className="shell">
-      <div className="intro">
-        <p>
-          <a href={localePath(locale, 'certifications')}>{t('backCertGuides')}</a>
-        </p>
-        <p className="eyebrow">
-          {certification.id.toUpperCase()} · {t(levelMessage[certification.level])}
-          {certification.beta ? ` · ${t('beta')}` : ''}
-        </p>
-        <h1>{content.certifications[certification.id].name}</h1>
-      </div>
-      <SiteAd placement="inline" />
+      <PageIntro>
+        <div className="intro">
+          <p>
+            <a href={localePath(locale, 'certifications')}>{t('backCertGuides')}</a>
+          </p>
+          <p className="eyebrow">
+            {certification.id.toUpperCase()} · {t(levelMessage[certification.level])}
+            {certification.beta ? ` · ${t('beta')}` : ''}
+          </p>
+          <h1>{content.certifications[certification.id].name}</h1>
+        </div>
+      </PageIntro>
       <section className="card">
         <h2>{t('certFee')}</h2>
         <p>

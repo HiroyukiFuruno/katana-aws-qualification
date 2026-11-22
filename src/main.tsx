@@ -5,7 +5,7 @@ import { analyticsAllowedForPath } from './analyticsNavigation';
 import { AccountPages } from './auth/AccountPages';
 import { AccountPrivacy } from './auth/AccountPrivacy';
 import { AuthCallback } from './auth/AuthCallback';
-import { AuthProvider, useAccount } from './auth/AuthContext';
+import { useAccount } from './auth/AuthContext';
 import { dashboardPath } from './auth/navigation';
 import { CertificationPages } from './CertificationPages';
 import { CookieConsent, useCookieConsent } from './CookieConsent';
@@ -16,15 +16,17 @@ import { useLessonLocation } from './fundamentals/delivery/useLessonLocation';
 import { LessonExperience } from './fundamentals/learner/LessonExperience';
 import { GlossaryPage } from './GlossaryPage';
 import { localePath } from './locales';
-import { PreferencesProvider, usePreferences } from './preferences';
+import { usePreferences } from './preferences';
 import { GuestStorageSettings, ProgressGate } from './progress/ProgressGate';
-import { ProgressProvider } from './progress/ProgressProvider';
 import { Roadmap } from './Roadmap';
 import { accountPages, routeAt } from './routes';
 import { SiteAdLayout } from './SiteAd';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
 import { Home, NotFound, StudyDirectory, StudyPaths } from './SitePages';
+import { SiteProviders } from './SiteProviders';
+import { useSitePreferences } from './sitePreferences/context';
+import { SitePreferenceNotice } from './sitePreferences/Notice';
 import './style.css';
 
 function App() {
@@ -34,6 +36,7 @@ function App() {
   const route = routeAt(currentUrl.pathname);
   const lesson = lessonRouteAt(currentUrl.pathname, currentUrl.search);
   const { state } = useAccount();
+  const site = useSitePreferences();
   useEffect(() => {
     initializeAnalytics(analyticsAllowedForPath(currentUrl.pathname, consent.value === 'granted'));
   }, [currentUrl.pathname, consent]);
@@ -57,10 +60,10 @@ function App() {
     };
   }, [consent.value]);
   useEffect(() => {
-    if (route?.page === '' && state.status === 'ready' && state.account) {
-      location.replace(dashboardPath(locale));
+    if (route?.page === '' && state.status === 'ready' && state.account && !site.loading) {
+      location.replace(dashboardPath(site.values.locale ?? locale));
     }
-  }, [route, state, locale]);
+  }, [route, state, locale, site.loading, site.values.locale]);
   if (!route) return <NotFound />;
   const [section, courseId] = route.page.split('/');
   const selected = section === 'study' ? studyCourses.find((cert) => cert.id === courseId) : undefined;
@@ -68,6 +71,7 @@ function App() {
     return (
       <>
         {!lesson && <SiteHeader section={section} subpage={courseId} />}
+        {!lesson && <SitePreferenceNotice />}
         <SiteAdLayout show={!lesson}>
           <LessonExperience />
         </SiteAdLayout>
@@ -87,6 +91,7 @@ function App() {
   return (
     <>
       <SiteHeader section={section} subpage={courseId} />
+      <SitePreferenceNotice />
       <SiteAdLayout show={contentAds} viewKey={currentUrl.pathname}>
         {section === 'auth' ? (
           <AuthCallback />
@@ -133,11 +138,7 @@ function App() {
 const root = document.getElementById('root');
 if (!root) throw new Error('Application root missing');
 createRoot(root).render(
-  <PreferencesProvider>
-    <AuthProvider>
-      <ProgressProvider>
-        <App />
-      </ProgressProvider>
-    </AuthProvider>
-  </PreferencesProvider>,
+  <SiteProviders>
+    <App />
+  </SiteProviders>,
 );

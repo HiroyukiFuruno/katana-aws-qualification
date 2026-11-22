@@ -1,40 +1,32 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { type Locale, localeForPath, localePath, locales } from './locales';
 import { type Message, messages } from './messages';
 import { routeAt } from './routes';
-
-const localeKey = 'katana-site-locale';
-const themeKey = 'katana-site-theme';
-const darkPreference = '(prefers-color-scheme: dark)';
-
-function readPreference(key: string) {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writePreference(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    /* The current selection still applies. */
-  }
-}
+import { guestLocaleKey, writeGuestPreference } from './sitePreferences/browserStorage';
+import { useSitePreferences } from './sitePreferences/context';
+import type { SitePreferences } from './sitePreferences/repository';
+import { useSiteTheme } from './sitePreferences/useTheme';
 
 type Translation = (key: Message, values?: Record<string, string | number>) => string;
 const Preferences = createContext<{
   locale: Locale;
   t: Translation;
   changeLocale: (locale: Locale) => void;
+  theme: 'light' | 'dark';
+  themeChoice: SitePreferences['theme'];
+  changeTheme(theme: SitePreferences['theme']): void;
 }>({
   locale: 'en',
   t: (key) => messages.en[key],
   changeLocale() {},
+  theme: 'light',
+  themeChoice: null,
+  changeTheme() {},
 });
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
+  const site = useSitePreferences();
+  const theme = useSiteTheme();
   const [locale, setLocale] = useState(
     () => routeAt(location.pathname)?.locale ?? localeForPath(location.pathname),
   );
@@ -48,15 +40,35 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = locale;
   }, [locale]);
 
+  const navigateLocale = useCallback(
+    (next: Locale) => {
+      if (next === locale) return;
+      const path = localePath(next, routeAt(location.pathname)?.page);
+      const localizedPath = routeAt(path)
+        ? path + location.search + location.hash
+        : localePath(next, 'study/questions');
+      history.pushState(null, '', localizedPath);
+      setLocale(next);
+    },
+    [locale],
+  );
+
+  useEffect(() => {
+    const preferred = site.values.locale;
+    if (
+      site.kind === 'member' &&
+      !site.loading &&
+      preferred &&
+      routeAt(location.pathname)?.page === 'dashboard'
+    )
+      navigateLocale(preferred);
+  }, [site.kind, site.loading, site.values.locale, navigateLocale]);
+
   function changeLocale(next: Locale) {
-    if (next === locale) return;
-    const path = localePath(next, routeAt(location.pathname)?.page);
-    const localizedPath = routeAt(path)
-      ? path + location.search + location.hash
-      : localePath(next, 'study/questions');
-    history.pushState(null, '', localizedPath);
-    writePreference(localeKey, next);
-    setLocale(next);
+    if (site.disabled) return;
+    navigateLocale(next);
+    if (site.kind === 'member') site.save({ ...site.values, locale: next });
+    else if (site.kind === 'guest') writeGuestPreference(guestLocaleKey, next);
   }
 
   const t: Translation = (key, values = {}) => {
@@ -65,29 +77,16 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  return <Preferences.Provider value={{ locale, changeLocale, t }}>{children}</Preferences.Provider>;
+  return (
+    <Preferences.Provider value={{ locale, changeLocale, t, ...theme }}>{children}</Preferences.Provider>
+  );
 }
 
 export const usePreferences = () => useContext(Preferences);
 
 export function SiteControls() {
-  const { locale, changeLocale, t } = usePreferences();
-  const [theme, setTheme] = useState(() => {
-    const saved = readPreference(themeKey);
-    return saved === 'light' || saved === 'dark' ? saved : undefined;
-  });
-  const [systemDark, setSystemDark] = useState(() => matchMedia(darkPreference).matches);
-  const current = theme ?? (systemDark ? 'dark' : 'light');
-
-  useEffect(() => {
-    const media = matchMedia(darkPreference);
-    const update = (event: MediaQueryListEvent) => setSystemDark(event.matches);
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
-  useEffect(() => {
-    if (theme) document.documentElement.dataset.theme = theme;
-  }, [theme]);
+  const { locale, changeLocale, t, theme, changeTheme } = usePreferences();
+  const site = useSitePreferences();
 
   return (
     <div className="site-controls">
@@ -97,6 +96,7 @@ export function SiteControls() {
       <select
         id="site-locale"
         value={locale}
+        disabled={site.disabled}
         onChange={(event) => {
           const selected = locales.find((candidate) => candidate === event.currentTarget.value);
           if (selected) changeLocale(selected);
@@ -112,14 +112,12 @@ export function SiteControls() {
         type="button"
         aria-label={t('darkMode')}
         title={t('darkMode')}
-        aria-pressed={current === 'dark'}
-        onClick={() => {
-          const next = current === 'dark' ? 'light' : 'dark';
-          setTheme(next);
-          writePreference(themeKey, next);
-        }}
+        aria-pressed={theme === 'dark'}
+        disabled={site.disabled}
+        aria-busy={site.notice === 'saving'}
+        onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}
       >
-        {current === 'dark' ? '☾' : '☀'}
+        {theme === 'dark' ? '☾' : '☀'}
       </button>
     </div>
   );

@@ -3,7 +3,9 @@ import { randomUUID } from 'node:crypto';
 import { request, type AuthSession } from './rest-client';
 import {
   expectCode,
+  deleteMilestoneWithCas,
   expectInvalidDeleteRevision,
+  expectMissingDeleteBlocksCreate,
   milestone,
   rpc,
   save,
@@ -119,30 +121,20 @@ export async function verifyCertificationMilestoneWrites(first: AuthSession) {
   const loser = writes.find(({ response }) => !response.ok);
   assert(loser, 'Milestone CAS had no stale loser.');
   assert.equal((loser.value as { code?: string }).code, 'PT412');
+  await expectMissingDeleteBlocksCreate(first);
   for (const revision of [null, -1]) await expectInvalidDeleteRevision(first, revision);
+  await deleteMilestoneWithCas(first, studyId);
   await expectCode(
-    await request('/rpc/delete_certification_milestone', {
+    await request('/rpc/save_certification_milestone', {
       token: first.access_token,
       method: 'POST',
-      body: { p_id: studyId, p_expected_revision: 1, p_expected_generation: 0 },
+      body: study,
     }),
     'PT412',
-    'Stale milestone delete',
+    'Deleted create retry',
   );
-  assert.equal(
-    await rpc(first, 'delete_certification_milestone', {
-      p_id: studyId,
-      p_expected_revision: 2,
-      p_expected_generation: 0,
-    }),
-    true,
-  );
-  assert.equal(
-    await rpc(first, 'delete_certification_milestone', {
-      p_id: studyId,
-      p_expected_revision: 2,
-      p_expected_generation: 0,
-    }),
-    true,
-  );
+  const hidden = await request(`/certification_milestones?id=eq.${studyId}`, {
+    token: first.access_token,
+  });
+  assert.deepEqual(await hidden.json(), [], 'PostgREST exposed a deleted milestone marker.');
 }

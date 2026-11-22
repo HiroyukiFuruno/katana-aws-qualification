@@ -2,30 +2,35 @@
 create table public.certification_milestones (
   user_id uuid not null references auth.users(id) on delete cascade,
   id uuid not null,
-  certification_id text not null check (certification_id in (
-    'clf-c02', 'aif-c01', 'saa-c03', 'dva-c03', 'soa-c03', 'dea-c01', 'mla-c01',
-    'sap-c03', 'dop-c02', 'aip-c01', 'scs-c03', 'ans-c01', 'ai-business-strategist'
-  )),
-  kind text not null check (kind in ('target', 'study', 'mock_exam', 'exam')),
-  title text not null check (title = btrim(title) and char_length(title) between 1 and 120),
+  certification_id text,
+  kind text,
+  title text,
   planned_on date,
   planned_at timestamptz,
-  completed boolean not null,
+  completed boolean,
   revision bigint not null default 0 check (revision >= 0),
+  deleted_at timestamptz,
   primary key (user_id, id),
   check (
-    (kind = 'target' and planned_on is not null and planned_on between date '0001-01-01' and date '9999-12-31' and planned_at is null and not completed)
-    or (kind <> 'target' and ((planned_on is not null and planned_on between date '0001-01-01' and date '9999-12-31' and planned_at is null)
-      or (planned_on is null and planned_at is not null and planned_at >= timestamptz '0001-01-01 00:00:00+00'
-        and planned_at < timestamptz '10000-01-01 00:00:00+00')))
+    (deleted_at is null and certification_id is not null and kind is not null and title is not null and certification_id in (
+      'clf-c02', 'aif-c01', 'saa-c03', 'dva-c03', 'soa-c03', 'dea-c01', 'mla-c01',
+      'sap-c03', 'dop-c02', 'aip-c01', 'scs-c03', 'ans-c01', 'ai-business-strategist'
+    ) and kind in ('target', 'study', 'mock_exam', 'exam')
+      and title = btrim(title) and char_length(title) between 1 and 120 and completed is not null
+      and ((kind = 'target' and planned_on is not null and planned_on between date '0001-01-01' and date '9999-12-31' and planned_at is null and not completed)
+        or (kind <> 'target' and ((planned_on is not null and planned_on between date '0001-01-01' and date '9999-12-31' and planned_at is null)
+          or (planned_on is null and planned_at is not null and planned_at >= timestamptz '0001-01-01 00:00:00+00'
+            and planned_at < timestamptz '10000-01-01 00:00:00+00')))))
+    or (deleted_at is not null and certification_id is null and kind is null and title is null
+      and planned_on is null and planned_at is null and completed is null)
   )
 );
 create unique index certification_milestones_one_target_idx
-  on public.certification_milestones(user_id, certification_id) where kind = 'target';
+  on public.certification_milestones(user_id, certification_id) where kind = 'target' and deleted_at is null;
 
 alter table public.certification_milestones enable row level security;
 create policy certification_milestones_read on public.certification_milestones
-  for select to authenticated using (user_id = auth.uid());
+  for select to authenticated using (user_id = auth.uid() and deleted_at is null);
 revoke all on table public.certification_milestones from public, anon, authenticated, service_role;
 grant select on table public.certification_milestones to authenticated;
 
@@ -43,7 +48,7 @@ returns jsonb language plpgsql security definer set search_path = public, auth a
 declare v_user_id uuid := public.require_learning_generation(p_expected_generation);
 begin
   return coalesce((select jsonb_agg(public.certification_milestone_json(m) order by m.planned_on nulls last, m.planned_at nulls last, m.id)
-    from public.certification_milestones m where m.user_id = v_user_id), '[]'::jsonb);
+    from public.certification_milestones m where m.user_id = v_user_id and m.deleted_at is null), '[]'::jsonb);
 end $$;
 
 create function public.save_certification_milestone(
@@ -71,6 +76,7 @@ begin
   select * into v_row from public.certification_milestones
     where user_id = v_user_id and id = p_id for update;
   if found then
+    if v_row.deleted_at is not null then raise exception 'deleted certification milestone' using errcode = 'PT412'; end if;
     if (v_row.certification_id, v_row.kind, v_row.title, v_row.planned_on, v_row.planned_at, v_row.completed)
       is not distinct from (p_certification_id, p_kind, p_title, p_planned_on, p_planned_at, p_completed) then
       return public.certification_milestone_json(v_row);
@@ -95,6 +101,7 @@ begin
   if not found then
     select * into v_row from public.certification_milestones
       where user_id = v_user_id and id = p_id for update;
+    if found and v_row.deleted_at is not null then raise exception 'deleted certification milestone' using errcode = 'PT412'; end if;
     if found and (v_row.certification_id, v_row.kind, v_row.title, v_row.planned_on, v_row.planned_at, v_row.completed)
       is not distinct from (p_certification_id, p_kind, p_title, p_planned_on, p_planned_at, p_completed) then
       return public.certification_milestone_json(v_row);
@@ -108,18 +115,22 @@ end $$;
 create function public.delete_certification_milestone(
   p_id uuid, p_expected_revision bigint, p_expected_generation bigint
 ) returns boolean language plpgsql security definer set search_path = public, auth as $$
-declare v_user_id uuid := public.require_learning_generation(p_expected_generation); v_revision bigint;
+declare v_user_id uuid := public.require_learning_generation(p_expected_generation); v_revision bigint; v_deleted_at timestamptz;
 begin
   if p_id is null or p_expected_revision is null or p_expected_revision < 0 then
     raise exception 'invalid certification milestone revision' using errcode = '22023';
   end if;
-  select revision into v_revision from public.certification_milestones
+  insert into public.certification_milestones(user_id, id, revision, deleted_at)
+    values (v_user_id, p_id, 0, clock_timestamp()) on conflict (user_id, id) do nothing;
+  select revision, deleted_at into v_revision, v_deleted_at from public.certification_milestones
     where user_id = v_user_id and id = p_id for update;
-  if not found then return true; end if;
+  if v_deleted_at is not null then return true; end if;
   if v_revision <> p_expected_revision then
     raise exception 'stale certification milestone' using errcode = 'PT412';
   end if;
-  delete from public.certification_milestones where user_id = v_user_id and id = p_id;
+  update public.certification_milestones set certification_id = null, kind = null, title = null,
+    planned_on = null, planned_at = null, completed = null, revision = revision + 1,
+    deleted_at = clock_timestamp() where user_id = v_user_id and id = p_id;
   return true;
 end $$;
 

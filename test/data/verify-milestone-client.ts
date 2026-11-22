@@ -80,6 +80,11 @@ export async function verifyMilestoneClient() {
   assert.deepEqual(await repository.save(instant, 0, 0), expected);
   await repository.remove(instant.id, 1, 0);
   await repository.remove(instant.id, 1, 0);
+  await assert.rejects(
+    repository.save(instant, null, 0),
+    /PT412/,
+    'Deleted create retry must stay rejected.',
+  );
   assert.deepEqual(await other.list(0), [{ ...sameId, revision: 0 }]);
   assert.equal((await repository.list(0)).length, certifications.length - 1);
   assert.deepEqual(await firstClient.select('learning_events'), []);

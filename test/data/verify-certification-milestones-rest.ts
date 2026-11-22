@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createSessions, request } from './rest-client';
+import { verifyCertificationMilestoneConcurrency } from './verify-certification-milestones-concurrency';
 import { expectCode, list, rpc } from './verify-certification-milestones-contract';
 import { verifyCertificationMilestoneOwnership } from './verify-certification-milestones-ownership';
 import { verifyCertificationMilestoneWrites } from './verify-certification-milestones-writes';
@@ -9,6 +10,7 @@ export async function verifyCertificationMilestonesPostgrest() {
   await rpc(first, 'initialize_learning_state', {});
   await rpc(second, 'initialize_learning_state', {});
   assert.deepEqual(await list(first, 0), []);
+  await verifyCertificationMilestoneConcurrency(first);
   const targetId = await verifyCertificationMilestoneOwnership(first, second);
   await verifyCertificationMilestoneWrites(first);
   const learningEvents = await request('/learning_events', { token: first.access_token });

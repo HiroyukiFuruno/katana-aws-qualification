@@ -37,10 +37,11 @@
 
 ## 保存契約
 
-- 主キーは `(user_id, id)`、idは新規操作時に一度発行するUUID。同じ作成操作の再送では同じidを使い、削除済みidを新しい予定に再利用しない。
+- 主キーは `(user_id, id)`、idは新規操作時に一度発行するUUID。同じ作成操作の再送では同じidを使う。削除後は同じ作成操作の遅延再送も拒否する。
 - `list_certification_milestones(p_expected_generation)` は本人の配列を返す。各行は `id/certificationId/kind/title/plannedOn/plannedAt/completed/revision` の8項目だけ。
 - `save_certification_milestone(p_id,p_certification_id,p_kind,p_title,p_planned_on,p_planned_at,p_completed,p_expected_revision,p_expected_generation)` は保存した行を返す。初回expected_revisionはnullでrevision0、更新は既存改訂とのCAS。同じpayload再送は改訂を増やさない。異なるpayloadの古い改訂はPT412、古い学習世代はPT409。
-- `delete_certification_milestone(p_id,p_expected_revision,p_expected_generation)` は本人の行だけをCAS削除しtrueを返す。既に存在しない同じidの再送はtrue。別の改訂が存在すればPT412。
+- `delete_certification_milestone(p_id,p_expected_revision,p_expected_generation)` は本人の行だけをCAS削除しtrueを返す。予定の6項目を消去し、同じ表にID・所有者・改訂・削除日時だけを残す。既に削除済みの再送はtrue、別の改訂が存在すればPT412。存在しないIDの削除も最小の削除記録を作り、作成との競合を同じ主キーで直列化する。
+- 削除済み行はRLSとlistから除外し、saveはPT412で拒否する。削除記録も退会時にcascade削除する。別の所有者モデル、再送キュー、別の削除記録テーブルは作らない。
 - 名称はtrim済み1〜120文字、資格IDは現行catalogのID、種別は上記4値、completedはboolean。targetは日付のみ・completed=false。予定は有効な日付又は時刻のどちらか一方。SQLとclientの検証を固定入力で照合する。
 - 適用済み17件は変更せず、次は `202611220006_certification_milestones.sql`。dashboardの新kind/表示方式の許可は後続の追加migrationで行い、既存配置や改訂を上書きしない。
 - 既存dashboard servicesへ本人用repositoryを接続する。予定読取・改訂・エラーは回答集計と分ける。新たな所有者・汎用同期モデルは作らない。
@@ -61,5 +62,6 @@
 - [ ] 既存check・150行・重複・依存ゲートを維持する。IT/E2EのMock・固定待機・timeout延長を追加しない。
 - [ ] Draft→review回収・修正・reply/resolve→P0/P1ゼロ→Ready→実required設定確認→通常merge→DB適用→公開source確認まで完了する。
 - [ ] 正式証跡を保存し、今回使い終わった再生成可能な検証用コピー・出力は削除する。
+- [ ] PR114のP2: 作成→削除→同じ作成要求の遅延再送で復活しない。未知IDの削除との競合、他人と同じID、削除後payload消去・非表示も実DBで検証する。
 
 本人の試験申込み・受験・実機確認をClose条件には含めない。Facebookの外部設定待ちで本Issueを止めない。

@@ -15,10 +15,11 @@ end $test$;
 
 set local role authenticated;
 select set_config('request.jwt.claims', jsonb_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
+select set_config('kaq.test_user_a', :'user_a', true);
 select public.initialize_learning_state();
 
 do $test$
-declare v_id uuid := 'd1111111-1111-4111-8111-111111111111'; v_row jsonb;
+declare v_id uuid := 'd1111111-1111-4111-8111-111111111111'; v_deleted_id uuid := 'd4444444-4444-4444-8444-444444444444'; v_row jsonb;
 begin
   v_row := public.save_certification_milestone(v_id, 'saa-c03', 'target', 'Goal', '2027-06-01', null, false, null, 0);
   if v_row <> jsonb_build_object('id',v_id,'certificationId','saa-c03','kind','target','title','Goal','plannedOn','2027-06-01','plannedAt',null,'completed',false,'revision',0)
@@ -38,6 +39,10 @@ begin
   begin perform public.save_certification_milestone(pg_catalog.gen_random_uuid(),'saa-c03','study','bad','2027-07-01',null,false,0,0); raise exception 'missing update accepted'; exception when sqlstate 'PT412' then null; end;
   begin perform public.delete_certification_milestone(pg_catalog.gen_random_uuid(),null,0); raise exception 'null delete revision accepted'; exception when sqlstate '22023' then null; end;
   begin perform public.delete_certification_milestone(pg_catalog.gen_random_uuid(),-1,0); raise exception 'negative delete revision accepted'; exception when sqlstate '22023' then null; end;
+  perform public.save_certification_milestone(v_deleted_id, 'saa-c03', 'study', 'deleted', '2027-07-01', null, false, null, 0);
+  perform public.delete_certification_milestone(v_deleted_id, 0, 0);
+  begin perform public.save_certification_milestone(v_deleted_id, 'saa-c03', 'study', 'deleted', '2027-07-01', null, false, null, 0); raise exception 'deleted create retry accepted'; exception when sqlstate 'PT412' then null; end;
+  if exists (select 1 from public.certification_milestones where id = v_deleted_id) then raise exception 'RLS exposed deleted marker'; end if;
   perform public.reset_my_learning_data(0);
   if public.list_certification_milestones(1) <> jsonb_build_array(v_row) then raise exception 'learning reset removed milestones'; end if;
   begin perform public.list_certification_milestones(0); raise exception 'stale milestone generation accepted'; exception when sqlstate 'PT409' then null; end;
@@ -50,6 +55,7 @@ do $test$
 begin
   if public.list_certification_milestones(0) <> '[]'::jsonb then raise exception 'milestone RLS leaked another owner'; end if;
   if not public.delete_certification_milestone('d1111111-1111-4111-8111-111111111111', 0, 0) then raise exception 'missing delete was not idempotent'; end if;
+  begin perform public.save_certification_milestone('d1111111-1111-4111-8111-111111111111', 'saa-c03', 'target', 'other', '2027-08-01', null, false, null, 0); raise exception 'missing-delete marker allowed create'; exception when sqlstate 'PT412' then null; end;
   perform public.save_certification_milestone('d3333333-3333-4333-8333-333333333333', 'clf-c02', 'target', 'cascade', '2027-08-01', null, false, null, 0);
 end $test$;
 
@@ -58,6 +64,7 @@ delete from auth.users where id = :'user_b';
 do $test$
 begin
   if exists (select 1 from public.certification_milestones where user_id = current_setting('kaq.test_user_b')::uuid) then raise exception 'account deletion did not cascade milestones'; end if;
+  if not exists (select 1 from public.certification_milestones where user_id = current_setting('kaq.test_user_a')::uuid and id = 'd4444444-4444-4444-8444-444444444444' and deleted_at is not null and certification_id is null and kind is null and title is null and planned_on is null and planned_at is null and completed is null) then raise exception 'deleted marker retained payload'; end if;
 end $test$;
 
 rollback;

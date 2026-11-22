@@ -50,6 +50,42 @@ export async function expectInvalidDeleteRevision(session: AuthSession, revision
   );
 }
 
+export async function deleteMilestoneWithCas(session: AuthSession, id: string) {
+  await expectCode(
+    await request('/rpc/delete_certification_milestone', {
+      token: session.access_token,
+      method: 'POST',
+      body: { p_id: id, p_expected_revision: 1, p_expected_generation: 0 },
+    }),
+    'PT412',
+    'Stale milestone delete',
+  );
+  const body = { p_id: id, p_expected_revision: 2, p_expected_generation: 0 };
+  assert.equal(await rpc(session, 'delete_certification_milestone', body), true);
+  assert.equal(await rpc(session, 'delete_certification_milestone', body), true);
+}
+
+export async function expectMissingDeleteBlocksCreate(session: AuthSession) {
+  const id = randomUUID();
+  assert.equal(
+    await rpc(session, 'delete_certification_milestone', {
+      p_id: id,
+      p_expected_revision: 0,
+      p_expected_generation: 0,
+    }),
+    true,
+  );
+  await expectCode(
+    await request('/rpc/save_certification_milestone', {
+      token: session.access_token,
+      method: 'POST',
+      body: save(id),
+    }),
+    'PT412',
+    'Missing-delete create',
+  );
+}
+
 export function milestone(value: unknown): asserts value is Milestone {
   assert(
     value && typeof value === 'object' && !Array.isArray(value),

@@ -28,4 +28,21 @@ $$;
 revoke all on function public.fixture_resolve_current_learning_grant()
   from public, anon, authenticated, service_role;
 grant execute on function public.fixture_resolve_current_learning_grant() to authenticated;
+create function public.fixture_lock_account_intent_scope(
+  p_intent_id uuid, p_intent_secret text, p_expected_revision bigint
+) returns jsonb language sql security definer set search_path = '' as $$
+  select kaq_private.lock_account_intent_scope(
+    p_intent_id, p_intent_secret, p_expected_revision
+  )
+$$;
+
+revoke all on function public.fixture_lock_account_intent_scope(uuid,text,bigint) from public, anon, authenticated, service_role;
+grant execute on function public.fixture_lock_account_intent_scope(uuid,text,bigint) to authenticated;
+create function public.fixture_read_account_intent(p_intent_id uuid, p_intent_secret text)
+returns jsonb language sql security definer set search_path = '' as $$
+  select kaq_private.read_account_intent(p_intent_id, p_intent_secret)
+$$;
+revoke all on function public.fixture_read_account_intent(uuid,text)
+  from public, anon, authenticated, service_role;
+grant execute on function public.fixture_read_account_intent(uuid,text) to authenticated;
 notify pgrst, 'reload schema';

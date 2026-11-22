@@ -98,6 +98,7 @@ export async function seedTargetMembership(
   actorUid: string,
   source: SourceScope | undefined,
   sameOwner: boolean,
+  targetExisting: boolean,
 ) {
   if (port.side !== 'target' || port.proofAuthUid === actorUid) return;
   if (kind === 'merge_existing' && sameOwner) {
@@ -113,6 +114,6 @@ export async function seedTargetMembership(
     );
     return;
   }
-  if (kind !== 'add_existing') return;
+  if (kind !== 'add_existing' && !(kind === 'merge_existing' && targetExisting)) return;
   await seedMembership(port.proofAuthUid, owned);
 }

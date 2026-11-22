@@ -6,15 +6,21 @@ export function filterAssessmentProfile(
   earned: string[],
   remaining: Set<string>,
 ): Profile {
+  const optionOrders = Object.fromEntries(
+    Object.entries(profile.optionOrders).filter(([id]) => remaining.has(id)),
+  );
+  const order = profile.order.filter(
+    (id, index) => remaining.has(id) && profile.order.indexOf(id) === index,
+  );
+  const ordered = new Set(order);
   return {
     earned,
     answers: Object.fromEntries(Object.entries(profile.answers).filter(([id]) => remaining.has(id))),
-    optionOrders: Object.fromEntries(
-      Object.entries(profile.optionOrders).filter(([id]) => remaining.has(id)),
-    ),
-    order: [],
+    optionOrders,
+    order: [...order, ...Object.keys(optionOrders).filter((id) => !ordered.has(id))],
   };
 }
+
 import { shuffle } from './randomization';
 
 export function assessmentComplete(items: AssessmentItem[], answers: Record<string, number>) {

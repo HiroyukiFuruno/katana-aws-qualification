@@ -17,7 +17,7 @@ test('two same-user contexts surface the real CAS conflict and reload before ano
     await first.locator('#account-theme').selectOption('dark');
     await expectSaved(first);
     await second.locator('#account-theme').selectOption('light');
-    const alert = second.getByRole('alert');
+    const alert = second.getByRole('alert').filter({ hasText: messages.ja.sitePreferencesConflict });
     await expect(alert).toBeVisible();
     await expect(second.locator('#account-theme')).toBeDisabled();
     await alert.getByRole('button', { name: messages.ja.sitePreferencesReload }).click();
@@ -41,13 +41,11 @@ test('offline member save is held until cloud reload, and another user never rec
     await openSitePreferences(first, firstSession);
     await firstContext.setOffline(true);
     await first.locator('#account-theme').selectOption('dark');
-    await expect(first.getByRole('alert')).toBeVisible();
+    const alert = first.getByRole('alert').filter({ hasText: messages.ja.sitePreferencesSaveFailed });
+    await expect(alert).toBeVisible();
     await expect(first.locator('#account-theme')).toBeDisabled();
     await firstContext.setOffline(false);
-    await first
-      .getByRole('alert')
-      .getByRole('button', { name: messages.ja.sitePreferencesReload })
-      .click();
+    await alert.getByRole('button', { name: messages.ja.sitePreferencesReload }).click();
     await expect(first.locator('#account-theme')).toHaveValue('system');
     await expect(first.locator('#account-theme')).toBeEnabled();
 

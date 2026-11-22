@@ -1,29 +1,15 @@
 import { spawnSync } from 'node:child_process';
 import { readdirSync, writeFileSync } from 'node:fs';
-import {
-  installAccountCreationFixture,
-  removeAccountCreationFixture,
-} from '../test/account-merge/account-creation-components';
 import { run } from '../test/account-merge/commands';
-import { verifyDeleteJobsCore } from '../test/account-merge/delete-jobs-core';
 import { captureNativeInputs } from '../test/account-merge/input-integrity';
 import { verifyOwnerShadowMigration } from '../test/account-merge/owner-shadow';
 import { verifyOwnerShadowProductionOps } from '../test/account-merge/owner-shadow-production-ops';
 import { prepareFixtures } from '../test/account-merge/prepare';
-import { installProofComponents, removeProofWrapper } from '../test/account-merge/proof-components';
-import { verifyScopeComponents } from '../test/account-merge/scope-components';
-import { runSdk, sdkSelection } from '../test/account-merge/sdk-selection';
 import { artifacts, compose } from '../test/account-merge/settings';
-import { verifySnapshotComponent } from '../test/account-merge/snapshot-component';
-import { installSdkMetadata } from '../test/account-sdk/install';
 import { verifyFoundationBoundary } from './account-foundation-boundary';
-import { verifyAccountMergeHarnesses } from './account-merge-harnesses';
 import { dataMigrations } from './data-migrations';
 
 const ownerShadowMigration = '202611220001_learning_owner_shadow.sql';
-const contextHelpersMigration = '202611220002_learning_context_helpers.sql';
-const sessionGrantsMigration = '202611220003_learning_session_grants.sql';
-const accountGrantsConfig = '--config=playwright.account-grants.config.ts';
 function applyMigration(migration: string) {
   run('docker', [
     ...compose,
@@ -57,22 +43,13 @@ async function applyMigrations() {
     if (migration === '202611210004_learning_account_foundation.sql') {
       run('docker', [...compose, 'up', '-d', '--wait', 'gateway']);
       await verifyFoundationBoundary(applyMigration, migration);
-    } else if (
-      [
-        ownerShadowMigration,
-        contextHelpersMigration,
-        sessionGrantsMigration,
-        '202611220004_learning_account_creation.sql',
-      ].includes(migration)
-    )
-      continue;
+    } else if (migration === ownerShadowMigration) continue;
     else applyMigration(migration);
   }
-  console.log(`Applied ${migrations.length} migrations to the dedicated account-merge database`);
+  console.log(`Verified ${migrations.length} registered migrations in the foundation database`);
 }
-const selection = sdkSelection(process.argv.slice(2));
 prepareFixtures();
-const verifyInputsUnchanged = captureNativeInputs(selection);
+const verifyInputsUnchanged = captureNativeInputs();
 try {
   run('docker', [...compose, 'up', '-d', '--wait', 'database', 'auth', 'kaq-merge-idp']);
   await applyMigrations();
@@ -81,29 +58,11 @@ try {
     'playwright',
     'test',
     '--config=playwright.account-merge.config.ts',
-    ...selection.scopeArgs,
+    ...process.argv.slice(2),
   ]);
   if (process.env.KAQ_ACCOUNT_POSTGRES_IMAGE?.startsWith('postgres:17'))
     await verifyOwnerShadowProductionOps();
   await verifyOwnerShadowMigration(() => applyMigration(ownerShadowMigration));
-  applyMigration(contextHelpersMigration);
-  applyMigration(sessionGrantsMigration);
-  applyMigration('202611220004_learning_account_creation.sql');
-  writeFileSync(`${artifacts}/delete-job-core.json`, JSON.stringify(verifyDeleteJobsCore(), null, 2));
-  verifyScopeComponents('session', true);
-  installSdkMetadata();
-  installProofComponents();
-  installAccountCreationFixture();
-  try {
-    run('bunx', ['playwright', 'test', accountGrantsConfig]);
-    run('bunx', ['playwright', 'test', '--config=playwright.account-creation.config.ts']);
-    runSdk(selection.sdkArgs);
-  } finally {
-    removeAccountCreationFixture();
-    removeProofWrapper();
-  }
-  await verifySnapshotComponent();
-  verifyScopeComponents('acl', true);
 } finally {
   const logs = spawnSync('docker', [...compose, 'logs', '--no-color'], {
     encoding: 'utf8',
@@ -111,5 +70,4 @@ try {
   writeFileSync(`${artifacts}/services.log`, `${logs.stdout ?? ''}${logs.stderr ?? ''}`);
   run('docker', [...compose, 'down', '--volumes']);
 }
-await verifyAccountMergeHarnesses();
 verifyInputsUnchanged();

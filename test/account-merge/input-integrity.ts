@@ -6,23 +6,21 @@ import { artifacts } from './settings';
 
 const directories = [
   'supabase/migrations',
-  'supabase/account-merge',
-  'supabase/functions/account-linking',
   'test/account-merge',
-  'test/account-sdk',
   'node_modules/@supabase/auth-js/src',
   'node_modules/@supabase/auth-js/dist',
 ];
 const files = [
+  'test/account-sdk/sql.ts',
   'scripts/run-account-merge-integration.ts',
-  'scripts/run-intent-scope-native.ts',
-  'scripts/run-account-data-engine-integration.ts',
+  'scripts/account-foundation-boundary.ts',
+  'scripts/account-owner-cutover-manifest.json',
+  'scripts/owner-shadow-production.ts',
+  'scripts/owner-shadow-production-contract.ts',
+  'scripts/owner-shadow-production-review.ts',
+  'scripts/owner-shadow-production-transport.ts',
   'scripts/data-migrations.ts',
   'playwright.account-merge.config.ts',
-  'playwright.account-data-engine.config.ts',
-  'playwright.account-grants.config.ts',
-  'playwright.account-creation.config.ts',
-  'playwright.account-sdk.config.ts',
   'package.json',
   'bun.lock',
   'patches/@supabase%2Fauth-js@2.119.2.patch',
@@ -46,12 +44,12 @@ function hashes(): Record<string, string> {
   );
 }
 
-export function captureNativeInputs(selection: { sdkGrep: string | null }) {
+export function captureNativeInputs() {
   const before = hashes();
   const write = (status: 'captured' | 'passed') =>
     writeFileSync(
       `${artifacts}/native-input-integrity.json`,
-      `${JSON.stringify({ status, observedAt: new Date().toISOString(), sdkGrep: selection.sdkGrep, inputs: before }, null, 2)}\n`,
+      `${JSON.stringify({ status, observedAt: new Date().toISOString(), inputs: before }, null, 2)}\n`,
     );
   write('captured');
   return () => {

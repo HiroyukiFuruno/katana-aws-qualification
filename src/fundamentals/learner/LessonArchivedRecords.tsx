@@ -26,8 +26,18 @@ export function LessonArchivedRecords({
     setFailed(undefined);
     void services
       .archivedRecords()
-      .then((records) => {
-        if (current) setLoaded({ services, records, request });
+      .then(async (records) => {
+        const localized = await Promise.all(
+          records.map(async (record) => {
+            const asset = await services.assets.unit(
+              record.unit.unitId,
+              record.unit.contentVersion,
+              locale,
+            );
+            return { ...record, unit: { ...record.unit, title: asset.unit.title } };
+          }),
+        );
+        if (current) setLoaded({ services, records: localized, request });
       })
       .catch(() => {
         if (current) setFailed({ services, request });
@@ -35,7 +45,7 @@ export function LessonArchivedRecords({
     return () => {
       current = false;
     };
-  }, [services, request]);
+  }, [services, locale, request]);
   if (failed?.services === services && failed.request === request)
     return (
       <section className="shell notice" aria-label={t('fundamentalsArchivedTitle')}>

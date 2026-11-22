@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Locale } from '../../locales';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import { lessonPath } from '../delivery/navigation';
 import { stepHref } from '../delivery/planNavigation';
 import type { LessonStep } from '../delivery/slideTypes';
 import type { LessonServices } from '../state/services';
@@ -36,16 +37,28 @@ export function useLessonNavigation(input: Input) {
   }, []);
   const path = location.pathname + location.search;
   const final = input.step.kind === 'final' && input.active;
-  const previous = input.asset.steps[input.step.position - 2];
-  const previousHref = previous
-    ? stepHref(input.locale, previous, input.asset, input.contentVersion)
-    : undefined;
   const nextLabelKey: 'fundamentalsStartPractice' | 'lessonFinalSubmit' | undefined =
     input.step.kind === 'final' && !input.active
       ? 'fundamentalsStartPractice'
       : input.step.kind === 'final' && input.position === 11
         ? 'lessonFinalSubmit'
         : undefined;
+  const previous = input.asset.steps[input.step.position - 2];
+  const previousHref = final
+    ? input.position > 0
+      ? lessonPath({
+          locale: input.locale,
+          unitId: input.asset.unit.id,
+          stage: 'final',
+          position: input.position,
+          contentVersion: input.contentVersion,
+        })
+      : previous
+        ? stepHref(input.locale, previous, input.asset, input.contentVersion)
+        : undefined
+    : previous
+      ? stepHref(input.locale, previous, input.asset, input.contentVersion)
+      : undefined;
   return {
     previousHref: input.blocked ? undefined : previousHref,
     nextAllowed: canAdvanceLesson({

@@ -4,10 +4,11 @@ import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import { lessonPath } from '../delivery/navigation';
 import { stepHref } from '../delivery/planNavigation';
 import type { LessonStep } from '../delivery/slideTypes';
-import type { LessonCommand } from '../state/outboxTypes';
 import type { LessonServices } from '../state/services';
 import type { LessonSnapshot } from '../state/types';
 import { useLessonMutation } from '../state/useLessonMutation';
+import { finalizeLessonCommand } from './finalizeLessonCommand';
+import { createRandomizedFinalSessionId } from './lesson-presentation';
 
 type Input = {
   services: LessonServices;
@@ -16,6 +17,8 @@ type Input = {
   step: LessonStep;
   locale: Locale;
   contentVersion?: string;
+  finalPosition?: number;
+  presentationPosition: number;
   selected: string[];
   confirm: (snapshot: LessonSnapshot, href?: string) => void;
   commit: (snapshot: LessonSnapshot) => void;
@@ -28,6 +31,8 @@ export function useLessonActions({
   step,
   locale,
   contentVersion,
+  finalPosition,
+  presentationPosition,
   selected,
   confirm,
   commit,
@@ -48,24 +53,15 @@ export function useLessonActions({
   const active = snapshot.sessions.find(
     (session) => session.sessionId === snapshot.progress.activeFinalSessionId,
   );
-  const finalPosition = asset.steps.filter((item) => item.kind === 'final').indexOf(step);
-  function finalCommand(confirmed: LessonSnapshot): LessonCommand {
-    const session = confirmed.sessions.find(
-      (item) => item.sessionId === confirmed.progress.activeFinalSessionId,
-    );
-    if (!session) throw new Error('The lesson final session is missing.');
-    return {
-      ...base(),
-      kind: 'finalize',
-      input: { sessionId: session.sessionId, expectedRevision: session.revision },
-    };
-  }
   const start = () =>
     mutation.execute(
       {
         ...base(),
         kind: 'startFinal',
-        input: { sessionId: crypto.randomUUID(), expectedRevision: snapshot.progress.revision },
+        input: {
+          sessionId: createRandomizedFinalSessionId(),
+          expectedRevision: snapshot.progress.revision,
+        },
       },
       (result) =>
         confirm(
@@ -75,6 +71,7 @@ export function useLessonActions({
     );
   function saveFinal(cursorPosition: number, href: string, submit = false) {
     if (!active) return start();
+    if (finalPosition === undefined) throw new Error('The lesson final position is missing.');
     return mutation.execute(
       {
         ...base(),
@@ -90,14 +87,25 @@ export function useLessonActions({
         },
       },
       (result) => confirm(result, href),
-      submit ? finalCommand : undefined,
+      submit ? (result) => finalizeLessonCommand(result, base()) : undefined,
     );
   }
   function next() {
     const next = asset.steps[step.position];
     const href = next ? stepHref(locale, next, asset, contentVersion) : resultHref;
     if (step.kind === 'final') {
-      return saveFinal(Math.min(finalPosition + 1, 11), href, finalPosition === 11);
+      const nextPosition = Math.min(presentationPosition + 1, 11);
+      const nextHref =
+        presentationPosition === 11
+          ? resultHref
+          : lessonPath({
+              locale,
+              unitId: asset.unit.id,
+              stage: 'final',
+              position: presentationPosition + 2,
+              contentVersion,
+            });
+      return saveFinal(nextPosition, nextHref, presentationPosition === 11);
     }
     if (step.kind === 'checkpoint') {
       confirm(snapshot, href);

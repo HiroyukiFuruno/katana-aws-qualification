@@ -1,0 +1,54 @@
+{
+  "producer": {
+    "thread": "01a1ff07-ebf5-76e3-b37f-b8f0f0fd9efb",
+    "model": "gpt-5.6-terra",
+    "reasoning": "high"
+  },
+  "scope": "AIBのlegacy natural exportにおける改訂ID衝突の修正だけを対象に、scripts/legacy-natural-exports.ts、同回帰test、既存legacy helper/runtime validator、RED/GREENログを独立確認した。AIB全441問の意味品質又は既存legacy出力のmaterialize結果全体を再レビューしたものではない。",
+  "decision": "accept",
+  "rationale": "現行425件、archive 6件、archive 10件の合計441件には同一idが6件あるが、runtimeが用いるtranslationKey(id@revision)は441件すべて一意である。従来の全bank連結後のvalidateQuestionTranslationはparseQuestionsの単一bank内id一意制約に反して失敗する。修正は各bankを既存のlegacyQuestionTranslationへ個別に渡すため、そのvalidatorのcanonical identity、correct、choice順序、構造、provenance前提を維持したまま、検証済みpayloadだけを結合する。questionsはid@revisionで改めて衝突assertし、categories/sourceLabelsは従来helperと同じ先勝ち挙動で結合する。output配列は全9localeについて完了してからmaterializerへ返るため、途中失敗で一部localeをwriteしない。unknown fallback又はvalidation例外の握りつぶしは追加されていない。",
+  "evidence": {
+    "failureLog": "output/question-quality/aib441-legacy-export-failure-stack.log",
+    "redLog": "output/question-quality/aib441-legacy-revisions-red.log",
+    "greenLog": "output/question-quality/aib441-legacy-revisions-green.log",
+    "reviewerFocusedRun": "rtk proxy bun test scripts/legacy-natural-exports.test.ts scripts/legacy-question-translation.test.ts: 3 pass, 0 fail, 7980 expectations",
+    "bankInventory": {
+      "paths": [
+        "courses/ai-business-strategist/full-mock-2026-11.json",
+        "courses/ai-business-strategist/questions.json",
+        "courses/ai-business-strategist/mock-2026-11.json"
+      ],
+      "questionCounts": [425, 6, 10],
+      "totalQuestions": 441,
+      "uniqueIds": 435,
+      "uniqueIdRevisionIdentities": 441
+    },
+    "greenRegression": {
+      "locales": 9,
+      "tests": 3,
+      "expectations": 7980,
+      "preserves": [
+        "all id@revision keys",
+        "bank provenance entries",
+        "localized prompt and learning values",
+        "canonical choice-order rejection",
+        "repeated same-identity rejection"
+      ]
+    }
+  },
+  "perspectives": {
+    "userAdvocate": "改訂前後の同一IDを持つ利用者にも、revisionごとの自然訳がlegacy consumerで選べ、旧版を上書きしない。",
+    "selfCritique": "per-bank validationを省くとcanonical grade、choice順序、translation provenanceの破壊を見逃すが、validateTranslation、validateNaturalReview、natural hash、payload hash、legacyQuestionTranslationはいずれも各bankで実行される。",
+    "devilsAdvocate": "単にparseQuestionsのID制約を緩める変更はruntimeの単一bank契約を壊す。今回はその変更をせず、revisionを含む既存translationKeyでのみ全bankを結合し、exact identity重複は明示assertで拒否する最小変更である。"
+  },
+  "findings": {
+    "P0": [],
+    "P1": [],
+    "P2": []
+  },
+  "unresolved": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0
+  }
+}

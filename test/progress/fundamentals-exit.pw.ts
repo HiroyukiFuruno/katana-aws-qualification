@@ -5,6 +5,7 @@ import {
   lessonCatalogCard,
   nextButton,
   selectLessonAnswer,
+  visibleLessonQuestion,
   walkLessonReading,
 } from './fundamentals.helpers';
 import { createSessions, setRealSession } from './sessions';
@@ -83,17 +84,14 @@ test('a member keeps an in-progress final answer after exiting and resuming', as
     await page.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' }));
     await walkLessonReading(page, asset);
     await nextButton(page).click();
-    const question = asset.finalQuestions[0];
-    if (!question) throw new Error('Missing final question fixture.');
+    const question = await visibleLessonQuestion(page, asset.finalQuestions);
     await selectLessonAnswer(page, question, [question.correct[0]]);
     await page.getByRole('button', { name: exitLabel, exact: true }).click();
     await expect(page).toHaveURL(/\/study\/fundamentals\/$/);
     await lessonCatalogCard(page, asset).getByRole('link').click();
     await expect(page).toHaveURL(/\/final\/1\/$/);
     await expect(
-      page
-        .locator('fieldset input')
-        .nth(question.choices.findIndex((item) => item.id === question.correct[0])),
+      page.locator(`fieldset input[name="${question.id}"][value="${question.correct[0]}"]`),
     ).toBeChecked();
   } finally {
     await context.close();

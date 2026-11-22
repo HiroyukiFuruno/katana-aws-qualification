@@ -1,5 +1,6 @@
 import { usePreferences } from '../../preferences';
 import type { FundamentalsQuestion } from '../types';
+import { QuestionClarifications } from '../../QuestionClarifications';
 import './learner-assessment.css';
 
 type Feedback = { correct: string[]; submitted: true };
@@ -48,6 +49,7 @@ export function LessonAssessment(props: LessonAssessmentProps) {
   return (
     <article className="lesson-assessment" aria-label={t('lessonAssessment')}>
       <p className="lesson-assessment-prompt">{question.prompt}</p>
+      <QuestionClarifications question={question} />
       <p className="lesson-assessment-hint">
         {t('lessonChoiceHint', { count: question.requiredChoices })}
       </p>
@@ -62,6 +64,7 @@ export function LessonAssessment(props: LessonAssessmentProps) {
                 id={inputId}
                 type={multiple ? 'checkbox' : 'radio'}
                 name={question.id}
+                value={choice.id}
                 checked={checked}
                 disabled={!checked && multiple && selected.length >= question.requiredChoices}
                 onChange={(event) => choose(choice.id, event.currentTarget.checked)}

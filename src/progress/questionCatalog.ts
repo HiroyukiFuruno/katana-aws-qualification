@@ -1,10 +1,58 @@
 import { parseCheckpointQuestions } from '../fundamentals/checkpointQuestions';
 import { validFundamentalsContent } from '../fundamentals/content';
+import { overlayFundamentalsContent } from '../fundamentals/contentLocalization';
+import type { Locale } from '../locales';
+import { loadQuestionBank } from '../questionLocalization';
+import { sourceLocaleOf } from '../questionSourceLocale';
 import { parseQuestions, type Question, questionKey } from '../questions';
 
 type IndexEntry = [string, string] | null;
 type QuestionIndex = { schemaVersion: 1; questions: Record<string, IndexEntry> };
 type Fetcher = (input: RequestInfo | URL) => Promise<Response>;
+
+function questionIdentity(question: Question) {
+  return {
+    ...question,
+    title: undefined,
+    prompt: undefined,
+    source: { url: question.source.url },
+    references: question.references?.map((reference) => ({ url: reference.url })),
+    choices: question.choices.map(({ explanation, text, ...choice }) => choice),
+    learning: question.learning ? { check: question.learning.check ? {} : undefined } : undefined,
+  };
+}
+
+function overlayNarrativeQuestions(canonical: Question[], translated: unknown) {
+  const localized = parseQuestions(translated);
+  if (
+    canonical.length !== localized.length ||
+    canonical.some(
+      (question, index) =>
+        JSON.stringify(questionIdentity(question)) !==
+        JSON.stringify(questionIdentity(localized[index])),
+    )
+  ) {
+    throw new Error('Localized question identity changed.');
+  }
+  return canonical.map((question, index) => {
+    const localizedQuestion = localized[index];
+    return {
+      ...question,
+      title: localizedQuestion.title,
+      prompt: localizedQuestion.prompt,
+      source: { ...question.source, label: localizedQuestion.source.label },
+      references: question.references?.map((reference, referenceIndex) => ({
+        ...reference,
+        label: localizedQuestion.references?.[referenceIndex]?.label ?? reference.label,
+      })),
+      choices: question.choices.map((choice, choiceIndex) => ({
+        ...choice,
+        ...localizedQuestion.choices[choiceIndex],
+      })),
+      learning: localizedQuestion.learning,
+    };
+  });
+}
 
 function parseIndex(value: unknown): QuestionIndex {
   if (
@@ -34,7 +82,7 @@ function parseIndex(value: unknown): QuestionIndex {
   return value as QuestionIndex;
 }
 
-export function createQuestionResolver(fetcher: Fetcher = fetch) {
+export function createQuestionResolver(fetcher: Fetcher = fetch, locale?: Locale) {
   let index: Promise<QuestionIndex> | undefined;
   const banks = new Map<string, Promise<Question[]>>();
   async function json(path: string): Promise<unknown> {
@@ -51,17 +99,31 @@ export function createQuestionResolver(fetcher: Fetcher = fetch) {
     });
     return pending;
   }
+  function parseBank(path: string, value: unknown) {
+    if (path === 'fundamentals/checkpoints.json') return parseCheckpointQuestions(value);
+    if (path === 'fundamentals/content.json') {
+      if (!validFundamentalsContent(value)) throw new Error('Fundamentals catalog is invalid');
+      return value.units.flatMap((unit) => unit.questions);
+    }
+    return parseQuestions(value);
+  }
+  async function localizeBank(path: string, base: unknown, canonical: Question[]) {
+    if (!locale || locale === sourceLocaleOf(path)) return canonical;
+    const translation = await json(`translations/${locale}/${path}`);
+    if (path === 'fundamentals/content.json') {
+      if (!validFundamentalsContent(base) || !validFundamentalsContent(translation))
+        throw new Error('Fundamentals catalog is invalid');
+      return overlayFundamentalsContent(base, translation).units.flatMap((unit) => unit.questions);
+    }
+    return overlayNarrativeQuestions(canonical, translation);
+  }
   function loadBank(path: string) {
     const existing = banks.get(path);
     if (existing) return existing;
-    const pending = json(path).then((value) => {
-      if (path === 'fundamentals/checkpoints.json') return parseCheckpointQuestions(value);
-      if (path === 'fundamentals/content.json') {
-        if (!validFundamentalsContent(value)) throw new Error('Fundamentals catalog is invalid');
-        return value.units.flatMap((unit) => unit.questions);
-      }
-      return parseQuestions(value);
-    });
+    const pending =
+      locale && path.startsWith('courses/')
+        ? loadQuestionBank(path, locale, fetcher).then((bank) => bank.questions)
+        : json(path).then(async (value) => localizeBank(path, value, parseBank(path, value)));
     banks.set(path, pending);
     void pending.catch(() => {
       if (banks.get(path) === pending) banks.delete(path);
@@ -76,4 +138,8 @@ export function createQuestionResolver(fetcher: Fetcher = fetch) {
     const question = (await loadBank(path)).find((candidate) => questionKey(candidate) === key);
     return question ? { certificationId, question } : undefined;
   };
+}
+
+export function createLocalizedQuestionResolver(locale: Locale, fetcher: Fetcher = fetch) {
+  return createQuestionResolver(fetcher, locale);
 }

@@ -43,11 +43,15 @@ test('uses exact RPC contracts with caller receipts and fixed question reference
       name: 'record_fundamentals_step',
       args: expect.objectContaining({ p_expected_generation: 4, p_kind: 'slide', p_selected: null }),
     },
-    { name: 'start_fundamentals_final', args: expect.objectContaining({ p_expected_generation: 4 }) },
+    {
+      name: 'start_fundamentals_final',
+      args: expect.objectContaining({ p_expected_generation: 4, p_session_id: lessonSessionId }),
+    },
     {
       name: 'save_fundamentals_final_response',
       args: expect.objectContaining({
         p_expected_generation: 4,
+        p_session_id: lessonSessionId,
         p_question_ref: {
           questionId: lessonAsset.finalQuestions[0]?.id,
           revision: lessonAsset.finalQuestions[0]?.revision,

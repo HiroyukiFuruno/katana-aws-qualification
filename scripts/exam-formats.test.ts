@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { certifications } from '../src/certifications';
 import { examDurationMinutes, examPresetCounts, newExam, selectExamQuestions } from '../src/exam';
-import { examDomainOf, questionKey, type Question } from '../src/questions';
+import { examDomainOf, type Question, questionKey } from '../src/questions';
 
 const course = certifications.find(({ id }) => id === 'sap-c03')?.course;
 if (!course) throw new Error('SAP-C03 course missing');
@@ -79,7 +79,11 @@ test('DVA-C03 provides five distinct full mocks and keeps DVA-C02 saved question
   expect(examPresetCounts(developer.exam)).toEqual({ short: 15, medium: 30, full: 65 });
   expect(newExam(questions, developer.exam, 0).deadline).toBe(130 * 60_000);
   expect(Object.values(developer.exam.distribution)).toEqual([20, 17, 14, 14]);
-  expect(new Set(archived.map(questionKey)).size).toBe(16);
+  const legacyArchived = developer.archives
+    .filter((path) => path.startsWith('courses/dva-c02/'))
+    .flatMap(load);
+  expect(new Set(legacyArchived.map(questionKey)).size).toBe(16);
+  expect(new Set(archived.map(questionKey)).size).toBe(17);
   expect(certifications.some(({ id }) => id === 'dva-c02')).toBe(false);
   for (const previous of archived) {
     const current = questions.find((question) => questionKey(question) === questionKey(previous));

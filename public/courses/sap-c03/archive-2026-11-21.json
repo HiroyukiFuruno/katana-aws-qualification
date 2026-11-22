@@ -1,0 +1,128 @@
+[
+  {
+    "id": "sap-c03-full-arch-018",
+    "revision": 1,
+    "category": "クラウドアーキテクチャ",
+    "similarityGroup": "centralized-egress-policy",
+    "version": "オリジナル模試 2026-11",
+    "title": "組織へ配布する送信フィルタリング",
+    "prompt": "複数アカウントのプライベートサブネットからのインターネット送信を中央で許可リスト方式に制御したい。TLS復号を含むステートフル検査とドメイン名ベースの制御を行い、新規アカウントを含む組織全体へルールとポリシーを自動配布したい。第三者ファイアウォールのOSやクラスタは運用したくない。最も適切な構成はどれか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "各EC2のセキュリティグループにFQDNルールを書く",
+        "explanation": "セキュリティグループはドメイン名ベースの送信フィルタやTLS検査を提供しない。"
+      },
+      {
+        "id": "B",
+        "text": "VPC Flow LogsをS3へ保存する",
+        "explanation": "事後観測であり、送信トラフィックを許可・遮断しない。"
+      },
+      {
+        "id": "C",
+        "text": "AWS Network Firewallを検査VPCに配置し、Firewall Managerポリシーで組織へ配布する",
+        "explanation": "Network Firewallがマネージド検査を提供し、Firewall ManagerがAWS Organizations内のポリシー展開を支援する。"
+      },
+      {
+        "id": "D",
+        "text": "Internet Gatewayのルートを削除する",
+        "explanation": "すべての送信を止めるだけで、許可リストに基づく必要通信を提供できない。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/fms-starting.html",
+      "label": "AWS Firewall Manager 開発者ガイド"
+    },
+    "learning": {
+      "reason": "Network Firewallはマネージドなステートフル検査を提供し、Firewall ManagerはOrganizations全体への一貫したポリシー展開を支援する。",
+      "concept": "インライン検査サービスと、複数アカウントへ設定を強制するガバナンスサービスは組み合わせて設計する。"
+    }
+  },
+  {
+    "id": "sap-c03-full-res3-018",
+    "revision": 1,
+    "category": "レジリエンス・移行・事業継続",
+    "similarityGroup": "sqs-dlq-redrive-rate-compatible-queue",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "失敗キューを別の処理先に安全な速度で再投入",
+    "prompt": "設備データを集約するワーカーのバグを修正した。SQS StandardのDLQにある失敗分は、稼働中の最新データ用キューに混ぜず、別の履歴再処理用キューへそのまま戻したい。処理先DBの余力が少ないので、初回は低い固定速度から始める。メッセージ本文の変換は不要で、自前のポーリングコードを減らしたい。どの操作を選ぶか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "DLQを元の最新データキューへシステム最適速度で戻し、再処理ワーカー側だけで区別する。",
+        "explanation": "新規最新データ用キューに混ざり、投入速度も固定の低速にはならない。"
+      },
+      {
+        "id": "B",
+        "text": "DLQリドライブで別のStandardキューを指定し、カスタム最大速度を低く設定する。",
+        "explanation": "元の新規最新データキューを避け、初回の再投入速度を抑えられる。"
+      },
+      {
+        "id": "C",
+        "text": "再処理側をFIFOキューとし、StandardのDLQから組み込みリドライブを実行する。",
+        "explanation": "リドライブの移動元と移動先はキュー種別を揃える必要がある。"
+      },
+      {
+        "id": "D",
+        "text": "DLQの可視性タイムアウトを延ばせば、メッセージが低速で別の再処理キューへ移ると判断する。",
+        "explanation": "可視性タイムアウトは受信後の再表示を制御し、別のキューへの移動や速度制限は行わない。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-dead-letter-queue-redrive.html",
+      "label": "Amazon SQS — DLQからのリドライブ"
+    },
+    "learning": {
+      "reason": "同じ種別の再処理用Standardキューをリドライブ先に選び、カスタム最大速度を低く設定して移す。",
+      "concept": "組み込みのリドライブは同じ種別のキューへ移せる。本文で個別にフィルターしたり修正したりする場合は別の処理が必要になる。"
+    }
+  },
+  {
+    "id": "sap-c03-full-ops7-009",
+    "revision": 1,
+    "category": "運用上の優秀性・自動化",
+    "similarityGroup": "database-insights-advanced-postgresql-lock-chain",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "ロック保持側までたどって短時間の待機を調査",
+    "prompt": "Aurora PostgreSQLで月末に数分間だけトランザクションの遅延が起きる。平均CPUは低く、調査時点ではロックは解消済みである。次回に備え、当時のセッション間のブロック関係と関連SQLをCloudWatchの管理画面でたどれるようにしたい。継続接続する監視エージェントを追加せずにどうするか。",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Database InsightsのStandardモードでDB負荷を待機イベント別に表示し、グラフからロックツリーを開く。",
+        "explanation": "負荷の内訳は表示できても、ロックツリー分析にはAdvancedモードが必要である。"
+      },
+      {
+        "id": "B",
+        "text": "RDS拡張モニタリングを1秒間隔にし、OSプロセスのCPUとメモリから待機関係を読む。",
+        "explanation": "OSプロセスの統計は得られるが、トランザクション間のロック関係は表示しない。"
+      },
+      {
+        "id": "C",
+        "text": "CloudWatchのDB接続数とデッドロック数を同じダッシュボードに表示する。",
+        "explanation": "件数の推移はわかるが、どのセッションが別のセッションをブロックしたかは復元できない。"
+      },
+      {
+        "id": "D",
+        "text": "CloudWatch Database InsightsのAdvancedモードを有効にし、対象インスタンスで発生時刻のロック分析を開く。",
+        "explanation": "DBネイティブのロック待機を階層で表示し、保持側と待機側のセッションを調べられる。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "label": "CloudWatch Database Insights — PostgreSQLのロック分析",
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Database-Insights-Lock-Analysis.html"
+    },
+    "learning": {
+      "reason": "Database InsightsをAdvancedモードにして、発生時間帯のロックツリーを調べる。",
+      "concept": "ロック待機の集計値は負荷の種類を示す。ブロックしているセッションと待機側の階層を調べるにはロック分析を使う。"
+    }
+  }
+]

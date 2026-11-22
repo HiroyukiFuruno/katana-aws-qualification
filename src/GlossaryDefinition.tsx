@@ -1,3 +1,4 @@
+import localizedMentions from './glossary-mentions.json' with { type: 'json' };
 import { Fragment } from 'react';
 import { glossary } from './glossary';
 
@@ -6,12 +7,7 @@ export function termAnchor(term: string) {
 }
 
 const termNames = new Map(glossary.map(({ term }) => [term.toLowerCase(), term]));
-for (const [mention, term] of [
-  ['パイロットライト', 'Pilot light'],
-  ['ウォームスタンバイ', 'Warm standby'],
-  ['VPCエンドポイント', 'VPC endpoint'],
-  ['冪等性', 'Idempotency'],
-]) {
+for (const [mention, term] of Object.entries(localizedMentions)) {
   termNames.set(mention.toLowerCase(), term);
 }
 const mentions = [...termNames.keys()]

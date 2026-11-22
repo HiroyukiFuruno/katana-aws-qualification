@@ -105,7 +105,7 @@ export function LessonSlideShell({
       <main id="main" className="lesson-slide-stage" aria-labelledby={headingId}>
         <div className="lesson-slide-content">
           <h1 id={headingId} ref={heading} tabIndex={-1}>
-            {step.label}
+            {step.kind === 'checkpoint' ? t('lessonAssessment') : step.label}
           </h1>
           {adSlot}
           {children}

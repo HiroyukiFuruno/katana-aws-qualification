@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePreferences } from '../../preferences';
-import { createQuestionResolver } from '../../progress/questionCatalog';
+import type { Question } from '../../questions';
+import { QuestionTranslationNotice } from '../../QuestionTranslationNotice';
+import { createLocalizedQuestionResolver } from '../../progress/questionCatalog';
+import { useDashboardDisplayLabels } from '../displayLabels';
 import { dashboardCourseLink, dashboardLessonLink } from '../learningLinks';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardReview } from '../summaryTypes';
@@ -9,6 +12,8 @@ import { dashboardChartPageSize, useDashboardDensity } from './DashboardDensity'
 import { DashboardDataTable } from './DataTable';
 import { DashboardPagePicker } from './PagePicker';
 import { ValueBars } from './ValueBars';
+
+type ReviewQuestion = Pick<Question, 'title' | 'categoryLabel' | 'versionLabel' | 'locale'>;
 
 const identity = (row: DashboardReview) =>
   JSON.stringify([row.certificationId, row.questionId, row.questionRevision, row.sourceVersion]);
@@ -24,12 +29,14 @@ export function ReviewPanel({
   lessons: readonly DashboardLessonData[];
 }) {
   const { locale, t } = usePreferences();
-  const [resolve] = useState(createQuestionResolver);
+  const display = useDashboardDisplayLabels(lessons);
+  const resolve = useMemo(() => createLocalizedQuestionResolver(locale), [locale]);
   const [requested, setRequested] = useState(0);
   const [retry, setRetry] = useState(0);
   const [metadata, setMetadata] = useState<{
+    locale: string;
     scope: object;
-    titles: Map<string, string>;
+    questions: Map<string, ReviewQuestion>;
     failed: boolean;
   } | null>(null);
   const density = useDashboardDensity();
@@ -43,7 +50,7 @@ export function ReviewPanel({
   useEffect(() => {
     let active = true;
     const queue = [...scope.rows];
-    const titles = new Map<string, string>();
+    const questions = new Map<string, ReviewQuestion>();
     let failed = false;
     const worker = async () => {
       while (queue.length) {
@@ -56,24 +63,34 @@ export function ReviewPanel({
             result.certificationId === row.certificationId &&
             result.question.version === row.sourceVersion
           )
-            titles.set(identity(row), result.question.title);
+            questions.set(identity(row), result.question);
         } catch {
           failed = true;
         }
       }
     };
     void Promise.all(Array.from({ length: Math.min(4, queue.length) }, worker)).then(() => {
-      if (active) setMetadata({ scope, titles, failed });
+      if (active) setMetadata({ locale, scope, questions, failed });
     });
     return () => {
       active = false;
     };
-  }, [resolve, scope]);
-  const title = (row: DashboardReview) =>
-    metadata?.scope === scope ? (metadata.titles.get(identity(row)) ?? row.category) : row.category;
+  }, [locale, resolve, scope]);
+  const question = (row: DashboardReview) =>
+    metadata?.locale === locale && metadata.scope === scope
+      ? metadata.questions.get(identity(row))
+      : undefined;
+  const title = (row: DashboardReview) => question(row)?.title ?? display.category(row.category);
+  const category = (row: DashboardReview) =>
+    question(row)?.categoryLabel ?? display.category(row.category);
+  const revision = (row: DashboardReview) =>
+    question(row)?.versionLabel ?? display.revision(row.sourceVersion, row.questionRevision);
   return (
     <div className="dashboard-viz">
-      {metadata?.scope === scope && metadata.failed && (
+      <QuestionTranslationNotice
+        sourceLocales={scope.rows.map(question).flatMap((item) => (item?.locale ? [item.locale] : []))}
+      />
+      {metadata?.locale === locale && metadata.scope === scope && metadata.failed && (
         <div>
           <p role="alert">{t('dashboardError')}</p>
           <button type="button" onClick={() => setRetry((value) => value + 1)}>
@@ -115,12 +132,13 @@ export function ReviewPanel({
           return {
             id: identity(row),
             cells: {
-              title: href ? <a href={href}>{title(row)}</a> : title(row),
-              category: row.category,
-              revision: t('dashboardRevisionValue', {
-                version: row.sourceVersion,
-                revision: row.questionRevision,
-              }),
+              title: (
+                <span lang={question(row)?.locale}>
+                  {href ? <a href={href}>{title(row)}</a> : title(row)}
+                </span>
+              ),
+              category: category(row),
+              revision: revision(row),
               wrong: String(row.incorrectCount),
               total: String(row.answered),
               latest: new Intl.DateTimeFormat(locale, {

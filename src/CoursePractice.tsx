@@ -1,10 +1,10 @@
-import { shuffle } from './exam';
 import type { Attempt, Mode } from './history';
 import { usePreferences } from './preferences';
 import { QuestionCard } from './QuestionCard';
 import { QuestionSetPicker, type QuestionSet } from './QuestionSetPicker';
 import { questionKey, type Question } from './questions';
-import type { PracticeSession } from './useCourseProgress';
+import { shuffle } from './randomization';
+import type { PracticeSession } from './practiceSession';
 
 type ReviewItem = { question: Question; wrong: number; lastReview?: Attempt };
 

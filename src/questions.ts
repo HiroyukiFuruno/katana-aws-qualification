@@ -5,15 +5,19 @@ type QuestionDetails = {
   revision: number;
   locale?: Locale;
   category: string;
+  categoryLabel?: string;
   examDomain?: string;
+  examDomainLabel?: string;
   similarityGroup?: string;
   version: string;
+  versionLabel?: string;
   title: string;
   prompt: string;
   choices: { id: string; text: string; explanation: string }[];
   correct: string[];
   source: { url: string; label: string };
   references?: { url: string; label: string }[];
+  sourceLabel?: string;
   learning?: {
     reason: string;
     concept: string;
@@ -76,7 +80,6 @@ export function isCorrectAnswer(question: Question, selected: readonly string[])
     ? question.correct.every((id, index) => id === selected[index])
     : question.correct.every((id) => selected.includes(id));
 }
-
 export function parseQuestions(value: unknown): Question[] {
   if (!Array.isArray(value) || !value.length) throw new Error('問題データが空です。');
   const questions = value as Question[];

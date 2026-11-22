@@ -1,0 +1,114 @@
+{
+  "producer": {
+    "thread": "01a1ff21-19cd-7551-b04d-43745010a731",
+    "model": "gpt-5.6-terra",
+    "reasoning": "high",
+    "role": "independent-follow-up-code-review"
+  },
+  "decision": "approved-p0-p1-p2-zero",
+  "initialReviewHistory": {
+    "p1": "resolved",
+    "initialFinding": "quantities() がSetで重複値を除去し、同じraw個数の同一次元の改変を見逃す。",
+    "resolution": "quantities() は出現値を保持する配列を返し、各次元でraw個数が一致するときにtranslation側frequency multisetを1件ずつ消費して比較するよう変更された。",
+    "p2Triage": "maintained-as-not-adopted: JA 8割からtarget EN 90%を検出する既存回帰が既にあり、追加推奨は重複だった。"
+  },
+  "findings": [],
+  "verification": [
+    {
+      "case": "旧P1 forward duplicate",
+      "input": "1GBと2GBを保存する。 -> Store 1 GB and 1 GB.",
+      "locale": "en",
+      "result": [
+        "bytes:2000000000"
+      ],
+      "verdict": "pass"
+    },
+    {
+      "case": "旧P1 reverse duplicate",
+      "input": "1GBと1GBを保存する。 -> Store 1 GB and 2 GB.",
+      "locale": "en",
+      "result": [
+        "bytes:1000000000"
+      ],
+      "verdict": "pass"
+    },
+    {
+      "case": "等価単位を含む重複",
+      "input": "1GBと1GBを保存する。 -> Store 1000 MB and 1000 MB.",
+      "locale": "en",
+      "result": [],
+      "verdict": "pass"
+    },
+    {
+      "case": "等価durationを含む重複",
+      "input": "10分と10分かかる。 -> It takes 600 seconds and 600 seconds.",
+      "locale": "en",
+      "result": [],
+      "verdict": "pass"
+    },
+    {
+      "case": "日本語sourceの次元分離と割alias",
+      "input": "月末2日間に判定の8割が発生。 -> 80 % des décisions surviennent au cours des deux derniers jours du mois.",
+      "locale": "fr",
+      "result": [],
+      "verdict": "pass",
+      "boundary": "deux joursは既存policyどおり綴り数詞としてsemantic reviewへ残り、80%だけをpercent:80として比較する。"
+    },
+    {
+      "case": "英語sourceから日本語targetの割alias",
+      "input": "80% of decisions occur during the final two days. -> 月末2日間に判定の8割が発生。",
+      "locale": "ja",
+      "result": [],
+      "verdict": "pass"
+    },
+    {
+      "case": "targeted unit suite",
+      "command": "bun test scripts/translation-numbers.test.ts",
+      "result": "9 pass, 0 fail",
+      "verdict": "pass"
+    },
+    {
+      "case": "reported formal suite",
+      "result": "bun run test: 478 pass, 0 fail, 5292 expectations, 174 files; scopeBiome, tsc, i18n:typecheck pass",
+      "verdict": "reported-by-main-not-rerun-in-this-review"
+    }
+  ],
+  "designAssessment": {
+    "rawMultiplicity": "preserved before comparison",
+    "comparison": "each source dimension is compared only when its raw occurrence count equals the target count; matching actual values are consumed by frequency, so duplicates are neither collapsed nor reused.",
+    "dimensionSeparation": "preserved: percent, seconds, and bytes remain independent.",
+    "boundary": "A missing or additional explicit value changes the raw count and remains outside this numeric guard by the stated policy; written numerals and clock formatting remain semantic-review concerns."
+  },
+  "candidateRecoveryEvidence": {
+    "path": "output/question-quality/quantity-dimensions-candidate-recovery.json",
+    "question": "aib-c01-d2-082",
+    "sourceHash": "ef93a41f5179d6f13d8ccd128318ae1aaa74e8327ed4fdbeb3e16a1cf7f862e7",
+    "observed": {
+      "currentGuardUsedWithoutException": true,
+      "rawBatchQuestionsValidated": 4,
+      "recoveredQuestions": 1,
+      "strictMerges": 9,
+      "persistedStrictReadbacks": 9,
+      "sourceAndGradingUnchanged": true,
+      "originalFailureRetained": true
+    },
+    "assessment": "旧aib-c01-d2-082の誤検知を個別qid例外なしで回収しており、source・採点・native wordingを変えずにguardだけを修正する境界に合致する。"
+  },
+  "unresolved": [
+    {
+      "item": "raw個数不一致の明示数量",
+      "status": "intentional-semantic-review-boundary",
+      "reason": "現行仕様が各次元の個数一致時のみ比較するため。今回のP1ではraw個数が一致する重複を正しく扱うようになった。"
+    },
+    {
+      "item": "Backup archive期待値更新を含むcourse test",
+      "status": "out-of-scope",
+      "reason": "mainが別ファイルで処理する既知の期待値更新であり、数量guardのP0/P1/P2には該当しない。"
+    }
+  ],
+  "scope": {
+    "codeEdited": false,
+    "sourceOrCacheEdited": false,
+    "initialReviewAndTriagePreserved": true
+  }
+}

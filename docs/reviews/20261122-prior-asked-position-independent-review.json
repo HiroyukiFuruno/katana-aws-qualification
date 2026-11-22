@@ -1,0 +1,69 @@
+{
+  "producer": {
+    "thread": "01a1ff21-19cd-7551-b04d-43745010a731",
+    "model": "gpt-5.6-terra",
+    "reasoning": "high",
+    "role": "independent-position-validation-review"
+  },
+  "decision": "changes-requested",
+  "acceptedScope": [
+    "aib-c01-d3-092の実文『先前問過的問題』は、RAGで過去に利用者が尋ねた質問を指し、シャッフルされた設問列の直前問題を指さない。",
+    "RED logは旧規則で実文がposition dependencyとして失敗したことを示し、unit logは新規4件目のtestを含め479 passである。",
+    "現行例外は日本語の『前問』『次問』『次問題』および選択肢文字参照を許可しない。reviewで直接実行したprobeでもそれぞれrejected、実文はacceptedだった。"
+  ],
+  "findings": [
+    {
+      "priority": "P1",
+      "title": "先前問題を無条件に許可し、繁体字の本当の前問参照を見逃す",
+      "paths": [
+        "scripts/question-position-validation.ts:5",
+        "scripts/question-position-validation.test.ts:34-39"
+      ],
+      "reproduction": {
+        "text": "先前問題の答案也要重新確認。",
+        "observed": "accepted",
+        "whyItIsPositionDependent": "RAGという文脈を伴わないこの文は『以前の問題の答えも再確認する』、すなわちシャッフルされた設問列の前問を参照する指示として自然に読める。現在のtestがこの文をallow-list化している。"
+      },
+      "rootCause": "(?<![目先])前問 は、前問の直前が先であれば後続語を問わずmatchを抑止する。実際に必要な例外は『先前問過的問題』であり、『先前問題』全般ではない。",
+      "impact": "繁体字の教材が前問の解答や内容へ依存してもposition-validationを通過し、選択肢と設問のシャッフル後に意味が壊れうる。",
+      "requiredFix": "許可対象を実文のRAG表現へ狭める。例えば前問参照を原則拒否したまま『前問』の直後が『過的問題』である場合だけ除外する形にし、actual文はpass、先前問題の答案・前問の回答・次問/次問題・choice letterはrejectする対照を追加する。"
+    }
+  ],
+  "p0": [],
+  "p2": [],
+  "evidence": {
+    "redLog": {
+      "path": "output/question-quality/prior-asked-position-red.log",
+      "observed": "narrow lookbehind fix前に実文のnot.toThrowが失敗し、displayed question text depends on shuffled positionsを返した。"
+    },
+    "unitLog": {
+      "path": "output/question-quality/prior-asked-position-unit.log",
+      "observed": "479 pass, 0 fail, 5294 expect calls。新規position testを含む。"
+    },
+    "independentTargetedTest": {
+      "command": "bun test scripts/question-position-validation.test.ts",
+      "observed": "4 pass, 0 fail"
+    },
+    "independentContrastProbe": {
+      "actualRagText": "accepted",
+      "twPriorQuestionText": "accepted (P1 reproduction)",
+      "japanesePreviousQuestion": "rejected",
+      "japaneseNextQuestion": "rejected",
+      "japaneseNextQuestionLong": "rejected",
+      "choiceLetter": "rejected",
+      "englishChoiceLetter": "rejected"
+    }
+  },
+  "unresolved": [
+    {
+      "item": "先前問過的問題以外のRAGにおける過去質問表現",
+      "status": "needs-explicit-semantics-if-added",
+      "reason": "位置参照と区別できる語形ごとに、実文と位置依存の反例を対にして狭く許可する必要がある。"
+    }
+  ],
+  "scope": {
+    "sourceOrCacheEdited": false,
+    "codeOrTestEdited": false,
+    "reviewArtifactOnly": true
+  }
+}

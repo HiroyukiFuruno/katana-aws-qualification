@@ -20,7 +20,7 @@ test('an acknowledged pending event remains in the snapshot when the new event f
   const client: ProgressRpcClient = {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name !== 'append_learning_event') return;
       const selected = (args.p_event as { selected: string[] }).selected[0] ?? '';
       writes.push(selected);
@@ -53,7 +53,7 @@ test('retryPending retains each event acknowledged before a later pending failur
   const client: ProgressRpcClient = {
     async rpc(name) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name !== 'append_learning_event') return;
       writes++;
       if (writes === 2) throw new Error('offline');

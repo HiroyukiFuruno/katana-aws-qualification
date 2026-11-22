@@ -50,7 +50,7 @@ test('an append begun before finalization retains the finalized events', async (
   const client: ProgressRpcClient = {
     async rpc(name) {
       if (name === 'initialize_learning_state') return 1;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name === 'finalize_exam_session') {
         hasExam = true;
         return 'finalized';

@@ -1,7 +1,7 @@
 import type { ExamDraft, ExamResponse } from '../exam';
 import { createExamClock } from '../examClock';
 import type { ExamFinalizationEvent } from './examFinalization';
-import { questionKey, refs, type SessionRow } from './examRepositoryCodec';
+import { presentation, questionKey, refs, type SessionRow } from './examRepositoryCodec';
 import { readExamSession, type SubmittedExamDraft } from './examRepositoryRead';
 import { pickLatestSubmitted } from './submittedExamSelection';
 import type { ProgressRpcClient } from './types';
@@ -57,12 +57,13 @@ export function createMemberExamRepository(
     async start(draft: ExamDraft, certificationId: string, sourceVersion: string, durationMs: number) {
       const clock = createExamClock(await readClock());
       const rows = await rpc<{ exam_id: string; deadline_at: string; revision: number }[]>(
-        'start_exam_session',
+        'start_exam_session_v2',
         {
           p_exam_id: draft.id,
           p_certification_id: certificationId,
           p_source_version: sourceVersion,
           p_question_order: refs(draft.order),
+          p_presentation: presentation(draft.order, draft.choiceOrders),
           p_duration_ms: durationMs,
         },
       );

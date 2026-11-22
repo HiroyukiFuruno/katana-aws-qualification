@@ -6,6 +6,7 @@ import {
   lessonCatalogCard,
   nextButton,
   selectLessonAnswer,
+  visibleLessonQuestion,
   walkLessonReading,
 } from './fundamentals.helpers';
 import { createSessions, setRealSession } from './sessions';
@@ -22,8 +23,7 @@ test('storage exhaustion keeps the unpersisted final answer on screen and allows
   await page.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' }));
   await walkLessonReading(page, asset);
   await nextButton(page).click();
-  const question = asset.finalQuestions[0];
-  if (!question) throw new Error('Missing final fixture.');
+  const question = await visibleLessonQuestion(page, asset.finalQuestions);
   await selectLessonAnswer(page, question, question.correct);
   const filled = await page.evaluate(() => {
     let count = 0;
@@ -63,6 +63,6 @@ test('storage exhaustion keeps the unpersisted final answer on screen and allows
   await expect(page).toHaveURL(/\/final\/1\/$/);
   for (const selected of question.correct)
     await expect(
-      page.locator('fieldset input').nth(question.choices.findIndex((choice) => choice.id === selected)),
+      page.locator(`fieldset input[name="${question.id}"][value="${selected}"]`),
     ).toBeChecked();
 });

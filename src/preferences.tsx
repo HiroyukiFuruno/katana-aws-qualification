@@ -1,5 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import localeNames from './locale-names.json' with { type: 'json' };
 import { type Locale, localeForPath, localePath, locales } from './locales';
+import { formatQuantityMessage } from './locales/quantity';
 import { type Message, messages } from './messages';
 import { routeAt } from './routes';
 import { guestLocaleKey, writeGuestPreference } from './sitePreferences/browserStorage';
@@ -72,8 +74,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }
 
   const t: Translation = (key, values = {}) => {
-    return messages[locale][key].replace(/\{(\w+)\}/g, (match, name: string) =>
-      Object.hasOwn(values, name) ? String(values[name]) : match,
+    return formatQuantityMessage(locale, key, messages[locale][key], values).replace(
+      /\{(\w+)\}/g,
+      (match, name: string) => (Object.hasOwn(values, name) ? String(values[name]) : match),
     );
   };
 
@@ -104,7 +107,7 @@ export function SiteControls() {
       >
         {locales.map((value) => (
           <option key={value} value={value} lang={value}>
-            {messages[value].localeName}
+            {localeNames[value]}
           </option>
         ))}
       </select>

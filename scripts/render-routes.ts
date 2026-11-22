@@ -1,7 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { certifications, studyCourses } from '../src/certifications.ts';
-import { titleForLessonPage } from '../src/fundamentals/delivery/routePages.ts';
+import { localizedBuildContent } from './localized-build-content.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { type Message, messages } from '../src/messages.ts';
 import { accountPages, privateLessonPages, publishedLocalesFor, publishedPages } from '../src/routes.ts';
@@ -30,18 +29,14 @@ function escapeHtml(value: string) {
 
 for (const locale of locales) {
   const dictionary = messages[locale];
+  const content = await localizedBuildContent(locale);
   for (const entry of publishedPages) {
     const supported = publishedLocalesFor(entry);
     if (!supported.includes(locale)) continue;
     const path = localePath(locale, entry);
-    const entries = entry.startsWith('study/') ? studyCourses : certifications;
-    const certification = entries.find((cert) => cert.id === entry.split('/')[1]);
-    const lessonTitle = titleForLessonPage(entry);
-    const baseTitle =
-      lessonTitle ??
-      (Object.hasOwn(indexTitles, entry)
-        ? dictionary[indexTitles[entry as keyof typeof indexTitles]]
-        : certification && `${certification.name} (${certification.id.toUpperCase()})`);
+    const baseTitle = Object.hasOwn(indexTitles, entry)
+      ? dictionary[indexTitles[entry as keyof typeof indexTitles]]
+      : content.titleFor(entry);
     if (!baseTitle) throw new Error(`Missing title for ${entry}`);
     const alternateLinks = [...supported, 'x-default']
       .map(
@@ -56,7 +51,7 @@ for (const locale of locales) {
       .replace('lang="en"', `lang="${locale}"`)
       .replace(
         /<title>[^<]+<\/title>/,
-        `<title>${escapeHtml(baseTitle)} | KatanA AWS Qualification</title>`,
+        `<title>${escapeHtml(baseTitle)} | ${escapeHtml(dictionary.siteName)}</title>`,
       )
       .replace(
         /<meta name="description" content="[^"]*">/,
@@ -74,10 +69,19 @@ for (const locale of locales) {
 }
 
 for (const locale of locales) {
+  const dictionary = messages[locale];
   for (const entry of accountPages) {
     const path = localePath(locale, entry);
     const html = template
       .replace('lang="en"', `lang="${locale}"`)
+      .replace(
+        /<title>[^<]+<\/title>/,
+        `<title>${escapeHtml(dictionary[entry === 'dashboard' ? 'accountDashboard' : entry === 'login' ? 'accountSignIn' : 'accountLoading'])} | ${escapeHtml(dictionary.siteName)}</title>`,
+      )
+      .replace(
+        /<meta name="description" content="[^"]*">/,
+        `<meta name="description" content="${escapeHtml(dictionary.accountSsoOnly)}">`,
+      )
       .replace(/<link rel="canonical" href="[^"]*">/, '')
       .replace(
         '</head>',
@@ -90,12 +94,17 @@ for (const locale of locales) {
 }
 
 for (const locale of locales) {
+  const content = await localizedBuildContent(locale);
   for (const entry of privateLessonPages) {
     const path = localePath(locale, entry);
     const directory = join('dist', path);
     await mkdir(directory, { recursive: true });
     const html = template
       .replace('lang="en"', `lang="${locale}"`)
+      .replace(
+        /<title>[^<]+<\/title>/,
+        `<title>${escapeHtml(content.titleFor(entry) ?? messages[locale].learnFundamentals)} | ${escapeHtml(messages[locale].siteName)}</title>`,
+      )
       .replace(/<link rel="canonical" href="[^"]*">/, '')
       .replace(
         '</head>',

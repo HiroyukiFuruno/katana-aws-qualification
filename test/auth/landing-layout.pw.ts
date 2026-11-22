@@ -53,7 +53,7 @@ for (const locale of locales) {
         }
         for (const summary of await page.locator('.landing-faq-item summary').all()) {
           const parent = await summary.boundingBox();
-          const label = await summary.locator('span').boundingBox();
+          const label = await summary.locator('span:not(.landing-faq-marker)').boundingBox();
           expect((label?.x ?? 0) - (parent?.x ?? 0)).toBeGreaterThanOrEqual(40);
           expect((label?.x ?? 0) + (label?.width ?? 0)).toBeLessThan(viewport.width - 30);
         }

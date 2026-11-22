@@ -1,0 +1,140 @@
+[
+  {
+    "id": "sap-c03-full-arch-018",
+    "revision": 1,
+    "category": "クラウドアーキテクチャ",
+    "similarityGroup": "centralized-egress-policy",
+    "version": "オリジナル模試 2026-11",
+    "title": "面向组织的出站流量筛选",
+    "prompt": "你希望通过集中式允许列表，控制多个账户中私有子网发往互联网的出站流量。你需要执行有状态检查（包括 TLS 解密）和基于域名的控制，并希望将规则和策略自动部署到整个组织，包括新账户。你不想运维第三方防火墙的操作系统或集群。哪种架构最合适？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在每个 EC2 实例的安全组中编写 FQDN 规则",
+        "explanation": "安全组不提供基于域名的出站筛选或 TLS 检查。"
+      },
+      {
+        "id": "B",
+        "text": "将 VPC Flow Logs 存储到 S3",
+        "explanation": "这只能提供事后可见性，不能允许或阻止出站流量。"
+      },
+      {
+        "id": "C",
+        "text": "在检查 VPC 中部署 AWS Network Firewall，并通过 Firewall Manager 将策略分发到组织",
+        "explanation": "Network Firewall 提供托管检查，Firewall Manager 则支持在 AWS Organizations 中部署策略。"
+      },
+      {
+        "id": "D",
+        "text": "删除指向 Internet Gateway 的路由",
+        "explanation": "这会阻止所有出站流量，无法根据允许列表放行所需通信。"
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/fms-starting.html",
+      "label": "AWS Firewall Manager 開発者ガイド"
+    },
+    "learning": {
+      "reason": "Network Firewall 提供托管的有状态检查，Firewall Manager 支持在整个 Organizations 中部署一致的策略。",
+      "concept": "将内联检查服务与负责在多个账户中强制实施配置的治理服务结合设计。"
+    },
+    "categoryLabel": "云架构",
+    "examDomainLabel": "云架构",
+    "versionLabel": "原创模拟考试 2026-11",
+    "sourceLabel": "AWS Firewall Manager 开发人员指南"
+  },
+  {
+    "id": "sap-c03-full-res3-018",
+    "revision": 1,
+    "category": "レジリエンス・移行・事業継続",
+    "similarityGroup": "sqs-dlq-redrive-rate-compatible-queue",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "以安全速率将失败消息重新投递到独立目标队列",
+    "prompt": "聚合设备数据的工作器中的错误已修复。需要将 SQS Standard 死信队列中的失败消息原样发送到单独的历史数据重处理队列，不得与处理最新数据的线上队列混在一起。目标数据库的可用余量很小，因此首次重新投递应从较低的固定速率开始。无需转换消息正文，并且希望减少自行编写的轮询代码。应选择哪项操作？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "以系统优化速率将死信队列重新投递到处理最新数据的线上队列，并仅由重处理工作器区分消息。",
+        "explanation": "消息会与最新数据的新消息混在一起，而且投递速率不会固定在较低水平。"
+      },
+      {
+        "id": "B",
+        "text": "使用死信队列重新投递，指定另一个 Standard 队列，并将自定义最大速率设为较低值。",
+        "explanation": "这样可以避开处理最新数据的队列，并限制首次重新投递的速率。"
+      },
+      {
+        "id": "C",
+        "text": "将重处理目标设为 FIFO 队列，然后从 Standard 死信队列执行内置重新投递。",
+        "explanation": "重新投递的源队列和目标队列必须具有相同的队列类型。"
+      },
+      {
+        "id": "D",
+        "text": "延长死信队列的可见性超时，并认为消息会以较低速率移到另一个重处理队列。",
+        "explanation": "可见性超时控制已接收消息何时重新可见；它不会将消息移到其他队列，也不会限制重新投递速率。"
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-dead-letter-queue-redrive.html",
+      "label": "Amazon SQS — DLQからのリドライブ"
+    },
+    "learning": {
+      "reason": "选择与源队列类型相同的 Standard 重处理队列作为重新投递目标，并设置较低的自定义最大速率。",
+      "concept": "内置重新投递可以将消息移至相同类型的队列。若要筛选或修改单条消息正文，需要单独处理。"
+    },
+    "categoryLabel": "弹性、迁移与业务连续性",
+    "examDomainLabel": "弹性、迁移与业务连续性",
+    "versionLabel": "SAP-C03 原创模拟试题 2026-11",
+    "sourceLabel": "Amazon SQS — 从死信队列重新投递消息"
+  },
+  {
+    "id": "sap-c03-full-ops7-009",
+    "revision": 1,
+    "category": "運用上の優秀性・自動化",
+    "similarityGroup": "database-insights-advanced-postgresql-lock-chain",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "追溯锁持有方，排查短暂等待",
+    "prompt": "Aurora PostgreSQL 在每月月底会出现持续几分钟的事务延迟。平均 CPU 使用率较低，而你开始调查时锁等待已经结束。为了应对下次发生，你希望能在 CloudWatch 管理控制台中追溯当时会话之间的阻塞关系和相关 SQL。如何在不添加持续连接的监控代理的情况下实现？",
+    "choices": [
+      {
+        "id": "A",
+        "text": "在 Database Insights 的 Standard 模式下按等待事件显示数据库负载，然后从图表打开锁树。",
+        "explanation": "该模式可以显示负载明细，但锁树分析需要 Advanced 模式。"
+      },
+      {
+        "id": "B",
+        "text": "将 RDS 增强监控设为 1 秒间隔，并根据操作系统进程的 CPU 和内存判断等待关系。",
+        "explanation": "这可以提供操作系统进程统计信息，但不会显示事务之间的锁关系。"
+      },
+      {
+        "id": "C",
+        "text": "在同一仪表板上显示 CloudWatch 数据库连接数和死锁数。",
+        "explanation": "这些指标可以显示数量趋势，但无法还原哪个会话阻塞了另一个会话。"
+      },
+      {
+        "id": "D",
+        "text": "启用 CloudWatch Database Insights 的 Advanced 模式，并查看目标数据库实例在相关时段的锁分析。",
+        "explanation": "它会以层级方式显示数据库原生锁等待，便于调查持锁会话和等待会话。"
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "label": "CloudWatch Database Insights — PostgreSQLのロック分析",
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Database-Insights-Lock-Analysis.html"
+    },
+    "learning": {
+      "reason": "在 Database Insights 中启用 Advanced 模式，检查相关时段的锁树。",
+      "concept": "锁等待的汇总指标可以表明负载类型。若要检查阻塞会话与等待会话的层级关系，应使用锁分析。"
+    },
+    "categoryLabel": "卓越运营与自动化",
+    "examDomainLabel": "卓越运营与自动化",
+    "versionLabel": "SAP-C03 原创模拟考试 2026-11",
+    "sourceLabel": "CloudWatch Database Insights — PostgreSQL 锁分析"
+  }
+]

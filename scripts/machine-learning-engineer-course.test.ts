@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { certifications, studyCourses } from '../src/certifications';
 import { newExam } from '../src/exam';
 import { routeAt } from '../src/routes';
+import { locales, localePath } from '../src/locales';
 import { type Question, examDomainOf, questionGroupKey, questionKey } from '../src/questions';
 
 const findCourse = () => {
@@ -37,12 +38,13 @@ test('MLA-C01 retains the storage identity and both archived banks', () => {
   expect(readBank(mock).some((question) => archivedKeys.has(questionKey(question)))).toBe(false);
 });
 
-test('MLA-C02 is an English beta study course with separate history and five full mocks', () => {
+test('MLA-C02 retains its English source and separate history while supporting all ten site languages', () => {
   const course = studyCourses.find(({ id }) => id === 'mla-c02')?.course;
   if (!course) throw new Error('MLA-C02 course missing');
   expect(certifications.some(({ id }) => id === 'mla-c02')).toBe(false);
   expect(routeAt('/study/mla-c02/')).toEqual({ locale: 'en', page: 'study/mla-c02' });
-  expect(routeAt('/ja/study/mla-c02/')).toBeUndefined();
+  for (const locale of locales)
+    expect(routeAt(localePath(locale, 'study/mla-c02'))).toEqual({ locale, page: 'study/mla-c02' });
   expect(routeAt('/ja/study/mla-c01/')).toEqual({ locale: 'ja', page: 'study/mla-c01' });
   expect(course.examStorageId).toBe('mla-c02');
   expect(course.examStorageId).not.toBe(findCourse().examStorageId);

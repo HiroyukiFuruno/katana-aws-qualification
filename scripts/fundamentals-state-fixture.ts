@@ -4,7 +4,8 @@ import { lessonQuestionRef } from '../src/fundamentals/state/grade';
 import type { LessonSnapshot } from '../src/fundamentals/state/types';
 
 export const lessonAsset = data as DeliveryUnitAsset;
-export const lessonSessionId = '00000000-0000-0000-0000-000000000001';
+// 新規の最終試験は提示方式v1をUUIDv8で永続化する。
+export const lessonSessionId = '00000000-0000-8000-8000-000000000001';
 export const lessonDate = '2026-11-20T10:00:00.123456+00:00';
 
 export function emptyLessonSnapshot(): LessonSnapshot {

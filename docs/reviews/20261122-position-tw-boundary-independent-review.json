@@ -1,0 +1,58 @@
+{
+  "reviewedAt": "2026-11-22T00:00:00+09:00",
+  "reviewerThread": "01a1ff21-19cd-7551-b04d-43745010a731",
+  "model": "gpt-5.6-terra",
+  "reasoning": "high",
+  "scope": "Read-only review of the Traditional Chinese boundary fix in scripts/question-position-validation.ts and its tests. The separate prompt-cache native wording work is assessed only as an unmerged follow-up.",
+  "verdict": "pass",
+  "findingCounts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0
+  },
+  "incidentEvidence": {
+    "batch": "output/question-quality/ai/natural/batches/b75ff526885d8a8aa0162cadc4f6a97e03812eac217fe5635125ee6d82f16585-4-1795286006528-0",
+    "failure": "validation-error.txt records aif-c01-d3-03-005/zh-TW.choices[0].explanation rejected as position-dependent text.",
+    "cause": "The earlier broad next-question match treated the substring 次問 inside the legitimate Traditional Chinese compound 每次問題 as a Japanese adjacent-question reference.",
+    "sourceHashBoundary": "The affected prompt-cache input records sourceHash f80c1a09b0902021b5bea527f502154b93f8ccdd893fcbf22c05c6c142ac8697, revision 1, and correct choice D; this review did not mutate source, cache, or translation data."
+  },
+  "implementationAssessment": {
+    "finalRule": "scripts/question-position-validation.ts:5 uses (?<!每)次問|(?<!目)前問, alongside the existing choice-letter and locale-specific checks.",
+    "whyCorrect": "The negative lookbehinds suppress only 次問 in 每次問題 and 前問 in 目前問題. They retain rejection of Japanese 次問, 前問, and 次問題, instead of weakening the complete position-reference rule.",
+    "rejectedAlternative": "The initial (?!題) suffix approach would have allowed Japanese 次問題. It was correctly not retained.",
+    "noBypass": "The validation rule remains active for every recursively visited string field; no source, locale, or path exclusion was introduced."
+  },
+  "regressionEvidence": [
+    "scripts/question-position-validation.test.ts:7-19 rejects 次問, 前問, 次問題, choice-letter references, English adjacent-question references, and localized choice-letter references.",
+    "scripts/question-position-validation.test.ts:21-34 accepts only the required Traditional Chinese compounds 每次問題 and 目前問題, including recursive choice explanation traversal.",
+    "Independent runtime probe confirmed those two accepted strings and all four required Japanese/choice-reference strings rejected.",
+    "output/question-quality/position-tw-boundary-red.log preserves the real RED failure; output/question-quality/position-tw-boundary-green.log passes all 3 tests and 15 assertions."
+  ],
+  "verification": [
+    {
+      "command": "bun test scripts/question-position-validation.test.ts",
+      "result": "pass: 3 tests"
+    },
+    {
+      "command": "bun run typecheck",
+      "result": "pass"
+    },
+    {
+      "command": "bun run format:check",
+      "result": "pass: 852 files, no fixes"
+    },
+    {
+      "command": "output/question-quality/position-tw-full-unit.log",
+      "result": "pass: 472 tests, 0 failures, 5,235 expectations, 173 files"
+    },
+    {
+      "command": "git diff --check -- scripts/question-position-validation.ts scripts/question-position-validation.test.ts",
+      "result": "pass"
+    }
+  ],
+  "promptCacheFollowUp": {
+    "status": "not-applied-and-not-used-as-this-review-evidence",
+    "assessment": "The current source for aif-c01-d3-03-005 has revision 1, correct D, and explains that putting a changing question inside the policy prevents the whole policy from remaining a common prefix. A bounded wording clarification to choice B explanation and learning material across 18 locale fields is semantically appropriate only if it preserves that condition, correct D, revision, and all other fields. It is not a necessary change for the position-boundary fix and must be independently reviewed after application."
+  },
+  "rootCollectedAt": "2026-11-21T18:58:23.352593+00:00"
+}

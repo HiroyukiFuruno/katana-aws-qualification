@@ -8,7 +8,7 @@ test('member read rejects a same-count replacement during pagination and keeps t
   const client: ProgressRpcClient = {
     async rpc(name) {
       if (name === 'initialize_learning_state') return generation;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       throw new Error(`unexpected rpc: ${name}`);
     },
     async select(table) {

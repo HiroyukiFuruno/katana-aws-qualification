@@ -54,7 +54,9 @@ export function AnalyticsSettings() {
   const cookieConsent = useCookieConsent();
   const [consent, setConsent] = useState(readConsent);
   useEffect(() => {
-    setConsent(cookieConsent.value === 'granted' && readConsent());
+    const enabled = cookieConsent.value === 'granted' && readConsent();
+    setConsent(enabled);
+    applyConsent(enabled);
   }, [cookieConsent]);
   return (
     <section className="card" aria-label={t('privacy')}>

@@ -35,7 +35,7 @@ export function contract(root = '.'): Contract {
   const policies = value.rlsPolicies
     .map(({ name, table }) => ({ name, table }))
     .sort((a, b) => `${a.table}.${a.name}`.localeCompare(`${b.table}.${b.name}`));
-  if (functions.length !== 44 || ownerTables.length !== 12 || policies.length !== 10)
+  if (functions.length !== 51 || ownerTables.length !== 12 || policies.length !== 10)
     throw new Error('Owner cutover manifest inventory is incomplete');
   if (
     [...functions, ...ownerTables, ...privateTables, ...policies.flatMap(Object.values)].some(

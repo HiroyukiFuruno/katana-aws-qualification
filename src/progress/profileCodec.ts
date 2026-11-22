@@ -19,5 +19,20 @@ export function parseStoredProfile(value: string | null) {
         ]
       : [],
     answers: profile.answers ?? {},
+    optionOrders:
+      profile.optionOrders &&
+      typeof profile.optionOrders === 'object' &&
+      !Array.isArray(profile.optionOrders)
+        ? Object.fromEntries(
+            Object.entries(profile.optionOrders).flatMap(([key, value]) =>
+              Array.isArray(value) && value.every((index) => Number.isSafeInteger(index))
+                ? [[key, value]]
+                : [],
+            ),
+          )
+        : {},
+    order: Array.isArray(profile.order)
+      ? profile.order.filter((id): id is string => typeof id === 'string')
+      : [],
   };
 }

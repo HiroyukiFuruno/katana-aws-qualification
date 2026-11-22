@@ -97,7 +97,7 @@ test('retry preserves its save error when the generation refresh also fails', as
         if (rejectGenerationRefresh) throw new Error('generation unavailable');
         return 1;
       }
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name === 'append_learning_event') {
         writes++;
         if (writes === 1) throw new Error('offline');

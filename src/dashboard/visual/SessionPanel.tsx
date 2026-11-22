@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePreferences } from '../../preferences';
+import { useDashboardDisplayLabels } from '../displayLabels';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardStats } from '../statTypes';
 import type { DashboardSummary } from '../summaryTypes';
@@ -8,7 +9,7 @@ import type { DashboardLessonData } from '../viewTypes';
 import { useDashboardDensity } from './DashboardDensity';
 import { DashboardDataTable } from './DataTable';
 import { FinalPassRates } from './FinalPassRates';
-import { dashboardCertificationLabel, dashboardMetricValue, formatDashboardValue } from './format';
+import { dashboardMetricValue, formatDashboardValue } from './format';
 import { TimeChart } from './TimeChart';
 
 type Session = {
@@ -34,6 +35,7 @@ export function SessionPanel({
   const density = useDashboardDensity();
   const [selected, setSelected] = useState('');
   const { locale, t } = usePreferences();
+  const display = useDashboardDisplayLabels(lessons);
   const timezone = summary.query.range.timezone;
   const date = (value: string | null) =>
     value === null
@@ -49,7 +51,7 @@ export function SessionPanel({
     ...summary.exams.map((exam) => ({
       id: exam.examId,
       series: JSON.stringify(['exam', exam.certificationId, exam.sourceVersion]),
-      label: `${t('exam')} · ${dashboardCertificationLabel(exam.certificationId)} · ${exam.sourceVersion}`,
+      label: `${t('exam')} · ${display.certification(exam.certificationId)} · ${display.sourceVersion(exam.sourceVersion)}`,
       submittedAt: exam.submittedAt,
       lastAnsweredAt: exam.lastAnsweredAt,
       questionCount: exam.questionCount,

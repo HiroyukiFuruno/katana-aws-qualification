@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ExamBlueprint } from './certifications';
-import { isAnswered } from './exam';
+import { examChoiceOrder, isAnswered } from './exam';
 import { examNow } from './examClock';
 import type { Attempt } from './history';
 import { getActiveProgressStore } from './history';
@@ -59,6 +59,7 @@ export function useExamSession({
   const correctRevision = draft?.order.length === questions.length;
   const question = questions[draft?.position ?? 0];
   const key = question ? questionKey(question) : '';
+  const choiceOrder = question && draft ? examChoiceOrder(draft, question) : [];
   const attempts = draft ? history.filter((attempt) => attempt.examId === draft.id) : [];
   const completed =
     attempts.length > 0 || Boolean(draft && 'submitted' in draft && draft.submitted === true);
@@ -118,6 +119,7 @@ export function useExamSession({
     error,
     expired,
     key,
+    choiceOrder,
     now: currentNow,
     question,
     questions,

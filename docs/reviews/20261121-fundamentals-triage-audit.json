@@ -1,0 +1,286 @@
+{
+  "purpose": "fundamentals semantic triage 29件の独立監査。canonical全文を先に照合し、既存decision、採点極性、受理済み訂正実装を検証する。",
+  "observedAt": "2026-11-21",
+  "scope": {
+    "input": "output/question-quality/fundamentals-triage-source-contexts.json",
+    "existingTriage": "docs/reviews/20261121-fundamentals-triage.json",
+    "items": 29,
+    "canonicalChecks": {
+      "cacheResolutionHashAndFieldsMatched": 29,
+      "canonicalSourceContextExactMatches": 49,
+      "canonicalSourceContextMismatches": 0,
+      "method": "各hashのcache reviewResolution.hash/id/decision/rationaleを入力と照合し、各sourcePathsを再帰走査してid・revision・prompt・selectionPolarity・requiredChoices・choices・correct・rationaleの完全一致を確認した。"
+    }
+  },
+  "acceptedImplementationChecks": {
+    "sourceOverrides": {
+      "fundamentals.core-services.checkpoint.compute.v1@1": "src/question-source-overrides.jsonにAWS Lambdaを登録。questionAdditionalSourcesがid/revisionキーで取得する。",
+      "fundamentals.observability.checkpoint.signals.v1@1": "src/question-source-overrides.jsonにAWS X-Rayを登録。questionAdditionalSourcesがid/revisionキーで取得する。"
+    },
+    "clarifications": {
+      "fund-cidr-105@1": "subnetAddressReservationScopeを登録。",
+      "fundamentals.observability.checkpoint.objectives.v1@1": "archivedSloCorrectionを登録。",
+      "fundamentals.testing-quality.checkpoint.test-design.v1@1": "archivedTaxTestClarificationを登録。",
+      "fundamentals.testing-quality.checkpoint.quality-gates.v1@1": "archivedQualityGateClarificationを登録。",
+      "rendering": "QuestionClarificationsは通常問題、fundamentals学習中、結果画面でquestion id/revisionにより表示される。"
+    },
+    "localeNotes": {
+      "keys": [
+        "subnetAddressReservationScope",
+        "archivedSloCorrection",
+        "archivedTaxTestClarification",
+        "archivedQualityGateClarification"
+      ],
+      "localeCountPerKey": 10,
+      "locales": ["de", "en", "es", "fr", "it", "ja", "ko", "pt", "zh-CN", "zh-TW"]
+    },
+    "revisionsAndArchive": {
+      "fundamentals.observability.checkpoint.objectives.v1": "archive revision 1のcorrect=[A,B]は不変。現行revision 2は対象操作・成功条件・分母、目標値・windowに訂正済み。",
+      "fundamentals.testing-quality.checkpoint.test-design.v1": "archive revision 1のcorrect=[A,B]は不変。現行revision 2は適用日時・税率・期待値の対応表を固定すると明確化済み。",
+      "fundamentals.testing-quality.checkpoint.quality-gates.v1": "archive revision 1のcorrect=[B,C]は不変。現行revision 2は型検査を必須と明記済み。"
+    }
+  },
+  "findings": {
+    "P0": [],
+    "P1": [],
+    "notes": [
+      "fund-release-004は実際にA/B/Cの3択で、requiredChoices=2、correct=[A,C]である。2択という旧AI指摘はcanonical全文の誤読であり、既存のrejectedは適切。",
+      "fund-cidr-002のoriginalSummaryにある/24を4等分する設問という記述はcanonical本文とは異なるが、既存triageはcanonical本文のA/Cを読んでrejectedとしており、判定自体は適切。"
+    ]
+  },
+  "items": [
+    {
+      "hash": "c7399035e5afaf69d7d5aca7a8af2a40b2c82cb31f30044468ecc97ed622b1b1",
+      "id": "fundamentals.core-services.checkpoint.compute.v1",
+      "canonical": { "actualChoiceCount": 4, "requiredChoices": 1, "selectionPolarity": "correct", "correctIds": ["D"] },
+      "existingDecision": "accepted",
+      "auditVerdict": "appropriate",
+      "rationale": "Dはイベント駆動で利用者にOS管理を求めないLambdaであり一意。元EC2出典だけが不一致で、revision 1のAWS Lambda overrideにより本文・採点を変えず解消している。"
+    },
+    {
+      "hash": "54672f0b3046c38b3bdb3e7f593053eb6ef69eda737317c6366816e75232006c",
+      "id": "fundamentals.identity-access.checkpoint.policy-deny.v1",
+      "canonical": { "actualChoiceCount": 4, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["C", "D"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "Cのexplicit Deny確認とDのresource policy・conditionを含む実効評価は補完関係で、Allowを見ただけでDenyを無視するA、全Allow化するBは誤り。二つの正答は一意である。"
+    },
+    {
+      "hash": "7eca2a2157a29c5fc4cb2c38071da0e65145910476714f1dc33bd0aef076e5e4",
+      "id": "fundamentals.networking-basics.checkpoint.transport.v1",
+      "canonical": { "actualChoiceCount": 4, "requiredChoices": 1, "selectionPolarity": "correct", "correctIds": ["D"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "promptは再送をアプリ側で担い接続確立遅延を避ける条件を明示する。DだけがUDPの軽量性と損失対策を併記し、保証を断言するA、TCPを断言するB、portだけで保証を得るCは誤り。"
+    },
+    {
+      "hash": "644a2a9edf2b151d69bceb98476262138c41fbbb1a1adec3ebe420a7b08c99c4",
+      "id": "fundamentals.domain-dns.checkpoint.records.v1",
+      "canonical": { "actualChoiceCount": 4, "requiredChoices": 1, "selectionPolarity": "correct", "correctIds": ["D"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "サブドメインapi.example.testを別名にするrecordはCNAME(D)。testは概念例として予約されたTLDであり、NS・AAAA・TTL単独は別名表現にならない。"
+    },
+    {
+      "hash": "c8d8de5de68cb51a076180dfeb6edbd6c277f998b68f9a6a9b5c055abb77afe4",
+      "id": "fundamentals.observability.checkpoint.signals.v1",
+      "canonical": { "actualChoiceCount": 4, "requiredChoices": 1, "selectionPolarity": "correct", "correctIds": ["B"] },
+      "existingDecision": "accepted",
+      "auditVerdict": "appropriate",
+      "rationale": "複数serviceを通る一要求の遅延箇所はtrace(B)で追う。metrics出典では根拠が不足するため、revision 1のAWS X-Ray overrideで補正済みであり、採点変更は不要。"
+    },
+    {
+      "hash": "6448092593ea63bc0e141eeb31305f2447ac80ab6a7d2ec09c93a9ffa78635cb",
+      "id": "fund-iam-104",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 1, "selectionPolarity": "incorrect", "correctIds": ["B"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "incorrect極性なので誤文Bを選ぶ採点は正しい。roleは引受主体に権限を与え、AWSサービスも引受可能だが、必ず長期パスワード・アクセスキーを持つわけではない。"
+    },
+    {
+      "hash": "d656923575afdf8bf8acaa96f0bbf0f11f79cfd0a7cea252c0214d15e15f377c",
+      "id": "fund-iam-107",
+      "canonical": { "actualChoiceCount": 5, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["A", "D"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "Aはexplicit Deny優先、Dは適用policyを判断するrequest contextの具体化で正しい。B/C/EはIAM評価と矛盾し、A/Dの組合せは一意である。"
+    },
+    {
+      "hash": "f31ae74671888dab7b74cfba571fc38e536abbed5ffafb81ef111b2cc4a2d889",
+      "id": "fund-network-109",
+      "canonical": { "actualChoiceCount": 5, "requiredChoices": 2, "selectionPolarity": "incorrect", "correctIds": ["A", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "名前解決不能時にHTTP 404を先に見るA、TLS再発行でDNSを直すCは層を取り違える誤手順である。B/D/EはDNS調査として妥当で、極性も採点も整合する。"
+    },
+    {
+      "hash": "84eae06a0b3a118a6df87b366bab6320888387eac8ae8360da41637a7ab95b9f",
+      "id": "fund-cidr-102",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 1, "selectionPolarity": "incorrect", "correctIds": ["B"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "VPC内ではAZが違っても同一CIDRのsubnetを重複できないためBだけが誤り。AのVPC CIDR内制約とCの区間での重複確認は妥当。"
+    },
+    {
+      "hash": "7a93111d36a155fbf35a4af090ac39aa9a60bceebaf1da7ec9765870a755d4a2",
+      "id": "fund-cidr-105",
+      "canonical": { "actualChoiceCount": 5, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["B", "E"] },
+      "existingDecision": "accepted",
+      "auditVerdict": "appropriate",
+      "rationale": "通常のAmazon提供IPv4 subnetでは先頭4個と最後1個が予約され、容量見積りにも含めるためB/Eが正しい。BYOIP例外はrevision 1注記と10ロケールで明示済み。"
+    },
+    {
+      "hash": "1e515e59271faba29cc2aae5ed0d2476b78ad8a73fc0f399873d61ed2a01a745",
+      "id": "fund-cidr-108",
+      "canonical": { "actualChoiceCount": 5, "requiredChoices": 2, "selectionPolarity": "incorrect", "correctIds": ["A", "E"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "public/privateはCIDRや名前ではなくIGWへのroute table関連で判断する。外部IPv4通信にはpublic IPも必要なのでB/C/Dは正しく、A/Eのみ誤り。"
+    },
+    {
+      "hash": "2f599d6c634f57ba222865ad06bf4fc9b184becdf263e150e54981ab2a148cb5",
+      "id": "fund-cicd-002",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 2, "selectionPolarity": "incorrect", "correctIds": ["B", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "失敗buildでもdeployを続行するB、rollback用の正常版を持たないCはいずれも安全なCI/CDに反する。Aは正しく、3択中2誤答は曖昧性を生まない。"
+    },
+    {
+      "hash": "3694f131dabed3b76523d7d52743ee7fc8e9e9ed715e7076090ce7c9681b9a82",
+      "id": "fund-cicd-006",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 1, "selectionPolarity": "correct", "correctIds": ["B"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "continuous deploymentは検査後の本番配布まで自動化するBが正しい。deliveryを無承認本番配布と断言するA、artifactを検査しないCは誤り。"
+    },
+    {
+      "hash": "9b54f91b560dda0d6281620505fb9f67d0911bd449c4326eb4959e970db3997c",
+      "id": "fund-cicd-009",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 2, "selectionPolarity": "incorrect", "correctIds": ["B", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "promotionは検査済みの同一artifactを環境間で進める。環境ごとの再build Bとversion/digest未記録Cが誤りで、Aは正しい。"
+    },
+    {
+      "hash": "0a6bc250540416586951e566158ff66851ec25de0c9dfd6c38810839b31d34a7",
+      "id": "fund-testing-004",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["A", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "固定入力と仕様由来期待値の比較Aは再現性の基本であり、失敗時の入力・実結果記録Cは再現と調査を可能にする。Bだけが期待値を事後決定する誤り。"
+    },
+    {
+      "hash": "518ad118a20f4a9a70a2dd73508bbd1b052d841d4b8cbe41c54ad332884ceaac",
+      "id": "fund-testing-005",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 2, "selectionPolarity": "incorrect", "correctIds": ["B", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "変動する外部応答で入力・期待値を記録しないB、境界値・異常期待値を定めないCは誤り。seedと失敗入力を保存するAは正しい。"
+    },
+    {
+      "hash": "b81cec4960361c168f50c338755a9b90405bcc1d564a2bf2101b8378cbfa92b4",
+      "id": "fund-release-004",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["A", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "A/B/Cの3択を全文で確認した。Aの閾値超過停止とCの観測不能時の拡大停止・ログ保存が正しく、BはCPU正常を理由にerror rateを見ない誤り。旧AIの2択前提は誤読。"
+    },
+    {
+      "hash": "da2618c5755a7382548f2258f5860b0ea4ab52822ad69a5b12592e8256900720",
+      "id": "fund-release-005",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 2, "selectionPolarity": "incorrect", "correctIds": ["B", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "canaryでは旧版・新版のerror rate、latency、業務成功率を比較するAが正しい。監視欠損のまま拡大するB、証跡を残さず続行するCは誤り。"
+    },
+    {
+      "hash": "3fc1548cff90dbbe10246e92dc4e1a05f5b6f5a2ed2fb5b2ec048ffca8c3d4f9",
+      "id": "fund-cidr-002",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["A", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "canonical本文はroute table設問であり、Aのsubnet関連付けとCの宛先CIDR/targetは正しい。IPv4 default routeがIPv6全体を表すBだけが誤りで、要約の別設問混入は採点根拠に採用していない。"
+    },
+    {
+      "hash": "2938f447efdab8abb3f927c9a1160f9156e83ce28eec6c20908b56aa511c7ee1",
+      "id": "fund-route-002",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 1, "selectionPolarity": "incorrect", "correctIds": ["C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "peering疎通では送信元の宛先route/target Aと相手側戻りroute Bを確認する。片側default routeだけで相手側を調べないCだけが誤り。"
+    },
+    {
+      "hash": "824a509fcccef8906be1589d9164052e280098ec98706ac3330fefaf73f19f39",
+      "id": "fund-route-011",
+      "canonical": { "actualChoiceCount": 5, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["A", "E"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "両VPCの相手CIDR route Aと必要なSecurity Group/NACL許可Eが必要である。全開放B、DNS確認不要C、return route不要Dは誤り。"
+    },
+    {
+      "hash": "39c40b604da259e4ace99258d7e3402e4e9348c486579e8eaf29b35855590002",
+      "id": "fund-cicd-001",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 1, "selectionPolarity": "incorrect", "correctIds": ["C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "incorrect極性のため、test結果に関係なく必ず本番へ送るCを選ぶのが正しい。Source AとTest Bの説明は妥当である。"
+    },
+    {
+      "hash": "1dca7f2b1af97d198bb804fd95740dbfae9dac95643769de2d8a2f631fa8c70c",
+      "id": "fund-data-105",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 1, "selectionPolarity": "incorrect", "correctIds": ["A"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "secret読取拒否ではSecretの権限だけでなくKMS key権限も確認する必要がある。KMSを見ないAだけが誤りで、B/Cは正しい調査順序。"
+    },
+    {
+      "hash": "6a16bd52a255147a4e7c4ce42d34fb14969e750a5ba001a1e53fcc8965921c76",
+      "id": "fund-iam-104",
+      "canonical": { "actualChoiceCount": 3, "requiredChoices": 1, "selectionPolarity": "incorrect", "correctIds": ["B"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "delivery版も同じrole設問で、temporary credentialを用いるroleに長期credentialが必ずあるとするBだけが誤り。A/Cと極性は整合する。"
+    },
+    {
+      "hash": "38340f4ca52c488f01cf1323985a55a2520291e4cde3743ef6c0926fddf259ea",
+      "id": "fundamentals.observability.checkpoint.objectives.v1",
+      "canonical": { "actualChoiceCount": 4, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["A", "B"] },
+      "existingDecision": "accepted",
+      "auditVerdict": "appropriate",
+      "rationale": "archive revision 1はalert/無データ扱いBをSLO定義の必須要素としたため範囲が広すぎる。archive採点は保持し、注記10ロケールと現行revision 2の定義要素への差替えで解消済み。"
+    },
+    {
+      "hash": "2c4c6a30aaf8048611ad73803eceb970b9d8c7d704f1f2f5535a1b8f21e5ac13",
+      "id": "fund-services-108",
+      "canonical": { "actualChoiceCount": 5, "requiredChoices": 2, "selectionPolarity": "incorrect", "correctIds": ["B", "D"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "IAMをCSV本文の保存先にするB、EC2選定後にDB検索要件を考えないDは誤り。S3原本保存A、実行方式選択C、問い合わせ要件に合うDB比較Eは妥当。"
+    },
+    {
+      "hash": "966ce2c5106dcb02fb34b833b8ab598659c33bde38c7f8a57527077bc33a1bcb",
+      "id": "fund-cloud-112",
+      "canonical": { "actualChoiceCount": 5, "requiredChoices": 2, "selectionPolarity": "incorrect", "correctIds": ["B", "C"] },
+      "existingDecision": "rejected",
+      "auditVerdict": "appropriate",
+      "rationale": "能力増強だけでAZ障害を防ぐB、複数AZで費用・運用検討が不要とするCは誤り。A/D/Eは負荷・可用性・残余リスクの説明として正しい。"
+    },
+    {
+      "hash": "8fbd69e048d04ff37df7e99e0fbe6a73c3485081aeccc9acd90863ecca2dd6a6",
+      "id": "fundamentals.testing-quality.checkpoint.test-design.v1",
+      "canonical": { "actualChoiceCount": 4, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["A", "B"] },
+      "existingDecision": "accepted",
+      "auditVerdict": "appropriate",
+      "rationale": "archive revision 1のBは固定clock Aとの関係が曖昧だった。採点を保持した上で、現行revision 2は日時・税率・期待値の固定対応表を示し、archive注記も10ロケールで表示可能にしている。"
+    },
+    {
+      "hash": "f9c86c6e3f53ca57960c40e06bcb49451c43848d08e62c5f32ac04fd2a1e5a05",
+      "id": "fundamentals.testing-quality.checkpoint.quality-gates.v1",
+      "canonical": { "actualChoiceCount": 4, "requiredChoices": 2, "selectionPolarity": "correct", "correctIds": ["B", "C"] },
+      "existingDecision": "accepted",
+      "auditVerdict": "appropriate",
+      "rationale": "archive revision 1は型検査を必須gateとする前提をpromptに明示しなかった。採点は不変のまま、現行revision 2と10ロケール注記で必須前提を明記しており、B/Cの一意性を回復している。"
+    }
+  ],
+  "conclusion": "29件すべてで既存semantic triageのdecisionは適切。P0/P1は検出なし。canonical本文・選択肢数・correct IDs・極性を誤読したまま残る判定はない。"
+}

@@ -59,14 +59,14 @@ export function DashboardWidgetState({
     content = (
       <>
         {state.summary.total.answered === 0 && <p>{t('dashboardNoData')}</p>}
-        <DashboardVisual widget={widget} summary={state.summary} />
+        <DashboardVisual widget={widget} summary={state.summary} lessons={items} />
       </>
     );
   return (
     <>
       {state.excludedRecords > 0 && (
         <p className="notice" role="status">
-          {t('dashboardExcludedRecords').replace('{count}', String(state.excludedRecords))}
+          {t('dashboardExcludedRecords', { count: state.excludedRecords })}
         </p>
       )}
       {content}

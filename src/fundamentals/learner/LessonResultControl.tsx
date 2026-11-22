@@ -9,6 +9,7 @@ import { useLessonMutation } from '../state/useLessonMutation';
 import { useLessonRecovery } from '../state/useLessonRecovery';
 import { useSavedLessonReload } from '../state/useSavedLessonReload';
 import { LessonResult } from './LessonResult';
+import { createRandomizedFinalSessionId } from './lesson-presentation';
 import { submittedSession } from './lesson-result-helpers';
 
 type Props = {
@@ -61,7 +62,10 @@ export function LessonResultControl({
         commandId: crypto.randomUUID(),
         unitId: asset.unit.id,
         contentVersion: asset.contentVersion,
-        input: { sessionId: crypto.randomUUID(), expectedRevision: snapshot.progress.revision },
+        input: {
+          sessionId: createRandomizedFinalSessionId(),
+          expectedRevision: snapshot.progress.revision,
+        },
       },
       (result) =>
         confirm(

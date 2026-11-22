@@ -22,7 +22,7 @@ test('reset drops old generation events but keeps an event written by another ta
   const client: ProgressRpcClient = {
     async rpc(name, args) {
       if (name === 'initialize_learning_state') return generation;
-      if (name === 'load_roadmap_profile_snapshot') return [];
+      if (name === 'load_roadmap_profile_snapshot_v2') return [];
       if (name === 'reset_my_learning_data') {
         generation = 2;
         resetComplete();

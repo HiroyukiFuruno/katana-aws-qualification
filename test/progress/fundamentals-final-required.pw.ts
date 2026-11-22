@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
-import { lessonAssets, nextButton, selectLessonAnswer, walkLessonReading } from './fundamentals.helpers';
+import {
+  lessonAssets,
+  nextButton,
+  selectLessonAnswer,
+  visibleLessonQuestion,
+  walkLessonReading,
+} from './fundamentals.helpers';
 
 test('every final question requires its specified selection count before next or submit', async ({
   page,
@@ -11,8 +17,9 @@ test('every final question requires its specified selection count before next or
   await page.getByRole('button', { name: '必要なもののみ', exact: true }).click();
   await walkLessonReading(page, asset);
   await nextButton(page).click();
-  for (const [index, question] of asset.finalQuestions.entries()) {
+  for (const [index] of asset.finalQuestions.entries()) {
     await expect(page).toHaveURL(new RegExp(`/final/${index + 1}/$`));
+    const question = await visibleLessonQuestion(page, asset.finalQuestions);
     await expect(nextButton(page)).toBeDisabled();
     if (question.requiredChoices > 1) {
       await selectLessonAnswer(page, question, [question.correct[0]]);

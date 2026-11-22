@@ -1,6 +1,6 @@
 import { usePreferences } from '../preferences';
-import type { FundamentalsUnit } from './types';
 import { FundamentalsSection } from './FundamentalsSection';
+import type { FundamentalsUnit } from './types';
 
 export function FundamentalsLesson({ unit, sectionId }: { unit: FundamentalsUnit; sectionId?: string }) {
   const { t } = usePreferences();
@@ -43,8 +43,7 @@ export function FundamentalsLesson({ unit, sectionId }: { unit: FundamentalsUnit
         <p key={paragraph}>{paragraph}</p>
       ))}
       <p>
-        <strong>{t('fundamentalsExample')}</strong>
-        {unit.example}
+        <strong>{t('fundamentalsExample')}</strong> {unit.example}
       </p>
     </section>
   );

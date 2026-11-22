@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
-import { applyQuestionTranslation } from '../../src/questionTranslations';
 import { parseQuestions, type Question, questionKey } from '../../src/questions';
+import { applyQuestionTranslation } from '../../src/questionTranslations';
 import { examSessions, learningEventRows } from './api';
 import { createSessions, setRealSession } from './sessions';
 
@@ -49,15 +49,19 @@ test('AIB-C01 keeps member review and full exam answers when switching languages
   await picker.locator('button').click();
   const prompt = page.locator('.prompt');
   await expect(prompt).toHaveAttribute('lang', 'en');
-  const practiced = findQuestion(english, await prompt.innerText());
-  const ordered = practiced.choices
-    .map((choice, index) => ({ id: choice.id, index }))
+  const practicedPrompt = await prompt.textContent();
+  if (!practicedPrompt) throw new Error('The reviewed question prompt is empty.');
+  const practiced = findQuestion(english, practicedPrompt);
+  const incorrectSelection = [...practiced.choices]
     .sort(
-      (first, second) =>
-        Number(practiced.correct.includes(first.id)) - Number(practiced.correct.includes(second.id)),
-    );
-  for (const choice of ordered.slice(0, practiced.correct.length)) {
-    await page.locator(practiceChoices).nth(choice.index).check();
+      (left, right) =>
+        Number(practiced.correct.includes(left.id)) - Number(practiced.correct.includes(right.id)),
+    )
+    .slice(0, practiced.correct.length);
+  expect(incorrectSelection).toHaveLength(practiced.correct.length);
+  expect(incorrectSelection.some((choice) => !practiced.correct.includes(choice.id))).toBe(true);
+  for (const choice of incorrectSelection) {
+    await page.locator(`${practiceChoices}[value="${choice.id}"]`).check();
   }
   await page.locator('.answer-footer button[type="submit"]').click();
   const identity = { question_id: practiced.id, question_revision: practiced.revision };
@@ -73,9 +77,8 @@ test('AIB-C01 keeps member review and full exam answers when switching languages
   await page.locator('.review-list + button').click();
   await expect(prompt).toHaveAttribute('lang', 'fr');
   await expect(prompt).toHaveText(localized.prompt);
-  for (const id of localized.correct) {
-    const index = localized.choices.findIndex((item) => item.id === id);
-    await page.locator(practiceChoices).nth(index).check();
+  for (const choiceId of localized.correct) {
+    await page.locator(`${practiceChoices}[value="${choiceId}"]`).check();
   }
   await page.locator('.answer-footer button[type="submit"]').click();
   await expect
@@ -99,7 +102,9 @@ test('AIB-C01 keeps member review and full exam answers when switching languages
   await formats.locator('select').selectOption('full');
   await formats.locator('button[type="submit"]').click();
   await expect(prompt).toHaveAttribute('lang', 'en');
-  const first = findQuestion(english, await prompt.innerText());
+  const firstPrompt = await prompt.textContent();
+  if (!firstPrompt) throw new Error('The exam question prompt is empty.');
+  const first = findQuestion(english, firstPrompt);
   const frenchFirst = french.find((item) => questionKey(item) === questionKey(first));
   if (!frenchFirst) throw new Error('French version of the exam question is missing.');
   const draft = await examSessions(session);

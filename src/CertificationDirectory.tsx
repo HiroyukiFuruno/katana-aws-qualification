@@ -1,6 +1,7 @@
 import { certifications, levelMessage, studyCourses } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
+import { useContent } from './useContent';
 
 type DirectoryProps =
   | { mode: 'certifications' | 'study' }
@@ -19,10 +20,10 @@ function examVersion(id: string) {
 
 export function CertificationDirectory(props: DirectoryProps) {
   const { locale, t } = usePreferences();
+  const { content } = useContent();
   const { mode } = props;
   const Heading = mode === 'earned' ? 'h3' : 'h2';
   const visible = mode === 'study' ? studyCourses : certifications;
-  const languageNames = new Intl.DisplayNames(locale, { type: 'language' });
 
   return (
     <div
@@ -43,12 +44,10 @@ export function CertificationDirectory(props: DirectoryProps) {
             </Heading>
             <ul className="course-grid">
               {group.map((cert) => {
-                const studyLocale = mode === 'study' ? cert.course?.studyLocale : undefined;
                 const code = (
                   <small className="certification-code">
                     {cert.id.toUpperCase()}
                     {cert.beta ? ` · ${t('beta')}` : ''}
-                    {studyLocale ? ` · ${languageNames.of(studyLocale)}` : ''}
                   </small>
                 );
                 return (
@@ -62,20 +61,16 @@ export function CertificationDirectory(props: DirectoryProps) {
                           onChange={(event) => props.onToggle(cert.id, event.currentTarget.checked)}
                         />
                         <span className="certification-row-content">
-                          <strong>{cert.name}</strong>
+                          <strong>{content.certifications[cert.id].name}</strong>
                           {code}
                         </span>
                       </label>
                     ) : (
-                      <a
-                        className="certification-row"
-                        href={localePath(studyLocale ?? locale, `${mode}/${cert.id}`)}
-                        hrefLang={studyLocale}
-                      >
+                      <a className="certification-row" href={localePath(locale, `${mode}/${cert.id}`)}>
                         <div className="certification-row-content">
                           {code}
-                          <h3>{cert.name}</h3>
-                          {mode === 'certifications' && <p>{t(cert.focus)}</p>}
+                          <h3>{content.certifications[cert.id].name}</h3>
+                          {mode === 'certifications' && <p>{content.certifications[cert.id].focus}</p>}
                         </div>
                         <span aria-hidden="true" className="certification-row-arrow">
                           →

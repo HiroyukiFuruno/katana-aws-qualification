@@ -1,46 +1,65 @@
 import { useState } from 'react';
-import { AssessmentQuestion } from './AssessmentQuestion';
+import { AssessmentContentError } from './AssessmentContentError';
+import * as assessmentDomain from './assessment';
+import { localizeAssessmentItems } from './assessmentLocalization';
 import {
-  assessmentDate,
-  assessmentEstimate,
-  assessmentItems,
-  remainingCertifications,
-} from './assessment';
+  assessmentComplete,
+  ensureAssessmentPresentation,
+  filterAssessmentProfile,
+  orderedItems,
+  randomOptionOrders,
+} from './assessmentOptionOrder';
+import type { AssessmentItem } from './assessmentTypes';
 import { AccountBenefits } from './auth/AccountBenefits';
-import { CertificationDirectory } from './CertificationDirectory';
 import { usePreferences } from './preferences';
+import { RoadmapHeader } from './RoadmapHeader';
+import { RoadmapQuestion } from './RoadmapQuestion';
 import { RoadmapResults } from './RoadmapResults';
-
+import { RoadmapSetup } from './RoadmapSetup';
+import { shuffle } from './randomization';
+import { useContent } from './useContent';
 import { useRoadmapProfile } from './useRoadmapProfile';
 
 export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
   const { t } = usePreferences();
+  const { content } = useContent();
   const { profile, persist, saveError, saving } = useRoadmapProfile();
   const [position, setPosition] = useState(0);
   const [phase, setPhase] = useState<'setup' | 'questions' | 'result'>('setup');
-  const today = assessmentDate();
-  const remaining = remainingCertifications(profile.earned, today);
-  const items = assessmentItems(profile.earned, today);
-  const estimate = assessmentEstimate(items.length);
-  const item = items[position];
-  const complete =
-    items.length > 0 &&
-    items.every(
-      ({ id, options }) =>
-        Number.isInteger(profile.answers[id]) &&
-        profile.answers[id] >= 0 &&
-        profile.answers[id] <= options.length,
+  const today = assessmentDomain.assessmentDate();
+  const remaining = assessmentDomain.remainingCertifications(profile.earned, today);
+  const canonicalItems = assessmentDomain.assessmentItems(profile.earned, today);
+  let localizedItems: AssessmentItem[];
+  try {
+    localizedItems = localizeAssessmentItems(
+      canonicalItems,
+      assessmentDomain.assessment,
+      content.assessment,
     );
+  } catch {
+    return (
+      <main className="shell" id="main">
+        <AssessmentContentError />
+      </main>
+    );
+  }
+  const items = orderedItems(localizedItems, profile.order);
+  const estimate = assessmentDomain.assessmentEstimate(items.length);
+  const item = items[position];
+  const complete = assessmentComplete(items, profile.answers);
 
-  function enterAssessment() {
+  async function enterAssessment() {
     if (complete) {
       setPhase('result');
       return;
     }
+    const nextProfile = ensureAssessmentPresentation(profile, items);
+    if (!(await persist(nextProfile))) return;
+    const nextItems = orderedItems(items, nextProfile.order);
     setPosition(
       Math.max(
         0,
-        items.findIndex((question) => profile.answers[question.id] === undefined),
+        nextItems.findIndex((question) => profile.answers[question.id] === undefined),
       ),
     );
     setPhase('questions');
@@ -50,30 +69,23 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
     const earned = checked
       ? [...new Set([...profile.earned, id])]
       : profile.earned.filter((value) => value !== id);
-    const remainingItems = new Set(assessmentItems(earned, today).map((question) => question.id));
-    const answers = Object.fromEntries(
-      Object.entries(profile.answers).filter(([question]) => remainingItems.has(question)),
+    const remainingItems = new Set(
+      assessmentDomain.assessmentItems(earned, today).map((question) => question.id),
     );
-    void persist({ earned, answers });
+    void persist(filterAssessmentProfile(profile, earned, remainingItems));
   }
 
   function selectAnswer(choice: number) {
+    if (!item) return;
     void persist({ ...profile, answers: { ...profile.answers, [item.id]: choice } });
   }
 
   return (
     <main className="shell" id="main" aria-busy={saving}>
-      <div className="intro">
-        <h1>{t('skillsAssessment')}</h1>
-        <p>{t('roadmapIntro')}</p>
-        {phase === 'setup' && !complete && items.length > 0 && (
-          <p>
-            <output>
-              <strong>{t('assessmentDuration', estimate)}</strong>
-            </output>
-          </p>
-        )}
-      </div>
+      <RoadmapHeader
+        showEstimate={phase === 'setup' && !complete && items.length > 0}
+        estimate={estimate}
+      />
       {phase !== 'questions' && <AccountBenefits context="assessment" showAction />}
       {saveError && (
         <p className="notice" role="alert">
@@ -81,30 +93,23 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
         </p>
       )}
       {phase === 'setup' ? (
-        <section className="card roadmap-card">
-          <h2>{t('earned')}</h2>
-          <p>{t('earnedIntro')}</p>
-          <CertificationDirectory
-            mode="earned"
-            selected={profile.earned}
-            saving={saving}
-            onToggle={toggleEarned}
-          />
-          {remaining.length ? (
-            <button type="button" className="primary" disabled={saving} onClick={enterAssessment}>
-              {complete ? t('certOrder') : t('startAssessment', estimate)}
-            </button>
-          ) : (
-            <p role="status">{t('allEarned')}</p>
-          )}
-        </section>
+        <RoadmapSetup
+          earned={profile.earned}
+          hasRemaining={remaining.length > 0}
+          complete={complete}
+          estimate={estimate}
+          onToggle={toggleEarned}
+          onStart={enterAssessment}
+          saving={saving}
+        />
       ) : phase === 'questions' && item ? (
-        <AssessmentQuestion
+        <RoadmapQuestion
           item={item}
-          answer={profile.answers[item.id]}
+          content={content}
+          profile={profile}
           position={position}
           total={items.length}
-          selectAnswer={selectAnswer}
+          onSelect={selectAnswer}
           onBack={() => (position ? setPosition(position - 1) : setPhase('setup'))}
           onNext={() => {
             if (position < items.length - 1) setPosition(position + 1);
@@ -121,8 +126,14 @@ export function Roadmap({ onStudy }: { onStudy: (id: string) => void }) {
           today={today}
           onStudy={onStudy}
           onEdit={() => setPhase('setup')}
-          onRetake={() => {
-            void persist({ ...profile, answers: {} });
+          onRetake={async () => {
+            const saved = await persist({
+              ...profile,
+              answers: {},
+              order: shuffle(items.map(({ id }) => id)),
+              optionOrders: randomOptionOrders(items),
+            });
+            if (!saved) return;
             setPosition(0);
             setPhase('questions');
           }}

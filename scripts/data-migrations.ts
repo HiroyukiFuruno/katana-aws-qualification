@@ -13,6 +13,7 @@ export const dataMigrations = [
   '202611210002_dashboard_summary.sql',
   '202611210003_dashboard_settings.sql',
   '202611210004_learning_account_foundation.sql',
+  '202611210005_presentation_storage.sql',
   '202611220001_learning_owner_shadow.sql',
   '202611220005_site_preferences.sql',
 ] as const;

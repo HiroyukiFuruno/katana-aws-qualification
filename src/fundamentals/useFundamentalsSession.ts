@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Attempt } from '../attempts';
+import { localizeSessionQuestions } from '../questionPresentation';
+import { randomizePracticeQuestions } from '../randomization';
 import { createSession, type FundamentalsSession } from './session';
-import type { FundamentalsContent, FundamentalsUnit } from './types';
+import type { FundamentalsContent, FundamentalsQuestion, FundamentalsUnit } from './types';
 
 function sessionFor(unit: FundamentalsUnit, attempts: Attempt[], review: boolean) {
   const session = createSession(unit, attempts, review);
-  return !review && !session.questions.length ? { ...session, questions: unit.questions } : session;
+  return !review && !session.questions.length
+    ? { ...session, questions: randomizePracticeQuestions(unit.questions) }
+    : session;
 }
 
 export function useFundamentalsSession(
@@ -26,6 +30,23 @@ export function useFundamentalsSession(
     const unit = content.units.find((item) => item.id === initialUnitId);
     if (unit) setSession(sessionFor(unit, attempts, initialReview));
   }, [attempts, content, historyLoaded, initialReview, initialUnitId]);
+
+  useEffect(() => {
+    if (!content) return;
+    setSession((current) => {
+      if (!current) return current;
+      const unit = content.units.find((item) => item.id === current.unitId);
+      return unit
+        ? {
+            ...current,
+            questions: localizeSessionQuestions(
+              current.questions,
+              unit.questions,
+            ) as FundamentalsQuestion[],
+          }
+        : current;
+    });
+  }, [content]);
 
   function openUnit(id: string, review = false) {
     const unit = content?.units.find((item) => item.id === id);

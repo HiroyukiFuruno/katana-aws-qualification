@@ -1,19 +1,20 @@
 import { AccountBenefits } from './auth/AccountBenefits';
 import type { ExamBlueprint } from './certifications';
 import { ExamFormatPicker } from './ExamFormatPicker';
+import { ExamSolution } from './ExamSolution';
 import { examLength } from './exam';
 import type { Attempt } from './history';
-import { LearningNotes } from './LearningNotes';
 import type { Message } from './messages';
 import type { usePreferences } from './preferences';
-import { examDomainOf, isAnswerComplete, type Question, questionKey } from './questions';
-import { StructuredAnswerReview } from './StructuredAnswer';
+import { examDomainOf, type Question, questionKey } from './questions';
+import { useContent } from './useContent';
 
 type Translate = ReturnType<typeof usePreferences>['t'];
 
 export function ExamResults({
   attempts,
   byKey,
+  choiceOrders,
   blueprint,
   available,
   saving,
@@ -25,6 +26,7 @@ export function ExamResults({
 }: {
   attempts: Attempt[];
   byKey: Map<string, Question>;
+  choiceOrders: Record<string, string[]> | undefined;
   blueprint: ExamBlueprint;
   available: boolean;
   saving: boolean;
@@ -34,19 +36,20 @@ export function ExamResults({
   onStart: (count: number) => void;
   t: Translate;
 }) {
+  const { content } = useContent();
   const reviewed = attempts.map((attempt) => ({
     attempt,
     item: byKey.get(questionKey({ id: attempt.questionId, revision: attempt.questionRevision })),
   }));
-  const scores = new Map<string, { correct: number; total: number; label: string; locale?: string }>();
+  const scores = new Map<string, { correct: number; total: number }>();
+  const domainLabels = new Map<string, string>();
   for (const { attempt, item } of reviewed) {
     const domain = item ? examDomainOf(item) : attempt.category;
-    const score = scores.get(domain) ?? {
-      correct: 0,
-      total: 0,
-      label: item?.locale ? item.category : domain,
-      locale: item?.locale,
-    };
+    domainLabels.set(
+      domain,
+      item?.examDomainLabel ?? item?.categoryLabel ?? content.labels[domain] ?? t('unavailableDomain'),
+    );
+    const score = scores.get(domain) ?? { correct: 0, total: 0 };
     score.total += 1;
     if (attempt.isCorrect) score.correct += 1;
     scores.set(domain, score);
@@ -67,10 +70,10 @@ export function ExamResults({
       <AccountBenefits context="exam" showAction />
       <dl className="domain-scores">
         {[...scores]
-          .sort(([, first], [, second]) => first.label.localeCompare(second.label, first.locale ?? 'ja'))
+          .sort(([first], [second]) => first.localeCompare(second, 'ja'))
           .map(([domain, score]) => (
             <div key={domain}>
-              <dt lang={score.locale}>{score.label}</dt>
+              <dt>{domainLabels.get(domain) ?? t('unavailableDomain')}</dt>
               <dd>
                 {score.correct} / {score.total}
               </dd>
@@ -98,41 +101,14 @@ export function ExamResults({
       <div className="exam-solutions">
         {reviewed.map(({ attempt, item }, index) => {
           if (!showAll && attempt.isCorrect) return null;
-          const answered = item
-            ? isAnswerComplete(item, attempt.selected)
-            : attempt.selected.filter(Boolean).length === attempt.correct.length;
           return (
-            <details key={attempt.questionId}>
-              <summary>
-                {t('questionNumber', { number: index + 1 })} ·{' '}
-                {attempt.isCorrect ? t('correct') : answered ? t('incorrect') : t('unanswered')} ·{' '}
-                <span lang={item?.locale}>{item?.title ?? attempt.questionId}</span>
-              </summary>
-              <p lang={item?.locale}>{item?.prompt}</p>
-              {item?.format ? (
-                <StructuredAnswerReview question={item} selected={attempt.selected} />
-              ) : (
-                <p>
-                  {t('selected')} {attempt.selected.join('・') || t('none')} ／ {t('correct')}{' '}
-                  {attempt.correct.join('・')}
-                </p>
-              )}
-              {item && <LearningNotes question={item} selected={attempt.selected} />}
-              {item && !item.format && (
-                <ul>
-                  {item.choices.map((choice) => (
-                    <li key={choice.id}>
-                      <strong>
-                        {choice.id} {attempt.correct.includes(choice.id) ? t('correct') : t('incorrect')}{' '}
-                        · <span lang={item.locale}>{choice.text}</span>
-                      </strong>
-                      <br />
-                      <span lang={item.locale}>{choice.explanation}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </details>
+            <ExamSolution
+              key={attempt.questionId}
+              attempt={attempt}
+              item={item}
+              index={index}
+              choiceOrder={item ? choiceOrders?.[questionKey(item)] : undefined}
+            />
           );
         })}
       </div>

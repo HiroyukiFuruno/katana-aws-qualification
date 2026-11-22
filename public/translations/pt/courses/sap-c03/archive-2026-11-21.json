@@ -1,0 +1,140 @@
+[
+  {
+    "id": "sap-c03-full-arch-018",
+    "revision": 1,
+    "category": "クラウドアーキテクチャ",
+    "similarityGroup": "centralized-egress-policy",
+    "version": "オリジナル模試 2026-11",
+    "title": "Filtragem de saída para a organização",
+    "prompt": "Você quer controlar centralmente o tráfego de saída para a internet originado em sub-redes privadas de várias contas, usando uma lista de permissões. Precisa de inspeção com estado, incluindo descriptografia TLS, e controle baseado em nomes de domínio. Também quer distribuir automaticamente regras e políticas para toda a organização, incluindo contas novas. Não quer operar o sistema operacional nem o cluster de um firewall de terceiros. Qual arquitetura é a mais adequada?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Escrever regras FQDN nos grupos de segurança de cada instância EC2",
+        "explanation": "Os grupos de segurança não oferecem filtragem de saída baseada em nomes de domínio nem inspeção TLS."
+      },
+      {
+        "id": "B",
+        "text": "Armazenar VPC Flow Logs no S3",
+        "explanation": "Isso oferece visibilidade posterior, mas não permite nem bloqueia o tráfego de saída."
+      },
+      {
+        "id": "C",
+        "text": "Implantar o AWS Network Firewall em uma VPC de inspeção e distribuir políticas pela organização com o Firewall Manager",
+        "explanation": "O Network Firewall oferece inspeção gerenciada, e o Firewall Manager ajuda a implantar políticas no AWS Organizations."
+      },
+      {
+        "id": "D",
+        "text": "Excluir as rotas para o Internet Gateway",
+        "explanation": "Isso interrompe toda a saída e não permite as comunicações necessárias com base em uma lista de permissões."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/waf/latest/developerguide/fms-starting.html",
+      "label": "AWS Firewall Manager 開発者ガイド"
+    },
+    "learning": {
+      "reason": "O Network Firewall oferece inspeção com estado gerenciada, e o Firewall Manager ajuda a distribuir políticas consistentes por toda a organização.",
+      "concept": "Projete em conjunto serviços de inspeção em linha e serviços de governança que impõem configurações em várias contas."
+    },
+    "categoryLabel": "Arquitetura de nuvem",
+    "examDomainLabel": "Arquitetura de nuvem",
+    "versionLabel": "Simulado original 2026-11",
+    "sourceLabel": "Guia do desenvolvedor do AWS Firewall Manager"
+  },
+  {
+    "id": "sap-c03-full-res3-018",
+    "revision": 1,
+    "category": "レジリエンス・移行・事業継続",
+    "similarityGroup": "sqs-dlq-redrive-rate-compatible-queue",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "Redirecionamento seguro de mensagens com falha a uma taxa controlada para um destino separado",
+    "prompt": "Um bug em um worker que agrega dados de equipamentos foi corrigido. As mensagens com falha na DLQ do SQS Standard precisam ser enviadas como estão para uma fila separada de reprocessamento histórico, sem se misturarem à fila ativa dos dados mais recentes. O banco de dados de destino tem pouca capacidade disponível, então o redirecionamento inicial deve começar com uma taxa fixa baixa. Não é necessário transformar o corpo das mensagens, e o objetivo é reduzir o código próprio de polling. Qual operação deve ser escolhida?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Redirecionar a DLQ para a fila ativa dos dados mais recentes na taxa otimizada pelo sistema e distingui-las apenas no worker de reprocessamento.",
+        "explanation": "As mensagens se misturariam à fila de novos dados mais recentes, e a taxa não seria fixa e baixa."
+      },
+      {
+        "id": "B",
+        "text": "Usar o redirecionamento da DLQ para especificar outra fila Standard e definir uma taxa máxima personalizada baixa.",
+        "explanation": "Isso evita a fila dos dados mais recentes e limita a taxa inicial de redirecionamento."
+      },
+      {
+        "id": "C",
+        "text": "Usar uma fila FIFO como destino de reprocessamento e executar o redirecionamento integrado a partir da DLQ Standard.",
+        "explanation": "As filas de origem e de destino do redirecionamento devem ser do mesmo tipo."
+      },
+      {
+        "id": "D",
+        "text": "Aumentar o tempo limite de visibilidade da DLQ e presumir que as mensagens serão movidas lentamente para outra fila de reprocessamento.",
+        "explanation": "O tempo limite de visibilidade controla quando uma mensagem recebida volta a ficar visível; não a move para outra fila nem limita a taxa de redirecionamento."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "source": {
+      "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-dead-letter-queue-redrive.html",
+      "label": "Amazon SQS — DLQからのリドライブ"
+    },
+    "learning": {
+      "reason": "Escolha uma fila Standard de reprocessamento do mesmo tipo como destino e defina uma taxa máxima personalizada baixa.",
+      "concept": "O redirecionamento integrado pode mover mensagens para uma fila do mesmo tipo. Para filtrar ou modificar o corpo de mensagens individuais, é necessário um processamento separado."
+    },
+    "categoryLabel": "Resiliência, migração e continuidade de negócios",
+    "examDomainLabel": "Resiliência, migração e continuidade de negócios",
+    "versionLabel": "Simulado original SAP-C03 2026-11",
+    "sourceLabel": "Amazon SQS — Redirecionamento de mensagens de uma DLQ"
+  },
+  {
+    "id": "sap-c03-full-ops7-009",
+    "revision": 1,
+    "category": "運用上の優秀性・自動化",
+    "similarityGroup": "database-insights-advanced-postgresql-lock-chain",
+    "version": "SAP-C03 オリジナル模試 2026-11",
+    "title": "Investigar uma espera breve rastreando até quem mantém o bloqueio",
+    "prompt": "No Aurora PostgreSQL, a latência das transações dura apenas alguns minutos no fim do mês. A utilização média de CPU é baixa e, quando a investigação começa, os bloqueios já foram resolvidos. Para se preparar para a próxima ocorrência, você quer rastrear, no console de gerenciamento do CloudWatch, as relações de bloqueio entre as sessões e as instruções SQL relacionadas naquele momento. Como fazer isso sem adicionar um agente de monitoramento conectado continuamente?",
+    "choices": [
+      {
+        "id": "A",
+        "text": "Exibir a carga do banco de dados por evento de espera no modo Standard do Database Insights e abrir a árvore de bloqueios no gráfico.",
+        "explanation": "É possível exibir a composição da carga, mas a análise da árvore de bloqueios exige o modo Advanced."
+      },
+      {
+        "id": "B",
+        "text": "Definir o Enhanced Monitoring do RDS para intervalos de um segundo e inferir as relações de espera a partir da CPU e da memória dos processos do sistema operacional.",
+        "explanation": "Isso fornece estatísticas dos processos do sistema operacional, mas não exibe as relações de bloqueio entre transações."
+      },
+      {
+        "id": "C",
+        "text": "Exibir as contagens de conexões com o banco de dados e de deadlocks do CloudWatch no mesmo painel.",
+        "explanation": "As métricas mostram tendências nas contagens, mas não permitem reconstruir qual sessão bloqueou outra."
+      },
+      {
+        "id": "D",
+        "text": "Habilitar o modo Advanced do CloudWatch Database Insights e abrir a análise de bloqueios da instância de banco de dados no horário relevante.",
+        "explanation": "Ele exibe hierarquicamente as esperas por bloqueios nativos do banco de dados, permitindo investigar as sessões que mantêm o bloqueio e as que aguardam."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "source": {
+      "label": "CloudWatch Database Insights — PostgreSQLのロック分析",
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Database-Insights-Lock-Analysis.html"
+    },
+    "learning": {
+      "reason": "Use o modo Advanced do Database Insights para investigar a árvore de bloqueios no período relevante.",
+      "concept": "As métricas agregadas de espera por bloqueio indicam o tipo de carga. Para examinar a hierarquia entre as sessões que bloqueiam e as que aguardam, use a análise de bloqueios."
+    },
+    "categoryLabel": "Excelência operacional e automação",
+    "examDomainLabel": "Excelência operacional e automação",
+    "versionLabel": "Simulado original SAP-C03 2026-11",
+    "sourceLabel": "CloudWatch Database Insights — Análise de bloqueios do PostgreSQL"
+  }
+]

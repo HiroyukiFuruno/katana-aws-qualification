@@ -2,6 +2,7 @@ import { usePreferences } from '../../preferences';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardFilters } from '../queryTypes';
 import type { DashboardFacets } from '../summaryTypes';
+import type { DashboardLessonData } from '../viewTypes';
 import { DashboardOverrideSelect } from './DashboardOverrideSelect';
 import { dashboardFilterOptions } from './dashboardFilterOptions';
 import { dashboardPeriodKeys } from './dashboardOptionLabels';
@@ -10,9 +11,10 @@ import { type DashboardOverrideKey, updateWidgetOverride } from './dashboardWidg
 type Props = {
   widget: DashboardWidget;
   facets?: DashboardFacets;
+  lessons: readonly DashboardLessonData[];
   onChange: (widget: DashboardWidget) => void;
 };
-export function DashboardWidgetOptions({ widget, facets, onChange }: Props) {
+export function DashboardWidgetOptions({ widget, facets, lessons, onChange }: Props) {
   const { t } = usePreferences();
   const labels: Record<string, Parameters<typeof t>[0]> = {
     certificationIds: 'dashboardCertification',
@@ -139,6 +141,7 @@ export function DashboardWidgetOptions({ widget, facets, onChange }: Props) {
             keyName={key}
             label={t(labels[key])}
             values={values[key]}
+            lessons={lessons}
             onChange={onChange}
           />
         ),

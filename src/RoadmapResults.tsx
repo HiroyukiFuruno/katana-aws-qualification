@@ -1,7 +1,8 @@
 import { recommend } from './assessment';
 import type { AssessmentItem } from './assessmentTypes';
-import { levelMessage, skills } from './certifications';
+import { levelMessage } from './certifications';
 import { usePreferences } from './preferences';
+import { useContent } from './useContent';
 
 export function RoadmapResults({
   items,
@@ -23,6 +24,7 @@ export function RoadmapResults({
   saving: boolean;
 }) {
   const { t, locale } = usePreferences();
+  const { content } = useContent();
   return (
     <>
       <section className="card roadmap-card">
@@ -44,20 +46,20 @@ export function RoadmapResults({
                 chosen === item.options.length
                   ? t('unknown')
                   : selectedOption
-                    ? t(selectedOption)
+                    ? selectedOption
                     : t('unanswered');
               return (
                 <li key={item.id}>
                   <strong className={correct ? 'good-text' : 'bad-text'}>
                     {correct ? `○ ${t('correct')}` : `× ${t('incorrect')}`}
                   </strong>
-                  <p>{t(item.prompt)}</p>
+                  <p lang={locale}>{item.prompt}</p>
                   <p>
                     {t('yourAnswer')} · {answer}
                   </p>
                   {!correct && (
                     <p>
-                      {t('correct')} · {t(item.options[item.correct])}
+                      {t('correct')} · {item.options[item.correct]}
                     </p>
                   )}
                 </li>
@@ -73,18 +75,18 @@ export function RoadmapResults({
           {recommend(earned, answers, today).map(({ cert, gaps, priority }) => (
             <li key={cert.id}>
               <strong>
-                {cert.name} · {t(levelMessage[cert.level])}
+                {content.certifications[cert.id]?.name ?? cert.name} · {t(levelMessage[cert.level])}
               </strong>{' '}
               <small>
                 {cert.id.toUpperCase()}
                 {cert.beta ? ` · ${t('beta')}` : ''}
               </small>
               <p>
-                {t('studyScope')} · {t(cert.focus)}
+                {t('studyScope')} · {content.certifications[cert.id]?.focus ?? cert.focus}
               </p>
               <p>
                 {gaps.length
-                  ? `${t('reviewTopics')} · ${new Intl.ListFormat(locale, { style: 'short', type: 'conjunction' }).format(gaps.map((skill) => t(skills[skill])))}`
+                  ? `${t('reviewTopics')} · ${new Intl.ListFormat(locale, { style: 'short', type: 'conjunction' }).format(gaps.map((skill) => content.skills[skill]))}`
                   : t('allTopicsCorrect')}
                 {priority > 0 && ` · ${t('retirementPriority')}`}
                 {cert.retireOn && ` · ${t('retirement', { date: cert.retireOn })}`}

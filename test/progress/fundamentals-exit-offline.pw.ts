@@ -6,6 +6,7 @@ import {
   lessonCatalogCard,
   nextButton,
   selectLessonAnswer,
+  visibleLessonQuestion,
   walkLessonReading,
 } from './fundamentals.helpers';
 import { createSessions, setRealSession } from './sessions';
@@ -45,8 +46,7 @@ test('an offline member exit retains the final response until the resumed lesson
     await page.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' }));
     await walkLessonReading(page, asset);
     await nextButton(page).click();
-    const question = asset.finalQuestions[0];
-    if (!question) throw new Error('Missing final question fixture.');
+    const question = await visibleLessonQuestion(page, asset.finalQuestions);
     const selected = question.correct[0];
     if (!selected) throw new Error('Missing final answer fixture.');
     await selectLessonAnswer(page, question, [selected]);
@@ -61,7 +61,7 @@ test('an offline member exit retains the final response until the resumed lesson
     await lessonCatalogCard(page, asset).getByRole('link').click();
     await expect(page).toHaveURL(/\/final\/1\/$/);
     await expect(
-      page.locator('fieldset input').nth(question.choices.findIndex((choice) => choice.id === selected)),
+      page.locator(`fieldset input[name="${question.id}"][value="${selected}"]`),
     ).toBeChecked();
     await expect.poll(() => hasQueuedFinalSave(page, outboxKey)).toBe(false);
   } finally {

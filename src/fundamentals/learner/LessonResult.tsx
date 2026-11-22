@@ -4,6 +4,7 @@ import { usePreferences } from '../../preferences';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonSnapshot } from '../state/types';
 import { LessonResultQuestion } from './LessonResultQuestion';
+import { finalPresentation } from './lesson-presentation';
 import { submittedSession } from './lesson-result-helpers';
 import './lesson-result.css';
 
@@ -41,7 +42,9 @@ export function LessonResult({
     onActionError?.(cause);
   };
   const navigate = (href: string) => {
-    void Promise.resolve(onNavigate(href)).catch(reportError);
+    void Promise.resolve()
+      .then(() => onNavigate(href))
+      .catch(reportError);
   };
   const retry = () => {
     setActionError(undefined);
@@ -116,13 +119,14 @@ export function LessonResult({
       {session && (
         <section className="lesson-result-questions" aria-labelledby="lesson-result-review">
           <h2 id="lesson-result-review">{t('fundamentalsResultReview')}</h2>
-          {asset.finalQuestions.map((question, index) => (
+          {finalPresentation(asset, session.sessionId).map(({ canonicalPosition, question }, index) => (
             <LessonResultQuestion
               key={`${question.id}-${question.revision}`}
               asset={asset}
               question={question}
               session={session}
-              index={index}
+              index={canonicalPosition}
+              position={index + 1}
               locale={locale}
               contentVersion={contentVersion}
               onNavigate={navigate}

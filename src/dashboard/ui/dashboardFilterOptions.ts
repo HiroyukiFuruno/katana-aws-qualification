@@ -59,6 +59,3 @@ export function dashboardFilterOptions(facets: DashboardFacets | undefined, curr
     units,
   };
 }
-export function certificationLabel(id: string) {
-  return certifications.find((item) => item.id === id)?.name ?? id;
-}

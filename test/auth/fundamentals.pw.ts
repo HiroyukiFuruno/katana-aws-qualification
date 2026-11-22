@@ -7,6 +7,7 @@ import {
   lessonCatalogCard,
   nextButton,
   selectLessonAnswer,
+  visibleLessonQuestion,
   walkLessonReading,
 } from '../progress/fundamentals.helpers';
 import { acceptNecessaryCookies } from '../progress/fundamentals-mobile.helpers';
@@ -90,12 +91,9 @@ test('final selection remains ungraded while related reading is toggled', async 
   await openConsentedLesson(page, asset);
   await walkLessonReading(page, asset);
   await nextButton(page).click();
-  const question = asset.finalQuestions[0];
+  const question = await visibleLessonQuestion(page, asset.finalQuestions);
   if (!question) throw new Error('Missing final question.');
-  for (const id of question.correct) {
-    const index = question.choices.findIndex((choice) => choice.id === id);
-    await page.locator('fieldset input').nth(index).check();
-  }
+  await selectLessonAnswer(page, question, question.correct);
   const related = page.locator('.lesson-related-reading');
   await related.locator('summary').click();
   await related.locator('summary').click();

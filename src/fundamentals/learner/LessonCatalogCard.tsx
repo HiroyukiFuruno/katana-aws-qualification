@@ -64,7 +64,7 @@ export function LessonCatalogCard({
         </p>
       ) : (
         <p className={`lesson-catalog-status lesson-catalog-status-${status}`}>
-          {t('fundamentalsStatus')}
+          {t('fundamentalsStatus')}{' '}
           {status === 'notStarted'
             ? t('fundamentalsNotStarted')
             : status === 'inProgress'

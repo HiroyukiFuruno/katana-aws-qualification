@@ -43,7 +43,12 @@ test('guest stored profiles normalize replaced certification ids', () => {
   const normalized = parseStoredProfile(
     JSON.stringify({ earned: ['dva-c02', 'sap-c02', 'dva-c03'], answers: {} }),
   );
-  expect(normalized).toEqual({ earned: ['dva-c03', 'sap-c03'], answers: {} });
+  expect(normalized).toEqual({
+    earned: ['dva-c03', 'sap-c03'],
+    answers: {},
+    optionOrders: {},
+    order: [],
+  });
   const remaining = remainingCertifications(normalized.earned, '2026-11-20').map(
     (certification) => certification.id,
   );

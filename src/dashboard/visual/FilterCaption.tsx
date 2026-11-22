@@ -1,7 +1,7 @@
 import { usePreferences } from '../../preferences';
+import { useDashboardDisplayLabels } from '../displayLabels';
 import type { DashboardQuery } from '../queryTypes';
 import type { DashboardLessonData } from '../viewTypes';
-import { dashboardCertificationLabel } from './format';
 import { dashboardDimensionLabel } from './labels';
 
 export function FilterCaption({
@@ -14,6 +14,7 @@ export function FilterCaption({
   currentProgress?: boolean;
 }) {
   const { locale, t } = usePreferences();
+  const display = useDashboardDisplayLabels(lessons);
   const date = (time: string) =>
     new Intl.DateTimeFormat(locale, {
       dateStyle: 'medium',
@@ -21,8 +22,8 @@ export function FilterCaption({
       timeZone: query.range.timezone,
     }).format(new Date(time));
   const items: [string, string[] | null][] = [
-    [t('dashboardCertification'), query.certificationIds?.map(dashboardCertificationLabel) ?? null],
-    [t('dashboardCategory'), query.categories],
+    [t('dashboardCertification'), query.certificationIds?.map(display.certification) ?? null],
+    [t('dashboardCategory'), query.categories?.map(display.category) ?? null],
     [t('dashboardMode'), query.modes?.map((value) => dashboardDimensionLabel(value, t)) ?? null],
     [t('dashboardContext'), query.contexts?.map((value) => dashboardDimensionLabel(value, t)) ?? null],
     [t('dashboardFormat'), query.formats?.map((value) => dashboardDimensionLabel(value, t)) ?? null],
@@ -32,7 +33,8 @@ export function FilterCaption({
     ],
     [
       t('dashboardRevision'),
-      query.revisions?.map((value) => `${value.sourceVersion} / r${value.questionRevision}`) ?? null,
+      query.revisions?.map((value) => display.revision(value.sourceVersion, value.questionRevision)) ??
+        null,
     ],
     [
       t('dashboardUnit'),

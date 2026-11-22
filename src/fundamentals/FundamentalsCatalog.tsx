@@ -74,7 +74,7 @@ export function FundamentalsCatalog({
               )}
               {available && status && (
                 <p className="fundamentals-status">
-                  {t('fundamentalsStatus')}
+                  {t('fundamentalsStatus')}{' '}
                   {status === 'notStarted'
                     ? t('fundamentalsNotStarted')
                     : status === 'inProgress'

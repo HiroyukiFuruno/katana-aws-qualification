@@ -1,16 +1,8 @@
+import sourceContent from './content/ja.json' with { type: 'json' };
 import type { Locale } from './locales';
 import type { Message } from './messages';
 
-export const skills = {
-  fundamentals: 'skillFundamentals',
-  architecture: 'skillArchitecture',
-  security: 'skillSecurity',
-  networking: 'skillNetworking',
-  development: 'skillDevelopment',
-  operations: 'skillOperations',
-  data: 'skillData',
-  ai: 'skillAi',
-} as const satisfies Record<string, Message>;
+export const skills = sourceContent.skills;
 
 export type Skill = keyof typeof skills;
 
@@ -37,7 +29,7 @@ export type Certification = {
   name: string;
   level: '基礎' | 'アソシエイト' | 'プロフェッショナル' | '専門' | 'ビジネス';
   skills: Skill[];
-  focus: Message;
+  focus: string;
   buildsOn?: string[];
   retireOn?: string;
   beta?: boolean;

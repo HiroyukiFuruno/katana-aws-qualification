@@ -1,6 +1,8 @@
 import { usePreferences } from '../../preferences';
+import { useDashboardDisplayLabels } from '../displayLabels';
 import type { DashboardWidget } from '../preferenceTypes';
 import type { DashboardFilters } from '../queryTypes';
+import type { DashboardLessonData } from '../viewTypes';
 import { dashboardOptionLabel } from './dashboardOptionLabels';
 import {
   type DashboardOverrideKey,
@@ -13,15 +15,18 @@ export function DashboardOverrideSelect({
   keyName,
   label,
   values,
+  lessons,
   onChange,
 }: {
   widget: DashboardWidget;
   keyName: Exclude<DashboardOverrideKey, 'period' | 'timezone'>;
   label: string;
   values: string[];
+  lessons: readonly DashboardLessonData[];
   onChange: (widget: DashboardWidget) => void;
 }) {
   const { t } = usePreferences();
+  const display = useDashboardDisplayLabels(lessons);
   const current = widget.overrides[keyName];
   const selected = Array.isArray(current)
     ? current.map((item) => (typeof item === 'string' ? item : JSON.stringify(item)))
@@ -55,7 +60,7 @@ export function DashboardOverrideSelect({
         >
           {values.map((item) => (
             <option key={item} value={item}>
-              {dashboardOptionLabel(keyName, item, t)}
+              {dashboardOptionLabel(keyName, item, t, display)}
             </option>
           ))}
         </select>

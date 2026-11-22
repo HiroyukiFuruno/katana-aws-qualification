@@ -1,8 +1,9 @@
 import { certifications } from '../certifications';
+import localeNames from '../locale-names.json' with { type: 'json' };
 import { localePath, locales } from '../locales';
-import { messages } from '../messages';
 import { usePreferences } from '../preferences';
 import { ProgressGate } from '../progress/ProgressGate';
+import { useContent } from '../useContent';
 import { useRoadmapProfile } from '../useRoadmapProfile';
 import { useSitePreferences } from './context';
 import { defaultSitePreferences } from './repository';
@@ -10,6 +11,7 @@ import './site-preferences.css';
 
 function EarnedQualifications() {
   const { profile } = useRoadmapProfile();
+  const { content } = useContent();
   const { locale, t } = usePreferences();
   const earned = certifications.filter((certification) => profile.earned.includes(certification.id));
   return (
@@ -18,7 +20,9 @@ function EarnedQualifications() {
       {earned.length ? (
         <ul>
           {earned.map((certification) => (
-            <li key={certification.id}>{certification.name}</li>
+            <li key={certification.id}>
+              {content.certifications[certification.id]?.name ?? t('loadContentError')}
+            </li>
           ))}
         </ul>
       ) : (
@@ -58,7 +62,7 @@ export function AccountAppearance() {
               <option value="">{t('siteLanguageDefault')}</option>
               {locales.map((value) => (
                 <option key={value} value={value} lang={value}>
-                  {messages[value].localeName}
+                  {localeNames[value]}
                 </option>
               ))}
             </select>

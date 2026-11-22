@@ -12,6 +12,21 @@ const dictionary = {
 };
 
 describe('translation quality lint', () => {
+  test('rejects copied English sentences while keeping official names and shared short words', () => {
+    const source = { message: 'Reload your cloud schedule before editing again.' };
+    expect(translationIssues('fr', { ...dictionary, ...source }, {}, source)).toContain(
+      'fr.message: untranslated English sentence',
+    );
+    expect(translationIssues('en', { ...dictionary, ...source }, {}, source)).toEqual([]);
+    const shared = {
+      siteName: 'KatanA AWS Qualification',
+      certSaaName: 'Solutions Architect – Associate',
+      assessmentF2Option1: 'Compute Savings Plans',
+      dashboardChartAxes: 'X: {x} · Y: {y}',
+      date: 'Date',
+    };
+    expect(translationIssues('fr', { ...dictionary, ...shared }, {}, shared)).toEqual([]);
+  });
   test('applies shared native grammar checks to visible UI messages', () => {
     expect(
       translationIssues('de', { ...messages.de, question: 'An einen verfügbaren Agent weiterleiten.' }),

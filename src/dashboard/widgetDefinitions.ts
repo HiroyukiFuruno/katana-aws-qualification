@@ -137,4 +137,13 @@ export const dashboardWidgets: readonly DashboardWidgetDefinition[] = [
     defaultVisible: true,
     defaultWidth: 'wide',
   },
+  {
+    kind: 'milestones',
+    charts: ['calendar', 'table'],
+    metrics: ['answered'],
+    defaultChart: 'calendar',
+    defaultMetric: 'answered',
+    defaultVisible: true,
+    defaultWidth: 'wide',
+  },
 ];

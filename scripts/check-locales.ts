@@ -6,8 +6,8 @@ import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
 import clarificationKeys from '../src/question-clarifications.json' with { type: 'json' };
 import { publishedLocalesFor, publishedPages, routeAt } from '../src/routes.ts';
-import { translationReferences } from './i18n-references.ts';
 import { hardcodedCssIssues, hardcodedUiIssues } from './hardcoded-ui.ts';
+import { translationReferences } from './i18n-references.ts';
 import { translationIssues } from './translation-quality.ts';
 
 function tokens(value: string) {
@@ -21,7 +21,7 @@ for (const locale of locales) {
   for (const [key, variant] of Object.entries(variants ?? {}))
     for (const [form, value] of Object.entries(variant.forms))
       assert.deepEqual(
-        translationIssues(locale, { ...messages[locale], [key]: value }, messages.ja),
+        translationIssues(locale, { ...messages[locale], [key]: value }, messages.ja, messages.en),
         [],
         `${locale} quantity translation quality: ${key}.${form}`,
       );
@@ -38,7 +38,7 @@ assert.deepEqual(
 for (const locale of locales) {
   const dictionary = messages[locale];
   assert.deepEqual(
-    translationIssues(locale, dictionary, messages.ja),
+    translationIssues(locale, dictionary, messages.ja, messages.en),
     [],
     `${locale} translation quality`,
   );

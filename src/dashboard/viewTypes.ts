@@ -1,4 +1,5 @@
 import type { LessonSummary } from '../fundamentals/state/memberTypes';
+import type { MilestoneApi } from '../milestones/modelTypes';
 import type { DashboardPreferences, DashboardWidget } from './preferenceTypes';
 import type { DashboardSummary } from './summaryTypes';
 
@@ -15,6 +16,7 @@ export type DashboardLessonData = {
 };
 
 export type DashboardViewProps = {
+  milestoneApi?: MilestoneApi | null;
   storageControl?: ReactNode;
   owner: 'guest' | 'member';
   consented: boolean;

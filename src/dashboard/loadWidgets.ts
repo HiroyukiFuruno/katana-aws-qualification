@@ -13,7 +13,9 @@ export async function loadDashboardWidgets(input: {
   retry: () => void;
 }) {
   const groups = new Map<string, { query: DashboardQuery; ids: string[] }>();
-  for (const widget of input.preferences.widgets.filter((widget) => widget.visible)) {
+  for (const widget of input.preferences.widgets.filter(
+    (widget) => widget.visible && widget.kind !== 'milestones',
+  )) {
     const query = buildDashboardQuery({ ...input.preferences.filters, ...widget.overrides }, input.asOf);
     const key = dashboardQueryKey(query);
     const group = groups.get(key) ?? { query, ids: [] };

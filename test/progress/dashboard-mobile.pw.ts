@@ -38,6 +38,8 @@ test('mobile dashboard switches charts and keeps detailed data behind the chosen
   await expect(page.getByRole('tabpanel')).toHaveCount(1);
   await expect(page.locator('.dashboard-widget')).toHaveCount(1);
   await page.keyboard.press('End');
+  await expect(sections.getByRole('tab', { name: t.dashboardSectionPlanning })).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
   await expect(sections.getByRole('tab', { name: t.dashboardSectionLessons })).toBeFocused();
   await page.keyboard.press('Home');
   await expect(activity).toBeFocused();

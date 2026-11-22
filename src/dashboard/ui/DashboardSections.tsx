@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMilestones } from '../../milestones/useMilestones';
 import { usePreferences } from '../../preferences';
 import type { DashboardViewProps } from '../viewTypes';
 import { DashboardTabs } from './DashboardTabs';
@@ -11,13 +12,17 @@ export function DashboardSections({
   data,
   lessons,
   density,
-}: Pick<DashboardViewProps, 'preferences' | 'data' | 'lessons'> & {
+  milestoneApi = null,
+}: Pick<DashboardViewProps, 'preferences' | 'data' | 'lessons' | 'milestoneApi'> & {
   density: DashboardDensity;
 }) {
   const { t } = usePreferences();
   const [requestedSection, setSection] = useState('activity');
   const [selectedWidgets, setSelectedWidgets] = useState<Record<string, string>>({});
   const visible = preferences.widgets.filter((widget) => widget.visible);
+  const milestones = useMilestones(
+    visible.some((widget) => widget.kind === 'milestones') ? milestoneApi : null,
+  );
   const sections = dashboardSections
     .map((section) => ({
       ...section,
@@ -65,6 +70,14 @@ export function DashboardSections({
             widget={widget}
             state={data.get(widget.id) ?? { status: 'loading' }}
             lessons={lessons}
+            planning={{
+              model: milestones,
+              timezone: widget.overrides.timezone ?? preferences.filters.timezone,
+              certificationIds:
+                widget.overrides.certificationIds === undefined
+                  ? preferences.filters.certificationIds
+                  : widget.overrides.certificationIds,
+            }}
             controls={chartPicker}
           />
         ))}

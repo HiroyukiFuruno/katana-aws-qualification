@@ -81,23 +81,25 @@ export function DashboardWidgetEditor({
             ))}
           </select>
         </label>
-        <label>
-          {t('dashboardMetric')}
-          <select
-            value={widget.metric}
-            onChange={(e) =>
-              onPreferences(
-                updateWidget(preferences, widget.id, { metric: e.target.value as DashboardMetric }),
-              )
-            }
-          >
-            {dashboardChartMetrics(definition, widget.chart).map((metric) => (
-              <option key={metric} value={metric}>
-                {t(metricKeys[metric])}
-              </option>
-            ))}
-          </select>
-        </label>
+        {widget.kind !== 'milestones' && (
+          <label>
+            {t('dashboardMetric')}
+            <select
+              value={widget.metric}
+              onChange={(e) =>
+                onPreferences(
+                  updateWidget(preferences, widget.id, { metric: e.target.value as DashboardMetric }),
+                )
+              }
+            >
+              {dashboardChartMetrics(definition, widget.chart).map((metric) => (
+                <option key={metric} value={metric}>
+                  {t(metricKeys[metric])}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <DashboardWidgetOptions
           widget={widget}
           facets={facets}

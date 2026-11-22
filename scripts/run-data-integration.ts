@@ -51,6 +51,8 @@ function psql(userA: string, userB: string) {
     '/verification/verify-site-preferences.sql',
     '-f',
     '/verification/verify-certification-milestones.sql',
+    '-f',
+    '/verification/verify-milestone-dashboard.sql',
   ]);
 }
 

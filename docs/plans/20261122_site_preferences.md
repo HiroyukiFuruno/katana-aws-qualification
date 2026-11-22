@@ -32,10 +32,12 @@
 
 ## 検証と公開
 
-- [ ] 実Auth/DBで2ユーザーの読取・保存・RLS・不正入力・競合・世代・reset/delete・配置設定との独立性を検査する。
-- [ ] 別browser contextで保存/復元し、所有者切替、URLの優先順位、ゲスト設定、失敗時の表示、再読込を検査する。
-- [ ] 全言語・light/dark・mobile・keyboardと既存品質検査を維持する。Mock/固定待機/timeout延長は追加しない。
-- [ ] Draft→review回収/修正/reply/resolve→P0/P1ゼロ→Ready→実required設定確認→通常merge→DB適用→公開URL確認まで行う。
-- [ ] 正式証跡を保存し、不要なビルド出力・検証用コピー・一時フォルダーを削除する。
+- [x] 実Auth/DBで2ユーザーの読取・保存・RLS・不正入力・競合・世代・reset/delete・配置設定との独立性を検査する。
+- [x] 別browser contextで保存/復元し、所有者切替、URLの優先順位、ゲスト設定、失敗時の表示、再読込を検査する。
+- [x] 全言語・light/dark・mobile・keyboardと既存品質検査を維持する。Mock/固定待機/timeout延長は追加しない。
+- [x] Draft→review回収/修正/reply/resolve→P0/P1ゼロ→Ready→実required設定確認→通常merge→DB適用→公開URL確認まで行う。
+- [x] 正式証跡を保存し、不要なビルド出力・検証用コピー・一時フォルダーを削除する。
 
 既適用foundation/owner-shadowの検査は当時のmigration1〜15の境界を維持する。通常のdata/progress検査で新しい表示設定migrationまで検査し、過去の独自統合フローは再導入しない。
+
+2026-11-22: PR113を通常merge（1b533761）し本番へ公開。全check965、認証166、画面193、PG17 data/owner回帰とActions8件が成功。既存16件と追加005の全17migration source hash・RPC権限を本番で照合し、公開4URL/新bundle/390pxのゲスト境界と操作を検査した。証跡はtest-results/site-preferences/root-validation-v5/verified-summary.json、production-migration-verified.json、production-publication-verified.json、public-browser-verified.json。Issue59は公開後にCloseした。

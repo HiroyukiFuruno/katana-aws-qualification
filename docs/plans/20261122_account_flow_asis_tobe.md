@@ -140,3 +140,5 @@ flowchart TD
 - [x] 既存機能の検査・レビュー・公開まで完了する。
 
 2026-11-22: [PR #111](https://github.com/HiroyukiFuruno/katana-aws-qualification/pull/111) を通常mergeし、[本番](https://kaq.katana-projects.org) のreleaseCommit `873c6b49463436a5987f81b09f2c78cbe837b554` とREADYを確認。独自試作318ファイルを整理し、全check789件・認証166件・画面178件・実DB/PG17/18が成功。広告修正の並行合流後も全checkと関連40件が成功した。公開390pxの3 provider/画像/有効状態/横はみ出しをDOMで検査した。別Auth userの履歴統合は劣後のままである。
+
+2026-11-22 #59公開後の更新: アカウントの言語・テーマ設定と既存取得資格の導線を公開した（PR113、merge1b533761）。上のAs-Is表は実装前の比較であり、現在の会員設定はクラウドを正本とする。次は#60の取得目標・学習予定で、Facebookはその後。

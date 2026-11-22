@@ -42,7 +42,7 @@ export class ProgressCoordinator {
     this.transitionId++;
     this.unsubscribeAuth?.();
     this.unsubscribeAuth = null;
-    void this.disposeStore(false).catch(() => {
+    void this.disposeStore().catch(() => {
       if (this.active) this.publish({ status: 'error', store: null });
     });
     this.publish({ status: 'loading', store: null });
@@ -104,7 +104,7 @@ export class ProgressCoordinator {
     if (this.owner) this.generation++;
     const owner = this.ownerFor(nextOwner.kind === 'member' ? nextOwner.userId : undefined);
     if (!owner) throw new Error('Member progress requires authentication.');
-    await this.disposeStore(true);
+    await this.disposeStore();
     if (
       !this.active ||
       this.transitionId !== transitionId ||
@@ -139,12 +139,12 @@ export class ProgressCoordinator {
     this.owner !== null &&
     sameProgressOwner(this.owner, owner) &&
     this.store === store;
-  private async disposeStore(clearPending = false) {
+  private async disposeStore() {
     setActiveProgressStore(null);
     this.unsubscribeStore?.();
     this.unsubscribeStore = null;
     const store = this.store;
     this.store = this.owner = null;
-    if (store) await store.dispose(clearPending);
+    if (store) await store.dispose();
   }
 }

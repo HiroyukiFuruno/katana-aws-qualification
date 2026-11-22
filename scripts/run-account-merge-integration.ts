@@ -38,7 +38,9 @@ async function applyMigrations() {
     names.some((name) => !dataMigrations.some((declared) => declared === name))
   )
     throw new Error('Migration inventory differs from the declared application order');
-  const migrations = [...dataMigrations];
+  const ownerShadowIndex = dataMigrations.indexOf(ownerShadowMigration);
+  if (ownerShadowIndex < 0) throw new Error('Owner-shadow migration is missing from the registry');
+  const migrations = dataMigrations.slice(0, ownerShadowIndex + 1);
   for (const migration of migrations) {
     if (migration === '202611210004_learning_account_foundation.sql') {
       run('docker', [...compose, 'up', '-d', '--wait', 'gateway']);
@@ -46,7 +48,7 @@ async function applyMigrations() {
     } else if (migration === ownerShadowMigration) continue;
     else applyMigration(migration);
   }
-  console.log(`Verified ${migrations.length} registered migrations in the foundation database`);
+  console.log(`Verified ${migrations.length} foundation migrations in the account database`);
 }
 prepareFixtures();
 const verifyInputsUnchanged = captureNativeInputs();

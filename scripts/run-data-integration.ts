@@ -1,8 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { createSessions, verifyPostgrest, waitForRest } from '../test/data/rest-client.ts';
+import { verifyAssessmentPresentationPostgrest } from '../test/data/verify-assessment-presentation-rest.ts';
 import { verifyConcurrentRevisions } from '../test/data/verify-concurrency.ts';
 import { verifyDashboardPostgrest } from '../test/data/verify-dashboard-rest.ts';
-import { verifyAssessmentPresentationPostgrest } from '../test/data/verify-assessment-presentation-rest.ts';
+import { verifySitePreferencesPostgrest } from '../test/data/verify-site-preferences-rest.ts';
 import { dataMigrations } from './data-migrations.ts';
 
 const compose = ['compose', '-f', 'test/data/compose.yml'];
@@ -44,6 +45,8 @@ function psql(userA: string, userB: string) {
     '/verification/verify-fundamentals-import.sql',
     '-f',
     '/verification/verify-dashboard.sql',
+    '-f',
+    '/verification/verify-site-preferences.sql',
   ]);
 }
 
@@ -77,6 +80,7 @@ try {
   await verifyPostgrest(first, second);
   await verifyConcurrentRevisions(second.user.id);
   await verifyDashboardPostgrest();
+  await verifySitePreferencesPostgrest();
   await verifyAssessmentPresentationPostgrest();
 } finally {
   run('docker', [...compose, 'down', '--volumes']);

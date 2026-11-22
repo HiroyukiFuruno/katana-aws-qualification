@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
+import { AccountAppearance } from '../sitePreferences/AccountAppearance';
 import { useAccount } from './AuthContext';
 import { DeleteAccount } from './DeleteAccount';
 import { dashboardPath } from './navigation';
@@ -55,6 +56,7 @@ export function AccountSettings() {
       <a className="account-settings-back" href={dashboardPath(locale)}>
         {t('accountDashboard')}
       </a>
+      <AccountAppearance key={account.id} />
       <section className="card layout-stack">
         {account.email && <p>{account.email}</p>}
         <h2>{t('accountLinkedProviders')}</h2>

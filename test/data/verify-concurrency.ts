@@ -20,7 +20,7 @@ const base = [
   'kaq_data',
 ];
 
-class PsqlSession {
+export class PsqlSession {
   readonly child = spawn('docker', [...compose, ...base], { stdio: ['pipe', 'pipe', 'pipe'] });
   readonly completion: Promise<number | null>;
   stdout = '';
@@ -61,7 +61,7 @@ class PsqlSession {
 function claim(userId: string) {
   return `set local role authenticated; select set_config('request.jwt.claims', jsonb_build_object('sub', '${userId}', 'role', 'authenticated')::text, true);`;
 }
-function sql(command: string) {
+export function sql(command: string) {
   const result = spawnSync('docker', [...compose, ...base, '-c', command], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stdout + result.stderr);
   return result.stdout.trim();

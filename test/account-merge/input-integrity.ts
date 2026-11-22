@@ -15,8 +15,10 @@ const directories = [
 ];
 const files = [
   'scripts/run-account-merge-integration.ts',
+  'scripts/run-account-data-engine-integration.ts',
   'scripts/data-migrations.ts',
   'playwright.account-merge.config.ts',
+  'playwright.account-data-engine.config.ts',
   'playwright.account-grants.config.ts',
   'playwright.account-creation.config.ts',
   'playwright.account-sdk.config.ts',

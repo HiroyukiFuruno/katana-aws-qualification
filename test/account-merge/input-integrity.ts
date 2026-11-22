@@ -15,6 +15,7 @@ const directories = [
 ];
 const files = [
   'scripts/run-account-merge-integration.ts',
+  'scripts/run-intent-scope-native.ts',
   'scripts/run-account-data-engine-integration.ts',
   'scripts/data-migrations.ts',
   'playwright.account-merge.config.ts',

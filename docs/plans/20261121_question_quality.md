@@ -479,3 +479,5 @@
 - [/] Linux auth CIで発見したFAQ本文selectorと、単独analytics拒否後のaccept-all再同意の同期を最小修正。実ブラウザ16/16成功（0skip/0unexpected/0flaky）、既存同意条件・10言語layout assertions維持。最終Linux CIも回収する。
 - [/] Linux progress shard1の競合再開timeoutは、ランダム先頭が複数選択でも旧testが誤答1つしか選ばない前提が原因。必要選択数を満たす誤答と保存済みsession同期に修正し、実backendで独立2回成功。競合・canonical回答・outbox・event assertions、30秒上限は維持。最終Linux全shardも回収する。
 - 先行公開 → 残り16バンク自然翻訳 → 最終公開のユーザー指定順序を維持する。本番Vercel権限とSupabase接続は引き続き本人の接続操作待ち。
+
+- [/] PR #108（2ecfedaa）の20 pathsも統合。新native runnerの固定18件/境界14という前提を共通migration phase helperへ置換し、既存の実registry回帰を再利用。新runnerには固定数再導入の静的guardを追加。個別5件とintent-scope型/対象Biome成功。最終統合候補の全check・最新head CIを回収する。

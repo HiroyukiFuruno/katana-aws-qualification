@@ -2,9 +2,8 @@ import { useHomePath } from './auth/AccountNavigation';
 import { openCookieSettings } from './CookieConsent';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
-import { SiteAd, SiteAdVisibilityButton } from './SiteAd';
 
-export function SiteFooter({ replaceAdOnMobile = false }: { replaceAdOnMobile?: boolean }) {
+export function SiteFooter() {
   const { t, locale } = usePreferences();
   const homePath = useHomePath();
   return (
@@ -19,7 +18,6 @@ export function SiteFooter({ replaceAdOnMobile = false }: { replaceAdOnMobile?: 
           <button type="button" onClick={openCookieSettings}>
             {t('cookieTitle')}
           </button>
-          <SiteAdVisibilityButton />
           <a
             href={`https://katana-series.katana-projects.org${localePath(locale)}`}
             target="_blank"
@@ -32,9 +30,6 @@ export function SiteFooter({ replaceAdOnMobile = false }: { replaceAdOnMobile?: 
           {t('brandName')}
           <span> {t('brandDescriptor')}</span>
         </a>
-      </div>
-      <div className="shell">
-        <SiteAd replaceOnMobile={replaceAdOnMobile} />
       </div>
     </footer>
   );

@@ -24,8 +24,8 @@ export function StudyPaths() {
         <h1>{t('study')}</h1>
         <p>{t('studyPathsIntro')}</p>
       </div>
-      <AccountBenefits context="study" showAction />
       <SiteAd placement="inline" />
+      <AccountBenefits context="study" showAction />
       <div className="entry-grid study-paths">
         <a className="entry-card" href={localePath(locale, 'study/fundamentals')}>
           <h2>{t('learnFundamentals')}</h2>

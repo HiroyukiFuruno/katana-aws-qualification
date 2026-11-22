@@ -7,6 +7,7 @@ import { ExamMode } from './ExamMode';
 import { selectExamQuestions } from './exam';
 import { examKeyFor } from './history';
 import { usePreferences } from './preferences';
+import { SiteAd, SiteAdLayout } from './SiteAd';
 import { useCourseBanks } from './useCourseBanks';
 import { useCourseProgress } from './useCourseProgress';
 
@@ -70,7 +71,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
   }
 
   return (
-    <>
+    <SiteAdLayout show={page !== 'settings'} viewKey={page}>
       <CourseNavigation page={page} busy={busy} onNavigate={navigate} />
       <main className="shell" id="main">
         <CourseOverview
@@ -83,9 +84,10 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
           notice={notice}
           hasQuestionTranslations={!!course.questionTranslations}
         />
+        {page !== 'settings' && <SiteAd key={page} placement="inline" />}
         {section()}
         {page !== 'exam' && !progress.session && <AccountBenefits context="study" showAction />}
       </main>
-    </>
+    </SiteAdLayout>
   );
 }

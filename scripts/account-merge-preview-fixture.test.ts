@@ -5,6 +5,13 @@ import { fixtureDigest, fixtureRow } from './account-merge-preview-fixture-value
 export const source = '11111111-1111-4111-8111-111111111111';
 export const target = '22222222-2222-4222-8222-222222222222';
 
+export function goldenFirst(input: ProjectionInput, table: string, provenance: 'source' | 'target') {
+  const rows = input[provenance].snapshot.document.tables[table];
+  if (!Array.isArray(rows) || !rows[0] || typeof rows[0] !== 'object')
+    throw new Error('golden row missing');
+  return rows[0] as Record<string, unknown>;
+}
+
 function snapshot(accountId: string, suffix: string) {
   const publicRows = Object.keys(rawColumns).map((table) => [
     `public.${table}`,

@@ -1,13 +1,6 @@
 import { expect, test } from 'bun:test';
 import { projectMergePreview } from '../supabase/functions/account-linking/merge/preview.ts';
-import { goldenInput } from './account-merge-preview-fixture.test.ts';
-
-function first(input: ReturnType<typeof goldenInput>, table: string, provenance: 'source' | 'target') {
-  const rows = input[provenance].snapshot.document.tables[table];
-  if (!Array.isArray(rows) || !rows[0] || typeof rows[0] !== 'object')
-    throw new Error('golden row missing');
-  return rows[0] as Record<string, unknown>;
-}
+import { goldenFirst as first, goldenInput } from './account-merge-preview-fixture.test.ts';
 
 test('does not prove a source pass from a target final with the same session ID', () => {
   const input = goldenInput();

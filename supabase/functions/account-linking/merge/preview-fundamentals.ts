@@ -8,7 +8,7 @@ export function addFundamentals(plan: ProjectionPlan) {
       .map((row) => [`${row.provenance}:${row.identity}`, row.raw]),
   );
   for (const [key, items] of group(
-    plan.retained.filter((row) => row.table === 'fundamentals_unit_progress'),
+    [...plan.retained, ...plan.duplicates].filter((row) => row.table === 'fundamentals_unit_progress'),
     (row) => row.identity,
   )) {
     const [unitId, contentVersion] = key.split(':');
@@ -28,7 +28,8 @@ export function addFundamentals(plan: ProjectionPlan) {
       )
         throw new Error('fundamentals pass is not backed by submitted session');
     }
-    const positions = [...new Set(items.map((item) => item.raw.furthest_plan_position))];
+    const retained = items.filter((item) => !('duplicateOf' in item));
+    const positions = [...new Set(retained.map((item) => item.raw.furthest_plan_position))];
     plan.conflicts.push({
       table: 'fundamentals_unit_progress',
       kind: 'fundamentals-continuity-review-required',
@@ -38,9 +39,11 @@ export function addFundamentals(plan: ProjectionPlan) {
     plan.fundamentalsUnions.push({
       unitId,
       contentVersion,
-      slideIds: [...new Set(items.flatMap((item) => textArray(item.raw, 'completed_slide_ids')))].sort(),
+      slideIds: [
+        ...new Set(retained.flatMap((item) => textArray(item.raw, 'completed_slide_ids'))),
+      ].sort(),
       checkpointIds: [
-        ...new Set(items.flatMap((item) => textArray(item.raw, 'completed_checkpoint_ids'))),
+        ...new Set(retained.flatMap((item) => textArray(item.raw, 'completed_checkpoint_ids'))),
       ].sort(),
       continuity: 'review-required',
       observedPositions: positions.filter((value): value is number => typeof value === 'number'),

@@ -68,7 +68,7 @@ private_contract as (select coalesce(jsonb_agg(jsonb_build_object('name',c.relna
   'constraints',(select jsonb_agg(jsonb_build_object('name',x.conname,'definition',pg_get_constraintdef(x.oid),'validated',x.convalidated) order by x.conname) from pg_constraint x where x.conrelid=c.oid)) order by c.relname),'[]'::jsonb) value
   from expected_private e join pg_class c on c.relname=e.name join pg_namespace n on n.oid=c.relnamespace and n.nspname='kaq_private'),
 policy_contract as (select coalesce(jsonb_agg(jsonb_build_object('table',p.tablename,'name',p.policyname,'roles',p.roles,'command',p.cmd,'qual',p.qual,'check',p.with_check) order by p.tablename,p.policyname),'[]'::jsonb) value
-  from expected_policy e join pg_policies p on p.schemaname='public' and p.tablename=e.table_name and p.policyname=e.name),
+  from pg_policies p where p.schemaname='public'),
 function_contract as (select coalesce(jsonb_agg(jsonb_build_object('signature',coalesce(e.signature,p.oid::regprocedure::text),'owner',pg_get_userbyid(p.proowner),
   'bodyHash',encode(extensions.digest(p.prosrc,'sha256'),'hex'),'securityDefiner',p.prosecdef,'searchPath',coalesce(array_to_string(p.proconfig,E'\\n'),''),
   'execute',jsonb_build_object('anon',has_function_privilege('anon',p.oid,'EXECUTE'),'authenticated',has_function_privilege('authenticated',p.oid,'EXECUTE'),'service_role',has_function_privilege('service_role',p.oid,'EXECUTE'))) order by coalesce(e.signature,p.oid::regprocedure::text)),'[]'::jsonb) value

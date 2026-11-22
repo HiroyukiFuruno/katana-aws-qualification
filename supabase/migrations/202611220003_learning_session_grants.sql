@@ -188,13 +188,8 @@ begin
       or receipt.canonical_account_id is distinct from member.account_id then
       raise exception using errcode = 'PT401', message = 'KAQ_REAUTHENTICATION_REQUIRED';
     end if;
-    insert into kaq_private.account_committed_proof_bindings(
-      proof_id, receipt_id, intent_id, auth_user_id, session_id, canonical_account_id,
-      membership_epoch, account_fence_at, membership_fence_at
-    ) values (
-      proof.id, receipt.id, proof.intent_id, actor_uid, actor_session_id, member.account_id,
-      member.epoch, account.session_fence_at, member.session_fence_at
-    ) on conflict (proof_id) do nothing;
+    -- binding は commit と同じ transaction で既に固定済みでなければならない。
+    -- issuer が現在の scope から遅延作成すると、commit 後の scope 変更で旧 proof を昇格できる。
     select * into binding from kaq_private.account_committed_proof_bindings where proof_id = proof.id for share;
     if not found or binding.receipt_id is distinct from receipt.id
       or binding.intent_id is distinct from proof.intent_id

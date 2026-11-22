@@ -42,6 +42,10 @@ test('frames the unmodified DO body and records exactly the registered migration
   const frame = migrationFrame(source, '0'.repeat(64));
   expect(expectedLedger().at(-1)?.version).toBe('202611220001');
   expect(frame).toStartWith('begin;\nset transaction isolation level serializable;\n');
+  expect(frame).toContain(
+    'lock table supabase_migrations.schema_migrations in share row exclusive mode;',
+  );
+  expect(frame).toContain('KAQ_OWNER_SHADOW_LEDGER_DRIFT');
   expect(frame).toContain(source.body);
   expect(frame).toContain('KAQ_OWNER_SHADOW_CONTRACT_DRIFT');
   expect(frame).toContain('insert into supabase_migrations.schema_migrations(version,name,statements)');
@@ -87,6 +91,17 @@ test('pins all owner, policy, private-table, and public-function inventory names
       expected,
     ),
   ).toBe(false);
+  expect(
+    contractMatches(
+      {
+        ownerTables: expected.ownerTables.map((name) => ({ name })),
+        privateTables: expected.privateTables.map((name) => ({ name })),
+        functions: expected.functions.map((signature) => ({ signature })),
+        policies: [...expected.policies, { table: firstPolicy.table, name: 'extra_policy' }],
+      },
+      expected,
+    ),
+  ).toBe(false);
 });
 
 test('resolves source signatures through PostgreSQL and rejects unlisted public functions', () => {
@@ -96,6 +111,7 @@ test('resolves source signatures through PostgreSQL and rejects unlisted public 
   expect(sql).toContain("'signature',coalesce(e.signature,p.oid::regprocedure::text)");
   expect(sql).toContain('left join resolved_function e on e.oid=p.oid');
   expect(sql).toContain("'pg_proc'::regclass");
+  expect(sql).toContain("from pg_policies p where p.schemaname='public'");
   expect(sql).toContain("'constraints'");
   expect(
     contractMatches(

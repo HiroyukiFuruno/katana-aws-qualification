@@ -6,7 +6,7 @@
 
 - normal は active existing member の単一 main OAuth SID だけを検査する。第二 SSO、intent、proof を要求しない。
 - normal は live user/session、OAuth AMR、current membership/account、`created_at` と `oauth_at` の双方が最大 fence を厳密に超えることを確認する。refresh/iat/header だけは許可しない。
-- proof は committed receipt、consumed proof、同一 intent/UID/SID/canonical account/current epoch/fence を binding で束縛したときだけ許可する。proof 不成立時に normal へ fallback しない。
+- proof は committed receipt、consumed proof、同一 intent/UID/SID/canonical account/current epoch/fence を binding で束縛したときだけ許可する。binding は future commit caller が receipt、proof 消費、membership scope と同一 transaction で固定し、issuer は作成・更新せず欠落を拒否する。proof 不成立時に normal へ fallback しない。
 - retired/deleting、detached/disabled、old/equal fence、Auth invalid SID は account/member/state/grant を再作成・再有効化しない。
 
 ## DoR

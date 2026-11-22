@@ -30,6 +30,12 @@ test('registers private normal and committed-proof session grants without public
   expect(source).toMatch(/proof.consumed_at is null/is);
   expect(source).toMatch(/is not distinct from binding\.account_fence_at/is);
   expect(source).toMatch(/before insert or update on kaq_private\.account_committed_proof_bindings/i);
+  const issuer = source.match(
+    /create function kaq_private\.issue_learning_session_grant[\s\S]*?\nend \$\$;/i,
+  )?.[0];
+  expect(issuer).toBeDefined();
+  expect(issuer).not.toMatch(/(?:insert into|update) kaq_private\.account_committed_proof_bindings/i);
+  expect(issuer).toMatch(/select \* into binding from kaq_private\.account_committed_proof_bindings/i);
   expect(source).not.toMatch(/create function public\.|alter table public\.|create policy/i);
   expect(source.match(/revoke all on function kaq_private\./gi)?.length).toBeGreaterThanOrEqual(2);
 });

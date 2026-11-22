@@ -27,6 +27,17 @@ export function expectedLedger() {
   return dataMigrations.slice(0, migrationIndex + 1).map(name);
 }
 
+function expectedLedgerSql() {
+  const migrationIndex = dataMigrations.indexOf(migrationFile);
+  if (migrationIndex < 0) throw new Error('Owner-shadow migration is not registered');
+  const rows = dataMigrations.slice(0, migrationIndex).map((file) => {
+    const source = readFileSync(join('supabase/migrations', file), 'utf8');
+    const { version, name: migrationName } = name(file);
+    return `('${version}','${migrationName}', '${hash(source)}')`;
+  });
+  return rows.join(',');
+}
+
 export function readSource(root = '.'): Source {
   const source = readFileSync(join(root, 'supabase/migrations', migrationFile), 'utf8');
   const marker = 'do $owner_shadow$\n';
@@ -103,6 +114,14 @@ export function migrationFrame(source: Source, expectedContractHash: string) {
   const { version, name: migrationName } = name(migrationFile);
   return `begin;
 set transaction isolation level serializable;
+lock table supabase_migrations.schema_migrations in share row exclusive mode;
+do $owner_shadow_ledger_guard$
+begin
+  if coalesce((select jsonb_agg(jsonb_build_object('version',version,'name',name,'sourceHash',case when statements is null then null else encode(extensions.digest(array_to_string(statements,E'\\n'),'sha256'),'hex') end) order by version) from supabase_migrations.schema_migrations),'[]'::jsonb) <>
+     (select jsonb_agg(jsonb_build_object('version',version,'name',name,'sourceHash',source_hash) order by version) from (values ${expectedLedgerSql()}) as expected(version,name,source_hash)) then
+    raise exception using errcode='PT409',message='KAQ_OWNER_SHADOW_LEDGER_DRIFT';
+  end if;
+end $owner_shadow_ledger_guard$;
 do $owner_shadow_contract$
 begin
   if (${contractFingerprintSql()}) <> '${expectedContractHash}' then

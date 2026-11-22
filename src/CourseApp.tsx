@@ -7,9 +7,10 @@ import type { Course } from './certifications';
 import { ExamMode } from './ExamMode';
 import { selectExamQuestions } from './exam';
 import { examKeyFor } from './history';
+import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';
 import { QuestionTranslationNotice } from './QuestionTranslationNotice';
-import { SiteAd, SiteAdLayout } from './SiteAd';
+import { SiteAdLayout } from './SiteAd';
 import { useCourseBanks } from './useCourseBanks';
 import { useCourseProgress } from './useCourseProgress';
 
@@ -89,18 +90,19 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
     <SiteAdLayout show={page !== 'settings'} viewKey={page}>
       <CourseNavigation page={page} busy={busy} onNavigate={navigate} />
       <main className="shell" id="main">
-        <CourseOverview
-          id={id}
-          name={name}
-          page={page}
-          answerCount={answerCount}
-          rate={rate}
-          wrongCount={review.length}
-          notice={notice}
-          contentLocalized={banksReady && sourceOnlyLocales.length === 0}
-        />
+        <PageIntro key={page} showAd={page !== 'settings'}>
+          <CourseOverview
+            id={id}
+            name={name}
+            page={page}
+            answerCount={answerCount}
+            rate={rate}
+            wrongCount={review.length}
+            notice={notice}
+            contentLocalized={banksReady && sourceOnlyLocales.length === 0}
+          />
+        </PageIntro>
         {banksReady && <QuestionTranslationNotice sourceLocales={sourceOnlyLocales} />}
-        {page !== 'settings' && <SiteAd key={page} placement="inline" />}
         {!ready && (
           <p role={contentError ? 'alert' : 'status'}>{t(contentError ?? 'loadingQuestions')}</p>
         )}

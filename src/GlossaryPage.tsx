@@ -4,8 +4,8 @@ import { GlossaryDefinition, termAnchor } from './GlossaryDefinition';
 import { GlossaryFilters } from './GlossaryFilters';
 import { filterGlossary, glossary, glossaryCategories, glossaryTags } from './glossary';
 import './glossary.css';
+import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';
-import { SiteAd } from './SiteAd';
 import { useContent } from './useContent';
 
 export function GlossaryPage() {
@@ -46,11 +46,12 @@ export function GlossaryPage() {
 
   return (
     <main id="main" className="shell glossary-page">
-      <div className="intro">
-        <h1>{t('glossary')}</h1>
-        <p>{t('glossaryIntro')}</p>
-      </div>
-      <SiteAd placement="inline" />
+      <PageIntro>
+        <div className="intro">
+          <h1>{t('glossary')}</h1>
+          <p>{t('glossaryIntro')}</p>
+        </div>
+      </PageIntro>
       <GlossaryFilters
         query={query}
         category={category}

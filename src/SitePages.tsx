@@ -1,8 +1,8 @@
 import { AccountBenefits } from './auth/AccountBenefits';
 import { CertificationDirectory } from './CertificationDirectory';
 import { localePath } from './locales';
+import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';
-import { SiteAd } from './SiteAd';
 
 export function NotFound() {
   const { locale, t } = usePreferences();
@@ -20,11 +20,12 @@ export function StudyPaths() {
   const { locale, t } = usePreferences();
   return (
     <main id="main" className="shell">
-      <div className="intro">
-        <h1>{t('study')}</h1>
-        <p>{t('studyPathsIntro')}</p>
-      </div>
-      <SiteAd placement="inline" />
+      <PageIntro>
+        <div className="intro">
+          <h1>{t('study')}</h1>
+          <p>{t('studyPathsIntro')}</p>
+        </div>
+      </PageIntro>
       <AccountBenefits context="study" showAction />
       <div className="entry-grid study-paths">
         <a className="entry-card" href={localePath(locale, 'study/fundamentals')}>
@@ -51,11 +52,12 @@ export function StudyDirectory() {
   const { t } = usePreferences();
   return (
     <main id="main" className="shell study-directory">
-      <div className="intro">
-        <h1>{t('learnFromQuestions')}</h1>
-        <p>{t('studyEntry')}</p>
-      </div>
-      <SiteAd placement="inline" />
+      <PageIntro>
+        <div className="intro">
+          <h1>{t('learnFromQuestions')}</h1>
+          <p>{t('studyEntry')}</p>
+        </div>
+      </PageIntro>
       <CertificationDirectory mode="study" />
     </main>
   );

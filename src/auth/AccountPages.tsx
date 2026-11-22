@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { DashboardPage } from '../dashboard/DashboardPage';
 import { localePath } from '../locales';
+import { PageIntro } from '../PageIntro';
 import { usePreferences } from '../preferences';
 import { useSitePreferences } from '../sitePreferences/context';
 import { AccountBenefits } from './AccountBenefits';
@@ -37,7 +38,13 @@ export function AccountPages({ page, hash }: { page: string; hash: string }) {
 
   return (
     <main id="main" className="shell account-page">
-      <h1>{t(page === 'dashboard' ? 'accountDashboard' : 'accountSignIn')}</h1>
+      {page === 'dashboard' ? (
+        <PageIntro>
+          <h1>{t('accountDashboard')}</h1>
+        </PageIntro>
+      ) : (
+        <h1>{t('accountSignIn')}</h1>
+      )}
       {state.status === 'loading' ? (
         <p role="status">{t('accountLoading')}</p>
       ) : state.status === 'error' ? (

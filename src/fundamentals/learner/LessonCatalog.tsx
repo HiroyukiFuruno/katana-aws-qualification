@@ -1,6 +1,6 @@
 import { type MouseEvent, useState } from 'react';
+import { PageIntro } from '../../PageIntro';
 import { usePreferences } from '../../preferences';
-import { SiteAd } from '../../SiteAd';
 import type { DeliveryIndexAsset } from '../delivery/artifactTypes';
 import { lessonPath } from '../delivery/navigation';
 import type { LessonSummary } from '../state/memberTypes';
@@ -62,12 +62,13 @@ export function LessonCatalog({
   };
   return (
     <main id="main" className="shell fundamentals-page lesson-catalog-page">
-      <div className="intro">
-        <p className="eyebrow">{t('fundamentalsCatalogEyebrow')}</p>
-        <h1>{t('fundamentalsCatalogTitle')}</h1>
-        <p>{t('fundamentalsCatalogIntro')}</p>
-      </div>
-      <SiteAd placement="inline" />
+      <PageIntro>
+        <div className="intro">
+          <p className="eyebrow">{t('fundamentalsCatalogEyebrow')}</p>
+          <h1>{t('fundamentalsCatalogTitle')}</h1>
+          <p>{t('fundamentalsCatalogIntro')}</p>
+        </div>
+      </PageIntro>
       {loading && <p role="status">{t('fundamentalsLoading')}</p>}
       {error && (
         <div className="notice" role="alert">

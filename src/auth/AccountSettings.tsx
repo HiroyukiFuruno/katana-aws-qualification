@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { localePath } from '../locales';
+import { PageIntro } from '../PageIntro';
 import { usePreferences } from '../preferences';
 import { AccountAppearance } from '../sitePreferences/AccountAppearance';
 import { useAccount } from './AuthContext';
@@ -35,7 +36,9 @@ export function AccountSettings() {
   if (state.status !== 'ready' || !state.account || !service) {
     return (
       <main id="main" className="shell account-page">
-        <h1>{t('accountSettings')}</h1>
+        <PageIntro>
+          <h1>{t('accountSettings')}</h1>
+        </PageIntro>
         {state.status === 'loading' ? (
           <p role="status">{t('accountLoading')}</p>
         ) : (
@@ -52,7 +55,9 @@ export function AccountSettings() {
   const account = state.account;
   return (
     <main id="main" className="shell account-page">
-      <h1>{t('accountSettings')}</h1>
+      <PageIntro>
+        <h1>{t('accountSettings')}</h1>
+      </PageIntro>
       <a className="account-settings-back" href={dashboardPath(locale)}>
         {t('accountDashboard')}
       </a>

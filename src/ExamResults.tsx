@@ -7,6 +7,7 @@ import type { Attempt } from './history';
 import type { Message } from './messages';
 import type { usePreferences } from './preferences';
 import { examDomainOf, type Question, questionKey } from './questions';
+import { SiteAd } from './SiteAd';
 import { useContent } from './useContent';
 
 type Translate = ReturnType<typeof usePreferences>['t'];
@@ -57,6 +58,7 @@ export function ExamResults({
   return (
     <section className="card">
       <h2>{t('examResults')}</h2>
+      <SiteAd placement="inline" />
       <p className="exam-score">
         {t('score', {
           correct: attempts.filter((attempt) => attempt.isCorrect).length,

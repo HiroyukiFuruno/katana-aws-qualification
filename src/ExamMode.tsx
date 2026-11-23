@@ -10,6 +10,7 @@ import { getResponse, remainingLabel } from './exam';
 import type { Attempt } from './history';
 import { usePreferences } from './preferences';
 import type { Question } from './questions';
+import { SiteAd } from './SiteAd';
 import { useExamSession } from './useExamSession';
 
 export function ExamMode({
@@ -102,6 +103,7 @@ export function ExamMode({
           error={error}
           t={t}
         />
+        <SiteAd placement="inline" />
         {history.some((attempt) => attempt.mode === 'exam' && attempt.examId) ? (
           <ExamResultsButton disabled={busy} onClick={() => void session.loadSubmittedExam()} t={t} />
         ) : null}
@@ -125,6 +127,7 @@ export function ExamMode({
       </div>
       {expired && <p className="notice">{t('expired')}</p>}
       <ExamSaveError busy={busy} error={error} onReload={session.reload} t={t} />
+      <SiteAd placement="inline" />
       <ExamQuestion
         draft={draft}
         question={question}

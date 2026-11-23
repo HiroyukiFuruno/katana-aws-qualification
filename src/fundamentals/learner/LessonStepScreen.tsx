@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
-import { SiteAdLayout } from '../../SiteAd';
+import { SiteAd, SiteAdLayout } from '../../SiteAd';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonRoute } from '../delivery/navigation';
 import type { LessonStep } from '../delivery/slideTypes';
@@ -39,7 +39,6 @@ export function LessonStepScreen({
   commit,
 }: Props) {
   const { locale, t } = usePreferences();
-  const showAd = step.kind !== 'final';
   const { activeFinalSessionId } = snapshot.progress;
   const active = snapshot.sessions.find((session) => session.sessionId === activeFinalSessionId);
   const presentationPosition = route.stage === 'final' && route.position ? route.position - 1 : -1;
@@ -93,11 +92,12 @@ export function LessonStepScreen({
     go: (href) => confirm(snapshot, href),
   });
   return (
-    <SiteAdLayout show={showAd} viewKey={step.id}>
+    <SiteAdLayout show viewKey={step.id}>
       <LessonSlideShell
         step={step}
         unitTitle={asset.unit.title}
         catalogHref={catalogHref}
+        adSlot={<SiteAd placement="inline" />}
         onCatalog={navigation.catalog}
         previousHref={navigation.previousHref}
         onPrevious={navigation.previous}

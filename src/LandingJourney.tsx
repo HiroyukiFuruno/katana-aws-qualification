@@ -1,4 +1,5 @@
 import { assessmentDate, assessmentEstimate, assessmentItems } from './assessment';
+import { CertificationOverviewLink } from './CertificationOverviewContent';
 import { LandingCatalogStats } from './LandingCatalogStats';
 import { LandingSectionTitle } from './LandingStory';
 import { localePath } from './locales';
@@ -52,6 +53,13 @@ export function LandingPaths() {
         </h2>
       </div>
       <div className="entry-grid">
+        <CertificationOverviewLink locale={locale} className="entry-card">
+          <h3>{t('certOverviewTitle')}</h3>
+          <p>{t('certOverviewDescription')}</p>
+          <span className="entry-action">
+            {t('certOverviewTitle')} <span aria-hidden="true">↗</span>
+          </span>
+        </CertificationOverviewLink>
         <a className="entry-card" href={localePath(locale, 'study')}>
           <h3>{t('study')}</h3>
           <p>{t('studyPathsIntro')}</p>

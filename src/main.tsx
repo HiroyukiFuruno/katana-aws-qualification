@@ -6,6 +6,7 @@ import { AccountPrivacy } from './auth/AccountPrivacy';
 import { AuthCallback } from './auth/AuthCallback';
 import { useAccount } from './auth/AuthContext';
 import { dashboardPath } from './auth/navigation';
+import { CertificationOverview } from './CertificationOverview';
 import { CertificationPages } from './CertificationPages';
 import { CookieConsent, useCookieConsent } from './CookieConsent';
 import { CourseApp } from './CourseApp';
@@ -29,6 +30,7 @@ import { SitePreferenceNotice } from './sitePreferences/Notice';
 import { ContentProvider, useContent } from './useContent';
 import { usePageTitle } from './usePageTitle';
 import { useSiteAnalytics } from './useSiteAnalytics';
+import './CertificationOverview.css';
 import './style.css';
 
 function App() {
@@ -96,6 +98,8 @@ function App() {
           <StudyDirectory />
         ) : section === 'study' ? (
           <StudyPaths />
+        ) : route.page === 'certifications/overview' ? (
+          <CertificationOverview />
         ) : section === 'certifications' ? (
           <CertificationPages id={courseId} />
         ) : section === 'glossary' ? (

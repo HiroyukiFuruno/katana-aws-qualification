@@ -1,5 +1,5 @@
 import type { Locale } from './locales';
-import { messages, type Message } from './messages.ts';
+import { type Message, messages } from './messages.ts';
 
 const titles: Record<string, Message> = {
   '': 'landingTitle',
@@ -8,6 +8,7 @@ const titles: Record<string, Message> = {
   'study/questions': 'learnFromQuestions',
   assessment: 'skillsAssessment',
   certifications: 'certGuides',
+  'certifications/overview': 'certOverviewSearchTitle',
   glossary: 'glossary',
   privacy: 'privacy',
   login: 'accountSignIn',

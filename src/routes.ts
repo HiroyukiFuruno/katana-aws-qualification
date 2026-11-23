@@ -9,6 +9,7 @@ export const publishedPages = [
   'study/questions',
   'assessment',
   'certifications',
+  'certifications/overview',
   'glossary',
   'privacy',
   ...certifications.map((cert) => `certifications/${cert.id}`),

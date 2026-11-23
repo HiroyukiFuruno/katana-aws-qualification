@@ -33,6 +33,7 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
   const { answerCount, rate, review, notice, busy, page, navigate } = progress;
   const ready = banksReady && !progress.translationError;
   const contentError = progress.translationError ? 'invalidQuestionData' : (loadingError ?? mockError);
+  const showIntroAd = page === 'settings' || (page !== 'exam' && !progress.session);
 
   function section() {
     if (page === 'settings') {
@@ -87,10 +88,10 @@ export function CourseApp({ id, name, course }: { id: string; name: string; cour
   }
 
   return (
-    <SiteAdLayout show={page !== 'settings'} viewKey={page}>
+    <SiteAdLayout show viewKey={page}>
       <CourseNavigation page={page} busy={busy} onNavigate={navigate} />
       <main className="shell" id="main">
-        <PageIntro key={page} showAd={page !== 'settings'}>
+        <PageIntro key={page} showAd={showIntroAd}>
           <CourseOverview
             id={id}
             name={name}

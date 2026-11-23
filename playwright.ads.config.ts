@@ -4,6 +4,8 @@ export default defineConfig({
   testDir: './test/ads',
   testMatch: '**/*.pw.ts',
   workers: 1,
+  outputDir: 'test-results/ads/artifacts',
+  reporter: [['list'], ['json', { outputFile: 'test-results/ads/results.json' }]],
   use: { baseURL: 'http://127.0.0.1:4193' },
   webServer: {
     command: 'VITE_ADSENSE_SERVING=1 bun run build && bunx vite preview --host 127.0.0.1 --port 4193 --strictPort',

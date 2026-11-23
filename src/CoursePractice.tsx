@@ -4,6 +4,7 @@ import { QuestionCard } from './QuestionCard';
 import { QuestionSetPicker, type QuestionSet } from './QuestionSetPicker';
 import { questionKey, type Question } from './questions';
 import { shuffle } from './randomization';
+import { SiteAd } from './SiteAd';
 import type { PracticeSession } from './practiceSession';
 
 type ReviewItem = { question: Question; wrong: number; lastReview?: Attempt };
@@ -43,6 +44,7 @@ export function CoursePractice({
             aria-label={t('questionPosition')}
           />
         </div>
+        <SiteAd placement="inline" />
         <QuestionCard
           key={questionKey(question)}
           question={question}
@@ -57,6 +59,7 @@ export function CoursePractice({
     return (
       <section className="card">
         <h2>{t('results')}</h2>
+        <SiteAd placement="inline" />
         <p>{t('score', { correct: session.correct, total: session.questions.length })}</p>
         <button type="button" className="primary" onClick={close}>
           {mode === 'review' ? t('backReview') : t('backStudy')}

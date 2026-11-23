@@ -108,7 +108,7 @@ export function CertificationOverviewContent({
         </div>
         <p>{copy.certOverviewOtherGoals}</p>
       </section>
-      {ad && <div className="certification-overview-ad">{ad}</div>}
+      {ad}
       <section className="certification-overview-section" aria-labelledby="overview-start">
         <h2 id="overview-start">{copy.certOverviewStartTitle}</h2>
         <p>{copy.certOverviewStartBody}</p>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
+import { SiteAd, SiteAdLayout } from '../../SiteAd';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
 import type { LessonSnapshot } from '../state/types';
 import { LessonResultQuestion } from './LessonResultQuestion';
@@ -56,98 +57,104 @@ export function LessonResult({
     : 0;
   const passedBefore = Boolean(snapshot.progress.passedFinalSessionId && snapshot.progress.passedAt);
   return (
-    <main id="main" className="shell fundamentals-page lesson-result-page">
-      <header className="intro">
-        <p className="eyebrow">{t('results')}</p>
-        <h1>{t('fundamentalsResultsTitle', { title: asset.unit.title })}</h1>
-        {session ? (
-          <>
-            {session.submittedAt && (
-              <p className="lesson-result-session">
-                {t('fundamentalsResultSubmittedAt')}:{' '}
-                <time dateTime={session.submittedAt}>{session.submittedAt}</time>
+    <SiteAdLayout show>
+      <main id="main" className="shell fundamentals-page lesson-result-page">
+        <header className="intro">
+          <p className="eyebrow">{t('results')}</p>
+          <h1>{t('fundamentalsResultsTitle', { title: asset.unit.title })}</h1>
+          {session ? (
+            <>
+              {session.submittedAt && (
+                <p className="lesson-result-session">
+                  {t('fundamentalsResultSubmittedAt')}:{' '}
+                  <time dateTime={session.submittedAt}>{session.submittedAt}</time>
+                </p>
+              )}
+              {session.score !== null ? (
+                <p className="lesson-result-score" aria-live="polite">
+                  {t('score', { correct: session.score, total: asset.finalQuestions.length })} ·{' '}
+                  {session.requiredScore} / {asset.finalQuestions.length}{' '}
+                  {t('fundamentalsResultRequired')} · {Math.round(asset.finalPolicy.ratio * 100)}%{' '}
+                  {t('fundamentalsResultPassRate')}
+                </p>
+              ) : (
+                <p role="alert">{t('fundamentalsResultNoScore')}</p>
+              )}
+              {session.passed === true && <p className="lesson-result-pass">{t('lessonPassed')}</p>}
+              {session.passed === false && (
+                <p className="lesson-result-fail">
+                  {t('lessonNotPassed')} · {t('fundamentalsReviewNeeded')}
+                </p>
+              )}
+              {session.passed === false && passedBefore && <p>{t('fundamentalsResultPreviousPass')}</p>}
+              <p>
+                {t('answered')}: {answered} / {asset.finalQuestions.length}
               </p>
-            )}
-            {session.score !== null ? (
-              <p className="lesson-result-score" aria-live="polite">
-                {t('score', { correct: session.score, total: asset.finalQuestions.length })} ·{' '}
-                {session.requiredScore} / {asset.finalQuestions.length} {t('fundamentalsResultRequired')}{' '}
-                · {Math.round(asset.finalPolicy.ratio * 100)}% {t('fundamentalsResultPassRate')}
+              <p>
+                {t('fundamentalsResultUnansweredCount')}: {asset.finalQuestions.length - answered}
               </p>
-            ) : (
-              <p role="alert">{t('fundamentalsResultNoScore')}</p>
-            )}
-            {session.passed === true && <p className="lesson-result-pass">{t('lessonPassed')}</p>}
-            {session.passed === false && (
-              <p className="lesson-result-fail">
-                {t('lessonNotPassed')} · {t('fundamentalsReviewNeeded')}
-              </p>
-            )}
-            {session.passed === false && passedBefore && <p>{t('fundamentalsResultPreviousPass')}</p>}
-            <p>
-              {t('answered')}: {answered} / {asset.finalQuestions.length}
-            </p>
-            <p>
-              {t('fundamentalsResultUnansweredCount')}: {asset.finalQuestions.length - answered}
-            </p>
-          </>
-        ) : (
-          <p role="alert">{t('fundamentalsResultUnavailable')}</p>
+            </>
+          ) : (
+            <p role="alert">{t('fundamentalsResultUnavailable')}</p>
+          )}
+        </header>
+        <SiteAd placement="inline" />
+        {error && (
+          <p className="notice" role="alert">
+            {error}
+            {onReloadSaved ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  void onReloadSaved().catch(reportError);
+                }}
+              >
+                {t('examReloadSaved')}
+              </button>
+            ) : null}
+          </p>
         )}
-      </header>
-      {error && (
-        <p className="notice" role="alert">
-          {error}
-          {onReloadSaved ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                void onReloadSaved().catch(reportError);
-              }}
-            >
-              {t('examReloadSaved')}
-            </button>
-          ) : null}
-        </p>
-      )}
-      {actionError && (
-        <p className="notice" role="alert">
-          {t('fundamentalsActionFailed')}
-        </p>
-      )}
-      {session && (
-        <section className="lesson-result-questions" aria-labelledby="lesson-result-review">
-          <h2 id="lesson-result-review">{t('fundamentalsResultReview')}</h2>
-          {finalPresentation(asset, session.sessionId).map(({ canonicalPosition, question }, index) => (
-            <LessonResultQuestion
-              key={`${question.id}-${question.revision}`}
-              asset={asset}
-              question={question}
-              session={session}
-              index={canonicalPosition}
-              position={index + 1}
-              locale={locale}
-              contentVersion={contentVersion}
-              onNavigate={navigate}
-            />
-          ))}
-        </section>
-      )}
-      <nav className="lesson-result-actions" aria-label={t('navigation')}>
-        <button type="button" className="primary" disabled={busy} onClick={retry}>
-          {t('fundamentalsResultRetake')}
-        </button>
-        <a
-          href={catalogHref}
-          onClick={(event) => {
-            event.preventDefault();
-            navigate(catalogHref);
-          }}
-        >
-          {t('fundamentalsBackToCatalog')}
-        </a>
-      </nav>
-    </main>
+        {actionError && (
+          <p className="notice" role="alert">
+            {t('fundamentalsActionFailed')}
+          </p>
+        )}
+        {session && (
+          <section className="lesson-result-questions" aria-labelledby="lesson-result-review">
+            <h2 id="lesson-result-review">{t('fundamentalsResultReview')}</h2>
+            {finalPresentation(asset, session.sessionId).map(
+              ({ canonicalPosition, question }, index) => (
+                <LessonResultQuestion
+                  key={`${question.id}-${question.revision}`}
+                  asset={asset}
+                  question={question}
+                  session={session}
+                  index={canonicalPosition}
+                  position={index + 1}
+                  locale={locale}
+                  contentVersion={contentVersion}
+                  onNavigate={navigate}
+                />
+              ),
+            )}
+          </section>
+        )}
+        <nav className="lesson-result-actions" aria-label={t('navigation')}>
+          <button type="button" className="primary" disabled={busy} onClick={retry}>
+            {t('fundamentalsResultRetake')}
+          </button>
+          <a
+            href={catalogHref}
+            onClick={(event) => {
+              event.preventDefault();
+              navigate(catalogHref);
+            }}
+          >
+            {t('fundamentalsBackToCatalog')}
+          </a>
+        </nav>
+      </main>
+    </SiteAdLayout>
   );
 }

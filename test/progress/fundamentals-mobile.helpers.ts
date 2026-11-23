@@ -1,13 +1,16 @@
 import { expect, type Page } from '@playwright/test';
 import type { DeliveryUnitAsset } from '../../src/fundamentals/delivery/artifactTypes';
 import { stepHref } from '../../src/fundamentals/delivery/planNavigation';
+import { localeForPath } from '../../src/locales';
+import { messages } from '../../src/messages';
 import { nextButton, selectLessonAnswer } from './fundamentals.helpers';
 
 export async function acceptNecessaryCookies(page: Page) {
   const banner = page.locator('.cookie-banner');
   const savedChoice = await page.evaluate(() => localStorage.getItem('katana-aws:cookie-consent'));
   if (savedChoice !== 'granted' && savedChoice !== 'denied') {
-    await banner.getByRole('button', { name: '必要なもののみ', exact: true }).click();
+    const locale = localeForPath(new URL(page.url()).pathname);
+    await banner.getByRole('button', { name: messages[locale].cookieNecessary, exact: true }).click();
   }
   await expect(banner).toBeHidden();
 }

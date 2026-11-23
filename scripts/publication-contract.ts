@@ -65,12 +65,18 @@ export function assertPublicationContract(
   }
 }
 
-export function assertPhaseAPublicationScope(contract: PublicationContract) {
-  const ready = Object.values(contract.banks).filter((bank) => Object.keys(bank.translations).length);
-  assert.equal(ready.length, 26, 'Phase A must publish exactly 26 reviewed banks');
-  assert.equal(
-    Object.keys(contract.banks).length - ready.length,
-    16,
-    'Phase A source-only scope changed',
-  );
+export function assertFullPublicationScope(
+  contract: PublicationContract,
+  targetsFor: (sourceLocale: Locale) => readonly Locale[],
+) {
+  assert.equal(Object.keys(contract.banks).length, 42, 'Full publication must contain exactly 42 banks');
+  for (const [path, bank] of Object.entries(contract.banks)) {
+    const targetLocales = targetsFor(bank.sourceLocale);
+    const locales = publishedLocales(bank, targetLocales);
+    assert.equal(
+      locales.length,
+      targetLocales.length,
+      `${path}: full publication must declare every target locale`,
+    );
+  }
 }

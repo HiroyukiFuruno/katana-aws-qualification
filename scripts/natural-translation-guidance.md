@@ -2,6 +2,10 @@
 
 When identifiersByQuestion is provided, each entry lists exact technical tokens required at specific output-field paths. Preserve EVERY listed token in the corresponding field in EVERY requested locale. In particular, capitalized Query and Scan are DynamoDB API names, even in English; natural verbs such as queries do not replace the explicit API identifier. Check the entire list before returning JSON.
 
+- In French technical contexts involving AWS Glue, Glue Data Catalog, Athena, Iceberg, catalogs, locking, commits, or writers, translate software writers as a write process, engine, or writing client (for example processus d’écriture, moteur, or client d’écriture), not écrivain/écrivaine, which denotes a human writer. Apply this only when the source context is technical; preserve literal labels and identifiers, and keep human-writer contexts natural in every locale.
+
+- In Redshift questions, `RG` and `RA3` are real technical node-family identifiers when present in the source. Preserve them together with eligibility and Region conditions; do not remove an unfamiliar identifier to make a translation sound natural. If the name or support status is uncertain, flag it for review instead of silently dropping it or treating the translation as valid. Primary references: https://docs.aws.amazon.com/redshift/latest/mgmt/managing-cluster-multi-az.html and https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-clusters.html.
+
 - 全文脈を読み、各言語の初稿を文法・語順・性数一致・用語統一の観点で校正してからJSONを返す。正答と誤答の意味、否定、数値、単位、選択数を保持する。
 - 各対象フィールドに明示された操作・条件・時制を、そのフィールド内に残す。例えば問題文の「発生時に収集し、発生後に調査する」という要件を、選択肢や学習ノートにだけ残して問題文から省略しない。
 - 問題文にない実装方式や製品名を、正解選択肢や補足指示から問題文へ追加して正答の手掛かりにしない。補足指示は誤訳を防ぐ文脈であり、追加の出題条件ではない。
@@ -38,6 +42,7 @@ When identifiersByQuestion is provided, each entry lists exact technical tokens 
 - Distinguish S3 Intelligent-Tiering access tiers from storage classes: moving between its tiers does not change the storage class. In Spanish use niveles de acceso / niveles de archivado for internal tiers, not clases. Preserve optional archive activation and restoration conditions.
 
 - Compare every translated question against its correct answer and explanations before returning it. Preserve the direction of proportions, destinations, permissions, and time conditions. If only one-quarter of traffic should continue TO Tokyo, keep that quarter going to Tokyo. Japanese fractions such as 4分の1 denote a fraction rather than minutes.
+- Preserve the owner and target of dependency attributes. In CloudFormation, a resource containing `DependsOn` waits for the resource named by that attribute. Explicitly distinguish where the attribute is placed from the resource it references; never reverse the dependency while translating “for” or “to”.
 
 - Check each target language directly against the original source, including every qualifier that makes an answer valid. For CloudFront automatic compression, “次回公開の新URLでは” means the new URLs in the next release, not merely the next release. Preserve the explicit new-URL condition: enabling compression does not retroactively recompress objects already cached. Do not carry an omission from one translated language into the other eight.
 
@@ -89,3 +94,8 @@ When identifiersByQuestion is provided, each entry lists exact technical tokens 
 - French réhébergement is masculine: write le réhébergement / un réhébergement, not la réhébergement / une réhébergement. Feminine heads such as la solution de réhébergement or la stratégie de réhébergement remain feminine.
 
 - In German, the ordinary noun Agent (human or software) has weak declension: den/einen/einem/eines/dem/des Agenten and zum Agenten, including eines eigenen Agenten, not den Agent or eines Agents. Preserve nominative der/ein Agent, official product names such as SSM Agent, AgentCore, and quoted code identifiers; do not mechanically replace every Agent/Agents token.
+- ドイツ語で原文がタグ（英語のtag/tagsを含む）を意味する場合、Zuständigkeits-Tagは中性名詞としてdas Zuständigkeits-Tag（対格もdas Zuständigkeits-Tag）とする。日付のTag、複数形Tags、Tag-Namen、コード識別子はこの規則と区別する。
+- 繁體中文で、エンドポイントのゾーン固有DNS名を単独で訳す場合は、regional DNSと混同しないよう可用區 DNS／可用區域 DNSなどとする。「區域 DNS」は、同じフィールドにregional nameとzonal nameが併記される正しい対比を除き避ける。learning.conceptなど混在文脈はこのguardだけで網羅せず、native校正で確認する。
+- DynamoDB Global Tablesのsourceが「複数リージョン（の）結果整合性」または「マルチリージョンの結果整合性（MREC）」を示す場合は、翻訳でもMRECまたは各localeのeventual consistency相当語（英 eventual consistency、中文 最终／最終一致性、韓 최종 일관성、葡 consistência eventual、仏 cohérence éventuelle、独 letztendliche／eventuelle Konsistenz、西 coherencia eventual、伊 consistenza eventuale、日本語 結果整合性）を保持する。単なるmulti-Region consistencyへの一般化や、MRECをMRSC／strong consistencyへ置き換える意味逆転は不可。リージョンendpointやMRSCのみのsourceはこの規則の対象外とする。
+- DynamoDB Global TablesのLWW／最終書き込み優先（最後の書込みが勝つ）は、中文でも最后／最後の書入者が勝つ・優先する等、最後の書込みを示す表現を保持する。最先／最初の書込み者が勝つへの逆転は不可だが、対比説明の中で最後の書込みが勝つことも明示する場合は許容する。普通の「最初」「最後」やLWWと無関係なsource、MRSCだけのsourceには適用しない。
+- sourceが明示するread-after-write（書き込み後の読み取り）は、各localeでも時間順序を保持する。読み取り後の書き込み／读取后写入／讀取後寫入／읽기 후 쓰기などへの逆転を拒否するが、sourceにread-after-write cueがない文やsource自体がwrite-after-readの文は対象外とする。

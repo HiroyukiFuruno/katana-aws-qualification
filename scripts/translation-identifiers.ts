@@ -5,5 +5,6 @@ export function translationIdentifiers(source: string): string[] {
   const tokens: string[] = source.match(technicalTokens) ?? [];
   if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(source) || /\bDynamoDB\b/u.test(source))
     tokens.push(...(source.match(/\b(?:Query|Scan)\b/gu) ?? []));
+  if (/\bRedshift\b/u.test(source)) tokens.push(...(source.match(/\b(?:RG|RA3)\b/gu) ?? []));
   return [...new Set(tokens)];
 }

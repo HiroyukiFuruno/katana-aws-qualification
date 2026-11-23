@@ -27,6 +27,33 @@ describe('translation quality lint', () => {
     };
     expect(translationIssues('fr', { ...dictionary, ...shared }, {}, shared)).toEqual([]);
   });
+  test('rejects the copied French milestone title label', () => {
+    expect(
+      translationIssues(
+        'fr',
+        { ...dictionary, milestoneTitleLabel: 'Name' },
+        {},
+        { milestoneTitleLabel: 'Name' },
+      ),
+    ).toContain('fr.milestoneTitleLabel: untranslated English label');
+    expect(translationIssues('fr', { ...dictionary, date: 'Date' }, {}, { date: 'Date' })).toEqual([]);
+    expect(
+      translationIssues(
+        'de',
+        { ...dictionary, name: 'Name', title: 'API Name' },
+        {},
+        { name: 'Name', title: 'API Name' },
+      ),
+    ).toEqual([]);
+    expect(
+      translationIssues(
+        'fr',
+        { ...dictionary, milestoneTitleLabel: 'Nom' },
+        {},
+        { milestoneTitleLabel: 'Name' },
+      ),
+    ).toEqual([]);
+  });
   test('applies shared native grammar checks to visible UI messages', () => {
     expect(
       translationIssues('de', { ...messages.de, question: 'An einen verfügbaren Agent weiterleiten.' }),

@@ -1,6 +1,7 @@
 # 全問題のランダム化と品質改善
 
 ## 最新依頼・DoD
+- 最新の公開方針：残りのフル対応と全検証が終わってから一括公開する。本人の明示指示なしに途中公開を追加しない。
 - [x] 全問題の選択肢と固定問題の出題順をランダム化する。
 - [x] 正解ID・採点・途中再開・構造化回答の対応を維持する。
 - [ ] public/courses の42バンク5158レコード（出題条件を変更した6設問の公開済み旧版を互換性のため追加保持）・診断問題・基礎学習教材（現行/アーカイブを含む）を全件点検し、問題文・正答・誤答解説を適正化する。旧版互換性を維持する。
@@ -9,11 +10,16 @@
 - [ ] 対象回帰検査および既存checkを実行し結果を回収する。
 
 ## 最新の段階公開指示（2026-11-22）
-- [ ] Phase A: UI・ランダム化・全基礎教材・自然訳済26バンクを先行公開する。未完16は原文言語を明示する準備中案内で既存学習を維持し、未検証の翻訳へ黙ってfallbackしない。公開対象のhash/provenance/内容lintをすべて通す。
+- [x] Phase A: UI・ランダム化・全基礎教材・自然訳済26バンクを先行公開する。未完16は原文言語を明示する準備中案内で既存学習を維持し、未検証の翻訳へ黙ってfallbackしない。公開対象のhash/provenance/内容lintをすべて通す。
 - [ ] Phase B: 残16バンクを自然翻訳・意味確認し、全42バンク5158レコード/10言語の元DoD、完全検査・全回帰・最終公開を完了する。先行公開は元DoDの完了を意味しない。
 - 公開はDraft→review→指摘修正/reply/resolve→P0/P1 zero→Ready→required checks→merge→Production確認。現行mainの機能を戻さず、source-onlyは明示的な配信契約として実装し、lint disable/Excludeで通さない。
 
 ## Phase A 統合・公開候補の検証
+- 2026-11-22 13:03 UTC: [本番サイト](https://kaq.katana-projects.org/)へ公開・検証完了。PR #107はDraftで追加レビュー・6スレッド返信/解決・Ready・最新headのLinux全8 checks成功後にmergeした。実merge `5509acc31fa7518b958b12e06dbab2f5aa5557e4` / tree `06289c4e38077fedc5b98dd0b1cc0ba348584d6a`。最新mainの広告と標準SSO構成を保ち、撤去済み独自アカウント試作は復活させていない。
+- 上記treeの全体検査957成功/0失敗・15,502 assertions、実DB/API検査、ブラウザ79/79成功。Vercel本番ビルドでも957成功/0失敗、504翻訳ファイル・783キー/10言語の検査成功（Node 26.13.1 / Bun 1.4.4）。公開URLの操作25/25成功、547配信JSONと実merge由来の原本のraw-byte hashが全一致。証跡 `output/question-quality/phase-a-publication-verified.json`。
+- 本番Supabaseは暗号化backupの保存・復号照合後にpresentation migrationを適用し、3列・7関数・権限・既存5関数不変・全16 migration hashを検証済み。既存認証を利用したためSupabaseの追加インストールは不要。Vercel個別uploadの上限には公式応答が案内した `--archive=tgz` で対応し、同一の検証済み原本だけを公開した。
+- Phase Bを再開。再開時点の資格翻訳cacheは3081/5158、意味検証3075/5158・要対応6、教材1081/1081・問題意味356/356。自然翻訳は既存AIのLuna/mediumを2並列で再開し、原文・正答ID・数量・否定・provenanceの検査を維持する。SCSの6フラグは全文と公式資料で個別判断する。英語原文MLA-C02は日本語原文バンクの後に処理する。
+- [ ] Phase B完了時に全42バンクが自然訳済みであることを確認し、公開検査のPhase A固定件数（26/16）を全量契約へ更新し、通常Lint/公開導線にも `i18n:content:full` を必須化する。既存の全量ゲートを緩和しない。
 - 最新main `88e6ce9b` を同一releaseブランチへ統合し、保護対象1668ファイルを復元照合した。短時間のmerge用stashは復元確認後に削除し0件。証跡は `output/question-quality/phase-a-sync/restore-verified.json`。
 - 公開契約は42バンクを明示し、自然訳済26バンク3027レコード/234翻訳を許可。残16バンク2131レコードは原文言語を明示する。未検証の英訳14payloadはGit候補から外し、作業場所に保持する。
 - 配信対象504ファイルの原文hash・payload hash・意味レビュー・自然訳provenance・既存キャッシュ照合は成功。全件用full gateは維持する。
@@ -331,7 +337,7 @@
 - [x] 2026-11-21T20:02:35.837213+00:00: TW此次問題/這次問題の誤検出修正は実2文RED→GREEN、3tests17assertions・全474/5243/174files・型/i18n型/format854成功。独立P0/P1/P2=0、main採用proof position-tw-current-issue-main-acceptance.json。日本語次問題/次問/前問とchoiceletter拒否を維持。source/cacheは修正せず、旧parentの保存完了後にcode読込のため再起動する。
 
 - 2026-11-21T20:03:19.973098+00:00: 旧parent31910/PID19862は1816件を保存しexit0回収。新parent12205/PID11878をgeneration-tw-current-issue-guard.logへ3担当/batch4で開始。全source5157/41/旧AIB441と最終検査は未完了のまま継続。
-- [ ] 全5157生成完了後に棄却batchを再棚卸しし、新規の意味指摘とcurrent hash/改訂/根拠付き判断の対応を確認する。現在28batch/16指摘entryは確認済みで、将来batchの確認を残す。
+- [ ] 全5158生成完了後に棄却batchを再棚卸しし、新規の意味指摘とcurrent hash/改訂/根拠付き判断の対応を確認する。現在28batch/16指摘entryは確認済みで、将来batchの確認を残す。
 
 - [x] 2026-11-21T20:18:21.478499+00:00: 現行公式のAWS Quick/AWS Quick Sightと異なる旧表示名4fields（AIF2choiceA/DEA2prompt）を検出。機能/正答/revを保持する名称明確化と既存AIF9訳×2fieldsの自然校正を行う。API/SDK識別子や歴史的説明は機械置換しない。CLI2へ減らし実枠を解放後native候補担当へ。
 
@@ -470,7 +476,7 @@
 
 - 追加レビュー2点は実装・回帰検証済み。単体1116件成功、実filterからの会員RPC保存の実DB検査成功、旧版再開・言語切替・offline再採点・guest競合の実DB/browser集中6件成功。独立highレビューP0/P1/P2=0。
 - account検査は起動中のIdPコンテナにSIGTERM/削除が入り、ローカルでは検査0件で環境失敗。品質条件は変えず、既存の独立Linux CIで全account検査を実行して確認する。元の11拒否条件は同じassertionsを保ち個別ケースへ分割し、timeout延長はしない。
-- [ ] 最終候補の全check・ブラウザ回帰、修正commit/push、指摘threadへの返信/resolve、最新headのCI/review回収、Ready化、接続とDB適用確認後のmerge/Production確認を完了する。
+- [x] Phase A最終候補の全check・ブラウザ回帰、修正commit/push、指摘threadへの返信/resolve、最新headのCI/review回収、Ready化、DB適用、merge/Production確認を完了。PR107/merge5509acc31f、phase-a-publication-verified.json。Phase Bの全量検査・最終公開は上記の別未完タスクとして継続する。
 
 ### 本流 PR #106 統合後の追加検証
 
@@ -478,7 +484,7 @@
 - [/] private merge snapshotのv1/v2許可列・fixtureへ表示順3列を追加し、余分列拒否を維持。実DB snapshot検査にも列存在条件を追加。thread `PRRT_kwDOVzQ52c66iPES`。最終CIで実DB検査を回収する。
 - [/] Linux auth CIで発見したFAQ本文selectorと、単独analytics拒否後のaccept-all再同意の同期を最小修正。実ブラウザ16/16成功（0skip/0unexpected/0flaky）、既存同意条件・10言語layout assertions維持。最終Linux CIも回収する。
 - [/] Linux progress shard1の競合再開timeoutは、ランダム先頭が複数選択でも旧testが誤答1つしか選ばない前提が原因。必要選択数を満たす誤答と保存済みsession同期に修正し、実backendで独立2回成功。競合・canonical回答・outbox・event assertions、30秒上限は維持。最終Linux全shardも回収する。
-- 先行公開 → 残り16バンク自然翻訳 → 最終公開のユーザー指定順序を維持する。本番Vercel権限とSupabase接続は引き続き本人の接続操作待ち。
+- 先行公開 → 残り16バンク自然翻訳 → 最終公開のユーザー指定順序を維持する。先行公開に必要なVercel権限・Supabase操作は解消し、Phase Aを実公開済み（phase-a-publication-verified.json）。
 
 - [/] PR #108（2ecfedaa）の20 pathsも統合。新native runnerの固定18件/境界14という前提を共通migration phase helperへ置換し、既存の実registry回帰を再利用。新runnerには固定数再導入の静的guardを追加。個別5件とintent-scope型/対象Biome成功。最終統合候補の全check・最新head CIを回収する。
 
@@ -489,3 +495,105 @@
 - [/] Linux b84 CIはData/Glossary/Progress全shard/Auth成功。AccountのSQL検査は新しい61項目が成功したがreceipt側が60を期待して失敗。正しい61項目と新presentation列検査labelの存在を必須として修正、型/対象Biome成功。最新CIで全体を回収する。
 
 - 最終追加修正は独立review P0/P1/P2=0。新unitの明示型検査は一時Bun型rootsで成功、repo依存変更なし。behavioral REDは未記録であり、missing-exportによる失敗をRED証跡として扱わない。実404 browser結果と最新snapshot保持のunit、全体検査、最新Linux CIを合わせて判定する。
+
+- [x] 2026-11-22T14:37:08.973034+00:00: PhaseAは実公開済。merge5509acc31f / dpl_GFnJTjxa8dAs8DkutWUuQVbpuimn / https://kaq.katana-projects.org/ 。最新CI8checks、957unit、79browser、production25browser/547payload SHA256一致。DBpresentation005適用確認済、Supabase追加install不要。正式証跡 phase-a-publication-verified.json。
+- [ ] 2026-11-22T14:37:08.973034+00:00: PhaseB全5158/42banks継続。現在3249semanticpass/0needs、JA1484残→EN425最後。新Tag guardのbehavior RED/GREENと再起動を記録。JA-only371batch/3workers PID78714、session7510。最終全check、81browser予定、691payload/27production予定、レビュー/最新CI/実公開は全訳後に実行。過去ログの先行公開未完/権限待ちは最新の公開証跡で解消済。
+
+- [x] 2026-11-22T15:12:33.610198+00:00: upstreamPR113/head1b533をsource衝突0でff統合、971unit/15531assert/222files成功。表示設定19keys×9native171値を22修正、追加66keys×9native594値は17修正/FR公式replica語1維持。既存721の正確なbytehashをGitc000から全10復元し717保持+削除4+66+19=現802の全値bindingを照合。独立P0-P3=0、802i18n/type/format/398TS hardcode0。coverage802/追加UI/設定UI各受入proofを保存。実表示の査定16問と辞書64duplicatesは別に扱い、旧辞書の否定誤文を実表示に存在したと主張しない。
+- [x] 2026-11-22T15:12:33.610198+00:00: source-onlyの実SCS構造化saved-input2形式が実devserver/consent/非canonical shuffle/slot/EN-JA-EN保存維持で成功。正式81/27の翻訳完成検査は未実施のまま保持。SCSsource3修正のsourceHash1fieldだけ正規metadata整合、全42sourcehash一致/fullgateは未完成を引続き拒否。
+- [x] 2026-11-22T15:12:33.610198+00:00: scs-c03-d6-029の個別証拠選択疑義は公式2Markdown/bodySHA照合で解決255。source/B/rev1維持、9localeB実読、8promptの期間係り先だけnative校正/KO main自然化、9strict/readback、独立P0-P3=0。formal3308pass/0needs。
+
+- [x] 2026-11-22T16:16:08.344601+00:00: PR114/backend-onlyのmain3edfc900をsource/locale重複0でff統合、21localhash全保持/stash0。default main refも通常ff同期。977unit/15554assert/224files、型、402TS hardcode0成功。upstream5workflows全success。migration220006はWeb表示を追加しない基盤であり、既適用17件のsourceを変更しない。本番006の適用状態は最終公開前に実読し、他taskの適用を重複しない。問題queue不変、formal3449pass/0needsを保持。
+
+- [x] 2026-11-22T16:57:08.345164+00:00: DEA d2-045のRG疑義は現行公式3Markdown/shaで正式RG familyとMultiAZ対応を確認しsource/B/rev1を保持、判断256。勝手にRGを省略していた全9promptをnative復元/EN・KO main自然化、9strict/readback、独立P0-P3=0。Redshift文脈RG/RA3脱落を実behavior RED→GREEN3tests/9expect、型/format/独立0でlint化。全currentcache3561×9=32049strict失敗0/needs0。旧JA PID78714/session7510は保存drain exit0で回収、新JA-only1172/293batch PID2312/session49336/3worker5.6Luna mediumへ再開。EN425は引続き最後。最初のnative applyはimmutable入力にlocaleが無いことをassertで書込前検出し、原cache9を実保全してbefore照合から正しく適用。両attempt証跡を保持。全5158/42・最終公開は未完のまま継続。
+
+
+### 2026-11-23 継続: 追加UI・software writer自然訳
+
+- [x] PR115/116（3b18e983）を同release branchへ統合。実merge用stashは同branchへ復元・39native edits完全一致検証後drop、残0。新規worktreeなし。
+- [x] 新54 UI keys×9=486値を全文contextでnativeレビューし8値修正。旧802×10はraw-file SHAを完全復元。新856×10のキー検査成功、415TSの表示hardcode0、型検査成功。独立レビューを回収中。proof: output/question-quality/phase-b-ui-856-exact-coverage-bindings.json。
+- [/] software writerを人物と訳すFrench誤訳を限定AND-context Lintへ昇格。ordinary human/service-only受容、実RED→GREEN5tests/24expect、既存IAM/NFC/literal保持。
+- [x] dea-c01-d2-077は公式2source snapshot+独立reviewで原文/正答C/rev1保持。native21leafのみ9言語校正、9strict/readback、source bytes不変。main decisionによりresolution257。
+- [x] 旧JA generator PID2312/session49336のdrain exit0実回収。新guard全cache監査とJA-only再開準備中。
+- [x] rejected57batch/20original review/18IDsはparse0/uncovered0、partial candidate7/7・German10/10 covered（3741cached時）。全5158後の必須--checkは保持。
+- [ ] 残問題の自然訳、全42materialize、全量検査/最終review/CI/merge/本番全量公開。先行公開完了を全量完了へ置換しない。
+
+- [x] 新UI856/newFrench guards統合後の全unitは987pass/0fail/15592assert/225files。専用実DB projectで全19migration/実GoTrue/PostgREST/RLS/世代・改訂競合/時計/表示順/設定/資格予定を検証しexit0、containers/network削除確認。phase-b-ui856-french-guards-integrated-unit-result.json / phase-b-full-data-integration-result.json。全翻訳・本番公開完了とは別の検証として扱う。
+
+- [x] native8修正後の会員予定UIを既存6ファイル全17実browserシナリオで検証しpass17/skip0/flaky0。全10locale/375light390dark/keyboard/overflow、CRUD/所有者競合/ネットワーク復旧/DSTも通過。18予想は以前のupstream合成runとの混同で、現行source定義は7固定+10locale=17、除外や検査縮小なし。専用サービスcleanup成功。phase-b-milestone-native-browser-main-acceptance.json参照。
+
+- [x] formal3789/5158自然訳・semantic pass、needs0/pending1369、合計5158を照合。JA残944/EN425（後続cohort保持）。実Bun25102/launcher25101は継続、新flagなし。progress-receipts/3789.json。全量公開は引続き未完。
+
+### ANS zonal DNS native追加校正
+
+- [/] 独立P1: d1-035繁体字D/conceptのzonal DNS→區域 DNS混同を可用區 DNSへ2leaf校正、gradeD/rev1を維持。
+- [/] P2採用: 本文にない分類用というtitle限定表現をJA/9targetで除き、アプリと同じAZという既存要件を直接表す。
+- [x] 単独zonal endpoint sourceに限定したTW言語Lintと実RED→GREEN。mixedRegional/zonalは誤拒否せず、conceptはnative手動校正の範囲とする。
+- [x] source/cache before binding、sourcehash遷移、9strict/readback/全currentcache audit、独立指摘解消、新runtime再開。
+
+- [x] ANS case independent P1/P2 resolved/newP0-P3zero、mainexact11/元cachebytes/全9immutable hash/Drev1保持確認、guard27pass62assert/type/Biome、全canonical3873×9strict0fail。resolution258/source-onlycontractmetadata維持。freshJA860=215batch/EN425heldをAPIassertしactualBun94818/launcher94816/session16251で再開。正式3873/5158/0needs/pending1285（75.1%）。全5158後のfull/materialize/公開DoDは維持。
+
+- [x] broadzonal rescanはsingle/mixed両方をcurrentcanonical3889snapshotで監査しpotentialcontexts0/fields0。同一collectorで旧immutable実caseをpositiveprobeしD.text/conceptの2fields検出を確認。sourceLocaleOf ja4733/en425、snapshotfilenameSet/digest、auto-legitimate判定を除去。output helperは実stdin format比較で検証済み（ignoreによる0processedを成功としない）。
+- [ ] 最終5158時に `bun output/question-quality/rescan-zonal-dns-contexts.ts` を再実行しsource/cache5158・potentialcontextsを実回収、0以外は全文source/TWで個別native判定・hashbinding証跡を残す。既存candidate/German最終--checkとrejectedhistoryも省略しない。
+
+- [x] DNSguard/ANSsource/native統合後の全unit996pass/0fail/15605assert/226files、Bun1.4.5/Node26.13.1、index5320。baseGitHEADとdirtyworkingtree差分SHAを区別して記録。phase-b-zonal-integrated-unit-result.json。helperのみの整形では再unitを行わず、最終materialize後はデータ変更に応じ全品質検査を再実行する。
+
+- [x] ansd3-063交通経路値のsource疑義は公式表/実例のlive確認(main+独立)で原文D/rev1保持、全9locale/36bindings/編集0を確認、resolution259。primary2mdHTTP200/bodySHA/beforecache保持、source/cachelocalizeddata不変。正式4065pass/0needs/pending1093、naturalready35/42、全ANS341natural完了。元full5158 publicationは引続き未完。
+
+### MRECモデル限定の保持
+
+- [x] 独立sourceP2: soa-c03-d2-024原文の結果整合性を正式なマルチリージョンの結果整合性（MREC）とprompt/D説明2fieldで明記。正答A/rev1/元条件は維持。
+- [x] main発見translationP1: 全9locale prompt/D説明の18fieldsでeventual限定が欠落。初回native0edit判定はこの欠落を見落としたため追補訂正し、fullterm+MRECへ復元。
+- [x] qualified-model sourceに限定したMREC言語Lint（9旧before+英語source→JA/正しいnative語/NFC等）実RED→GREEN、nativev2/sourcebeforeafter/readback/独立closure/allcacheaudit。
+- [x] 実Bun94818/launcher94816/session16251のSIGINT後inflight保存/実exit回収、新guard全canonicalauditとfreshJAのみ再開。EN425最後/full5158未完を維持。
+
+- [x] 2026-11-23: SOA-C03 `soa-c03-d2-024` のMREC正式用語を日本語2か所で明示し、全9言語の問題文・D解説18か所から脱落していた結果整合性条件を復元した。正答A・revision1・他の設問/訳文は保持。旧reviewと旧cacheを保存し、元指摘はmainと独立レビューで閉鎖。42バンクの配信source hashはproduction `contentJobs()` 正規化基準で全一致。`docs/reviews/20261123-dynamodb-mrec-native-main-acceptance.json` および `output/question-quality/phase-b-dynamodb-mrec-main-data-verification.json`。
+- [x] MREC検査の実データ7bindings（3設問）で検出した正しいDE/KO/ES/IT用語の誤検知を修正し、元の9言語条件欠落拒否・MRSC境界を保った回帰検査と全canonical cache再検査を完了してJA-only生成を再開する。残961問（SOA195/MLA-C01 341/MLA-C02 425）は未生成であり、全量DoDは未完了。
+
+- 2026-11-23 07:09 JST: 正式4197/5158全pass・needs0・全37773 locale bindings strict成功、残961。MREC追加を含む現行HEAD f78fc70eのunit1005/15644assertions成功（228files）。JA残536を134batches/3workersで実Bun14138/session1464から再開し、EN425は保持。Phase Bの全量公開は引き続き未完了。
+
+## LWW条件の誤訳修正（全量公開へ統合、2026-11-23）
+- [x] mainがDynamoDB単独の結果整合性の対象8原文・117翻訳leafを全文点検し、SAA-C03 rev2のzh-CN問題文に「最終書き込み優先」から「最先写入者胜出」への逆転を検出。独立レビューとAWS公式英中資料で確認し、実本番JSONにも同じ誤訳があることをraw hashで照合した。
+- [x] 原文・正解・revision・他localeを維持し、該当cacheのpromptだけ最后へ修正。PTのverificação→varredura提案は公式PT文書でも現行用語が使われるため不採用とし、記録を保持。
+- [x] LWWの先後逆転を検出する限定的な翻訳Lintと実データ回帰を追加した。実データ14 bindings・named policy・境界を含むfocused16 tests/72 assertions、全4317 cache・38853 locale bindings成功、独立P0/P1ゼロ。
+- 途中公開の計画はユーザー指示により取りやめた。commit/push/公開は行っていない。途中公開用indexを解除し、修正済みの原稿・Lint・依存更新はすべて最終の全量公開へ含める。
+- [ ] その後も元の42バンク5158問・全10言語の完了、全検査、全量公開を継続する。英語原文MLA-C02の単独eventual対象1件は生成後に横断レビューへ追加する。
+
+## 最新ユーザー指示：公開計画を追加しない（2026-11-23）
+- [/] 「次はフル対応後に公開」「計画にない余計な事しない」を優先する。残翻訳を進め、全42バンク5158問・全10言語・計画済み全検証を完了してから一括公開する。
+- [/] 既公開の誤訳を発見しても、本人の明示指示なしにhotfixや別の公開区切りを追加しない。誤訳は原計画の修正へ統合する。途中公開用のstageは解除済みで、working filesは全保持、commit/push/deployなし。
+- アンチパターン：個別の誤訳発見を理由に独自に公開候補・別QA・PRを用意して本体作業を広げる。正しい対応：発見と進捗を短く報告し、必要な修正を原計画に取り込み、次の公開はフル対応後にする。検索語: full completion before publication, no unplanned interim release, 公開区切り追加禁止。
+
+## SOA表現3件・ECR仕様疑義の確認（2026-11-23）
+- [x] SOAのbreaching設定名と2問の問いかけ欠落を最小修正。正答・revision・元条件を保持し、該当する9言語を全文確認、18翻訳箇所を調整した。全42バンクのsource hash整合と27 locale strict mergesを確認し、独立指摘を解消した。`docs/reviews/20261123-soa-three-source-native-main-acceptance.json`。
+- [x] ECR Basic scan-on-pushのrepository filterは公式仕様で対応を確認。正答B・原文・revision・全9言語を維持し、主査/独立レビューで意味確認の指摘を解消した。`docs/reviews/20261123-ecr-basic-filter-main-acceptance.json`。累計semantic resolution264件。
+- [ ] 残りの原計画の翻訳・全体検証・一括公開を継続する。上記は作業原稿の検証結果であり、全量公開の完了ではない。
+
+## MLA EventBridge・Batch Transformの仕様確認（2026-11-23）
+- [x] d3-044の承認済みモデル版イベントのdetail項目・Approved値と、d3-052の単一S3入力オブジェクトのインスタンス配分をAWS公式資料で確認。両問とも原文・正答A・revision1を維持した。
+- [x] 原文2件・全18言語文脈を主査と担当者・独立担当が全文確認した。繁体字のS3索引鍵の表記を1か所明確化し、18 strict merges・変更範囲・元review・provenance保持を確認。意味検証resolution266件。`docs/reviews/20261123-mla-event-batch-main-acceptance.json`。最終全量公開に含める。
+
+## ModelTrainerの出典・自然表現の精密化（2026-11-23）
+- [x] d2-085の出典をSDK v3公式Quickstartへ1か所変更した。公式のSourceCode/source_dir/requirements仕様を主査・独立担当が確認し、原文条件・正答D・revision1は保持。
+- [x] 全9言語の文脈を確認し、TW/DEのソフトウェアNotebook表現とDE/FRの依存パッケージ版固定を6か所明確化。旧cache・元review・provenance・他レコードを保持し、9strict merges、全42bank5158問の配信sourceHash一致を確認した。resolution267、独立P0-P3未対応0。`docs/reviews/20261123-modeltrainer-source-native-main-acceptance.json`。公開は引き続き原計画の全量完了後。
+
+## BedrockモデルEOL表現の精密化（2026-11-23）
+- [x] 英語原文d2-043のLEGACYから後継モデルを選ぶ手順を現行AWS公式仕様で確認。原文Aの終了日がBedrockサービスでなく対象モデルのものであると1か所明示し、全9訳のAとドイツ語の退役表現11か所を精密化した。正答A・revision1・元条件は保持。
+- [x] sourceLocale=enで新hashを算定し、9strict・原文1/翻訳11/契約metadata1のみの差分・元cache/review/provenance保持・全42bank5158問sourceHash一致を確認、resolution268。独立P1/P2を実readbackで閉鎖し未対応P0-P3ゼロ。`docs/reviews/20261123-bedrock-lifecycle-source-native-main-acceptance.json`。元の全量公開に含める。
+
+## CloudFormation依存方向の明確化（2026-11-23）
+- [x] 英語原文d3-049のA/Bで、DependsOn属性を置くリソースと依存先が逆にも読める問題をAWS公式仕様と照合した。原文A/Bの2か所と全9訳の18か所を明確化し、誤答Aはpolicy側→deployment、正答Bはdeployment側→policyと整合。正答B・revision1・元条件・解説は保持した。
+- [x] 新cache先行・sourceLocale=enのhash再算定・9strict・原文2/翻訳18/契約metadata1のみの差分・旧cache/元review/provenance保持・全42bank5158問sourceHash一致を確認。resolution269、独立P1を実readbackで閉鎖し未対応P0-P3ゼロ。`docs/reviews/20261123-cfn-dependency-source-native-main-acceptance.json`。翻訳指示にも属性ownerとtargetの保持を明記し、生成は停止せず原計画を継続する。
+
+## SageMakerホスト型モデルのVPC要件確認（2026-11-23）
+- [x] 英語原文d3-068の異なるAZのサブネット要件は現行AWS公式資料に明記されていると主査・独立担当が確認し、原文・正答A・revision1を維持した。全9訳のネットワーク条件とRuntimeエンドポイントの役割分離を全文点検し、KOの特徴量サービス表現を1か所だけ自然化した。
+- [x] 9strict・変更1leafのみ・元review/provenance保持を確認、resolution270。独立P3を実readbackで解消し未対応P0-P3ゼロ。`docs/reviews/20261123-sagemaker-host-vpc-main-acceptance.json`。最終全量公開は継続中。
+
+## 書き込み後読み取りの時間順序検査（2026-11-23）
+- [x] 最後のEN eventual対象d1-120を原文・全9訳で全文確認し、D解説のread-after-writeを4言語で逆順にしていた誤訳を訂正、KO/PTタイトル2か所も自然化した。原文・正答C・revision1・元source review/provenanceを保持し、実差分6leafと9strictを確認。
+- [x] 明示sourceだけに限定する翻訳Lintと実データ回帰を追加。正しい対比を保持し、actual baseline RED5→GREEN7 tests/21 assertions、型・Biome成功。source全文1/before4/actualafter9の14fixtureを実データと機械照合して0不一致、独立指摘も閉鎖した。
+- [x] standalone eventual subsetをcurrent canonicalで再集計し、9 source questions/14source leaves/126locale bindings・未読0・hash不一致0・欠落0。既存LWW delta1と今回delta6以外は不変、eventual/strong/MREC/先後の未解決逆転0。`docs/reviews/20261123-read-after-write-native-main-acceptance.json`。全5158問の公開完了とは分け、元の全量検証・公開を継続する。
+
+## 全量最終の限定校正検査（2026-11-23）
+- [x] current5158を対象にcandidate entity、German Agent、zonal DNS、棄却batch履歴の検査を実回収。FRの画像候補と初回scan待機の表現を1field校正し、German7新文脈は公式製品名として全source/localeを確認、既存の製品名保持policyで原形を維持した。普通名詞Agentの弱変化条件は変更していない。
+- [x] candidate7/7、German17/17contexts・21fields、zonal0、全uncovered0で既存--check成功。棄却78batch/20reviews/18IDs、parsefail0/uncovered0。初回の未確認指摘とGerman P2のpolicy再評価履歴を保持。`output/question-quality/final-rescan-result.json` と `docs/reviews/20261123-final-candidate-entity-main-acceptance.json`、`docs/reviews/20261123-final-german-agent-main-acceptance.json`。

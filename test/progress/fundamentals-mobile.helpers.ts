@@ -4,8 +4,12 @@ import { stepHref } from '../../src/fundamentals/delivery/planNavigation';
 import { nextButton, selectLessonAnswer } from './fundamentals.helpers';
 
 export async function acceptNecessaryCookies(page: Page) {
-  const button = page.getByRole('button', { name: '必要なもののみ', exact: true });
-  if (await button.isVisible()) await button.click();
+  const banner = page.locator('.cookie-banner');
+  const savedChoice = await page.evaluate(() => localStorage.getItem('katana-aws:cookie-consent'));
+  if (savedChoice !== 'granted' && savedChoice !== 'denied') {
+    await banner.getByRole('button', { name: '必要なもののみ', exact: true }).click();
+  }
+  await expect(banner).toBeHidden();
 }
 
 export async function assertReadingGeometry(

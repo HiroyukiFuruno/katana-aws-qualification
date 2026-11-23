@@ -1,4 +1,5 @@
 import { CertificationDirectory } from './CertificationDirectory';
+import { CertificationOverviewLink } from './CertificationOverviewContent';
 import { officialGuideLink } from './certificationGuides';
 import { examPrices, pricingUrl } from './certificationPricing';
 import { certifications, levelMessage } from './certifications';
@@ -17,7 +18,14 @@ export function CertificationPages({ id }: { id?: string }) {
     return (
       <main id="main" className="shell study-directory">
         <PageIntro>
-          <h1>{t('certGuides')}</h1>
+          <div className="intro">
+            <h1>{t('certGuides')}</h1>
+            <p>
+              <CertificationOverviewLink locale={locale}>
+                {t('certOverviewTitle')}
+              </CertificationOverviewLink>
+            </p>
+          </div>
         </PageIntro>
         <CertificationDirectory mode="certifications" />
       </main>

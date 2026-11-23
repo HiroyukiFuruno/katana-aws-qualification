@@ -1,9 +1,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { localizedBuildContent } from './localized-build-content.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { type Message, messages } from '../src/messages.ts';
 import { accountPages, privateLessonPages, publishedLocalesFor, publishedPages } from '../src/routes.ts';
+import { localizedBuildContent } from './localized-build-content.ts';
 
 const origin = 'https://kaq.katana-projects.org';
 const template = await readFile('dist/index.html', 'utf8');
@@ -14,6 +14,7 @@ const indexTitles = {
   'study/questions': 'learnFromQuestions',
   assessment: 'skillsAssessment',
   certifications: 'certGuides',
+  'certifications/overview': 'certOverviewSearchTitle',
   glossary: 'glossary',
   privacy: 'privacy',
 } satisfies Record<string, Message>;
@@ -25,6 +26,12 @@ function escapeHtml(value: string) {
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
+}
+
+function descriptionFor(entry: string, dictionary: Record<Message, string>) {
+  if (entry === 'glossary') return dictionary.glossaryIntro;
+  if (entry === 'certifications/overview') return dictionary.certOverviewDescription;
+  return dictionary.landingDescription;
 }
 
 for (const locale of locales) {
@@ -44,9 +51,7 @@ for (const locale of locales) {
           `<link rel="alternate" hreflang="${alternate}" href="${origin}${localePath(alternate === 'x-default' ? 'en' : alternate, entry)}">`,
       )
       .join('\n');
-    const description = escapeHtml(
-      entry === 'glossary' ? dictionary.glossaryIntro : dictionary.landingDescription,
-    );
+    const description = escapeHtml(descriptionFor(entry, dictionary));
     const html = template
       .replace('lang="en"', `lang="${locale}"`)
       .replace(

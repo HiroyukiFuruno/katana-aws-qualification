@@ -9,7 +9,7 @@ import { directoryExists } from './content-translation-provenance';
 import { validateTranslation } from './content-translation-validation';
 import { checkLegacyNaturalExports } from './legacy-natural-exports';
 import {
-  assertPhaseAPublicationScope,
+  assertFullPublicationScope,
   assertPublicationContract,
   type PublicationContract,
   publishedLocales,
@@ -51,7 +51,10 @@ export async function checkContentTranslations(
     assertPublicationContract(contract, entries, (sourceLocale) =>
       locales.filter((locale) => locale !== sourceLocale),
     );
-    if (mode === 'published') assertPhaseAPublicationScope(contract);
+    if (mode === 'published')
+      assertFullPublicationScope(contract, (sourceLocale) =>
+        locales.filter((locale) => locale !== sourceLocale),
+      );
   }
   let count = 0;
   for (const { path, data } of questions) {

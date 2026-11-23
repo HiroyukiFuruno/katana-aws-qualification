@@ -58,3 +58,78 @@ test('French role assumption is phrased naturally without banning English identi
     ),
   ).not.toThrow();
 });
+
+test('French technical software writers are not translated as human writers', () => {
+  const contexts = [
+    'AWS Glue and Glue Data Catalog writers use locking.',
+    'Athena and Iceberg writers coordinate commit and write operations.',
+    'Le catalogue et le verrouillage coordonnent les commits des writers.',
+    'AWS Glue ライターとロック、コミットを使う。',
+  ];
+  for (const source of contexts)
+    expect(() =>
+      assertNativeLanguage(source, 'Les écrivains gèrent le traitement.', 'fr', 'writer'),
+    ).toThrow('French software writer terminology');
+});
+
+test('French writer terminology keeps natural process wording and unrelated people', () => {
+  expect(() =>
+    assertNativeLanguage(
+      'Athena et Iceberg utilisent des writers pour les commits.',
+      'Athena et Iceberg utilisent un processus d’écriture pour les commits.',
+      'fr',
+      'writer',
+    ),
+  ).not.toThrow();
+  expect(() =>
+    assertNativeLanguage(
+      'Un écrivain humain présente son roman.',
+      'Un écrivain humain présente son roman.',
+      'fr',
+      'writer',
+    ),
+  ).not.toThrow();
+  expect(() =>
+    assertNativeLanguage(
+      'AWS Glue conserve le libellé « écrivain ».',
+      'AWS Glue conserve le libellé « écrivain ».',
+      'fr',
+      'writer',
+    ),
+  ).not.toThrow();
+  expect(() =>
+    assertNativeLanguage(
+      'Athena et Iceberg utilisent des writers pour les commits.',
+      'Athena et Iceberg utilisent des e\u0301crivains pour les commits.',
+      'fr',
+      'writer',
+    ),
+  ).toThrow('French software writer terminology');
+});
+
+test('French writer guard does not classify ordinary writers as software writers', () => {
+  expect(() =>
+    assertNativeLanguage(
+      'The writer writes novels.',
+      'Les écrivains écrivent des romans.',
+      'fr',
+      'writer',
+    ),
+  ).not.toThrow();
+  expect(() =>
+    assertNativeLanguage(
+      '通常のライターが小説を書く。',
+      'Les écrivains écrivent des romans.',
+      'fr',
+      'writer',
+    ),
+  ).not.toThrow();
+  expect(() =>
+    assertNativeLanguage(
+      'The service writer is enabled.',
+      'Les écrivains sont activés.',
+      'fr',
+      'writer',
+    ),
+  ).not.toThrow();
+});

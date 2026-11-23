@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import type { Locale } from '../src/locales';
 import { assertClassificationMetrics } from './translation-classification-metrics.ts';
+import { assertConflictLanguage } from './translation-conflict-language.ts';
+import { assertZonalDnsLanguage } from './translation-dns-language.ts';
 import { assertLowRankLanguage } from './translation-low-rank-language.ts';
+import { assertMrecLanguage } from './translation-mrec-language.ts';
 import { assertNewUrlCondition } from './translation-new-url-condition.ts';
+import { assertReadAfterWriteLanguage } from './translation-read-after-write-language.ts';
 import { assertRoleLanguage } from './translation-role-language.ts';
 
 const reversedTrafficFractions: Partial<Record<Locale, RegExp>> = {
@@ -17,6 +21,17 @@ const reversedTrafficFractions: Partial<Record<Locale, RegExp>> = {
   it: /deviare da Tokyo\s+(?:circa\s+)?un quarto/iu,
 };
 
+function assertGermanTagArticle(source: string, translated: string, context: string) {
+  if (!/(?:タグ|\btags?\b)/iu.test(source)) return;
+  const normalized = translated.normalize('NFC');
+  const pattern = /\b(?:die|den)\s+Zuständigkeits-Tag(?![-\p{L}\p{N}_])/giu;
+  for (const match of normalized.matchAll(pattern)) {
+    const before = normalized.slice(0, match.index ?? 0);
+    if ((before.match(/`/gu)?.length ?? 0) % 2 === 0)
+      assert.fail(`${context}: German Zuständigkeits-Tag article`);
+  }
+}
+
 export function assertNativeLanguage(
   source: string,
   translated: string,
@@ -24,9 +39,14 @@ export function assertNativeLanguage(
   context: string,
 ) {
   assertClassificationMetrics(source, translated, locale, context);
+  assertConflictLanguage(source, translated, locale, context);
   assertLowRankLanguage(source, translated, locale, context);
   assertNewUrlCondition(source, translated, locale, context);
+  assertMrecLanguage(source, translated, locale, context);
   assertRoleLanguage(source, translated, locale, context);
+  assertReadAfterWriteLanguage(source, translated, locale, context);
+  assertZonalDnsLanguage(source, translated, locale, context);
+  if (locale === 'de') assertGermanTagArticle(source, translated, context);
   if (locale === 'pt' && /\bIOPS\b/u.test(source))
     assert(
       !/(?<![\p{L}\p{N}_])(?:a|o|da|do|na|no|pela|pelo|à)\s+IOPS\b/iu.test(translated),

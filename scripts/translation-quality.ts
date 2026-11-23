@@ -35,6 +35,8 @@ export function translationIssues(
   const issues: string[] = [];
   for (const [key, value] of Object.entries(dictionary)) {
     const context = `${locale}.${key}`;
+    if (locale === 'fr' && key === 'milestoneTitleLabel' && value === 'Name')
+      issues.push(`${context}: untranslated English label`);
     if (
       locale !== 'en' &&
       value === englishDictionary[key] &&

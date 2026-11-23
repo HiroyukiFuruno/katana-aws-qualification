@@ -55,3 +55,44 @@ test('German Agent nominatives, inflected nouns and code identifiers remain vali
   ])
     expect(() => validateTranslation(source, translated, 'de', 'fixture')).not.toThrow();
 });
+
+test('German Zuständigkeits-Tag uses das only for tag meaning', () => {
+  const tagSource = 'タグの値を確認する。';
+  for (const translated of ['Die Zuständigkeits-Tag wird geprüft.', 'Den Zuständigkeits-Tag auswählen.'])
+    expect(() => validateTranslation(tagSource, translated, 'de', 'fixture')).toThrow(
+      'German Zuständigkeits-Tag article',
+    );
+  expect(() =>
+    validateTranslation(
+      tagSource,
+      'Das Zuständigkeits-Tag wird geprüft.'.normalize('NFD'),
+      'de',
+      'fixture',
+    ),
+  ).not.toThrow();
+  for (const translated of [
+    'Die Zuständigkeits-Tag kennzeichnet Ressourcen.',
+    'Den Zuständigkeits-Tag auswählen.',
+  ])
+    expect(() =>
+      validateTranslation('Attach the ownership tag to the resource.', translated, 'de', 'fixture'),
+    ).toThrow('German Zuständigkeits-Tag article');
+  expect(() =>
+    validateTranslation(
+      'Attach the ownership tags to the resources.',
+      'Das Zuständigkeits-Tag kennzeichnet Ressourcen.',
+      'de',
+      'fixture',
+    ),
+  ).not.toThrow();
+});
+
+test('German tag guard excludes code literals, plural Tags, Tag-Namen and denTag identifiers', () => {
+  for (const [source, translated] of [
+    ['タグをコードで参照する。', 'Der Code enthält `Den Zuständigkeits-Tag` als Literal.'],
+    ['タグを複数確認する。', 'Die Zuständigkeits-Tags werden geprüft.'],
+    ['タグ名を確認する。', 'Die Zuständigkeits-Tag-Namen werden geprüft.'],
+    ['日付のdenTag識別子を保持する。', 'Den denTag-Wert unverändert beibehalten.'],
+  ] as const)
+    expect(() => validateTranslation(source, translated, 'de', 'fixture')).not.toThrow();
+});

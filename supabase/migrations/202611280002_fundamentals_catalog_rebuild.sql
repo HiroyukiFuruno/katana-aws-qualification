@@ -5,7 +5,7 @@ begin;
 insert into public.published_fundamentals_catalogs (
   unit_id, content_version, content_hash, plan, final_questions
 ) values
-  ('fundamentals.cloud-concepts', 'a449805a7dc2560431cf97babc3a82b8d796532366f40b081cd9dbf369228bc3', decode('db7c901c93cae9344e1cf2ad34f773c831f8d2126cb7136fef682c3a9c96c19b', 'hex'),
+  ('fundamentals.cloud-concepts', 'ba3c90a7f0f349f923c74577dae13686a8bbc0a921608244fed0240b5350ab85', decode('d1417560c69c8e46d543ea9082c14989b640180aa407dd21635326f8c5027a32', 'hex'),
     $kaq_plan_1_0$[
   {
     "id": "fundamentals.cloud-concepts:intro:orientation:1",
@@ -74,7 +74,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "cloud-1",
       "questionId": "fundamentals.cloud-concepts.checkpoint.on-demand.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "on-demand",
       "selectionPolarity": "correct",
       "source": {
@@ -134,7 +134,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "cloud-2",
       "questionId": "fundamentals.cloud-concepts.checkpoint.shared-responsibility.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "shared-responsibility",
       "selectionPolarity": "correct",
       "source": {
@@ -194,7 +194,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "cloud-3",
       "questionId": "fundamentals.cloud-concepts.checkpoint.regions-az.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "regions-az",
       "selectionPolarity": "correct",
       "source": {
@@ -255,7 +255,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "cloud-4",
       "questionId": "fundamentals.cloud-concepts.checkpoint.tradeoffs.v1",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "tradeoffs",
       "selectionPolarity": "correct",
       "source": {
@@ -356,7 +356,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "cloud-2",
     "questionId": "fund-cloud-001",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "shared-responsibility",
     "selectionPolarity": "correct",
     "source": {
@@ -430,7 +430,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "cloud-3",
     "questionId": "fund-cloud-002",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "regions-az",
     "selectionPolarity": "incorrect",
     "source": {
@@ -532,7 +532,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "cloud-4",
     "questionId": "fund-cloud-111",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "tradeoffs",
     "selectionPolarity": "correct",
     "source": {
@@ -569,7 +569,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_1_0$::jsonb),
-  ('fundamentals.core-services', '182b4d2fc01f17e0e1f01c2e2d3bac1d6aab8169e06abd79b6e7dc2499e599f4', decode('2631380aa344d5f36f05cc73034687f07f2a1e416c66f1be5f1137bb8e720474', 'hex'),
+  ('fundamentals.core-services', '50a7a86a9818170315779d4d033558ace91da6e2d231068169eafc68086d57c5', decode('8afe31866fd7aaa0c91d0fe68cd09068c5a8dc65e9832f3710fed8a237916667', 'hex'),
     $kaq_plan_2_0$[
   {
     "id": "fundamentals.core-services:intro:orientation:1",
@@ -1135,7 +1135,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_2_0$::jsonb),
-  ('fundamentals.identity-access', 'b40fc7667aa3b62c2fc2ecc9421f3a4d438c5356b5f2db7b8727cdfef27bb201', decode('1a920ed3e0405b08739cc0d309b3264848b428df41f74d315543fcd8d96e4114', 'hex'),
+  ('fundamentals.identity-access', 'd29654c5e1f1e93f75140001d8c97373546992d6f97be1c090ce781574bda6eb', decode('54b74d10a60ad95db40b93382ae1d45f68b8a37db23dc1773dd50ce2a7a2151e', 'hex'),
     $kaq_plan_3_0$[
   {
     "id": "fundamentals.identity-access:intro:orientation:1",
@@ -1700,7 +1700,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_3_0$::jsonb),
-  ('fundamentals.data-protection', '423e408963109275ec57a7ffc1a2755e9c6f37683101ee11186402db1aac3e16', decode('a80808814e84dda26f4597759edacafe630040e01fd72df1e6ae1ce0658ea90e', 'hex'),
+  ('fundamentals.data-protection', '16ab4d6dfc6fdeda11e34a22dadbaf231f6120b55495881746260dc1c7a35e4b', decode('99254ab7ef8ceb3d8c38daf5adf3b16da3b4a66d8085acfd8c278125d58bcc8e', 'hex'),
     $kaq_plan_4_0$[
   {
     "id": "fundamentals.data-protection:intro:orientation:1",
@@ -1769,7 +1769,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "encryption",
       "questionId": "fundamentals.data-protection.checkpoint.encryption.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "encryption",
       "selectionPolarity": "correct",
       "source": {
@@ -1829,7 +1829,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "kms",
       "questionId": "fundamentals.data-protection.checkpoint.kms.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "kms",
       "selectionPolarity": "correct",
       "source": {
@@ -1889,7 +1889,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "recovery",
       "questionId": "fundamentals.data-protection.checkpoint.recovery.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "recovery",
       "selectionPolarity": "correct",
       "source": {
@@ -1949,7 +1949,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "secrets",
       "questionId": "fundamentals.data-protection.checkpoint.secrets.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "secrets",
       "selectionPolarity": "correct",
       "source": {
@@ -2074,7 +2074,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "kms",
     "questionId": "fund-data-105",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "kms",
     "selectionPolarity": "incorrect",
     "source": {
@@ -2124,7 +2124,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "recovery",
     "questionId": "fund-data-107",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "recovery",
     "selectionPolarity": "incorrect",
     "source": {
@@ -2259,7 +2259,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_4_0$::jsonb),
-  ('fundamentals.networking-basics', '09bd38adac3fe8a935706792e7a2cf937a303a9a8825f908c14e4cfdc61fa852', decode('5f0881222addcff253a00ffe1f99ad146a69385c0672512a239fb240f3ef093f', 'hex'),
+  ('fundamentals.networking-basics', '7f72f6fb78aa39fdcb18c4950f7219c3bb12edc393f5550d4ddc0b302485fbb9', decode('adf179584f9652eddbca72965a65bb0197fab1decb7fafc06becc36c9e67e574', 'hex'),
     $kaq_plan_5_0$[
   {
     "id": "fundamentals.networking-basics:intro:orientation:1",
@@ -2531,7 +2531,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "ip-port",
     "questionId": "fund-network-001",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "ip-port",
     "selectionPolarity": "correct",
     "source": {
@@ -2555,7 +2555,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "ip-port",
     "questionId": "fund-network-002",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "ip-port",
     "selectionPolarity": "correct",
     "source": {
@@ -2629,7 +2629,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "transport",
     "questionId": "fund-network-103",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "transport",
     "selectionPolarity": "incorrect",
     "source": {
@@ -2653,7 +2653,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "http-tls",
     "questionId": "fund-network-104",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "http-tls",
     "selectionPolarity": "correct",
     "source": {
@@ -2781,7 +2781,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "ip-port",
     "questionId": "fund-network-109",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 4,
     "sectionId": "ip-port",
     "selectionPolarity": "correct",
     "source": {
@@ -2818,7 +2818,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_5_0$::jsonb),
-  ('fundamentals.domain-dns', '48fb48d7947f148e97b0970c04ad33db50906144577774d70e2ed8c019b6ac12', decode('ffc634bfa28f269e029e7ab8926129ea68b9a3158dfa6b4674a635929d978b95', 'hex'),
+  ('fundamentals.domain-dns', 'b272edef91c8d799cbb68b54e49065f774fd782b298a952d9a1a32aac8c1a5d8', decode('7d40fd2bb3137463bcfdc6b79e2b02ac3af8e2281ffa1362e25ecdf2f70035fc', 'hex'),
     $kaq_plan_6_0$[
   {
     "id": "fundamentals.domain-dns:intro:orientation:1",
@@ -2887,7 +2887,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "resolution",
       "questionId": "fundamentals.domain-dns.checkpoint.resolution.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "resolution",
       "selectionPolarity": "correct",
       "source": {
@@ -2947,7 +2947,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "records",
       "questionId": "fundamentals.domain-dns.checkpoint.records.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "records",
       "selectionPolarity": "correct",
       "source": {
@@ -3007,7 +3007,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "ttl",
       "questionId": "fundamentals.domain-dns.checkpoint.ttl.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "ttl",
       "selectionPolarity": "correct",
       "source": {
@@ -3067,7 +3067,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "boundary",
       "questionId": "fundamentals.domain-dns.checkpoint.boundary.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "boundary",
       "selectionPolarity": "correct",
       "source": {
@@ -3095,7 +3095,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "resolution",
     "questionId": "fund-dns-001",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "resolution",
     "selectionPolarity": "incorrect",
     "source": {
@@ -3120,7 +3120,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "resolution",
     "questionId": "fund-dns-002",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "resolution",
     "selectionPolarity": "incorrect",
     "source": {
@@ -3193,7 +3193,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "records",
     "questionId": "fund-dns-103",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "records",
     "selectionPolarity": "correct",
     "source": {
@@ -3217,7 +3217,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "boundary",
     "questionId": "fund-dns-104",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "boundary",
     "selectionPolarity": "correct",
     "source": {
@@ -3376,7 +3376,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_6_0$::jsonb),
-  ('fundamentals.cidr-subnets', '3b87ff36280420ca68a100dd4d729c0046c331cff11b22afa8e001bf13348537', decode('32433e496055fb5f2c451a1c0c3f21c991a8f58af8c94f5ff2784ccc7b3abca6', 'hex'),
+  ('fundamentals.cidr-subnets', 'c6713bf51e2f7acef94bfed1f911ccd995cc6112f10e41f30fb717eb00b862e8', decode('3fb56bb0fdef56ebe548631f377f22dd27075a9e20b931bc9174211012ef39ca', 'hex'),
     $kaq_plan_7_0$[
   {
     "id": "fundamentals.cidr-subnets:intro:orientation:1",
@@ -3654,7 +3654,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "cidr",
     "questionId": "fund-cidr-001",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "cidr",
     "selectionPolarity": "correct",
     "source": {
@@ -3678,7 +3678,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "cidr",
     "questionId": "fund-cidr-002",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "cidr",
     "selectionPolarity": "correct",
     "source": {
@@ -3702,7 +3702,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "cidr",
     "questionId": "fund-cidr-101",
     "requiredChoices": 1,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "cidr",
     "selectionPolarity": "incorrect",
     "source": {
@@ -3752,7 +3752,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "planning",
     "questionId": "fund-cidr-103",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "planning",
     "selectionPolarity": "incorrect",
     "source": {
@@ -3778,7 +3778,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "planning",
     "questionId": "fund-cidr-104",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "planning",
     "selectionPolarity": "correct",
     "source": {
@@ -3941,7 +3941,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_7_0$::jsonb),
-  ('fundamentals.routing-connectivity', 'c245389d6198469c8ee5d31f435f0be8f1d4e6e7b52f35ba03c29f5ee5de7310', decode('dbe7bd4112fed1a63643a942f2c134c346ad5b989274eb10861de831a9a4eb1b', 'hex'),
+  ('fundamentals.routing-connectivity', '18abd0c7f826ae95cc81c9d748c4ca6fb67f2d5f3c562755ac12e7fdcff55215', decode('71f5df08f71a9fabcfaebe8b374b9535607d9a0267ed6f8a37c642c7d87b73ea', 'hex'),
     $kaq_plan_8_0$[
   {
     "id": "fundamentals.routing-connectivity:intro:orientation:1",
@@ -4509,7 +4509,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_8_0$::jsonb),
-  ('fundamentals.cicd', '287b1ca7b06480752f71380b5af122397accf14a4c0d73be6aaaf336ac8e3d67', decode('6a008d72e66dabc21aa57fc6712265d9984c358b6c1b576ac24ddaab624accc5', 'hex'),
+  ('fundamentals.cicd', '4608605153f035f872080fb05da1c5b04f07fa35665a889e822d81636daf55a8', decode('02e58c61f2a32a6e04d447d63d0b9fc25dc24b28bb0df746828c7f5439f3b498', 'hex'),
     $kaq_plan_9_0$[
   {
     "id": "fundamentals.cicd:intro:orientation:1",
@@ -5073,7 +5073,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_9_0$::jsonb),
-  ('fundamentals.testing-quality', 'cf2bea7920789110f4eff8530baf28608d25106b60473b52faf31d9a7bbbebc5', decode('a6010f182911ec4f0fd5fa964921e2537bff2046cf23f3cc6c3d1651c561a332', 'hex'),
+  ('fundamentals.testing-quality', '49b580a6093aca0558dd7e61db7b20504f8ad8f7310cf60dc3f87e5a80c63bbb', decode('e8f775335ff4ada5462b853f789b26a074f4d62eb0d6f0f268f0e55da16320e1', 'hex'),
     $kaq_plan_10_0$[
   {
     "id": "fundamentals.testing-quality:intro:orientation:1",
@@ -5142,7 +5142,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "test-levels",
       "questionId": "fundamentals.testing-quality.checkpoint.test-levels.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "test-levels",
       "selectionPolarity": "correct",
       "source": {
@@ -5203,7 +5203,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "test-design",
       "questionId": "fundamentals.testing-quality.checkpoint.test-design.v1",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 3,
       "sectionId": "test-design",
       "selectionPolarity": "correct",
       "source": {
@@ -5264,7 +5264,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "quality-gates",
       "questionId": "fundamentals.testing-quality.checkpoint.quality-gates.v1",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 3,
       "sectionId": "quality-gates",
       "selectionPolarity": "correct",
       "source": {
@@ -5324,7 +5324,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "failure-regression",
       "questionId": "fundamentals.testing-quality.checkpoint.failure-regression.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "failure-regression",
       "selectionPolarity": "correct",
       "source": {
@@ -5559,7 +5559,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "quality-gates",
     "questionId": "fund-testing-009",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "quality-gates",
     "selectionPolarity": "correct",
     "source": {
@@ -5635,7 +5635,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "failure-regression",
     "questionId": "fund-testing-012",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 4,
     "sectionId": "failure-regression",
     "selectionPolarity": "incorrect",
     "source": {
@@ -5646,7 +5646,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_10_0$::jsonb),
-  ('fundamentals.release-rollback', '9434a9a8db39e3c2dc5f61fd90ee558fded3c5d806de4bbc82afb726c6e6bd91', decode('2037fbd335442fcd93e87f2401b76756867b68ecca03594dc20ec729fd4ef198', 'hex'),
+  ('fundamentals.release-rollback', 'e9cc2aadabe2ed0a9953aefe9bfbae5e87d6c614f284d3ed47312232a5fce430', decode('9845c95f3f8afe2836df0955bf68d7f49409e43f334c95b1996567e57f80b94e', 'hex'),
     $kaq_plan_11_0$[
   {
     "id": "fundamentals.release-rollback:intro:orientation:1",
@@ -5715,7 +5715,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "release-1",
       "questionId": "fundamentals.release-rollback.checkpoint.deployment-strategies.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "deployment-strategies",
       "selectionPolarity": "correct",
       "source": {
@@ -5775,7 +5775,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "release-2",
       "questionId": "fundamentals.release-rollback.checkpoint.observation-abort.v1",
       "requiredChoices": 1,
-      "revision": 2,
+      "revision": 3,
       "sectionId": "observation-abort",
       "selectionPolarity": "correct",
       "source": {
@@ -5835,7 +5835,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "release-3",
       "questionId": "fundamentals.release-rollback.checkpoint.rollback-recovery.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "rollback-recovery",
       "selectionPolarity": "correct",
       "source": {
@@ -5896,7 +5896,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "release-4",
       "questionId": "fundamentals.release-rollback.checkpoint.database-recovery.v1",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "database-recovery",
       "selectionPolarity": "correct",
       "source": {
@@ -5923,7 +5923,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-1",
     "questionId": "fund-release-001",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "deployment-strategies",
     "selectionPolarity": "correct",
     "source": {
@@ -5947,7 +5947,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-1",
     "questionId": "fund-release-002",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "deployment-strategies",
     "selectionPolarity": "incorrect",
     "source": {
@@ -5974,7 +5974,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-1",
     "questionId": "fund-release-003",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "deployment-strategies",
     "selectionPolarity": "correct",
     "source": {
@@ -5999,7 +5999,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-2",
     "questionId": "fund-release-004",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "observation-abort",
     "selectionPolarity": "correct",
     "source": {
@@ -6024,7 +6024,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-2",
     "questionId": "fund-release-005",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "observation-abort",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6051,7 +6051,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-2",
     "questionId": "fund-release-006",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "observation-abort",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6075,7 +6075,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-3",
     "questionId": "fund-release-007",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "rollback-recovery",
     "selectionPolarity": "correct",
     "source": {
@@ -6099,7 +6099,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-3",
     "questionId": "fund-release-008",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "rollback-recovery",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6126,7 +6126,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-3",
     "questionId": "fund-release-009",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "rollback-recovery",
     "selectionPolarity": "correct",
     "source": {
@@ -6150,7 +6150,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-4",
     "questionId": "fund-release-010",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "database-recovery",
     "selectionPolarity": "correct",
     "source": {
@@ -6174,7 +6174,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-4",
     "questionId": "fund-release-011",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "database-recovery",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6201,7 +6201,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "release-4",
     "questionId": "fund-release-012",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "database-recovery",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6212,7 +6212,7 @@ insert into public.published_fundamentals_catalogs (
     "position": 11
   }
 ]$kaq_final_11_0$::jsonb),
-  ('fundamentals.observability', 'b2e00877dcb28b31039c0b1df85b2d97440e66adcc3103f8885345638d133d80', decode('f64e0ac1df09ca68792edcfe4ecc8920115efbe2eff649d0fdc1e787ab8d4e5d', 'hex'),
+  ('fundamentals.observability', '4de078eb5535b2d5305513031d2d7d17ba6700d97223e969cd4125d8f0c5efbd', decode('f6e1bcdaccbacbd8f37a8863a1595606e9993d618a7ad48c8024c1ed049f7936', 'hex'),
     $kaq_plan_12_0$[
   {
     "id": "fundamentals.observability:intro:orientation:1",
@@ -6281,7 +6281,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "signals",
       "questionId": "fundamentals.observability.checkpoint.signals.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "signals",
       "selectionPolarity": "correct",
       "source": {
@@ -6342,7 +6342,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "golden-signals",
       "questionId": "fundamentals.observability.checkpoint.golden-signals.v1",
       "requiredChoices": 2,
-      "revision": 2,
+      "revision": 3,
       "sectionId": "golden-signals",
       "selectionPolarity": "correct",
       "source": {
@@ -6409,7 +6409,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "objectives",
       "questionId": "fundamentals.observability.checkpoint.objectives.v1",
       "requiredChoices": 2,
-      "revision": 2,
+      "revision": 3,
       "sectionId": "objectives",
       "selectionPolarity": "correct",
       "source": {
@@ -6469,7 +6469,7 @@ insert into public.published_fundamentals_catalogs (
       "objectiveId": "improvement",
       "questionId": "fundamentals.observability.checkpoint.improvement.v1",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "improvement",
       "selectionPolarity": "correct",
       "source": {
@@ -6496,7 +6496,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "signals",
     "questionId": "fund-observe-101",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "signals",
     "selectionPolarity": "correct",
     "source": {
@@ -6520,7 +6520,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "signals",
     "questionId": "fund-observe-102",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "signals",
     "selectionPolarity": "correct",
     "source": {
@@ -6544,7 +6544,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "signals",
     "questionId": "fund-observe-103",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "signals",
     "selectionPolarity": "correct",
     "source": {
@@ -6569,7 +6569,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "golden-signals",
     "questionId": "fund-observe-104",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "golden-signals",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6593,7 +6593,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "golden-signals",
     "questionId": "fund-observe-105",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "golden-signals",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6620,7 +6620,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "golden-signals",
     "questionId": "fund-observe-106",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "golden-signals",
     "selectionPolarity": "correct",
     "source": {
@@ -6645,7 +6645,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "objectives",
     "questionId": "fund-observe-107",
     "requiredChoices": 2,
-    "revision": 2,
+    "revision": 3,
     "sectionId": "objectives",
     "selectionPolarity": "correct",
     "source": {
@@ -6669,7 +6669,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "objectives",
     "questionId": "fund-observe-108",
     "requiredChoices": 1,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "objectives",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6696,7 +6696,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "objectives",
     "questionId": "fund-observe-109",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "objectives",
     "selectionPolarity": "correct",
     "source": {
@@ -6723,7 +6723,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "improvement",
     "questionId": "fund-observe-110",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "improvement",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6750,7 +6750,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "improvement",
     "questionId": "fund-observe-111",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "improvement",
     "selectionPolarity": "incorrect",
     "source": {
@@ -6777,7 +6777,7 @@ insert into public.published_fundamentals_catalogs (
     "objectiveId": "improvement",
     "questionId": "fund-observe-112",
     "requiredChoices": 2,
-    "revision": 1,
+    "revision": 2,
     "sectionId": "improvement",
     "selectionPolarity": "incorrect",
     "source": {

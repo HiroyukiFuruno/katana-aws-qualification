@@ -1,6 +1,7 @@
 import { parseCheckpointQuestions } from '../fundamentals/checkpointQuestions';
 import { validFundamentalsContent } from '../fundamentals/content';
 import { overlayFundamentalsContent } from '../fundamentals/contentLocalization';
+import { fundamentalsQuestionArchives } from '../fundamentals/questionHistory';
 import type { Locale } from '../locales';
 import { loadQuestionBank } from '../questionLocalization';
 import { sourceLocaleOf } from '../questionSourceLocale';
@@ -73,9 +74,10 @@ function parseIndex(value: unknown): QuestionIndex {
       entry.length !== 2 ||
       entry.some((part) => typeof part !== 'string') ||
       !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry[0]) ||
-      !/^(courses\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*\.json|fundamentals\/(?:content|checkpoints|archive\/[0-9]{4}-[0-9]{2}-questions)\.json)$/.test(
+      (!/^(courses\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*\.json|fundamentals\/(?:content|checkpoints)\.json)$/.test(
         entry[1],
-      )
+      ) &&
+        !fundamentalsQuestionArchives.includes(entry[1]))
     )
       throw new Error('Question index entry is invalid');
   }

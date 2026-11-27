@@ -102,3 +102,16 @@ test('Control TowerとBedrockのガードレールを区別してリンクする
     .filter({ has: page.locator('#glossary-term-bedrock-guardrails') });
   await expect(target).toContainText('生成AIへの入力');
 });
+
+test('日本語のSLO評価期間からAWS公式の日本語資料を参照できる', async ({ page }) => {
+  await page.goto('/ja/glossary/');
+  const term = page.locator('.glossary-row').filter({
+    has: page.locator('#glossary-term-slo-evaluation-period'),
+  });
+  await expect(
+    term.getByRole('link', { name: messages.ja.glossarySource, exact: true }),
+  ).toHaveAttribute(
+    'href',
+    'https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch-ServiceLevelObjectives.html',
+  );
+});

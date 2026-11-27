@@ -30,6 +30,8 @@ test('builds deterministic delivery assets without losing published learning con
     expect(asset.contentHash).toMatch(/^[a-f0-9]{64}$/);
     expect(asset.contentHash).not.toBe(asset.contentVersion);
     expect(asset.steps).toHaveLength(asset.totalSteps);
+    for (const step of asset.steps)
+      for (const block of step.blocks) expect(block).not.toHaveProperty('words');
     expect(asset.totalSteps).toBeGreaterThanOrEqual(39);
     expect(asset.totalSteps).toBeLessThanOrEqual(43);
     expect(new Set(asset.steps.map((step) => step.id)).size).toBe(asset.steps.length);

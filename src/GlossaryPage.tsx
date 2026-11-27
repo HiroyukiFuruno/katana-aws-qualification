@@ -7,6 +7,7 @@ import { termAnchor } from './glossaryAnchor';
 import './glossary.css';
 import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';
+import { localizedDocumentationSource } from './sourceDocumentationUrl';
 import { useContent } from './useContent';
 
 export function GlossaryPage() {
@@ -107,7 +108,18 @@ export function GlossaryPage() {
                             {t(glossaryTags[tag])}
                           </button>
                         ))}
-                        {source && <a href={source}>{t('glossarySource')}</a>}
+                        {source && (
+                          <a
+                            href={
+                              localizedDocumentationSource(
+                                { url: source, label: t('glossarySource') },
+                                locale,
+                              ).url
+                            }
+                          >
+                            {t('glossarySource')}
+                          </a>
+                        )}
                       </div>
                     </dd>
                   </div>

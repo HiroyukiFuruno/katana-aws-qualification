@@ -11,13 +11,15 @@ test('derives localized, route-specific public lesson metadata and static copy',
     const content = await localizedBuildContent(locale);
     for (const page of publicLessonPageNames) {
       const lesson = await content.lessonFor(page);
-      expect(lesson).toBeDefined();
-      expect(lesson?.title).not.toBe('');
-      expect(lesson?.description).not.toBe('');
-      expect(lesson?.body).not.toBe('');
+      if (!lesson) throw new Error(`Missing lesson: ${locale}/${page}`);
+      expect(lesson.title.trim()).not.toBe('');
+      expect(lesson.description.trim()).not.toBe('');
+      expect(lesson.body.heading.trim()).not.toBe('');
+      expect(lesson.body.paragraphs.length).toBeGreaterThan(0);
+      for (const paragraph of lesson.body.paragraphs) expect(paragraph.trim()).not.toBe('');
       if (page.includes('/checkpoints/')) {
-        expect(lesson?.body.heading).not.toBe('checkpoint');
-        expect(lesson?.body.paragraphs[0]).not.toBe('');
+        expect(lesson.body.heading).not.toBe('checkpoint');
+        expect(lesson.body.paragraphs[0]).not.toBe('');
       }
     }
   }

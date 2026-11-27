@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
-import { lessonAssets } from './fundamentals.helpers';
+import { messages } from '../../src/messages';
+import {
+  lessonAssets,
+  lessonSlideCount,
+  selectLessonAnswer,
+  visibleLessonSteps,
+} from './fundamentals.helpers';
 import { acceptNecessaryCookies, walkReadingWithGeometry } from './fundamentals-mobile.helpers';
 
 for (const asset of lessonAssets) {
@@ -28,7 +34,7 @@ for (const mode of [
         });
       await walkReadingWithGeometry(page, asset);
       await expect(page.locator('.lesson-slide-meta')).toContainText(
-        `STEP ${asset.totalSteps - asset.finalQuestions.length + 1}`,
+        `STEP ${lessonSlideCount(asset) - asset.finalQuestions.length + 1}`,
       );
     });
 }
@@ -56,6 +62,58 @@ test('a short mobile viewport scrolls the entire lesson and starts the next slid
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await expect(page.getByRole('button', { name: '学習を終了', exact: true })).toBeInViewport();
   await page.locator('.lesson-slide-actions > button.primary').click();
-  await expect(page).toHaveURL(/\/slides\/2\/$/);
+  const second = visibleLessonSteps(asset)[1];
+  await expect(page).toHaveURL(new RegExp(`/slides/${second.position}/$`));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('the introduction opens objectives in place and reaches the first topic with one advance', async ({
+  page,
+}) => {
+  const asset = lessonAssets[0];
+  const [intro, topic] = visibleLessonSteps(asset);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' }));
+  await acceptNecessaryCookies(page);
+  const objectives = page.locator('.lesson-slide-content details').filter({ hasText: '学習目標' });
+  await expect(objectives.locator('li')).toHaveCount(4);
+  await expect(objectives.locator('li').first()).toBeHidden();
+  await objectives.locator('summary').click();
+  await expect(objectives.locator('li').first()).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/slides/${intro.position}/$`));
+  await page.locator('.lesson-slide-actions > button.primary').click();
+  await expect(page).toHaveURL(new RegExp(`/slides/${topic.position}/$`));
+  await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${lessonSlideCount(asset)}`);
+  await page.getByRole('link', { name: '前へ', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/slides/${intro.position}/$`));
+  await page.locator('.lesson-slide-actions > button.primary').click();
+  await expect(page).toHaveURL(new RegExp(`/slides/${topic.position}/$`));
+});
+
+test('a long German database lesson shows the comparison first and keeps the full explanation', async ({
+  page,
+}) => {
+  const asset = lessonAssets.find(({ unit }) => unit.id === 'fundamentals.core-services');
+  if (!asset) throw new Error('Missing database lesson fixture.');
+  const target = asset.steps.find((step) => step.sectionId === 'database' && step.kind === 'reading');
+  if (!target) throw new Error('Missing database concept slide.');
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto(lessonPath({ locale: 'de', unitId: asset.unit.id, stage: 'resume' }));
+  await acceptNecessaryCookies(page);
+  for (const step of visibleLessonSteps(asset)) {
+    if (step.id === target.id) break;
+    if (step.kind === 'checkpoint') {
+      const question = asset.checkpoints.find((item) => item.id === step.assessmentId);
+      if (!question) throw new Error('Missing database checkpoint fixture.');
+      await selectLessonAnswer(page, question, question.correct);
+      await page.getByRole('button', { name: messages.de.lessonCheckpointSubmit, exact: true }).click();
+    }
+    await page.locator('.lesson-slide-actions > button.primary').click();
+  }
+  await expect(page.locator('.lesson-visual-comparison li')).toHaveCount(2);
+  const details = page.locator('.lesson-reading details');
+  await expect(details.locator('.lesson-reading-paragraph').first()).toBeHidden();
+  await details.locator('summary').click();
+  await expect(details.locator('.lesson-reading-paragraph').first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
 });

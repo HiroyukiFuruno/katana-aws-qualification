@@ -14,6 +14,7 @@ type Input = {
   services: LessonServices;
   actions: Pick<ReturnType<typeof useLessonActions>, 'pending' | 'saveFinal' | 'getPendingCommand'>;
   step: LessonStep;
+  previousStep?: LessonStep;
   active: boolean;
   question?: { requiredChoices: number };
   selectedCount: number;
@@ -43,7 +44,7 @@ export function useLessonNavigation(input: Input) {
       : input.step.kind === 'final' && input.position === 11
         ? 'lessonFinalSubmit'
         : undefined;
-  const previous = input.asset.steps[input.step.position - 2];
+  const previous = input.previousStep;
   const previousHref = final
     ? input.position > 0
       ? lessonPath({

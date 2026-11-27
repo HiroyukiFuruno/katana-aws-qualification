@@ -1,9 +1,10 @@
 import { expect, type Page } from '@playwright/test';
 import type { DeliveryUnitAsset } from '../../src/fundamentals/delivery/artifactTypes';
 import { stepHref } from '../../src/fundamentals/delivery/planNavigation';
+import { lessonSlidePresentation } from '../../src/fundamentals/learner/lessonSlidePresentation';
 import { localeForPath } from '../../src/locales';
 import { messages } from '../../src/messages';
-import { nextButton, selectLessonAnswer } from './fundamentals.helpers';
+import { nextButton, selectLessonAnswer, visibleLessonSteps } from './fundamentals.helpers';
 
 export async function acceptNecessaryCookies(page: Page) {
   const banner = page.locator('.cookie-banner');
@@ -20,15 +21,20 @@ export async function assertReadingGeometry(
   step: DeliveryUnitAsset['steps'][number],
   asset: DeliveryUnitAsset,
 ) {
+  const { display } = lessonSlidePresentation(asset.steps, step);
   await expect(page).toHaveURL(new RegExp(`${stepHref('ja', step, asset)}$`));
   await expect(page.locator('.lesson-slide-meta')).toContainText(
-    `STEP ${step.position} / ${asset.totalSteps}`,
+    `STEP ${display.position} / ${display.totalSteps}`,
   );
-  await expect(page.locator('.lesson-slide-meta')).toContainText(`残り${step.remainingSteps}ステップ`);
+  await expect(page.locator('.lesson-slide-meta')).toContainText(
+    `残り${display.remainingSteps}ステップ`,
+  );
   const metrics = await page.locator('.lesson-slide-shell').evaluate((shell) => {
     const stage = shell.querySelector<HTMLElement>('.lesson-slide-stage');
     const content = shell.querySelector<HTMLElement>('.lesson-slide-content');
-    const controls = [...shell.querySelectorAll<HTMLElement>('button, a')];
+    const controls = [...shell.querySelectorAll<HTMLElement>('button, a, summary')].filter(
+      (control) => control.getClientRects().length > 0,
+    );
     if (!stage || !content) throw new Error('Missing lesson geometry nodes.');
     window.scrollTo(0, document.documentElement.scrollHeight);
     const contentRect = content.getBoundingClientRect();
@@ -50,7 +56,7 @@ export async function assertReadingGeometry(
 }
 
 export async function walkReadingWithGeometry(page: Page, asset: DeliveryUnitAsset) {
-  for (const step of asset.steps.filter((candidate) => candidate.kind !== 'final')) {
+  for (const step of visibleLessonSteps(asset).filter((candidate) => candidate.kind !== 'final')) {
     await assertReadingGeometry(page, step, asset);
     if (step.kind === 'checkpoint') {
       const question = asset.checkpoints.find((candidate) => candidate.id === step.assessmentId);

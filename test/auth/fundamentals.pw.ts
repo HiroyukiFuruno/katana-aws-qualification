@@ -5,9 +5,11 @@ import {
   finishLessonFinal,
   lessonAssets,
   lessonCatalogCard,
+  lessonSlideCount,
   nextButton,
   selectLessonAnswer,
   visibleLessonQuestion,
+  visibleLessonSteps,
   walkLessonReading,
 } from '../progress/fundamentals.helpers';
 import { acceptNecessaryCookies } from '../progress/fundamentals-mobile.helpers';
@@ -63,7 +65,7 @@ test('related reading keeps an ungraded and graded checkpoint selection', async 
   const checkpoint = asset.steps.find((step) => step.kind === 'checkpoint');
   if (!checkpoint) throw new Error('Missing checkpoint step.');
   await openConsentedLesson(page, asset);
-  for (const step of asset.steps.filter((candidate) => candidate.kind !== 'final')) {
+  for (const step of visibleLessonSteps(asset).filter((candidate) => candidate.kind !== 'final')) {
     if (step.id === checkpoint.id) break;
     await nextButton(page).click();
   }
@@ -131,7 +133,7 @@ test('catalog navigation opens the first slide and preserves fixed step metadata
   const first = asset.steps[0];
   if (!first) throw new Error('Missing first lesson step.');
   await expect(page).toHaveURL(new RegExp(`${stepHref('ja', first, asset)}$`));
-  await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${asset.totalSteps}`);
+  await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${lessonSlideCount(asset)}`);
   await expect(page.getByRole('heading', { name: first.label, exact: true })).toBeFocused();
   await expect(nextButton(page)).toBeEnabled();
 });

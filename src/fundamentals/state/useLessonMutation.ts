@@ -7,7 +7,7 @@ import type { LessonSnapshot } from './types';
 type Pending = {
   command: LessonCommand;
   done: (snapshot: LessonSnapshot) => void;
-  followUp?: (snapshot: LessonSnapshot) => LessonCommand;
+  followUp?: (snapshot: LessonSnapshot, completed: LessonCommand) => LessonCommand | undefined;
 };
 
 export function useLessonMutation(
@@ -38,12 +38,15 @@ export function useLessonMutation(
     setError(undefined);
     setPending(operation);
     try {
-      let result = await services.execute(asset, operation.command);
+      let completed = operation.command;
+      let result = await services.execute(asset, completed);
       onConfirmed?.(result);
-      if (operation.followUp && current.current) {
-        const next = { command: operation.followUp(result), done: operation.done };
-        setPending(next);
-        result = await services.execute(asset, next.command);
+      while (operation.followUp && current.current) {
+        const command = operation.followUp(result, completed);
+        if (!command) break;
+        setPending({ ...operation, command });
+        completed = command;
+        result = await services.execute(asset, completed);
         onConfirmed?.(result);
       }
       if (!current.current) return;

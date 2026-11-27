@@ -7,7 +7,13 @@ import type {
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
 import { stepHref } from '../../src/fundamentals/delivery/planNavigation';
 import { messages } from '../../src/messages';
-import { lessonAssets, nextButton, selectLessonAnswer } from '../progress/fundamentals.helpers';
+import {
+  lessonAssets,
+  lessonSlideCount,
+  nextButton,
+  selectLessonAnswer,
+  visibleLessonSteps,
+} from '../progress/fundamentals.helpers';
 import {
   openLocalizedLessonCatalogFixture,
   openLocalizedLessonFixture,
@@ -70,9 +76,12 @@ test('failed localized lesson asset keeps an in-progress answer through retry', 
   );
   const hiddenPath = new URL(`${localizedPath.pathname}.pr107-unavailable`, localizedPath);
   await openLocalizedLessonFixture(page, asset);
-  for (const step of asset.steps.slice(0, checkpointPosition)) {
+  const beforeCheckpoint = visibleLessonSteps(asset).filter(
+    (step) => step.position < checkpoint.position,
+  );
+  for (const position of beforeCheckpoint.keys()) {
     await expect(page.locator('.lesson-slide-meta')).toContainText(
-      `STEP ${step.position} / ${asset.totalSteps}`,
+      `STEP ${position + 1} / ${lessonSlideCount(asset)}`,
     );
     await nextButton(page).click();
   }

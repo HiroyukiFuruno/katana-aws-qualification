@@ -6,6 +6,7 @@ import { parseDeliveryIndex } from '../../src/fundamentals/delivery/loadIndex';
 import { parseDeliveryUnit } from '../../src/fundamentals/delivery/loadUnit';
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
 import { stepHref } from '../../src/fundamentals/delivery/planNavigation';
+import { lessonSlidePresentation } from '../../src/fundamentals/learner/lessonSlidePresentation';
 
 const root = resolve(import.meta.dirname, '../../public/fundamentals/delivery');
 const index = parseDeliveryIndex(JSON.parse(readFileSync(`${root}/index.json`, 'utf8')));
@@ -13,6 +14,14 @@ export const lessonAssets = index.units.map((entry) =>
   parseDeliveryUnit(JSON.parse(readFileSync(`${root}/${entry.slug}.json`, 'utf8')), entry),
 );
 export const lessonPrefix = 'katana.fundamentals-progress.v1.';
+
+export function visibleLessonSteps(asset: DeliveryUnitAsset) {
+  return asset.steps.filter((step) => step.kind !== 'intro' || step.position === 1);
+}
+
+export function lessonSlideCount(asset: DeliveryUnitAsset) {
+  return visibleLessonSteps(asset).length;
+}
 
 export function lessonCatalogCard(page: Page, asset: DeliveryUnitAsset) {
   const href = lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' });
@@ -38,13 +47,16 @@ export async function visibleLessonQuestion(page: Page, questions: DeliveryQuest
 }
 
 export async function walkLessonReading(page: Page, asset: DeliveryUnitAsset) {
-  const plan = asset.steps.filter((step) => step.kind !== 'final');
+  const plan = visibleLessonSteps(asset).filter((step) => step.kind !== 'final');
   for (const step of plan) {
+    const { display } = lessonSlidePresentation(asset.steps, step);
     await expect(page).toHaveURL(new RegExp(`${stepHref('ja', step, asset)}$`));
     await expect(page.locator('.lesson-slide-meta')).toContainText(
-      `STEP ${step.position} / ${asset.totalSteps}`,
+      `STEP ${display.position} / ${display.totalSteps}`,
     );
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`残り${step.remainingSteps}ステップ`);
+    await expect(page.locator('.lesson-slide-meta')).toContainText(
+      `残り${display.remainingSteps}ステップ`,
+    );
     if (step.kind === 'checkpoint') {
       const question = asset.checkpoints.find((question) => question.id === step.assessmentId);
       if (!question) throw new Error('Missing fixture checkpoint.');

@@ -4,10 +4,12 @@ import type { LessonStep } from '../delivery/slideTypes';
 import { LessonAssessment } from './LessonAssessment';
 import { LessonReading } from './LessonReading';
 import { LessonRelatedReading } from './LessonRelatedReading';
+import { lessonFragments } from './lessonFragments';
 
 type Props = {
   step: LessonStep;
   asset: DeliveryUnitAsset;
+  optionalObjectives?: readonly LessonStep[];
   question?: DeliveryQuestion;
   selected: string[];
   onChange: (selected: string[]) => void;
@@ -56,5 +58,19 @@ export function LessonStepContent(props: Props) {
       </>
     );
   }
-  return <LessonReading step={step} />;
+  return (
+    <>
+      <LessonReading step={step} />
+      {props.optionalObjectives?.length ? (
+        <details className="lesson-related-reading">
+          <summary>{props.optionalObjectives[0].label}</summary>
+          <ul className="lesson-related-content">
+            {props.optionalObjectives.flatMap((objectives) =>
+              lessonFragments(objectives).map(({ block, key }) => <li key={key}>{block.text}</li>),
+            )}
+          </ul>
+        </details>
+      ) : null}
+    </>
+  );
 }

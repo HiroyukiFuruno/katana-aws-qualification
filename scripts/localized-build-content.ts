@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import type { SiteContent } from '../src/contentTypes';
 import type { DeliveryIndexAsset, DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
 import { lessonDisplayText, lessonReadingCopy } from '../src/fundamentals/delivery/lessonReadingCopy.ts';
+import networkFigures from '../src/fundamentals/delivery/network-figures.json' with { type: 'json' };
 import { isPrivateLessonPage, lessonPageAt } from '../src/fundamentals/delivery/routePages.ts';
 import type { Locale } from '../src/locales';
 import { localePath } from '../src/locales.ts';
@@ -9,8 +10,10 @@ import { localePath } from '../src/locales.ts';
 type StaticLessonContent = {
   title: string;
   description: string;
-  body: { heading: string; paragraphs: string[] };
+  body: { heading: string; paragraphs: string[]; figure?: { url: string; alt: string } };
 };
+
+const figures = new Map(Object.entries(networkFigures));
 
 function compact(value: string) {
   return value.replaceAll(/\s+/g, ' ').trim();
@@ -86,6 +89,7 @@ export async function localizedBuildContent(locale: Locale) {
       body: {
         heading: checkpoint?.title ?? step.label,
         paragraphs: paragraphs.length ? paragraphs : [objective],
+        figure: step.kind === 'reading' ? figures.get(step.id) : undefined,
       },
     };
   }

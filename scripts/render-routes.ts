@@ -56,8 +56,12 @@ for (const locale of locales) {
     const description = escapeHtml(
       descriptionFor(entry, dictionary, lesson?.description ?? content.descriptionFor(entry)),
     );
+    const figure = lesson?.body.figure;
+    const staticFigure = figure
+      ? `<figure class="lesson-network-figure" lang="en"><img src="${escapeHtml(figure.url)}" alt="${escapeHtml(figure.alt)}"></figure>`
+      : '';
     const staticLessonBody = lesson
-      ? `<main data-static-lesson="true"><article><h1>${escapeHtml(lesson.body.heading)}</h1>${lesson.body.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}</article></main>`
+      ? `<main data-static-lesson="true"><article><h1>${escapeHtml(lesson.body.heading)}</h1>${lesson.body.paragraphs.map((paragraph, index) => `<p>${escapeHtml(paragraph)}</p>${index === 0 ? staticFigure : ''}`).join('')}</article></main>`
       : '';
     const html = template
       .replace('lang="en"', `lang="${locale}"`)

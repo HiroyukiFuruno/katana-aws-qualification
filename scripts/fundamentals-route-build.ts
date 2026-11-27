@@ -1,4 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
+import type { DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
+import { lessonPath } from '../src/fundamentals/delivery/navigation';
+import networkFigures from '../src/fundamentals/delivery/network-figures.json' with { type: 'json' };
 import {
   privateLessonPageNames,
   publicLessonPageNames,
@@ -29,6 +32,25 @@ if (publicLessonPageNames.length !== new Set(publicLessonPageNames).size)
   throw new Error('Duplicate public lesson pages.');
 if (privateLessonPageNames.length !== new Set(privateLessonPageNames).size)
   throw new Error('Duplicate private lesson pages.');
+
+for (const [stepId, figure] of Object.entries(networkFigures)) {
+  const unitId = stepId.split(':')[0];
+  const slug = unitId.split('.')[1];
+  const asset: DeliveryUnitAsset = JSON.parse(
+    await readFile(`public/fundamentals/delivery/${slug}.json`, 'utf8'),
+  );
+  const step = asset.steps.find(({ id }) => id === stepId);
+  if (step?.kind !== 'reading') throw new Error(`Missing reading step for figure: ${stepId}`);
+  const svg = await readFile(`dist${figure.url}`, 'utf8');
+  if (!svg.includes('<svg') || /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(svg))
+    throw new Error(`Invalid English network diagram: ${figure.url}`);
+  for (const locale of locales) {
+    const path = lessonPath({ locale, unitId, stage: 'slides', position: step.position });
+    const html = await readFile(`dist${path}index.html`, 'utf8');
+    if (!html.includes(`<img src="${figure.url}" alt="${figure.alt}">`))
+      throw new Error(`Missing shared figure in static reading: ${path}`);
+  }
+}
 
 const sitemap = `${root}/dist/sitemap.xml`;
 if (

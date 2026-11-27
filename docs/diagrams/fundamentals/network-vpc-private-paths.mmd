@@ -1,0 +1,29 @@
+%%{init: {'theme': 'base', 'flowchart': {'htmlLabels': true, 'curve': 'linear'}}}%%
+flowchart TB
+  subgraph VPC["VPC: 10.0.0.0/16"]
+    direction TB
+    subgraph LocalPath["Private VPC path"]
+      direction TB
+      AppLocal["App EC2<br/>application subnet"]
+      Service["Private service<br/>service subnet"]
+      AppLocal -->|VPC CIDR -> local| Service
+    end
+    subgraph EndpointPath["S3 gateway endpoint path"]
+      direction TB
+      AppS3["Same App EC2<br/>application subnet"]
+      RouteTable["Selected route table<br/>S3 prefix list -> endpoint"]
+      Endpoint["S3 gateway endpoint<br/>not the default Internet route"]
+      AppS3 -->|S3 destination| RouteTable
+      RouteTable --> Endpoint
+    end
+    Service ~~~ AppS3
+  end
+  S3[(Amazon S3<br/>same Region)]
+  Endpoint --> S3
+
+  classDef route fill:#E8F1FB,stroke:#1F5A99,color:#102A43,stroke-width:1.5px;
+  classDef workload fill:#EAF7EE,stroke:#217346,color:#123524,stroke-width:1.5px;
+  classDef gateway fill:#FFF4E5,stroke:#A65B00,color:#4A2A00,stroke-width:1.5px;
+  class RouteTable route;
+  class AppLocal,AppS3,Service workload;
+  class Endpoint gateway;

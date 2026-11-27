@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
+import networkFigures from '../../src/fundamentals/delivery/network-figures.json' with { type: 'json' };
 import { messages } from '../../src/messages';
 import { lessonAssets, selectLessonAnswer, visibleLessonSteps } from './fundamentals.helpers';
 import { acceptNecessaryCookies } from './fundamentals-mobile.helpers';
@@ -39,3 +40,74 @@ test('Japanese deployment slides use natural headings and explain the canary exa
   );
   await expect(page.locator('.lesson-reading')).not.toContainText('新版本');
 });
+
+test('lesson recovery actions fit and have breathing room on a narrow screen', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto('/ja/study/fundamentals/');
+  await acceptNecessaryCookies(page);
+  const firstLesson = page.locator('.lesson-catalog-card a').first();
+  await expect(firstLesson).toBeVisible();
+  await page.context().setOffline(true);
+  try {
+    await firstLesson.click();
+    await expect(page.getByRole('alert')).toHaveText(messages.ja.fundamentalsLoadError);
+    const actions = page.locator('.lesson-recovery-actions');
+    await expect(actions.getByRole('button', { name: messages.ja.fundamentalsReload })).toBeVisible();
+    await expect(actions.getByRole('link')).toBeVisible();
+    await expect(actions).toHaveCSS('column-gap', '16px');
+    expect(await actions.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  } finally {
+    await page.context().setOffline(false);
+  }
+});
+
+for (const [stepId, figure] of Object.entries(networkFigures)) {
+  for (const locale of ['ja', 'de'] as const) {
+    test(`${locale}: network diagrams use shared English assets at ${stepId}`, async ({ page }) => {
+      const unitId = stepId.split(':')[0];
+      const asset = lessonAssets.find(({ unit }) => unit.id === unitId);
+      if (!asset) throw new Error(`Missing public lesson: ${unitId}`);
+      const steps = visibleLessonSteps(asset);
+      const target = steps.findIndex(({ id }) => id === stepId);
+      if (target < 0) throw new Error(`Missing public slide: ${stepId}`);
+      await page.setViewportSize({ width: 320, height: 700 });
+      await page.goto(lessonPath({ locale, unitId, stage: 'resume' }));
+      await acceptNecessaryCookies(page);
+      for (const step of steps.slice(0, target)) {
+        if (step.kind === 'checkpoint') {
+          const question = asset.checkpoints.find((item) => item.id === step.assessmentId);
+          if (!question) throw new Error(`Missing checkpoint: ${step.id}`);
+          await selectLessonAnswer(page, question, question.correct);
+          await page
+            .getByRole('button', { name: messages[locale].lessonCheckpointSubmit, exact: true })
+            .click();
+        }
+        await page.locator('.lesson-slide-actions > button.primary').click();
+      }
+
+      const diagram = page.locator('.lesson-reading .lesson-network-figure');
+      const image = diagram.getByRole('img');
+      await expect(diagram).toHaveAttribute('lang', 'en');
+      await expect(image).toHaveAttribute('src', figure.url);
+      await expect(image).toHaveAttribute('alt', figure.alt);
+      await expect
+        .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
+        .toBeGreaterThan(0);
+      await expect(image).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+
+      if (locale === 'ja' && unitId === 'fundamentals.cidr-subnets') {
+        const glossary = page.waitForEvent('popup');
+        await page
+          .locator('.lesson-glossary-links')
+          .getByRole('link', { name: 'Subnet', exact: true })
+          .click();
+        const popup = await glossary;
+        await expect(popup).toHaveURL(/\/ja\/glossary\/#glossary-term-subnet$/);
+        await expect(popup.locator('#glossary-term-subnet')).toBeInViewport();
+        await popup.close();
+        await expect(image).toBeVisible();
+      }
+    });
+  }
+}

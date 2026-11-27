@@ -1,8 +1,9 @@
 import { useId } from 'react';
+import { choiceLabel } from './choiceLabels';
 import { usePreferences } from './preferences';
 import { QuestionSources } from './QuestionSources';
+import { QuestionFigure } from './questionFigures/QuestionFigure';
 import type { Question } from './questions';
-import { choiceLabel } from './choiceLabels';
 
 export function LearningNotes({ question, selected }: { question: Question; selected: string[] }) {
   const { locale, t } = usePreferences();
@@ -50,6 +51,7 @@ export function LearningNotes({ question, selected }: { question: Question; sele
         <dt>{t('concept')}</dt>
         <dd lang={question.locale ?? locale}>{notes.concept}</dd>
       </dl>
+      <QuestionFigure question={question} />
       {notes.check && (
         <details>
           <summary>{t('knowledgeCheck')}</summary>

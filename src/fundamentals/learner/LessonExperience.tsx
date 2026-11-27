@@ -47,10 +47,12 @@ export function LessonExperience() {
     return (
       <main id="main" className="shell">
         <p role="alert">{t('fundamentalsLoadError')}</p>
-        <button type="button" onClick={retry}>
-          {t('fundamentalsReload')}
-        </button>
-        <a href={localePath(locale, 'study/fundamentals')}>{t('fundamentalsBackToCatalog')}</a>
+        <div className="lesson-recovery-actions">
+          <button type="button" onClick={retry}>
+            {t('fundamentalsReload')}
+          </button>
+          <a href={localePath(locale, 'study/fundamentals')}>{t('fundamentalsBackToCatalog')}</a>
+        </div>
       </main>
     );
   }

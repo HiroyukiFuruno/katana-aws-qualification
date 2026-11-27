@@ -67,26 +67,28 @@ export function LessonUnit({ services, route }: { services: LessonServices; rout
               : 'fundamentalsLoading',
         )}
       </p>
-      {conflict ? (
-        <>
-          <p>{t('progressStorageConflictChoiceDescription')}</p>
-          <button type="button" disabled={busy} onClick={() => void resolve('stored')}>
-            {t('progressStorageConflictUseStored')}
+      {conflict && <p>{t('progressStorageConflictChoiceDescription')}</p>}
+      <div className="lesson-recovery-actions">
+        {conflict ? (
+          <>
+            <button type="button" disabled={busy} onClick={() => void resolve('stored')}>
+              {t('progressStorageConflictUseStored')}
+            </button>
+            <button type="button" disabled={busy} onClick={() => void resolve('pending')}>
+              {t('progressStorageConflictUseCurrent')}
+            </button>
+          </>
+        ) : stale ? (
+          <button type="button" disabled={busy} onClick={() => void saved()}>
+            {t('examReloadSaved')}
           </button>
-          <button type="button" disabled={busy} onClick={() => void resolve('pending')}>
-            {t('progressStorageConflictUseCurrent')}
+        ) : error ? (
+          <button type="button" onClick={unit.retry}>
+            {t('fundamentalsReload')}
           </button>
-        </>
-      ) : stale ? (
-        <button type="button" disabled={busy} onClick={() => void saved()}>
-          {t('examReloadSaved')}
-        </button>
-      ) : error ? (
-        <button type="button" onClick={unit.retry}>
-          {t('fundamentalsReload')}
-        </button>
-      ) : null}
-      <a href={localePath(locale, 'study/fundamentals')}>{t('lessonExit')}</a>
+        ) : null}
+        <a href={localePath(locale, 'study/fundamentals')}>{t('lessonExit')}</a>
+      </div>
     </main>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { GlossaryDefinition, termAnchor } from './GlossaryDefinition';
+import { GlossaryDefinition } from './GlossaryDefinition';
 import { GlossaryFilters } from './GlossaryFilters';
 import { filterGlossary, glossary, glossaryCategories, glossaryTags } from './glossary';
+import { termAnchor } from './glossaryAnchor';
 import './glossary.css';
 import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';

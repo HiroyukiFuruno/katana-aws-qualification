@@ -1,10 +1,7 @@
-import localizedMentions from './glossary-mentions.json' with { type: 'json' };
 import { Fragment } from 'react';
 import { glossary } from './glossary';
-
-export function termAnchor(term: string) {
-  return `glossary-term-${term.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-}
+import localizedMentions from './glossary-mentions.json' with { type: 'json' };
+import { termAnchor } from './glossaryAnchor';
 
 const termNames = new Map(glossary.map(({ term }) => [term.toLowerCase(), term]));
 for (const [mention, term] of Object.entries(localizedMentions)) {

@@ -44,6 +44,7 @@ export async function assertReadingGeometry(
       contentReachable: contentRect.bottom <= innerHeight + 2,
       stageUsesPageScroll: getComputedStyle(stage).overflowY === 'visible',
       controls: controls.map((control) => ({
+        label: control.textContent?.trim() || control.getAttribute('href'),
         width: control.getBoundingClientRect().width,
         height: control.getBoundingClientRect().height,
       })),
@@ -52,7 +53,7 @@ export async function assertReadingGeometry(
   expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.viewportWidth);
   expect(metrics.contentReachable).toBe(true);
   expect(metrics.stageUsesPageScroll).toBe(true);
-  expect(metrics.controls.every(({ width, height }) => width >= 44 && height >= 44)).toBe(true);
+  expect(metrics.controls.filter(({ width, height }) => width < 44 || height < 44)).toEqual([]);
 }
 
 export async function walkReadingWithGeometry(page: Page, asset: DeliveryUnitAsset) {

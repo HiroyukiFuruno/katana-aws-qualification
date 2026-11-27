@@ -1,0 +1,26 @@
+%%{init: {'theme': 'base', 'flowchart': {'htmlLabels': true, 'curve': 'linear', 'nodeSpacing': 12, 'rankSpacing': 28}}}%%
+flowchart TB
+  subgraph Ingress["Public ingress"]
+    direction TB
+    Client([Internet client])
+    IGWIngress[Internet gateway]
+    Web["Web EC2 in public subnet<br/>Public IPv4 or EIP<br/>Inbound HTTPS allowed"]
+    Client -->|HTTPS| IGWIngress --> Web
+  end
+  subgraph Egress["Private outbound"]
+    direction TB
+    App["App EC2 in private subnet<br/>Private IPv4 only"]
+    PrivateRT["Private route table<br/>0.0.0.0/0 to NAT"]
+    NAT["Zonal public NAT gateway<br/>Public subnet and EIP"]
+    IGWEgress["Internet gateway<br/>Public default route to IGW"]
+    Dest([Internet destination])
+    App --> PrivateRT --> NAT --> IGWEgress --> Dest
+  end
+  Web ~~~ App
+
+  classDef gateway fill:#FFF4E5,stroke:#A65B00,color:#4A2A00,stroke-width:1.5px;
+  classDef route fill:#E8F1FB,stroke:#1F5A99,color:#102A43,stroke-width:1.5px;
+  classDef workload fill:#EAF7EE,stroke:#217346,color:#123524,stroke-width:1.5px;
+  class IGWIngress,IGWEgress,NAT gateway;
+  class PrivateRT route;
+  class Web,App workload;

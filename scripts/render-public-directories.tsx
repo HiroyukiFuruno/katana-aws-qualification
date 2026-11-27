@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { certifications, studyCourses } from '../src/certifications.ts';
 import type { SiteContent } from '../src/contentTypes.ts';
 import type { DeliveryIndexAsset } from '../src/fundamentals/delivery/artifactTypes.ts';
+import { lessonDisplayText } from '../src/fundamentals/delivery/lessonReadingCopy.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
 
@@ -50,7 +51,7 @@ for (const locale of locales) {
             .map((unit) => (
               <li key={unit.unitId}>
                 <a href={localePath(locale, `study/fundamentals/${unit.slug}`)}>{unit.title}</a>
-                <p>{unit.objective}</p>
+                <p>{lessonDisplayText(unit.objective, locale, unit.unitId)}</p>
               </li>
             ))}
         </ul>

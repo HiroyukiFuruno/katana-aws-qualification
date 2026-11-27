@@ -1,6 +1,7 @@
 import type { MouseEvent } from 'react';
 import { usePreferences } from '../../preferences';
 import type { DeliveryIndexAsset } from '../delivery/artifactTypes';
+import { lessonDisplayText } from '../delivery/lessonReadingCopy';
 import { moduleLabels } from '../moduleLabels';
 import type { LessonSummary } from '../state/memberTypes';
 
@@ -27,7 +28,7 @@ export function LessonCatalogCard({
   action: string;
   onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
-  const { t } = usePreferences();
+  const { t, locale } = usePreferences();
   return (
     <article className="card lesson-catalog-card">
       <p className="eyebrow">
@@ -35,7 +36,9 @@ export function LessonCatalogCard({
       </p>
       <h2>{unit.title}</h2>
       {pending && <p role="status">{t('lessonPendingSave')}</p>}
-      <p className="lesson-catalog-objective">{unit.objective}</p>
+      <p className="lesson-catalog-objective">
+        {lessonDisplayText(unit.objective, locale, unit.unitId)}
+      </p>
       <dl className="lesson-catalog-facts">
         <div>
           <dt>{t('fundamentalsMinutes')}</dt>

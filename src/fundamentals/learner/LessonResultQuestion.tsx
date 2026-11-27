@@ -2,6 +2,7 @@ import type { Locale } from '../../locales';
 import { usePreferences } from '../../preferences';
 import { QuestionClarifications } from '../../QuestionClarifications';
 import type { DeliveryQuestion, DeliveryUnitAsset } from '../delivery/artifactTypes';
+import { lessonDisplayText } from '../delivery/lessonReadingCopy';
 import type { LessonFinalSession } from '../state/types';
 import { reviewPath, selectedSetMatches } from './lesson-result-helpers';
 
@@ -25,6 +26,7 @@ export function LessonResultQuestion({
   onNavigate: (href: string) => void;
 }) {
   const { t } = usePreferences();
+  const display = (text: string) => lessonDisplayText(text, locale, question.unitId);
   const selected = session.responses[String(index)]?.selected ?? [];
   const answered = selected.length > 0;
   const exact = selectedSetMatches(question, selected);
@@ -32,10 +34,9 @@ export function LessonResultQuestion({
   return (
     <details className="card lesson-result-question">
       <summary>
-        {t('questionNumber', { number: position })}: {question.title}
-        {question.title}
+        {t('questionNumber', { number: position })}: {display(question.title)}
       </summary>
-      <p>{question.prompt}</p>
+      <p>{display(question.prompt)}</p>
       <QuestionClarifications question={question} />
       <p className={exact ? 'lesson-result-correct' : 'lesson-result-incorrect'}>
         {answered ? (exact ? t('correct') : t('incorrect')) : t('unanswered')}
@@ -47,10 +48,10 @@ export function LessonResultQuestion({
           return (
             <li key={choice.id} className="lesson-result-choice">
               <p>
-                <strong>{choice.text}</strong> {chosen && <span>({t('selected')})</span>}{' '}
+                <strong>{display(choice.text)}</strong> {chosen && <span>({t('selected')})</span>}{' '}
                 {answer && <span>({t('correct')})</span>}
               </p>
-              <p>{choice.explanation}</p>
+              <p>{display(choice.explanation)}</p>
             </li>
           );
         })}

@@ -1,6 +1,7 @@
 import { usePreferences } from '../../preferences';
 import { questionAdditionalSources } from '../../questionAdditionalSources';
 import type { DeliveryQuestion, DeliveryUnitAsset } from '../delivery/artifactTypes';
+import { lessonReadingCopy } from '../delivery/lessonReadingCopy';
 import { lessonFragments } from './lessonFragments';
 import './lesson-related.css';
 import { sourceDocumentationUrl } from '../../sourceDocumentationUrl';
@@ -12,11 +13,13 @@ export function LessonRelatedReading({
   asset: DeliveryUnitAsset;
   question: DeliveryQuestion;
 }) {
-  const { t } = usePreferences();
-  const reading = asset.steps.filter(
-    (step) =>
-      step.kind !== 'checkpoint' && step.kind !== 'final' && step.sectionId === question.sectionId,
-  );
+  const { t, locale } = usePreferences();
+  const reading = asset.steps
+    .filter(
+      (step) =>
+        step.kind !== 'checkpoint' && step.kind !== 'final' && step.sectionId === question.sectionId,
+    )
+    .map((step) => lessonReadingCopy(step, locale));
   const sources = [
     ...reading.flatMap((step) => step.sources),
     ...questionAdditionalSources(question).map((source) => ({

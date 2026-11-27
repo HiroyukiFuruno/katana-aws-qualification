@@ -1,10 +1,10 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { object, text } from './codecPrimitives';
 import { readLessonProgress } from './progressCodec';
 import { readLessonFinalSession } from './sessionCodec';
 import type { LessonSnapshot } from './types';
 
-export function readLessonSnapshot(value: unknown, asset: DeliveryUnitAsset): LessonSnapshot {
+export function readLessonSnapshot(value: unknown, asset: LessonRecordAsset): LessonSnapshot {
   const row = object(value, 'snapshot');
   if (row.unitId !== asset.unit.id || row.contentVersion !== asset.contentVersion) {
     throw new Error('The lesson snapshot is from another unit or content version.');

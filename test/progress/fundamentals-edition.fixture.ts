@@ -1,6 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { parseDeliveryIndex } from '../../src/fundamentals/delivery/loadIndex';
-import { parseDeliveryUnit } from '../../src/fundamentals/delivery/loadUnit';
+import legacyRecordAssets from '../../src/fundamentals/delivery/legacyRecordAssets.json' with {
+  type: 'json',
+};
+import { readLessonRecordAsset } from '../../src/fundamentals/delivery/recordAsset';
 import { lessonQuestionRef } from '../../src/fundamentals/state/grade';
 import {
   saveGuestLessonResponse,
@@ -10,24 +11,18 @@ import {
 import { initialGuestLesson } from '../../src/fundamentals/state/guestInitial';
 import { recordGuestLessonStep } from '../../src/fundamentals/state/guestStep';
 
-const root = 'public/fundamentals/delivery/history/2026-11-20';
-const index = parseDeliveryIndex(JSON.parse(readFileSync(`${root}/index.json`, 'utf8')));
-const entry = index.units[0];
-if (!entry) throw new Error('Missing archived lesson fixture');
-export const archivedAsset = parseDeliveryUnit(
-  JSON.parse(readFileSync(`${root}/${entry.slug}.json`, 'utf8')),
-  entry,
-);
+const legacy = legacyRecordAssets.assets[0];
+if (!legacy) throw new Error('Missing legacy lesson fixture');
+export const archivedAsset = readLessonRecordAsset(legacy, legacy.unit.id, legacy.contentVersion);
 
 export function archivedGuestFinal(submitted: boolean) {
-  const asset = archivedAsset;
-  let source = initialGuestLesson(asset);
+  let source = initialGuestLesson(archivedAsset);
   const time = new Date().toISOString();
-  for (const step of asset.steps.filter((step) => step.kind !== 'final')) {
-    const question = asset.checkpoints.find((question) => question.id === step.assessmentId);
+  for (const step of archivedAsset.steps.filter((step) => step.kind !== 'final')) {
+    const question = archivedAsset.checkpoints.find((question) => question.id === step.assessmentId);
     source = recordGuestLessonStep(
       source,
-      asset,
+      archivedAsset,
       step.id,
       question
         ? {
@@ -40,11 +35,11 @@ export function archivedGuestFinal(submitted: boolean) {
     ).source;
   }
   const session = crypto.randomUUID();
-  source = startGuestLessonFinal(source, asset, session, time);
-  for (const [position, question] of asset.finalQuestions.entries()) {
+  source = startGuestLessonFinal(source, archivedAsset, session, time);
+  for (const [position, question] of archivedAsset.finalQuestions.entries()) {
     source = saveGuestLessonResponse(
       source,
-      asset,
+      archivedAsset,
       session,
       position,
       {
@@ -59,7 +54,7 @@ export function archivedGuestFinal(submitted: boolean) {
   return submitted
     ? submitGuestLessonFinal(
         source,
-        asset,
+        archivedAsset,
         session,
         time,
         Array.from({ length: 12 }, () => crypto.randomUUID()),

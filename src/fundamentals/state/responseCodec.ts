@@ -1,4 +1,4 @@
-import type { DeliveryQuestion } from '../delivery/artifactTypes';
+import type { LessonRecordQuestion } from '../delivery/recordAsset';
 import { integer, object, strings, text, timestamp } from './codecPrimitives';
 import { lessonQuestionRef, sameLessonQuestionRef, validateLessonSelection } from './grade';
 import type { LessonQuestionRef, LessonResponse } from './types';
@@ -14,7 +14,7 @@ export function readLessonQuestionRef(value: unknown): LessonQuestionRef {
   };
 }
 
-export function readLessonResponse(value: unknown, question: DeliveryQuestion): LessonResponse {
+export function readLessonResponse(value: unknown, question: LessonRecordQuestion): LessonResponse {
   const row = object(value, 'response');
   const questionRef = readLessonQuestionRef(row.questionRef);
   if (!sameLessonQuestionRef(questionRef, lessonQuestionRef(question))) {
@@ -30,7 +30,7 @@ export function readLessonResponse(value: unknown, question: DeliveryQuestion): 
   };
 }
 
-export function readLessonResponses(value: unknown, questions: readonly DeliveryQuestion[]) {
+export function readLessonResponses(value: unknown, questions: readonly LessonRecordQuestion[]) {
   const row = object(value, 'responses');
   const responses: Record<string, LessonResponse> = {};
   for (const [position, response] of Object.entries(row)) {

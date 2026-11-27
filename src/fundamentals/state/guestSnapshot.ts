@@ -1,10 +1,10 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { gradeLessonFinal } from './grade';
 import { assertGuestLessonAsset } from './guestInitial';
 import { readLessonSnapshot } from './snapshotCodec';
 import type { GuestLessonSource, LessonFinalSession } from './types';
 
-export function guestLessonSnapshot(source: GuestLessonSource, asset: DeliveryUnitAsset) {
+export function guestLessonSnapshot(source: GuestLessonSource, asset: LessonRecordAsset) {
   assertGuestLessonAsset(source, asset);
   const submitted: LessonFinalSession[] = source.submittedFinals.map((session) => ({
     sessionId: session.sessionId,

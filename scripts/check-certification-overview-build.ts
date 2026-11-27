@@ -113,7 +113,7 @@ for (const locale of locales) {
   for (const page of ['study', 'study/questions', 'study/fundamentals', 'certifications']) {
     const html = await readFile(routeFile(locale, page), 'utf8');
     assert(html.includes('<h1>'), `${locale}/${page}: heading`);
-    assert(html.includes('<a href='), `${locale}/${page}: links`);
+    assert(/<a\s[^>]*\bhref="/.test(html), `${locale}/${page}: links`);
   }
 }
 

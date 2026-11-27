@@ -11,7 +11,7 @@ import {
 import { invokeLessonCommand, resolveLessonAsset } from './outboxExecutor';
 import { createOutboxPersistence } from './outboxPersistence';
 import { discardChangedOwner } from './outboxRecovery';
-import { pendingLessonCommands } from './outboxScope';
+import { pendingLessonCommands, pendingLessonReferences } from './outboxScope';
 import type {
   LessonAssetResolver,
   LessonCommand,
@@ -68,9 +68,8 @@ export function createLessonOutbox(input: Input): LessonOutbox {
       throw error;
     }
     if (invalidated.has(command.commandId)) throw new LessonStateChangedError();
-    if (asset.unit.id !== command.unitId || asset.contentVersion !== command.contentVersion) {
+    if (asset.unit.id !== command.unitId || asset.contentVersion !== command.contentVersion)
       throw new Error('Lesson outbox asset mismatch');
-    }
     const existing = pending.find((item) => item.commandId === command.commandId);
     if (existing && !sameLessonCommand(existing, command)) {
       throw new Error('Lesson outbox command conflict.');
@@ -144,6 +143,7 @@ export function createLessonOutbox(input: Input): LessonOutbox {
       }
     },
     hasPending: (scope) => pendingLessonCommands(pending, scope).length > 0,
+    pendingReferences: () => pendingLessonReferences(pending),
     isPersisted: persistence.isPersisted,
     hasPersistedPending: persistence.hasPersistedPending,
   };

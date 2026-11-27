@@ -1,13 +1,13 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { usePreferences } from '../../preferences';
 import type { BrowserStorage } from '../../progress/guest';
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { importGuestLesson, readGuestLessonImport } from '../state/importGuestLesson';
 import type { LessonMigrationAccess } from '../state/importTypes';
 
 type Props = {
   access: () => LessonMigrationAccess | null;
-  asset: DeliveryUnitAsset;
+  asset: LessonRecordAsset;
   onImported?: () => void | Promise<void>;
   storage?: BrowserStorage;
 };

@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import {
   exactFields,
   integer,
@@ -15,7 +15,7 @@ import { guestLessonSnapshot } from './guestSnapshot';
 import { readLessonQuestionRef } from './responseCodec';
 import type { GuestLessonSource } from './types';
 
-export function readGuestLessonSource(value: unknown, asset: DeliveryUnitAsset): GuestLessonSource {
+export function readGuestLessonSource(value: unknown, asset: LessonRecordAsset): GuestLessonSource {
   const row = object(value, 'guestLesson');
   exactFields(row, [
     'unitId',

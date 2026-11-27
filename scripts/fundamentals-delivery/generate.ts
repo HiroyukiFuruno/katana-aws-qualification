@@ -1,7 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { FundamentalsContent } from '../../src/fundamentals/types';
-import { archivedLessonEditions } from '../../src/fundamentals/delivery/editions';
 import { buildDelivery } from './build';
 import type { CheckpointDocument } from './source';
 
@@ -23,14 +22,6 @@ async function artifacts() {
     JSON.parse(content) as FundamentalsContent,
     JSON.parse(checkpoints) as CheckpointDocument,
   );
-  const editions = await Promise.all(
-    archivedLessonEditions.map(
-      async (edition) =>
-        JSON.parse(
-          await readFile(join(deliveryPath, 'history', edition, 'routeManifest.json'), 'utf8'),
-        ) as unknown,
-    ),
-  );
   return new Map<string, string>([
     [
       checkpointPath,
@@ -42,10 +33,6 @@ async function artifacts() {
     [join(deliveryPath, 'index.json'), json(bundle.index)],
     [join(deliveryPath, 'routeManifest.json'), json(bundle.routeManifest)],
     [sourceManifestPath, json(bundle.routeManifest)],
-    [
-      join(root, 'src/fundamentals/delivery/archivedRouteManifest.json'),
-      json({ schemaVersion: 1, editions }),
-    ],
     [join(deliveryPath, 'trustedCatalog.json'), json(bundle.trustedCatalog)],
     ...bundle.units.map(
       (unit) =>

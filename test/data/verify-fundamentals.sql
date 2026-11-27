@@ -5,6 +5,14 @@ begin
     or not has_function_privilege('authenticated','public.load_fundamentals_progress_summaries(jsonb,bigint)','EXECUTE') then
     raise exception 'fundamentals summaries must only be executable by authenticated users';
   end if;
+  if has_function_privilege('anon','public.load_fundamentals_history_summaries(jsonb,bigint)','EXECUTE')
+    or not has_function_privilege('authenticated','public.load_fundamentals_history_summaries(jsonb,bigint)','EXECUTE') then
+    raise exception 'fundamentals history summaries must only be executable by authenticated users';
+  end if;
+  if has_function_privilege('anon','public.load_fundamentals_checkpoint_selection(text,text,text,integer,text,bigint)','EXECUTE')
+    or not has_function_privilege('authenticated','public.load_fundamentals_checkpoint_selection(text,text,text,integer,text,bigint)','EXECUTE') then
+    raise exception 'historical checkpoint selections must only be executable by authenticated users';
+  end if;
 end $test$;
 insert into auth.users (id,email) values
   ('55555555-5555-4555-8555-555555555555','fundamentals-a@example.test'),
@@ -25,10 +33,16 @@ set local role authenticated;
 select set_config('request.jwt.claims',jsonb_build_object('sub','55555555-5555-4555-8555-555555555555','role','authenticated')::text,true);
 do $test$
 declare position integer; session_one uuid:='11111111-1111-4111-8111-111111111111'; session_two uuid:='22222222-2222-4222-8222-222222222222'; session_three uuid:='33333333-3333-4333-8333-333333333333';
+  v_history jsonb;
 begin
   perform public.initialize_learning_state();
   perform public.record_fundamentals_step('draft-unit','v1','slide','slide-1',null,0,0,'44444444-4444-4444-8444-444444444444');
   perform public.record_fundamentals_step('draft-unit','v1','checkpoint','check-1','["a"]',1,0,'88888888-8888-4888-8888-888888888888',1200);
+  if public.load_fundamentals_checkpoint_selection('draft-unit','v1','check-1',1,'v1',0) is distinct from '["a"]'::jsonb
+    or public.load_fundamentals_checkpoint_selection('draft-unit','v2','check-1',1,'v1',0) is not null
+    or public.load_fundamentals_checkpoint_selection('draft-unit','v1','check-1',2,'v1',0) is not null then
+    raise exception 'checkpoint history did not preserve the exact answer identity';
+  end if;
   begin perform public.record_fundamentals_step('draft-unit','v1','checkpoint','check-1','["b"]',1,0,'88888888-8888-4888-8888-888888888888',1200); raise exception 'receipt collision accepted'; exception when unique_violation then null; end;
   perform public.start_fundamentals_final(session_one,'draft-unit','v1',2,0);
   if public.load_fundamentals_snapshot('draft-unit','v1',0)->'progress'->'resumeStepId' is distinct from 'null'::jsonb then
@@ -45,6 +59,34 @@ begin
   perform public.start_fundamentals_final(session_three,'draft-unit','v1',6,0);
   for position in 0..11 loop perform public.save_fundamentals_final_response(session_three,position,position,jsonb_build_object('questionId','final-'||(position+1),'revision',1,'sourceVersion','v1'),case when position<10 then '["a"]'::jsonb else '["b"]'::jsonb end,0,gen_random_uuid(),100,position); end loop;
   perform public.finalize_fundamentals_final(session_three,12,0);
+  v_history := public.load_fundamentals_history_summaries(
+    jsonb_build_array(jsonb_build_object('unitId','draft-unit','contentVersion','v2')),
+    0
+  );
+  if jsonb_array_length(v_history) <> 1
+    or v_history->0->>'unitId' is distinct from 'draft-unit'
+    or v_history->0->>'contentVersion' is distinct from 'v1'
+    or v_history->0->>'latestScore' is distinct from '10'
+    or v_history->0->>'requiredScore' is distinct from '10'
+    or (select count(*) from jsonb_object_keys(v_history->0)) <> 10
+    or not (v_history->0 ?& array[
+      'unitId','contentVersion','completedSlides','totalSlides',
+      'completedCheckpoints','totalCheckpoints','activeFinalSessionId','passedAt',
+      'latestScore','requiredScore'
+    ]) then
+    raise exception 'history summary did not preserve the owner submitted score';
+  end if;
+  if public.load_fundamentals_history_summaries(
+    jsonb_build_array(jsonb_build_object('unitId','draft-unit','contentVersion','v1')),
+    0
+  ) <> '[]'::jsonb then
+    raise exception 'current fundamentals unit was returned as history';
+  end if;
+  begin
+    perform public.load_fundamentals_history_summaries('[]'::jsonb,1);
+    raise exception 'stale generation accepted for history summaries';
+  exception when sqlstate 'PT409' then null;
+  end;
 end $test$;
 reset role;
 do $test$
@@ -60,6 +102,25 @@ do $test$
 begin
   perform public.initialize_learning_state();
   if (public.load_fundamentals_snapshot('draft-unit','v1',0)->'sessions')<>'[]'::jsonb then raise exception 'owner isolation failed'; end if;
+  if public.load_fundamentals_checkpoint_selection('draft-unit','v1','check-1',1,'v1',0) is not null then
+    raise exception 'checkpoint history exposed another account response';
+  end if;
+  if public.load_fundamentals_history_summaries(
+    jsonb_build_array(jsonb_build_object('unitId','draft-unit','contentVersion','v2')),
+    0
+  ) <> '[]'::jsonb then
+    raise exception 'history summaries exposed another account records';
+  end if;
+end $test$;
+reset role;
+set local role anon;
+do $test$
+begin
+  begin
+    perform public.load_fundamentals_history_summaries('[]'::jsonb,0);
+    raise exception 'anonymous history summary call was accepted';
+  exception when insufficient_privilege then null;
+  end;
 end $test$;
 reset role;
 set local role authenticated;

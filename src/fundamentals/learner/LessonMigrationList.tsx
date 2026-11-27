@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { guestLessonPrefix } from '../../learningStorage';
 import { usePreferences } from '../../preferences';
 import { canPersistGuestProgress } from '../../progress/guest';
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
+import { guestLessonKeys, guestLessonReference } from '../state/guestReferences';
 import type { LessonMigrationAccess } from '../state/importTypes';
 import type { LessonServices } from '../state/services';
 import { LessonMigrationPrompt } from './LessonMigrationPrompt';
@@ -15,7 +15,7 @@ type Props = {
 
 export function LessonMigrationList({ services, access, onImported }: Props) {
   const { locale, t } = usePreferences();
-  const [units, setUnits] = useState<DeliveryUnitAsset[]>([]);
+  const [units, setUnits] = useState<LessonRecordAsset[]>([]);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     let current = true;
@@ -24,22 +24,25 @@ export function LessonMigrationList({ services, access, onImported }: Props) {
     setFailed(false);
     if (!member || !canPersistGuestProgress(localStorage)) return;
     void services.assets
-      .editions(locale)
-      .then(async (editions) => {
-        const pending = new Set<string>();
-        for (let offset = 0; offset < localStorage.length; offset++) {
-          const key = localStorage.key(offset);
-          if (key?.startsWith(guestLessonPrefix)) pending.add(key);
-        }
-        const assets: DeliveryUnitAsset[] = [];
-        for (const entry of editions.flatMap(({ index }) => index.units)) {
-          const key = `${guestLessonPrefix}${entry.unitId}.${entry.contentVersion}`;
-          if (pending.delete(key))
-            assets.push(await services.assets.unit(entry.unitId, entry.contentVersion, locale));
-        }
+      .index(locale)
+      .then(async (index) => {
+        const titles = new Map(index.units.map(({ unitId, title }) => [unitId, title]));
+        const pending = await Promise.allSettled(
+          guestLessonKeys(localStorage).map(async (key) => {
+            const reference = guestLessonReference(key);
+            if (!reference) return undefined;
+            const { unitId, contentVersion } = reference;
+            return services.assets.record(unitId, contentVersion, locale, localStorage);
+          }),
+        );
         if (current && access()?.owner.userId === member.owner.userId) {
+          const assets = pending.flatMap((result) => {
+            if (result.status !== 'fulfilled' || !result.value) return [];
+            const { unit } = result.value;
+            return [{ ...result.value, unit: { ...unit, title: titles.get(unit.id) ?? unit.title } }];
+          });
           setUnits(assets);
-          setFailed(pending.size > 0);
+          setFailed(pending.length !== assets.length);
         }
       })
       .catch(() => {

@@ -1,22 +1,17 @@
 import { withHistoryLock } from '../../historyLock';
-import { guestLessonPrefix } from '../../learningStorage';
 import { type BrowserStorage, canPersistGuestProgress } from '../../progress/guest';
 import { registerGuestLearningMemory } from '../../progress/guestMemoryLifecycle';
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
+import { retainLessonRecord } from '../delivery/recordStorage';
+import { GuestLessonConflictError } from './conflicts';
 import { initialGuestLesson } from './guestInitial';
+import { guestLessonKey, guestLessonReferences } from './guestReferences';
 import { readGuestLessonSource } from './guestSourceCodec';
 import type { GuestLessonSource } from './types';
 
 export { guestLessonPrefix } from '../../learningStorage';
 
 type MemoryEntry = { source: GuestLessonSource; base: string | null; pending: boolean };
-
-export class GuestLessonConflictError extends Error {
-  constructor() {
-    super('Saved and temporary lesson progress differ. Choose which record to keep.');
-    this.name = 'GuestLessonConflictError';
-  }
-}
 
 export class GuestLessonStorage {
   private epoch = 0;
@@ -34,15 +29,23 @@ export class GuestLessonStorage {
     if (!this.isCurrent()) throw new Error('Lesson progress owner changed.');
   }
 
-  private key(asset: DeliveryUnitAsset) {
-    return `${guestLessonPrefix}${asset.unit.id}.${asset.contentVersion}`;
+  private key(asset: LessonRecordAsset) {
+    return guestLessonKey({ unitId: asset.unit.id, contentVersion: asset.contentVersion });
   }
 
-  private parse(raw: string | null, asset: DeliveryUnitAsset) {
+  private parse(raw: string | null, asset: LessonRecordAsset) {
     return raw === null ? initialGuestLesson(asset) : readGuestLessonSource(JSON.parse(raw), asset);
   }
 
-  private load(asset: DeliveryUnitAsset): GuestLessonSource {
+  private persist(key: string, asset: LessonRecordAsset, source: GuestLessonSource) {
+    retainLessonRecord(this.storage, asset);
+    const serialized = JSON.stringify(source);
+    this.storage.setItem(key, serialized);
+    if (this.storage.getItem(key) !== serialized) throw new Error('Lesson save was not confirmed.');
+    this.memory.set(key, { source, base: serialized, pending: false });
+  }
+
+  private load(asset: LessonRecordAsset): GuestLessonSource {
     this.current();
     const key = this.key(asset);
     const entry = this.memory.get(key);
@@ -59,9 +62,7 @@ export class GuestLessonStorage {
         throw new GuestLessonConflictError();
       }
       this.parse(raw, asset);
-      this.storage.setItem(key, serialized);
-      if (this.storage.getItem(key) !== serialized) throw new Error('Lesson save was not confirmed.');
-      this.memory.set(key, { ...entry, base: serialized, pending: false });
+      this.persist(key, asset, entry.source);
       return structuredClone(entry.source);
     }
     const source = this.parse(raw, asset);
@@ -69,20 +70,25 @@ export class GuestLessonStorage {
     return structuredClone(source);
   }
 
-  read(asset: DeliveryUnitAsset) {
+  read(asset: LessonRecordAsset) {
     return withHistoryLock(() => this.load(asset));
   }
 
   hasSource(unitId: string, contentVersion: string) {
     this.current();
-    const key = `${guestLessonPrefix}${unitId}.${contentVersion}`;
+    const key = guestLessonKey({ unitId, contentVersion });
     return (
       this.memory.has(key) ||
       (canPersistGuestProgress(this.storage) && this.storage.getItem(key) !== null)
     );
   }
 
-  change(asset: DeliveryUnitAsset, update: (source: GuestLessonSource) => GuestLessonSource) {
+  references() {
+    this.current();
+    return guestLessonReferences(this.storage, this.memory.keys());
+  }
+
+  change(asset: LessonRecordAsset, update: (source: GuestLessonSource) => GuestLessonSource) {
     const epoch = this.epoch;
     return withHistoryLock(() => {
       if (epoch !== this.epoch) throw new Error('Guest lesson data was reset.');
@@ -91,13 +97,10 @@ export class GuestLessonStorage {
       this.current();
       const key = this.key(asset);
       const previous = this.memory.get(key);
-      const serialized = JSON.stringify(next);
       if (canPersistGuestProgress(this.storage)) {
         // ロック中に読み直した同一原本だけを書き換え、別タブの進捗を上書きしない。
         if (this.storage.getItem(key) !== previous?.base) throw new GuestLessonConflictError();
-        this.storage.setItem(key, serialized);
-        if (this.storage.getItem(key) !== serialized) throw new Error('Lesson save was not confirmed.');
-        this.memory.set(key, { source: next, base: serialized, pending: false });
+        this.persist(key, asset, next);
       } else {
         this.memory.set(key, { source: next, base: previous?.base ?? null, pending: true });
       }
@@ -105,7 +108,7 @@ export class GuestLessonStorage {
     });
   }
 
-  resolve(asset: DeliveryUnitAsset, choice: 'pending' | 'stored') {
+  resolve(asset: LessonRecordAsset, choice: 'pending' | 'stored') {
     const epoch = this.epoch;
     return withHistoryLock(() => {
       if (epoch !== this.epoch) throw new Error('Guest lesson data was reset.');
@@ -119,10 +122,7 @@ export class GuestLessonStorage {
       if (choice === 'stored') {
         this.memory.delete(key);
       } else {
-        const serialized = JSON.stringify(pending.source);
-        this.storage.setItem(key, serialized);
-        if (this.storage.getItem(key) !== serialized) throw new Error('Lesson save was not confirmed.');
-        this.memory.set(key, { ...pending, base: serialized, pending: false });
+        this.persist(key, asset, pending.source);
       }
       return this.load(asset);
     });

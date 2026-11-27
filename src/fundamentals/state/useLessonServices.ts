@@ -7,6 +7,10 @@ import { createLessonServices } from './services';
 
 const assets = createLessonAssets();
 const storage: BrowserStorage = {
+  get length() {
+    return localStorage.length;
+  },
+  key: (offset) => localStorage.key(offset),
   getItem: (key) => localStorage.getItem(key),
   removeItem: (key) => localStorage.removeItem(key),
   setItem: (key, value) => localStorage.setItem(key, value),

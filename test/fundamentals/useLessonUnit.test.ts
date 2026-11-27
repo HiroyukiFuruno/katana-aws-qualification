@@ -24,7 +24,7 @@ function servicesFor(
     assets: {
       index: async () => index,
       unit: async () => asset,
-      editions: async () => [],
+      record: async () => undefined,
     },
     storage: { getItem: () => null, removeItem() {}, setItem() {} },
     isCurrent: () => true,

@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { lessonQuestionRef, sameLessonQuestionRef } from './grade';
 import { guestLessonSnapshot } from './guestSnapshot';
 import { sameLessonInstant } from './instant';
@@ -44,7 +44,7 @@ function hasSession(snapshot: LessonSnapshot, expected: LessonFinalSession) {
   );
 }
 
-function canonicalSubmitted(session: LessonFinalSession, asset: DeliveryUnitAsset): LessonFinalSession {
+function canonicalSubmitted(session: LessonFinalSession, asset: LessonRecordAsset): LessonFinalSession {
   if (session.state !== 'submitted') return session;
   const submittedAt = session.submittedAt;
   if (!submittedAt) throw new Error('The guest submission time is missing.');
@@ -67,7 +67,7 @@ function canonicalSubmitted(session: LessonFinalSession, asset: DeliveryUnitAsse
 export function verifiesImportedGuestLesson(
   snapshot: LessonSnapshot,
   source: GuestLessonSource,
-  asset: DeliveryUnitAsset,
+  asset: LessonRecordAsset,
 ) {
   const expected = guestLessonSnapshot(source, asset);
   return (

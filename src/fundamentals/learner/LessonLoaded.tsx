@@ -8,6 +8,7 @@ import type { LessonServices } from '../state/services';
 import type { LessonSnapshot } from '../state/types';
 import { LessonResultControl } from './LessonResultControl';
 import { LessonStepScreen } from './LessonStepScreen';
+import { useCompatibleSelections } from './useCompatibleSelections';
 
 type Props = {
   services: LessonServices;
@@ -31,6 +32,7 @@ function viewFor(route: LessonRoute, asset: DeliveryUnitAsset, snapshot: LessonS
 export function LessonLoaded({ services, asset, snapshot, route, update }: Props) {
   const { t } = usePreferences();
   const [reloadVersion, setReloadVersion] = useState(0);
+  const compatibleSelections = useCompatibleSelections(services, asset);
   const view = viewFor(route, asset, snapshot);
   useEffect(() => {
     if (view.redirect) navigateLesson(view.redirect, true);
@@ -85,6 +87,7 @@ export function LessonLoaded({ services, asset, snapshot, route, update }: Props
       confirm={confirm}
       reloadSaved={reloadSaved}
       commit={update}
+      compatibleSelections={compatibleSelections.failed ? false : compatibleSelections.selections}
     />
   );
 }

@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { integer, timestamp, uuid } from './codecPrimitives';
 import { LessonStateChangedError } from './conflicts';
 import { gradeLessonFinal, lessonQuestionRef } from './grade';
@@ -8,7 +8,7 @@ import type { GuestLessonSource, LessonResponse } from './types';
 
 export function startGuestLessonFinal(
   source: GuestLessonSource,
-  asset: DeliveryUnitAsset,
+  asset: LessonRecordAsset,
   sessionId: string,
   startedAt: string,
 ): GuestLessonSource {
@@ -42,7 +42,7 @@ export function startGuestLessonFinal(
 
 export function saveGuestLessonResponse(
   source: GuestLessonSource,
-  asset: DeliveryUnitAsset,
+  asset: LessonRecordAsset,
   sessionId: string,
   questionPosition: number,
   response: LessonResponse,
@@ -72,7 +72,7 @@ export function saveGuestLessonResponse(
 
 export function submitGuestLessonFinal(
   source: GuestLessonSource,
-  asset: DeliveryUnitAsset,
+  asset: LessonRecordAsset,
   sessionId: string,
   submittedAt: string,
   eventIds: string[],

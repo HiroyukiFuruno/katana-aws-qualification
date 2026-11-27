@@ -5,3 +5,10 @@ export class LessonStateChangedError extends Error {
     this.name = 'LessonStateChangedError';
   }
 }
+
+export class GuestLessonConflictError extends Error {
+  constructor() {
+    super('Saved and temporary lesson progress differ. Choose which record to keep.');
+    this.name = 'GuestLessonConflictError';
+  }
+}

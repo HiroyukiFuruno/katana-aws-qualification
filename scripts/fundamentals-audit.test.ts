@@ -1,14 +1,12 @@
 import { expect, test } from 'bun:test';
 import { readFile } from 'node:fs/promises';
-import { parseDeliveryIndex } from '../src/fundamentals/delivery/loadIndex';
-import { parseDeliveryUnit } from '../src/fundamentals/delivery/loadUnit';
+import legacy from '../src/fundamentals/delivery/legacyRecordAssets.json';
+import { readLessonRecordAsset } from '../src/fundamentals/delivery/recordAsset';
 
 test('the 192-question audit preserves the original polarity, choice count and answer keys', async () => {
-  const root = 'public/fundamentals/delivery/history/2026-11-20';
-  const index = parseDeliveryIndex(await Bun.file(`${root}/index.json`).json());
   const expected = new Map<string, { polarity: string; required: number; correct: string[] }>();
-  for (const entry of index.units) {
-    const asset = parseDeliveryUnit(await Bun.file(`${root}/${entry.slug}.json`).json(), entry);
+  for (const entry of legacy.assets.slice(0, 12)) {
+    const asset = readLessonRecordAsset(entry, entry.unit.id, entry.contentVersion);
     for (const question of [...asset.checkpoints, ...asset.finalQuestions])
       expected.set(question.id, {
         polarity: question.selectionPolarity,

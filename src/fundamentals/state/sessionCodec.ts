@@ -1,10 +1,10 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { integer, nullable, object, text, timestamp, uuid } from './codecPrimitives';
 import { gradeLessonFinal } from './grade';
 import { readLessonResponses } from './responseCodec';
 import type { LessonFinalSession } from './types';
 
-export function readLessonFinalSession(value: unknown, asset: DeliveryUnitAsset): LessonFinalSession {
+export function readLessonFinalSession(value: unknown, asset: LessonRecordAsset): LessonFinalSession {
   const row = object(value, 'finalSession');
   const state = text(row.state, 'finalSession.state');
   if (state !== 'draft' && state !== 'submitted') throw new Error('Invalid final session state.');

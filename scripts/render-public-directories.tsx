@@ -7,6 +7,7 @@ import type { DeliveryIndexAsset } from '../src/fundamentals/delivery/artifactTy
 import { lessonDisplayText } from '../src/fundamentals/delivery/lessonReadingCopy.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
+import { StudyEntryCards } from '../src/StudyEntryCards.tsx';
 
 async function insert(locale: (typeof locales)[number], page: string, content: string) {
   const path = join('dist', localePath(locale, page), 'index.html');
@@ -28,8 +29,7 @@ for (const locale of locales) {
       <main id="main" className="shell">
         <h1>{copy.study}</h1>
         <p>{copy.studyPathsIntro}</p>
-        <a href={localePath(locale, 'study/fundamentals')}>{copy.learnFundamentals}</a>
-        <a href={localePath(locale, 'study/questions')}>{copy.learnFromQuestions}</a>
+        <StudyEntryCards locale={locale} />
       </main>,
     ),
   );

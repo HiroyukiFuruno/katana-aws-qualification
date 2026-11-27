@@ -1,6 +1,5 @@
 import { expect, test } from 'bun:test';
 import index from '../public/fundamentals/delivery/index.json';
-import archivedIndex from '../public/fundamentals/delivery/history/2026-11-20/index.json';
 import { loadGuestDashboard } from '../src/dashboard/guestRecords';
 import { guestLessonPrefix } from '../src/learningStorage';
 import { setGuestProgressConsent } from '../src/progress/guest';
@@ -33,12 +32,9 @@ function fixture() {
       isCurrent: () => true,
       assets: {
         index: async () => index,
-        editions: async () => [
-          { index, basePath: '/fundamentals/delivery' },
-          { index: archivedIndex, basePath: '/fundamentals/delivery/history/2026-11-20' },
-        ],
-        unit: async (_id: string, version?: string) =>
-          version === archivedAsset.contentVersion ? archivedAsset : lessonAsset,
+        unit: async () => lessonAsset,
+        record: async (_id: string, version: string) =>
+          version === archivedAsset.contentVersion ? archivedAsset : undefined,
       },
     },
   };
@@ -76,7 +72,7 @@ test('unknown edition remains disclosed and retained beside recognized archived 
 
 test('archive transport failure is visible and does not discard a valid archived source', async () => {
   const { input, key, raw } = fixture();
-  input.assets.editions = async () => {
+  input.assets.record = async () => {
     throw new TypeError('archive offline');
   };
   await expect(loadGuestDashboard(input)).rejects.toThrow('archive offline');

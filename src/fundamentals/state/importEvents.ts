@@ -1,5 +1,5 @@
 import type { ProgressRpcClient } from '../../progress/types';
-import type { DeliveryQuestion, DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset, LessonRecordQuestion } from '../delivery/recordAsset';
 import { isLessonAnswerCorrect, lessonQuestionRef } from './grade';
 import { sameLessonInstant } from './instant';
 import type { GuestLessonSource, LessonResponse } from './types';
@@ -8,7 +8,7 @@ type Expected = {
   answeredAt: string;
   durationMs: number;
   eventId: string;
-  question: DeliveryQuestion;
+  question: LessonRecordQuestion;
   selected: string[];
   sessionId: string | null;
   stepId?: string;
@@ -43,7 +43,7 @@ function sameJson(left: unknown, right: unknown): boolean {
   );
 }
 
-function expected(source: GuestLessonSource, asset: DeliveryUnitAsset) {
+function expected(source: GuestLessonSource, asset: LessonRecordAsset) {
   const checkpoints: Expected[] = source.checkpointReceipts.map((receipt) => {
     const step = asset.steps.find((item) => item.id === receipt.stepId);
     const question = asset.checkpoints.find((item) => item.id === step?.assessmentId);
@@ -82,7 +82,7 @@ function expected(source: GuestLessonSource, asset: DeliveryUnitAsset) {
   return [...checkpoints, ...finals];
 }
 
-function context(event: Expected, asset: DeliveryUnitAsset) {
+function context(event: Expected, asset: LessonRecordAsset) {
   const base = {
     unitId: asset.unit.id,
     contentVersion: asset.contentVersion,
@@ -94,7 +94,7 @@ function context(event: Expected, asset: DeliveryUnitAsset) {
     : { ...base, kind: 'lesson-checkpoint', stepId: event.stepId };
 }
 
-function rowMatches(row: unknown, event: Expected, asset: DeliveryUnitAsset) {
+function rowMatches(row: unknown, event: Expected, asset: LessonRecordAsset) {
   if (!row || typeof row !== 'object') return false;
   const value = row as Record<string, unknown>;
   const correct = event.question.correct;
@@ -122,7 +122,7 @@ function rowMatches(row: unknown, event: Expected, asset: DeliveryUnitAsset) {
 export async function verifiesImportedEvents(
   client: ProgressRpcClient,
   source: GuestLessonSource,
-  asset: DeliveryUnitAsset,
+  asset: LessonRecordAsset,
 ) {
   const events = expected(source, asset);
   for (let offset = 0; offset < events.length; offset += 64) {

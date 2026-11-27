@@ -28,6 +28,15 @@ function StudyNavigation({ active, subpage }: { active: boolean; subpage?: strin
       <ul className="study-navigation-links" hidden={!open} id="study-navigation-links">
         <li>
           <a
+            href={localePath(locale, 'study')}
+            aria-current={active && !subpage ? 'page' : undefined}
+            onClick={() => setOpen(false)}
+          >
+            {t('study')}
+          </a>
+        </li>
+        <li>
+          <a
             href={localePath(locale, 'study/fundamentals')}
             aria-current={subpage === 'fundamentals' ? 'page' : undefined}
             onClick={() => setOpen(false)}

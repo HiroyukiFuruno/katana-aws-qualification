@@ -82,6 +82,12 @@ test('全言語に同じ用語を収録し、教材で使う別表記で定義�
     ['データの欠落', 'Missing data'],
     ['接続プール', 'Connection pool'],
     ['品質ゲート', 'Quality gate'],
+    ['S3 gateway endpoint', 'Gateway endpoint'],
+    ['S3 regional prefix list', 'Prefix list'],
+    ['Zonal public NAT gateway', 'NAT gateway'],
+    ['Private route table', 'Route table'],
+    ['Private IPv4', 'Private IPv4 address'],
+    ['SAN', 'SAN'],
   ]) {
     expect(filterGlossary(query).map((entry) => entry.term)).toEqual([term]);
   }

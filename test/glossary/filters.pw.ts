@@ -48,7 +48,12 @@ test('用語の分類表示から絞り込み、タグを再選択して解除�
   await lambda.getByRole('button', { name: 'コンピューティング', exact: true }).click();
   await expect(page.getByLabel('カテゴリ', { exact: true })).toHaveValue('compute');
   await lambda.getByRole('button', { name: 'サーバーレス', exact: true }).click();
-  await expect(page.locator('.glossary-row')).toHaveCount(1);
+  const expected = glossary
+    .filter((entry) => entry.category === 'compute' && entry.tags.includes('serverless'))
+    .map(({ term }) => term);
+  await expect(page.locator('.glossary-row dt strong')).toHaveText(expected);
+  await expect(page.locator('#glossary-term-lambda')).toBeVisible();
+  await expect(page.locator('#glossary-term-serverless')).toBeVisible();
   const tag = page
     .getByRole('group', { name: 'タグ', exact: true })
     .getByRole('button', { name: 'サーバーレス', exact: true });

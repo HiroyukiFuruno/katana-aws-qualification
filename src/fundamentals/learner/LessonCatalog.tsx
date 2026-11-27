@@ -1,3 +1,5 @@
+import { appliedDirectory, appliedIndexPage } from '../../applied/routes';
+import { localePath } from '../../locales';
 import { type MouseEvent, useState } from 'react';
 import { PageIntro } from '../../PageIntro';
 import { usePreferences } from '../../preferences';
@@ -67,6 +69,9 @@ export function LessonCatalog({
           <p className="eyebrow">{t('fundamentalsCatalogEyebrow')}</p>
           <h1>{t('fundamentalsCatalogTitle')}</h1>
           <p>{t('fundamentalsCatalogIntro')}</p>
+          <p>
+            <a href={localePath(locale, appliedIndexPage)}>{appliedDirectory(locale).title}</a>
+          </p>
         </div>
       </PageIntro>
       {loading && <p role="status">{t('fundamentalsLoading')}</p>}

@@ -1,6 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
+import AppliedPages from '../src/applied/AppliedPages.tsx';
+import { appliedDirectory, appliedIndexPage, appliedStudyPages } from '../src/applied/routes.ts';
 import { certifications, studyCourses } from '../src/certifications.ts';
 import type { SiteContent } from '../src/contentTypes.ts';
 import type { DeliveryIndexAsset } from '../src/fundamentals/delivery/artifactTypes.ts';
@@ -32,6 +34,8 @@ for (const locale of locales) {
       </main>,
     ),
   );
+  for (const page of appliedStudyPages)
+    await insert(locale, page, renderToStaticMarkup(<AppliedPages page={page} locale={locale} />));
   const indexPath =
     locale === 'ja'
       ? 'public/fundamentals/delivery/index.json'
@@ -44,6 +48,7 @@ for (const locale of locales) {
       <main id="main" className="shell">
         <h1>{copy.learnFundamentals}</h1>
         <p>{copy.fundamentalsEntry}</p>
+        <a href={localePath(locale, appliedIndexPage)}>{appliedDirectory(locale).title}</a>
         <ul>
           {lessons.units
             .filter((unit) => unit.state === 'published')

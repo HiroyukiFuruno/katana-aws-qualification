@@ -1,0 +1,1570 @@
+{
+  "ja": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "注文APIが遅くなった原因を調べる",
+    "intro": "注文確定処理の応答が遅くなりました。運用担当として、処理のどこで時間が増えたかを調べ、利用者への影響を抑えながら対策を検証します。観測値は教材用の架空の値です。",
+    "sections": [
+      {
+        "id": "system",
+        "title": "構成と制約",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "利用者は `POST /orders` で注文を確定します。リクエストは Application Load Balancer（ALB）から Amazon ECS 上のJavaアプリケーションに届きます。アプリケーションはタスクごとに HikariCP の接続プールを持ち、借りた接続で Amazon RDS for PostgreSQL に注文を記録します。"
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "通常はECSタスク4つで処理します。入れ替え中に同時に動くのは最大5タスクです。注文サービスが使えるDB接続数は64本で、段階展開を止める基準は56本の超過です。PostgreSQLの `pg_stat_activity` で注文サービス専用のDBユーザーに絞り、使用中の接続とプールに戻った接続の両方を数えます。RDSの `DatabaseConnections` ではインスタンス全体の接続数を別途確認します。"
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "遅くなった箇所を特定する",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "運用チームは12時にアプリケーションの設定を変更しました。その後の20分を変更直前の20分と比べます。どちらも注文確定操作を対象とし、リクエスト数はおおむね同じです。"
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["観測値", "変更前", "変更後"],
+            "rows": [
+              ["対象リクエスト数", "143,900件", "144,200件"],
+              ["注文APIの応答時間 p95", "220ミリ秒", "910ミリ秒"],
+              ["注文APIの HTTP 5xx の割合", "0.1%", "0.7%"],
+              ["DB接続の取得待ち p95", "7ミリ秒", "620ミリ秒"],
+              ["接続を借りた後のSQL実行 p95", "42ミリ秒", "46ミリ秒"],
+              ["RDSインスタンスの平均CPU使用率", "37%", "39%"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "応答時間のp95は、約95%のリクエストで応答がその時間以内だったことを示します。表の応答時間と接続取得待ちはアプリケーション側で測定し、タスクごとに集計できるように記録しています。表の5xxの割合は、アプリケーションが `POST /orders` で返した5xx応答の件数を、同じ操作の全応答件数で割った値です。ALBが返した5xxは `HTTPCode_ELB_5XX_Count` で、利用者端末の待ち時間は端末側で別途確認します。処理の内訳を調べるときは、同じリクエストのトレースを開いて、接続を取得するまでとSQLの実行にかかった時間を確認します。"
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "接続を借りるまでの待ち時間が大きく増え、借りた後のSQL実行時間には同じ変化がありません。遅いリクエストをトレースで追い、同じリクエストIDのログを読んで、接続取得のタイムアウトが起きたことを確認しました。"
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "一部のタスクで設定を変える",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "変更前後の設定を照合すると、タスクごとの最大接続数 `maximumPoolSize` が12本から6本に減っていました。すべての接続が使用中になると、新しい注文処理は接続が戻るまで待ちます。取得を待てる時間は変更前後とも1,000ミリ秒です。まず確認する仮説は、この設定変更によって接続待ちが増えたというものです。"
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "コードやSQLを揃えた状態で、1タスクだけ上限を12本に戻します。残りのタスクと同時に比較します。",
+              "入れ替え中の5タスクがすべて上限12本まで使うと、最大60本です。注文サービスの枠は64本ですが、上限まで8本の余裕を確保するため、実際の接続数が56本を超えたら展開を中断します。",
+              "同じ20分間の `POST /orders` を対象に、1タスク当たりの負荷が同程度か確かめます。そのうえで応答時間、HTTP 5xxの割合、接続待ちを比較します。注文サービスのDB接続数と、接続取得後のSQL実行時間も確認します。"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "展開を続けるか判断する",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "変更したタスクでは、応答時間p95が310ミリ秒、HTTP 5xxが0.2%、接続待ちp95が65ミリ秒でした。変更していないタスクでは、順に890ミリ秒、0.7%、605ミリ秒でした。比較中の1タスク当たりのリクエスト数はほぼ同じです。SQL実行時間に大きな変化はなく、注文サービス全体のDB接続数は最も多い時点で28本でした。注文サービス専用のALBが返した5xxは、アクセスログと照合して0件と確認しました。"
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "次の段階へ進む条件は、変更したタスク群の応答時間p95が500ミリ秒以内、HTTP 5xxが0.5%以下で、注文サービス全体のDB接続数が56本以下であることです。ALBが返した5xxが5分間で3件以上になった場合も、展開を止めて原因を調べます。今回の1タスクは次の段階へ進む条件を満たしました。運用チームは変更対象を増やすたびに同じ条件で測ります。"
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "全タスクの更新後は、同じ期間の `POST /orders` の応答時間をリクエスト単位で集め、全体のp95を計算し直します。5xxの割合も、各タスクの件数を足してから計算します。これらの値とDB接続数・ALBの5xxが基準内に収まり、業務側の記録で注文の保存漏れや重複がないことを確認できれば、運用チームは復旧と判断します。"
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "次に応答が遅くなったときは、対象の操作を絞り、処理を分けて測ります。設定変更との関係を確かめるときは、変更する範囲を限定して同じ条件で比較します。"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "参照先",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Amazon RDS の Amazon CloudWatch メトリクス",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "`pg_stat_activity` で参照できる列の例",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer の CloudWatch メトリクス",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "AWS公式ブログの HikariCP 設定例（Amazon Aurora DSQL 向け）",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "en": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "Investigating the Cause of a Slow Order API",
+    "intro": "Responses from the order-confirmation process have become slower. As the operations engineer, I will investigate where processing time increased and validate countermeasures while minimizing the impact on users. The observed values are fictional values for educational purposes.",
+    "sections": [
+      {
+        "id": "system",
+        "title": "Configuration and Constraints",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "The user finalizes an order with `POST /orders`. The request arrives from the Application Load Balancer (ALB) at a Java application running on Amazon ECS. The application has a HikariCP connection pool for each task and records the order in Amazon RDS for PostgreSQL using a borrowed connection."
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "Normally, four ECS tasks process the requests. During a replacement, up to five tasks run concurrently. The order service can use 64 database connections, and the threshold for stopping the phased rollout is exceeding 56 connections. In PostgreSQL `pg_stat_activity`, filter to the database user dedicated to the order service, and count both connections currently in use and connections returned to the pool. Separately, check the total number of connections for the entire instance using RDS `DatabaseConnections`."
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "Identify where the slowdown occurred",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "The operations team changed the application configuration at 12:00. We compare the following 20 minutes with the 20 minutes immediately before the change. Both periods cover order-confirmation operations, and the number of requests is approximately the same."
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["Observation", "Before the change", "After the change"],
+            "rows": [
+              ["Number of target requests", "143,900 requests", "144,200 requests"],
+              ["Order API response time p95", "220 milliseconds", "910 milliseconds"],
+              ["Order API HTTP 5xx rate", "0.1%", "0.7%"],
+              ["DB connection acquisition wait time p95", "7 milliseconds", "620 milliseconds"],
+              ["SQL execution after acquiring a connection p95", "42 milliseconds", "46 milliseconds"],
+              ["Average CPU utilization of the RDS instance", "37%", "39%"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "The response-time p95 indicates that approximately 95% of requests received a response within that time. The response times and connection-acquisition wait times in the table are measured on the application side and recorded so they can be aggregated by task. The 5xx rate in the table is the number of 5xx responses returned by the application for `POST /orders`, divided by the total number of responses for the same operation. 5xx responses returned by the ALB are reported as `HTTPCode_ELB_5XX_Count`, while the waiting time on user devices is checked separately on the device side. To examine the processing breakdown, open the trace for the same request and check the time spent acquiring a connection and executing SQL."
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "The wait time before acquiring a connection increased substantially, while the SQL execution time after acquiring a connection did not show the same change. We followed slow requests in their traces and read the logs with the same request ID, confirming that a connection-acquisition timeout occurred."
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "Change the configuration for some tasks",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "Comparing the configurations before and after the change showed that the per-task maximum number of connections, `maximumPoolSize`, had decreased from 12 to 6. When all connections are in use, new order processing waits until a connection is returned. The time allowed to wait for acquisition is 1,000 milliseconds both before and after the change. The first hypothesis to verify is that this configuration change increased connection wait time."
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "Keeping the code and SQL identical, return the limit to 12 connections for only one task. Compare it concurrently with the remaining tasks.",
+              "If all 5 tasks being rotated use the full limit of 12 connections, the maximum is 60 connections. The order service has a capacity of 64 connections, but to maintain a buffer of 8 connections below the limit, stop the rollout if the actual number of connections exceeds 56.",
+              "For the same 20-minute period of `POST /orders`, verify that the load per task is comparable. Then compare response time, the proportion of HTTP 5xx responses, and connection wait time. Also check the number of database connections used by the order service and the SQL execution time after a connection is acquired."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "Deciding Whether to Continue the Rollout",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "For the modified tasks, response-time p95 was 310 milliseconds, HTTP 5xx was 0.2%, and connection-wait p95 was 65 milliseconds. For the unmodified tasks, the corresponding values were 890 milliseconds, 0.7%, and 605 milliseconds. The number of requests per task was nearly the same during the comparison. SQL execution time did not change significantly, and the total number of database connections for the order service was 28 at its peak. By cross-checking the 5xx responses returned by the ALB dedicated to the order service against the access logs, we confirmed that the count was zero."
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "The conditions for proceeding to the next stage are that the response-time p95 for the modified task group is no more than 500 milliseconds, HTTP 5xx is no more than 0.5%, and the total number of database connections for the order service is no more than 56. If the number of 5xx responses returned by the ALB reaches 3 or more within 5 minutes, we also stop the rollout and investigate the cause. This task met the conditions for proceeding to the next stage. Each time the operations team increases the scope of the changes, it measures the same conditions."
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "After all tasks have been updated, we collect the response times for `POST /orders` on a per-request basis over the same period and recalculate the overall p95. We also calculate the 5xx percentage after adding the counts from each task. If these values, the number of database connections, and the ALB 5xx remain within the thresholds, and business records confirm that no orders were missed or duplicated, the operations team determines that service recovery has been achieved."
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "If responses become slow again, we narrow down the operations being examined and measure the processing stages separately. To verify the relationship with the configuration change, we limit the scope of the change and compare the results under the same conditions."
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "References",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Amazon RDS Amazon CloudWatch metrics",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Example columns available in `pg_stat_activity`",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer CloudWatch metrics",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "HikariCP configuration example for Amazon Aurora DSQL (AWS blog)",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "ko": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "주문 API가 느려진 원인 조사",
+    "intro": "주문 확정 처리의 응답이 느려졌습니다. 운영 담당자로서 처리 과정 중 어느 부분에서 시간이 늘어났는지 조사하고, 사용자에게 미치는 영향을 줄이면서 대응 방안을 검증합니다. 관측값은 교육용으로 만든 가상의 값입니다.",
+    "sections": [
+      {
+        "id": "system",
+        "title": "구성 및 제약 조건",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "사용자는 `POST /orders`로 주문을 확정합니다. 요청은 Application Load Balancer(ALB)에서 Amazon ECS의 Java 애플리케이션으로 전달됩니다. 애플리케이션은 태스크별로 HikariCP 연결 풀을 보유하며, 대여한 연결을 사용해 Amazon RDS for PostgreSQL에 주문을 기록합니다."
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "일반적으로 ECS 태스크 4개로 처리합니다. 교체 중 동시에 실행되는 태스크는 최대 5개입니다. 주문 서비스가 사용할 수 있는 DB 연결 수는 64개이며, 단계적 배포를 중단하는 기준은 56개를 초과하는 것입니다. PostgreSQL의 `pg_stat_activity`에서 주문 서비스 전용 DB 사용자를 대상으로 필터링하고, 사용 중인 연결과 풀로 반환된 연결을 모두 셉니다. RDS의 `DatabaseConnections`에서는 인스턴스 전체의 연결 수를 별도로 확인합니다."
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "느려진 지점 파악하기",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "운영 팀은 12시에 애플리케이션 설정을 변경했습니다. 그 후 20분을 변경 직전의 20분과 비교합니다. 두 기간 모두 주문 확정 작업을 대상으로 하며, 요청 수는 대체로 같습니다."
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["관측값", "변경 전", "변경 후"],
+            "rows": [
+              ["대상 요청 수", "143,900건", "144,200건"],
+              ["주문 API 응답 시간 p95", "220밀리초", "910밀리초"],
+              ["주문 API의 HTTP 5xx 비율", "0.1%", "0.7%"],
+              ["DB 연결 획득 대기 시간 p95", "7밀리초", "620밀리초"],
+              ["연결 획득 후 SQL 실행 p95", "42밀리초", "46밀리초"],
+              ["RDS 인스턴스 평균 CPU 사용률", "37%", "39%"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "응답 시간 p95는 약 95%의 요청이 해당 시간 이내에 응답을 받았음을 나타냅니다. 표의 응답 시간과 연결 획득 대기 시간은 애플리케이션 측에서 측정하고, 태스크별로 집계할 수 있도록 기록합니다. 표의 5xx 비율은 애플리케이션이 `POST /orders`에서 반환한 5xx 응답 수를 동일한 작업의 전체 응답 수로 나눈 값입니다. ALB가 반환한 5xx는 `HTTPCode_ELB_5XX_Count`로 확인하며, 사용자 단말의 대기 시간은 단말 측에서 별도로 확인합니다. 처리 내역을 조사할 때는 동일한 요청의 트레이스를 열어 연결을 획득하는 데 걸린 시간과 SQL 실행에 걸린 시간을 확인합니다."
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "연결을 획득하기 전의 대기 시간이 크게 증가했지만, 연결을 획득한 후의 SQL 실행 시간에는 같은 변화가 없었습니다. 느린 요청을 트레이스로 추적하고 동일한 요청 ID의 로그를 읽어 연결 획득 시간 초과가 발생했음을 확인했습니다."
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "일부 태스크의 설정 변경",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "변경 전후의 설정을 대조한 결과, 태스크별 최대 연결 수 `maximumPoolSize`가 12개에서 6개로 줄어든 것을 확인했습니다. 모든 연결이 사용 중이면 새 주문 처리는 연결이 반환될 때까지 기다립니다. 연결 획득을 기다릴 수 있는 시간은 변경 전후 모두 1,000밀리초입니다. 먼저 확인할 가설은 이 설정 변경으로 연결 대기 시간이 증가했다는 것입니다."
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "코드와 SQL을 동일하게 유지한 상태에서 태스크 하나만 상한을 12개로 되돌립니다. 나머지 태스크와 동시에 비교합니다.",
+              "교체 중인 5개 태스크가 모두 연결 상한인 12개까지 사용하면 최대 60개입니다. 주문 서비스의 한도는 64개이지만, 한도보다 8개의 여유를 확보하기 위해 실제 연결 수가 56개를 초과하면 배포를 중단합니다.",
+              "동일한 20분 동안의 `POST /orders`를 대상으로 태스크당 부하가 비슷한지 확인합니다. 그런 다음 응답 시간, HTTP 5xx 비율, 연결 대기 시간을 비교합니다. 주문 서비스의 데이터베이스 연결 수와 연결을 획득한 후의 SQL 실행 시간도 확인합니다."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "롤아웃을 계속할지 판단하기",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "변경한 태스크에서는 응답 시간 p95가 310밀리초, HTTP 5xx가 0.2%, 연결 대기 p95가 65밀리초였습니다. 변경하지 않은 태스크에서는 각각 890밀리초, 0.7%, 605밀리초였습니다. 비교 기간 동안 태스크당 요청 수는 거의 같았습니다. SQL 실행 시간에는 큰 변화가 없었으며, 주문 서비스 전체의 데이터베이스 연결 수는 가장 많을 때 28개였습니다. 주문 서비스 전용 ALB가 반환한 5xx를 액세스 로그와 대조하여 0건임을 확인했습니다."
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "다음 단계로 진행하는 조건은 변경한 태스크 그룹의 응답 시간 p95가 500밀리초 이하이고, HTTP 5xx가 0.5% 이하이며, 주문 서비스 전체의 데이터베이스 연결 수가 56개 이하인 것입니다. ALB가 반환한 5xx가 5분 동안 3건 이상이 된 경우에도 롤아웃을 중지하고 원인을 조사합니다. 이번 태스크는 다음 단계로 진행하는 조건을 충족했습니다. 운영 팀은 변경 범위를 늘릴 때마다 동일한 조건으로 측정합니다."
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "모든 태스크를 업데이트한 후에는 동일한 기간의 `POST /orders` 응답 시간을 요청 단위로 수집하고 전체 p95를 다시 계산합니다. 5xx 비율도 각 태스크의 건수를 합산한 후 계산합니다. 이러한 값과 데이터베이스 연결 수 및 ALB의 5xx가 기준 내에 있고, 업무 측 기록에서 주문 저장 누락이나 중복이 없음을 확인할 수 있다면 운영 팀은 서비스가 복구되었다고 판단합니다."
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "다음에 응답이 다시 느려지면 조사할 작업의 범위를 좁히고 처리를 나누어 측정합니다. 구성 변경과의 관계를 확인할 때는 변경 범위를 제한하고 동일한 조건에서 비교합니다."
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "참조 자료",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Amazon RDS의 Amazon CloudWatch 지표",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "`pg_stat_activity`에서 확인할 수 있는 열의 예",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer의 CloudWatch 지표",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon Aurora DSQL용 HikariCP 구성 예제(AWS 블로그)",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "zh-CN": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "调查订单 API 变慢的原因",
+    "intro": "订单确认处理的响应速度变慢了。作为运维负责人，我将调查处理过程中的哪个环节耗时增加，并在尽量减少对用户影响的同时验证应对措施。观测值是用于教学的虚构值。",
+    "sections": [
+      {
+        "id": "system",
+        "title": "配置与约束",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "用户通过 `POST /orders` 确认订单。请求从 Application Load Balancer（ALB）到达运行在 Amazon ECS 上的 Java 应用程序。该应用程序为每个任务维护一个 HikariCP 连接池，并使用借出的连接将订单记录到 Amazon RDS for PostgreSQL 中。"
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "通常由 4 个 ECS 任务处理请求。替换期间，同时运行的任务最多为 5 个。订单服务可使用 64 个数据库连接，停止分阶段发布的标准是连接数超过 56 个。在 PostgreSQL 的 `pg_stat_activity` 中筛选订单服务专用的数据库用户，并同时统计正在使用的连接以及已返回连接池的连接。另请使用 RDS 的 `DatabaseConnections` 单独检查整个实例的连接总数。"
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "确定变慢的位置",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "运维团队在 12:00 更改了应用程序配置。随后，我们将更改后的 20 分钟与更改前紧邻的 20 分钟进行比较。两个时段都针对订单确认操作，请求数量大致相同。"
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["观测值", "更改前", "更改后"],
+            "rows": [
+              ["目标请求数", "143,900 个请求", "144,200 个请求"],
+              ["订单 API 响应时间 p95", "220 毫秒", "910 毫秒"],
+              ["订单 API 的 HTTP 5xx 比例", "0.1%", "0.7%"],
+              ["获取 DB 连接的等待时间 p95", "7 毫秒", "620 毫秒"],
+              ["获取连接后的 SQL 执行时间 p95", "42 毫秒", "46 毫秒"],
+              ["RDS 实例的平均 CPU 使用率", "37%", "39%"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "响应时间 p95 表示约 95% 的请求在该时间内收到响应。表中的响应时间和获取连接的等待时间由应用程序侧测量，并记录下来，以便按任务进行汇总。表中的 5xx 比例是应用程序通过 `POST /orders` 返回的 5xx 响应数除以同一操作的全部响应数。ALB 返回的 5xx 通过 `HTTPCode_ELB_5XX_Count` 统计，用户设备的等待时间则在设备侧另行确认。调查处理细分时，打开同一请求的跟踪记录，确认获取连接和执行 SQL 所用的时间。"
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "获取连接之前的等待时间大幅增加，而获取连接之后的 SQL 执行时间没有出现相同的变化。我们通过跟踪记录追踪慢请求，并读取具有相同请求 ID 的日志，确认发生了获取连接超时。"
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "更改部分任务的配置",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "对比更改前后的配置后发现，每个任务的最大连接数 `maximumPoolSize` 已从 12 个降至 6 个。当所有连接都在使用时，新的订单处理必须等到连接归还后才能继续。更改前后，等待获取连接的时长均为 1,000 毫秒。首先要验证的假设是，这项配置更改增加了连接等待时间。"
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "保持代码和 SQL 完全一致，只将一个任务的上限恢复为 12 个连接，并与其余任务同时进行比较。",
+              "如果正在轮换的 5 个任务都使用 12 个连接的上限，最大连接数就是 60 个。订单服务的容量为 64 个连接，但为了在达到上限前保留 8 个连接的余量，当实际连接数超过 56 个时中止发布。",
+              "针对同一个 20 分钟时段的 `POST /orders`，确认每个任务的负载是否大致相同。然后比较响应时间、HTTP 5xx 的比例和连接等待时间。同时检查订单服务使用的数据库连接数，以及获取连接后的 SQL 执行时间。"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "判断是否继续逐步发布",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "对于已修改的任务，响应时间 p95 为 310 毫秒，HTTP 5xx 为 0.2%，连接等待 p95 为 65 毫秒。对于未修改的任务，上述数值依次为 890 毫秒、0.7% 和 605 毫秒。比较期间，每个任务的请求数基本相同。SQL 执行时间没有明显变化，订单服务整体的数据库连接数在峰值时为 28 个。将订单服务专用 ALB 返回的 5xx 与访问日志进行比对后，确认数量为 0 个。"
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "进入下一阶段的条件是：已修改任务组的响应时间 p95 不超过 500 毫秒，HTTP 5xx 不超过 0.5%，并且订单服务整体的数据库连接数不超过 56 个。如果 ALB 返回的 5xx 在 5 分钟内达到 3 个或更多，也要停止发布并调查原因。本次任务满足进入下一阶段的条件。每次扩大修改范围时，运维团队都会按照相同条件进行测量。"
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "所有任务更新完成后，在相同期间内按请求收集 `POST /orders` 的响应时间，并重新计算整体 p95。5xx 的比例也要先汇总各任务的数量，再进行计算。如果这些数值、数据库连接数和 ALB 的 5xx 均处于基准范围内，并且业务记录确认没有订单保存遗漏或重复，运维团队即可判断服务已恢复。"
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "如果之后响应再次变慢，就缩小要调查的操作范围，并分别测量各处理阶段。验证其与配置变更的关系时，限定变更范围，并在相同条件下进行比较。"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "参考资料",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Amazon RDS 的 Amazon CloudWatch 指标",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "`pg_stat_activity` 可查询的列示例",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer 的 CloudWatch 指标",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "适用于 Amazon Aurora DSQL 的 HikariCP 配置示例（AWS 博客）",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "zh-TW": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "調查訂單 API 變慢的原因",
+    "intro": "訂單確認處理的回應速度變慢了。作為維運負責人，我將調查處理過程中的哪個環節耗時增加，並在盡量降低對使用者影響的同時驗證應對措施。觀測值是用於教學的虛構值。",
+    "sections": [
+      {
+        "id": "system",
+        "title": "組態與限制",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "使用者透過 `POST /orders` 確認訂單。請求會從 Application Load Balancer（ALB）傳送至 Amazon ECS 上執行的 Java 應用程式。應用程式會為每個工作維護一個 HikariCP 連線集區，並使用借出的連線將訂單記錄到 Amazon RDS for PostgreSQL。"
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "通常由 4 個 ECS 工作處理請求。替換期間，同時執行的工作最多為 5 個。訂單服務可使用 64 個資料庫連線，而停止分階段部署的標準是超過 56 個連線。在 PostgreSQL 的 `pg_stat_activity` 中篩選訂單服務專用的資料庫使用者，並同時計算使用中的連線及已返回連線集區的連線。另請使用 RDS 的 `DatabaseConnections` 個別確認整個執行個體的連線總數。"
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "找出變慢的位置",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "維運團隊在 12:00 變更了應用程式設定。接著，我們將變更後的 20 分鐘與變更前緊接的 20 分鐘進行比較。兩個時段都以訂單確認操作為對象，請求數量大致相同。"
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["觀測值", "變更前", "變更後"],
+            "rows": [
+              ["目標請求數", "143,900 個請求", "144,200 個請求"],
+              ["訂單 API 回應時間 p95", "220 毫秒", "910 毫秒"],
+              ["訂單 API 的 HTTP 5xx 比例", "0.1%", "0.7%"],
+              ["取得 DB 連線的等待時間 p95", "7 毫秒", "620 毫秒"],
+              ["取得連線後的 SQL 執行時間 p95", "42 毫秒", "46 毫秒"],
+              ["RDS 執行個體的平均 CPU 使用率", "37%", "39%"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "回應時間 p95 表示約 95% 的請求在該時間內收到回應。表中的回應時間和取得連線的等待時間由應用程式端測量，並記錄下來，以便依工作進行彙總。表中的 5xx 比例，是應用程式透過 `POST /orders` 傳回的 5xx 回應數除以相同操作的全部回應數。ALB 傳回的 5xx 會以 `HTTPCode_ELB_5XX_Count` 統計，使用者裝置的等待時間則在裝置端另行確認。調查處理細分時，開啟相同請求的追蹤記錄，確認取得連線和執行 SQL 所花費的時間。"
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "取得連線之前的等待時間大幅增加，但取得連線後的 SQL 執行時間沒有出現相同的變化。我們透過追蹤記錄追蹤速度緩慢的請求，並讀取具有相同請求 ID 的日誌，確認發生了取得連線逾時。"
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "變更部分工作中的設定",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "比對變更前後的設定後發現，每個工作中的最大連線數 `maximumPoolSize` 已從 12 條降至 6 條。當所有連線都在使用中時，新的訂單處理會等待連線歸還。變更前後，可等待取得連線的時間都是 1,000 毫秒。首先要驗證的假設是，這項設定變更增加了等待連線的時間。"
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "在程式碼和 SQL 完全一致的情況下，只將一個工作中的上限恢復為 12 條連線，並與其餘工作中的結果同時比較。",
+              "如果正在替換的 5 個工作中都使用 12 條的上限，最多就是 60 條連線。訂單服務的容量為 64 條連線，但為了在達到上限前保留 8 條餘裕，當實際連線數超過 56 條時中止推出。",
+              "針對同一個 20 分鐘期間的 `POST /orders`，確認每個工作中的負載是否大致相同。接著比較回應時間、HTTP 5xx 的比例及等待連線的時間。同時檢查訂單服務使用的資料庫連線數，以及取得連線後的 SQL 執行時間。"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "判斷是否繼續逐步部署",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "對於已修改的工作，回應時間 p95 為 310 毫秒，HTTP 5xx 為 0.2%，連線等待 p95 為 65 毫秒。對於未修改的工作，上述數值依序為 890 毫秒、0.7% 和 605 毫秒。比較期間，每個工作收到的請求數大致相同。SQL 執行時間沒有明顯變化，訂單服務整體的資料庫連線數在最高時為 28 個。將訂單服務專用 ALB 回傳的 5xx 與存取日誌比對後，確認數量為 0 個。"
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "進入下一階段的條件是：已修改工作群組的回應時間 p95 不超過 500 毫秒，HTTP 5xx 不超過 0.5%，而且訂單服務整體的資料庫連線數不超過 56 個。如果 ALB 回傳的 5xx 在 5 分鐘內達到 3 個以上，也要停止部署並調查原因。本次工作符合進入下一階段的條件。每當運維團隊擴大修改範圍時，都會依照相同條件進行測量。"
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "所有工作更新完成後，在相同期間內逐一收集 `POST /orders` 的回應時間，並重新計算整體 p95。5xx 比例也要先加總各工作產生的數量，再進行計算。如果這些數值、資料庫連線數和 ALB 的 5xx 都在基準範圍內，且業務記錄確認沒有訂單儲存遺漏或重複，運維團隊即可判定服務已恢復。"
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "如果之後回應再次變慢，就縮小要調查的操作範圍，並分別測量各個處理階段。確認其與設定變更的關係時，限定變更範圍，並在相同條件下進行比較。"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "參考資料",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Amazon RDS 的 Amazon CloudWatch 指標",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "`pg_stat_activity` 可查詢的欄位範例",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer 的 CloudWatch 指標",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon Aurora DSQL 的 HikariCP 設定範例（AWS 部落格）",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "pt": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "Investigar a causa da lentidão da API de pedidos",
+    "intro": "A resposta do processamento de confirmação de pedidos ficou mais lenta. Como responsável pelas operações, vou investigar em que parte do processamento o tempo aumentou e validar medidas de mitigação, minimizando o impacto sobre os usuários. Os valores observados são valores fictícios para fins educacionais.",
+    "sections": [
+      {
+        "id": "system",
+        "title": "Configuração e restrições",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "O usuário confirma um pedido usando `POST /orders`. A solicitação chega do Application Load Balancer (ALB) a uma aplicação Java no Amazon ECS. A aplicação mantém um pool de conexões HikariCP para cada tarefa e registra o pedido no Amazon RDS for PostgreSQL usando uma conexão emprestada."
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "Normalmente, 4 tarefas do ECS processam as solicitações. Durante uma substituição, no máximo 5 tarefas são executadas simultaneamente. O serviço de pedidos pode usar 64 conexões de banco de dados, e o critério para interromper a implantação gradual é exceder 56 conexões. Em `pg_stat_activity` do PostgreSQL, filtre pelo usuário do banco de dados dedicado ao serviço de pedidos e conte tanto as conexões em uso quanto as conexões devolvidas ao pool. Em `DatabaseConnections` do RDS, verifique separadamente o número total de conexões de toda a instância."
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "Identificar onde ocorreu a lentidão",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "A equipe de operações alterou a configuração da aplicação às 12:00. Em seguida, comparamos os 20 minutos posteriores aos 20 minutos imediatamente anteriores à alteração. Ambos os períodos abrangem operações de confirmação de pedidos, e o número de solicitações é aproximadamente o mesmo."
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["Observação", "Antes da alteração", "Depois da alteração"],
+            "rows": [
+              ["Número de solicitações-alvo", "143.900 solicitações", "144.200 solicitações"],
+              ["Tempo de resposta p95 da API de pedidos", "220 milissegundos", "910 milissegundos"],
+              ["Taxa de HTTP 5xx da API de pedidos", "0,1%", "0,7%"],
+              ["Tempo de espera p95 para obter uma conexão DB", "7 milissegundos", "620 milissegundos"],
+              ["Execução de SQL p95 após obter uma conexão", "42 milissegundos", "46 milissegundos"],
+              ["Utilização média de CPU da instância do RDS", "37%", "39%"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "O p95 do tempo de resposta indica que aproximadamente 95% das solicitações receberam uma resposta dentro desse tempo. Os tempos de resposta e de espera para obter uma conexão mostrados na tabela são medidos no lado da aplicação e registrados para que possam ser agregados por tarefa. A taxa de 5xx na tabela é o número de respostas 5xx retornadas pela aplicação em `POST /orders`, dividido pelo número total de respostas da mesma operação. As respostas 5xx retornadas pelo ALB são contabilizadas por `HTTPCode_ELB_5XX_Count`, enquanto o tempo de espera nos dispositivos dos usuários é verificado separadamente no lado do dispositivo. Para investigar a decomposição do processamento, abra o trace da mesma solicitação e verifique o tempo gasto para obter uma conexão e executar o SQL."
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "O tempo de espera antes de obter uma conexão aumentou substancialmente, enquanto o tempo de execução do SQL depois de obter uma conexão não apresentou a mesma alteração. Rastreamos as solicitações lentas nos traces e lemos os logs com o mesmo ID de solicitação, confirmando que ocorreu um timeout na obtenção da conexão."
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "Alterar a configuração de algumas tarefas",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "Ao comparar as configurações antes e depois da alteração, verificamos que o número máximo de conexões por tarefa, `maximumPoolSize`, havia diminuído de 12 para 6. Quando todas as conexões estão em uso, o processamento de novos pedidos aguarda até que uma conexão seja devolvida. O tempo permitido para aguardar a aquisição é de 1.000 milissegundos antes e depois da alteração. A primeira hipótese a verificar é que essa alteração de configuração aumentou o tempo de espera por conexões."
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "Mantendo o código e o SQL idênticos, restaure o limite para 12 conexões em apenas uma tarefa. Compare-a simultaneamente com as tarefas restantes.",
+              "Se as 5 tarefas em substituição usarem todas o limite de 12 conexões, o máximo será 60 conexões. O serviço de pedidos tem capacidade para 64 conexões, mas, para manter uma margem de 8 conexões abaixo do limite, interrompa a implantação quando o número real de conexões ultrapassar 56.",
+              "Para o mesmo período de 20 minutos de `POST /orders`, verifique se a carga por tarefa é aproximadamente equivalente. Em seguida, compare o tempo de resposta, a proporção de respostas HTTP 5xx e o tempo de espera por conexões. Verifique também o número de conexões de banco de dados do serviço de pedidos e o tempo de execução do SQL após a aquisição de uma conexão."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "Decidir se a implantação deve continuar",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "Nas tarefas modificadas, o p95 do tempo de resposta foi de 310 milissegundos, a taxa de HTTP 5xx foi de 0,2% e o p95 do tempo de espera da conexão foi de 65 milissegundos. Nas tarefas não modificadas, os valores correspondentes foram 890 milissegundos, 0,7% e 605 milissegundos. Durante a comparação, o número de solicitações por tarefa foi praticamente igual. Não houve mudança significativa no tempo de execução do SQL, e o número total de conexões de banco de dados do serviço de pedidos foi 28 no pico. Comparamos os 5xx retornados pelo ALB dedicado ao serviço de pedidos com os logs de acesso e confirmamos que a contagem era 0."
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "As condições para avançar para a próxima etapa são: o p95 do tempo de resposta do grupo de tarefas modificadas deve ser de no máximo 500 milissegundos, a taxa de HTTP 5xx deve ser de no máximo 0,5% e o número total de conexões de banco de dados do serviço de pedidos deve ser de no máximo 56. Se o número de 5xx retornados pelo ALB chegar a 3 ou mais em 5 minutos, também interromperemos a implantação e investigaremos a causa. Esta tarefa atendeu às condições para avançar para a próxima etapa. Sempre que a equipe de operações aumenta o escopo das alterações, ela mede usando as mesmas condições."
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "Depois que todas as tarefas forem atualizadas, coletamos os tempos de resposta de `POST /orders` por solicitação durante o mesmo período e recalculamos o p95 geral. Também calculamos a taxa de 5xx depois de somar as contagens de cada tarefa. Se esses valores, o número de conexões de banco de dados e os 5xx do ALB permanecerem dentro dos limites, e os registros de negócio confirmarem que não houve pedidos não armazenados ou duplicados, a equipe de operações determinará que o serviço foi recuperado."
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "Se as respostas ficarem lentas novamente, restringiremos as operações analisadas e mediremos as etapas do processamento separadamente. Para confirmar a relação com a alteração de configuração, limitaremos o escopo da alteração e compararemos os resultados nas mesmas condições."
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referências",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Métricas do Amazon CloudWatch para o Amazon RDS",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Exemplos de colunas disponíveis em `pg_stat_activity`",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Métricas do CloudWatch do Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Exemplo de configuração do HikariCP para o Amazon Aurora DSQL (blog da AWS)",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "fr": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "Rechercher la cause du ralentissement de l’API de commandes",
+    "intro": "Les réponses du traitement de confirmation des commandes sont devenues plus lentes. En tant que responsable de l’exploitation, je vais rechercher à quel endroit du traitement le temps a augmenté et valider des mesures correctives tout en limitant l’impact sur les utilisateurs. Les valeurs observées sont fictives et servent à des fins pédagogiques.",
+    "sections": [
+      {
+        "id": "system",
+        "title": "Configuration et contraintes",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "L’utilisateur finalise une commande avec `POST /orders`. La requête arrive depuis l’Application Load Balancer (ALB) jusqu’à une application Java exécutée sur Amazon ECS. L’application dispose d’un pool de connexions HikariCP pour chaque tâche et enregistre la commande dans Amazon RDS for PostgreSQL à l’aide d’une connexion empruntée."
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "En temps normal, 4 tâches ECS traitent les requêtes. Pendant un remplacement, 5 tâches au maximum s’exécutent simultanément. Le service de commandes peut utiliser 64 connexions à la base de données, et le critère d’arrêt du déploiement progressif est le dépassement de 56 connexions. Dans `pg_stat_activity` de PostgreSQL, filtrez sur l’utilisateur de base de données dédié au service de commandes et comptez à la fois les connexions en cours d’utilisation et celles qui ont été rendues au pool. Dans `DatabaseConnections` de RDS, vérifiez séparément le nombre total de connexions pour l’instance entière."
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "Identifier l’étape devenue lente",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "L’équipe d’exploitation a modifié la configuration de l’application à 12 h. Nous comparons ensuite les 20 minutes qui suivent la modification aux 20 minutes qui la précèdent immédiatement. Les deux périodes concernent les opérations de confirmation de commande et le nombre de requêtes est à peu près identique."
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["Observation", "Avant la modification", "Après la modification"],
+            "rows": [
+              ["Nombre de requêtes concernées", "143 900 requêtes", "144 200 requêtes"],
+              ["Temps de réponse p95 de l’API de commandes", "220 millisecondes", "910 millisecondes"],
+              ["Taux de HTTP 5xx de l’API de commandes", "0,1 %", "0,7 %"],
+              [
+                "Temps d’attente p95 pour obtenir une connexion DB",
+                "7 millisecondes",
+                "620 millisecondes"
+              ],
+              [
+                "Exécution SQL p95 après l’obtention d’une connexion",
+                "42 millisecondes",
+                "46 millisecondes"
+              ],
+              ["Utilisation moyenne du processeur de l’instance RDS", "37 %", "39 %"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "Le p95 du temps de réponse indique qu’environ 95 % des requêtes ont reçu une réponse dans ce délai. Les temps de réponse et d’attente pour obtenir une connexion présentés dans le tableau sont mesurés côté application et enregistrés afin de pouvoir être agrégés par tâche. Le taux de 5xx du tableau correspond au nombre de réponses 5xx renvoyées par l’application sur `POST /orders`, divisé par le nombre total de réponses de la même opération. Les réponses 5xx renvoyées par l’ALB sont comptabilisées avec `HTTPCode_ELB_5XX_Count`, tandis que le temps d’attente sur les appareils des utilisateurs est vérifié séparément côté appareil. Pour examiner le détail du traitement, ouvrez la trace de la même requête et vérifiez le temps nécessaire pour obtenir une connexion et exécuter le SQL."
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "Le temps d’attente avant d’obtenir une connexion a fortement augmenté, tandis que le temps d’exécution SQL après l’obtention d’une connexion n’a pas connu la même évolution. Nous avons suivi les requêtes lentes dans leurs traces et lu les journaux portant le même ID de requête, ce qui a confirmé qu’un délai d’expiration s’était produit lors de l’obtention de la connexion."
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "Modifier la configuration de certaines tâches",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "La comparaison des configurations avant et après la modification a montré que le nombre maximal de connexions par tâche, `maximumPoolSize`, était passé de 12 à 6. Lorsque toutes les connexions sont utilisées, le traitement d’une nouvelle commande attend qu’une connexion soit libérée. Le délai d’attente autorisé pour l’acquisition est de 1 000 millisecondes avant comme après la modification. La première hypothèse à vérifier est que cette modification de configuration a augmenté le temps d’attente des connexions."
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "En conservant exactement le même code et le même SQL, rétablissez la limite à 12 connexions pour une seule tâche. Comparez-la simultanément aux autres tâches.",
+              "Si les 5 tâches en cours de remplacement utilisent toutes la limite de 12 connexions, le maximum est de 60 connexions. Le service de commandes dispose d’une capacité de 64 connexions, mais, afin de conserver une marge de 8 connexions sous la limite, interrompez le déploiement si le nombre réel de connexions dépasse 56.",
+              "Pour la même période de 20 minutes concernant `POST /orders`, vérifiez que la charge par tâche est comparable. Comparez ensuite le temps de réponse, la proportion de réponses HTTP 5xx et le temps d’attente des connexions. Vérifiez également le nombre de connexions à la base de données du service de commandes ainsi que le temps d’exécution du SQL après l’acquisition d’une connexion."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "Décider de poursuivre le déploiement",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "Pour les tâches modifiées, le p95 du temps de réponse était de 310 millisecondes, le taux de HTTP 5xx de 0,2 % et le p95 du temps d’attente de connexion de 65 millisecondes. Pour les tâches non modifiées, les valeurs correspondantes étaient respectivement de 890 millisecondes, 0,7 % et 605 millisecondes. Pendant la comparaison, le nombre de requêtes par tâche était presque identique. Le temps d’exécution SQL n’a pas changé de manière significative, et le nombre total de connexions à la base de données du service de commandes était de 28 au maximum. Après avoir comparé les 5xx renvoyés par l’ALB dédié au service de commandes avec les journaux d’accès, nous avons confirmé que le nombre était de 0."
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "Pour passer à l’étape suivante, le p95 du temps de réponse du groupe de tâches modifiées doit être inférieur ou égal à 500 millisecondes, le taux de HTTP 5xx inférieur ou égal à 0,5 %, et le nombre total de connexions à la base de données du service de commandes inférieur ou égal à 56. Si le nombre de 5xx renvoyés par l’ALB atteint au moins 3 en 5 minutes, nous arrêtons également le déploiement et recherchons la cause. Cette tâche a satisfait aux conditions de passage à l’étape suivante. Chaque fois que l’équipe d’exploitation augmente le périmètre des modifications, elle effectue les mesures avec les mêmes conditions."
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "Une fois toutes les tâches mises à jour, nous recueillons les temps de réponse de `POST /orders` requête par requête sur la même période, puis recalculons le p95 global. Nous calculons également le taux de 5xx après avoir additionné les nombres de chaque tâche. Si ces valeurs, le nombre de connexions à la base de données et les 5xx de l’ALB restent dans les seuils, et si les enregistrements métier confirment qu’aucune commande n’a été omise ou enregistrée en double, l’équipe d’exploitation considère que le service est rétabli."
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "Si les réponses ralentissent à nouveau, nous limitons les opérations examinées et mesurons séparément les différentes étapes du traitement. Pour vérifier le lien avec la modification de configuration, nous limitons le périmètre de la modification et comparons les résultats dans les mêmes conditions."
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Références",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Métriques Amazon CloudWatch d’Amazon RDS",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Exemples de colonnes disponibles dans `pg_stat_activity`",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Métriques CloudWatch d’Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Exemple de configuration de HikariCP pour Amazon Aurora DSQL (blog AWS)",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "de": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "Die Ursache für die langsamere Bestell-API untersuchen",
+    "intro": "Die Antwort des Prozesses zur Bestellbestätigung ist langsamer geworden. Als Verantwortlicher für den Betrieb untersuche ich, an welcher Stelle des Prozesses sich die Bearbeitungszeit erhöht hat, und validiere Gegenmaßnahmen, während ich die Auswirkungen auf die Benutzer möglichst gering halte. Die Messwerte sind fiktive Werte für Lehrzwecke.",
+    "sections": [
+      {
+        "id": "system",
+        "title": "Konfiguration und Einschränkungen",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "Der Benutzer schließt eine Bestellung mit `POST /orders` ab. Die Anfrage kommt vom Application Load Balancer (ALB) bei einer Java-Anwendung auf Amazon ECS an. Die Anwendung verfügt pro Task über einen HikariCP-Verbindungspool und speichert die Bestellung mit einer ausgeliehenen Verbindung in Amazon RDS for PostgreSQL."
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "Normalerweise verarbeiten 4 ECS-Tasks die Anfragen. Während eines Austauschs laufen gleichzeitig höchstens 5 Tasks. Der Bestellservice kann 64 Datenbankverbindungen verwenden; das Kriterium zum Stoppen des schrittweisen Rollouts ist eine Überschreitung von 56 Verbindungen. Filtern Sie in PostgreSQL `pg_stat_activity` nach dem Datenbankbenutzer, der ausschließlich für den Bestellservice vorgesehen ist, und zählen Sie sowohl die aktuell verwendeten Verbindungen als auch die Verbindungen, die an den Pool zurückgegeben wurden. Prüfen Sie in RDS `DatabaseConnections` separat die Gesamtzahl der Verbindungen für die gesamte Instance."
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "Ermitteln, wo die Verlangsamung auftrat",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "Das Betriebsteam hat die Anwendungskonfiguration um 12:00 Uhr geändert. Anschließend vergleichen wir die folgenden 20 Minuten mit den unmittelbar vor der Änderung liegenden 20 Minuten. Beide Zeiträume betreffen Vorgänge zur Bestätigung von Bestellungen, und die Anzahl der Anfragen ist ungefähr gleich."
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["Messwert", "Vor der Änderung", "Nach der Änderung"],
+            "rows": [
+              ["Anzahl der betroffenen Anfragen", "143.900 Anfragen", "144.200 Anfragen"],
+              ["Antwortzeit p95 der Bestell-API", "220 Millisekunden", "910 Millisekunden"],
+              ["HTTP-5xx-Rate der Bestell-API", "0,1 %", "0,7 %"],
+              ["Wartezeit p95 beim Abrufen einer DB-Verbindung", "7 Millisekunden", "620 Millisekunden"],
+              [
+                "SQL-Ausführung p95 nach dem Abrufen einer Verbindung",
+                "42 Millisekunden",
+                "46 Millisekunden"
+              ],
+              ["Durchschnittliche CPU-Auslastung der RDS-Instance", "37 %", "39 %"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "Das Antwortzeit-p95 gibt an, dass ungefähr 95 % der Anfragen innerhalb dieser Zeit eine Antwort erhalten haben. Die in der Tabelle aufgeführten Antwortzeiten und Wartezeiten beim Abrufen einer Verbindung werden auf der Anwendungsseite gemessen und aufgezeichnet, damit sie nach Task aggregiert werden können. Die 5xx-Rate in der Tabelle ist die Anzahl der von der Anwendung über `POST /orders` zurückgegebenen 5xx-Antworten geteilt durch die Gesamtzahl der Antworten für denselben Vorgang. Von der ALB zurückgegebene 5xx-Antworten werden mit `HTTPCode_ELB_5XX_Count` erfasst; die Wartezeit auf den Geräten der Benutzer wird separat auf der Geräteseite geprüft. Um die Aufschlüsselung der Verarbeitung zu untersuchen, öffnen Sie den Trace derselben Anfrage und prüfen Sie die Zeit für das Abrufen einer Verbindung und die Ausführung von SQL."
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "Die Wartezeit vor dem Abrufen einer Verbindung ist deutlich gestiegen, während sich die SQL-Ausführungszeit nach dem Abrufen einer Verbindung nicht in gleicher Weise verändert hat. Wir haben langsame Anfragen in ihren Traces verfolgt und die Logs mit derselben Anfrage-ID gelesen. Dabei haben wir bestätigt, dass beim Abrufen der Verbindung ein Timeout aufgetreten ist."
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "Die Konfiguration für einige Tasks ändern",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "Beim Vergleich der Konfiguration vor und nach der Änderung zeigte sich, dass die maximale Anzahl von Verbindungen pro Task, `maximumPoolSize`, von 12 auf 6 gesunken war. Wenn alle Verbindungen verwendet werden, wartet die Verarbeitung neuer Bestellungen, bis eine Verbindung zurückgegeben wird. Die zulässige Wartezeit für den Abruf beträgt sowohl vor als auch nach der Änderung 1.000 Millisekunden. Die zuerst zu überprüfende Hypothese lautet, dass diese Konfigurationsänderung die Wartezeit auf Verbindungen erhöht hat."
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "Setzen Sie bei identischem Code und SQL das Limit nur für einen Task auf 12 Verbindungen zurück. Vergleichen Sie ihn gleichzeitig mit den übrigen Tasks.",
+              "Wenn alle 5 auszutauschenden Tasks das Limit von 12 Verbindungen vollständig nutzen, beträgt das Maximum 60 Verbindungen. Der Bestellservice hat eine Kapazität von 64 Verbindungen. Um jedoch einen Puffer von 8 Verbindungen unterhalb des Limits zu erhalten, brechen Sie den Rollout ab, sobald die tatsächliche Anzahl der Verbindungen 56 überschreitet.",
+              "Prüfen Sie für denselben Zeitraum von 20 Minuten für `POST /orders`, ob die Last pro Task ungefähr gleich ist. Vergleichen Sie anschließend die Antwortzeit, den Anteil der HTTP-5xx-Antworten und die Wartezeit auf Verbindungen. Prüfen Sie außerdem die Anzahl der vom Bestellservice verwendeten Datenbankverbindungen sowie die SQL-Ausführungszeit nach dem Abruf einer Verbindung."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "Entscheiden, ob der Rollout fortgesetzt wird",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "Bei den geänderten Tasks betrug das Antwortzeit-p95 310 Millisekunden, der Anteil von HTTP 5xx 0,2 % und das p95 der Verbindungswartezeit 65 Millisekunden. Bei den unveränderten Tasks lagen die entsprechenden Werte bei 890 Millisekunden, 0,7 % und 605 Millisekunden. Während des Vergleichs war die Anzahl der Requests pro Task nahezu gleich. Die SQL-Ausführungszeit änderte sich nicht wesentlich, und die Gesamtzahl der Datenbankverbindungen des Bestellservices betrug zum Spitzenzeitpunkt 28. Durch den Abgleich der vom dedizierten ALB des Bestellservices zurückgegebenen 5xx mit den Access-Logs bestätigten wir, dass die Anzahl 0 betrug."
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "Die Bedingungen für den Übergang zur nächsten Stufe sind ein Antwortzeit-p95 der geänderten Task-Gruppe von höchstens 500 Millisekunden, höchstens 0,5 % HTTP 5xx und höchstens 56 Datenbankverbindungen für den Bestellservice insgesamt. Wenn die Anzahl der vom ALB zurückgegebenen 5xx innerhalb von 5 Minuten mindestens 3 erreicht, stoppen wir den Rollout ebenfalls und untersuchen die Ursache. Dieser Task erfüllte die Bedingungen für den Übergang zur nächsten Stufe. Jedes Mal, wenn das Betriebsteam den Umfang der Änderungen erweitert, misst es unter denselben Bedingungen."
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "Nach der Aktualisierung aller Tasks erfassen wir die Antwortzeiten von `POST /orders` im selben Zeitraum pro Request und berechnen das Gesamt-p95 neu. Den 5xx-Anteil berechnen wir ebenfalls, nachdem wir die Anzahlen der einzelnen Tasks addiert haben. Wenn diese Werte, die Anzahl der Datenbankverbindungen und die ALB-5xx innerhalb der Grenzwerte liegen und die Geschäftsaufzeichnungen bestätigen, dass keine Bestellungen fehlen oder doppelt gespeichert wurden, stellt das Betriebsteam die Wiederherstellung des Services fest."
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "Wenn die Antworten später wieder langsamer werden, grenzen wir die zu untersuchenden Vorgänge ein und messen die Verarbeitung getrennt. Um den Zusammenhang mit der Konfigurationsänderung zu überprüfen, begrenzen wir den Änderungsumfang und vergleichen unter denselben Bedingungen."
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referenzen",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Amazon-CloudWatch-Metriken für Amazon RDS",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Beispiele für Spalten in `pg_stat_activity`",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "CloudWatch-Metriken von Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Beispiel für die HikariCP-Konfiguration mit Amazon Aurora DSQL (AWS-Blog)",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "es": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "Investigar la causa de la lentitud de la API de pedidos",
+    "intro": "La respuesta del proceso de confirmación de pedidos se ha vuelto más lenta. Como responsable de operaciones, investigaré en qué parte del procesamiento ha aumentado el tiempo y validaré medidas correctivas mientras minimizo el impacto en los usuarios. Los valores observados son valores ficticios con fines educativos.",
+    "sections": [
+      {
+        "id": "system",
+        "title": "Configuración y restricciones",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "El usuario confirma un pedido mediante `POST /orders`. La solicitud llega desde el Application Load Balancer (ALB) a una aplicación Java en Amazon ECS. La aplicación tiene un grupo de conexiones HikariCP por tarea y registra el pedido en Amazon RDS for PostgreSQL mediante una conexión prestada."
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "Normalmente, 4 tareas de ECS procesan las solicitudes. Durante un reemplazo, se ejecutan simultáneamente como máximo 5 tareas. El servicio de pedidos puede usar 64 conexiones de base de datos, y el criterio para detener el despliegue gradual es superar las 56 conexiones. En `pg_stat_activity` de PostgreSQL, filtre por el usuario de base de datos dedicado al servicio de pedidos y cuente tanto las conexiones en uso como las conexiones devueltas al grupo. En `DatabaseConnections` de RDS, compruebe por separado el número total de conexiones de toda la instancia."
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "Identificar dónde se produjo la ralentización",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "El equipo de operaciones cambió la configuración de la aplicación a las 12:00. Después, comparamos los 20 minutos posteriores al cambio con los 20 minutos inmediatamente anteriores. Ambos periodos abarcan operaciones de confirmación de pedidos y el número de solicitudes es aproximadamente el mismo."
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["Observación", "Antes del cambio", "Después del cambio"],
+            "rows": [
+              ["Número de solicitudes objetivo", "143.900 solicitudes", "144.200 solicitudes"],
+              ["Tiempo de respuesta p95 de la API de pedidos", "220 milisegundos", "910 milisegundos"],
+              ["Porcentaje de HTTP 5xx de la API de pedidos", "0,1 %", "0,7 %"],
+              [
+                "Tiempo de espera p95 para obtener una conexión DB",
+                "7 milisegundos",
+                "620 milisegundos"
+              ],
+              [
+                "Ejecución de SQL p95 después de obtener una conexión",
+                "42 milisegundos",
+                "46 milisegundos"
+              ],
+              ["Uso medio de CPU de la instancia de RDS", "37 %", "39 %"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "El p95 del tiempo de respuesta indica que aproximadamente el 95 % de las solicitudes recibieron una respuesta dentro de ese tiempo. Los tiempos de respuesta y de espera para obtener una conexión que aparecen en la tabla se miden en el lado de la aplicación y se registran para poder agregarlos por tarea. El porcentaje de 5xx de la tabla es el número de respuestas 5xx devueltas por la aplicación en `POST /orders`, dividido por el número total de respuestas de la misma operación. Las respuestas 5xx devueltas por el ALB se registran mediante `HTTPCode_ELB_5XX_Count`, mientras que el tiempo de espera en los dispositivos de los usuarios se comprueba por separado en el dispositivo. Para examinar el desglose del procesamiento, abra el trace de la misma solicitud y compruebe el tiempo empleado en obtener una conexión y ejecutar SQL."
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "El tiempo de espera antes de obtener una conexión aumentó considerablemente, mientras que el tiempo de ejecución de SQL después de obtener una conexión no mostró el mismo cambio. Seguimos las solicitudes lentas en sus traces y leímos los registros con el mismo ID de solicitud, confirmando que se produjo un tiempo de espera agotado al obtener la conexión."
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "Cambiar la configuración de algunas tareas",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "Al comparar la configuración antes y después del cambio, comprobamos que el número máximo de conexiones por tarea, `maximumPoolSize`, había disminuido de 12 a 6. Cuando todas las conexiones están en uso, el procesamiento de nuevos pedidos espera hasta que se devuelva una conexión. El tiempo permitido para esperar la adquisición es de 1.000 milisegundos tanto antes como después del cambio. La primera hipótesis que se debe verificar es que este cambio de configuración aumentó el tiempo de espera de las conexiones."
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "Manteniendo idénticos el código y el SQL, restaura el límite a 12 conexiones solo para una tarea. Compárala simultáneamente con las tareas restantes.",
+              "Si las 5 tareas que se están sustituyendo utilizan todas el límite de 12 conexiones, el máximo es de 60 conexiones. El servicio de pedidos tiene una capacidad de 64 conexiones, pero, para conservar un margen de 8 conexiones por debajo del límite, detén el despliegue si el número real de conexiones supera 56.",
+              "Para el mismo periodo de 20 minutos de `POST /orders`, comprueba que la carga por tarea sea aproximadamente equivalente. Después compara el tiempo de respuesta, la proporción de respuestas HTTP 5xx y el tiempo de espera de las conexiones. Comprueba también el número de conexiones a la base de datos del servicio de pedidos y el tiempo de ejecución del SQL después de adquirir una conexión."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "Decidir si se continúa con el despliegue",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "En las tareas modificadas, el p95 del tiempo de respuesta fue de 310 milisegundos, HTTP 5xx fue del 0,2 % y el p95 de la espera de conexión fue de 65 milisegundos. En las tareas no modificadas, los valores correspondientes fueron 890 milisegundos, 0,7 % y 605 milisegundos. Durante la comparación, el número de solicitudes por tarea fue prácticamente igual. El tiempo de ejecución de SQL no cambió de forma significativa y el número total de conexiones a la base de datos del servicio de pedidos fue de 28 en el momento de mayor uso. Al comparar los 5xx devueltos por el ALB dedicado al servicio de pedidos con los registros de acceso, confirmamos que el recuento era 0."
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "Las condiciones para pasar a la siguiente etapa son que el p95 del tiempo de respuesta del grupo de tareas modificadas sea como máximo de 500 milisegundos, que HTTP 5xx sea como máximo del 0,5 % y que el número total de conexiones a la base de datos del servicio de pedidos sea como máximo de 56. Si el número de 5xx devueltos por el ALB llega a 3 o más en 5 minutos, también detenemos el despliegue e investigamos la causa. Esta tarea cumplió las condiciones para pasar a la siguiente etapa. Cada vez que el equipo de operaciones amplía el alcance de los cambios, mide con las mismas condiciones."
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "Después de actualizar todas las tareas, recopilamos los tiempos de respuesta de `POST /orders` por solicitud durante el mismo periodo y volvemos a calcular el p95 global. También calculamos el porcentaje de 5xx después de sumar los recuentos de cada tarea. Si estos valores, el número de conexiones a la base de datos y los 5xx del ALB se mantienen dentro de los límites, y los registros del negocio confirman que no se omitió ni duplicó ningún pedido, el equipo de operaciones determina que el servicio se ha recuperado."
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "Si las respuestas vuelven a ralentizarse, acotamos las operaciones que se van a examinar y medimos por separado las distintas partes del procesamiento. Para comprobar la relación con el cambio de configuración, limitamos el alcance del cambio y comparamos en las mismas condiciones."
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referencias",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Métricas de Amazon CloudWatch para Amazon RDS",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Ejemplos de columnas disponibles en `pg_stat_activity`",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Métricas de CloudWatch de Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Ejemplo de configuración de HikariCP para Amazon Aurora DSQL (blog de AWS)",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  },
+  "it": {
+    "id": "orders-api-latency",
+    "category": "investigation",
+    "title": "Indagare sulla causa del rallentamento dell’API degli ordini",
+    "intro": "La risposta dell’elaborazione di conferma degli ordini è diventata più lenta. In qualità di responsabile delle operazioni, indagherò in quale punto dell’elaborazione sia aumentato il tempo e verificherò le contromisure, riducendo al minimo l’impatto sugli utenti. I valori osservati sono valori fittizi a scopo didattico.",
+    "sections": [
+      {
+        "id": "system",
+        "title": "Configurazione e vincoli",
+        "blocks": [
+          {
+            "key": "request-and-runtime",
+            "kind": "paragraph",
+            "text": "L’utente finalizza un ordine con `POST /orders`. La richiesta arriva dall’Application Load Balancer (ALB) a un’applicazione Java su Amazon ECS. L’applicazione dispone di un pool di connessioni HikariCP per ogni task e registra l’ordine in Amazon RDS for PostgreSQL utilizzando una connessione presa in prestito."
+          },
+          {
+            "key": "request-path-figure",
+            "kind": "figure",
+            "id": "request-path"
+          },
+          {
+            "key": "database-connection-limit",
+            "kind": "paragraph",
+            "text": "Normalmente, 4 task ECS elaborano le richieste. Durante una sostituzione, vengono eseguiti contemporaneamente al massimo 5 task. Il servizio ordini può utilizzare 64 connessioni al database e il criterio per interrompere il rollout graduale è superare 56 connessioni. In `pg_stat_activity` di PostgreSQL, filtra per l’utente del database dedicato al servizio ordini e conta sia le connessioni in uso sia quelle restituite al pool. In `DatabaseConnections` di RDS, verifica separatamente il numero totale di connessioni dell’intera istanza."
+          }
+        ]
+      },
+      {
+        "id": "investigate",
+        "title": "Individuare il punto in cui si è verificato il rallentamento",
+        "blocks": [
+          {
+            "key": "comparison-period",
+            "kind": "paragraph",
+            "text": "Il team operativo ha modificato la configurazione dell’applicazione alle 12:00. Confrontiamo quindi i 20 minuti successivi alla modifica con i 20 minuti immediatamente precedenti. Entrambi i periodi riguardano le operazioni di conferma degli ordini e il numero di richieste è all’incirca lo stesso."
+          },
+          {
+            "key": "measured-signals",
+            "kind": "table",
+            "columns": ["Osservazione", "Prima della modifica", "Dopo la modifica"],
+            "rows": [
+              ["Numero di richieste interessate", "143.900 richieste", "144.200 richieste"],
+              ["Tempo di risposta p95 dell’API degli ordini", "220 millisecondi", "910 millisecondi"],
+              ["Percentuale di HTTP 5xx dell’API degli ordini", "0,1%", "0,7%"],
+              [
+                "Tempo di attesa p95 per ottenere una connessione DB",
+                "7 millisecondi",
+                "620 millisecondi"
+              ],
+              [
+                "Esecuzione SQL p95 dopo aver ottenuto una connessione",
+                "42 millisecondi",
+                "46 millisecondi"
+              ],
+              ["Utilizzo medio della CPU dell’istanza RDS", "37%", "39%"]
+            ]
+          },
+          {
+            "key": "interpretation",
+            "kind": "paragraph",
+            "text": "Il p95 del tempo di risposta indica che circa il 95% delle richieste ha ricevuto una risposta entro tale tempo. I tempi di risposta e di attesa per ottenere una connessione riportati nella tabella vengono misurati sul lato dell’applicazione e registrati in modo da poter essere aggregati per attività. La percentuale di 5xx nella tabella è il numero di risposte 5xx restituite dall’applicazione tramite `POST /orders`, diviso per il numero totale di risposte della stessa operazione. Le risposte 5xx restituite dall’ALB vengono conteggiate tramite `HTTPCode_ELB_5XX_Count`, mentre il tempo di attesa sui dispositivi degli utenti viene verificato separatamente sul dispositivo. Per esaminare la suddivisione dell’elaborazione, apri la traccia della stessa richiesta e verifica il tempo impiegato per ottenere una connessione e per eseguire SQL."
+          },
+          {
+            "key": "first-hypothesis",
+            "kind": "paragraph",
+            "text": "Il tempo di attesa prima di ottenere una connessione è aumentato notevolmente, mentre il tempo di esecuzione SQL dopo aver ottenuto una connessione non ha mostrato lo stesso cambiamento. Abbiamo seguito le richieste lente nelle relative tracce e letto i log con lo stesso ID della richiesta, confermando che si è verificato un timeout durante l’acquisizione della connessione."
+          },
+          {
+            "key": "investigation-figure",
+            "kind": "figure",
+            "id": "investigation"
+          }
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "Modificare la configurazione di alcune attività",
+        "blocks": [
+          {
+            "key": "trial-scope",
+            "kind": "paragraph",
+            "text": "Confrontando la configurazione prima e dopo la modifica, abbiamo verificato che il numero massimo di connessioni per attività, `maximumPoolSize`, era diminuito da 12 a 6. Quando tutte le connessioni sono in uso, l’elaborazione di nuovi ordini attende finché una connessione non viene restituita. Il tempo consentito per attendere l’acquisizione è di 1.000 millisecondi sia prima sia dopo la modifica. La prima ipotesi da verificare è che questa modifica della configurazione abbia aumentato il tempo di attesa delle connessioni."
+          },
+          {
+            "key": "trial-steps",
+            "kind": "steps",
+            "items": [
+              "Mantenendo invariati il codice e l’SQL, ripristina il limite a 12 connessioni per una sola attività. Confrontala contemporaneamente con le attività rimanenti.",
+              "Se tutte le 5 attività in fase di sostituzione utilizzano il limite massimo di 12 connessioni, il massimo è di 60 connessioni. Il servizio ordini ha una capacità di 64 connessioni, ma, per mantenere un margine di 8 connessioni al di sotto del limite, interrompi il deployment se il numero effettivo di connessioni supera 56.",
+              "Per lo stesso periodo di 20 minuti relativo a `POST /orders`, verifica che il carico per attività sia approssimativamente equivalente. Quindi confronta il tempo di risposta, la percentuale di risposte HTTP 5xx e il tempo di attesa delle connessioni. Controlla anche il numero di connessioni al database utilizzate dal servizio ordini e il tempo di esecuzione dell’SQL dopo l’acquisizione di una connessione."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "outcome",
+        "title": "Decidere se continuare il rollout",
+        "blocks": [
+          {
+            "key": "observed-outcome",
+            "kind": "paragraph",
+            "text": "Per i task modificati, il p95 del tempo di risposta era di 310 millisecondi, HTTP 5xx era dello 0,2% e il p95 del tempo di attesa della connessione era di 65 millisecondi. Per i task non modificati, i valori corrispondenti erano 890 millisecondi, 0,7% e 605 millisecondi. Durante il confronto, il numero di richieste per task era pressoché uguale. Il tempo di esecuzione SQL non è cambiato in modo significativo e il numero totale di connessioni al database del servizio ordini era pari a 28 nel momento di picco. Confrontando i 5xx restituiti dall’ALB dedicato al servizio ordini con i log di accesso, abbiamo confermato che il conteggio era 0."
+          },
+          {
+            "key": "rollout-decision",
+            "kind": "paragraph",
+            "text": "Le condizioni per passare alla fase successiva sono che il p95 del tempo di risposta del gruppo di task modificati sia al massimo di 500 millisecondi, che HTTP 5xx sia al massimo dello 0,5% e che il numero totale di connessioni al database del servizio ordini sia al massimo 56. Se il numero di 5xx restituiti dall’ALB raggiunge almeno 3 in 5 minuti, interrompiamo inoltre il rollout e analizziamo la causa. Questo task ha soddisfatto le condizioni per passare alla fase successiva. Ogni volta che il team operativo amplia l’ambito delle modifiche, esegue le misurazioni alle stesse condizioni."
+          },
+          {
+            "key": "rollback-criteria",
+            "kind": "paragraph",
+            "text": "Dopo aver aggiornato tutti i task, raccogliamo i tempi di risposta di `POST /orders` per singola richiesta nello stesso periodo e ricalcoliamo il p95 complessivo. Calcoliamo anche la percentuale di 5xx dopo aver sommato i conteggi di ciascun task. Se questi valori, il numero di connessioni al database e i 5xx dell’ALB rimangono entro le soglie, e i registri aziendali confermano che non ci sono ordini non salvati o duplicati, il team operativo determina che il servizio è stato ripristinato."
+          },
+          {
+            "key": "remaining-work",
+            "kind": "paragraph",
+            "text": "Se in seguito le risposte diventano nuovamente lente, restringiamo le operazioni da esaminare e misuriamo separatamente le fasi di elaborazione. Per verificare il rapporto con la modifica della configurazione, limitiamo l’ambito della modifica e confrontiamo i risultati alle stesse condizioni."
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Riferimenti",
+    "foundations": ["networking-basics", "testing-quality", "observability"],
+    "glossary": [
+      "Connection pool",
+      "p95",
+      "Trace",
+      "Metric",
+      "Log",
+      "HTTP 5xx",
+      "Request ID",
+      "ALB",
+      "HikariCP",
+      "PostgreSQL",
+      "ECS",
+      "DatabaseConnections",
+      "pg_stat_activity",
+      "HTTPCode_ELB_5XX_Count"
+    ],
+    "sources": [
+      {
+        "label": "Metriche Amazon CloudWatch di Amazon RDS",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/rds-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Esempi di colonne disponibili in `pg_stat_activity`",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PostgreSQL.Replication.ReadReplicas.Troubleshooting.html",
+        "language": "ja"
+      },
+      {
+        "label": "Metriche CloudWatch di Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-cloudwatch-metrics.html",
+        "language": "ja"
+      },
+      {
+        "label": "Esempio di configurazione di HikariCP per Amazon Aurora DSQL (blog AWS)",
+        "url": "https://aws.amazon.com/jp/blogs/news/connection-pooling-strategies-in-amazon-aurora-dsql/",
+        "language": "ja"
+      }
+    ]
+  }
+}

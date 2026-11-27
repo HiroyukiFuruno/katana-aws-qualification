@@ -1,3 +1,4 @@
+import { appliedStudyPages } from './applied/routes.ts';
 import { certifications, studyCourses } from './certifications.ts';
 import { privateLessonPageNames, publicLessonPageNames } from './fundamentals/delivery/routePages.ts';
 import { type Locale, localePath, locales } from './locales.ts';
@@ -6,6 +7,7 @@ export const publishedPages = [
   '',
   'study',
   'study/fundamentals',
+  ...appliedStudyPages,
   'study/questions',
   'assessment',
   'certifications',

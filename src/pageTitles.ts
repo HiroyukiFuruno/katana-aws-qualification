@@ -1,3 +1,4 @@
+import { appliedPageMetadata } from './applied/routes.ts';
 import type { Locale } from './locales';
 import { type Message, messages } from './messages.ts';
 
@@ -19,6 +20,7 @@ const titles: Record<string, Message> = {
 export function pageTitle(page: string | undefined, locale: Locale, certificationName?: string) {
   const dictionary = messages[locale];
   const key = page === undefined ? undefined : titles[page];
-  const title = key ? dictionary[key] : (certificationName ?? dictionary.notFound);
+  const applied = page === undefined ? undefined : appliedPageMetadata(locale, page);
+  const title = key ? dictionary[key] : (applied?.title ?? certificationName ?? dictionary.notFound);
   return `${title} | ${dictionary.siteName}`;
 }

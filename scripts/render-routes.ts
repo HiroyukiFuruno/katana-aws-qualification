@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { appliedPageMetadata } from '../src/applied/routes.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { type Message, messages } from '../src/messages.ts';
 import { accountPages, privateLessonPages, publishedLocalesFor, publishedPages } from '../src/routes.ts';
@@ -43,9 +44,10 @@ for (const locale of locales) {
     if (!supported.includes(locale)) continue;
     const path = localePath(locale, entry);
     const lesson = await content.lessonFor(entry);
+    const applied = appliedPageMetadata(locale, entry);
     const baseTitle = Object.hasOwn(indexTitles, entry)
       ? dictionary[indexTitles[entry as keyof typeof indexTitles]]
-      : await content.titleFor(entry);
+      : (applied?.title ?? (await content.titleFor(entry)));
     if (!baseTitle) throw new Error(`Missing title for ${entry}`);
     const alternateLinks = [...supported, 'x-default']
       .map(
@@ -54,7 +56,11 @@ for (const locale of locales) {
       )
       .join('\n');
     const description = escapeHtml(
-      descriptionFor(entry, dictionary, lesson?.description ?? content.descriptionFor(entry)),
+      descriptionFor(
+        entry,
+        dictionary,
+        lesson?.description ?? applied?.description ?? content.descriptionFor(entry),
+      ),
     );
     const figure = lesson?.body.figure;
     const staticFigure = figure

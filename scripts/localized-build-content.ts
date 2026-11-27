@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import type { SiteContent } from '../src/contentTypes';
 import type { DeliveryIndexAsset, DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
+import { lessonDisplayText, lessonReadingCopy } from '../src/fundamentals/delivery/lessonReadingCopy.ts';
 import { isPrivateLessonPage, lessonPageAt } from '../src/fundamentals/delivery/routePages.ts';
 import type { Locale } from '../src/locales';
 import { localePath } from '../src/locales.ts';
@@ -50,18 +51,20 @@ export async function localizedBuildContent(locale: Locale) {
     const unit = lessons.units.find((item) => item.unitId === lesson.route.unitId);
     if (!unit) throw new Error(`Missing localized lesson index: ${locale}/${page}`);
     if (lesson.route.stage === 'final' || lesson.route.stage === 'result') return undefined;
+    const objective = lessonDisplayText(unit.objective, locale, unit.unitId);
     if (lesson.route.stage === 'resume') {
       return {
         title: unit.title,
-        description: metaDescription(unit.objective),
-        body: { heading: unit.title, paragraphs: [unit.objective] },
+        description: metaDescription(objective),
+        body: { heading: unit.title, paragraphs: [objective] },
       };
     }
     const position = lesson.route.position;
     if (typeof position !== 'number')
       throw new Error(`Missing public lesson position: ${locale}/${page}`);
     const asset = await assetFor(unit.slug);
-    const step = asset.steps[position - 1];
+    const original = asset.steps[position - 1];
+    const step = original && lessonReadingCopy(original, locale);
     const routeMatchesStep =
       step &&
       step.kind !== 'final' &&
@@ -74,7 +77,7 @@ export async function localizedBuildContent(locale: Locale) {
     if (step.kind === 'checkpoint' && !checkpoint)
       throw new Error(`Missing localized checkpoint: ${locale}/${page}`);
     const paragraphs = checkpoint
-      ? [compact(checkpoint.prompt)]
+      ? [compact(lessonDisplayText(checkpoint.prompt, locale, step.unitId))]
       : step.blocks.map((block) => compact(block.text)).filter(Boolean);
     const summary = paragraphs.join(' ');
     return {
@@ -82,7 +85,7 @@ export async function localizedBuildContent(locale: Locale) {
       description: metaDescription(summary || `${unit.title}: ${checkpoint?.title ?? step.label}`),
       body: {
         heading: checkpoint?.title ?? step.label,
-        paragraphs: paragraphs.length ? paragraphs : [unit.objective],
+        paragraphs: paragraphs.length ? paragraphs : [objective],
       },
     };
   }

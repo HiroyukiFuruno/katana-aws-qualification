@@ -3,6 +3,7 @@ import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
 import { SiteAd, SiteAdLayout } from '../../SiteAd';
 import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import { lessonReadingCopy } from '../delivery/lessonReadingCopy';
 import type { LessonRoute } from '../delivery/navigation';
 import type { LessonStep } from '../delivery/slideTypes';
 import { isLessonConflict } from '../state/isLessonConflict';
@@ -41,6 +42,7 @@ export function LessonStepScreen({
 }: Props) {
   const { locale, t } = usePreferences();
   const slide = lessonSlidePresentation(asset.steps, step);
+  const displayStep = lessonReadingCopy(slide.display, locale);
   const { activeFinalSessionId } = snapshot.progress;
   const active = snapshot.sessions.find((session) => session.sessionId === activeFinalSessionId);
   const presentationPosition = route.stage === 'final' && route.position ? route.position - 1 : -1;
@@ -98,7 +100,7 @@ export function LessonStepScreen({
   return (
     <SiteAdLayout show viewKey={step.id}>
       <LessonSlideShell
-        step={slide.display}
+        step={displayStep}
         unitTitle={asset.unit.title}
         catalogHref={catalogHref}
         adSlot={<SiteAd placement="inline" />}
@@ -129,8 +131,8 @@ export function LessonStepScreen({
         ) : null}
         <LessonStepContent
           asset={asset}
-          step={slide.display}
-          optionalObjectives={slide.optionalObjectives}
+          step={displayStep}
+          optionalObjectives={slide.optionalObjectives.map((item) => lessonReadingCopy(item, locale))}
           question={checkpoint.question}
           selected={selected}
           onChange={setSelected}

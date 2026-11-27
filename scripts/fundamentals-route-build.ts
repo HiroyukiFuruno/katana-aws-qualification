@@ -44,10 +44,21 @@ for (const [stepId, figure] of Object.entries(networkFigures)) {
   const svg = await readFile(`dist${figure.url}`, 'utf8');
   if (!svg.includes('<svg') || /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(svg))
     throw new Error(`Invalid English network diagram: ${figure.url}`);
+  const viewBox = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/u);
+  if (
+    !viewBox ||
+    Math.round(Number(viewBox[1])) !== figure.width ||
+    Math.round(Number(viewBox[2])) !== figure.height
+  )
+    throw new Error(`Incorrect network diagram dimensions: ${figure.url}`);
   for (const locale of locales) {
     const path = lessonPath({ locale, unitId, stage: 'slides', position: step.position });
     const html = await readFile(`dist${path}index.html`, 'utf8');
-    if (!html.includes(`<img src="${figure.url}" alt="${figure.alt}">`))
+    if (
+      !html.includes(
+        `<img src="${figure.url}" alt="${figure.alt}" width="${figure.width}" height="${figure.height}">`,
+      )
+    )
       throw new Error(`Missing shared figure in static reading: ${path}`);
   }
 }

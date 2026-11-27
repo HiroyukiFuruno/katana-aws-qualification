@@ -10,7 +10,11 @@ import { localePath } from '../src/locales.ts';
 type StaticLessonContent = {
   title: string;
   description: string;
-  body: { heading: string; paragraphs: string[]; figure?: { url: string; alt: string } };
+  body: {
+    heading: string;
+    paragraphs: string[];
+    figure?: { url: string; alt: string; width: number; height: number };
+  };
 };
 
 const figures = new Map(Object.entries(networkFigures));

@@ -7,14 +7,21 @@ const bank = parseQuestions(
   JSON.parse(readFileSync('public/courses/ans-c01/full-mock-2026-11.json', 'utf8')),
 );
 
-for (const [id, routeCount] of [
-  ['ans-c01-practice-01', 3],
-  ['ans-c01-practice-04', 1],
-  ['ans-c01-practice-05', 1],
-  ['ans-c01-practice-06', 1],
+const archived = parseQuestions(
+  JSON.parse(readFileSync('public/courses/ans-c01/questions.json', 'utf8')),
+);
+
+for (const [id, routeCount, revision] of [
+  ['ans-c01-practice-01', 3, 3],
+  ['ans-c01-practice-04', 1, 3],
+  ['ans-c01-practice-05', 1, 3],
+  ['ans-c01-practice-06', 1, 3],
+  ['ans-c01-practice-06', 1, 1],
 ] as const) {
-  test(`ANS-C01 shows the relevant route figure after grading ${id}`, async ({ page }) => {
-    const question = bank.find((item) => item.id === id);
+  test(`ANS-C01 shows the relevant route figure after grading ${id} revision ${revision}`, async ({
+    page,
+  }) => {
+    const question = (revision === 1 ? archived : bank).find((item) => item.id === id);
     if (!question) throw new Error(`Missing ANS-C01 question: ${id}`);
     await page.goto('/ja/study/ans-c01/');
     await page.getByRole('button', { name: messages.ja.cookieNecessary, exact: true }).click();
@@ -68,3 +75,39 @@ for (const [id, routeCount] of [
     }
   });
 }
+
+test('ANS-C01 practice displays a figure only after checking the answer', async ({ page }) => {
+  await page.goto('/ja/study/ans-c01/');
+  await page.getByRole('button', { name: messages.ja.cookieNecessary, exact: true }).click();
+  await page.getByRole('combobox', { name: messages.ja.selection, exact: true }).selectOption('0');
+  await page.getByRole('button', { name: messages.ja.startStudy, exact: true }).click();
+  const figure = page.locator('.question-figure');
+  const illustrated = new Set([
+    'ans-c01-practice-01',
+    'ans-c01-practice-04',
+    'ans-c01-practice-05',
+    'ans-c01-practice-06',
+  ]);
+  const prompt = page.locator('.prompt');
+  for (let index = 0; index < bank.length; index += 1) {
+    await expect(prompt).toBeVisible();
+    const text = await prompt.textContent();
+    const question = bank.find((item) => item.prompt === text);
+    if (!question) throw new Error('Displayed practice question is missing from the bank.');
+    await expect(figure).toHaveCount(0);
+    for (const [position, id] of question.correct.entries()) {
+      if (question.format)
+        await page.locator('.structured-answer-fields select').nth(position).selectOption(id);
+      else await page.locator(`input[name=answer][value="${id}"]`).check();
+    }
+    await page.getByRole('button', { name: messages.ja.grade, exact: true }).click();
+    if (illustrated.has(question.id)) {
+      await expect(figure.locator('figcaption')).toBeVisible();
+      return;
+    }
+    await expect(figure).toHaveCount(0);
+    await page.getByRole('button', { name: messages.ja.next, exact: true }).click();
+    await expect(prompt).not.toHaveText(question.prompt);
+  }
+  throw new Error('No illustrated ANS-C01 question was reached.');
+});

@@ -15,6 +15,7 @@ import { LessonSlideShell } from './LessonSlideShell';
 import { LessonStepContent } from './LessonStepContent';
 import { stepQuestionPresentation } from './lesson-presentation';
 import { useLessonNavigation } from './lessonNavigation';
+import { lessonSlidePresentation } from './lessonSlidePresentation';
 import { useCheckpointPresentation } from './useCheckpointPresentation';
 import { useLessonActions } from './useLessonActions';
 
@@ -39,6 +40,7 @@ export function LessonStepScreen({
   commit,
 }: Props) {
   const { locale, t } = usePreferences();
+  const slide = lessonSlidePresentation(asset.steps, step);
   const { activeFinalSessionId } = snapshot.progress;
   const active = snapshot.sessions.find((session) => session.sessionId === activeFinalSessionId);
   const presentationPosition = route.stage === 'final' && route.position ? route.position - 1 : -1;
@@ -57,6 +59,7 @@ export function LessonStepScreen({
     asset,
     snapshot,
     step,
+    lastPosition: slide.lastPosition,
     locale,
     contentVersion: route.contentVersion,
     finalPosition: presentedFinal?.canonicalPosition,
@@ -79,6 +82,7 @@ export function LessonStepScreen({
     services,
     actions,
     step,
+    previousStep: slide.previous,
     active: Boolean(active),
     question,
     selectedCount: selected.length,
@@ -94,7 +98,7 @@ export function LessonStepScreen({
   return (
     <SiteAdLayout show viewKey={step.id}>
       <LessonSlideShell
-        step={step}
+        step={slide.display}
         unitTitle={asset.unit.title}
         catalogHref={catalogHref}
         adSlot={<SiteAd placement="inline" />}
@@ -125,7 +129,8 @@ export function LessonStepScreen({
         ) : null}
         <LessonStepContent
           asset={asset}
-          step={step}
+          step={slide.display}
+          optionalObjectives={slide.optionalObjectives}
           question={checkpoint.question}
           selected={selected}
           onChange={setSelected}

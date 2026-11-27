@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
-import { lessonAssets, lessonCatalogCard, nextButton } from './fundamentals.helpers';
+import { lessonAssets, lessonCatalogCard, lessonSlideCount, nextButton } from './fundamentals.helpers';
 import { createSessions, setRealSession } from './sessions';
 
 test('another tab cannot resurrect a discarded shared command when saving a different unit', async ({
@@ -19,10 +19,10 @@ test('another tab cannot resurrect a discarded shared command when saving a diff
       await page.getByRole('button', { name: '必要なもののみ', exact: true }).click();
       await setRealSession(page, session);
       await page.goto(lessonPath({ locale: 'ja', unitId: a.unit.id, stage: 'resume' }));
-      await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${a.totalSteps}`);
+      await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${lessonSlideCount(a)}`);
     }
     await nextButton(updater).click();
-    await expect(updater.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${a.totalSteps}`);
+    await expect(updater.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${lessonSlideCount(a)}`);
     await nextButton(first).click();
     const reload = first.getByRole('button', { name: '保存済みの回答を再読み込み', exact: true });
     await expect(reload).toBeVisible();
@@ -40,18 +40,18 @@ test('another tab cannot resurrect a discarded shared command when saving a diff
     ).toBeVisible();
     await reload.click();
     await expect(reload).not.toBeVisible();
-    await expect(first.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${a.totalSteps}`);
+    await expect(first.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${lessonSlideCount(a)}`);
     expect(await first.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
     await second.goBack();
     await expect(second).toHaveURL(/\/fundamentals\/$/);
     await lessonCatalogCard(second, b).getByRole('link').click();
-    await expect(second.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${b.totalSteps}`);
+    await expect(second.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${lessonSlideCount(b)}`);
     await nextButton(second).click();
-    await expect(second.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${b.totalSteps}`);
+    await expect(second.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${lessonSlideCount(b)}`);
     expect(await second.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
     await second.getByRole('link', { name: '基礎学習の目次', exact: true }).click();
     await lessonCatalogCard(second, a).getByRole('link').click();
-    await expect(second.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${a.totalSteps}`);
+    await expect(second.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${lessonSlideCount(a)}`);
     expect(await second.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
   } finally {
     await Promise.all([shared.close(), external.close()]);

@@ -2,33 +2,26 @@ import { expect, test } from '@playwright/test';
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
 import { object } from '../../src/fundamentals/state/codecPrimitives';
 import { validateLessonCommand } from '../../src/fundamentals/state/outboxCodec';
-import { readLessonSnapshot } from '../../src/fundamentals/state/snapshotCodec';
-import { learningEvents, replayRpc } from './api';
+import { learningEvents } from './api';
 import {
   finishLessonFinal,
   lessonAssets,
   lessonPrefix,
+  lessonSlideCount,
   nextButton,
+  visibleLessonSteps,
   walkLessonReading,
 } from './fundamentals.helpers';
-import { createSessions, type RealSession, setRealSession } from './sessions';
+import { memberLessonSnapshot } from './fundamentals-member-snapshot';
+import { createSessions, setRealSession } from './sessions';
 
 const asset = lessonAssets[0];
 if (!asset) throw new Error('Missing first lesson fixture.');
 
-async function snapshot(session: RealSession) {
-  const generation = await (
-    await replayRpc('/rpc/initialize_learning_state', session.accessToken, {})
-  ).json();
-  if (typeof generation !== 'number') throw new Error('Invalid server generation.');
-  const raw = await (
-    await replayRpc('/rpc/load_fundamentals_snapshot', session.accessToken, {
-      p_unit_id: asset.unit.id,
-      p_content_version: asset.contentVersion,
-      p_expected_generation: generation,
-    })
-  ).json();
-  return readLessonSnapshot(raw, asset);
+function expectStep(page: Parameters<typeof nextButton>[0], position: number) {
+  return expect(page.locator('.lesson-slide-meta')).toContainText(
+    `STEP ${position} / ${lessonSlideCount(asset)}`,
+  );
 }
 
 test('member lesson checkpoints and one final persist in real DB without a guest copy', async ({
@@ -46,15 +39,15 @@ test('member lesson checkpoints and one final persist in real DB without a guest
     await finishLessonFinal(page, asset, 10);
     await expect(page.locator('.lesson-result-pass')).toBeVisible();
     await expect.poll(() => learningEvents(a)).toHaveLength(16);
-    const confirmed = await snapshot(a);
+    const confirmed = await memberLessonSnapshot(a, asset);
     expect(confirmed.progress.passedFinalSessionId).toBeTruthy();
     expect(confirmed.sessions).toHaveLength(1);
     expect(confirmed.sessions[0]).toMatchObject({ score: 10, passed: true, state: 'submitted' });
     await page.reload();
     await expect(page.locator('.lesson-result-pass')).toBeVisible();
-    expect(await snapshot(a)).toEqual(confirmed);
+    expect(await memberLessonSnapshot(a, asset)).toEqual(confirmed);
     expect(await learningEvents(a)).toHaveLength(16);
-    expect((await snapshot(b)).sessions).toEqual([]);
+    expect((await memberLessonSnapshot(b, asset)).sessions).toEqual([]);
     expect(await learningEvents(b)).toEqual([]);
     expect(
       await page.evaluate(
@@ -82,7 +75,7 @@ test('a real offline member step retries its immutable outbox command and resume
     await page.getByRole('button', { name: '必要なもののみ', exact: true }).click();
     await setRealSession(page, session);
     await page.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' }));
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${asset.totalSteps}`);
+    await expectStep(page, 1);
     await context.setOffline(true);
     await nextButton(page).click();
     await expect(page.locator('.lesson-slide-save-state [role="alert"]')).toBeVisible();
@@ -98,11 +91,14 @@ test('a real offline member step retries its immutable outbox command and resume
       .locator('.lesson-slide-save-state')
       .getByRole('button', { name: '再試行', exact: true })
       .click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${asset.totalSteps}`);
+    await expectStep(page, 2);
     expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
-    expect((await snapshot(session)).progress).toMatchObject({ furthestPlanPosition: 1, revision: 1 });
+    expect((await memberLessonSnapshot(session, asset)).progress).toMatchObject({
+      furthestPlanPosition: visibleLessonSteps(asset)[1].position - 1,
+      revision: visibleLessonSteps(asset)[1].position - 1,
+    });
     await page.reload();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${asset.totalSteps}`);
+    await expectStep(page, 2);
   } finally {
     await context.close();
   }
@@ -121,23 +117,25 @@ test('native back and forward recover an earlier offline command before another 
     await setRealSession(page, session);
     await page.goto(lessonPath({ locale: 'ja', unitId: asset.unit.id, stage: 'resume' }));
     await nextButton(page).click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${asset.totalSteps}`);
+    await expectStep(page, 2);
     await context.setOffline(true);
     await nextButton(page).click();
     await expect(page.locator('.lesson-slide-save-state [role="alert"]')).toBeVisible();
     await context.setOffline(false);
     await page.goBack();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${asset.totalSteps}`);
+    await expectStep(page, 1);
     await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
     await expect(nextButton(page)).toBeEnabled();
     await page.goForward();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${asset.totalSteps}`);
+    await expectStep(page, 2);
     await nextButton(page).click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 3 / ${asset.totalSteps}`);
-    expect((await snapshot(session)).progress.furthestPlanPosition).toBe(2);
+    await expectStep(page, 3);
+    expect((await memberLessonSnapshot(session, asset)).progress.furthestPlanPosition).toBe(
+      visibleLessonSteps(asset)[2].position - 1,
+    );
     expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBeNull();
     await page.reload();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 3 / ${asset.totalSteps}`);
+    await expectStep(page, 3);
   } finally {
     await context.close();
   }

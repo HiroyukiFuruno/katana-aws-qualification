@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
+import lessonFigures from '../../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
-import networkFigures from '../../src/fundamentals/delivery/network-figures.json' with { type: 'json' };
 import { messages } from '../../src/messages';
 import { lessonAssets, selectLessonAnswer, visibleLessonSteps } from './fundamentals.helpers';
 import { acceptNecessaryCookies } from './fundamentals-mobile.helpers';
@@ -61,9 +61,9 @@ test('lesson recovery actions fit and have breathing room on a narrow screen', a
   }
 });
 
-for (const [stepId, figure] of Object.entries(networkFigures)) {
+for (const [stepId, figure] of Object.entries(lessonFigures)) {
   for (const locale of ['ja', 'de'] as const) {
-    test(`${locale}: network diagrams use shared English assets at ${stepId}`, async ({ page }) => {
+    test(`${locale}: lesson diagrams use shared English assets at ${stepId}`, async ({ page }) => {
       const unitId = stepId.split(':')[0];
       const asset = lessonAssets.find(({ unit }) => unit.id === unitId);
       if (!asset) throw new Error(`Missing public lesson: ${unitId}`);
@@ -85,7 +85,7 @@ for (const [stepId, figure] of Object.entries(networkFigures)) {
         await page.locator('.lesson-slide-actions > button.primary').click();
       }
 
-      const diagram = page.locator('.lesson-reading .lesson-network-figure');
+      const diagram = page.locator('.lesson-reading .lesson-figure');
       const image = diagram.getByRole('img');
       await expect(diagram).toHaveAttribute('lang', 'en');
       await expect(image).toHaveAttribute('src', figure.url);

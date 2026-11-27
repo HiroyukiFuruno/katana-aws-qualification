@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import type { SiteContent } from '../src/contentTypes';
 import type { DeliveryIndexAsset, DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
+import lessonFigures from '../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
 import { lessonDisplayText, lessonReadingCopy } from '../src/fundamentals/delivery/lessonReadingCopy.ts';
-import networkFigures from '../src/fundamentals/delivery/network-figures.json' with { type: 'json' };
 import { isPrivateLessonPage, lessonPageAt } from '../src/fundamentals/delivery/routePages.ts';
 import type { Locale } from '../src/locales';
 import { localePath } from '../src/locales.ts';
@@ -17,7 +17,7 @@ type StaticLessonContent = {
   };
 };
 
-const figures = new Map(Object.entries(networkFigures));
+const figures = new Map(Object.entries(lessonFigures));
 
 function compact(value: string) {
   return value.replaceAll(/\s+/g, ' ').trim();

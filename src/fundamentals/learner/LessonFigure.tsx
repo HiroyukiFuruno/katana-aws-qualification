@@ -1,12 +1,12 @@
-import networkFigures from '../delivery/network-figures.json' with { type: 'json' };
+import lessonFigures from '../delivery/lesson-figures.json' with { type: 'json' };
 
-const figures = new Map(Object.entries(networkFigures));
+const figures = new Map(Object.entries(lessonFigures));
 
-export function LessonNetworkFigure({ stepId }: { stepId: string }) {
+export function LessonFigure({ stepId }: { stepId: string }) {
   const figure = figures.get(stepId);
   if (!figure) return null;
   return (
-    <figure className="lesson-network-figure" lang="en">
+    <figure className="lesson-figure" lang="en">
       <a href={figure.url} target="_blank" rel="noreferrer">
         <img
           src={figure.url}

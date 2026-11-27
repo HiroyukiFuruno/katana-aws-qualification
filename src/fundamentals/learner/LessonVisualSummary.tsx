@@ -28,8 +28,6 @@ export function LessonVisualSummary({ stepId, children }: { stepId: string; chil
   switch (stepId) {
     case 'fundamentals.observability:section:improvement:concept:1':
       return details('flow', copy.review);
-    case 'fundamentals.release-rollback:section:deployment-strategies:concept:1':
-      return details('comparison', copy.deployment);
     case 'fundamentals.core-services:section:database:concept:1':
       return details('comparison', copy.database);
     default:

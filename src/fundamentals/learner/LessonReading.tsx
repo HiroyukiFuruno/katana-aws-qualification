@@ -1,8 +1,8 @@
 import { Fragment } from 'react';
 import { usePreferences } from '../../preferences';
 import type { LessonStep } from '../delivery/slideTypes';
+import { LessonFigure } from './LessonFigure';
 import { LessonGlossaryLinks } from './LessonGlossaryLinks';
-import { LessonNetworkFigure } from './LessonNetworkFigure';
 import { LessonVisualSummary } from './LessonVisualSummary';
 import { lessonFragments } from './lessonFragments';
 import './learner-assessment.css';
@@ -27,7 +27,7 @@ export function LessonReading({ step }: { step: LessonStep }) {
                 {showLabel ? <h2>{label}</h2> : null}
                 <p>{block.text}</p>
               </section>
-              {index === 0 && step.kind === 'reading' ? <LessonNetworkFigure stepId={step.id} /> : null}
+              {index === 0 && step.kind === 'reading' ? <LessonFigure stepId={step.id} /> : null}
             </Fragment>
           );
         })}

@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AnalyticsSettings } from './AnalyticsSettings';
+import './applied/applied-case.css';
 import { AccountPages } from './auth/AccountPages';
 import { AccountPrivacy } from './auth/AccountPrivacy';
 import { AuthCallback } from './auth/AuthCallback';
@@ -32,6 +33,8 @@ import { usePageTitle } from './usePageTitle';
 import { useSiteAnalytics } from './useSiteAnalytics';
 import './CertificationOverview.css';
 import './style.css';
+
+const AppliedPages = lazy(() => import('./applied/AppliedPages'));
 
 function App() {
   const { t, locale } = usePreferences();
@@ -94,6 +97,10 @@ function App() {
               course={selected.course}
             />
           </ProgressGate>
+        ) : section === 'study' && courseId === 'applied' ? (
+          <Suspense fallback={<main id="main" className="shell" />}>
+            <AppliedPages page={route.page} locale={locale} />
+          </Suspense>
         ) : section === 'study' && courseId === 'questions' ? (
           <StudyDirectory />
         ) : section === 'study' ? (

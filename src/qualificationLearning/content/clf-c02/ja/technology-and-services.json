@@ -1,0 +1,220 @@
+{
+  "id": "technology-and-services",
+  "title": "主要サービスを要件から選ぶ",
+  "objective": "処理、保存、データベース、イベント処理という要件を区別し、主要な AWS サービスを用途と運用責任から説明できる。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要AWSサービス"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "通信の基礎"
+    },
+    {
+      "slug": "data-protection",
+      "title": "データ保護"
+    }
+  ],
+  "sections": [
+    {
+      "id": "service-category-first",
+      "title": "サービス名より先に、扱う仕事を分ける",
+      "paragraphs": [
+        "サービスを選ぶときは、最初に扱う仕事を分けます。プログラムを実行する処理、ファイルなどを保存するストレージ、関連するデータを管理するデータベース、サービス間をつなぐイベント処理、ネットワークで到達範囲を制御する仕組みは、目的も判断材料も異なります。「AWS を使う」だけでは、必要なサービスは決まりません。",
+        "Amazon EC2 は仮想サーバーを必要な数だけ利用できるコンピューティングサービスです。利用者はオペレーティングシステム、ネットワーク設定、アプリケーションなどを管理します。コンテナを実行する Amazon ECS や Amazon EKS、サーバーの管理を減らしてイベントを処理する AWS Lambda なども、実行方式と運用責任を比較して選びます。",
+        "Amazon S3 はオブジェクトストレージサービスです。画像、バックアップ、ログなどをオブジェクトとして保存する用途に適します。EC2 に接続するブロックストレージである Amazon EBS や、複数のコンピューティング資源で共有できるファイルストレージである Amazon EFS とは用途が異なります。アクセス頻度、保持期間、復元要件、ストレージクラス、アクセス制御も合わせて確認します。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon EC2 とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/concepts.html"
+        },
+        {
+          "label": "Amazon S3 とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "managed-database",
+      "title": "データベースの運用責任も要件に含める",
+      "paragraphs": [
+        "注文、顧客、在庫のように関係を持つデータを扱う場合、チームはデータモデル、整合性、問い合わせ、可用性を確認します。Amazon RDS はリレーショナルデータベースをセットアップ、運用、スケーリングするためのマネージドサービスであり、バックアップ、ソフトウェアパッチ、障害検出と復旧などの管理作業を支援します。",
+        "マネージドデータベースを使っても、利用者の判断がなくなるわけではありません。利用者は、どのデータベースエンジンを使うか、誰が接続できるか、どのデータを保持するか、業務として必要な可用性を決めます。マネージドという言葉だけで、すべての設定と責任が AWS に移ると考えないようにします。",
+        "選定では、既存のアプリケーションが必要とするデータ構造と運用上の制約を明確にします。関係データベースの機能と既存の SQL 利用が要件なら Amazon RDS または Amazon Aurora を候補にします。一方、キーと値を中心に低レイテンシーでアクセスする要件では Amazon DynamoDB、頻繁に参照するデータをキャッシュする要件では Amazon ElastiCache を比較します。サービス名ではなく、データモデルとアクセス要件から選びます。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon RDS とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "event-driven-processing",
+      "title": "イベントを起点に処理を分ける",
+      "paragraphs": [
+        "利用者の画像アップロード後に縮小画像を作るような処理では、アップロードと変換を同じ操作に詰め込まず、出来事をきっかけに後続処理を起動する構成を検討できます。Amazon S3 はオブジェクトの作成や削除のイベントを Lambda 関数へ送れます。Lambda 関数はイベントを非同期に処理します。",
+        "この構成では、S3 のイベント通知、Lambda 関数を呼び出すためのリソースベースのアクセス許可、関数が他の AWS リソースを操作するための実行ロールを、それぞれ区別します。イベントで動くという説明だけでは、誰がどの権限で処理するかが欠けます。",
+        "S3 イベント通知は少なくとも1回配信されるように設計され、まれに同じイベントが重複したり、順序が変わったりすることがあります。関数の担当者は、同じイベントを複数回処理しても結果が壊れない冪等な処理を設計します。同じバケットへの書き込みが再び同じ関数を起動すると意図しない繰り返しが起きるため、入力用と出力用のバケットを分ける、または対象プレフィックスを限定します。"
+      ],
+      "sources": [
+        {
+          "label": "Lambda を使用した S3 イベント通知の処理",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        },
+        {
+          "label": "Amazon S3 イベント通知",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/EventNotifications.html"
+        },
+        {
+          "label": "S3 イベントの順序と重複",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html"
+        }
+      ],
+      "figureId": "clf-event-driven-service-flow"
+    },
+    {
+      "id": "networking-and-delivery-interfaces",
+      "title": "接続と変更の方法を目的別に選ぶ",
+      "paragraphs": [
+        "VPC は AWS 内に論理的に分離したネットワークを作る基盤です。構成を決めるときは、アプリケーションをインターネットに公開するか、オンプレミス環境と接続するか、DNSでドメイン名をどのIPアドレスに解決するかを整理します。要件に応じて、セキュリティグループ、Amazon Route 53、AWS Site-to-Site VPN、AWS Direct Connect を使い分けます。",
+        "サービスやリソースを操作する窓口には、AWS マネジメントコンソール、AWS CLI、AWS SDK、API があります。反復して同じ構成を作る場合は、AWS CloudFormation のようなコードによるインフラストラクチャ管理を検討します。手作業と自動化のどちらが適切かは、変更頻度、再現性、承認手順、運用できる体制で判断します。",
+        "サービス間の非同期連携では、Amazon SNS は通知の配信、Amazon SQS はメッセージを一時的に保持して処理を分離する用途、Amazon EventBridge はイベントに応じた連携に使います。同期的な呼び出しだけに依存せず、障害時の影響範囲と処理の遅延を考えて選びます。"
+      ],
+      "sources": [
+        {
+          "label": "CLF-C02 分野3: クラウドテクノロジーとサービス",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "clf-technology-001",
+      "prompt": "出版社のコンテンツ担当者は、記事に添付された元画像を長期間保存し、アプリケーションから必要なときに取得したいと考えています。ファイルをオブジェクトとして保存する要件に最も合うサービスはどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon S3",
+          "explanation": "Amazon S3 は画像などのデータをオブジェクトとして保存・保護するオブジェクトストレージサービスです。長期保存ではストレージクラスやライフサイクルも要件に合わせて選びます。"
+        },
+        {
+          "id": "b",
+          "text": "Amazon EBS",
+          "explanation": "Amazon EBS は EC2 インスタンスに接続するブロックストレージです。アプリケーションがファイルをオブジェクトとして保存・取得する要件の第一候補ではありません。"
+        },
+        {
+          "id": "c",
+          "text": "Amazon EFS",
+          "explanation": "Amazon EFS は複数のコンピューティング資源で共有できるファイルストレージです。オブジェクトストレージを求める要件とは管理方法と利用形態が異なります。"
+        },
+        {
+          "id": "d",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS はリレーショナルデータベースを管理するサービスであり、元画像をオブジェクトとして保存するサービスではありません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-002",
+      "prompt": "写真共有サービスの開発責任者は、利用者が S3 の入力用バケットへ画像をアップロードした後、縮小画像を自動作成したいと考えています。アップロードを起点に後続処理を分ける構成として適切なものはどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "S3 のオブジェクト作成イベントで Lambda 関数を呼び出し、処理済み画像は入力対象と異なる場所へ保存する。",
+          "explanation": "S3 のイベント通知で Lambda を非同期に起動でき、出力先を分けることで再帰的な起動を避けやすくなります。通知は少なくとも1回配信されるため、関数は重複イベントを安全に扱える冪等な処理にします。"
+        },
+        {
+          "id": "b",
+          "text": "S3 のオブジェクト作成イベントで Lambda 関数を呼び出し、処理済み画像を同じ入力用プレフィックスへ保存する。",
+          "explanation": "同じバケット・同じ対象プレフィックスへ書き戻すと、出力が再び同じイベントを発火させる可能性があります。入力と出力を分けるか、フィルターを限定します。"
+        },
+        {
+          "id": "c",
+          "text": "Lambda 関数を呼び出す許可と、関数が S3 を操作する許可を、同じ個人用アクセスキーだけで管理する。",
+          "explanation": "S3 が Lambda を呼び出すためのリソースベースの許可と、関数が他のリソースを操作する実行ロールは役割が異なります。個人用アクセスキーに依存しません。"
+        },
+        {
+          "id": "d",
+          "text": "イベントを一度だけ受け取れる前提で、同じ画像の処理済み状態を確認しない。",
+          "explanation": "S3 イベント通知は少なくとも1回配信され、重複または順序の異なる通知があり得ます。重複時も安全な処理を設計する必要があります。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-003",
+      "prompt": "予約サービスのプロダクト責任者は、既存の SQL を使い、予約・顧客・支払いの関連データを扱いたいと考えています。データベースの運用作業を減らすことも条件です。最初の候補として適切なサービスはどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS はリレーショナルデータベースを運用するためのマネージドサービスで、既存 SQL、バックアップ、パッチなどの管理作業を支援します。Amazon Aurora もリレーショナル要件で比較する候補です。"
+        },
+        {
+          "id": "b",
+          "text": "Amazon DynamoDB",
+          "explanation": "DynamoDB はキーと値を中心に低レイテンシーでアクセスする要件で比較するマネージド NoSQL データベースです。既存 SQL と関係データという条件からは第一候補ではありません。"
+        },
+        {
+          "id": "c",
+          "text": "Amazon ElastiCache",
+          "explanation": "ElastiCache は頻繁に参照するデータをキャッシュする用途です。予約・顧客・支払いの永続的な関係データを管理する主データベースではありません。"
+        },
+        {
+          "id": "d",
+          "text": "Amazon S3",
+          "explanation": "S3 はオブジェクト保存に適しますが、関係データベースと既存 SQL 利用という要件への第一候補ではありません。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EC2",
+    "Virtual server",
+    "ECS",
+    "EKS",
+    "Lambda",
+    "Serverless",
+    "S3",
+    "Object storage",
+    "Bucket",
+    "Object key",
+    "S3 storage class",
+    "EBS",
+    "Block storage",
+    "EFS",
+    "File storage",
+    "RDS",
+    "Aurora",
+    "Relational database",
+    "SQL",
+    "DynamoDB",
+    "ElastiCache",
+    "Access pattern",
+    "S3 event notification",
+    "Event-driven architecture",
+    "Resource-based policy",
+    "IAM role",
+    "Idempotency",
+    "VPC",
+    "Security group",
+    "Route 53",
+    "AWS Site-to-Site VPN",
+    "AWS Direct Connect",
+    "AWS Management Console",
+    "AWS CLI",
+    "AWS SDK",
+    "API call",
+    "CloudFormation",
+    "Infrastructure as code",
+    "SNS",
+    "SQS",
+    "EventBridge"
+  ]
+}

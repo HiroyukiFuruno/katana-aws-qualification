@@ -1,0 +1,220 @@
+{
+  "id": "technology-and-services",
+  "title": "依需求選擇主要服務",
+  "objective": "區分處理、儲存、資料庫與事件處理等需求，並從用途與營運責任的角度說明主要的 AWS 服務。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服務"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "通訊基礎"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    }
+  ],
+  "sections": [
+    {
+      "id": "service-category-first",
+      "title": "先區分要處理的工作，再選擇服務名稱",
+      "paragraphs": [
+        "選擇服務時，首先要區分需要處理的工作。執行程式的處理、儲存檔案等內容的儲存體、管理相關資料的資料庫、連接服務之間的事件處理，以及透過網路控制可達範圍的機制，其目的和判斷依據各不相同。僅僅說「使用 AWS」並不能決定所需的服務。",
+        "Amazon EC2 是一項運算服務，可讓您依需求使用所需數量的虛擬伺服器。使用者負責管理作業系統、網路設定、應用程式等。對於執行容器的 Amazon ECS 和 Amazon EKS，以及透過減少伺服器管理來處理事件的 AWS Lambda 等服務，也應比較其執行方式和營運責任後再進行選擇。",
+        "Amazon S3 是物件儲存服務，適合將影像、備份和日誌等內容以物件形式儲存。它與連接至 EC2 的區塊儲存 Amazon EBS，以及可由多個運算資源共用的檔案儲存 Amazon EFS，用途不同。也應一併確認存取頻率、保留期間、復原需求、儲存類別和存取控制。"
+      ],
+      "sources": [
+        {
+          "label": "什麼是 Amazon EC2？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/concepts.html"
+        },
+        {
+          "label": "什麼是 Amazon S3？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "managed-database",
+      "title": "將資料庫營運責任也納入需求",
+      "paragraphs": [
+        "處理訂單、客戶和庫存等具有關聯性的資料時，團隊會確認資料模型、完整性、查詢和可用性。Amazon RDS 是一項用於設定、營運和擴展關聯式資料庫的受管服務，可協助執行備份、軟體修補、故障偵測和復原等管理工作。",
+        "即使使用受管資料庫，也不代表使用者不再需要做出決策。使用者必須決定要使用哪種資料庫引擎、誰可以連線、要保留哪些資料，以及業務所需的可用性。不要只因為「受管」一詞，就認為所有設定和責任都會轉移給 AWS。",
+        "選擇時，應釐清現有應用程式所需的資料結構和營運限制。如果關聯式資料庫功能和現有 SQL 使用方式是需求，應將 Amazon RDS 或 Amazon Aurora 列為候選解決方案。另一方面，若需求是以鍵值資料為主、進行低延遲存取，則比較 Amazon DynamoDB；若需求是快取經常參照的資料，則比較 Amazon ElastiCache。應根據資料模型和存取需求選擇，而不是根據服務名稱選擇。"
+      ],
+      "sources": [
+        {
+          "label": "什麼是 Amazon RDS？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "event-driven-processing",
+      "title": "依事件觸發分離處理",
+      "paragraphs": [
+        "對於使用者上傳影像後建立縮圖這類工作流程，可以考慮由事件觸發後續處理的架構，而不是將上傳與轉換塞入同一個操作中。Amazon S3 可以將物件建立和物件刪除事件傳送至 Lambda 函數。Lambda 函數會非同步處理事件。",
+        "在此架構中，應分別區分 S3 事件通知、允許叫用 Lambda 函數的資源型許可，以及函數用來操作其他 AWS 資源的執行角色。僅說明處理由事件驅動，並未說明由誰以及使用哪些許可執行處理。",
+        "S3 事件通知是以至少傳遞一次的方式設計，因此相同事件偶爾可能重複，或以不同順序傳遞。函數負責人應設計冪等處理，讓相同事件即使被處理多次，結果也不會損壞。由於寫入相同儲存貯體可能再次觸發相同函數並造成非預期的重複，因此應分開使用輸入與輸出儲存貯體，或限制目標字首。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Lambda 處理 S3 事件通知",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        },
+        {
+          "label": "Amazon S3 事件通知",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/EventNotifications.html"
+        },
+        {
+          "label": "S3 事件的順序與重複",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html"
+        }
+      ],
+      "figureId": "clf-event-driven-service-flow"
+    },
+    {
+      "id": "networking-and-delivery-interfaces",
+      "title": "依據目的選擇連線與變更方法",
+      "paragraphs": [
+        "VPC 是在 AWS 內建立邏輯隔離網路的基礎。決定組態時，請釐清是否要將應用程式公開至網際網路、是否要連線至內部部署環境，以及 DNS 應將網域名稱解析為哪個 IP 位址。請根據需求適當使用安全群組、Amazon Route 53、AWS Site-to-Site VPN 和 AWS Direct Connect。",
+        "操作服務和資源的入口包括 AWS 管理主控台、AWS CLI、AWS SDK 和 API。若需要重複建立相同的組態，請考慮採用 AWS CloudFormation 等以程式碼管理基礎設施的方式。應根據變更頻率、可重現性、核准程序，以及可執行營運工作的體制，判斷手動操作和自動化何者較適合。",
+        "在服務之間進行非同步整合時，Amazon SNS 用於傳遞通知，Amazon SQS 用於暫時保留訊息以分離處理，Amazon EventBridge 則用於根據事件進行整合。不要只依賴同步呼叫；選擇方法時，還要考慮發生故障時的影響範圍和處理延遲。"
+      ],
+      "sources": [
+        {
+          "label": "CLF-C02 領域 3：雲端技術與服務",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "clf-technology-001",
+      "prompt": "出版社的內容負責人希望長期保存文章中附加的原始圖片，並在需要時從應用程式取得這些圖片。哪項服務最符合將檔案儲存為物件的需求？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon S3",
+          "explanation": "Amazon S3 是物件儲存服務，可將圖片等資料以物件形式儲存並加以保護。若要長期保存，應依需求選擇適合的儲存類別和生命週期設定。"
+        },
+        {
+          "id": "b",
+          "text": "Amazon EBS",
+          "explanation": "Amazon EBS 是連接至 EC2 執行個體的區塊儲存。對於應用程式需要將檔案以物件形式儲存和取得的需求，它不是首選方案。"
+        },
+        {
+          "id": "c",
+          "text": "Amazon EFS",
+          "explanation": "Amazon EFS 是可由多個運算資源共用的檔案儲存。其管理方式和使用模式與物件儲存的需求不同。"
+        },
+        {
+          "id": "d",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS 是用來管理關聯式資料庫的服務，不是用來將原始圖片以物件形式儲存的服務。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-002",
+      "prompt": "相片分享服務的開發負責人希望在使用者將影像上傳至 S3 輸入儲存貯體後，自動建立縮圖。以下哪種架構適合以這次上傳為起點分流後續處理？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "透過 S3 物件建立事件呼叫 Lambda 函數，並將處理後的影像儲存到不同於輸入位置的位置。",
+          "explanation": "S3 事件通知可以非同步呼叫 Lambda，分開輸出位置有助於避免遞迴呼叫。由於通知至少傳遞一次，因此函數應採用冪等處理，以安全地處理重複事件。"
+        },
+        {
+          "id": "b",
+          "text": "透過 S3 物件建立事件呼叫 Lambda 函數，並將處理後的影像儲存到相同的輸入前綴下。",
+          "explanation": "寫回相同的儲存貯體和目標前綴，可能會使輸出再次觸發相同的事件。應分開輸入與輸出，或縮小篩選條件。"
+        },
+        {
+          "id": "c",
+          "text": "僅使用同一個個人存取金鑰，同時管理呼叫 Lambda 函數的許可，以及函數操作 S3 的許可。",
+          "explanation": "允許 S3 呼叫 Lambda 的以資源為基礎的許可，與允許函數操作其他資源的執行角色，所負責的角色不同。不要依賴個人存取金鑰。"
+        },
+        {
+          "id": "d",
+          "text": "假設每個事件只會接收一次，不檢查相同影像是否已完成處理。",
+          "explanation": "S3 事件通知至少傳遞一次，因此可能出現重複通知或順序不同的通知。必須設計能在發生重複時安全處理的處理方式。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-003",
+      "prompt": "預約服務的產品負責人希望使用現有的 SQL，處理預約、客戶與付款的關聯資料。降低資料庫營運工作量也是一項要求。作為第一個候選服務，哪一項最適合？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS 是用於運作關聯式資料庫的受管服務，可協助處理使用現有 SQL、備份及修補等管理工作。對於關聯式資料庫需求，Amazon Aurora 也是可比較的候選服務。"
+        },
+        {
+          "id": "b",
+          "text": "Amazon DynamoDB",
+          "explanation": "DynamoDB 是適合在以鍵值資料的低延遲存取為中心的需求中進行比較的受管 NoSQL 資料庫。根據使用現有 SQL 和關聯資料的條件，它不是第一候選。"
+        },
+        {
+          "id": "c",
+          "text": "Amazon ElastiCache",
+          "explanation": "ElastiCache 用於快取經常存取的資料。它不是管理預約、客戶和付款持久性關聯資料的主要資料庫。"
+        },
+        {
+          "id": "d",
+          "text": "Amazon S3",
+          "explanation": "S3 適合物件儲存，但對於關聯式資料庫以及使用現有 SQL 的要求，它不是第一候選。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EC2",
+    "Virtual server",
+    "ECS",
+    "EKS",
+    "Lambda",
+    "Serverless",
+    "S3",
+    "Object storage",
+    "Bucket",
+    "Object key",
+    "S3 storage class",
+    "EBS",
+    "Block storage",
+    "EFS",
+    "File storage",
+    "RDS",
+    "Aurora",
+    "Relational database",
+    "SQL",
+    "DynamoDB",
+    "ElastiCache",
+    "Access pattern",
+    "S3 event notification",
+    "Event-driven architecture",
+    "Resource-based policy",
+    "IAM role",
+    "Idempotency",
+    "VPC",
+    "Security group",
+    "Route 53",
+    "AWS Site-to-Site VPN",
+    "AWS Direct Connect",
+    "AWS Management Console",
+    "AWS CLI",
+    "AWS SDK",
+    "API call",
+    "CloudFormation",
+    "Infrastructure as code",
+    "SNS",
+    "SQS",
+    "EventBridge"
+  ]
+}

@@ -1,0 +1,220 @@
+{
+  "id": "technology-and-services",
+  "title": "Scegliere i servizi principali in base ai requisiti",
+  "objective": "Distinguere i requisiti relativi a elaborazione, archiviazione, database ed elaborazione degli eventi, e spiegare i principali servizi AWS in base al loro utilizzo e alle responsabilità operative.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Servizi AWS principali"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Fondamenti della comunicazione"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protezione dei dati"
+    }
+  ],
+  "sections": [
+    {
+      "id": "service-category-first",
+      "title": "Separa il tipo di lavoro prima di scegliere il nome del servizio",
+      "paragraphs": [
+        "Quando scegli un servizio, separa innanzitutto il tipo di lavoro che devi svolgere. L’elaborazione che esegue programmi, lo storage che salva file e altri dati, i database che gestiscono dati correlati, l’elaborazione degli eventi che collega i servizi e i meccanismi che controllano la portata della rete hanno scopi e criteri decisionali diversi. Dire semplicemente «usare AWS» non determina quali servizi siano necessari.",
+        "Amazon EC2 è un servizio di elaborazione che consente di utilizzare il numero necessario di server virtuali. Gli utenti gestiscono il sistema operativo, le impostazioni di rete, le applicazioni e altri componenti. Per servizi come Amazon ECS e Amazon EKS, che eseguono container, e AWS Lambda, che elabora gli eventi riducendo la gestione dei server, confronta anche il modello di esecuzione e le responsabilità operative prima di scegliere.",
+        "Amazon S3 è un servizio di storage di oggetti. È adatto per archiviare immagini, backup, log e altri dati sotto forma di oggetti. Il suo scopo è diverso da quello di Amazon EBS, uno storage a blocchi connesso a EC2, e di Amazon EFS, uno storage di file condivisibile da più risorse di elaborazione. Verifica inoltre la frequenza di accesso, il periodo di conservazione, i requisiti di ripristino, la classe di storage e il controllo degli accessi."
+      ],
+      "sources": [
+        {
+          "label": "Che cos’è Amazon EC2?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/concepts.html"
+        },
+        {
+          "label": "Che cos’è Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "managed-database",
+      "title": "La responsabilità operativa del database è anch’essa un requisito",
+      "paragraphs": [
+        "Quando gestisce dati correlati, come ordini, clienti e inventario, il team verifica il modello di dati, l’integrità, le query e la disponibilità. Amazon RDS è un servizio gestito per configurare, gestire e dimensionare database relazionali e supporta attività di amministrazione come backup, applicazione di patch software, rilevamento dei guasti e ripristino.",
+        "L’utilizzo di un database gestito non elimina le decisioni dell’utente. L’utente determina quale motore di database usare, chi può connettersi, quali dati conservare e quale livello di disponibilità è necessario per l’attività. Non si deve presumere, solo perché si parla di servizio gestito, che tutta la configurazione e ogni responsabilità vengano trasferite ad AWS.",
+        "Durante la selezione, chiarire le strutture dati richieste dalle applicazioni esistenti e i vincoli operativi. Se i requisiti includono funzionalità di database relazionali e l’uso esistente di SQL, considerare Amazon RDS o Amazon Aurora come soluzioni candidate. Al contrario, per requisiti di accesso a bassa latenza incentrati su dati chiave-valore, confrontare Amazon DynamoDB; per requisiti di memorizzazione nella cache dei dati consultati frequentemente, confrontare Amazon ElastiCache. Scegliere in base al modello di dati e ai requisiti di accesso, non in base al nome del servizio."
+      ],
+      "sources": [
+        {
+          "label": "Che cos’è Amazon RDS?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "event-driven-processing",
+      "title": "Separare l’elaborazione in base agli eventi",
+      "paragraphs": [
+        "Per flussi di lavoro come la creazione di una miniatura dopo il caricamento di un’immagine da parte di un utente, prendete in considerazione un’architettura che attivi l’elaborazione successiva tramite un evento, invece di includere caricamento e conversione nella stessa operazione. Amazon S3 può inviare gli eventi di creazione ed eliminazione degli oggetti a una funzione Lambda. La funzione Lambda elabora gli eventi in modo asincrono.",
+        "In questa architettura, distinguete tra le notifiche degli eventi S3, le autorizzazioni basate sulle risorse che consentono di richiamare una funzione Lambda e il ruolo di esecuzione che la funzione usa per operare su altre risorse AWS. Dire soltanto che il processo è basato sugli eventi non chiarisce chi esegue l’elaborazione né con quali autorizzazioni.",
+        "Le notifiche degli eventi S3 sono progettate per una consegna almeno una volta; pertanto, lo stesso evento può occasionalmente essere duplicato o consegnato fuori ordine. Il responsabile della funzione progetta un’elaborazione idempotente, in modo che l’elaborazione ripetuta dello stesso evento non danneggi il risultato. Poiché una scrittura nello stesso bucket può attivare nuovamente la stessa funzione e causare una ripetizione indesiderata, utilizzate bucket di input e output separati oppure limitate il prefisso di destinazione."
+      ],
+      "sources": [
+        {
+          "label": "Elaborazione delle notifiche degli eventi S3 con Lambda",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        },
+        {
+          "label": "Notifiche degli eventi di Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/EventNotifications.html"
+        },
+        {
+          "label": "Ordine e duplicazione degli eventi S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html"
+        }
+      ],
+      "figureId": "clf-event-driven-service-flow"
+    },
+    {
+      "id": "networking-and-delivery-interfaces",
+      "title": "Scegliere i metodi di connessione e modifica in base allo scopo",
+      "paragraphs": [
+        "Una VPC è la base per creare una rete logicamente isolata all’interno di AWS. Quando si definisce la configurazione, è necessario stabilire se esporre l’applicazione a Internet, connetterla a un ambiente on-premises e a quale indirizzo IP il DNS debba risolvere il nome di dominio. In base ai requisiti, utilizzare in modo appropriato i gruppi di sicurezza, Amazon Route 53, AWS Site-to-Site VPN e AWS Direct Connect.",
+        "Per operare servizi e risorse sono disponibili AWS Management Console, AWS CLI, AWS SDK e API. Se è necessario creare ripetutamente la stessa configurazione, valutare la gestione dell’infrastruttura come codice, ad esempio con AWS CloudFormation. La scelta tra attività manuali e automazione deve basarsi sulla frequenza delle modifiche, sulla riproducibilità, sulle procedure di approvazione e sulla capacità operativa disponibile.",
+        "Per l’integrazione asincrona tra servizi, Amazon SNS viene usato per distribuire notifiche, Amazon SQS per conservare temporaneamente i messaggi e separare l’elaborazione, e Amazon EventBridge per l’integrazione basata sugli eventi. Non fare affidamento esclusivamente sulle chiamate sincrone; scegli considerando l’ampiezza dell’impatto in caso di guasti e i ritardi di elaborazione."
+      ],
+      "sources": [
+        {
+          "label": "CLF-C02 Dominio 3: tecnologie e servizi cloud",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "clf-technology-001",
+      "prompt": "Il responsabile dei contenuti di una casa editrice desidera archiviare a lungo termine le immagini originali allegate agli articoli e recuperarle da un’applicazione quando necessario. Quale servizio soddisfa meglio il requisito di archiviare i file come oggetti?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon S3",
+          "explanation": "Amazon S3 è un servizio di storage di oggetti che archivia e protegge dati come le immagini sotto forma di oggetti. Per l’archiviazione a lungo termine, scegli le classi di storage e le impostazioni del ciclo di vita in base ai requisiti."
+        },
+        {
+          "id": "b",
+          "text": "Amazon EBS",
+          "explanation": "Amazon EBS è uno storage a blocchi collegato alle istanze EC2. Non è la prima scelta per un’applicazione che deve archiviare e recuperare file come oggetti."
+        },
+        {
+          "id": "c",
+          "text": "Amazon EFS",
+          "explanation": "Amazon EFS è uno storage di file condivisibile tra più risorse di calcolo. Il relativo metodo di gestione e modello di utilizzo differiscono dai requisiti dello storage di oggetti."
+        },
+        {
+          "id": "d",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS è un servizio per la gestione di database relazionali, non un servizio per archiviare immagini originali come oggetti."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-002",
+      "prompt": "Il responsabile dello sviluppo di un servizio di condivisione di foto vuole creare automaticamente immagini ridimensionate dopo che gli utenti hanno caricato immagini in un bucket di input S3. Quale architettura è adatta per suddividere l’elaborazione successiva a partire dal caricamento?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Richiamare una funzione Lambda da un evento di creazione di un oggetto S3 e salvare le immagini elaborate in una posizione diversa da quella di input.",
+          "explanation": "Le notifiche degli eventi S3 possono richiamare Lambda in modo asincrono e separare la posizione di output aiuta a evitare richiami ricorsivi. Poiché le notifiche vengono distribuite almeno una volta, la funzione deve usare un’elaborazione idempotente per gestire in sicurezza gli eventi duplicati."
+        },
+        {
+          "id": "b",
+          "text": "Richiamare una funzione Lambda da un evento di creazione di un oggetto S3 e salvare le immagini elaborate nello stesso prefisso di input.",
+          "explanation": "La riscrittura nello stesso bucket e sotto lo stesso prefisso di destinazione può fare sì che l’output attivi nuovamente lo stesso evento. Separare input e output oppure limitare il filtro."
+        },
+        {
+          "id": "c",
+          "text": "Gestire esclusivamente con la stessa chiave di accesso personale sia l’autorizzazione a richiamare la funzione Lambda sia l’autorizzazione della funzione a operare su S3.",
+          "explanation": "L’autorizzazione basata sulle risorse che consente a S3 di richiamare Lambda e il ruolo di esecuzione che consente alla funzione di operare su altre risorse hanno funzioni diverse. Non fare affidamento sulle chiavi di accesso personali."
+        },
+        {
+          "id": "d",
+          "text": "Presupporre che ogni evento venga ricevuto una sola volta e non verificare se la stessa immagine è già stata elaborata.",
+          "explanation": "Le notifiche degli eventi S3 vengono distribuite almeno una volta, quindi possono verificarsi notifiche duplicate o fuori ordine. L’elaborazione deve essere progettata per rimanere sicura anche in presenza di duplicati."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-003",
+      "prompt": "Il responsabile del prodotto di un servizio di prenotazione desidera utilizzare l’SQL esistente per gestire dati correlati relativi a prenotazioni, clienti e pagamenti. Anche la riduzione delle attività operative del database è un requisito. Quale servizio è il candidato iniziale più appropriato?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS è un servizio gestito per l’operatività di database relazionali e supporta attività di gestione come l’utilizzo dell’SQL esistente, i backup e l’applicazione di patch. Anche Amazon Aurora è un candidato da confrontare per i requisiti relazionali."
+        },
+        {
+          "id": "b",
+          "text": "Amazon DynamoDB",
+          "explanation": "DynamoDB è un database NoSQL gestito da prendere in considerazione per requisiti incentrati sull’accesso a bassa latenza ai dati chiave-valore. Date le condizioni relative all’SQL esistente e ai dati relazionali, non è il primo candidato."
+        },
+        {
+          "id": "c",
+          "text": "Amazon ElastiCache",
+          "explanation": "ElastiCache è destinato al caching dei dati consultati frequentemente. Non è il database principale per gestire i dati relazionali persistenti di prenotazioni, clienti e pagamenti."
+        },
+        {
+          "id": "d",
+          "text": "Amazon S3",
+          "explanation": "S3 è adatto all’archiviazione di oggetti, ma non è il primo candidato per i requisiti di un database relazionale e dell’utilizzo dell’SQL esistente."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EC2",
+    "Virtual server",
+    "ECS",
+    "EKS",
+    "Lambda",
+    "Serverless",
+    "S3",
+    "Object storage",
+    "Bucket",
+    "Object key",
+    "S3 storage class",
+    "EBS",
+    "Block storage",
+    "EFS",
+    "File storage",
+    "RDS",
+    "Aurora",
+    "Relational database",
+    "SQL",
+    "DynamoDB",
+    "ElastiCache",
+    "Access pattern",
+    "S3 event notification",
+    "Event-driven architecture",
+    "Resource-based policy",
+    "IAM role",
+    "Idempotency",
+    "VPC",
+    "Security group",
+    "Route 53",
+    "AWS Site-to-Site VPN",
+    "AWS Direct Connect",
+    "AWS Management Console",
+    "AWS CLI",
+    "AWS SDK",
+    "API call",
+    "CloudFormation",
+    "Infrastructure as code",
+    "SNS",
+    "SQS",
+    "EventBridge"
+  ]
+}

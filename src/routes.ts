@@ -2,12 +2,14 @@ import { appliedStudyPages } from './applied/routes.ts';
 import { certifications, studyCourses } from './certifications.ts';
 import { privateLessonPageNames, publicLessonPageNames } from './fundamentals/delivery/routePages.ts';
 import { type Locale, localePath, locales } from './locales.ts';
+import { qualificationLearningPages } from './qualificationLearning/routes.ts';
 
 export const publishedPages = [
   '',
   'study',
   'study/fundamentals',
   ...appliedStudyPages,
+  ...qualificationLearningPages,
   'study/questions',
   'assessment',
   'certifications',

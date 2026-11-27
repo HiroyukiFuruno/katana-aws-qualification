@@ -1,0 +1,220 @@
+{
+  "id": "technology-and-services",
+  "title": "根据需求选择主要服务",
+  "objective": "区分处理、存储、数据库和事件处理等需求，并根据用途和运维责任说明主要的 AWS 服务。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服务"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "通信基础"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    }
+  ],
+  "sections": [
+    {
+      "id": "service-category-first",
+      "title": "先区分要处理的工作，再选择服务名称",
+      "paragraphs": [
+        "选择服务时，首先要区分需要处理的工作。运行程序的处理、保存文件等内容的存储、管理相关数据的数据库、连接服务之间的事件处理，以及通过网络控制可达范围的机制，其目的和判断依据各不相同。仅仅说“使用 AWS”并不能确定所需的服务。",
+        "Amazon EC2 是一种计算服务，可让您按需使用所需数量的虚拟服务器。用户负责管理操作系统、网络设置、应用程序等。对于运行容器的 Amazon ECS 和 Amazon EKS，以及通过减少服务器管理来处理事件的 AWS Lambda 等服务，也应比较其执行方式和运维责任后再进行选择。",
+        "Amazon S3 是对象存储服务，适合将图像、备份和日志等内容作为对象存储。它与连接到 EC2 的块存储 Amazon EBS，以及可由多个计算资源共享的文件存储 Amazon EFS，用途不同。还应同时确认访问频率、保留期限、恢复要求、存储类和访问控制。"
+      ],
+      "sources": [
+        {
+          "label": "什么是 Amazon EC2？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/concepts.html"
+        },
+        {
+          "label": "什么是 Amazon S3？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "managed-database",
+      "title": "将数据库运营责任也纳入要求",
+      "paragraphs": [
+        "处理订单、客户和库存等具有关联关系的数据时，团队会确认数据模型、完整性、查询和可用性。Amazon RDS 是一项用于设置、运营和扩展关系数据库的托管服务，可协助完成备份、软件补丁、故障检测和恢复等管理任务。",
+        "即使使用托管数据库，也并不意味着用户不再需要做出决策。用户需要决定使用哪种数据库引擎、谁可以连接、保留哪些数据，以及业务所需的可用性水平。不要仅因为“托管”一词，就认为所有配置和责任都会转移给 AWS。",
+        "在进行选择时，应明确现有应用程序所需的数据结构和运营限制。如果关系数据库功能和现有 SQL 使用方式属于要求，应将 Amazon RDS 或 Amazon Aurora 作为候选解决方案。另一方面，如果要求围绕键值数据进行低延迟访问，则应比较 Amazon DynamoDB；如果要求缓存频繁访问的数据，则应比较 Amazon ElastiCache。应根据数据模型和访问要求进行选择，而不是根据服务名称。"
+      ],
+      "sources": [
+        {
+          "label": "什么是 Amazon RDS？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "event-driven-processing",
+      "title": "按事件触发分离处理",
+      "paragraphs": [
+        "对于用户上传图像后生成缩略图之类的工作流，可以考虑由事件触发后续处理的架构，而不是把上传和转换塞进同一个操作中。Amazon S3 可以将对象创建和对象删除事件发送给 Lambda 函数。Lambda 函数会异步处理事件。",
+        "在这种架构中，应分别区分 S3 事件通知、允许调用 Lambda 函数的基于资源的权限，以及函数用于操作其他 AWS 资源的执行角色。仅说明处理由事件驱动，并没有说明由谁以及使用哪些权限执行处理。",
+        "S3 事件通知按至少传递一次的方式设计，因此同一事件偶尔可能重复，或以不同顺序传递。函数负责人应设计幂等处理，使同一事件被处理多次时结果不会损坏。由于向同一存储桶写入内容可能再次触发同一个函数并造成意外重复，因此应分开使用输入存储桶和输出存储桶，或者限制目标前缀。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Lambda 处理 S3 事件通知",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        },
+        {
+          "label": "Amazon S3 事件通知",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/EventNotifications.html"
+        },
+        {
+          "label": "S3 事件的顺序和重复",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html"
+        }
+      ],
+      "figureId": "clf-event-driven-service-flow"
+    },
+    {
+      "id": "networking-and-delivery-interfaces",
+      "title": "根据目的选择连接和变更方法",
+      "paragraphs": [
+        "VPC 是在 AWS 内创建逻辑隔离网络的基础。确定配置时，需要明确是否将应用程序公开到互联网、是否连接到本地环境，以及 DNS 应将域名解析到哪个 IP 地址。根据需求，适当选用安全组、Amazon Route 53、AWS Site-to-Site VPN 和 AWS Direct Connect。",
+        "操作服务和资源的入口包括 AWS 管理控制台、AWS CLI、AWS SDK 和 API。如果需要反复创建相同的配置，请考虑使用 AWS CloudFormation 等基础设施即代码管理方式。应根据变更频率、可重复性、审批流程以及可承担运维工作的体制，判断手动操作和自动化哪种方式更合适。",
+        "在服务之间进行异步集成时，Amazon SNS 用于分发通知，Amazon SQS 用于临时保存消息以分离处理，Amazon EventBridge 用于根据事件进行集成。不要只依赖同步调用，还应考虑发生故障时的影响范围和处理延迟后再做选择。"
+      ],
+      "sources": [
+        {
+          "label": "CLF-C02 领域 3：云技术与服务",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "clf-technology-001",
+      "prompt": "一名出版社内容负责人希望长期保存文章中附带的原始图片，并在需要时从应用程序中获取这些图片。哪项服务最符合将文件存储为对象的要求？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon S3",
+          "explanation": "Amazon S3 是一种对象存储服务，可将图片等数据作为对象进行存储和保护。对于长期保存，应根据需求选择合适的存储类和生命周期设置。"
+        },
+        {
+          "id": "b",
+          "text": "Amazon EBS",
+          "explanation": "Amazon EBS 是连接到 EC2 实例的块存储。对于应用程序需要将文件作为对象进行存储和检索的要求，它不是首选方案。"
+        },
+        {
+          "id": "c",
+          "text": "Amazon EFS",
+          "explanation": "Amazon EFS 是可由多个计算资源共享的文件存储。其管理方式和使用模式不同于对象存储的要求。"
+        },
+        {
+          "id": "d",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS 是用于管理关系数据库的服务，并不是用于将原始图片作为对象存储的服务。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-002",
+      "prompt": "照片共享服务的开发负责人希望在用户将图像上传到 S3 输入存储桶后，自动创建缩略图。以下哪种架构适合以此次上传为起点分流后续处理？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "通过 S3 对象创建事件调用 Lambda 函数，并将处理后的图像保存到不同于输入位置的位置。",
+          "explanation": "S3 事件通知可以异步调用 Lambda，将输出位置分开有助于避免递归调用。由于通知至少传递一次，因此函数应采用幂等处理，以安全地处理重复事件。"
+        },
+        {
+          "id": "b",
+          "text": "通过 S3 对象创建事件调用 Lambda 函数，并将处理后的图像保存到同一个输入前缀下。",
+          "explanation": "写回同一个存储桶和目标前缀可能会使输出再次触发同一个事件。应分开输入和输出，或缩小筛选范围。"
+        },
+        {
+          "id": "c",
+          "text": "仅使用同一个个人访问密钥，同时管理调用 Lambda 函数的权限和函数操作 S3 的权限。",
+          "explanation": "允许 S3 调用 Lambda 的基于资源的权限，与允许函数操作其他资源的执行角色承担不同的职责。不要依赖个人访问密钥。"
+        },
+        {
+          "id": "d",
+          "text": "假设每个事件只会接收一次，不检查同一图像是否已经处理完成。",
+          "explanation": "S3 事件通知至少传递一次，因此可能出现重复通知或顺序不同的通知。必须设计能够安全处理重复通知的处理逻辑。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-003",
+      "prompt": "预订服务的产品负责人希望使用现有的 SQL 来处理预订、客户和支付之间的关联数据。减少数据库运维工作也是一项要求。作为第一候选，哪项服务最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS 是用于运行关系数据库的托管服务，可帮助处理使用现有 SQL、备份和修补等管理任务。对于关系数据库需求，Amazon Aurora 也是可以比较的候选服务。"
+        },
+        {
+          "id": "b",
+          "text": "Amazon DynamoDB",
+          "explanation": "DynamoDB 是一种托管 NoSQL 数据库，适合比较以键值数据的低延迟访问为中心的需求。根据使用现有 SQL 和处理关系数据的条件，它不是第一候选。"
+        },
+        {
+          "id": "c",
+          "text": "Amazon ElastiCache",
+          "explanation": "ElastiCache 用于缓存经常访问的数据。它不是管理预订、客户和支付持久性关系数据的主数据库。"
+        },
+        {
+          "id": "d",
+          "text": "Amazon S3",
+          "explanation": "S3 适合对象存储，但对于关系数据库和使用现有 SQL 的要求，它不是第一候选。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EC2",
+    "Virtual server",
+    "ECS",
+    "EKS",
+    "Lambda",
+    "Serverless",
+    "S3",
+    "Object storage",
+    "Bucket",
+    "Object key",
+    "S3 storage class",
+    "EBS",
+    "Block storage",
+    "EFS",
+    "File storage",
+    "RDS",
+    "Aurora",
+    "Relational database",
+    "SQL",
+    "DynamoDB",
+    "ElastiCache",
+    "Access pattern",
+    "S3 event notification",
+    "Event-driven architecture",
+    "Resource-based policy",
+    "IAM role",
+    "Idempotency",
+    "VPC",
+    "Security group",
+    "Route 53",
+    "AWS Site-to-Site VPN",
+    "AWS Direct Connect",
+    "AWS Management Console",
+    "AWS CLI",
+    "AWS SDK",
+    "API call",
+    "CloudFormation",
+    "Infrastructure as code",
+    "SNS",
+    "SQS",
+    "EventBridge"
+  ]
+}

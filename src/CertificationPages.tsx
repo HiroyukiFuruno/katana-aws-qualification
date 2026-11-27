@@ -6,6 +6,7 @@ import { certifications, levelMessage } from './certifications';
 import { localePath } from './locales';
 import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';
+import { qualificationLearningPath } from './qualificationLearning/routes';
 import { useContent } from './useContent';
 
 export function CertificationPages({ id }: { id?: string }) {
@@ -92,7 +93,13 @@ export function CertificationPages({ id }: { id?: string }) {
         <p>{guide.audience}</p>
         <div className="exam-actions">
           {certification.course && (
-            <a className="entry-action" href={localePath(locale, `study/${certification.id}`)}>
+            <a
+              className="entry-action"
+              href={
+                qualificationLearningPath(locale, certification.id) ??
+                localePath(locale, `study/${certification.id}`)
+              }
+            >
               {t('openCourse')}
             </a>
           )}

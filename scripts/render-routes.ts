@@ -28,7 +28,8 @@ function escapeHtml(value: string) {
     .replaceAll('"', '&quot;');
 }
 
-function descriptionFor(entry: string, dictionary: Record<Message, string>) {
+function descriptionFor(entry: string, dictionary: Record<Message, string>, localized?: string) {
+  if (localized) return localized;
   if (entry === 'glossary') return dictionary.glossaryIntro;
   if (entry === 'certifications/overview') return dictionary.certOverviewDescription;
   return dictionary.landingDescription;
@@ -41,9 +42,10 @@ for (const locale of locales) {
     const supported = publishedLocalesFor(entry);
     if (!supported.includes(locale)) continue;
     const path = localePath(locale, entry);
+    const lesson = await content.lessonFor(entry);
     const baseTitle = Object.hasOwn(indexTitles, entry)
       ? dictionary[indexTitles[entry as keyof typeof indexTitles]]
-      : content.titleFor(entry);
+      : await content.titleFor(entry);
     if (!baseTitle) throw new Error(`Missing title for ${entry}`);
     const alternateLinks = [...supported, 'x-default']
       .map(
@@ -51,7 +53,12 @@ for (const locale of locales) {
           `<link rel="alternate" hreflang="${alternate}" href="${origin}${localePath(alternate === 'x-default' ? 'en' : alternate, entry)}">`,
       )
       .join('\n');
-    const description = escapeHtml(descriptionFor(entry, dictionary));
+    const description = escapeHtml(
+      descriptionFor(entry, dictionary, lesson?.description ?? content.descriptionFor(entry)),
+    );
+    const staticLessonBody = lesson
+      ? `<main data-static-lesson="true"><article><h1>${escapeHtml(lesson.body.heading)}</h1>${lesson.body.paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}</article></main>`
+      : '';
     const html = template
       .replace('lang="en"', `lang="${locale}"`)
       .replace(
@@ -65,7 +72,8 @@ for (const locale of locales) {
       .replace(
         /<link rel="canonical" href="[^"]*">/,
         `<link rel="canonical" href="${origin}${path}">\n${alternateLinks}`,
-      );
+      )
+      .replace('<div id="root"></div>', `<div id="root">${staticLessonBody}</div>`);
     const directory = join('dist', path);
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'index.html'), html);
@@ -108,7 +116,7 @@ for (const locale of locales) {
       .replace('lang="en"', `lang="${locale}"`)
       .replace(
         /<title>[^<]+<\/title>/,
-        `<title>${escapeHtml(content.titleFor(entry) ?? messages[locale].learnFundamentals)} | ${escapeHtml(messages[locale].siteName)}</title>`,
+        `<title>${escapeHtml((await content.titleFor(entry)) ?? messages[locale].learnFundamentals)} | ${escapeHtml(messages[locale].siteName)}</title>`,
       )
       .replace(/<link rel="canonical" href="[^"]*">/, '')
       .replace(

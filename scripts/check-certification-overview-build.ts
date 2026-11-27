@@ -99,6 +99,24 @@ for (const locale of locales) {
   }
 }
 
+for (const locale of locales) {
+  const content = JSON.parse(await readFile(`public/translations/${locale}/site.json`, 'utf8')) as {
+    certifications: Record<string, { name: string }>;
+    guides: Record<string, { scope: string; audience: string }>;
+  };
+  for (const id of certificationIds) {
+    const html = await readFile(routeFile(locale, `certifications/${id}`), 'utf8');
+    assert(html.includes(escapeBodyText(content.certifications[id].name)), `${locale}/${id}: name`);
+    assert(html.includes(escapeBodyText(content.guides[id].scope)), `${locale}/${id}: scope`);
+    assert(html.includes(escapeBodyText(content.guides[id].audience)), `${locale}/${id}: audience`);
+  }
+  for (const page of ['study', 'study/questions', 'study/fundamentals', 'certifications']) {
+    const html = await readFile(routeFile(locale, page), 'utf8');
+    assert(html.includes('<h1>'), `${locale}/${page}: heading`);
+    assert(html.includes('<a href='), `${locale}/${page}: links`);
+  }
+}
+
 const sitemap = await readFile('dist/sitemap.xml', 'utf8');
 for (const locale of locales)
   assert.equal(

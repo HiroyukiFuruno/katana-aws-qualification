@@ -27,10 +27,12 @@ export function repairShiftedLessonBody(step: LessonStep): LessonStep {
     };
   }
   const misplaced = comparable(previous.label);
+  const hasHeadingLabel =
+    lastLabel === heading || (lastLabel.startsWith(heading) && !lastLabel.replaceAll(heading, ''));
   if (
     !heading ||
     misplaced.length <= heading.length * 1.25 ||
-    lastLabel !== heading ||
+    !hasHeadingLabel ||
     !previous.text.trim()
   ) {
     return step;
@@ -47,8 +49,8 @@ export function repairShiftedLessonBody(step: LessonStep): LessonStep {
     ...step,
     blocks: [
       ...step.blocks.slice(0, -2),
-      { ...previous, label: last.label, text: previous.label },
-      { ...last, text: previous.text },
+      { ...previous, label: step.label, text: previous.label },
+      { ...last, label: step.label, text: previous.text },
     ],
   };
 }

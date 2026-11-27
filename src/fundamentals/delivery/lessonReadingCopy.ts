@@ -33,7 +33,7 @@ function repairedBlock(block: LessonSlideBlock, locale: Locale) {
 export function lessonReadingCopy(step: LessonStep, locale: Locale): LessonStep {
   const fixed = locale === 'ja' ? step : repairLocalizedLesson(step, locale);
   const edit = headings.get(`${step.unitId}/${step.sectionId}`)?.[locale];
-  const newHeading = edit?.source === fixed.label ? edit.text : fixed.label;
+  const newHeading = edit?.source === step.label ? edit.text : fixed.label;
   const heading = step.kind === 'misconception' ? labels[locale].heading : newHeading;
   if (heading === fixed.label && step.kind !== 'misconception' && step.unitId !== releaseUnit)
     return fixed;

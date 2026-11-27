@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { readFile } from 'node:fs/promises';
-import type { DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
+import type { DeliveryIndexAsset, DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
 import { lessonReadingCopy } from '../src/fundamentals/delivery/lessonReadingCopy';
 import { type Locale, locales } from '../src/locales';
 
@@ -89,5 +89,46 @@ test('all nine translations retain the CI/CD approval and artifact objectives', 
       step.blocks[1].label,
       step.blocks[1].text,
     ]);
+  }
+});
+
+test('artifact misconceptions keep their correction and cloud and networking show all objectives', async () => {
+  for (const locale of locales.filter((item) => item !== 'ja')) {
+    const cicd = await deliveryUnit(locale, 'cicd');
+    const correction = cicd.steps.find((item) =>
+      item.id.endsWith(':artifacts-promotion:misconception:1'),
+    );
+    if (!correction) throw new Error(`Missing artifact slide for ${locale}`);
+    expect(lessonReadingCopy(correction, locale).blocks[1].text).toBe(correction.blocks[1].label);
+
+    for (const slug of ['cloud-concepts', 'networking-basics']) {
+      const asset = await deliveryUnit(locale, slug);
+      const step = asset.steps.find((item) => item.id.endsWith(':intro:objectives:1'));
+      if (!step) throw new Error(`Missing ${slug} objectives for ${locale}`);
+      const fixed = lessonReadingCopy(step, locale);
+      expect(fixed.label).toBe(step.blocks[0].label);
+      expect(fixed.blocks.map((block) => block.text)).toEqual([
+        step.blocks[0].text,
+        step.blocks[1].label,
+        step.blocks[1].text,
+      ]);
+    }
+  }
+});
+
+test('restored reading slides do not use their heading in place of a paragraph', async () => {
+  const { units } = (await Bun.file(
+    'public/fundamentals/delivery/index.json',
+  ).json()) as DeliveryIndexAsset;
+  for (const locale of locales.filter((item) => item !== 'ja')) {
+    for (const unit of units.filter((item) => item.state === 'published')) {
+      const asset = await deliveryUnit(locale, unit.slug);
+      for (const step of asset.steps.filter((item) => item.kind === 'reading')) {
+        const fixed = lessonReadingCopy(step, locale);
+        const body = fixed.blocks.map((block) => block.text);
+        expect(body, `${locale}/${step.id}`).not.toContain(fixed.label);
+        expect(new Set(body).size, `${locale}/${step.id}`).toBe(body.length);
+      }
+    }
   }
 });

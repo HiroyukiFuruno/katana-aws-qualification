@@ -1,3 +1,5 @@
+import localizedMentions from './glossary-mentions.json' with { type: 'json' };
+import searchAliases from './glossary-search-aliases.json' with { type: 'json' };
 import terms from './glossary-terms.json' with { type: 'json' };
 import type { Message } from './messages';
 
@@ -40,6 +42,13 @@ function searchText(value: string) {
   return value.normalize('NFKC').toLowerCase();
 }
 
+const mentions = new Map(
+  Object.entries({ ...localizedMentions, ...searchAliases }).map(([mention, term]) => [
+    searchText(mention),
+    term,
+  ]),
+);
+
 export function filterGlossary(query: string, category = '', tags: string[] = [], entries = glossary) {
   const search = searchText(query.trim());
   const words = search.split(/\s+/);
@@ -48,8 +57,9 @@ export function filterGlossary(query: string, category = '', tags: string[] = []
       (!category || entry.category === category) && tags.every((tag) => entry.tags.includes(tag)),
   );
   const exact = candidates.find((entry) => searchText(entry.term) === search);
-  return exact
-    ? [exact]
+  const namedEntry = exact ?? candidates.find((entry) => entry.term === mentions.get(search));
+  return namedEntry
+    ? [namedEntry]
     : candidates.filter((entry) => {
         const text = searchText(`${entry.term} ${entry.expansion} ${entry.definition}`);
         return words.every((word) => text.includes(word));

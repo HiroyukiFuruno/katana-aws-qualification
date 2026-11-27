@@ -5,9 +5,11 @@ import {
   finishLessonFinal,
   lessonAssets,
   lessonCatalogCard,
+  lessonSlideCount,
   nextButton,
   selectLessonAnswer,
   visibleLessonQuestion,
+  visibleLessonSteps,
   walkLessonReading,
 } from '../progress/fundamentals.helpers';
 import { acceptNecessaryCookies } from '../progress/fundamentals-mobile.helpers';

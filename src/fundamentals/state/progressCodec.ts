@@ -1,8 +1,8 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { integer, nullable, object, strings, text, timestamp, uuid } from './codecPrimitives';
 import type { LessonProgress } from './types';
 
-export function readLessonProgress(value: unknown, asset: DeliveryUnitAsset): LessonProgress {
+export function readLessonProgress(value: unknown, asset: LessonRecordAsset): LessonProgress {
   const row = object(value, 'progress');
   const slides = strings(row.completedSlideIds, 'completedSlideIds');
   const checkpoints = strings(row.completedCheckpointIds, 'completedCheckpointIds');

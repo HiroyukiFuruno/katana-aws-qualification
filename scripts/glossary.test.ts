@@ -88,6 +88,12 @@ test('全言語に同じ用語を収録し、教材で使う別表記で定義�
     ['Private route table', 'Route table'],
     ['Private IPv4', 'Private IPv4 address'],
     ['SAN', 'SAN'],
+    ['ACL', 'NACL'],
+    ['アクセス拒否', 'AccessDenied'],
+    ['s3:GetObject', 'GetObject'],
+    ['s3:PutObject', 'PutObject'],
+    ['RDS for PostgreSQL', 'PostgreSQL'],
+    ['Well-Architected', 'AWS Well-Architected Framework'],
   ]) {
     expect(filterGlossary(query).map((entry) => entry.term)).toEqual([term]);
   }

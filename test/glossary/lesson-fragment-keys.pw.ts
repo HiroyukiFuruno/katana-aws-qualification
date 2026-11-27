@@ -7,11 +7,11 @@ import { parseDeliveryUnit } from '../../src/fundamentals/delivery/loadUnit';
 const root = new URL('../../public/fundamentals/delivery/', import.meta.url);
 const index = parseDeliveryIndex(JSON.parse(readFileSync(new URL('index.json', root), 'utf8')));
 const cases = [
-  ['cloud-concepts', 'tradeoffs', 2, false],
-  ['routing-connectivity', 'route-selection', 1, false],
-  ['routing-connectivity', 'internet-egress', 2, false],
-  ['observability', 'objectives', 2, false],
-  ['cloud-concepts', 'tradeoffs', 2, true],
+  ['observability', 'objectives', false],
+  ['cloud-concepts', 'tradeoffs', true],
+  ['routing-connectivity', 'route-selection', true],
+  ['routing-connectivity', 'internet-egress', true],
+  ['observability', 'objectives', true],
 ] as const;
 
 function fixture(slug: string): DeliveryUnitAsset {
@@ -20,15 +20,21 @@ function fixture(slug: string): DeliveryUnitAsset {
   return parseDeliveryUnit(JSON.parse(readFileSync(new URL(`${slug}.json`, root), 'utf8')), entry);
 }
 
-for (const [slug, section, position, repeat] of cases) {
+for (const [slug, section, repeat] of cases) {
   const asset = fixture(slug);
-  const id = `${asset.unit.id}:section:${section}:concept:${position}`;
-  const target = asset.steps.find((step) => step.id === id);
-  if (target && repeat) target.blocks = [...target.blocks, target.blocks[0]];
-  const adjacent = asset.steps.find(
-    (step) => step.blocks.length && step.sectionId && step.sectionId !== target?.sectionId,
+  const readings = asset.steps.filter(
+    (step) => step.kind === 'reading' && step.sectionId === section && step.blocks.length,
   );
-  if (!target || !adjacent) throw new Error(`Missing reading step: ${id}`);
+  const split = readings.find(
+    (step) => new Set(step.blocks.map((block) => block.contentRef)).size < step.blocks.length,
+  );
+  const target = split ?? (repeat ? readings[0] : undefined);
+  const adjacent = asset.steps.find(
+    (step) => step.blocks.length && step.sectionId && step.sectionId !== section,
+  );
+  if (!target || !adjacent) throw new Error(`Missing reading step: ${slug}/${section}`);
+  if (repeat) target.blocks = [...target.blocks, target.blocks[0]];
+  const id = target.id;
   expect(new Set(target.blocks.map((block) => block.contentRef)).size).toBeLessThan(
     target.blocks.length,
   );

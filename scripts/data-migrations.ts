@@ -18,4 +18,6 @@ export const dataMigrations = [
   '202611220005_site_preferences.sql',
   '202611220006_certification_milestones.sql',
   '202611220007_milestone_dashboard.sql',
+  '202611280001_fundamentals_history_read.sql',
+  '202611280002_fundamentals_catalog_rebuild.sql',
 ] as const;

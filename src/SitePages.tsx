@@ -3,6 +3,7 @@ import { CertificationDirectory } from './CertificationDirectory';
 import { localePath } from './locales';
 import { PageIntro } from './PageIntro';
 import { usePreferences } from './preferences';
+import { StudyEntryCards } from './StudyEntryCards';
 
 export function NotFound() {
   const { locale, t } = usePreferences();
@@ -26,24 +27,8 @@ export function StudyPaths() {
           <p>{t('studyPathsIntro')}</p>
         </div>
       </PageIntro>
+      <StudyEntryCards locale={locale} />
       <AccountBenefits context="study" showAction />
-      <div className="entry-grid study-paths">
-        <a className="entry-card" href={localePath(locale, 'study/fundamentals')}>
-          <h2>{t('learnFundamentals')}</h2>
-          <p>{t('fundamentalsEntry')}</p>
-          <small>{t('coursePending')}</small>
-          <span className="entry-action">
-            {t('learnFundamentals')} <span aria-hidden="true">→</span>
-          </span>
-        </a>
-        <a className="entry-card" href={localePath(locale, 'study/questions')}>
-          <h2>{t('learnFromQuestions')}</h2>
-          <p>{t('studyEntry')}</p>
-          <span className="entry-action">
-            {t('browseCourses')} <span aria-hidden="true">→</span>
-          </span>
-        </a>
-      </div>
     </main>
   );
 }

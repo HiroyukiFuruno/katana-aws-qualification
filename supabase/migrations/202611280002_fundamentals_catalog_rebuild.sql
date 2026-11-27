@@ -1,0 +1,6793 @@
+-- Generated from public/fundamentals/delivery/trustedCatalog.json. Do not edit manually.
+-- The hash is Node canonical JSON SHA-256, stored as decode(hex, 'hex').
+begin;
+
+insert into public.published_fundamentals_catalogs (
+  unit_id, content_version, content_hash, plan, final_questions
+) values
+  ('fundamentals.cloud-concepts', 'ba3c90a7f0f349f923c74577dae13686a8bbc0a921608244fed0240b5350ab85', decode('d1417560c69c8e46d543ea9082c14989b640180aa407dd21635326f8c5027a32', 'hex'),
+    $kaq_plan_1_0$[
+  {
+    "id": "fundamentals.cloud-concepts:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:on-demand:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:on-demand:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:on-demand:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:on-demand:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:on-demand:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:checkpoint:fundamentals.cloud-concepts.checkpoint.on-demand.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.cloud-concepts",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cloud-concepts.checkpoint.on-demand.v1",
+      "objectiveId": "cloud-1",
+      "questionId": "fundamentals.cloud-concepts.checkpoint.on-demand.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "on-demand",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS: Six advantages of cloud computing",
+        "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/six-advantages-of-cloud-computing.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:shared-responsibility:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:shared-responsibility:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:shared-responsibility:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:shared-responsibility:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:shared-responsibility:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:checkpoint:fundamentals.cloud-concepts.checkpoint.shared-responsibility.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.cloud-concepts",
+      "choiceIds": [
+        "B",
+        "A",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cloud-concepts.checkpoint.shared-responsibility.v1",
+      "objectiveId": "cloud-2",
+      "questionId": "fundamentals.cloud-concepts.checkpoint.shared-responsibility.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "shared-responsibility",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS: Shared Responsibility Model",
+        "url": "https://aws.amazon.com/compliance/shared-responsibility-model/"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:regions-az:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:regions-az:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:regions-az:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:regions-az:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:regions-az:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:checkpoint:fundamentals.cloud-concepts.checkpoint.regions-az.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.cloud-concepts",
+      "choiceIds": [
+        "C",
+        "A",
+        "B",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cloud-concepts.checkpoint.regions-az.v1",
+      "objectiveId": "cloud-3",
+      "questionId": "fundamentals.cloud-concepts.checkpoint.regions-az.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "regions-az",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:tradeoffs:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:tradeoffs:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:tradeoffs:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:tradeoffs:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:section:tradeoffs:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cloud-concepts:checkpoint:fundamentals.cloud-concepts.checkpoint.tradeoffs.v1",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.cloud-concepts",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A",
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cloud-concepts.checkpoint.tradeoffs.v1",
+      "objectiveId": "cloud-4",
+      "questionId": "fundamentals.cloud-concepts.checkpoint.tradeoffs.v1",
+      "requiredChoices": 2,
+      "revision": 2,
+      "sectionId": "tradeoffs",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS: Regions and Availability Zones",
+        "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_1_0$::jsonb,
+    $kaq_final_1_0$[
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-cloud-101",
+    "objectiveId": "cloud-1",
+    "questionId": "fund-cloud-101",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "on-demand",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS: Six advantages of cloud computing",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/six-advantages-of-cloud-computing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 0
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cloud-102",
+    "objectiveId": "cloud-1",
+    "questionId": "fund-cloud-102",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "on-demand",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS: Six advantages of cloud computing",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/six-advantages-of-cloud-computing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 1
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-cloud-103",
+    "objectiveId": "cloud-1",
+    "questionId": "fund-cloud-103",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "on-demand",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS: Six advantages of cloud computing",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/six-advantages-of-cloud-computing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 2
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cloud-001",
+    "objectiveId": "cloud-2",
+    "questionId": "fund-cloud-001",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "shared-responsibility",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS: Shared Responsibility Model",
+      "url": "https://aws.amazon.com/compliance/shared-responsibility-model/"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 3
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-cloud-105",
+    "objectiveId": "cloud-2",
+    "questionId": "fund-cloud-105",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "shared-responsibility",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS: Shared Responsibility Model",
+      "url": "https://aws.amazon.com/compliance/shared-responsibility-model/"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 4
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "C",
+      "D"
+    ],
+    "explanationRef": "final:fund-cloud-106",
+    "objectiveId": "cloud-2",
+    "questionId": "fund-cloud-106",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "shared-responsibility",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS: Shared Responsibility Model",
+      "url": "https://aws.amazon.com/compliance/shared-responsibility-model/"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 5
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cloud-002",
+    "objectiveId": "cloud-3",
+    "questionId": "fund-cloud-002",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "regions-az",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS: Regions and Availability Zones",
+      "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 6
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-cloud-108",
+    "objectiveId": "cloud-3",
+    "questionId": "fund-cloud-108",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "regions-az",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS: Regions and Availability Zones",
+      "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 7
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "C",
+      "D"
+    ],
+    "explanationRef": "final:fund-cloud-109",
+    "objectiveId": "cloud-3",
+    "questionId": "fund-cloud-109",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "regions-az",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS: Regions and Availability Zones",
+      "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 8
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-cloud-110",
+    "objectiveId": "cloud-4",
+    "questionId": "fund-cloud-110",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "tradeoffs",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS: Reliability Pillar",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 9
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-cloud-111",
+    "objectiveId": "cloud-4",
+    "questionId": "fund-cloud-111",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "tradeoffs",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS: Regions and Availability Zones",
+      "url": "https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions-availability-zones.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 10
+  },
+  {
+    "category": "クラウド概念",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-cloud-112",
+    "objectiveId": "cloud-4",
+    "questionId": "fund-cloud-112",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "tradeoffs",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS: Reliability Pillar",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 11
+  }
+]$kaq_final_1_0$::jsonb),
+  ('fundamentals.core-services', '50a7a86a9818170315779d4d033558ace91da6e2d231068169eafc68086d57c5', decode('8afe31866fd7aaa0c91d0fe68cd09068c5a8dc65e9832f3710fed8a237916667', 'hex'),
+    $kaq_plan_2_0$[
+  {
+    "id": "fundamentals.core-services:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:compute:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:compute:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:compute:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:compute:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:compute:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:checkpoint:fundamentals.core-services.checkpoint.compute.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.core-services",
+      "choiceIds": [
+        "D",
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "D"
+      ],
+      "explanationRef": "checkpoint:fundamentals.core-services.checkpoint.compute.v1",
+      "objectiveId": "compute",
+      "questionId": "fundamentals.core-services.checkpoint.compute.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "compute",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Lambda with Amazon S3",
+        "url": "https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:storage:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:storage:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:storage:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:storage:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:storage:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:checkpoint:fundamentals.core-services.checkpoint.storage.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.core-services",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.core-services.checkpoint.storage.v1",
+      "objectiveId": "storage",
+      "questionId": "fundamentals.core-services.checkpoint.storage.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "storage",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Amazon S3 User Guide",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:database:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:database:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:database:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:database:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:database:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:checkpoint:fundamentals.core-services.checkpoint.database.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.core-services",
+      "choiceIds": [
+        "B",
+        "A",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.core-services.checkpoint.database.v1",
+      "objectiveId": "database",
+      "questionId": "fundamentals.core-services.checkpoint.database.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "database",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS database services overview",
+        "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/database.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:composition:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:composition:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:composition:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:composition:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:section:composition:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.core-services:checkpoint:fundamentals.core-services.checkpoint.composition.v1",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.core-services",
+      "choiceIds": [
+        "B",
+        "C",
+        "A",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "B",
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.core-services.checkpoint.composition.v1",
+      "objectiveId": "composition",
+      "questionId": "fundamentals.core-services.checkpoint.composition.v1",
+      "requiredChoices": 2,
+      "revision": 2,
+      "sectionId": "composition",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Well-Architected Framework",
+        "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_2_0$::jsonb,
+    $kaq_final_2_0$[
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-services-001",
+    "objectiveId": "compute",
+    "questionId": "fund-services-001",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "compute",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon EC2 User Guide",
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 0
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-services-002",
+    "objectiveId": "compute",
+    "questionId": "fund-services-002",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "compute",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Lambda with Amazon S3",
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 1
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-services-101",
+    "objectiveId": "compute",
+    "questionId": "fund-services-101",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "compute",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Lambda Developer Guide",
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 2
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-services-102",
+    "objectiveId": "storage",
+    "questionId": "fund-services-102",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "storage",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon S3 User Guide",
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 3
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-services-103",
+    "objectiveId": "storage",
+    "questionId": "fund-services-103",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "storage",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon EBS User Guide",
+      "url": "https://docs.aws.amazon.com/ebs/latest/userguide/what-is-ebs.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 4
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-services-104",
+    "objectiveId": "storage",
+    "questionId": "fund-services-104",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "storage",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS storage services overview",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/storage-services.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 5
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-services-105",
+    "objectiveId": "database",
+    "questionId": "fund-services-105",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "database",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS database services overview",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/database.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 6
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "E"
+    ],
+    "explanationRef": "final:fund-services-106",
+    "objectiveId": "database",
+    "questionId": "fund-services-106",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "database",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon RDS User Guide",
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Welcome.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 7
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-services-107",
+    "objectiveId": "database",
+    "questionId": "fund-services-107",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "database",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon DynamoDB Developer Guide",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 8
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-services-108",
+    "objectiveId": "composition",
+    "questionId": "fund-services-108",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "composition",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS Well-Architected Framework",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 9
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "E"
+    ],
+    "explanationRef": "final:fund-services-109",
+    "objectiveId": "composition",
+    "questionId": "fund-services-109",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "composition",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS storage services overview",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/storage-services.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 10
+  },
+  {
+    "category": "fundamentals.core-services",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "C",
+      "D"
+    ],
+    "explanationRef": "final:fund-services-110",
+    "objectiveId": "composition",
+    "questionId": "fund-services-110",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "composition",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS Well-Architected Framework",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 11
+  }
+]$kaq_final_2_0$::jsonb),
+  ('fundamentals.identity-access', 'd29654c5e1f1e93f75140001d8c97373546992d6f97be1c090ce781574bda6eb', decode('54b74d10a60ad95db40b93382ae1d45f68b8a37db23dc1773dd50ce2a7a2151e', 'hex'),
+    $kaq_plan_3_0$[
+  {
+    "id": "fundamentals.identity-access:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:authn-authz:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:authn-authz:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:authn-authz:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:authn-authz:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:authn-authz:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:checkpoint:fundamentals.identity-access.checkpoint.authn-authz.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.identity-access",
+      "choiceIds": [
+        "C",
+        "A",
+        "B"
+      ],
+      "correctChoiceIds": [
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.identity-access.checkpoint.authn-authz.v1",
+      "objectiveId": "authn-authz",
+      "questionId": "fundamentals.identity-access.checkpoint.authn-authz.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "authn-authz",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "IAM policy evaluation logic",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:principal-role:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:principal-role:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:principal-role:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:principal-role:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:principal-role:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:checkpoint:fundamentals.identity-access.checkpoint.principal-role.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.identity-access",
+      "choiceIds": [
+        "D",
+        "A",
+        "B"
+      ],
+      "correctChoiceIds": [
+        "D"
+      ],
+      "explanationRef": "checkpoint:fundamentals.identity-access.checkpoint.principal-role.v1",
+      "objectiveId": "principal-role",
+      "questionId": "fundamentals.identity-access.checkpoint.principal-role.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "principal-role",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS IAM roles",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:policy-deny:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:policy-deny:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:policy-deny:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:policy-deny:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:policy-deny:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:checkpoint:fundamentals.identity-access.checkpoint.policy-deny.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.identity-access",
+      "choiceIds": [
+        "C",
+        "D",
+        "A"
+      ],
+      "correctChoiceIds": [
+        "C",
+        "D"
+      ],
+      "explanationRef": "checkpoint:fundamentals.identity-access.checkpoint.policy-deny.v1",
+      "objectiveId": "policy-deny",
+      "questionId": "fundamentals.identity-access.checkpoint.policy-deny.v1",
+      "requiredChoices": 2,
+      "revision": 2,
+      "sectionId": "policy-deny",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "IAM policy evaluation logic",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:least-privilege:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:least-privilege:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:least-privilege:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:least-privilege:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:section:least-privilege:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.identity-access:checkpoint:fundamentals.identity-access.checkpoint.least-privilege.v1",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.identity-access",
+      "choiceIds": [
+        "D",
+        "A",
+        "B"
+      ],
+      "correctChoiceIds": [
+        "D",
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.identity-access.checkpoint.least-privilege.v1",
+      "objectiveId": "least-privilege",
+      "questionId": "fundamentals.identity-access.checkpoint.least-privilege.v1",
+      "requiredChoices": 2,
+      "revision": 2,
+      "sectionId": "least-privilege",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "IAM best practices",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_3_0$::jsonb,
+    $kaq_final_3_0$[
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-iam-101",
+    "objectiveId": "authn-authz",
+    "questionId": "fund-iam-101",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "authn-authz",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS IAM User Guide",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 0
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-iam-102",
+    "objectiveId": "authn-authz",
+    "questionId": "fund-iam-102",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "authn-authz",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "IAM policy evaluation logic",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 1
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-iam-103",
+    "objectiveId": "authn-authz",
+    "questionId": "fund-iam-103",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "authn-authz",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS IAM MFA",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 2
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-iam-104",
+    "objectiveId": "principal-role",
+    "questionId": "fund-iam-104",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "principal-role",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS IAM roles",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 3
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-iam-105",
+    "objectiveId": "principal-role",
+    "questionId": "fund-iam-105",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "principal-role",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "IAM roles for EC2",
+      "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 4
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-iam-106",
+    "objectiveId": "principal-role",
+    "questionId": "fund-iam-106",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "principal-role",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS IAM principals",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 5
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-iam-107",
+    "objectiveId": "policy-deny",
+    "questionId": "fund-iam-107",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "policy-deny",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "IAM policy evaluation logic",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 6
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "E"
+    ],
+    "explanationRef": "final:fund-iam-108",
+    "objectiveId": "policy-deny",
+    "questionId": "fund-iam-108",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "policy-deny",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "IAM policy evaluation logic",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 7
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-iam-109",
+    "objectiveId": "policy-deny",
+    "questionId": "fund-iam-109",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "policy-deny",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "IAM policy evaluation logic",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 8
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-iam-110",
+    "objectiveId": "least-privilege",
+    "questionId": "fund-iam-110",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "least-privilege",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "IAM best practices",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 9
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "E"
+    ],
+    "explanationRef": "final:fund-iam-111",
+    "objectiveId": "least-privilege",
+    "questionId": "fund-iam-111",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "least-privilege",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "IAM best practices",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 10
+  },
+  {
+    "category": "fundamentals.identity-access",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "C",
+      "D"
+    ],
+    "explanationRef": "final:fund-iam-112",
+    "objectiveId": "least-privilege",
+    "questionId": "fund-iam-112",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "least-privilege",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "IAM best practices",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 11
+  }
+]$kaq_final_3_0$::jsonb),
+  ('fundamentals.data-protection', '16ab4d6dfc6fdeda11e34a22dadbaf231f6120b55495881746260dc1c7a35e4b', decode('99254ab7ef8ceb3d8c38daf5adf3b16da3b4a66d8085acfd8c278125d58bcc8e', 'hex'),
+    $kaq_plan_4_0$[
+  {
+    "id": "fundamentals.data-protection:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:encryption:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:encryption:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:encryption:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:encryption:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:encryption:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.encryption.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.data-protection",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.data-protection.checkpoint.encryption.v1",
+      "objectiveId": "encryption",
+      "questionId": "fundamentals.data-protection.checkpoint.encryption.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "encryption",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Amazon S3 default encryption",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:kms:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:kms:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:kms:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:kms:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:kms:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.kms.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.data-protection",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.data-protection.checkpoint.kms.v1",
+      "objectiveId": "kms",
+      "questionId": "fundamentals.data-protection.checkpoint.kms.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "kms",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS KMS key policies",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:recovery:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:recovery:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:recovery:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:recovery:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:recovery:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.recovery.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.data-protection",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.data-protection.checkpoint.recovery.v1",
+      "objectiveId": "recovery",
+      "questionId": "fundamentals.data-protection.checkpoint.recovery.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "recovery",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Backup restore testing",
+        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:secrets:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:secrets:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:secrets:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:secrets:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:section:secrets:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.secrets.v1",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.data-protection",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "D"
+      ],
+      "explanationRef": "checkpoint:fundamentals.data-protection.checkpoint.secrets.v1",
+      "objectiveId": "secrets",
+      "questionId": "fundamentals.data-protection.checkpoint.secrets.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "secrets",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Secrets Manager User Guide",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_4_0$::jsonb,
+    $kaq_final_4_0$[
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-data-101",
+    "objectiveId": "encryption",
+    "questionId": "fund-data-101",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "encryption",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS data protection",
+      "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 0
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-data-102",
+    "objectiveId": "encryption",
+    "questionId": "fund-data-102",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "encryption",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon S3 SSE-KMS",
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 1
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-data-103",
+    "objectiveId": "encryption",
+    "questionId": "fund-data-103",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "encryption",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS data protection",
+      "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 2
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-data-104",
+    "objectiveId": "kms",
+    "questionId": "fund-data-104",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "kms",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS KMS key policies",
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 3
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-data-105",
+    "objectiveId": "kms",
+    "questionId": "fund-data-105",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "kms",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS KMS key policies",
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 4
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-data-106",
+    "objectiveId": "kms",
+    "questionId": "fund-data-106",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "kms",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS KMS key access and permissions",
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/control-access.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 5
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-data-107",
+    "objectiveId": "recovery",
+    "questionId": "fund-data-107",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "recovery",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS Backup restore testing",
+      "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 6
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-data-108",
+    "objectiveId": "recovery",
+    "questionId": "fund-data-108",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "recovery",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS Backup restore testing",
+      "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 7
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-data-109",
+    "objectiveId": "recovery",
+    "questionId": "fund-data-109",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "recovery",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Backup restore testing",
+      "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 8
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-data-110",
+    "objectiveId": "secrets",
+    "questionId": "fund-data-110",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "secrets",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Secrets Manager User Guide",
+      "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 9
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-data-111",
+    "objectiveId": "secrets",
+    "questionId": "fund-data-111",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "secrets",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Secrets Manager retrieving secrets",
+      "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/retrieving-secrets.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 10
+  },
+  {
+    "category": "データ保護",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-data-112",
+    "objectiveId": "secrets",
+    "questionId": "fund-data-112",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "secrets",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS Secrets Manager rotation schedules",
+      "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotate-secrets_schedule.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 11
+  }
+]$kaq_final_4_0$::jsonb),
+  ('fundamentals.networking-basics', '7f72f6fb78aa39fdcb18c4950f7219c3bb12edc393f5550d4ddc0b302485fbb9', decode('adf179584f9652eddbca72965a65bb0197fab1decb7fafc06becc36c9e67e574', 'hex'),
+    $kaq_plan_5_0$[
+  {
+    "id": "fundamentals.networking-basics:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:ip-port:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:ip-port:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:ip-port:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:ip-port:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:ip-port:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:checkpoint:fundamentals.networking-basics.checkpoint.ip-port.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.networking-basics",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.networking-basics.checkpoint.ip-port.v1",
+      "objectiveId": "ip-port",
+      "questionId": "fundamentals.networking-basics.checkpoint.ip-port.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "ip-port",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Amazon VPC security group rules",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:transport:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:transport:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:transport:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:transport:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:transport:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:checkpoint:fundamentals.networking-basics.checkpoint.transport.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.networking-basics",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.networking-basics.checkpoint.transport.v1",
+      "objectiveId": "transport",
+      "questionId": "fundamentals.networking-basics.checkpoint.transport.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "transport",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Amazon VPC security group rules",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:http-tls:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:http-tls:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:http-tls:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:http-tls:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:http-tls:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:checkpoint:fundamentals.networking-basics.checkpoint.http-tls.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.networking-basics",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.networking-basics.checkpoint.http-tls.v1",
+      "objectiveId": "http-tls",
+      "questionId": "fundamentals.networking-basics.checkpoint.http-tls.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "http-tls",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Certificate Manager User Guide",
+        "url": "https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:diagnosis:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:diagnosis:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:diagnosis:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:diagnosis:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:section:diagnosis:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.networking-basics:checkpoint:fundamentals.networking-basics.checkpoint.diagnosis.v1",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.networking-basics",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.networking-basics.checkpoint.diagnosis.v1",
+      "objectiveId": "diagnosis",
+      "questionId": "fundamentals.networking-basics.checkpoint.diagnosis.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "diagnosis",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Certificate Manager User Guide",
+        "url": "https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_5_0$::jsonb,
+    $kaq_final_5_0$[
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-network-001",
+    "objectiveId": "ip-port",
+    "questionId": "fund-network-001",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "ip-port",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 0
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-network-002",
+    "objectiveId": "ip-port",
+    "questionId": "fund-network-002",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "ip-port",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 1
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-network-101",
+    "objectiveId": "transport",
+    "questionId": "fund-network-101",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "transport",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 2
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-network-102",
+    "objectiveId": "transport",
+    "questionId": "fund-network-102",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "transport",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 3
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-network-103",
+    "objectiveId": "transport",
+    "questionId": "fund-network-103",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "transport",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 4
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-network-104",
+    "objectiveId": "http-tls",
+    "questionId": "fund-network-104",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "http-tls",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Certificate Manager User Guide",
+      "url": "https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 5
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-network-105",
+    "objectiveId": "http-tls",
+    "questionId": "fund-network-105",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "http-tls",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Certificate Manager User Guide",
+      "url": "https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 6
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-network-106",
+    "objectiveId": "http-tls",
+    "questionId": "fund-network-106",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "http-tls",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS Certificate Manager User Guide",
+      "url": "https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 7
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-network-107",
+    "objectiveId": "diagnosis",
+    "questionId": "fund-network-107",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "diagnosis",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 8
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-network-108",
+    "objectiveId": "diagnosis",
+    "questionId": "fund-network-108",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "diagnosis",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 9
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-network-109",
+    "objectiveId": "ip-port",
+    "questionId": "fund-network-109",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "ip-port",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Configure security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/working-with-security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 10
+  },
+  {
+    "category": "fundamentals.networking-basics",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-network-110",
+    "objectiveId": "diagnosis",
+    "questionId": "fund-network-110",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "diagnosis",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 11
+  }
+]$kaq_final_5_0$::jsonb),
+  ('fundamentals.domain-dns', 'b272edef91c8d799cbb68b54e49065f774fd782b298a952d9a1a32aac8c1a5d8', decode('7d40fd2bb3137463bcfdc6b79e2b02ac3af8e2281ffa1362e25ecdf2f70035fc', 'hex'),
+    $kaq_plan_6_0$[
+  {
+    "id": "fundamentals.domain-dns:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:resolution:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:resolution:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:resolution:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:resolution:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:resolution:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:checkpoint:fundamentals.domain-dns.checkpoint.resolution.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.domain-dns",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.domain-dns.checkpoint.resolution.v1",
+      "objectiveId": "resolution",
+      "questionId": "fundamentals.domain-dns.checkpoint.resolution.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "resolution",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Route 53 VPC Resolver",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:records:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:records:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:records:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:records:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:records:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:checkpoint:fundamentals.domain-dns.checkpoint.records.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.domain-dns",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.domain-dns.checkpoint.records.v1",
+      "objectiveId": "records",
+      "questionId": "fundamentals.domain-dns.checkpoint.records.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "records",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Choosing alias and non-alias records",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:ttl:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:ttl:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:ttl:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:ttl:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:ttl:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:checkpoint:fundamentals.domain-dns.checkpoint.ttl.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.domain-dns",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.domain-dns.checkpoint.ttl.v1",
+      "objectiveId": "ttl",
+      "questionId": "fundamentals.domain-dns.checkpoint.ttl.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "ttl",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Route 53 DNS settings not in effect",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/troubleshooting-new-dns-settings-not-in-effect.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:boundary:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:boundary:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:boundary:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:boundary:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:section:boundary:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.domain-dns:checkpoint:fundamentals.domain-dns.checkpoint.boundary.v1",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.domain-dns",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "D"
+      ],
+      "explanationRef": "checkpoint:fundamentals.domain-dns.checkpoint.boundary.v1",
+      "objectiveId": "boundary",
+      "questionId": "fundamentals.domain-dns.checkpoint.boundary.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "boundary",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Route 53 health checks and routing",
+        "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_6_0$::jsonb,
+    $kaq_final_6_0$[
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-dns-001",
+    "objectiveId": "resolution",
+    "questionId": "fund-dns-001",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "resolution",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon Route 53 concepts",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/route-53-concepts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 0
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-dns-002",
+    "objectiveId": "resolution",
+    "questionId": "fund-dns-002",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "resolution",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Route 53 VPC Resolver",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 1
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-dns-101",
+    "objectiveId": "records",
+    "questionId": "fund-dns-101",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "records",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Route 53 supported DNS record types",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 2
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-dns-102",
+    "objectiveId": "records",
+    "questionId": "fund-dns-102",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "records",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Choosing alias and non-alias records",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 3
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-dns-103",
+    "objectiveId": "records",
+    "questionId": "fund-dns-103",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "records",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Route 53 supported DNS record types",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 4
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-dns-104",
+    "objectiveId": "boundary",
+    "questionId": "fund-dns-104",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "boundary",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Route 53 supported DNS record types",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 5
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-dns-105",
+    "objectiveId": "ttl",
+    "questionId": "fund-dns-105",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "ttl",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Route 53 DNS settings not in effect",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/troubleshooting-new-dns-settings-not-in-effect.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 6
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-dns-106",
+    "objectiveId": "ttl",
+    "questionId": "fund-dns-106",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "ttl",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Route 53 DNS best practices",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/best-practices-dns.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 7
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-dns-107",
+    "objectiveId": "ttl",
+    "questionId": "fund-dns-107",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "ttl",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Route 53 DNS best practices",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/best-practices-dns.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 8
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-dns-108",
+    "objectiveId": "boundary",
+    "questionId": "fund-dns-108",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "boundary",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon Route 53 concepts",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/route-53-concepts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 9
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-dns-109",
+    "objectiveId": "boundary",
+    "questionId": "fund-dns-109",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "boundary",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Route 53 health checks and routing",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 10
+  },
+  {
+    "category": "ドメインとDNS",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-dns-110",
+    "objectiveId": "resolution",
+    "questionId": "fund-dns-110",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "resolution",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Route 53 VPC Resolver",
+      "url": "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resolver.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 11
+  }
+]$kaq_final_6_0$::jsonb),
+  ('fundamentals.cidr-subnets', 'c6713bf51e2f7acef94bfed1f911ccd995cc6112f10e41f30fb717eb00b862e8', decode('3fb56bb0fdef56ebe548631f377f22dd27075a9e20b931bc9174211012ef39ca', 'hex'),
+    $kaq_plan_7_0$[
+  {
+    "id": "fundamentals.cidr-subnets:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:cidr:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:cidr:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:cidr:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:cidr:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:cidr:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:checkpoint:fundamentals.cidr-subnets.checkpoint.cidr.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.cidr-subnets",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cidr-subnets.checkpoint.cidr.v1",
+      "objectiveId": "cidr",
+      "questionId": "fundamentals.cidr-subnets.checkpoint.cidr.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "cidr",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Subnet CIDR blocks",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:planning:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:planning:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:planning:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:planning:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:planning:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:checkpoint:fundamentals.cidr-subnets.checkpoint.planning.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.cidr-subnets",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cidr-subnets.checkpoint.planning.v1",
+      "objectiveId": "planning",
+      "questionId": "fundamentals.cidr-subnets.checkpoint.planning.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "planning",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "VPC subnet basics",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-subnet-basics.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:reserved:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:reserved:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:reserved:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:reserved:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:reserved:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:checkpoint:fundamentals.cidr-subnets.checkpoint.reserved.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.cidr-subnets",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cidr-subnets.checkpoint.reserved.v1",
+      "objectiveId": "reserved",
+      "questionId": "fundamentals.cidr-subnets.checkpoint.reserved.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "reserved",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Subnet CIDR blocks",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:public:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:public:concept:2",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:public:example:1",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:public:example:2",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:public:misconception:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:section:public:takeaway:1",
+    "kind": "slide",
+    "position": 27,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cidr-subnets:checkpoint:fundamentals.cidr-subnets.checkpoint.public.v1",
+    "kind": "checkpoint",
+    "position": 28,
+    "question": {
+      "category": "fundamentals.cidr-subnets",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cidr-subnets.checkpoint.public.v1",
+      "objectiveId": "public",
+      "questionId": "fundamentals.cidr-subnets.checkpoint.public.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "public",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Subnet route tables",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_7_0$::jsonb,
+    $kaq_final_7_0$[
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-cidr-001",
+    "objectiveId": "cidr",
+    "questionId": "fund-cidr-001",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "cidr",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Subnet CIDR blocks",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 0
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cidr-002",
+    "objectiveId": "cidr",
+    "questionId": "fund-cidr-002",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "cidr",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Subnet CIDR blocks",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 1
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-cidr-101",
+    "objectiveId": "cidr",
+    "questionId": "fund-cidr-101",
+    "requiredChoices": 1,
+    "revision": 3,
+    "sectionId": "cidr",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Subnet CIDR blocks",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 2
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cidr-102",
+    "objectiveId": "planning",
+    "questionId": "fund-cidr-102",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "planning",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "VPC subnet basics",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-subnet-basics.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 3
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-cidr-103",
+    "objectiveId": "planning",
+    "questionId": "fund-cidr-103",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "planning",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "VPC subnet basics",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-subnet-basics.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 4
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-cidr-104",
+    "objectiveId": "planning",
+    "questionId": "fund-cidr-104",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "planning",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "VPC subnet basics",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-subnet-basics.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 5
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cidr-105",
+    "objectiveId": "reserved",
+    "questionId": "fund-cidr-105",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "reserved",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Subnet CIDR blocks",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 6
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-cidr-106",
+    "objectiveId": "reserved",
+    "questionId": "fund-cidr-106",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "reserved",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Subnet CIDR blocks",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 7
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-cidr-107",
+    "objectiveId": "reserved",
+    "questionId": "fund-cidr-107",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "reserved",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Subnet CIDR blocks",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-sizing.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 8
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-cidr-108",
+    "objectiveId": "public",
+    "questionId": "fund-cidr-108",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "public",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Subnet route tables",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 9
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-cidr-109",
+    "objectiveId": "public",
+    "questionId": "fund-cidr-109",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "public",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon VPC security group rules",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 10
+  },
+  {
+    "category": "fundamentals.cidr-subnets",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-cidr-110",
+    "objectiveId": "public",
+    "questionId": "fund-cidr-110",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "public",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Subnet route tables",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 11
+  }
+]$kaq_final_7_0$::jsonb),
+  ('fundamentals.routing-connectivity', '18abd0c7f826ae95cc81c9d748c4ca6fb67f2d5f3c562755ac12e7fdcff55215', decode('71f5df08f71a9fabcfaebe8b374b9535607d9a0267ed6f8a37c642c7d87b73ea', 'hex'),
+    $kaq_plan_8_0$[
+  {
+    "id": "fundamentals.routing-connectivity:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:route-selection:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:route-selection:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:route-selection:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:route-selection:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:route-selection:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:checkpoint:fundamentals.routing-connectivity.checkpoint.route-selection.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.routing-connectivity",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.routing-connectivity.checkpoint.route-selection.v1",
+      "objectiveId": "route-1",
+      "questionId": "fundamentals.routing-connectivity.checkpoint.route-selection.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "route-selection",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Subnet route tables",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:internet-egress:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:internet-egress:concept:2",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:internet-egress:example:1",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:internet-egress:example:2",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:internet-egress:misconception:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:internet-egress:takeaway:1",
+    "kind": "slide",
+    "position": 15,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:checkpoint:fundamentals.routing-connectivity.checkpoint.internet-egress.v1",
+    "kind": "checkpoint",
+    "position": 16,
+    "question": {
+      "category": "fundamentals.routing-connectivity",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A",
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.routing-connectivity.checkpoint.internet-egress.v1",
+      "objectiveId": "route-2",
+      "questionId": "fundamentals.routing-connectivity.checkpoint.internet-egress.v1",
+      "requiredChoices": 2,
+      "revision": 2,
+      "sectionId": "internet-egress",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Example routing options",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/route-table-options.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:traffic-controls:concept:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:traffic-controls:example:1",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:traffic-controls:example:2",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:traffic-controls:misconception:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:traffic-controls:takeaway:1",
+    "kind": "slide",
+    "position": 21,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:checkpoint:fundamentals.routing-connectivity.checkpoint.traffic-controls.v1",
+    "kind": "checkpoint",
+    "position": 22,
+    "question": {
+      "category": "fundamentals.routing-connectivity",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.routing-connectivity.checkpoint.traffic-controls.v1",
+      "objectiveId": "route-3",
+      "questionId": "fundamentals.routing-connectivity.checkpoint.traffic-controls.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "traffic-controls",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Network ACLs",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:private-paths:concept:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:private-paths:example:1",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:private-paths:example:2",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:private-paths:misconception:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:section:private-paths:takeaway:1",
+    "kind": "slide",
+    "position": 27,
+    "required": true
+  },
+  {
+    "id": "fundamentals.routing-connectivity:checkpoint:fundamentals.routing-connectivity.checkpoint.private-paths.v1",
+    "kind": "checkpoint",
+    "position": 28,
+    "question": {
+      "category": "fundamentals.routing-connectivity",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.routing-connectivity.checkpoint.private-paths.v1",
+      "objectiveId": "route-4",
+      "questionId": "fundamentals.routing-connectivity.checkpoint.private-paths.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "private-paths",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "VPC peering connections",
+        "url": "https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_8_0$::jsonb,
+    $kaq_final_8_0$[
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-route-001",
+    "objectiveId": "route-1",
+    "questionId": "fund-route-001",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "route-selection",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Configure route tables",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 0
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-route-002",
+    "objectiveId": "route-1",
+    "questionId": "fund-route-002",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "route-selection",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Subnet route tables",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 1
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-route-003",
+    "objectiveId": "route-1",
+    "questionId": "fund-route-003",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "route-selection",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "VPC peering connections",
+      "url": "https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 2
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "C",
+      "E"
+    ],
+    "explanationRef": "final:fund-route-004",
+    "objectiveId": "route-2",
+    "questionId": "fund-route-004",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "internet-egress",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Subnet route tables",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 3
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-route-005",
+    "objectiveId": "route-2",
+    "questionId": "fund-route-005",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "internet-egress",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Example routing options",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/route-table-options.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 4
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-route-006",
+    "objectiveId": "route-2",
+    "questionId": "fund-route-006",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "internet-egress",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "NAT ゲートウェイのトラブルシューティング",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-troubleshooting.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 5
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-route-007",
+    "objectiveId": "route-3",
+    "questionId": "fund-route-007",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "traffic-controls",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Network ACLs",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 6
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-route-008",
+    "objectiveId": "route-3",
+    "questionId": "fund-route-008",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "traffic-controls",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Network ACLs",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 7
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-route-009",
+    "objectiveId": "route-3",
+    "questionId": "fund-route-009",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "traffic-controls",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Configure route tables",
+      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 8
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-route-010",
+    "objectiveId": "route-4",
+    "questionId": "fund-route-010",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "private-paths",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "VPC endpoints",
+      "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 9
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-route-011",
+    "objectiveId": "route-4",
+    "questionId": "fund-route-011",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "private-paths",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "VPC peering connections",
+      "url": "https://docs.aws.amazon.com/vpc/latest/peering/what-is-vpc-peering.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 10
+  },
+  {
+    "category": "fundamentals.routing-connectivity",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-route-012",
+    "objectiveId": "route-4",
+    "questionId": "fund-route-012",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "private-paths",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "VPC endpoints",
+      "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints.html"
+    },
+    "sourceVersion": "2026-11-rebuild",
+    "position": 11
+  }
+]$kaq_final_8_0$::jsonb),
+  ('fundamentals.cicd', '4608605153f035f872080fb05da1c5b04f07fa35665a889e822d81636daf55a8', decode('02e58c61f2a32a6e04d447d63d0b9fc25dc24b28bb0df746828c7f5439f3b498', 'hex'),
+    $kaq_plan_9_0$[
+  {
+    "id": "fundamentals.cicd:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:continuous-integration:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:checkpoint:fundamentals.cicd.checkpoint.continuous-integration.v2",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.cicd",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cicd.checkpoint.continuous-integration.v2",
+      "objectiveId": "cicd-1",
+      "questionId": "fundamentals.cicd.checkpoint.continuous-integration.v2",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "continuous-integration",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS CodePipeline concepts",
+        "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:delivery-deployment:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:checkpoint:fundamentals.cicd.checkpoint.delivery-deployment.v2",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.cicd",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cicd.checkpoint.delivery-deployment.v2",
+      "objectiveId": "cicd-2",
+      "questionId": "fundamentals.cicd.checkpoint.delivery-deployment.v2",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "delivery-deployment",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS CodePipeline approvals",
+        "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/approvals.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:artifacts-promotion:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:checkpoint:fundamentals.cicd.checkpoint.artifacts-promotion.v2",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.cicd",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cicd.checkpoint.artifacts-promotion.v2",
+      "objectiveId": "cicd-3",
+      "questionId": "fundamentals.cicd.checkpoint.artifacts-promotion.v2",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "artifacts-promotion",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS CodePipeline artifacts",
+        "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:section:quality-gates:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.cicd:checkpoint:fundamentals.cicd.checkpoint.quality-gates.v2",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.cicd",
+      "choiceIds": [
+        "A",
+        "B",
+        "C"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.cicd.checkpoint.quality-gates.v2",
+      "objectiveId": "cicd-4",
+      "questionId": "fundamentals.cicd.checkpoint.quality-gates.v2",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "quality-gates",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS CodePipeline stages",
+        "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_9_0$::jsonb,
+    $kaq_final_9_0$[
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-cicd-001",
+    "objectiveId": "cicd-1",
+    "questionId": "fund-cicd-001",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "continuous-integration",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline concepts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 0
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-002",
+    "objectiveId": "cicd-1",
+    "questionId": "fund-cicd-002",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "continuous-integration",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline concepts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 1
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-cicd-003",
+    "objectiveId": "cicd-1",
+    "questionId": "fund-cicd-003",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "continuous-integration",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline concepts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 2
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "E"
+    ],
+    "explanationRef": "final:fund-cicd-004",
+    "objectiveId": "cicd-2",
+    "questionId": "fund-cicd-004",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "delivery-deployment",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline approvals",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/approvals.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 3
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cicd-005",
+    "objectiveId": "cicd-2",
+    "questionId": "fund-cicd-005",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "delivery-deployment",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline approvals",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/approvals.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 4
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-cicd-006",
+    "objectiveId": "cicd-2",
+    "questionId": "fund-cicd-006",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "delivery-deployment",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline concepts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/concepts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 5
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-cicd-007",
+    "objectiveId": "cicd-3",
+    "questionId": "fund-cicd-007",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "artifacts-promotion",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline artifacts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 6
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-cicd-008",
+    "objectiveId": "cicd-3",
+    "questionId": "fund-cicd-008",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "artifacts-promotion",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline artifacts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 7
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "E"
+    ],
+    "explanationRef": "final:fund-cicd-009",
+    "objectiveId": "cicd-3",
+    "questionId": "fund-cicd-009",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "artifacts-promotion",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline artifacts",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 8
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-cicd-010",
+    "objectiveId": "cicd-4",
+    "questionId": "fund-cicd-010",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodePipeline stages",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 9
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-cicd-011",
+    "objectiveId": "cicd-4",
+    "questionId": "fund-cicd-011",
+    "requiredChoices": 1,
+    "revision": 4,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodePipeline stages",
+      "url": "https://docs.aws.amazon.com/codepipeline/latest/userguide/pipelines.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 10
+  },
+  {
+    "category": "CI/CD",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-cicd-012",
+    "objectiveId": "cicd-4",
+    "questionId": "fund-cicd-012",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodeDeploy deployment configurations",
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-configurations.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 11
+  }
+]$kaq_final_9_0$::jsonb),
+  ('fundamentals.testing-quality', '49b580a6093aca0558dd7e61db7b20504f8ad8f7310cf60dc3f87e5a80c63bbb', decode('e8f775335ff4ada5462b853f789b26a074f4d62eb0d6f0f268f0e55da16320e1', 'hex'),
+    $kaq_plan_10_0$[
+  {
+    "id": "fundamentals.testing-quality:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-levels:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-levels:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-levels:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-levels:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-levels:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:checkpoint:fundamentals.testing-quality.checkpoint.test-levels.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.testing-quality",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.testing-quality.checkpoint.test-levels.v1",
+      "objectiveId": "test-levels",
+      "questionId": "fundamentals.testing-quality.checkpoint.test-levels.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "test-levels",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS testing strategy",
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/strategy-migration-connect/tech-foundation.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-design:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-design:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-design:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-design:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:test-design:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:checkpoint:fundamentals.testing-quality.checkpoint.test-design.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.testing-quality",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A",
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.testing-quality.checkpoint.test-design.v1",
+      "objectiveId": "test-design",
+      "questionId": "fundamentals.testing-quality.checkpoint.test-design.v1",
+      "requiredChoices": 2,
+      "revision": 3,
+      "sectionId": "test-design",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS continuous integration guidance",
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/mlops-checklist/continuous-integration.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:quality-gates:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:quality-gates:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:quality-gates:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:quality-gates:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:quality-gates:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:checkpoint:fundamentals.testing-quality.checkpoint.quality-gates.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.testing-quality",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A",
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.testing-quality.checkpoint.quality-gates.v1",
+      "objectiveId": "quality-gates",
+      "questionId": "fundamentals.testing-quality.checkpoint.quality-gates.v1",
+      "requiredChoices": 2,
+      "revision": 3,
+      "sectionId": "quality-gates",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Test reports in AWS CodeBuild",
+        "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/test-reporting.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:failure-regression:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:failure-regression:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:failure-regression:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:failure-regression:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:section:failure-regression:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.testing-quality:checkpoint:fundamentals.testing-quality.checkpoint.failure-regression.v1",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.testing-quality",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.testing-quality.checkpoint.failure-regression.v1",
+      "objectiveId": "failure-regression",
+      "questionId": "fundamentals.testing-quality.checkpoint.failure-regression.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "failure-regression",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS continuous integration guidance",
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/mlops-checklist/continuous-integration.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_10_0$::jsonb,
+    $kaq_final_10_0$[
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-testing-001",
+    "objectiveId": "test-levels",
+    "questionId": "fund-testing-001",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "test-levels",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS testing strategy",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/strategy-migration-connect/tech-foundation.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 0
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-testing-002",
+    "objectiveId": "test-levels",
+    "questionId": "fund-testing-002",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "test-levels",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS testing strategy",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/strategy-migration-connect/tech-foundation.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 1
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-testing-003",
+    "objectiveId": "test-levels",
+    "questionId": "fund-testing-003",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "test-levels",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS testing strategy",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/strategy-migration-connect/tech-foundation.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 2
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "C",
+      "D"
+    ],
+    "explanationRef": "final:fund-testing-004",
+    "objectiveId": "test-design",
+    "questionId": "fund-testing-004",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "test-design",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS continuous integration guidance",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/mlops-checklist/continuous-integration.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 3
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-testing-005",
+    "objectiveId": "test-design",
+    "questionId": "fund-testing-005",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "test-design",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS continuous integration guidance",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/mlops-checklist/continuous-integration.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 4
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "E"
+    ],
+    "explanationRef": "final:fund-testing-006",
+    "objectiveId": "test-design",
+    "questionId": "fund-testing-006",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "test-design",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS continuous integration guidance",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/mlops-checklist/continuous-integration.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 5
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-testing-007",
+    "objectiveId": "quality-gates",
+    "questionId": "fund-testing-007",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Test reports in AWS CodeBuild",
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/test-reporting.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 6
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "D"
+    ],
+    "explanationRef": "final:fund-testing-008",
+    "objectiveId": "quality-gates",
+    "questionId": "fund-testing-008",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Test reports in AWS CodeBuild",
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/test-reporting.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 7
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-testing-009",
+    "objectiveId": "quality-gates",
+    "questionId": "fund-testing-009",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "quality-gates",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Test reports in AWS CodeBuild",
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/test-reporting.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 8
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-testing-010",
+    "objectiveId": "failure-regression",
+    "questionId": "fund-testing-010",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "failure-regression",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Test reports in AWS CodeBuild",
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/test-reporting.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 9
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "D"
+    ],
+    "explanationRef": "final:fund-testing-011",
+    "objectiveId": "failure-regression",
+    "questionId": "fund-testing-011",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "failure-regression",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS continuous integration guidance",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/mlops-checklist/continuous-integration.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 10
+  },
+  {
+    "category": "テスト品質",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-testing-012",
+    "objectiveId": "failure-regression",
+    "questionId": "fund-testing-012",
+    "requiredChoices": 2,
+    "revision": 4,
+    "sectionId": "failure-regression",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Running parallel tests in AWS CodeBuild",
+      "url": "https://docs.aws.amazon.com/codebuild/latest/userguide/parallel-test.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 11
+  }
+]$kaq_final_10_0$::jsonb),
+  ('fundamentals.release-rollback', 'e9cc2aadabe2ed0a9953aefe9bfbae5e87d6c614f284d3ed47312232a5fce430', decode('9845c95f3f8afe2836df0955bf68d7f49409e43f334c95b1996567e57f80b94e', 'hex'),
+    $kaq_plan_11_0$[
+  {
+    "id": "fundamentals.release-rollback:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:deployment-strategies:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:deployment-strategies:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:deployment-strategies:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:deployment-strategies:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:deployment-strategies:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:checkpoint:fundamentals.release-rollback.checkpoint.deployment-strategies.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.release-rollback",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.release-rollback.checkpoint.deployment-strategies.v1",
+      "objectiveId": "release-1",
+      "questionId": "fundamentals.release-rollback.checkpoint.deployment-strategies.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "deployment-strategies",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Amazon ECS のデプロイコントローラーと戦略",
+        "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_service-options.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:observation-abort:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:observation-abort:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:observation-abort:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:observation-abort:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:observation-abort:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:checkpoint:fundamentals.release-rollback.checkpoint.observation-abort.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.release-rollback",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "D"
+      ],
+      "explanationRef": "checkpoint:fundamentals.release-rollback.checkpoint.observation-abort.v1",
+      "objectiveId": "release-2",
+      "questionId": "fundamentals.release-rollback.checkpoint.observation-abort.v1",
+      "requiredChoices": 1,
+      "revision": 3,
+      "sectionId": "observation-abort",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS CodeDeploy のアラームとロールバックの設定",
+        "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-groups-configure-advanced-options.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:rollback-recovery:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:rollback-recovery:example:1",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:rollback-recovery:example:2",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:rollback-recovery:misconception:1",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:rollback-recovery:takeaway:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:checkpoint:fundamentals.release-rollback.checkpoint.rollback-recovery.v1",
+    "kind": "checkpoint",
+    "position": 21,
+    "question": {
+      "category": "fundamentals.release-rollback",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.release-rollback.checkpoint.rollback-recovery.v1",
+      "objectiveId": "release-3",
+      "questionId": "fundamentals.release-rollback.checkpoint.rollback-recovery.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "rollback-recovery",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS CodeDeploy のロールバックと再デプロイ",
+        "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployments-rollback-and-redeploy.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:database-recovery:concept:1",
+    "kind": "slide",
+    "position": 22,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:database-recovery:example:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:database-recovery:example:2",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:database-recovery:misconception:1",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:section:database-recovery:takeaway:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.release-rollback:checkpoint:fundamentals.release-rollback.checkpoint.database-recovery.v1",
+    "kind": "checkpoint",
+    "position": 27,
+    "question": {
+      "category": "fundamentals.release-rollback",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "C",
+        "D"
+      ],
+      "explanationRef": "checkpoint:fundamentals.release-rollback.checkpoint.database-recovery.v1",
+      "objectiveId": "release-4",
+      "questionId": "fundamentals.release-rollback.checkpoint.database-recovery.v1",
+      "requiredChoices": 2,
+      "revision": 2,
+      "sectionId": "database-recovery",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS 規範ガイダンスのデータベーススキーマ変更",
+        "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/blue-green-deployments/schema-changes.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_11_0$::jsonb,
+    $kaq_final_11_0$[
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-release-001",
+    "objectiveId": "release-1",
+    "questionId": "fund-release-001",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "deployment-strategies",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon ECS のデプロイコントローラーと戦略",
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_service-options.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 0
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-release-002",
+    "objectiveId": "release-1",
+    "questionId": "fund-release-002",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "deployment-strategies",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon ECS のデプロイコントローラーと戦略",
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_service-options.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 1
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-release-003",
+    "objectiveId": "release-1",
+    "questionId": "fund-release-003",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "deployment-strategies",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon ECS のデプロイコントローラーと戦略",
+      "url": "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_service-options.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 2
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "C"
+    ],
+    "explanationRef": "final:fund-release-004",
+    "objectiveId": "release-2",
+    "questionId": "fund-release-004",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "observation-abort",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodeDeploy のアラームとロールバックの設定",
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-groups-configure-advanced-options.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 3
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "C"
+    ],
+    "explanationRef": "final:fund-release-005",
+    "objectiveId": "release-2",
+    "questionId": "fund-release-005",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "observation-abort",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodeDeploy のアラームとロールバックの設定",
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-groups-configure-advanced-options.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 4
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "E"
+    ],
+    "explanationRef": "final:fund-release-006",
+    "objectiveId": "release-2",
+    "questionId": "fund-release-006",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "observation-abort",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodeDeploy のアラームとロールバックの設定",
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-groups-configure-advanced-options.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 5
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-release-007",
+    "objectiveId": "release-3",
+    "questionId": "fund-release-007",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "rollback-recovery",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodeDeploy のロールバックと再デプロイ",
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployments-rollback-and-redeploy.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 6
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-release-008",
+    "objectiveId": "release-3",
+    "questionId": "fund-release-008",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "rollback-recovery",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS CodeDeploy のロールバックと再デプロイ",
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployments-rollback-and-redeploy.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 7
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-release-009",
+    "objectiveId": "release-3",
+    "questionId": "fund-release-009",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "rollback-recovery",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS CodeDeploy のロールバックと再デプロイ",
+      "url": "https://docs.aws.amazon.com/codedeploy/latest/userguide/deployments-rollback-and-redeploy.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 8
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-release-010",
+    "objectiveId": "release-4",
+    "questionId": "fund-release-010",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "database-recovery",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS 規範ガイダンスのデータベーススキーマ変更",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/blue-green-deployments/schema-changes.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 9
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-release-011",
+    "objectiveId": "release-4",
+    "questionId": "fund-release-011",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "database-recovery",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS 規範ガイダンスのデータベーススキーマ変更",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/blue-green-deployments/schema-changes.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 10
+  },
+  {
+    "category": "デプロイ復旧",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "E"
+    ],
+    "explanationRef": "final:fund-release-012",
+    "objectiveId": "release-4",
+    "questionId": "fund-release-012",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "database-recovery",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS 規範ガイダンスのデータベーススキーマ変更",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/blue-green-deployments/schema-changes.html"
+    },
+    "sourceVersion": "2026-11",
+    "position": 11
+  }
+]$kaq_final_11_0$::jsonb),
+  ('fundamentals.observability', '4de078eb5535b2d5305513031d2d7d17ba6700d97223e969cd4125d8f0c5efbd', decode('f6e1bcdaccbacbd8f37a8863a1595606e9993d618a7ad48c8024c1ed049f7936', 'hex'),
+    $kaq_plan_12_0$[
+  {
+    "id": "fundamentals.observability:intro:orientation:1",
+    "kind": "slide",
+    "position": 1,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:intro:objectives:1",
+    "kind": "slide",
+    "position": 2,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:intro:objectives:2",
+    "kind": "slide",
+    "position": 3,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:signals:concept:1",
+    "kind": "slide",
+    "position": 4,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:signals:example:1",
+    "kind": "slide",
+    "position": 5,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:signals:example:2",
+    "kind": "slide",
+    "position": 6,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:signals:misconception:1",
+    "kind": "slide",
+    "position": 7,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:signals:takeaway:1",
+    "kind": "slide",
+    "position": 8,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:checkpoint:fundamentals.observability.checkpoint.signals.v1",
+    "kind": "checkpoint",
+    "position": 9,
+    "question": {
+      "category": "fundamentals.observability",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.observability.checkpoint.signals.v1",
+      "objectiveId": "signals",
+      "questionId": "fundamentals.observability.checkpoint.signals.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "signals",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Well-Architected Framework: 基本的な可観測性",
+        "url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/implement-observability.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:golden-signals:concept:1",
+    "kind": "slide",
+    "position": 10,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:golden-signals:example:1",
+    "kind": "slide",
+    "position": 11,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:golden-signals:example:2",
+    "kind": "slide",
+    "position": 12,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:golden-signals:misconception:1",
+    "kind": "slide",
+    "position": 13,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:golden-signals:takeaway:1",
+    "kind": "slide",
+    "position": 14,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:checkpoint:fundamentals.observability.checkpoint.golden-signals.v1",
+    "kind": "checkpoint",
+    "position": 15,
+    "question": {
+      "category": "fundamentals.observability",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "D",
+        "A"
+      ],
+      "explanationRef": "checkpoint:fundamentals.observability.checkpoint.golden-signals.v1",
+      "objectiveId": "golden-signals",
+      "questionId": "fundamentals.observability.checkpoint.golden-signals.v1",
+      "requiredChoices": 2,
+      "revision": 3,
+      "sectionId": "golden-signals",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Amazon CloudWatch: 統計の定義",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/Statistics-definitions.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:objectives:concept:1",
+    "kind": "slide",
+    "position": 16,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:objectives:concept:2",
+    "kind": "slide",
+    "position": 17,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:objectives:example:1",
+    "kind": "slide",
+    "position": 18,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:objectives:example:2",
+    "kind": "slide",
+    "position": 19,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:objectives:misconception:1",
+    "kind": "slide",
+    "position": 20,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:objectives:takeaway:1",
+    "kind": "slide",
+    "position": 21,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:checkpoint:fundamentals.observability.checkpoint.objectives.v1",
+    "kind": "checkpoint",
+    "position": 22,
+    "question": {
+      "category": "fundamentals.observability",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "A",
+        "B"
+      ],
+      "explanationRef": "checkpoint:fundamentals.observability.checkpoint.objectives.v1",
+      "objectiveId": "objectives",
+      "questionId": "fundamentals.observability.checkpoint.objectives.v1",
+      "requiredChoices": 2,
+      "revision": 3,
+      "sectionId": "objectives",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "Amazon CloudWatch: サービスレベル目標（SLO）",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch-ServiceLevelObjectives.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:improvement:concept:1",
+    "kind": "slide",
+    "position": 23,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:improvement:example:1",
+    "kind": "slide",
+    "position": 24,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:improvement:example:2",
+    "kind": "slide",
+    "position": 25,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:improvement:misconception:1",
+    "kind": "slide",
+    "position": 26,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:section:improvement:takeaway:1",
+    "kind": "slide",
+    "position": 27,
+    "required": true
+  },
+  {
+    "id": "fundamentals.observability:checkpoint:fundamentals.observability.checkpoint.improvement.v1",
+    "kind": "checkpoint",
+    "position": 28,
+    "question": {
+      "category": "fundamentals.observability",
+      "choiceIds": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctChoiceIds": [
+        "C"
+      ],
+      "explanationRef": "checkpoint:fundamentals.observability.checkpoint.improvement.v1",
+      "objectiveId": "improvement",
+      "questionId": "fundamentals.observability.checkpoint.improvement.v1",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "improvement",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS X-Ray: トレース",
+        "url": "https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html"
+      },
+      "sourceVersion": "2026-11-learning"
+    },
+    "required": true
+  }
+]$kaq_plan_12_0$::jsonb,
+    $kaq_final_12_0$[
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-observe-101",
+    "objectiveId": "signals",
+    "questionId": "fund-observe-101",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "signals",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Well-Architected Framework: 基本的な可観測性",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/implement-observability.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 0
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-observe-102",
+    "objectiveId": "signals",
+    "questionId": "fund-observe-102",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "signals",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Well-Architected Framework: 基本的な可観測性",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/implement-observability.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 1
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "C"
+    ],
+    "explanationRef": "final:fund-observe-103",
+    "objectiveId": "signals",
+    "questionId": "fund-observe-103",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "signals",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "AWS Well-Architected Framework: 基本的な可観測性",
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/implement-observability.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 2
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correctChoiceIds": [
+      "D"
+    ],
+    "explanationRef": "final:fund-observe-104",
+    "objectiveId": "golden-signals",
+    "questionId": "fund-observe-104",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "golden-signals",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon CloudWatch: 統計の定義",
+      "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/Statistics-definitions.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 3
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A"
+    ],
+    "explanationRef": "final:fund-observe-105",
+    "objectiveId": "golden-signals",
+    "questionId": "fund-observe-105",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "golden-signals",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon CloudWatch: 統計の定義",
+      "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/Statistics-definitions.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 4
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "E"
+    ],
+    "explanationRef": "final:fund-observe-106",
+    "objectiveId": "golden-signals",
+    "questionId": "fund-observe-106",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "golden-signals",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon CloudWatch: 統計の定義",
+      "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/Statistics-definitions.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 5
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "B"
+    ],
+    "explanationRef": "final:fund-observe-107",
+    "objectiveId": "objectives",
+    "questionId": "fund-observe-107",
+    "requiredChoices": 2,
+    "revision": 3,
+    "sectionId": "objectives",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon CloudWatch: サービスレベル目標（SLO）",
+      "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch-ServiceLevelObjectives.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 6
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C"
+    ],
+    "correctChoiceIds": [
+      "B"
+    ],
+    "explanationRef": "final:fund-observe-108",
+    "objectiveId": "objectives",
+    "questionId": "fund-observe-108",
+    "requiredChoices": 1,
+    "revision": 2,
+    "sectionId": "objectives",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon CloudWatch: サービスレベル目標（SLO）",
+      "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch-ServiceLevelObjectives.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 7
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-observe-109",
+    "objectiveId": "objectives",
+    "questionId": "fund-observe-109",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "objectives",
+    "selectionPolarity": "correct",
+    "source": {
+      "label": "Amazon CloudWatch: サービスレベル目標（SLO）",
+      "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch-ServiceLevelObjectives.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 8
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "B",
+      "E"
+    ],
+    "explanationRef": "final:fund-observe-110",
+    "objectiveId": "improvement",
+    "questionId": "fund-observe-110",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "improvement",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS X-Ray: トレース",
+      "url": "https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 9
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "A",
+      "D"
+    ],
+    "explanationRef": "final:fund-observe-111",
+    "objectiveId": "improvement",
+    "questionId": "fund-observe-111",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "improvement",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "Amazon RDS Proxy metrics",
+      "url": "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-proxy.monitoring.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 10
+  },
+  {
+    "category": "監視と改善",
+    "choiceIds": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ],
+    "correctChoiceIds": [
+      "C",
+      "E"
+    ],
+    "explanationRef": "final:fund-observe-112",
+    "objectiveId": "improvement",
+    "questionId": "fund-observe-112",
+    "requiredChoices": 2,
+    "revision": 2,
+    "sectionId": "improvement",
+    "selectionPolarity": "incorrect",
+    "source": {
+      "label": "AWS X-Ray: トレース",
+      "url": "https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html"
+    },
+    "sourceVersion": "2026-11-learning",
+    "position": 11
+  }
+]$kaq_final_12_0$::jsonb)
+;
+
+commit;

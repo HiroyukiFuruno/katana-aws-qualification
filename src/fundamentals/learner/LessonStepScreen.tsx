@@ -18,6 +18,7 @@ import { stepQuestionPresentation } from './lesson-presentation';
 import { useLessonNavigation } from './lessonNavigation';
 import { lessonSlidePresentation } from './lessonSlidePresentation';
 import { useCheckpointPresentation } from './useCheckpointPresentation';
+import { lessonSaveRetry, useRecoveredCompatibleSelection } from './useCompatibleSelections';
 import { useLessonActions } from './useLessonActions';
 
 type Props = {
@@ -29,6 +30,7 @@ type Props = {
   confirm: (snapshot: LessonSnapshot, href?: string) => void;
   reloadSaved: () => Promise<void>;
   commit: (snapshot: LessonSnapshot) => void;
+  compatibleSelections?: Readonly<Record<string, readonly string[]>> | false;
 };
 export function LessonStepScreen({
   asset,
@@ -39,6 +41,7 @@ export function LessonStepScreen({
   confirm,
   reloadSaved,
   commit,
+  compatibleSelections,
 }: Props) {
   const { locale, t } = usePreferences();
   const slide = lessonSlidePresentation(asset.steps, step);
@@ -51,6 +54,13 @@ export function LessonStepScreen({
   const { presentedFinal, question } = questionPresentation;
   const [selected, setSelected] = useState<string[]>(
     active?.responses[String(presentedFinal?.canonicalPosition ?? -1)]?.selected ?? [],
+  );
+  const recoveredSelection = useRecoveredCompatibleSelection(
+    question,
+    compatibleSelections || undefined,
+    selected,
+    setSelected,
+    compatibleSelections === false,
   );
   const [feedback, setFeedback] = useState(false);
   const checkpoint = useCheckpointPresentation(question, step.kind === 'checkpoint');
@@ -109,15 +119,7 @@ export function LessonStepScreen({
         onPrevious={navigation.previous}
         saving={navigation.saving}
         error={saveError || actionError || savedReload.error ? t('progressCloudSaveFailed') : undefined}
-        onRetry={
-          savedReload.error
-            ? savedReload.retry
-            : conflict
-              ? undefined
-              : recovery.error
-                ? recovery.retry
-                : actions.retry
-        }
+        onRetry={lessonSaveRetry(savedReload, recovery, actions.retry, conflict)}
         onActionError={setActionError}
         onNext={navigation.nextAllowed ? actions.next : undefined}
         nextLabel={navigation.nextLabelKey ? t(navigation.nextLabelKey, { total: 12 }) : undefined}
@@ -129,13 +131,14 @@ export function LessonStepScreen({
             retry={() => void savedReload.retry()}
           />
         ) : null}
+        {!feedback && recoveredSelection.message && <p role="status">{t(recoveredSelection.message)}</p>}
         <LessonStepContent
           asset={asset}
           step={displayStep}
           optionalObjectives={slide.optionalObjectives.map((item) => lessonReadingCopy(item, locale))}
           question={checkpoint.question}
           selected={selected}
-          onChange={setSelected}
+          onChange={recoveredSelection.select}
           activeFinal={Boolean(active)}
           requiredScore={asset.finalPolicy.passCorrect}
           blocked={blocked}

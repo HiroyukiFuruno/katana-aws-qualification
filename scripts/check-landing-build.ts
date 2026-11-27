@@ -26,6 +26,17 @@ for (const locale of locales) {
   for (const page of ['study', 'assessment', 'certifications/overview']) {
     assert(html.includes(`href="${localePath(locale, page)}"`), `${locale}: link to ${page}`);
   }
+  const study = await readFile(join('dist', localePath(locale, 'study'), 'index.html'), 'utf8');
+  const copy = messages[locale];
+  for (const [page, title, description] of [
+    ['study/fundamentals', copy.learnFundamentals, copy.fundamentalsEntry],
+    ['study/questions', copy.learnFromQuestions, copy.studyEntry],
+  ]) {
+    assert(study.includes(`href="${localePath(locale, page)}"`), `${locale}: study entry to ${page}`);
+    for (const text of [title, description]) {
+      assert(study.includes(escapeHtml(text).replaceAll("'", '&#x27;')), `${locale}: describe ${page}`);
+    }
+  }
   assert(
     html.includes(`href="https://katana-series.katana-projects.org${localePath(locale)}"`),
     `${locale}: link to the KatanA series`,
@@ -50,4 +61,4 @@ assert(messages.ja.landingUsesTitle.includes('AWS認定資格'));
 assert(messages.ja.landingSearchTitle.includes('AWS認定資格'));
 assert(messages.ja.landingConceptUses.includes('AWS認定資格の試験対策'));
 assert(messages.ja.landingDescription.includes('AWS認定資格の試験対策'));
-console.log(`Validated the learning concept and search metadata for ${locales.length} landing pages`);
+console.log(`Validated landing metadata and study entry links in ${locales.length} languages`);

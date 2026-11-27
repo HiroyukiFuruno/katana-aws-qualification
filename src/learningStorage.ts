@@ -6,12 +6,18 @@ export const legacyExamKey = 'saa-study.exam.v1';
 export const examKeyPrefix = 'katana.certification-exam.v1.';
 export const legacyIncorrectIndex = 'saa-study.incorrect.v1';
 export const guestLessonPrefix = 'katana.fundamentals-progress.v1.';
+export const lessonRecordPrefix = 'katana.fundamentals-record-asset.v1.';
 
 export function clearBrowserLearningRecords() {
   const keys = [historyKey, profileKey, legacyIncorrectIndex, legacyExamKey];
   for (let index = 0; index < localStorage.length; index++) {
     const key = localStorage.key(index);
-    if (key?.startsWith(examKeyPrefix) || key?.startsWith(guestLessonPrefix)) keys.push(key);
+    if (
+      key?.startsWith(examKeyPrefix) ||
+      key?.startsWith(guestLessonPrefix) ||
+      key?.startsWith(lessonRecordPrefix)
+    )
+      keys.push(key);
   }
   for (const key of keys) localStorage.removeItem(key);
   if (keys.some((key) => localStorage.getItem(key) !== null)) {

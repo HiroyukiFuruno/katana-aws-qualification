@@ -1,17 +1,28 @@
 import type { ProgressRpcClient } from '../../progress/types';
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
-import type { MemberLessonRepository } from './memberTypes';
-import { readLessonSummaries } from './memberSummary';
+import type { LessonRecordAsset, LessonRecordQuestion } from '../delivery/recordAsset';
+import { strings } from './codecPrimitives';
+import {
+  type LessonSummaryReference,
+  readLessonHistorySummaries,
+  readLessonSummaries,
+} from './memberSummary';
+import type { LessonSummary, MemberLessonRepository } from './memberTypes';
 import { readLessonSnapshot } from './snapshotCodec';
 
 type Input = { client: ProgressRpcClient; isCurrent: () => boolean };
 
-export function createMemberLessonRepository({ client, isCurrent }: Input): MemberLessonRepository {
+export function createMemberLessonRepository({ client, isCurrent }: Input): MemberLessonRepository & {
+  historySummaries(currentUnits: LessonSummaryReference[]): Promise<LessonSummary[]>;
+  checkpointSelection(
+    asset: LessonRecordAsset,
+    question: LessonRecordQuestion,
+  ): Promise<string[] | undefined>;
+} {
   let generation: number | undefined;
   const current = () => {
     if (!isCurrent()) throw new Error('Progress owner changed');
   };
-  const snapshot = (raw: unknown, asset: DeliveryUnitAsset) => {
+  const snapshot = (raw: unknown, asset: LessonRecordAsset) => {
     current();
     return readLessonSnapshot(raw, asset);
   };
@@ -106,6 +117,28 @@ export function createMemberLessonRepository({ client, isCurrent }: Input): Memb
       });
       current();
       return readLessonSummaries(raw, units);
+    },
+    async historySummaries(currentUnits) {
+      current();
+      const raw = await client.rpc<unknown>('load_fundamentals_history_summaries', {
+        p_current_units: currentUnits,
+        p_expected_generation: ready(),
+      });
+      current();
+      return readLessonHistorySummaries(raw, currentUnits);
+    },
+    async checkpointSelection(asset, question) {
+      current();
+      const raw = await client.rpc<unknown>('load_fundamentals_checkpoint_selection', {
+        p_unit_id: asset.unit.id,
+        p_content_version: asset.contentVersion,
+        p_question_id: question.id,
+        p_question_revision: question.revision,
+        p_source_version: question.version,
+        p_expected_generation: ready(),
+      });
+      current();
+      return raw === null ? undefined : strings(raw, 'previous selected choices');
     },
   };
 }

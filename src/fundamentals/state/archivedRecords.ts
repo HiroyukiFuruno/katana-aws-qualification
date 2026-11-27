@@ -1,49 +1,107 @@
+import type { Locale } from '../../locales';
+import type { BrowserStorage } from '../../progress/guest';
 import type { DeliveryIndexAsset } from '../delivery/artifactTypes';
 import type { LessonAssets } from '../delivery/assets';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
+import type { GuestLessonStorage } from './guestStorage';
+import { guestLessonSummary } from './guestSummary';
 import type { LessonSummary } from './memberTypes';
-import type { LessonOutbox } from './outboxTypes';
+import type { LessonOutbox, LessonOutboxScope } from './outboxTypes';
 
 export type ArchivedLessonRecord = {
-  unit: DeliveryIndexAsset['units'][number];
+  unit: { unitId: string; contentVersion: string; title: string };
   summary: LessonSummary;
   pending: boolean;
-  publishedOn?: string;
 };
 
-export async function readArchivedLessonRecords(
-  assets: LessonAssets,
-  summaries: (index: DeliveryIndexAsset) => Promise<LessonSummary[]>,
-  outbox: LessonOutbox | null,
-): Promise<ArchivedLessonRecord[]> {
-  const current = await assets.index();
-  const currentVersions = new Map(current.units.map((unit) => [unit.unitId, unit.contentVersion]));
-  const seen = new Set<string>();
-  const records: ArchivedLessonRecord[] = [];
-  for (const edition of (await assets.editions()).slice(1)) {
-    const units = edition.index.units.filter((unit) => {
-      const key = `${unit.unitId}\u0000${unit.contentVersion}`;
-      if (currentVersions.get(unit.unitId) === unit.contentVersion || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    if (!units.length) continue;
-    const rows = await summaries({ ...edition.index, units });
-    for (const unit of units) {
-      const summary = rows.find(
-        (row) => row.unitId === unit.unitId && row.contentVersion === unit.contentVersion,
-      );
-      if (!summary) throw new Error('Archived lesson summary is missing');
-      const pending = outbox?.hasPending(unit) ?? false;
-      if (
-        pending ||
-        summary.completedSlides ||
-        summary.completedCheckpoints ||
-        summary.activeFinalSessionId ||
-        summary.latestScore !== null ||
-        summary.passedAt
-      )
-        records.push({ unit, summary, pending, publishedOn: edition.publishedOn });
-    }
+function sameLessonReference(left: LessonOutboxScope, right: LessonOutboxScope) {
+  return left.unitId === right.unitId && left.contentVersion === right.contentVersion;
+}
+
+function emptyLessonRecordSummary(asset: LessonRecordAsset): LessonSummary {
+  return {
+    unitId: asset.unit.id,
+    contentVersion: asset.contentVersion,
+    completedSlides: 0,
+    completedCheckpoints: 0,
+    totalSlides: asset.steps.length - asset.checkpoints.length - asset.finalQuestions.length,
+    totalCheckpoints: asset.checkpoints.length,
+    activeFinalSessionId: null,
+    passedAt: null,
+    latestScore: null,
+    requiredScore: null,
+  };
+}
+
+function archivedLessonRecords(
+  current: DeliveryIndexAsset,
+  summaries: LessonSummary[],
+  pending: LessonOutboxScope[],
+): ArchivedLessonRecord[] {
+  const titles = new Map(current.units.map(({ unitId, title }) => [unitId, title]));
+  return summaries.flatMap((summary) => {
+    const hasPending = pending.some((reference) => sameLessonReference(reference, summary));
+    if (
+      !hasPending &&
+      !summary.completedSlides &&
+      !summary.completedCheckpoints &&
+      !summary.activeFinalSessionId &&
+      summary.latestScore === null &&
+      !summary.passedAt
+    )
+      return [];
+    const { unitId, contentVersion } = summary;
+    return [
+      {
+        unit: { unitId, contentVersion, title: titles.get(unitId) ?? unitId },
+        summary,
+        pending: hasPending,
+      },
+    ];
+  });
+}
+
+type HistoryInput = {
+  assets: LessonAssets;
+  guest: GuestLessonStorage | null;
+  locale: Locale;
+  outbox: LessonOutbox | null;
+  storage: BrowserStorage;
+  savedSummaries?: (current: LessonOutboxScope[]) => Promise<LessonSummary[]>;
+};
+
+export async function readArchivedLessonRecords({
+  assets,
+  guest,
+  locale,
+  outbox,
+  storage,
+  savedSummaries,
+}: HistoryInput) {
+  const index = await assets.index(locale);
+  const current = index.units.map(({ unitId, contentVersion }) => ({ unitId, contentVersion }));
+  const isArchived = (reference: LessonOutboxScope) =>
+    !current.some((item) => sameLessonReference(item, reference));
+  const record = async ({ unitId, contentVersion }: LessonOutboxScope) => {
+    const asset = await assets.record(unitId, contentVersion, locale, storage);
+    if (!asset) throw new Error('Lesson history data is missing.');
+    return asset;
+  };
+  const pending = outbox?.pendingReferences().filter(isArchived) ?? [];
+  if (savedSummaries) {
+    const saved = await savedSummaries(current);
+    const pendingOnly = pending.filter((item) => !saved.some((row) => sameLessonReference(row, item)));
+    const queued = await Promise.all(
+      pendingOnly.map(async (reference) => emptyLessonRecordSummary(await record(reference))),
+    );
+    return archivedLessonRecords(index, [...saved, ...queued], pending);
   }
-  return records;
+  if (!guest) throw new Error('Guest lesson repository is unavailable.');
+  const saved = await Promise.all(
+    guest
+      .references()
+      .filter(isArchived)
+      .map(async (reference) => guestLessonSummary(await record(reference), guest)),
+  );
+  return archivedLessonRecords(index, saved, []);
 }

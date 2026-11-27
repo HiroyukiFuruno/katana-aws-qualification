@@ -24,7 +24,7 @@ export function dashboardServicesFixture(client: ProgressRpcClient) {
       unit: async () => {
         throw new Error('Not needed');
       },
-      editions: async () => {
+      record: async () => {
         throw new Error('Not needed');
       },
     },

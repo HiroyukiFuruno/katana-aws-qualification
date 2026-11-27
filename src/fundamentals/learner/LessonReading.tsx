@@ -1,19 +1,21 @@
 import { Fragment } from 'react';
 import { usePreferences } from '../../preferences';
 import type { LessonStep } from '../delivery/slideTypes';
+import { LessonFigure } from './LessonFigure';
 import { LessonGlossaryLinks } from './LessonGlossaryLinks';
-import { LessonNetworkFigure } from './LessonNetworkFigure';
 import { LessonVisualSummary } from './LessonVisualSummary';
 import { lessonFragments } from './lessonFragments';
 import './learner-assessment.css';
-import { sourceDocumentationUrl } from '../../sourceDocumentationUrl';
+import { localizedDocumentationSource } from '../../sourceDocumentationUrl';
 
 export function LessonReading({ step }: { step: LessonStep }) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
   let previousLabel = '';
-  const sources = step.sources.filter(
-    (source, index, all) => all.findIndex((candidate) => candidate.url === source.url) === index,
-  );
+  const sources = step.sources
+    .map((source) => localizedDocumentationSource(source, locale))
+    .filter(
+      (source, index, all) => all.findIndex((candidate) => candidate.url === source.url) === index,
+    );
   return (
     <article className={`lesson-reading lesson-reading-page-${step.kind}`} aria-label={step.label}>
       <LessonVisualSummary stepId={step.id}>
@@ -27,7 +29,7 @@ export function LessonReading({ step }: { step: LessonStep }) {
                 {showLabel ? <h2>{label}</h2> : null}
                 <p>{block.text}</p>
               </section>
-              {index === 0 && step.kind === 'reading' ? <LessonNetworkFigure stepId={step.id} /> : null}
+              {index === 0 && step.kind === 'reading' ? <LessonFigure stepId={step.id} /> : null}
             </Fragment>
           );
         })}
@@ -39,7 +41,7 @@ export function LessonReading({ step }: { step: LessonStep }) {
           <ul>
             {sources.map((source) => (
               <li key={source.url}>
-                <a href={sourceDocumentationUrl(source.url)} target="_blank" rel="noreferrer">
+                <a href={source.url} hrefLang={source.locale} target="_blank" rel="noreferrer">
                   {source.label}
                 </a>
               </li>

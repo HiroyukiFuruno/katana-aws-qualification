@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
 import type { LessonRoute } from '../delivery/navigation';
-import { GuestLessonConflictError } from '../state/guestStorage';
+import { GuestLessonConflictError } from '../state/conflicts';
 import type { LessonServices } from '../state/services';
 import { useLessonUnit } from '../state/useLessonUnit';
 import { LessonLoaded } from './LessonLoaded';

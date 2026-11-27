@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { integer, timestamp, uuid } from './codecPrimitives';
 import { isLessonAnswerCorrect, lessonQuestionRef, validateLessonSelection } from './grade';
 import { assertGuestLessonAsset } from './guestInitial';
@@ -13,7 +13,7 @@ export type GuestStepAnswer = {
 
 export function recordGuestLessonStep(
   source: GuestLessonSource,
-  asset: DeliveryUnitAsset,
+  asset: LessonRecordAsset,
   stepId: string,
   answer?: GuestStepAnswer,
 ): { source: GuestLessonSource; isCorrect?: boolean } {

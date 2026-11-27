@@ -3,6 +3,7 @@ import { localePath } from '../../locales';
 import { usePreferences } from '../../preferences';
 import { lessonPath, lessonRouteAt } from '../delivery/navigation';
 import { stepHref } from '../delivery/planNavigation';
+import { isRetiredLessonPath } from '../delivery/routePages';
 import { navigateLesson, useLessonLocation } from '../delivery/useLessonLocation';
 import { useLessonServices } from '../state/useLessonServices';
 import { LessonCatalogPage } from './LessonCatalogPage';
@@ -20,6 +21,9 @@ export function LessonExperience() {
     [...url.searchParams.keys()].every((key) => key === 'unit' || key === 'review');
   const legacyUnit = legacyQuery ? url.searchParams.get('unit') : null;
   const review = url.searchParams.get('review') === '1';
+  const route = lessonRouteAt(url.pathname, url.search);
+  const redirectedUnitId =
+    route?.contentVersion || isRetiredLessonPath(url.pathname) ? route?.unitId : undefined;
   useEffect(() => {
     let current = true;
     if (!services || !legacyUnit) return;
@@ -43,6 +47,24 @@ export function LessonExperience() {
       current = false;
     };
   }, [services, legacyUnit, review, locale]);
+  useEffect(() => {
+    let current = true;
+    if (!services || !redirectedUnitId) return;
+    void services.assets
+      .index(locale)
+      .then((index) => {
+        const currentUnit = index.units.find((unit) => unit.unitId === redirectedUnitId);
+        if (currentUnit?.state !== 'published') throw new Error('The lesson is no longer published.');
+        if (!current) return;
+        navigateLesson(lessonPath({ locale, unitId: redirectedUnitId, stage: 'resume' }), true);
+      })
+      .catch((cause: unknown) => {
+        if (current) setLegacyError(cause);
+      });
+    return () => {
+      current = false;
+    };
+  }, [services, redirectedUnitId, locale]);
   if (cleanupError || legacyError || status === 'error') {
     return (
       <main id="main" className="shell">
@@ -56,14 +78,13 @@ export function LessonExperience() {
       </main>
     );
   }
-  if (!services || status !== 'ready' || legacyUnit) {
+  if (!services || status !== 'ready' || legacyUnit || redirectedUnitId) {
     return (
       <main id="main" className="shell">
         <p role="status">{t('fundamentalsLoading')}</p>
       </main>
     );
   }
-  const route = lessonRouteAt(url.pathname, url.search);
   if (!route && (url.pathname !== localePath(locale, 'study/fundamentals') || url.search))
     return (
       <main id="main" className="shell">

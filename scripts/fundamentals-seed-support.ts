@@ -37,13 +37,8 @@ function text(value: string) {
 
 export async function seedSql(
   directory = 'public/fundamentals/delivery',
-  previousDirectories: readonly string[] = [],
+  previous: ReadonlyMap<string, string> = new Map(),
 ) {
-  const previous = new Set<string>();
-  for (const path of previousDirectories) {
-    const catalog = (await json(`${path}/trustedCatalog.json`)) as Catalog;
-    for (const unit of catalog.units) previous.add(`${unit.unitId}\u0000${unit.contentVersion}`);
-  }
   const trusted = (await json(`${directory}/trustedCatalog.json`)) as Catalog;
   const index = (await json(`${directory}/index.json`)) as { units: Unit[] };
   const manifest = (await json(`${directory}/routeManifest.json`)) as {
@@ -117,11 +112,14 @@ export async function seedSql(
       });
       if (calculated !== unit.contentHash || !/^[0-9a-f]{64}$/.test(unit.contentHash))
         fail(`content hash mismatch for ${unit.unitId}`);
-      if (previous.has(`${unit.unitId}\u0000${unit.contentVersion}`)) return null;
+      const previousHash = previous.get(`${unit.unitId}\u0000${unit.contentVersion}`);
+      if (previousHash && previousHash !== unit.contentHash)
+        fail(`changed grading data for published ${unit.unitId}`);
+      if (previousHash) return null;
       return `  (${text(unit.unitId)}, ${text(unit.contentVersion)}, decode(${text(unit.contentHash)}, 'hex'),\n    ${dollar(unit.plan, `plan_${ids.size}`)}::jsonb,\n    ${dollar(unit.finalQuestions, `final_${ids.size}`)}::jsonb)`;
     })
     .filter((row) => row !== null);
-  if (!rows.length) fail('no new catalog versions');
+  if (!rows.length) return undefined;
   return `-- Generated from public/fundamentals/delivery/trustedCatalog.json. Do not edit manually.\n-- The hash is Node canonical JSON SHA-256, stored as decode(hex, 'hex').\nbegin;\n\ninsert into public.published_fundamentals_catalogs (\n  unit_id, content_version, content_hash, plan, final_questions\n) values\n${rows.join(',\n')}\n;\n\ncommit;\n`;
 }
 

@@ -4,41 +4,36 @@
       "id": "fundamentals.identity-access.checkpoint.authn-authz.v1",
       "sectionId": "authn-authz",
       "objectiveId": "authn-authz",
-      "prompt": "用户已成功登录，但只有某项特定的 S3 操作返回了 AccessDenied。接下来应检查哪一层？",
+      "prompt": "运维人员登录 AWS 后，只有特定的 S3 操作返回 AccessDenied。请选择一项首先要确认的内容。",
       "selectionPolarity": "correct",
       "requiredChoices": 1,
       "choices": [
         {
           "id": "C",
-          "text": "对授权中的主体、操作和资源进行评估",
-          "explanation": "身份验证成功后操作仍被拒绝，这时应检查权限策略的评估。"
+          "text": "确认调用方主体、操作、目标资源，以及适用于这些对象的策略。",
+          "explanation": "成功认证后的操作拒绝需要从授权方面进行排查。"
         },
         {
           "id": "A",
-          "text": "反复更改登录密码",
-          "explanation": "已确认身份验证成功，因此更改密码不能解释授权被拒绝的原因。"
+          "text": "反复更改密码。",
+          "explanation": "这没有调查成功认证后的拒绝原因。"
         },
         {
           "id": "B",
-          "text": "只缩短 DNS TTL",
-          "explanation": "DNS 缓存不会改变 IAM 对操作权限的评估。"
-        },
-        {
-          "id": "D",
-          "text": "无条件公开 S3 对象",
-          "explanation": "通过公开访问设置绕过授权问题违反最小权限原则。"
+          "text": "仅缩短 DNS TTL。",
+          "explanation": "DNS 不会改变 IAM 的权限评估。"
         }
       ],
       "correct": [
         "C"
       ],
       "source": {
-        "label": "IAM 身份管理",
-        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+        "label": "IAM 策略评估逻辑",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
       },
       "category": "fundamentals.identity-access",
-      "revision": 1,
-      "title": "身份验证和授权是两个不同的问题",
+      "revision": 2,
+      "title": "认证与授权是两个不同的问题",
       "unitId": "fundamentals.identity-access",
       "version": "2026-11-learning"
     },
@@ -46,41 +41,36 @@
       "id": "fundamentals.identity-access.checkpoint.principal-role.v1",
       "sectionId": "principal-role",
       "objectiveId": "principal-role",
-      "prompt": "请选择一项推荐的设计。批处理只需要 3 小时的 S3 写入权限。",
+      "prompt": "运维人员允许在 AWS 上运行的批处理仅在其运行的 3 小时内向 S3 写入。请选择一种符合此要求的权限授予方式。",
       "selectionPolarity": "correct",
       "requiredChoices": 1,
       "choices": [
         {
           "id": "D",
-          "text": "批处理主体承担一个角色，并使用临时凭证运行。",
-          "explanation": "角色的临时凭证将访问权限限定在特定用途和时长内，避免分发长期密钥。"
+          "text": "批处理主体承担受信任的角色，并使用临时凭证仅执行所需的 S3 操作。",
+          "explanation": "可以将信任条件、权限和持续时间分开管理。"
         },
         {
           "id": "A",
-          "text": "向所有开发人员发放永不过期的管理员访问密钥。",
-          "explanation": "永久有效且权限过大的凭证不符合基于角色和最小权限的设计原则。"
+          "text": "向所有开发人员发放永久管理员密钥。",
+          "explanation": "这是过度授权且长期有效的共享凭证。"
         },
         {
           "id": "B",
-          "text": "将 S3 存储桶设为匿名公开访问，使其无需凭证。",
-          "explanation": "匿名公开访问无法限制权限，也无法只允许所需的写入操作。"
-        },
-        {
-          "id": "C",
-          "text": "将凭证硬编码到源代码中。",
-          "explanation": "将密钥硬编码到代码中会增加泄露风险，并加大撤销管理的难度。"
+          "text": "将 S3 公开为允许匿名写入。",
+          "explanation": "无法限定主体和目标。"
         }
       ],
       "correct": [
         "D"
       ],
       "source": {
-        "label": "IAM 角色",
+        "label": "AWS IAM 角色",
         "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
       },
       "category": "fundamentals.identity-access",
-      "revision": 1,
-      "title": "主体与角色：谁会临时变成什么身份？",
+      "revision": 2,
+      "title": "主体与角色承担条件",
       "unitId": "fundamentals.identity-access",
       "version": "2026-11-learning"
     },
@@ -88,29 +78,24 @@
       "id": "fundamentals.identity-access.checkpoint.policy-deny.v1",
       "sectionId": "policy-deny",
       "objectiveId": "policy-deny",
-      "prompt": "identity policy 中有 Allow，但操作仍被拒绝。请选择评估时应优先检查的两项。",
+      "prompt": "运维人员正在调查使用 IAM 角色的应用程序调用 AWS API 被拒绝的原因。附加到该角色的策略允许此调用。请选择另外两项需要检查的内容。",
       "selectionPolarity": "correct",
       "requiredChoices": 2,
       "choices": [
         {
           "id": "C",
-          "text": "检查相同 principal/action/resource 是否存在显式 Deny。",
-          "explanation": "显式拒绝的优先级高于 Allow，因此仅凭 Allow 无法判断结果。"
+          "text": "检查请求是否受到显式拒绝的影响。",
+          "explanation": "适用的显式拒绝优先于 Allow。"
         },
         {
           "id": "D",
-          "text": "评估有效权限，包括 resource policy 和 condition。",
-          "explanation": "有效权限由多个策略与 condition 的组合决定。"
+          "text": "确认最终允许执行的操作，包括基于资源的策略、适用条件和权限边界。",
+          "explanation": "需要结合多个控制点进行评估。"
         },
         {
           "id": "A",
-          "text": "只要有 Allow，就始终忽略 Deny。",
-          "explanation": "忽略显式 Deny 是 IAM 评估中的错误。"
-        },
-        {
-          "id": "B",
-          "text": "为解除拒绝而允许所有操作。",
-          "explanation": "过度宽泛的 Allow 会破坏最小权限原则，却无法找出原因。"
+          "text": "由于存在 Allow，因此忽略 Deny。",
+          "explanation": "不能忽略显式拒绝。"
         }
       ],
       "correct": [
@@ -122,8 +107,8 @@
         "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
       },
       "category": "fundamentals.identity-access",
-      "revision": 1,
-      "title": "策略：不只看 Allow，也要检查 Deny",
+      "revision": 2,
+      "title": "除了 Allow 之外还要检查显式 Deny",
       "unitId": "fundamentals.identity-access",
       "version": "2026-11-learning"
     },
@@ -131,29 +116,24 @@
       "id": "fundamentals.identity-access.checkpoint.least-privilege.v1",
       "sectionId": "least-privilege",
       "objectiveId": "least-privilege",
-      "prompt": "请选择两项适当的策略，以缩小图像转换 Lambda 所需的权限范围。",
+      "prompt": "开发人员正在限制一个 Lambda 函数的权限。该函数从 S3 的输入前缀读取图片，并将处理结果写入输出前缀。请选择两项适当的策略。",
       "selectionPolarity": "correct",
       "requiredChoices": 2,
       "choices": [
         {
           "id": "D",
-          "text": "仅允许对目标存储桶中所需的前缀执行所需的操作。",
-          "explanation": "将资源和操作限制在处理所需的范围内，就是最小权限原则。"
+          "text": "仅允许所需的前缀和操作",
+          "explanation": "将目标资源和操作限制在必要范围内。"
         },
         {
           "id": "A",
-          "text": "为执行角色临时签发凭证。",
-          "explanation": "与长期密钥相比，短期凭证可在泄露时降低影响。"
+          "text": "使用执行角色的临时凭证",
+          "explanation": "这样可以避免分发长期密钥。"
         },
         {
           "id": "B",
-          "text": "向转换处理授予所有 AWS 服务的管理权限。",
-          "explanation": "所有服务的权限超出了处理需求。"
-        },
-        {
-          "id": "C",
-          "text": "将密钥永久保存在 Lambda 环境变量中。",
-          "explanation": "保存长期秘密密钥会失去临时凭证的优势。"
+          "text": "授予所有 AWS 服务的管理权限",
+          "explanation": "这是超出需求的过度权限。"
         }
       ],
       "correct": [
@@ -161,18 +141,18 @@
         "A"
       ],
       "source": {
-        "label": "IAM 临时凭证",
-        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html"
+        "label": "IAM 最佳实践",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
       },
       "category": "fundamentals.identity-access",
-      "revision": 1,
-      "title": "最小权限与临时凭证",
+      "revision": 2,
+      "title": "最小权限与短期凭证",
       "unitId": "fundamentals.identity-access",
       "version": "2026-11-learning"
     }
   ],
-  "contentHash": "de4e25c7839966a0b36ec4edbc250dedce70d1fb31b055f8f8f3f26414c81e95",
-  "contentVersion": "8ae183171d3f7b180cadb6c196b4e0dc985ad5638356f919e6eaa9ef2f4c58a2",
+  "contentHash": "54b74d10a60ad95db40b93382ae1d45f68b8a37db23dc1773dd50ce2a7a2151e",
+  "contentVersion": "d29654c5e1f1e93f75140001d8c97373546992d6f97be1c090ce781574bda6eb",
   "finalPolicy": {
     "attemptScope": "current-attempt-only",
     "passCorrect": 10,
@@ -181,22 +161,22 @@
   },
   "finalQuestions": [
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "确认访问主体是谁。",
-          "explanation": "身份验证用于确认个人或主体的身份。"
+          "text": "确认请求访问的主体是谁。",
+          "explanation": "身份验证用于确认主体。"
         },
         {
           "id": "B",
           "text": "允许对 S3 对象执行操作。",
-          "explanation": "这是授权判断。"
+          "explanation": "允许执行操作属于授权判断。"
         },
         {
           "id": "C",
-          "text": "加密数据。",
-          "explanation": "加密是一种数据保护手段。"
+          "text": "加密静态数据。",
+          "explanation": "加密是保护数据的一种手段。"
         }
       ],
       "correct": [
@@ -204,36 +184,36 @@
       ],
       "id": "fund-iam-101",
       "objectiveId": "authn-authz",
-      "prompt": "选择一项关于身份验证的正确说法。",
+      "prompt": "请选择一项关于请求 S3 操作的主体的正确身份验证说明。",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "authn-authz",
       "selectionPolarity": "correct",
       "source": {
-        "label": "IAM 身份管理",
-        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+        "label": "AWS IAM 用户指南",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html"
       },
-      "title": "身份验证",
+      "title": "身份验证和授权是两个不同的问题",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "只检查密码输入页面。",
-          "explanation": "由于已经登录，这未必只是身份验证问题。"
+          "text": "只检查密码输入界面。",
+          "explanation": "由于登录已成功，因此应检查授权评估。"
         },
         {
           "id": "B",
-          "text": "检查请求的操作、目标存储桶和权限策略。",
-          "explanation": "检查授权所需的 action 和 resource。"
+          "text": "检查请求的操作、目标资源和适用的策略。",
+          "explanation": "明确授权所需的操作和目标。"
         },
         {
           "id": "C",
-          "text": "将 S3 改为 EBS。",
-          "explanation": "更改存储服务并不能查明拒绝访问的原因。"
+          "text": "将 S3 更改为 EBS。",
+          "explanation": "更改服务无法确定拒绝的原因。"
         }
       ],
       "correct": [
@@ -241,36 +221,36 @@
       ],
       "id": "fund-iam-102",
       "objectiveId": "authn-authz",
-      "prompt": "登录后，访问特定存储桶时出现 AccessDenied。请选择最先应调查的一个正确步骤。",
+      "prompt": "一名运维人员已成功登录 AWS，但针对目标 S3 存储桶的 GetObject 返回 AccessDenied。请选择首先要检查的一个阶段。",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "authn-authz",
       "selectionPolarity": "correct",
       "source": {
-        "label": "IAM 身份管理",
-        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+        "label": "IAM 策略评估逻辑",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
       },
-      "title": "授权失败",
+      "title": "身份验证和授权是两个不同的问题",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "主体身份验证得到加强，但对 S3 操作的授权仍由策略管理。",
-          "explanation": "多重身份验证会加强主体身份验证。授权决定允许已验证的主体执行哪些操作。"
+          "text": "主体验证得到加强，但 S3 操作的权限仍由策略单独管理。",
+          "explanation": "MFA 会加强身份验证，但不会取代授权策略。"
         },
         {
           "id": "B",
-          "text": "通过多重身份验证后，就可以读写所有存储桶。",
-          "explanation": "加强身份验证并不会自动授予对资源执行操作的权限。"
+          "text": "通过 MFA 后即可读写所有存储桶。",
+          "explanation": "身份验证成功并不意味着拥有对所有资源的权限。"
         },
         {
           "id": "C",
-          "text": "既然加强了身份验证，就不再需要目标资源的策略。",
-          "explanation": "身份验证和授权回答的是不同的问题，因此仍需管理对目标执行操作的权限。"
+          "text": "由于已配置 MFA，因此不再需要基于资源的策略。",
+          "explanation": "身份验证和授权分别进行管理。"
         }
       ],
       "correct": [
@@ -278,36 +258,36 @@
       ],
       "id": "fund-iam-103",
       "objectiveId": "authn-authz",
-      "prompt": "登录时已要求必须进行多重身份验证。请选择一项同时考虑身份验证和授权的正确说法。",
+      "prompt": "您已将控制台登录设置为必须使用 MFA。请选择一项关于 S3 操作权限的正确说明。",
       "requiredChoices": 1,
-      "revision": 2,
+      "revision": 4,
       "sectionId": "authn-authz",
       "selectionPolarity": "correct",
       "source": {
-        "label": "IAM 身份管理",
-        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+        "label": "AWS IAM MFA",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html"
       },
-      "title": "区分各个阶段",
+      "title": "身份验证和授权是两个不同的问题",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "一种向承担该角色的主体授予权限的身份。",
-          "explanation": "角色会关联权限策略。"
+          "text": "它是一种 IAM 身份，可向承担该角色的主体授予权限。",
+          "explanation": "权限策略会附加到角色。"
         },
         {
           "id": "B",
-          "text": "必须始终具有长期密码和长期访问密钥。",
-          "explanation": "这是错误的。角色没有长期凭证。"
+          "text": "它始终具有长期密码和长期访问密钥。",
+          "explanation": "承担角色时通常使用 STS 临时凭证。"
         },
         {
           "id": "C",
-          "text": "AWS 服务可以承担该角色。",
-          "explanation": "EC2 等服务也可以使用角色。"
+          "text": "EC2 等 AWS 服务可以承担该角色。",
+          "explanation": "可以配置信任某项服务的角色。"
         }
       ],
       "correct": [
@@ -315,36 +295,36 @@
       ],
       "id": "fund-iam-104",
       "objectiveId": "principal-role",
-      "prompt": "请选择一项关于 IAM 角色的错误说法。",
+      "prompt": "请选择一项关于 IAM 角色的错误说明。",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "principal-role",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "IAM 角色",
+        "label": "AWS IAM 角色",
         "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
       },
-      "title": "角色",
+      "title": "主体和角色承担条件",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "将仅包含所需 S3 操作权限的角色关联到 EC2。",
-          "explanation": "仅向运行环境授予其所需的最低权限。"
+          "text": "将仅具有所需 S3 操作权限的角色关联到 EC2。",
+          "explanation": "这会向执行主体授予所需的最小权限。"
         },
         {
           "id": "B",
-          "text": "应用程序使用角色提供的临时凭证。",
-          "explanation": "这样无需嵌入长期密钥即可运行。"
+          "text": "应用程序从角色获取临时凭证并使用它们。",
+          "explanation": "这样无需分发长期密钥即可执行 AWS 操作。"
         },
         {
           "id": "C",
           "text": "将长期访问密钥直接写入源代码。",
-          "explanation": "应避免这种做法。它违背了使用角色和临时凭证的设计原则。"
+          "explanation": "由于存在泄露和凭证撤销管理风险，应避免这种做法。"
         }
       ],
       "correct": [
@@ -352,36 +332,36 @@
       ],
       "id": "fund-iam-105",
       "objectiveId": "principal-role",
-      "prompt": "在 EC2 上运行的应用程序会向特定的 S3 存储桶写入数据。请选择一种错误的权限授予方式。",
+      "prompt": "EC2 上的应用程序将结果写入 S3 存储桶中的特定前缀。请选择一种错误的权限授予方式。",
       "requiredChoices": 1,
-      "revision": 2,
+      "revision": 4,
       "sectionId": "principal-role",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "IAM 角色",
-        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+        "label": "EC2 的 IAM 角色",
+        "url": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html"
       },
-      "title": "EC2 权限",
+      "title": "主体与角色引入条件",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "只有人的控制台操作才有主体（principal）；EC2 上的应用程序没有操作主体。",
-          "explanation": "错误。主体（principal）是执行操作的实体，并不限于人。即使是 EC2 上的应用程序使用角色的临时凭证发出的请求，也要确认哪个主体在操作并进行授权。"
+          "text": "主体只存在于人员中，EC2 上运行的应用程序不存在主体。",
+          "explanation": "应用程序也是使用角色凭证发送请求的主体。"
         },
         {
           "id": "B",
-          "text": "先明确由哪个主体执行操作，再授予权限。",
-          "explanation": "识别主体（principal）是起点。"
+          "text": "先确定执行操作的主体，再授予权限。",
+          "explanation": "设计授权时不要使主体含糊不清。"
         },
         {
           "id": "C",
-          "text": "不要让人员和正在运行的应用程序共用同一个长期密钥。",
-          "explanation": "可以为每个主体分配不同的角色，并使用临时凭证。"
+          "text": "不要让人员和应用程序共享同一个长期密钥。",
+          "explanation": "必须分离并跟踪各个主体。"
         }
       ],
       "correct": [
@@ -389,46 +369,41 @@
       ],
       "id": "fund-iam-106",
       "objectiveId": "principal-role",
-      "prompt": "请选择一项关于主体（principal）和角色的错误说法。",
+      "prompt": "请选择一项关于人员执行控制台操作和 EC2 上应用程序操作主体的错误说明。",
       "requiredChoices": 1,
-      "revision": 3,
+      "revision": 4,
       "sectionId": "principal-role",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "IAM 角色",
-        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+        "label": "AWS IAM 主体",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html"
       },
-      "title": "判断主体",
+      "title": "主体与角色引入条件",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "显式 Deny 的优先级高于 Allow。",
-          "explanation": "在评估过程中，显式拒绝优先。"
+          "text": "适用的显式拒绝优先于 Allow。",
+          "explanation": "包含显式拒绝的请求会被拒绝。"
         },
         {
           "id": "B",
-          "text": "找到一条 Allow 后，就不需要其他策略了。",
-          "explanation": "还需要检查 Deny 和条件。"
+          "text": "找到一个 Allow 后，就不需要其他策略了。",
+          "explanation": "还会评估 Deny、权限上限和条件。"
         },
         {
           "id": "C",
           "text": "策略与资源无关。",
-          "explanation": "评估时会指定 action 和 resource。"
+          "explanation": "资源是评估允许目标时的重要要素。"
         },
         {
           "id": "D",
-          "text": "调查时，应明确 principal、action 和 resource。",
-          "explanation": "固定请求内容后再进行评估。"
-        },
-        {
-          "id": "E",
-          "text": "Deny 仅适用于加密。",
-          "explanation": "Deny 会影响访问权限评估。"
+          "text": "调查时，确定调用方、执行的操作以及目标资源。",
+          "explanation": "固定请求后，就可以追踪适用的策略。"
         }
       ],
       "correct": [
@@ -437,46 +412,46 @@
       ],
       "id": "fund-iam-107",
       "objectiveId": "policy-deny",
-      "prompt": "请选择两项关于 IAM 策略评估的正确说法。",
+      "prompt": "请选择两项关于 IAM 策略评估的正确说明。",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "policy-deny",
       "selectionPolarity": "correct",
       "source": {
-        "label": "策略评估逻辑",
+        "label": "IAM 策略评估逻辑",
         "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
       },
-      "title": "显式 Deny",
+      "title": "不仅要查看 Allow，还要查看显式拒绝",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "不确认错误针对的对象，就授予管理员权限。",
-          "explanation": "这会破坏最小权限原则，也无法查明原因。"
+          "text": "不检查目标就授予管理员权限。",
+          "explanation": "这会掩盖原因并造成过度授权。"
         },
         {
           "id": "B",
-          "text": "检查请求的 action 和 resource 是否与 Allow 相匹配。",
-          "explanation": "这可以确认是否存在目标不匹配。"
+          "text": "确认请求的操作和资源是否与 Allow 匹配。",
+          "explanation": "这有助于排查目标不匹配。"
         },
         {
           "id": "C",
-          "text": "删除并重新创建 S3 资源。",
-          "explanation": "这不是在调查策略评估。"
+          "text": "删除并重新创建 S3。",
+          "explanation": "这没有调查拒绝的评估原因。"
         },
         {
           "id": "D",
-          "text": "只要请求已通过身份验证，就忽略 Deny。",
-          "explanation": "显式 Deny 的优先级更高。"
+          "text": "只要通过身份验证就忽略 Deny。",
+          "explanation": "即使身份验证成功，显式拒绝仍然适用。"
         },
         {
           "id": "E",
-          "text": "检查存储桶策略等策略中的显式 Deny 和条件。",
-          "explanation": "即使存在 Allow，这些也可能是拒绝的原因。"
+          "text": "检查基于资源的策略中的显式拒绝及其条件。",
+          "explanation": "这会检查 Allow 之外的适用条件。"
         }
       ],
       "correct": [
@@ -485,46 +460,41 @@
       ],
       "id": "fund-iam-108",
       "objectiveId": "policy-deny",
-      "prompt": "明明存在 Allow，读取请求却被拒绝。请选择两个正确的调查步骤。",
+      "prompt": "即使存在 Allow，S3 读取仍被拒绝。请选择两项正确的调查方法。",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "policy-deny",
       "selectionPolarity": "correct",
       "source": {
-        "label": "策略评估逻辑",
+        "label": "IAM 策略评估逻辑",
         "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
       },
-      "title": "调查 AccessDenied",
+      "title": "不仅要查看 Allow，还要查看显式拒绝",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "该操作会被拒绝。",
-          "explanation": "显式 Deny 的优先级高于 Allow。"
+          "text": "该 GetObject 操作会被拒绝。",
+          "explanation": "适用的显式拒绝优先于 Allow。"
         },
         {
           "id": "B",
-          "text": "因为存在 Allow，所以操作一定会成功。",
-          "explanation": "这种说法忽略了 Deny，因此不正确。"
+          "text": "因为存在 Allow，所以一定会成功。",
+          "explanation": "不能忽略 Deny。"
         },
         {
           "id": "C",
-          "text": "检查导致 Deny 的策略和条件。",
-          "explanation": "这是进一步缩小原因范围的下一步。"
+          "text": "调查产生 Deny 的策略和条件。",
+          "explanation": "这有助于确定拒绝的责任方及其范围。"
         },
         {
           "id": "D",
-          "text": "重新进行身份验证就能消除 Deny。",
-          "explanation": "重新进行身份验证不会消除策略中的 Deny。"
-        },
-        {
-          "id": "E",
-          "text": "S3 不会评估策略。",
-          "explanation": "访问权限会根据 IAM、资源策略等进行评估。"
+          "text": "重新进行身份验证即可消除 Deny。",
+          "explanation": "重新进行身份验证不会改变策略。"
         }
       ],
       "correct": [
@@ -533,46 +503,46 @@
       ],
       "id": "fund-iam-109",
       "objectiveId": "policy-deny",
-      "prompt": "针对同一资源的 S3:GetObject Allow 和显式 Deny 同时存在。请选择两项正确判断。",
+      "prompt": "同一 S3 目标同时适用 GetObject Allow 和显式拒绝。请选择两项正确判断。",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "policy-deny",
       "selectionPolarity": "correct",
       "source": {
-        "label": "策略评估逻辑",
+        "label": "IAM 策略评估逻辑",
         "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
       },
-      "title": "Allow 的结论",
+      "title": "不仅要查看 Allow，还要查看显式拒绝",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "明确所需的操作和资源。",
-          "explanation": "这是缩小所需权限范围的起点。"
+          "text": "明确所需的操作以及输入和输出资源。",
+          "explanation": "将需求落实为权限。"
         },
         {
           "id": "B",
-          "text": "为了让系统运行，从一开始就授予对所有资源的管理员权限。",
-          "explanation": "这是错误的。应先确认所需的权限范围。"
+          "text": "为了验证运行情况，授予对所有资源的管理员权限。",
+          "explanation": "这超出了必要范围，属于过度授权。"
         },
         {
           "id": "C",
-          "text": "根据每个主体的需求分配不同角色。",
-          "explanation": "可以区分人员、CI 和应用程序。"
+          "text": "仅为作业主体分配所需的角色。",
+          "explanation": "按主体分离权限。"
         },
         {
           "id": "D",
-          "text": "所有人员和应用程序共用一个长期访问密钥。",
-          "explanation": "这是错误的。这样会损害主体隔离和可追溯性。"
+          "text": "让所有人员和所有应用共享一个长期访问密钥。",
+          "explanation": "无法追踪主体，也无法撤销该密钥。"
         },
         {
           "id": "E",
-          "text": "根据实际使用情况重新审视权限。",
-          "explanation": "这有助于判断如何减少过多的权限。"
+          "text": "根据实际使用情况重新审查权限。",
+          "explanation": "可以缩减未使用的权限。"
         }
       ],
       "correct": [
@@ -581,46 +551,46 @@
       ],
       "id": "fund-iam-110",
       "objectiveId": "least-privilege",
-      "prompt": "请选择关于最小权限的两项错误说法。",
+      "prompt": "运维人员配置一个每天运行的 CSV 导入作业，使其能够从输入位置读取文件，并且只能写入处理结果。请选择两个不符合最小权限设计的选项。",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "least-privilege",
       "selectionPolarity": "incorrect",
       "source": {
         "label": "IAM 最佳实践",
         "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
       },
-      "title": "最小权限",
+      "title": "最小权限与短期凭证",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "始终允许删除所有存储桶中的对象。",
-          "explanation": "这是错误的。应将权限限制在必要的读写操作范围内。"
+          "text": "始终允许删除所有存储桶中的内容。",
+          "explanation": "应将目标和操作限制在必要范围内。"
         },
         {
           "id": "B",
-          "text": "列出输入和输出存储桶的路径。",
-          "explanation": "这样可以明确指定资源。"
+          "text": "确定用于输入和输出的 S3 存储桶及前缀。",
+          "explanation": "这会限制目标资源。"
         },
         {
           "id": "C",
-          "text": "仅向作业角色授予其所需的操作权限。",
-          "explanation": "这是针对该主体实施的最小权限原则。"
+          "text": "仅向作业角色授予所需的操作权限。",
+          "explanation": "这符合最小权限原则。"
         },
         {
           "id": "D",
-          "text": "考虑使用可使用临时安全凭证的角色。",
-          "explanation": "这样可以减少长期密钥的分发。"
+          "text": "考虑使用能够使用临时凭证的角色。",
+          "explanation": "这可以避免分发长期密钥。"
         },
         {
           "id": "E",
-          "text": "将开发者个人的访问密钥复制到作业配置中。",
-          "explanation": "这是错误的。应将个人凭证与运行环境分开。"
+          "text": "将开发人员的个人访问密钥复制到作业配置中。",
+          "explanation": "共享个人密钥会损害追踪和撤销能力。"
         }
       ],
       "correct": [
@@ -629,46 +599,46 @@
       ],
       "id": "fund-iam-111",
       "objectiveId": "least-privilege",
-      "prompt": "为每日 CSV 导入作业授予权限。请选择两种错误的做法。",
+      "prompt": "开发人员仅允许 CSV 导入作业读取 S3 输入存储桶中的 CSV，并将结果写入输出存储桶。请选择两种错误的权限授予方式。",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "least-privilege",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "临时安全凭证",
-        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html"
+        "label": "IAM 最佳实践",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
       },
-      "title": "每日作业",
+      "title": "最小权限与短期凭证",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     },
     {
-      "category": "認証と認可",
+      "category": "fundamentals.identity-access",
       "choices": [
         {
           "id": "A",
-          "text": "列出该流程执行的操作及其目标资源。",
-          "explanation": "这是最小权限原则的基础。"
+          "text": "列出处理所执行的操作和目标资源。",
+          "explanation": "这为所需权限提供依据。"
         },
         {
           "id": "B",
-          "text": "为每个执行主体分配不同的角色。",
-          "explanation": "这有助于明确权限边界。"
+          "text": "按执行主体分开角色。",
+          "explanation": "这会分离主体并支持追踪。"
         },
         {
           "id": "C",
-          "text": "为了避免调查故障，允许所有操作。",
-          "explanation": "这是错误的做法，会扩大影响范围。"
+          "text": "为了避免故障排查，允许所有操作。",
+          "explanation": "过度授权会扩大影响范围。"
         },
         {
           "id": "D",
-          "text": "将永不过期的长期密钥放入共享配置中。",
-          "explanation": "这是错误的做法。请考虑使用临时凭证。"
+          "text": "在共享配置中放置一个没有期限的长期密钥。",
+          "explanation": "这会带来泄露影响和撤销管理方面的问题。"
         },
         {
           "id": "E",
-          "text": "验证实际访问情况，包括显式拒绝和条件。",
-          "explanation": "确认只有预期范围内的访问是允许的。"
+          "text": "验证实际访问，包括 Deny 和条件。",
+          "explanation": "这可以确认有效权限。"
         }
       ],
       "correct": [
@@ -677,18 +647,18 @@
       ],
       "id": "fund-iam-112",
       "objectiveId": "least-privilege",
-      "prompt": "请选择两项关于新流程权限设计的错误做法。",
+      "prompt": "负责添加购买处理的开发人员分别运行两个处理：一个保存订单信息，另一个用于审计并查看订单内容。在为两者设计权限时，请选择两个错误的策略。",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 4,
       "sectionId": "least-privilege",
       "selectionPolarity": "incorrect",
       "source": {
         "label": "IAM 最佳实践",
         "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
       },
-      "title": "权限设计顺序",
+      "title": "最小权限与短期凭证",
       "unitId": "fundamentals.identity-access",
-      "version": "2026-11-learning"
+      "version": "2026-11-rebuild"
     }
   ],
   "steps": [
@@ -698,18 +668,16 @@
           "contentRef": "unit:summary",
           "kind": "summary",
           "label": "概述",
-          "text": "将身份验证、权限、角色和最小权限视为不同的概念。",
-          "words": 11
+          "text": "评估 IAM 时，要区分谁执行操作、允许执行什么，以及谁可以承担该角色。"
         },
         {
           "contentRef": "unit:objective",
           "kind": "objective",
           "label": "学习目标",
-          "text": "能够区分身份验证、授权、IAM 角色和最小权限，并据此判断配置。",
-          "words": 14
+          "text": "能够区分身份验证、授权、IAM 角色和最小权限，并据此判断配置。"
         }
       ],
-      "estimatedSeconds": 12,
+      "estimatedSeconds": 13,
       "id": "fundamentals.identity-access:intro:orientation:1",
       "kind": "intro",
       "label": "单元概述",
@@ -727,25 +695,22 @@
           "contentRef": "objective:authn-authz",
           "kind": "objective",
           "label": "学习目标",
-          "text": "区分身份验证与授权，并说明失败发生在哪个阶段。",
-          "words": 12
+          "text": "区分身份验证和授权，以定位被拒绝的原因。"
         },
         {
           "contentRef": "objective:principal-role",
           "kind": "objective",
           "label": "学习目标",
-          "text": "说明 IAM 主体和角色如何获得临时权限。",
-          "words": 16
+          "text": "确定主体和角色担任条件。"
         },
         {
           "contentRef": "objective:policy-deny",
           "kind": "objective",
           "label": "学习目标",
-          "text": "区分策略允许与显式拒绝，并据此作出判断。",
-          "words": 12
+          "text": "结合 Allow、显式 Deny 和条件，判断有效权限。"
         }
       ],
-      "estimatedSeconds": 14,
+      "estimatedSeconds": 12,
       "id": "fundamentals.identity-access:intro:objectives:1",
       "kind": "intro",
       "label": "学习目标",
@@ -763,8 +728,7 @@
           "contentRef": "objective:least-privilege",
           "kind": "objective",
           "label": "学习目标",
-          "text": "能够使用最小权限和临时凭证设计访问权限。",
-          "words": 13
+          "text": "将操作、对象和时间范围限定在必要的最小范围内。"
         }
       ],
       "estimatedSeconds": 12,
@@ -784,29 +748,20 @@
         {
           "contentRef": "section:authn-authz:paragraph:0",
           "kind": "paragraph",
-          "label": "认证与授权是两个不同的问题",
-          "text": "认证用于确认尝试访问的主体是谁。密码、多重身份验证和联合身份验证等，都是验证个人或主体身份的方式。",
-          "words": 30
+          "label": "身份验证和授权回答的是不同的问题。",
+          "text": "身份验证用于确认发送请求的主体是谁。密码和多重身份验证可加强对主体的确认。"
         },
         {
           "contentRef": "section:authn-authz:paragraph:1",
           "kind": "paragraph",
-          "label": "授权用于决定允许已验证的主体执行哪些操作。如果能够登录，却无法读取 S3 对象，问题就出在认证之后的授权环节。",
-          "text": "排查故障时，先确认认证是否成功，再确认是否已获准对目标资源执行相应操作。不要把“无法登录”和“访问被拒绝”当成同一个问题。",
-          "words": 40
-        },
-        {
-          "contentRef": "section:authn-authz:paragraph:2",
-          "kind": "paragraph",
-          "label": "认证与授权是两个不同的问题",
-          "text": "认证与授权是两个不同的问题",
-          "words": 42
+          "label": "身份验证和授权回答的是不同的问题。",
+          "text": "授权用于确定已验证的主体是否可以对资源执行特定的操作。如果成功登录后 S3 操作返回 AccessDenied，请检查授权中的主体、操作、资源和策略。"
         }
       ],
-      "estimatedSeconds": 39,
+      "estimatedSeconds": 28,
       "id": "fundamentals.identity-access:section:authn-authz:concept:1",
       "kind": "reading",
-      "label": "认证与授权是两个不同的问题",
+      "label": "身份验证和授权回答的是不同的问题。",
       "objectiveIds": [
         "authn-authz"
       ],
@@ -823,29 +778,26 @@
         {
           "contentRef": "section:authn-authz:scenario",
           "kind": "scenario",
-          "label": "情境",
-          "text": "用户可以登录控制台，但无法打开账单存储桶。",
-          "words": 15
+          "label": "情况",
+          "text": "用户登录成功，但对特定存储桶执行 GetObject 被拒绝。"
         },
         {
           "contentRef": "section:authn-authz:step:0",
           "kind": "steps",
           "label": "步骤 1",
-          "text": "确认登录成功意味着身份验证成功。",
-          "words": 9
+          "text": "将认证成功与授权被拒绝区分开来。"
         },
         {
           "contentRef": "section:authn-authz:step:1",
           "kind": "steps",
           "label": "步骤 2",
-          "text": "检查请求的 S3 操作和目标存储桶。",
-          "words": 10
+          "text": "确定请求的 action 和目标 resource。"
         }
       ],
       "estimatedSeconds": 19,
       "id": "fundamentals.identity-access:section:authn-authz:example:1",
       "kind": "example",
-      "label": "示例",
+      "label": "具体示例",
       "objectiveIds": [
         "authn-authz"
       ],
@@ -863,15 +815,13 @@
           "contentRef": "section:authn-authz:step:2",
           "kind": "steps",
           "label": "步骤 3",
-          "text": "检查允许或拒绝该操作的策略。",
-          "words": 11
+          "text": "评估适用的 Allow、Deny 和 condition。"
         },
         {
           "contentRef": "section:authn-authz:outcome",
           "kind": "outcome",
           "label": "结论",
-          "text": "身份验证已完成，因此应将其作为授权问题进行调查。",
-          "words": 15
+          "text": "不要通过更改密码或公开设置来掩盖授权问题，而是调查发生拒绝的层级。"
         }
       ],
       "estimatedSeconds": 18,
@@ -895,21 +845,19 @@
           "contentRef": "section:authn-authz:misconception:claim",
           "kind": "misconception",
           "label": "这是错误的",
-          "text": "只要成功登录，就可以操作所有 AWS 资源。",
-          "words": 11
+          "text": "通过多重身份验证后即可操作所有存储桶。"
         },
         {
           "contentRef": "section:authn-authz:misconception:correction",
           "kind": "correction",
-          "label": "纠正",
-          "text": "登录属于身份验证。实际操作还需由策略单独授权。",
-          "words": 16
+          "label": "更正",
+          "text": "加强认证不会自动向授权策略添加权限。"
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.identity-access:section:authn-authz:misconception:1",
       "kind": "misconception",
-      "label": "错误说法与纠正",
+      "label": "错误与更正",
       "objectiveIds": [
         "authn-authz"
       ],
@@ -927,22 +875,13 @@
           "contentRef": "section:authn-authz:takeaway:0",
           "kind": "takeaway",
           "label": "要点",
-          "text": "身份验证用于确认主体身份。",
-          "words": 6
+          "text": "身份验证用于确定你是谁，授权用于确定你能做什么。"
         },
         {
           "contentRef": "section:authn-authz:takeaway:1",
           "kind": "takeaway",
           "label": "要点",
-          "text": "授权是允许执行某项操作。",
-          "words": 7
-        },
-        {
-          "contentRef": "section:authn-authz:takeaway:2",
-          "kind": "takeaway",
-          "label": "要点",
-          "text": "按顺序区分失败发生的阶段。",
-          "words": 7
+          "text": "遇到 AccessDenied 时，继续评估请求和策略。"
         }
       ],
       "estimatedSeconds": 16,
@@ -955,8 +894,8 @@
       "sectionId": "authn-authz",
       "sources": [
         {
-          "label": "IAM 身份验证与访问控制",
-          "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html"
+          "label": "AWS IAM 用户指南",
+          "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html"
         }
       ],
       "style": "normal",
@@ -968,7 +907,7 @@
     {
       "assessmentId": "fundamentals.identity-access.checkpoint.authn-authz.v1",
       "blocks": [],
-      "estimatedSeconds": 55,
+      "estimatedSeconds": 52,
       "id": "fundamentals.identity-access:checkpoint:fundamentals.identity-access.checkpoint.authn-authz.v1",
       "kind": "checkpoint",
       "label": "检查点",
@@ -988,29 +927,20 @@
         {
           "contentRef": "section:principal-role:paragraph:0",
           "kind": "paragraph",
-          "label": "主体与角色：谁临时扮演什么身份",
-          "text": "principal 是可以在 AWS 中执行操作的实体。IAM 用户、角色、AWS 服务和联合用户等都可以是 principal。",
-          "words": 30
+          "label": "主体与角色承担条件",
+          "text": "principal 是请求执行 AWS 操作的主体。人员、运行在 EC2 上的应用程序以及 AWS 服务都属于这一范围。"
         },
         {
           "contentRef": "section:principal-role:paragraph:1",
           "kind": "paragraph",
-          "label": "IAM 角色是一种带有权限策略的身份。承担该角色的主体会通过临时凭证使用角色定义的权限。角色本身没有长期密码或长期访问密钥。",
-          "text": "向应用程序授予权限时，应先设计由哪个 principal 承担哪个角色，再考虑将访问密钥嵌入文件。按职责分配角色，有助于将权限限制在必要的时长和范围内。",
-          "words": 42
-        },
-        {
-          "contentRef": "section:principal-role:paragraph:2",
-          "kind": "paragraph",
-          "label": "主体与角色：谁临时扮演什么身份",
-          "text": "principal 是可以在 AWS 中执行操作的实体。IAM 用户、角色、AWS 服务和联合用户等都可以是 principal。",
-          "words": 44
+          "label": "主体与角色承担条件",
+          "text": "IAM 角色包含信任策略和权限策略。信任策略规定谁可以承担该角色，权限策略规定承担角色后允许执行的操作。STS 会签发临时凭证。"
         }
       ],
-      "estimatedSeconds": 45,
+      "estimatedSeconds": 26,
       "id": "fundamentals.identity-access:section:principal-role:concept:1",
       "kind": "reading",
-      "label": "IAM 角色是一种带有权限策略的身份。承担该角色的主体会通过临时凭证使用角色定义的权限。角色本身没有长期密码或长期访问密钥。",
+      "label": "主体与角色承担条件",
       "objectiveIds": [
         "principal-role"
       ],
@@ -1027,23 +957,20 @@
         {
           "contentRef": "section:principal-role:scenario",
           "kind": "scenario",
-          "label": "情境",
-          "text": "EC2 上的应用程序将其输出保存到指定存储桶。",
-          "words": 11
+          "label": "情景",
+          "text": "仅允许批处理作业写入 S3 3 小时。"
         },
         {
           "contentRef": "section:principal-role:step:0",
           "kind": "steps",
           "label": "步骤 1",
-          "text": "仅列出应用程序所需的 S3 操作。",
-          "words": 10
+          "text": "确定运行批处理作业的主体。"
         },
         {
           "contentRef": "section:principal-role:step:1",
           "kind": "steps",
           "label": "步骤 2",
-          "text": "创建一个具有这些权限的 IAM 角色。",
-          "words": 8
+          "text": "通过信任策略确保只有该主体可以承担 role。"
         }
       ],
       "estimatedSeconds": 18,
@@ -1067,18 +994,16 @@
           "contentRef": "section:principal-role:step:2",
           "kind": "steps",
           "label": "步骤 3",
-          "text": "将角色关联到 EC2，并让应用程序使用临时凭证。",
-          "words": 15
+          "text": "通过权限策略仅允许所需的 bucket、prefix 和 action。"
         },
         {
           "contentRef": "section:principal-role:outcome",
           "kind": "outcome",
           "label": "结论",
-          "text": "无需将长期访问密钥放入应用程序配置中，即可将权限关联到运行环境的角色。",
-          "words": 22
+          "text": "无需分发长期访问密钥，即可将主体与权限分离。"
         }
       ],
-      "estimatedSeconds": 19,
+      "estimatedSeconds": 18,
       "id": "fundamentals.identity-access:section:principal-role:example:2",
       "kind": "example",
       "label": "示例",
@@ -1098,22 +1023,20 @@
         {
           "contentRef": "section:principal-role:misconception:claim",
           "kind": "misconception",
-          "label": "错误说法",
-          "text": "角色是用于存储个人登录密码的容器。",
-          "words": 13
+          "label": "这是错误的",
+          "text": "只要在角色的信任策略中写入主体，该主体就可以执行所有 AWS 操作。"
         },
         {
           "contentRef": "section:principal-role:misconception:correction",
           "kind": "correction",
           "label": "更正",
-          "text": "角色是一种可被承担的权限身份。它不持有长期密码或访问密钥。",
-          "words": 16
+          "text": "信任策略规定角色被担任的条件，而担任角色后的操作由权限策略单独控制。"
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 19,
       "id": "fundamentals.identity-access:section:principal-role:misconception:1",
       "kind": "misconception",
-      "label": "错误说法与更正",
+      "label": "错误与更正",
       "objectiveIds": [
         "principal-role"
       ],
@@ -1131,22 +1054,13 @@
           "contentRef": "section:principal-role:takeaway:0",
           "kind": "takeaway",
           "label": "要点",
-          "text": "principal 是执行操作的主体。",
-          "words": 6
+          "text": "principal 不仅限于人员，也包括正在运行的应用程序。"
         },
         {
           "contentRef": "section:principal-role:takeaway:1",
           "kind": "takeaway",
-          "label": "角色是通过承担并使用的、携带权限的身份。",
-          "text": "角色使用临时凭证。",
-          "words": 8
-        },
-        {
-          "contentRef": "section:principal-role:takeaway:2",
-          "kind": "takeaway",
           "label": "要点",
-          "text": "IAM 角色",
-          "words": 10
+          "text": "分别检查信任策略和权限策略。"
         }
       ],
       "estimatedSeconds": 16,
@@ -1159,7 +1073,7 @@
       "sectionId": "principal-role",
       "sources": [
         {
-          "label": "要点",
+          "label": "AWS IAM 角色",
           "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
         }
       ],
@@ -1172,7 +1086,7 @@
     {
       "assessmentId": "fundamentals.identity-access.checkpoint.principal-role.v1",
       "blocks": [],
-      "estimatedSeconds": 55,
+      "estimatedSeconds": 52,
       "id": "fundamentals.identity-access:checkpoint:fundamentals.identity-access.checkpoint.principal-role.v1",
       "kind": "checkpoint",
       "label": "检查点",
@@ -1192,29 +1106,20 @@
         {
           "contentRef": "section:policy-deny:paragraph:0",
           "kind": "paragraph",
-          "label": "策略：不仅查看允许，也要查看拒绝",
-          "text": "IAM 策略定义 principal 可以对资源执行的操作。在排查时，应具体确认允许谁对哪些资源执行哪些操作。",
-          "words": 33
+          "label": "检查显式 Deny，而不只是 Allow",
+          "text": "IAM 的有效权限会结合请求中的 principal、action、resource 和 condition，以及适用的多个策略进行评估。即使存在一个 Allow，也不一定能确定请求被允许。"
         },
         {
           "contentRef": "section:policy-deny:paragraph:1",
           "kind": "paragraph",
-          "label": "策略：不仅查看允许，也要查看拒绝",
-          "text": "即使找到一项允许，也不要据此下结论。在 IAM 评估中，显式 Deny 的优先级高于 Allow。因此，请检查适用的拒绝，例如权限边界、组织策略和基于资源的策略。",
-          "words": 43
-        },
-        {
-          "contentRef": "section:policy-deny:paragraph:2",
-          "kind": "paragraph",
-          "label": "策略：不仅查看允许，也要查看拒绝",
-          "text": "排查 AccessDenied 时，先确定发出请求的 principal、action 和 resource，确认相应的 Allow，然后查找显式 Deny 和条件。不要只根据显示的服务名称推断原因。",
-          "words": 39
+          "label": "检查显式 Deny，而不只是 Allow",
+          "text": "适用于相关请求的显式 Deny 优先于 Allow。请检查适用策略的范围，包括资源策略、身份策略、权限边界和 Organizations 控制等。"
         }
       ],
-      "estimatedSeconds": 48,
+      "estimatedSeconds": 35,
       "id": "fundamentals.identity-access:section:policy-deny:concept:1",
       "kind": "reading",
-      "label": "策略：不仅查看允许，也要查看拒绝",
+      "label": "检查显式 Deny，而不只是 Allow",
       "objectiveIds": [
         "policy-deny"
       ],
@@ -1231,29 +1136,26 @@
         {
           "contentRef": "section:policy-deny:scenario",
           "kind": "scenario",
-          "label": "情境",
-          "text": "已授予读取权限，但只有某个特定存储桶返回 AccessDenied。",
-          "words": 14
+          "label": "情况",
+          "text": "虽然存在 S3:GetObject 的 Allow，但针对同一目标的请求却收到 AccessDenied。"
         },
         {
           "contentRef": "section:policy-deny:step:0",
           "kind": "steps",
           "label": "步骤 1",
-          "text": "确定 principal、s3:GetObject 和目标存储桶的键。",
-          "words": 10
+          "text": "确定实际的 principal、action 和 resource。"
         },
         {
           "contentRef": "section:policy-deny:step:1",
           "kind": "steps",
           "label": "步骤 2",
-          "text": "检查 Allow 策略是否包含目标资源。",
-          "words": 10
+          "text": "查找适用的 Deny 和 condition。"
         }
       ],
-      "estimatedSeconds": 24,
+      "estimatedSeconds": 22,
       "id": "fundamentals.identity-access:section:policy-deny:example:1",
       "kind": "example",
-      "label": "示例",
+      "label": "具体示例",
       "objectiveIds": [
         "policy-deny"
       ],
@@ -1271,21 +1173,19 @@
           "contentRef": "section:policy-deny:step:2",
           "kind": "steps",
           "label": "步骤 3",
-          "text": "检查存储桶策略等策略中的显式 Deny 及其条件。",
-          "words": 12
+          "text": "同时评估所需的 Allow 权限和权限边界策略。"
         },
         {
           "contentRef": "section:policy-deny:outcome",
           "kind": "outcome",
           "label": "结论",
-          "text": "不要只看是否存在 Allow，还要检查适用的 Deny，这样才能准确判断被拒绝的原因。",
-          "words": 21
+          "text": "无需通过允许所有操作来绕过拒绝，即可确定拒绝的责任归属。"
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.identity-access:section:policy-deny:example:2",
       "kind": "example",
-      "label": "示例",
+      "label": "具体示例",
       "objectiveIds": [
         "policy-deny"
       ],
@@ -1303,15 +1203,13 @@
           "contentRef": "section:policy-deny:misconception:claim",
           "kind": "misconception",
           "label": "这是错误的",
-          "text": "只要有一个 Allow，就不必查看其他策略。",
-          "words": 13
+          "text": "如果找到 Allow，就可以忽略 Deny。"
         },
         {
           "contentRef": "section:policy-deny:misconception:correction",
           "kind": "correction",
           "label": "更正",
-          "text": "显式 Deny 的优先级高于 Allow。条件和拒绝也会纳入评估。",
-          "words": 16
+          "text": "适用的显式 Deny 优先于 Allow。"
         }
       ],
       "estimatedSeconds": 18,
@@ -1335,35 +1233,26 @@
           "contentRef": "section:policy-deny:takeaway:0",
           "kind": "takeaway",
           "label": "要点",
-          "text": "策略将主体、操作和资源关联起来。",
-          "words": 8
+          "text": "不要仅根据 Allow 确定有效权限。"
         },
         {
           "contentRef": "section:policy-deny:takeaway:1",
           "kind": "takeaway",
-          "label": "显式 Deny 优先于 Allow。",
-          "text": "通过细化请求来进行调查。",
-          "words": 9
-        },
-        {
-          "contentRef": "section:policy-deny:takeaway:2",
-          "kind": "takeaway",
           "label": "要点",
-          "text": "策略将主体、操作和资源关联起来。",
-          "words": 10
+          "text": "明确 Deny 的适用资源和 condition。"
         }
       ],
       "estimatedSeconds": 16,
       "id": "fundamentals.identity-access:section:policy-deny:takeaway:1",
       "kind": "takeaway",
-      "label": "显式 Deny 优先于 Allow。",
+      "label": "要点",
       "objectiveIds": [
         "policy-deny"
       ],
       "sectionId": "policy-deny",
       "sources": [
         {
-          "label": "通过细化请求来进行调查。",
+          "label": "IAM policy evaluation logic",
           "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
         }
       ],
@@ -1376,7 +1265,7 @@
     {
       "assessmentId": "fundamentals.identity-access.checkpoint.policy-deny.v1",
       "blocks": [],
-      "estimatedSeconds": 63,
+      "estimatedSeconds": 60,
       "id": "fundamentals.identity-access:checkpoint:fundamentals.identity-access.checkpoint.policy-deny.v1",
       "kind": "checkpoint",
       "label": "检查点",
@@ -1396,29 +1285,20 @@
         {
           "contentRef": "section:least-privilege:paragraph:0",
           "kind": "paragraph",
-          "label": "最小权限与临时凭证",
-          "text": "最小权限是指只允许工作所需的操作、资源和条件。不要一开始就授予对所有资源的管理员权限，而应先观察所需的操作，再缩小授权范围。",
-          "words": 42
+          "label": "最小权限与短期凭证",
+          "text": "最小权限原则是：仅允许主体在必要的条件和期限内，对所需资源执行工作所需的 action。"
         },
         {
           "contentRef": "section:least-privilege:paragraph:1",
           "kind": "paragraph",
-          "label": "最小权限与临时凭证",
-          "text": "临时凭证是动态创建的，并且有有效期限。它们可与角色或联合身份验证配合使用，从而有助于降低分发和存储长期访问密钥的风险。",
-          "words": 36
-        },
-        {
-          "contentRef": "section:least-privilege:paragraph:2",
-          "kind": "paragraph",
-          "label": "最小权限与临时凭证",
-          "text": "在实施时，不要让人员、CI 和运行中的应用程序共用同一组凭证。应为每个主体分配不同的角色，并在确认有效期限、目标资源和所需操作后再授予权限。",
-          "words": 35
+          "label": "最小权限与短期凭证",
+          "text": "为执行角色临时签发 credential，不要将长期访问密钥放在源代码或共享配置中。根据实际使用情况检查并缩减或更新权限。"
         }
       ],
-      "estimatedSeconds": 41,
+      "estimatedSeconds": 21,
       "id": "fundamentals.identity-access:section:least-privilege:concept:1",
       "kind": "reading",
-      "label": "最小权限与临时凭证",
+      "label": "最小权限与短期凭证",
       "objectiveIds": [
         "least-privilege"
       ],
@@ -1435,29 +1315,26 @@
         {
           "contentRef": "section:least-privilege:scenario",
           "kind": "scenario",
-          "label": "场景",
-          "text": "为仅执行每日 CSV 导入的作业授予权限。",
-          "words": 13
+          "label": "情境",
+          "text": "图像转换 Lambda 读取特定 prefix 下的图像，并写入生成的成果物。"
         },
         {
           "contentRef": "section:least-privilege:step:0",
           "kind": "steps",
           "label": "步骤 1",
-          "text": "列出要读取的输入存储桶、要写入的输出存储桶以及所需的操作。",
-          "words": 12
+          "text": "列出所需的 GetObject 和 PutObject 操作。"
         },
         {
           "contentRef": "section:least-privilege:step:1",
           "kind": "steps",
           "label": "步骤 2",
-          "text": "创建仅限于这些操作和路径的角色策略。",
-          "words": 11
+          "text": "限定目标 bucket 和 prefix。"
         }
       ],
       "estimatedSeconds": 20,
       "id": "fundamentals.identity-access:section:least-privilege:example:1",
       "kind": "example",
-      "label": "示例",
+      "label": "具体示例",
       "objectiveIds": [
         "least-privilege"
       ],
@@ -1475,21 +1352,19 @@
           "contentRef": "section:least-privilege:step:2",
           "kind": "steps",
           "label": "步骤 3",
-          "text": "将角色关联到作业，并定期检查其实际使用情况。",
-          "words": 14
+          "text": "将执行角色与 Lambda 关联，并且不要存储长期密钥。"
         },
         {
           "contentRef": "section:least-privilege:outcome",
           "kind": "outcome",
           "label": "结论",
-          "text": "这样既不会授予不必要的删除权限或对其他存储桶的访问权限，也能限制发生泄漏时的影响范围。",
-          "words": 23
+          "text": "这样可以降低泄露造成的影响以及权限过度授予的风险。"
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.identity-access:section:least-privilege:example:2",
       "kind": "example",
-      "label": "示例",
+      "label": "具体示例",
       "objectiveIds": [
         "least-privilege"
       ],
@@ -1507,21 +1382,19 @@
           "contentRef": "section:least-privilege:misconception:claim",
           "kind": "misconception",
           "label": "这是错误的",
-          "text": "最小权限原则意味着只保留一个用户。",
-          "words": 14
+          "text": "无法运行时，授予所有 AWS 服务的管理员权限。"
         },
         {
           "contentRef": "section:least-privilege:misconception:correction",
           "kind": "correction",
           "label": "更正",
-          "text": "这意味着无论主体有多少，都只授予每个主体所需的操作和资源。",
-          "words": 18
+          "text": "确定请求和拒绝的内容，只添加必要的 action、resource 和 condition。"
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.identity-access:section:least-privilege:misconception:1",
       "kind": "misconception",
-      "label": "错误说法与更正",
+      "label": "错误与更正",
       "objectiveIds": [
         "least-privilege"
       ],
@@ -1539,22 +1412,13 @@
           "contentRef": "section:least-privilege:takeaway:0",
           "kind": "takeaway",
           "label": "要点",
-          "text": "明确所需的操作和资源。",
-          "words": 10
+          "text": "限定操作、资源、条件和期限。"
         },
         {
           "contentRef": "section:least-privilege:takeaway:1",
           "kind": "takeaway",
-          "label": "可以通过角色使用临时安全凭证。",
-          "text": "按主体划分权限。",
-          "words": 11
-        },
-        {
-          "contentRef": "section:least-privilege:takeaway:2",
-          "kind": "takeaway",
           "label": "要点",
-          "text": "临时安全凭证",
-          "words": 7
+          "text": "不要将人员密钥共享给应用程序。"
         }
       ],
       "estimatedSeconds": 16,
@@ -1567,8 +1431,8 @@
       "sectionId": "least-privilege",
       "sources": [
         {
-          "label": "明确所需的操作和资源。",
-          "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html"
+          "label": "IAM 最佳实践",
+          "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
         }
       ],
       "style": "normal",
@@ -1580,7 +1444,7 @@
     {
       "assessmentId": "fundamentals.identity-access.checkpoint.least-privilege.v1",
       "blocks": [],
-      "estimatedSeconds": 63,
+      "estimatedSeconds": 60,
       "id": "fundamentals.identity-access:checkpoint:fundamentals.identity-access.checkpoint.least-privilege.v1",
       "kind": "checkpoint",
       "label": "检查点",
@@ -1619,7 +1483,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.identity-access:final:fund-iam-102",
       "kind": "final",
-      "label": "最终复习",
+      "label": "最终检查",
       "objectiveIds": [
         "authn-authz"
       ],
@@ -1655,7 +1519,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.identity-access:final:fund-iam-104",
       "kind": "final",
-      "label": "最终复习",
+      "label": "最终检查",
       "objectiveIds": [
         "principal-role"
       ],
@@ -1691,7 +1555,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.identity-access:final:fund-iam-106",
       "kind": "final",
-      "label": "最终复习",
+      "label": "最终检查",
       "objectiveIds": [
         "principal-role"
       ],
@@ -1706,10 +1570,10 @@
     {
       "assessmentId": "fund-iam-107",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 68,
       "id": "fundamentals.identity-access:final:fund-iam-107",
       "kind": "final",
-      "label": "最终复习",
+      "label": "最终检查",
       "objectiveIds": [
         "policy-deny"
       ],
@@ -1742,7 +1606,7 @@
     {
       "assessmentId": "fund-iam-109",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 68,
       "id": "fundamentals.identity-access:final:fund-iam-109",
       "kind": "final",
       "label": "最终检查",
@@ -1781,7 +1645,7 @@
       "estimatedSeconds": 71,
       "id": "fundamentals.identity-access:final:fund-iam-111",
       "kind": "final",
-      "label": "最终检查",
+      "label": "最终确认",
       "objectiveIds": [
         "least-privilege"
       ],
@@ -1799,7 +1663,7 @@
       "estimatedSeconds": 71,
       "id": "fundamentals.identity-access:final:fund-iam-112",
       "kind": "final",
-      "label": "最终检查",
+      "label": "最终确认",
       "objectiveIds": [
         "least-privilege"
       ],
@@ -1813,10 +1677,10 @@
     }
   ],
   "timing": {
-    "checkpointSeconds": 236,
-    "finalSeconds": 768,
-    "readingSeconds": 501,
-    "totalSeconds": 1505
+    "checkpointSeconds": 224,
+    "finalSeconds": 762,
+    "readingSeconds": 435,
+    "totalSeconds": 1421
   },
   "totalSteps": 39,
   "unit": {

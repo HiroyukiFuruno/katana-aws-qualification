@@ -1,8 +1,8 @@
 import { type Locale, locales } from '../../locales.ts';
 import type { DeliveryRouteManifest } from './artifactTypes';
+import legacyLessonPaths from './legacyLessonPaths.json' with { type: 'json' };
 import { type LessonRoute, lessonPath, lessonRouteAt } from './navigation.ts';
 import manifest from './routeManifest.json' with { type: 'json' };
-import history from './archivedRouteManifest.json' with { type: 'json' };
 
 const routes = manifest as DeliveryRouteManifest;
 type LessonPage = { locale: Locale; page: string; route: LessonRoute; title: string };
@@ -13,21 +13,20 @@ function unit(unitId: string) {
   return result;
 }
 
-function entries(
-  locale: Locale,
-  privateOnly: boolean,
-  edition: DeliveryRouteManifest = routes,
-): LessonPage[] {
-  return edition.units.flatMap((item) => {
+function pageForRoute(locale: Locale, route: LessonRoute, title: string): LessonPage {
+  return {
+    locale,
+    page: lessonPath(route).replace(`/${locale}`, '').replace(/^\//, '').replace(/\/$/, ''),
+    route,
+    title,
+  };
+}
+
+function entries(locale: Locale, privateOnly: boolean): LessonPage[] {
+  return routes.units.flatMap((item) => {
     const result: LessonPage[] = [];
     const resume: LessonRoute = { locale, unitId: item.unitId, stage: 'resume' };
-    if (!privateOnly)
-      result.push({
-        locale,
-        page: lessonPath(resume).replace(`/${locale}`, '').replace(/^\//, '').replace(/\/$/, ''),
-        route: resume,
-        title: item.title,
-      });
+    if (!privateOnly) result.push(pageForRoute(locale, resume, item.title));
     for (const step of item.nonFinalSteps) {
       const route: LessonRoute = {
         locale,
@@ -35,13 +34,7 @@ function entries(
         stage: step.kind === 'checkpoint' ? 'checkpoints' : 'slides',
         position: step.globalPosition,
       };
-      if (!privateOnly)
-        result.push({
-          locale,
-          page: lessonPath(route).replace(`/${locale}`, '').replace(/^\//, '').replace(/\/$/, ''),
-          route,
-          title: item.title,
-        });
+      if (!privateOnly) result.push(pageForRoute(locale, route, item.title));
     }
     for (const final of item.finalQuestions) {
       const route: LessonRoute = {
@@ -50,22 +43,10 @@ function entries(
         stage: 'final',
         position: final.position,
       };
-      if (privateOnly)
-        result.push({
-          locale,
-          page: lessonPath(route).replace(`/${locale}`, '').replace(/^\//, '').replace(/\/$/, ''),
-          route,
-          title: item.title,
-        });
+      if (privateOnly) result.push(pageForRoute(locale, route, item.title));
     }
     const resultRoute: LessonRoute = { locale, unitId: item.unitId, stage: 'result' };
-    if (privateOnly)
-      result.push({
-        locale,
-        page: lessonPath(resultRoute).replace(`/${locale}`, '').replace(/^\//, '').replace(/\/$/, ''),
-        route: resultRoute,
-        title: item.title,
-      });
+    if (privateOnly) result.push(pageForRoute(locale, resultRoute, item.title));
     return result;
   });
 }
@@ -75,15 +56,19 @@ const currentPrivatePages = locales.flatMap((locale) => entries(locale, true));
 const paths = new Set(
   [...publicLessonPages, ...currentPrivatePages].map((entry) => lessonPath(entry.route)),
 );
-const archivedPages = (history.editions as DeliveryRouteManifest[])
-  .flatMap((edition) => locales.flatMap((locale) => entries(locale, false, edition)))
-  .filter((entry) => {
-    const path = lessonPath(entry.route);
-    if (paths.has(path)) return false;
-    paths.add(path);
-    return true;
-  });
+const archivedPages = locales.flatMap((locale) =>
+  legacyLessonPaths.flatMap((legacy) => {
+    const title = unit(legacy.unitId).title;
+    return (['slides', 'checkpoints'] as const).flatMap((stage) =>
+      legacy[stage].flatMap((position) => {
+        const route = { locale, unitId: legacy.unitId, stage, position };
+        return paths.has(lessonPath(route)) ? [] : [pageForRoute(locale, route, title)];
+      }),
+    );
+  }),
+);
 export const privateLessonPages = [...currentPrivatePages, ...archivedPages];
+const retiredPaths = new Set(archivedPages.map((entry) => lessonPath(entry.route)));
 export const publicLessonPageNames = [...new Set(publicLessonPages.map((item) => item.page))];
 export const privateLessonPageNames = [...new Set(privateLessonPages.map((item) => item.page))];
 
@@ -99,6 +84,10 @@ export function lessonPageAt(path: string) {
 
 export function isPrivateLessonPage(page: string) {
   return privateLessonPageNames.includes(page);
+}
+
+export function isRetiredLessonPath(path: string) {
+  return retiredPaths.has(path.endsWith('/') ? path : `${path}/`);
 }
 
 export function lessonPageNamesFor(locale: Locale, visibility: 'public' | 'private') {

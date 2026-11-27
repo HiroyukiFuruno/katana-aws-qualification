@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import type { MemberLessonRepository } from './memberTypes';
 import type { LessonSnapshot } from './types';
 
@@ -38,9 +38,10 @@ export type LessonOutbox = {
   clear(): Promise<void>;
   discard(commandId: string): Promise<void>;
   discardUnit(unitId: string, contentVersion: string): Promise<void>;
-  execute(asset: DeliveryUnitAsset, command: LessonCommand): Promise<LessonSnapshot>;
+  execute(asset: LessonRecordAsset, command: LessonCommand): Promise<LessonSnapshot>;
   flush(scope?: LessonOutboxScope): Promise<void>;
   hasPending(scope?: LessonOutboxScope): boolean;
+  pendingReferences(): LessonOutboxScope[];
   isPersisted(command: LessonCommand): boolean;
   hasPersistedPending(scope?: LessonOutboxScope): boolean;
   initialize(): Promise<void>;
@@ -49,4 +50,4 @@ export type LessonOutbox = {
 export type LessonAssetResolver = (
   unitId: string,
   contentVersion: string,
-) => DeliveryUnitAsset | Promise<DeliveryUnitAsset | undefined> | undefined;
+) => LessonRecordAsset | Promise<LessonRecordAsset | undefined> | undefined;

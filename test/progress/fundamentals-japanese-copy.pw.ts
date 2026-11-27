@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
+import lessonFigures from '../../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
-import networkFigures from '../../src/fundamentals/delivery/network-figures.json' with { type: 'json' };
 import { messages } from '../../src/messages';
 import { lessonAssets, selectLessonAnswer, visibleLessonSteps } from './fundamentals.helpers';
 import { acceptNecessaryCookies } from './fundamentals-mobile.helpers';
@@ -21,12 +21,22 @@ test('Japanese deployment slides use natural headings and explain the canary exa
   await expect(page.getByRole('heading', { name: '誤解の例' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '正しい考え方' })).toBeVisible();
   await expect(page.locator('.lesson-reading')).toContainText(
-    '新環境で書き込んだデータを旧版が扱えなければ',
+    '更新版が書いたデータを以前の版が読めない場合は復旧できません',
   );
   const example = visible.findIndex(
     (step) => step.kind === 'example' && step.sectionId === 'observation-abort',
   );
   for (const step of visible.slice(misconception, example)) {
+    if (step.kind === 'takeaway' && step.sectionId === 'deployment-strategies') {
+      const sources = page.locator('.lesson-reading-sources');
+      await sources.locator('summary').click();
+      const reference = sources.getByRole('link', { name: 'Amazon ECS のデプロイ方式とコントローラー' });
+      await expect(reference).toHaveAttribute(
+        'href',
+        'https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/ecs_service-options.html',
+      );
+      await expect(reference).toHaveAttribute('hreflang', 'ja');
+    }
     if (step.kind === 'checkpoint') {
       const question = asset.checkpoints.find((item) => item.id === step.assessmentId);
       if (!question) throw new Error('Missing checkpoint fixture.');
@@ -36,7 +46,7 @@ test('Japanese deployment slides use natural headings and explain the canary exa
     await page.locator('.lesson-slide-actions > button.primary').click();
   }
   await expect(page.locator('.lesson-reading')).toContainText(
-    'カナリアデプロイ中に、新版の応答時間（p95）が基準を超えた。',
+    '更新版へのリクエストを5%にした後、更新版の注文完了率が事前に決めた下限を割りました。',
   );
   await expect(page.locator('.lesson-reading')).not.toContainText('新版本');
 });
@@ -61,9 +71,9 @@ test('lesson recovery actions fit and have breathing room on a narrow screen', a
   }
 });
 
-for (const [stepId, figure] of Object.entries(networkFigures)) {
+for (const [stepId, figure] of Object.entries(lessonFigures)) {
   for (const locale of ['ja', 'de'] as const) {
-    test(`${locale}: network diagrams use shared English assets at ${stepId}`, async ({ page }) => {
+    test(`${locale}: lesson diagrams use shared English assets at ${stepId}`, async ({ page }) => {
       const unitId = stepId.split(':')[0];
       const asset = lessonAssets.find(({ unit }) => unit.id === unitId);
       if (!asset) throw new Error(`Missing public lesson: ${unitId}`);
@@ -85,7 +95,7 @@ for (const [stepId, figure] of Object.entries(networkFigures)) {
         await page.locator('.lesson-slide-actions > button.primary').click();
       }
 
-      const diagram = page.locator('.lesson-reading .lesson-network-figure');
+      const diagram = page.locator('.lesson-reading .lesson-figure');
       const image = diagram.getByRole('img');
       await expect(diagram).toHaveAttribute('lang', 'en');
       await expect(image).toHaveAttribute('src', figure.url);

@@ -1,9 +1,10 @@
 import { usePreferences } from '../preferences';
-import { sourceDocumentationUrl } from '../sourceDocumentationUrl';
+import { localizedDocumentationSource } from '../sourceDocumentationUrl';
 import type { FundamentalsSection as Section } from './types';
 
 export function FundamentalsSection({ section }: { section: Section }) {
-  const { t } = usePreferences();
+  const { locale, t } = usePreferences();
+  const source = localizedDocumentationSource(section.source, locale);
   return (
     <section className="card fundamentals-reading-section" aria-labelledby={`lesson-${section.id}`}>
       <h2 id={`lesson-${section.id}`}>{section.title}</h2>
@@ -33,8 +34,8 @@ export function FundamentalsSection({ section }: { section: Section }) {
           <li key={item}>{item}</li>
         ))}
       </ul>
-      <a href={sourceDocumentationUrl(section.source.url)} target="_blank" rel="noreferrer">
-        {section.source.label}
+      <a href={source.url} hrefLang={source.locale} target="_blank" rel="noreferrer">
+        {source.label}
       </a>
     </section>
   );

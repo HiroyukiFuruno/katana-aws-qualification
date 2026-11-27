@@ -17,6 +17,7 @@ function questionIdentity(question: DeliveryQuestion) {
     ...question,
     choices: question.choices.map(({ explanation, text, ...choice }) => choice),
     source: { url: question.source.url },
+    learning: question.learning && { check: Boolean(question.learning.check) },
     title: undefined,
     prompt: undefined,
   };
@@ -28,6 +29,7 @@ function overlayQuestion(base: DeliveryQuestion, locale: DeliveryQuestion): Deli
   return {
     ...base,
     prompt: locale.prompt,
+    ...(locale.learning && { learning: locale.learning }),
     source: { ...base.source, label: locale.source.label },
     title: locale.title,
     choices: base.choices.map((choice, index) => {

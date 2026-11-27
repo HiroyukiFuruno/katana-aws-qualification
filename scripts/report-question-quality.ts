@@ -1,9 +1,9 @@
 import { writeFile } from 'node:fs/promises';
 import { sourceLocaleOf } from '../src/questionSourceLocale';
 import type { Question } from '../src/questions';
-import { fundamentalsTranslationJobs, narrativeUnits } from './fundamentals-translation-data';
-import { readNarrative } from './natural-narrative-translation';
+import { fundamentalsNarrativeJobs } from './fundamentals-narrative-jobs';
 import { lessonQuestion, readLessonReview } from './natural-lesson-review';
+import { readNarrative } from './natural-narrative-translation';
 import { readNaturalQuestion } from './natural-question-cache';
 import { validateNaturalReview } from './natural-question-review';
 import { naturalQuestionHash } from './natural-translation-content';
@@ -45,9 +45,9 @@ for (const { path, data } of (await contentJobs()).filter((job) => job.path !== 
   }
 }
 const lessonUnits = new Map(
-  (await fundamentalsTranslationJobs())
-    .flatMap((job) => narrativeUnits(job.data))
-    .map((unit) => [unit.hash, unit]),
+  (await fundamentalsNarrativeJobs())
+    .flatMap(({ units }) => units)
+    .map(({ source }) => [source.hash, source]),
 );
 let lessons = 0;
 const lessonReviews = [];

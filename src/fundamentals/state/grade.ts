@@ -1,7 +1,7 @@
-import type { DeliveryQuestion } from '../delivery/artifactTypes';
+import type { LessonRecordQuestion } from '../delivery/recordAsset';
 import type { LessonQuestionRef } from './types';
 
-export function lessonQuestionRef(question: DeliveryQuestion): LessonQuestionRef {
+export function lessonQuestionRef(question: LessonRecordQuestion): LessonQuestionRef {
   return {
     questionId: question.id,
     revision: question.revision,
@@ -17,7 +17,7 @@ export function sameLessonQuestionRef(left: LessonQuestionRef, right: LessonQues
   );
 }
 
-export function validateLessonSelection(question: DeliveryQuestion, selected: readonly string[]) {
+export function validateLessonSelection(question: LessonRecordQuestion, selected: readonly string[]) {
   if (
     new Set(selected).size !== selected.length ||
     selected.some((id) => !question.choices.some((choice) => choice.id === id))
@@ -26,7 +26,7 @@ export function validateLessonSelection(question: DeliveryQuestion, selected: re
   }
 }
 
-export function isLessonAnswerCorrect(question: DeliveryQuestion, selected: readonly string[]) {
+export function isLessonAnswerCorrect(question: LessonRecordQuestion, selected: readonly string[]) {
   validateLessonSelection(question, selected);
   return (
     selected.length === question.requiredChoices &&
@@ -36,7 +36,7 @@ export function isLessonAnswerCorrect(question: DeliveryQuestion, selected: read
 }
 
 export function gradeLessonFinal(
-  questions: readonly DeliveryQuestion[],
+  questions: readonly LessonRecordQuestion[],
   responses: Readonly<Record<string, { selected: string[] }>>,
 ) {
   if (questions.length !== 12) throw new Error('A lesson final requires twelve fixed questions.');

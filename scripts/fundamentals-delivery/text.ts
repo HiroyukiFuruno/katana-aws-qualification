@@ -30,12 +30,6 @@ function sentences(text: string) {
   return result;
 }
 
-function words(text: string) {
-  return [...new Intl.Segmenter('ja', { granularity: 'word' }).segment(text)].filter(
-    (part) => part.isWordLike,
-  ).length;
-}
-
 export function blocks(
   input: Omit<LessonSlideBlock, 'contentRef'> & { contentRef: string },
   warnings: TextWarning[],
@@ -54,7 +48,7 @@ export function blocks(
     } else current += sentence;
   }
   if (current) chunks.push(current);
-  return chunks.map((text) => ({ ...input, text, words: words(text) }));
+  return chunks.map((text) => ({ ...input, text }));
 }
 
 export function semanticGroups(blocks: LessonSlideBlock[]) {

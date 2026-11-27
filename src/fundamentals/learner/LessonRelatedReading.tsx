@@ -4,7 +4,7 @@ import type { DeliveryQuestion, DeliveryUnitAsset } from '../delivery/artifactTy
 import { lessonReadingCopy } from '../delivery/lessonReadingCopy';
 import { lessonFragments } from './lessonFragments';
 import './lesson-related.css';
-import { sourceDocumentationUrl } from '../../sourceDocumentationUrl';
+import { localizedDocumentationSource } from '../../sourceDocumentationUrl';
 
 export function LessonRelatedReading({
   asset,
@@ -26,7 +26,9 @@ export function LessonRelatedReading({
       ...source,
       label: t('sourceDocumentation', { name: source.label }),
     })),
-  ].filter((source, index, all) => all.findIndex((item) => item.url === source.url) === index);
+  ]
+    .map((source) => localizedDocumentationSource(source, locale))
+    .filter((source, index, all) => all.findIndex((item) => item.url === source.url) === index);
   if (!reading.length) throw new Error('The assessment has no related reading section.');
   return (
     <details className="lesson-related-reading">
@@ -43,7 +45,7 @@ export function LessonRelatedReading({
         <ul>
           {sources.map((source) => (
             <li key={source.url}>
-              <a href={sourceDocumentationUrl(source.url)} target="_blank" rel="noreferrer">
+              <a href={source.url} hrefLang={source.locale} target="_blank" rel="noreferrer">
                 {source.label}
               </a>
             </li>

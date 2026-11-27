@@ -3,8 +3,11 @@ import type { FundamentalsContent } from '../src/fundamentals/types';
 import { parseQuestions } from '../src/questions';
 
 const content = (await Bun.file('public/fundamentals/content.json').json()) as FundamentalsContent;
-const question = content.units.flatMap((unit) => unit.questions).find((item) => item.references?.length);
-if (!question) throw new Error('Missing multi-source learning fixture');
+const [unit] = content.units;
+const [baseQuestion] = unit.questions;
+const secondary = unit.sections?.find(({ source }) => source.url !== baseQuestion.source.url)?.source;
+if (!secondary) throw new Error('Missing independent lesson reference.');
+const question = { ...baseQuestion, references: [{ ...secondary }] };
 
 test('shared question validation preserves the references needed by multi-topic explanations', () => {
   expect(parseQuestions([question])[0].references).toEqual(question.references);

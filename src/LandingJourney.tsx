@@ -53,6 +53,10 @@ export function LandingPaths() {
         </h2>
       </div>
       <div className="entry-grid">
+        <a className="entry-card" href={localePath(locale, 'study')}>
+          <h3>{t('study')}</h3>
+          <p>{t('studyPathsIntro')}</p>
+        </a>
         <CertificationOverviewLink locale={locale} className="entry-card">
           <h3>{t('certOverviewTitle')}</h3>
           <p>{t('certOverviewDescription')}</p>
@@ -60,13 +64,6 @@ export function LandingPaths() {
             {t('certOverviewTitle')} <span aria-hidden="true">↗</span>
           </span>
         </CertificationOverviewLink>
-        <a className="entry-card" href={localePath(locale, 'study')}>
-          <h3>{t('study')}</h3>
-          <p>{t('studyPathsIntro')}</p>
-          <span className="entry-action">
-            {t('study')} <span aria-hidden="true">↗</span>
-          </span>
-        </a>
         <a className="entry-card" href={localePath(locale, 'assessment')}>
           <h3>{t('skillsAssessment')}</h3>
           <p>{t('assessmentEntry')}</p>

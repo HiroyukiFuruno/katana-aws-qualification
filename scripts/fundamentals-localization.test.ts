@@ -2,7 +2,6 @@ import { expect, test } from 'bun:test';
 import { validFundamentalsContent } from '../src/fundamentals/content';
 import { overlayFundamentalsContent } from '../src/fundamentals/contentLocalization';
 import type { DeliveryIndexAsset, DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
-import { archivedLessonEditions } from '../src/fundamentals/delivery/editions';
 import {
   type Fetcher,
   loadDeliveryIndex,
@@ -98,11 +97,8 @@ test('base trust validation runs before requesting a localized unit overlay', as
   expect(localizedRequested).toBe(false);
 });
 
-test('every non-Japanese translation overlays current and archived delivery assets', async () => {
-  const editions = [
-    '/fundamentals/delivery',
-    ...archivedLessonEditions.map((edition) => `/fundamentals/delivery/history/${edition}`),
-  ];
+test('every non-Japanese translation overlays current delivery assets', async () => {
+  const basePath = '/fundamentals/delivery';
   for (const locale of locales.filter((locale) => locale !== 'ja')) {
     const localizedContent = await Bun.file(
       `public/translations/${locale}/fundamentals/content.json`,
@@ -111,23 +107,21 @@ test('every non-Japanese translation overlays current and archived delivery asse
     expect(() =>
       overlayFundamentalsContent(content, localizedContent as FundamentalsContent),
     ).not.toThrow();
-    for (const basePath of editions) {
-      const baseIndex = parseDeliveryIndex(await Bun.file(`public${basePath}/index.json`).json());
-      const localizedIndex = parseDeliveryIndex(
-        await Bun.file(`public/translations/${locale}${basePath}/index.json`).json(),
+    const baseIndex = parseDeliveryIndex(await Bun.file(`public${basePath}/index.json`).json());
+    const localizedIndex = parseDeliveryIndex(
+      await Bun.file(`public/translations/${locale}${basePath}/index.json`).json(),
+    );
+    expect(() => overlayDeliveryIndex(baseIndex, localizedIndex)).not.toThrow();
+    for (const entry of baseIndex.units) {
+      const baseUnit = parseDeliveryUnit(
+        await Bun.file(`public${basePath}/${entry.slug}.json`).json(),
+        entry,
       );
-      expect(() => overlayDeliveryIndex(baseIndex, localizedIndex)).not.toThrow();
-      for (const entry of baseIndex.units) {
-        const baseUnit = parseDeliveryUnit(
-          await Bun.file(`public${basePath}/${entry.slug}.json`).json(),
-          entry,
-        );
-        const localizedUnit = parseDeliveryUnit(
-          await Bun.file(`public/translations/${locale}${basePath}/${entry.slug}.json`).json(),
-          entry,
-        );
-        expect(() => overlayDeliveryUnit(baseUnit, localizedUnit)).not.toThrow();
-      }
+      const localizedUnit = parseDeliveryUnit(
+        await Bun.file(`public/translations/${locale}${basePath}/${entry.slug}.json`).json(),
+        entry,
+      );
+      expect(() => overlayDeliveryUnit(baseUnit, localizedUnit)).not.toThrow();
     }
   }
 });

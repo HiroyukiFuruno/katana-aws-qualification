@@ -1,9 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { dashboardText, expectDashboardMetrics } from './dashboard.helpers';
 import { setDashboardDensity, showDashboardWidget } from './dashboard-actions';
-import { lessonPrefix } from './fundamentals.helpers';
+import { lessonAssets, lessonPrefix } from './fundamentals.helpers';
 import { archivedAsset, archivedGuestFinal } from './fundamentals-edition.fixture';
 import { createSessions, setRealSession } from './sessions';
+
+const currentAsset = lessonAssets.find((asset) => asset.unit.id === archivedAsset.unit.id);
+if (!currentAsset) throw new Error('Missing current lesson fixture for the archived unit');
+const currentSlideCount = currentAsset.steps.filter(
+  (step) => step.kind !== 'checkpoint' && step.kind !== 'final',
+).length;
 
 for (const owner of ['guest', 'member'] as const) {
   test(`the ${owner} dashboard counts archived answers without granting current lesson completion`, async ({
@@ -42,9 +48,9 @@ for (const owner of ['guest', 'member'] as const) {
     const lessonProgress = progress
       .getByRole('table', { name: dashboardText.lessonProgress, exact: true })
       .getByRole('row')
-      .filter({ hasText: archivedAsset.unit.title });
-    await expect(lessonProgress).toContainText('0 / 27');
-    await expect(lessonProgress).toContainText('0 / 4');
+      .filter({ hasText: currentAsset.unit.title });
+    await expect(lessonProgress).toContainText(`0 / ${currentSlideCount}`);
+    await expect(lessonProgress).toContainText(`0 / ${currentAsset.checkpoints.length}`);
     await expect(lessonProgress).toContainText(dashboardText.fundamentalsNotStarted);
     await expect(lessonProgress).not.toContainText(dashboardText.lessonPassed);
     await expect(page.getByText(dashboardText.dashboardError, { exact: true })).toHaveCount(0);

@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { exactFields, integer, object, timestamp, uuid } from './codecPrimitives';
 import { lessonQuestionRef, sameLessonQuestionRef } from './grade';
 import { readLessonQuestionRef, readLessonResponses } from './responseCodec';
@@ -6,7 +6,7 @@ import type { GuestFinalSource } from './types';
 
 export function readGuestFinal(
   value: unknown,
-  asset: DeliveryUnitAsset,
+  asset: LessonRecordAsset,
   submitted = false,
 ): GuestFinalSource {
   const row = object(value, 'guestFinal');

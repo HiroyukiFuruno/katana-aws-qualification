@@ -1,6 +1,6 @@
 import type { BrowserStorage } from '../../progress/guest';
 import type { MemberProgressOwner, ProgressRpcClient } from '../../progress/types';
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import type { GuestLessonSource, LessonSnapshot } from './types';
 
 export type LessonMigrationAccess = {
@@ -11,7 +11,7 @@ export type LessonMigrationAccess = {
 };
 
 export type GuestLessonImport = {
-  asset: DeliveryUnitAsset;
+  asset: LessonRecordAsset;
   key: string;
   raw: string;
   source: GuestLessonSource;
@@ -25,6 +25,6 @@ export type LessonImportResult = {
 
 export type LessonMigrationInput = {
   access: LessonMigrationAccess;
-  asset: DeliveryUnitAsset;
+  asset: LessonRecordAsset;
   storage: BrowserStorage;
 };

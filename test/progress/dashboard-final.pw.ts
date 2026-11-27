@@ -39,8 +39,11 @@ test('fundamentals final result and dashboard keep final-test scope separate', a
       .getByRole('table', { name: dashboardText.lessonProgress, exact: true })
       .getByRole('row')
       .filter({ hasText: asset.unit.title });
-    await expect(progress).toContainText('27 / 27');
-    await expect(progress).toContainText('4 / 4');
+    const slideCount = asset.steps.filter(
+      (step) => step.kind !== 'checkpoint' && step.kind !== 'final',
+    ).length;
+    await expect(progress).toContainText(`${slideCount} / ${slideCount}`);
+    await expect(progress).toContainText(`${asset.checkpoints.length} / ${asset.checkpoints.length}`);
     await expect(progress).toContainText(dashboardText.lessonPassed);
     expect(
       await page.evaluate(() =>

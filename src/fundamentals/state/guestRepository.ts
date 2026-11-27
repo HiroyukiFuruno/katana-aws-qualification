@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import { lessonQuestionRef } from './grade';
 import { saveGuestLessonResponse, startGuestLessonFinal, submitGuestLessonFinal } from './guestFinal';
 import { guestLessonSnapshot } from './guestSnapshot';
@@ -12,7 +12,7 @@ export type LessonLearningRepository = Pick<
 >;
 
 export function createGuestLessonRepository(storage: GuestLessonStorage): LessonLearningRepository {
-  async function change(asset: DeliveryUnitAsset, update: Parameters<GuestLessonStorage['change']>[1]) {
+  async function change(asset: LessonRecordAsset, update: Parameters<GuestLessonStorage['change']>[1]) {
     return guestLessonSnapshot(await storage.change(asset, update), asset);
   }
   return {

@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { readLessonSnapshot } from '../../src/fundamentals/state/snapshotCodec';
 import { learningEvents, replayRpc } from './api';
-import { archivedAsset, archivedGuestFinal } from './fundamentals-edition.fixture';
 import { lessonAssets, lessonPrefix } from './fundamentals.helpers';
+import { archivedAsset, archivedGuestFinal } from './fundamentals-edition.fixture';
 import { createSessions, type RealSession, setRealSession } from './sessions';
 
-const currentAsset = lessonAssets[0];
-if (!currentAsset) throw new Error('Missing current lesson fixture');
+const currentAsset = lessonAssets.find((asset) => asset.unit.id === archivedAsset.unit.id);
+if (!currentAsset) throw new Error('Missing current lesson fixture for the archived unit');
 const key = `${lessonPrefix}${archivedAsset.unit.id}.${archivedAsset.contentVersion}`;
-async function snapshot(session: RealSession, asset: typeof archivedAsset) {
+async function snapshot(session: RealSession, asset: typeof archivedAsset | typeof currentAsset) {
   const initialized = await replayRpc('/rpc/initialize_learning_state', session.accessToken, {});
   expect(await initialized.json()).toBe(0);
   const response = await replayRpc('/rpc/load_fundamentals_snapshot', session.accessToken, {
@@ -35,7 +35,7 @@ for (const submitted of [false, true]) {
     expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe(raw);
     await setRealSession(page, a);
     const prompt = page.getByRole('region', {
-      name: `端末の記録を引き継ぐ · ${archivedAsset.unit.title}`,
+      name: `端末の記録を引き継ぐ · ${currentAsset.unit.title}`,
     });
     await expect(prompt).toBeVisible();
     expect(await learningEvents(a)).toHaveLength(0);
@@ -62,17 +62,15 @@ for (const submitted of [false, true]) {
     const archive = page.locator('.lesson-archived-records');
     await archive.locator('summary').click();
     await archive.getByRole('link').click();
-    expect(new URL(page.url()).searchParams.get('version')).toBe(archivedAsset.contentVersion);
-    if (!submitted) {
-      await expect(page).toHaveURL(/\/final\/12\/\?version=/);
-      const question = archivedAsset.finalQuestions[11];
-      if (!question) throw new Error('Missing last archived question');
-      await expect(page.locator('fieldset input:checked')).toHaveCount(question.requiredChoices);
-      await page.locator('.lesson-slide-actions > button.primary').click();
-    }
-    await expect(page.locator('.lesson-result-pass')).toBeVisible();
-    await expect(page.locator('.lesson-result-score')).toContainText('12問中 12問正解');
+    await expect(page).toHaveURL(
+      `/ja/study/fundamentals/${currentAsset.unit.id.replace('fundamentals.', '')}/`,
+    );
+    expect(new URL(page.url()).search).toBe('');
+    await expect(page.locator('.lesson-slide-meta')).toBeVisible();
+    await expect(page.locator('.lesson-result-pass')).toHaveCount(0);
+    await expect(page.locator('fieldset input:checked')).toHaveCount(0);
     expect((await snapshot(a, currentAsset)).progress.passedAt).toBeNull();
-    expect(await learningEvents(a)).toHaveLength(16);
+    expect((await snapshot(a, currentAsset)).sessions).toHaveLength(0);
+    expect(await learningEvents(a)).toHaveLength(submitted ? 16 : 4);
   });
 }

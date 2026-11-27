@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import type { LessonSnapshot } from './types';
 
 export type LessonSummary = {
@@ -16,13 +16,13 @@ export type LessonSummary = {
 
 export type MemberLessonRepository = {
   finalize(
-    asset: DeliveryUnitAsset,
+    asset: LessonRecordAsset,
     input: { expectedRevision: number; sessionId: string },
   ): Promise<LessonSnapshot>;
   initialize(): Promise<number>;
-  load(asset: DeliveryUnitAsset): Promise<LessonSnapshot>;
+  load(asset: LessonRecordAsset): Promise<LessonSnapshot>;
   recordStep(
-    asset: DeliveryUnitAsset,
+    asset: LessonRecordAsset,
     input: {
       durationMs: number;
       expectedRevision: number;
@@ -32,7 +32,7 @@ export type MemberLessonRepository = {
     },
   ): Promise<LessonSnapshot>;
   saveResponse(
-    asset: DeliveryUnitAsset,
+    asset: LessonRecordAsset,
     input: {
       cursorPosition: number;
       durationMs: number;
@@ -44,7 +44,7 @@ export type MemberLessonRepository = {
     },
   ): Promise<LessonSnapshot>;
   startFinal(
-    asset: DeliveryUnitAsset,
+    asset: LessonRecordAsset,
     input: { expectedRevision: number; sessionId: string },
   ): Promise<LessonSnapshot>;
   summaries(units: { contentVersion: string; unitId: string }[]): Promise<LessonSummary[]>;

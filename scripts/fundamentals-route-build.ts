@@ -1,7 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import type { DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
+import lessonFigures from '../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
 import { lessonPath } from '../src/fundamentals/delivery/navigation';
-import networkFigures from '../src/fundamentals/delivery/network-figures.json' with { type: 'json' };
 import {
   privateLessonPageNames,
   publicLessonPageNames,
@@ -33,7 +33,7 @@ if (publicLessonPageNames.length !== new Set(publicLessonPageNames).size)
 if (privateLessonPageNames.length !== new Set(privateLessonPageNames).size)
   throw new Error('Duplicate private lesson pages.');
 
-for (const [stepId, figure] of Object.entries(networkFigures)) {
+for (const [stepId, figure] of Object.entries(lessonFigures)) {
   const unitId = stepId.split(':')[0];
   const slug = unitId.split('.')[1];
   const asset: DeliveryUnitAsset = JSON.parse(
@@ -43,14 +43,14 @@ for (const [stepId, figure] of Object.entries(networkFigures)) {
   if (step?.kind !== 'reading') throw new Error(`Missing reading step for figure: ${stepId}`);
   const svg = await readFile(`dist${figure.url}`, 'utf8');
   if (!svg.includes('<svg') || /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(svg))
-    throw new Error(`Invalid English network diagram: ${figure.url}`);
+    throw new Error(`Invalid English lesson diagram: ${figure.url}`);
   const viewBox = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/u);
   if (
     !viewBox ||
     Math.round(Number(viewBox[1])) !== figure.width ||
     Math.round(Number(viewBox[2])) !== figure.height
   )
-    throw new Error(`Incorrect network diagram dimensions: ${figure.url}`);
+    throw new Error(`Incorrect lesson diagram dimensions: ${figure.url}`);
   for (const locale of locales) {
     const path = lessonPath({ locale, unitId, stage: 'slides', position: step.position });
     const html = await readFile(`dist${path}index.html`, 'utf8');

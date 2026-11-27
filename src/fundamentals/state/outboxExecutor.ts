@@ -1,4 +1,4 @@
-import type { DeliveryUnitAsset } from '../delivery/artifactTypes';
+import type { LessonRecordAsset } from '../delivery/recordAsset';
 import type { MemberLessonRepository } from './memberTypes';
 import type { LessonAssetResolver, LessonCommand } from './outboxTypes';
 
@@ -11,8 +11,8 @@ export async function resolveLessonAsset(resolver: LessonAssetResolver, command:
 }
 
 export function invokeLessonCommand(
-  repository: MemberLessonRepository,
-  asset: DeliveryUnitAsset,
+  repository: Pick<MemberLessonRepository, 'recordStep' | 'startFinal' | 'saveResponse' | 'finalize'>,
+  asset: LessonRecordAsset,
   command: LessonCommand,
 ) {
   if (command.kind === 'recordStep') return repository.recordStep(asset, command.input);

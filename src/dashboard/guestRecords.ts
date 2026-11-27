@@ -1,8 +1,12 @@
 import type { Attempt } from '../attempts';
 import type { LessonAssets } from '../fundamentals/delivery/assets';
+import {
+  guestLessonKey,
+  guestLessonKeys,
+  guestLessonReference,
+} from '../fundamentals/state/guestReferences';
 import { readGuestLessonSource } from '../fundamentals/state/guestSourceCodec';
 import type { GuestLessonSource } from '../fundamentals/state/types';
-import { guestLessonPrefix } from '../learningStorage';
 import { type Locale, localePath } from '../locales';
 import { type BrowserStorage, canPersistGuestProgress } from '../progress/guest';
 import type { LegacyQuestionResolver } from '../progress/migrationTypes';
@@ -28,42 +32,31 @@ export async function loadGuestDashboard(input: Input) {
   };
   current();
   const index = await input.assets.index(input.locale);
-  const editions = await input.assets.editions(input.locale);
   current();
-  const currentVersions = new Map(index.units.map((entry) => [entry.unitId, entry.contentVersion]));
-  const known = new Map<string, (typeof index.units)[number]>();
-  for (const edition of editions) {
-    for (const entry of edition.index.units) {
-      const key = `${guestLessonPrefix}${entry.unitId}.${entry.contentVersion}`;
-      if (!known.has(key)) known.set(key, entry);
-    }
-  }
-  const rawSources = [...known].map(([key, entry]) => ({ entry, raw: input.storage.getItem(key) }));
-  let unknownSources = 0;
-  if (input.storage.key && input.storage.length !== undefined) {
-    for (let position = 0; position < input.storage.length; position++) {
-      const key = input.storage.key(position);
-      if (key?.startsWith(guestLessonPrefix) && !known.has(key)) unknownSources++;
-    }
-  }
+  const currentEntries = new Map(index.units.map((entry) => [guestLessonKey(entry), entry]));
+  const keys = new Set([...currentEntries.keys(), ...guestLessonKeys(input.storage)]);
+  const rawSources = [...keys].map((key) => ({
+    entry: currentEntries.get(key),
+    reference: guestLessonReference(key),
+    raw: input.storage.getItem(key),
+  }));
   const normal = await dashboardGuestAttempts(input.attempts, input.resolve);
   current();
   const records: DashboardRecords = {
     ...normal,
     lessonFinals: [],
-    excludedRecords: normal.excludedRecords + input.corruptRows + unknownSources,
+    excludedRecords: normal.excludedRecords + input.corruptRows,
   };
   const lessons: DashboardLessonData[] = [];
-  for (const { entry, raw } of rawSources) {
+  for (const { entry, reference, raw } of rawSources) {
     current();
-    const currentVersion = currentVersions.get(entry.unitId) === entry.contentVersion;
-    const common = {
+    const common = entry && {
       unitId: entry.unitId,
       title: entry.title,
       href: localePath(input.locale, `study/fundamentals/${entry.slug}`),
     };
     if (raw === null) {
-      if (!currentVersion) continue;
+      if (!entry || !common) continue;
       lessons.push({
         ...common,
         summary: {
@@ -81,8 +74,19 @@ export async function loadGuestDashboard(input: Input) {
       });
       continue;
     }
-    const asset = await input.assets.unit(entry.unitId, entry.contentVersion);
+    const asset =
+      reference &&
+      (await input.assets.record(
+        reference.unitId,
+        reference.contentVersion,
+        input.locale,
+        input.storage,
+      ));
     current();
+    if (!asset) {
+      records.excludedRecords++;
+      continue;
+    }
     let source: GuestLessonSource;
     try {
       source = readGuestLessonSource(JSON.parse(raw), asset);
@@ -93,7 +97,7 @@ export async function loadGuestDashboard(input: Input) {
     const derived = dashboardGuestLesson(source, asset);
     records.events.push(...derived.events);
     records.lessonFinals.push(...derived.lessonFinals);
-    if (currentVersion) lessons.push({ ...common, summary: derived.summary });
+    if (common) lessons.push({ ...common, summary: derived.summary });
   }
   current();
   if (new Set(records.events.map((event) => event.eventId)).size !== records.events.length)

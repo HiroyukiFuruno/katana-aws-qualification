@@ -1,7 +1,7 @@
 import { integer, timestamp, uuid } from './codecPrimitives';
 import type { LessonSummary } from './memberTypes';
 
-type RequestedUnit = { contentVersion: string; unitId: string };
+export type LessonSummaryReference = { contentVersion: string; unitId: string };
 
 const fields = new Set([
   'unitId',
@@ -20,7 +20,7 @@ function nullableInteger(value: unknown, field: string, maximum: number) {
   return value === null ? null : integer(value, field, maximum);
 }
 
-export function readLessonSummaries(raw: unknown, requested: RequestedUnit[]): LessonSummary[] {
+export function readLessonSummaries(raw: unknown, requested: LessonSummaryReference[]): LessonSummary[] {
   if (!Array.isArray(raw) || raw.length !== requested.length)
     throw new Error('Invalid lesson summaries');
   const requestedByKey = new Map(
@@ -67,4 +67,23 @@ export function readLessonSummaries(raw: unknown, requested: RequestedUnit[]): L
       requiredScore,
     };
   });
+}
+
+export function readLessonHistorySummaries(raw: unknown, current: LessonSummaryReference[]) {
+  if (!Array.isArray(raw)) throw new Error('Invalid lesson history summaries');
+  const references = raw.map((value): LessonSummaryReference => {
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new Error('Invalid lesson history summary');
+    const { unitId, contentVersion } = value as Record<string, unknown>;
+    if (
+      typeof unitId !== 'string' ||
+      !/^fundamentals\.[a-z0-9]+(?:-[a-z0-9]+)*$/.test(unitId) ||
+      typeof contentVersion !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(contentVersion) ||
+      current.some((item) => item.unitId === unitId && item.contentVersion === contentVersion)
+    )
+      throw new Error('Invalid lesson history summary reference');
+    return { unitId, contentVersion };
+  });
+  return readLessonSummaries(raw, references);
 }

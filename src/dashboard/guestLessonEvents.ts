@@ -1,4 +1,4 @@
-import type { DeliveryQuestion, DeliveryUnitAsset } from '../fundamentals/delivery/artifactTypes';
+import type { LessonRecordAsset, LessonRecordQuestion } from '../fundamentals/delivery/recordAsset';
 import { gradeLessonFinal, isLessonAnswerCorrect } from '../fundamentals/state/grade';
 import { guestLessonSnapshot } from '../fundamentals/state/guestSnapshot';
 import type { LessonSummary } from '../fundamentals/state/memberTypes';
@@ -6,7 +6,7 @@ import type { GuestLessonSource } from '../fundamentals/state/types';
 import type { DashboardEvent, DashboardRecords } from './eventTypes';
 
 function lessonEvent(
-  question: DeliveryQuestion,
+  question: LessonRecordQuestion,
   source: GuestLessonSource,
   input: {
     eventId: string;
@@ -37,7 +37,7 @@ function lessonEvent(
   };
 }
 
-export function dashboardGuestLesson(source: GuestLessonSource, asset: DeliveryUnitAsset) {
+export function dashboardGuestLesson(source: GuestLessonSource, asset: LessonRecordAsset) {
   const events = source.checkpointReceipts.map((receipt) => {
     const step = asset.steps.find((item) => item.id === receipt.stepId);
     const question = asset.checkpoints.find((item) => item.id === step?.assessmentId);

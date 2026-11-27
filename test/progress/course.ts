@@ -6,7 +6,7 @@ export async function openMemberCourse(page: Page, session: RealSession) {
   await page.goto('/ja/study/saa-c03/');
   await setRealSession(page, session);
   await page.reload();
-  await expect(page.getByRole('heading', { name: '問題から学ぶ' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '資格別の問題と模試' })).toBeVisible();
 }
 
 export async function startStudy(page: Page) {

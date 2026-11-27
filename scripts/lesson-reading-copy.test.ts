@@ -1,134 +1,113 @@
 import { expect, test } from 'bun:test';
-import { readFile } from 'node:fs/promises';
 import type { DeliveryIndexAsset, DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
 import { lessonReadingCopy } from '../src/fundamentals/delivery/lessonReadingCopy';
+import labels from '../src/fundamentals/delivery/misconception-labels.json';
+import type { FundamentalsContent } from '../src/fundamentals/types';
 import { type Locale, locales } from '../src/locales';
+import type { CheckpointDocument } from './fundamentals-delivery/source';
 
-async function deliveryUnit(locale: Locale, slug = 'release-rollback') {
+function deliveryUnit(locale: Locale, slug: string): Promise<DeliveryUnitAsset> {
   const root = locale === 'ja' ? 'public' : `public/translations/${locale}`;
-  return JSON.parse(
-    await readFile(`${root}/fundamentals/delivery/${slug}.json`, 'utf8'),
-  ) as DeliveryUnitAsset;
+  return Bun.file(`${root}/fundamentals/delivery/${slug}.json`).json();
 }
 
-test('Japanese release copy replaces misleading wording while preserving step and question identities', async () => {
-  const asset = await deliveryUnit('ja');
-  const copy = asset.steps.map((step) => lessonReadingCopy(step, 'ja'));
-  expect(copy.map((step) => step.id)).toEqual(asset.steps.map((step) => step.id));
-  expect(copy.filter((step) => step.kind === 'misconception').map((step) => step.label)).toEqual(
-    Array(4).fill('よくある誤解'),
-  );
-  const body = copy.flatMap((step) => step.blocks.map((block) => block.text));
-  expect(body).toContain('カナリアデプロイ中に、新版の応答時間（p95）が基準を超えた。');
-  expect(body.join('')).not.toMatch(/新版本|\btraffic\b|\blatency\b/);
-  expect(asset.steps.flatMap((step) => step.blocks.map((block) => block.text)).join('')).toContain(
-    '新版本',
-  );
-});
+const index: DeliveryIndexAsset = await Bun.file('public/fundamentals/delivery/index.json').json();
+const units = index.units.filter((unit) => unit.state === 'published');
 
-test('all nine translations keep the two monitoring paragraphs and outcome in their body fields', async () => {
-  for (const locale of locales.filter((item) => item !== 'ja')) {
-    const asset = await deliveryUnit(locale);
-    const reading = asset.steps[10];
-    const outcome = asset.steps[6];
-    expect(reading.sectionId).toBe('observation-abort');
-    const repaired = lessonReadingCopy(reading, locale);
-    expect(repaired.blocks[1].text).toBe(reading.blocks[1].label);
-    expect(repaired.blocks[2].text).toBe(reading.blocks[1].text);
-    expect(repaired.blocks[1].label).toBe(reading.label);
-    expect(lessonReadingCopy(outcome, locale).blocks[1].text).toBe(outcome.blocks[1].label);
+test('the Japanese lesson and assessment screens avoid the reported unnatural wording', async () => {
+  for (const { slug } of units) {
+    const lesson = await deliveryUnit('ja', slug);
+    const questions = [...lesson.checkpoints, ...lesson.finalQuestions];
+    const texts = [
+      ...lesson.steps
+        .map((step) => lessonReadingCopy(step, 'ja'))
+        .flatMap((step) => [step.label, ...step.blocks.map((block) => block.text)]),
+      ...questions.flatMap(({ prompt, title, choices }) => [
+        title,
+        prompt,
+        ...choices.flatMap(({ text, explanation }) => [text, explanation]),
+      ]),
+    ];
+    const copy = texts.join('\n');
+    expect(copy, slug).not.toMatch(/新版本|観測窓|データ点|これは誤りと訂正|private接続/);
   }
 });
 
-test('a chapter outside deployment also recovers a paragraph stored in a heading', async () => {
-  const data = await deliveryUnit('it', 'networking-basics');
-  const step = data.steps[9];
-  const fixed = lessonReadingCopy(step, 'it');
-  expect(fixed.blocks.at(-2)?.text).toBe(step.blocks.at(-2)?.label);
-  expect(fixed.blocks.at(-1)?.text).toBe(step.blocks.at(-2)?.text);
-  expect(lessonReadingCopy(fixed, 'it')).toBe(fixed);
-});
-
-test('all nine translations restore a final paragraph with a swapped heading and body', async () => {
-  for (const locale of locales.filter((item) => item !== 'ja')) {
-    const asset = await deliveryUnit(locale, 'cloud-concepts');
-    const onDemand = asset.steps.find(
-      (step) => step.sectionId === 'on-demand' && step.kind === 'reading',
-    );
-    if (!onDemand) throw new Error(`Missing on-demand reading for ${locale}`);
-    const fixed = lessonReadingCopy(onDemand, locale);
-    expect(fixed.blocks[0]).toEqual(onDemand.blocks[0]);
-    expect(fixed.blocks[1].text).toBe(onDemand.blocks[1].label);
-    expect(fixed.blocks[1].label).toBe(onDemand.blocks[1].text);
-    expect(lessonReadingCopy(fixed, locale)).toBe(fixed);
-  }
-});
-
-test('all nine translations keep the IAM role definition when replacing the heading', async () => {
-  for (const locale of locales.filter((item) => item !== 'ja')) {
-    const asset = await deliveryUnit(locale, 'identity-access');
-    const step = asset.steps.find((item) => item.id.endsWith(':principal-role:concept:1'));
-    if (!step) throw new Error(`Missing IAM role slide for ${locale}`);
-    const fixed = lessonReadingCopy(step, locale);
-    expect(fixed.label).not.toBe(step.label);
-    expect(fixed.blocks.map((block) => block.text)).toEqual([
-      step.blocks[0].text,
-      step.blocks[1].label,
-      step.blocks[1].text,
-    ]);
-  }
-});
-
-test('all nine translations retain the CI/CD approval and artifact objectives', async () => {
-  for (const locale of locales.filter((item) => item !== 'ja')) {
-    const asset = await deliveryUnit(locale, 'cicd');
-    const step = asset.steps.find((item) => item.id.endsWith(':intro:objectives:1'));
-    if (!step) throw new Error(`Missing CI/CD objectives slide for ${locale}`);
-    expect(lessonReadingCopy(step, locale).blocks.map((block) => block.text)).toEqual([
-      step.blocks[0].text,
-      step.blocks[1].label,
-      step.blocks[1].text,
-    ]);
-  }
-});
-
-test('artifact misconceptions keep their correction and cloud and networking show all objectives', async () => {
-  for (const locale of locales.filter((item) => item !== 'ja')) {
-    const cicd = await deliveryUnit(locale, 'cicd');
-    const correction = cicd.steps.find((item) =>
-      item.id.endsWith(':artifacts-promotion:misconception:1'),
-    );
-    if (!correction) throw new Error(`Missing artifact slide for ${locale}`);
-    expect(lessonReadingCopy(correction, locale).blocks[1].text).toBe(correction.blocks[1].label);
-
-    for (const slug of ['cloud-concepts', 'networking-basics']) {
+test('all locales display the authored paragraph order and use the localized misconception labels', async () => {
+  for (const locale of locales) {
+    for (const { slug } of units) {
       const asset = await deliveryUnit(locale, slug);
-      const step = asset.steps.find((item) => item.id.endsWith(':intro:objectives:1'));
-      if (!step) throw new Error(`Missing ${slug} objectives for ${locale}`);
-      const fixed = lessonReadingCopy(step, locale);
-      expect(fixed.label).toBe(step.blocks[0].label);
-      expect(fixed.blocks.map((block) => block.text)).toEqual([
-        step.blocks[0].text,
-        step.blocks[1].label,
-        step.blocks[1].text,
-      ]);
-    }
-  }
-});
-
-test('restored reading slides do not use their heading in place of a paragraph', async () => {
-  const { units } = (await Bun.file(
-    'public/fundamentals/delivery/index.json',
-  ).json()) as DeliveryIndexAsset;
-  for (const locale of locales.filter((item) => item !== 'ja')) {
-    for (const unit of units.filter((item) => item.state === 'published')) {
-      const asset = await deliveryUnit(locale, unit.slug);
-      for (const step of asset.steps.filter((item) => item.kind === 'reading')) {
-        const fixed = lessonReadingCopy(step, locale);
-        const body = fixed.blocks.map((block) => block.text);
-        expect(body, `${locale}/${step.id}`).not.toContain(fixed.label);
+      for (const step of asset.steps) {
+        const display = lessonReadingCopy(step, locale);
+        const body = step.blocks.map((block) => block.text);
+        expect(
+          display.blocks.map((block) => block.text),
+          `${locale}/${step.id}`,
+        ).toEqual(body);
+        if (step.kind === 'misconception') {
+          expect(display.label).toBe(labels[locale].heading);
+          expect(display.blocks.map((block) => block.label)).toEqual([
+            labels[locale].misconception,
+            labels[locale].correction,
+          ]);
+        }
+        for (const heading of [step.label, ...step.blocks.map((block) => block.label)]) {
+          expect(body, `${locale}/${step.id}`).not.toContain(heading);
+        }
         expect(new Set(body).size, `${locale}/${step.id}`).toBe(body.length);
       }
     }
+  }
+});
+
+test('all locales present the same full question in the source data and learner assessment', async () => {
+  for (const locale of locales) {
+    const root = locale === 'ja' ? 'public' : `public/translations/${locale}`;
+    const content: FundamentalsContent = await Bun.file(`${root}/fundamentals/content.json`).json();
+    const checkpoints: CheckpointDocument = await Bun.file(
+      `${root}/fundamentals/checkpoints.json`,
+    ).json();
+    for (const { slug, unitId } of units) {
+      const authorship = content.units.find(({ id }) => id === unitId);
+      const checkpointAuthor = checkpoints.units.find((item) => item.unitId === unitId);
+      const lesson = await deliveryUnit(locale, slug);
+      expect(authorship?.questions).toHaveLength(lesson.finalQuestions.length);
+      expect(checkpointAuthor?.checkpoints).toHaveLength(lesson.checkpoints.length);
+      for (const [source, delivered] of [
+        [authorship?.questions, lesson.finalQuestions],
+        [checkpointAuthor?.checkpoints, lesson.checkpoints],
+      ] as const) {
+        for (const question of delivered) {
+          const original = source?.find(({ id }) => id === question.id);
+          expect(original, `${locale}/${question.id}`).toMatchObject({
+            title: question.title,
+            prompt: question.prompt,
+            choices: question.choices,
+            correct: question.correct,
+            selectionPolarity: question.selectionPolarity,
+            requiredChoices: question.requiredChoices,
+          });
+        }
+      }
+    }
+  }
+});
+
+test('every locale keeps the context needed to answer the reported ambiguous questions', async () => {
+  for (const locale of locales) {
+    const signals = await deliveryUnit(locale, 'observability');
+    const question = (id: string) => {
+      const value = signals.finalQuestions.find((entry) => entry.id === id);
+      if (!value) throw new Error(`Missing question: ${locale}/${id}`);
+      return value;
+    };
+    expect(question('fund-observe-107').prompt, locale).toMatch(/500/);
+    expect(question('fund-observe-107').prompt, locale).toMatch(/SLI/);
+    expect(question('fund-observe-108').prompt, locale).toMatch(/API/);
+    expect(question('fund-observe-111').prompt, locale).toMatch(/RDS Proxy/);
+    const routing = await deliveryUnit(locale, 'routing-connectivity');
+    const route = routing.finalQuestions.find(({ id }) => id === 'fund-route-001');
+    expect(route?.prompt, locale).toMatch(/VPC/);
+    expect(route?.choices.find(({ id }) => id === 'A')?.text, locale).toMatch(/CIDR/);
   }
 });

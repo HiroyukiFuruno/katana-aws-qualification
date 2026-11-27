@@ -1,6 +1,5 @@
 import { usePreferences } from '../../preferences';
 import { QuestionClarifications } from '../../QuestionClarifications';
-import { lessonDisplayText } from '../delivery/lessonReadingCopy';
 import type { FundamentalsQuestion } from '../types';
 import './learner-assessment.css';
 
@@ -27,9 +26,8 @@ export type LessonFinalProps = CommonProps & {
 export type LessonAssessmentProps = LessonCheckpointProps | LessonFinalProps;
 
 export function LessonAssessment(props: LessonAssessmentProps) {
-  const { t, locale } = usePreferences();
+  const { t } = usePreferences();
   const { question, selected, onChange, busy = false, error } = props;
-  const display = (text: string) => lessonDisplayText(text, locale, question.unitId);
   const multiple = question.requiredChoices > 1;
   const submitted = props.mode === 'checkpoint' && Boolean(props.feedback?.submitted);
   const correct = props.mode === 'checkpoint' && props.feedback ? props.feedback.correct : [];
@@ -50,13 +48,13 @@ export function LessonAssessment(props: LessonAssessmentProps) {
   }
   return (
     <article className="lesson-assessment" aria-label={t('lessonAssessment')}>
-      <p className="lesson-assessment-prompt">{display(question.prompt)}</p>
+      <p className="lesson-assessment-prompt">{question.prompt}</p>
       <QuestionClarifications question={question} />
       <p className="lesson-assessment-hint">
         {t('lessonChoiceHint', { count: question.requiredChoices })}
       </p>
       <fieldset disabled={busy || submitted}>
-        <legend className="sr-only">{display(question.prompt)}</legend>
+        <legend className="sr-only">{question.prompt}</legend>
         {question.choices.map((choice) => {
           const checked = selected.includes(choice.id);
           const inputId = `${question.id}-${choice.id}`;
@@ -72,12 +70,12 @@ export function LessonAssessment(props: LessonAssessmentProps) {
                 onChange={(event) => choose(choice.id, event.currentTarget.checked)}
               />
               <span>
-                {display(choice.text)}
+                {choice.text}
                 {submitted ? (
                   <small>
                     {correct.includes(choice.id) ? t('lessonCorrectChoice') : ''}
                     {selected.includes(choice.id) ? ` ${t('lessonSelectedChoice')}` : ''}{' '}
-                    {display(choice.explanation)}
+                    {choice.explanation}
                   </small>
                 ) : null}
               </span>

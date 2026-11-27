@@ -42,7 +42,7 @@ export const quantityUnits: QuantityUnit[] = [
       'minuto',
       'minuti',
       'minuto',
-      '分',
+      '分(?!割)',
       '분',
     ],
   },
@@ -105,7 +105,7 @@ export const quantityUnits: QuantityUnit[] = [
       '週間',
       '週',
       '周',
-      '주',
+      '주(?!소)',
     ],
   },
   ...[

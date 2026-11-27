@@ -1,178 +1,196 @@
 {
   "checkpoints": [
     {
+      "unitId": "fundamentals.data-protection",
       "id": "fundamentals.data-protection.checkpoint.encryption.v1",
-      "sectionId": "encryption",
-      "objectiveId": "encryption",
-      "prompt": "HTTPS 通訊已加密，但尚未確認儲存在 S3 中的備份加密設定。還應檢查什麼？",
+      "revision": 1,
+      "category": "fundamentals.data-protection",
+      "version": "2026-11-learning",
+      "title": "分別保護傳輸中與靜態資料",
+      "prompt": "開發人員將使用者瀏覽器傳送至訂單 API 的發票儲存在 S3。組織要求通訊使用 HTTPS，儲存使用指定 KMS 金鑰的 SSE-KMS。請選擇一種驗證這兩項要求的方法。",
       "selectionPolarity": "correct",
       "requiredChoices": 1,
-      "choices": [
-        {
-          "id": "A",
-          "text": "檢查靜態加密設定，以及用於解密的金鑰設定。",
-          "explanation": "TLS 保護傳輸中的資料，因此必須另外檢查靜態資料的保護。"
-        },
-        {
-          "id": "B",
-          "text": "認為使用 HTTPS 就不需要靜態加密設定。",
-          "explanation": "傳輸中的保護並不能保證儲存的資料受到保護。"
-        },
-        {
-          "id": "C",
-          "text": "移除加密，只重新檢查通訊。",
-          "explanation": "這只會削弱保護，卻沒有消除靜態資料面臨的風險。"
-        },
-        {
-          "id": "D",
-          "text": "不檢查金鑰的使用者，就授予所有人解密權限。",
-          "explanation": "解密權限應限於有需要的主體。"
-        }
-      ],
+      "objectiveId": "encryption",
+      "sectionId": "encryption",
+      "application": "integrate",
       "correct": [
         "A"
       ],
-      "source": {
-        "label": "Amazon S3 加密",
-        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingEncryption.html"
-      },
-      "category": "fundamentals.data-protection",
-      "revision": 1,
-      "title": "傳輸中與靜態儲存：保護的環節不同",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "id": "fundamentals.data-protection.checkpoint.kms.v1",
-      "sectionId": "kms",
-      "objectiveId": "kms",
-      "prompt": "應用程式無法讀取加密物件。疑難排解 KMS 時，請選出兩項需要檢查的內容。",
-      "selectionPolarity": "correct",
-      "requiredChoices": 2,
       "choices": [
         {
           "id": "A",
-          "text": "應用程式的角色是否有權使用該金鑰",
-          "explanation": "金鑰使用者需要具備 KMS 使用權限。"
+          "text": "分別驗證整個路徑上的 HTTPS，以及 S3 中物件所套用的 SSE-KMS 與 KMS 金鑰。",
+          "explanation": "這樣可以分別驗證通訊加密，以及儲存目的地的加密方式與金鑰要求。"
         },
         {
           "id": "B",
-          "text": "金鑰政策是否允許該角色使用金鑰",
-          "explanation": "除了 IAM policy，也需要評估 KMS key policy。"
+          "text": "只驗證瀏覽器與訂單 API 之間使用 HTTPS。",
+          "explanation": "這無法驗證從 API 到 S3 的路徑，也無法驗證靜態資料使用指定金鑰的要求。"
         },
         {
           "id": "C",
-          "text": "縮短金鑰名稱就能取得權限",
-          "explanation": "變更名稱不會為政策新增許可。"
+          "text": "由於 S3 預設加密會保護新物件，因此不驗證所使用的 KMS 金鑰。",
+          "explanation": "僅使用預設加密的 SSE-S3 不一定符合組織要求使用指定 KMS 金鑰的條件。"
         },
         {
           "id": "D",
-          "text": "授予所有主體 kms:*",
-          "explanation": "授予所有權限無法解決根本原因，還會破壞最小權限原則。"
+          "text": "只驗證 S3 物件使用了 SSE-KMS。",
+          "explanation": "這無法驗證指定的金鑰和通訊路徑上的 HTTPS。"
         }
       ],
-      "correct": [
-        "A",
-        "B"
-      ],
       "source": {
-        "label": "AWS KMS 政策評估",
-        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/policy-evaluation.html"
+        "label": "Amazon S3 預設加密",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html"
       },
-      "category": "fundamentals.data-protection",
-      "revision": 1,
-      "title": "KMS：金鑰本身與使用金鑰的權限",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
+      "learning": {
+        "reason": "通訊和儲存是不同的邊界。",
+        "concept": "傳輸中與靜態資料"
+      }
     },
     {
-      "id": "fundamentals.data-protection.checkpoint.recovery.v1",
-      "sectionId": "recovery",
-      "objectiveId": "recovery",
-      "prompt": "備份工作已成功。請選擇一種適當的方法，以確認是否符合復原目標。",
+      "unitId": "fundamentals.data-protection",
+      "id": "fundamentals.data-protection.checkpoint.kms.v1",
+      "revision": 1,
+      "category": "fundamentals.data-protection",
+      "version": "2026-11-learning",
+      "title": "分別確認 KMS 金鑰與存取權限",
+      "prompt": "操作人員嘗試透過應用程式讀取使用 SSE-KMS 加密的 S3 物件時，存取遭到拒絕。請選擇一種釐清原因的方法。",
       "selectionPolarity": "correct",
       "requiredChoices": 1,
+      "objectiveId": "kms",
+      "sectionId": "kms",
+      "application": "apply",
+      "correct": [
+        "C"
+      ],
       "choices": [
         {
-          "id": "B",
-          "text": "實際將資料還原至隔離的目的地，並驗證資料與所需時間。",
-          "explanation": "僅成功建立備份，並不能證明資料可以復原，也不能證明能符合 RTO。"
+          "id": "A",
+          "text": "只確認是否知道金鑰 ARN。",
+          "explanation": "識別資訊不等於許可。"
         },
         {
-          "id": "A",
-          "text": "只根據工作顯示「成功」就判斷可以復原。",
-          "explanation": "備份建立結果與還原測試是兩項不同的檢查。"
+          "id": "B",
+          "text": "授予所有人 kms:Decrypt。",
+          "explanation": "這是過度授權。"
         },
         {
           "id": "C",
-          "text": "先刪除正式環境資料，再首次嘗試還原。",
-          "explanation": "驗證時不需要破壞正式環境資料。"
+          "text": "確認 S3 物件的讀取許可，以及 KMS 金鑰政策或 IAM 政策所允許的解密許可。",
+          "explanation": "這樣可以確認資料與金鑰的授權邊界。"
         },
         {
           "id": "D",
-          "text": "不決定還原目的地或驗證條件，只增加執行次數。",
-          "explanation": "僅憑執行次數無法評估復原資料或所需時間。"
+          "text": "刪除並重新建立儲存貯體。",
+          "explanation": "這無法解決原因，且有資料遺失的風險。"
         }
       ],
+      "source": {
+        "label": "AWS KMS 金鑰政策",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+      },
+      "learning": {
+        "reason": "這樣可以確認資料與金鑰的授權邊界。",
+        "concept": "KMS 許可"
+      }
+    },
+    {
+      "unitId": "fundamentals.data-protection",
+      "id": "fundamentals.data-protection.checkpoint.recovery.v1",
+      "revision": 1,
+      "category": "fundamentals.data-protection",
+      "version": "2026-11-learning",
+      "title": "分別驗證備份成功與可還原性",
+      "prompt": "資料庫負責人已確認備份建立成功，但尚未確認能否在目標復原時間（RTO）內恢復訂單處理。請選擇下一項要執行的驗證。",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "recovery",
+      "sectionId": "recovery",
+      "application": "integrate",
       "correct": [
         "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "將成功通知作為稽核軌跡，然後結束。",
+          "explanation": "這無法證明可還原性。"
+        },
+        {
+          "id": "B",
+          "text": "還原到隔離的目的地，並記錄所需時間、完整性與應用程式連線。",
+          "explanation": "這樣可以比較目標與實測結果。"
+        },
+        {
+          "id": "C",
+          "text": "刪除生產資料並嘗試還原。",
+          "explanation": "這不是安全的測試。"
+        },
+        {
+          "id": "D",
+          "text": "將 RTO 修改為符合實測結果。",
+          "explanation": "必須先進行實測。"
+        }
       ],
       "source": {
         "label": "AWS Backup 還原測試",
         "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
       },
-      "category": "fundamentals.data-protection",
-      "revision": 1,
-      "title": "備份與還原：能建立備份和能從備份還原是兩回事。",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
+      "learning": {
+        "reason": "這樣可以比較目標與實測結果。",
+        "concept": "還原驗證"
+      }
     },
     {
+      "unitId": "fundamentals.data-protection",
       "id": "fundamentals.data-protection.checkpoint.secrets.v1",
-      "sectionId": "secrets",
-      "objectiveId": "secrets",
-      "prompt": "在將 DB password 傳遞給應用程式的設計中，請選擇 2 個能降低洩漏面的選項。",
+      "revision": 1,
+      "category": "fundamentals.data-protection",
+      "version": "2026-11-learning",
+      "title": "分離秘密資訊的儲存、取得與顯示",
+      "prompt": "一名操作管理員在原始程式碼和錯誤日誌中發現了訂單應用程式使用的外部 API 權杖。請選擇一項改善秘密資訊管理的措施。",
       "selectionPolarity": "correct",
-      "requiredChoices": 2,
+      "requiredChoices": 1,
+      "objectiveId": "secrets",
+      "sectionId": "secrets",
+      "application": "apply",
+      "correct": [
+        "D"
+      ],
       "choices": [
         {
+          "id": "A",
+          "text": "向所有人公開日誌以進行監控",
+          "explanation": "這會擴大洩漏範圍。"
+        },
+        {
           "id": "B",
-          "text": "不要將 password 直接寫入程式碼，而是從受管理的 secret 取得。",
-          "explanation": "將值與原始碼分離，可降低程式碼外洩時的暴露。"
+          "text": "將其移到另一個原始程式檔案",
+          "explanation": "明文問題仍然存在。"
         },
         {
           "id": "C",
-          "text": "將讀取 secret 的 role 限定為只有需要它的應用程式可使用。",
-          "explanation": "限制取得者有助於落實最小權限。"
-        },
-        {
-          "id": "A",
-          "text": "為了排查故障，將 password 輸出到日誌。",
-          "explanation": "日誌的可檢視範圍通常較廣，因此應避免輸出機密值。"
+          "text": "將執行角色設為管理員",
+          "explanation": "這無法解決儲存與顯示問題。"
         },
         {
           "id": "D",
-          "text": "將相同的 secret 複製到所有開發者的環境。",
-          "explanation": "副本和可檢視者都會增加，進而擴大暴露面。"
+          "text": "將其移至 Secrets Manager，限制取得主體，並從日誌中移除該值",
+          "explanation": "這樣可以分離儲存、取得與顯示。"
         }
       ],
-      "correct": [
-        "B",
-        "C"
-      ],
       "source": {
-        "label": "Secrets Manager 資料保護",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
+        "label": "AWS Secrets Manager 使用者指南",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
       },
-      "category": "fundamentals.data-protection",
-      "revision": 1,
-      "title": "秘密資訊：分離值、顯示內容與取得者",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
+      "learning": {
+        "reason": "這樣可以分離儲存、取得與顯示。",
+        "concept": "秘密資訊"
+      }
     }
   ],
-  "contentHash": "7464eb67f645a7878578a2382c527c1a64db599afdbfec615be9f91fbf2ad38a",
-  "contentVersion": "6303c286a1d7a24e430a15478babcc44523eff89e2859a4e99802a5d68933316",
+  "contentHash": "a80808814e84dda26f4597759edacafe630040e01fd72df1e6ae1ce0658ea90e",
+  "contentVersion": "423e408963109275ec57a7ffc1a2755e9c6f37683101ee11186402db1aac3e16",
   "finalPolicy": {
     "attemptScope": "current-attempt-only",
     "passCorrect": 10,
@@ -185,18 +203,18 @@
       "choices": [
         {
           "id": "A",
-          "text": "保護在通訊路徑中傳輸的資料。",
-          "explanation": "HTTPS/TLS 用於保護傳輸中的資料。"
+          "text": "使用 HTTPS/TLS",
+          "explanation": "HTTPS/TLS 可保護傳輸中的資料。"
         },
         {
           "id": "B",
-          "text": "自動加密已儲存在磁碟上的資料。",
-          "explanation": "請另外確認靜態加密的設定。"
+          "text": "僅啟用 S3 靜態資料加密",
+          "explanation": "僅加密儲存目的地無法保護通往 API 的通訊路徑。"
         },
         {
           "id": "C",
-          "text": "不需要 IAM 權限。",
-          "explanation": "加密與授權是兩回事。"
+          "text": "將 KMS 金鑰的名稱寫入日誌",
+          "explanation": "顯示金鑰資訊並不會加密通訊。"
         }
       ],
       "correct": [
@@ -204,16 +222,16 @@
       ],
       "id": "fund-data-101",
       "objectiveId": "encryption",
-      "prompt": "請選出一項關於傳輸中加密的正確敘述。",
+      "prompt": "Web 管理員希望在將客戶資訊從瀏覽器傳送至訂單 API 時，防止通訊路徑上的第三方讀取內容。請選擇一項直接符合此要求的設定。",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "encryption",
       "selectionPolarity": "correct",
       "source": {
         "label": "AWS 資料保護",
         "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
       },
-      "title": "傳輸中",
+      "title": "傳輸中的保護",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -222,35 +240,35 @@
       "choices": [
         {
           "id": "A",
-          "text": "只檢查 HTTPS，不檢查靜態加密。",
-          "explanation": "傳輸中的資料和靜態資料是不同的。"
+          "text": "只要確認正在使用 HTTPS，就可以判斷發票是使用指定的 KMS 金鑰儲存的。",
+          "explanation": "HTTPS 保護的是通訊。必須另外確認儲存在 S3 中的物件所使用的加密方式和金鑰。"
         },
         {
           "id": "B",
-          "text": "分別檢查通訊路徑的 TLS 和目標儲存位置的加密。",
-          "explanation": "分別保護這兩個階段。"
+          "text": "確認已儲存發票的加密方式為 SSE-KMS，且金鑰是組織指定的金鑰。",
+          "explanation": "如此即可確認已儲存的物件是否符合資料保護要求。"
         },
         {
           "id": "C",
-          "text": "不使用加密，而是授予所有人管理員權限。",
-          "explanation": "擴大權限並不能提供加密。"
+          "text": "確認應用程式用於寫入的執行角色是否具有使用目標 KMS 金鑰的權限。",
+          "explanation": "除了允許寫入 S3 的權限外，還要確認 SSE-KMS 所需的金鑰使用權限。"
         }
       ],
       "correct": [
-        "B"
+        "A"
       ],
       "id": "fund-data-102",
       "objectiveId": "encryption",
-      "prompt": "請選擇一項適用於從 Web 上傳文件的檢查。",
+      "prompt": "Web 管理員將透過 HTTPS 接收的發票儲存在 S3 中。組織規定，儲存的發票必須使用指定的 KMS 金鑰。請選出在確認此要求時不正確的一項判斷。",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "encryption",
-      "selectionPolarity": "correct",
+      "selectionPolarity": "incorrect",
       "source": {
-        "label": "AWS 資料保護",
-        "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
+        "label": "Amazon S3 SSE-KMS",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html"
       },
-      "title": "文件上傳",
+      "title": "靜態資料的保護",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -259,35 +277,36 @@
       "choices": [
         {
           "id": "A",
-          "text": "可用於保護瀏覽器與 API 之間傳輸中的資料。",
-          "explanation": "TLS 可保護通訊。"
+          "text": "檢查從瀏覽器到 API 的 TLS",
+          "explanation": "這可以保護從使用者到 API 的通訊。"
         },
         {
           "id": "B",
-          "text": "請另外確認儲存目的地的加密設定。",
-          "explanation": "它們保護資料的情境不同。"
+          "text": "不檢查從 API 到 S3 的路徑",
+          "explanation": "從 API 到儲存目的地的通訊也屬於保護對象。"
         },
         {
           "id": "C",
-          "text": "使用 HTTPS 後，就不需要管理儲存資料的金鑰了。",
-          "explanation": "這是錯誤的。靜態資料加密與金鑰管理是不同的責任。"
+          "text": "檢查儲存加密以及使用金鑰的主體",
+          "explanation": "檢查靜態資料加密和使用金鑰所需的權限。"
         }
       ],
       "correct": [
+        "A",
         "C"
       ],
       "id": "fund-data-103",
       "objectiveId": "encryption",
-      "prompt": "請選出一項關於 HTTPS 的錯誤敘述。",
-      "requiredChoices": 1,
-      "revision": 1,
+      "prompt": "客戶資訊會透過瀏覽器中的 API 儲存至 S3。請選擇兩個應檢查的正確保護對象。",
+      "requiredChoices": 2,
+      "revision": 2,
       "sectionId": "encryption",
-      "selectionPolarity": "incorrect",
+      "selectionPolarity": "correct",
       "source": {
         "label": "AWS 資料保護",
         "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
       },
-      "title": "HTTPS 的限制",
+      "title": "整理保護邊界",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -296,35 +315,36 @@
       "choices": [
         {
           "id": "A",
-          "text": "用於建立和管理加密金鑰的服務。",
-          "explanation": "KMS 可協助管理金鑰。"
+          "text": "S3 讀取許可和 KMS 金鑰解密許可",
+          "explanation": "資料和金鑰屬於不同的授權邊界。"
         },
         {
           "id": "B",
-          "text": "只要金鑰存在，所有主體都可以不受限制地使用它。",
-          "explanation": "這是錯誤的。使用該金鑰需要相應權限。"
+          "text": "只有 KMS 金鑰的名稱",
+          "explanation": "識別資訊不等於使用許可。"
         },
         {
           "id": "C",
-          "text": "可以分別檢查資料權限和金鑰使用權限。",
-          "explanation": "這兩種權限都涉及其中。"
+          "text": "修改執行角色的信任政策，允許所有 AWS 帳戶中的主體作為信任實體。",
+          "explanation": "擴大信任實體範圍並不能確認 S3 或 KMS 所需的許可。這會不必要地擴大可擔任該角色的範圍。"
         }
       ],
       "correct": [
-        "B"
+        "B",
+        "C"
       ],
       "id": "fund-data-104",
       "objectiveId": "kms",
-      "prompt": "請選出一項關於 KMS 的錯誤陳述。",
-      "requiredChoices": 1,
-      "revision": 1,
+      "prompt": "訂單 API 嘗試讀取 S3 物件時會傳回 AccessDenied。該物件使用 SSE-KMS 加密。請選出兩項在調查原因或採取處置時不正確的做法。",
+      "requiredChoices": 2,
+      "revision": 2,
       "sectionId": "kms",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "AWS KMS 資料保護",
-        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/data-protection.html"
+        "label": "AWS KMS 金鑰政策",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
       },
-      "title": "KMS",
+      "title": "KMS 使用許可",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -333,18 +353,18 @@
       "choices": [
         {
           "id": "A",
-          "text": "只檢查讀取 secret 的權限，不檢查 KMS 金鑰的權限。",
-          "explanation": "這是錯誤的。也應檢查使用加密金鑰的權限。"
+          "text": "只要有 IAM 政策就一定可以解密",
+          "explanation": "不能忽略金鑰政策。"
         },
         {
           "id": "B",
-          "text": "找出應用程式的執行角色。",
-          "explanation": "這有助於釐清是哪個主體提出了請求。"
+          "text": "一起檢查金鑰政策、IAM 政策，以及必要時的授權",
+          "explanation": "KMS 使用許可由多項授權要素的組合決定。"
         },
         {
           "id": "C",
-          "text": "檢查存取 secret 和 KMS 金鑰所需的權限。",
-          "explanation": "這涉及取得 secret 和解密。"
+          "text": "如果組態不使用授權，請確認不需要授權",
+          "explanation": "即使不使用授權，也要檢查金鑰政策與 IAM 政策的組合。"
         }
       ],
       "correct": [
@@ -352,16 +372,16 @@
       ],
       "id": "fund-data-105",
       "objectiveId": "kms",
-      "prompt": "應用程式無法讀取 secret，存取要求遭到拒絕。請選出一項不正確的原因調查方式。",
+      "prompt": "我們已允許 IAM 角色使用 kms:Decrypt，但目標 KMS 金鑰的金鑰政策不允許使用 IAM 政策。請選出一項不正確的確認方式。",
       "requiredChoices": 1,
       "revision": 2,
       "sectionId": "kms",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "Secrets Manager 加密",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/security-encryption.html"
+        "label": "AWS KMS 金鑰政策",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
       },
-      "title": "secret 取得遭拒",
+      "title": "KMS 授權",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -370,46 +390,36 @@
       "choices": [
         {
           "id": "A",
-          "text": "不要只看金鑰名稱就確認是否獲得授權。",
-          "explanation": "需要確認是否有權使用該金鑰。"
+          "text": "只授予需要使用目標金鑰的必要主體所需的操作權限",
+          "explanation": "這樣可以限定目標、主體和操作。"
         },
         {
           "id": "B",
-          "text": "找出要求主體與 KMS 操作。",
-          "explanation": "確認是誰要求執行哪項金鑰操作。"
+          "text": "對所有角色授予 kms:*",
+          "explanation": "這會擴大權限，包含不必要的管理和解密權限。"
         },
         {
           "id": "C",
-          "text": "將機密值寫入日誌進行調查。",
-          "explanation": "不得揭露機密值。"
-        },
-        {
-          "id": "D",
-          "text": "分別確認資料存取權限與金鑰存取權限。",
-          "explanation": "這是不同的控制點。"
-        },
-        {
-          "id": "E",
-          "text": "停用 TLS 以調查原因。",
-          "explanation": "無須移除傳輸中的保護。"
+          "text": "透過金鑰政策確認主體可以使用目標金鑰",
+          "explanation": "金鑰政策也是 KMS 授權的要素。"
         }
       ],
       "correct": [
-        "B",
-        "D"
+        "A",
+        "C"
       ],
       "id": "fund-data-106",
       "objectiveId": "kms",
-      "prompt": "讀取儲存的資料失敗時，請選出兩項正確的調查步驟。",
+      "prompt": "訂單應用程式只會從 AWS Secrets Manager 取得資料庫憑證。該密密使用客戶管理的 KMS 金鑰加密。允許應用程式解密時，請選擇兩項適當的措施。",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "kms",
       "selectionPolarity": "correct",
       "source": {
-        "label": "AWS KMS 資料保護",
-        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/data-protection.html"
+        "label": "AWS KMS 金鑰存取與權限",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/control-access.html"
       },
-      "title": "釐清金鑰使用問題",
+      "title": "最小權限",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -418,37 +428,108 @@
       "choices": [
         {
           "id": "A",
-          "text": "僅備份成功並不能證明資料已還原至可用狀態。",
-          "explanation": "只有執行還原程序並檢查資料和連線後，才能判斷是否可用。"
+          "text": "儲存成功通知並結束。",
+          "explanation": "僅建立成功並不能表示可以使用。"
         },
         {
           "id": "B",
-          "text": "還原測試不需要設定驗證標準。",
-          "explanation": "錯誤。需要設定還原後的驗證標準，例如記錄筆數和連線狀況。"
+          "text": "無條件覆寫還原至正式資料庫。",
+          "explanation": "這不是安全的測試程序。"
         },
         {
           "id": "C",
-          "text": "一律透過覆寫正式環境來測試。",
-          "explanation": "錯誤。為避免造成影響，應考慮將測試設計為還原至隔離的目標位置。"
-        },
-        {
-          "id": "D",
-          "text": "只要決定保留期間即可，不需要規劃復原時間。",
-          "explanation": "錯誤。也要將所需的復原時間納入計畫。"
-        },
-        {
-          "id": "E",
-          "text": "只要決定還原目標位置，就不必確認還原後是否可用。",
-          "explanation": "錯誤。還原目標位置和還原後的可用性都必須確認。"
+          "text": "還原至隔離的目的地，並確認完整性與應用程式連線。",
+          "explanation": "可以透過實際還原與可用性檢查進行驗證。"
         }
       ],
       "correct": [
-        "A"
+        "A",
+        "B"
       ],
       "id": "fund-data-107",
       "objectiveId": "recovery",
-      "prompt": "請選出一項關於備份與還原關係的正確敘述。",
+      "prompt": "AWS Backup 任務已成功。請選出兩個用於確認可復原性的錯誤後續步驟。",
+      "requiredChoices": 2,
+      "revision": 2,
+      "sectionId": "recovery",
+      "selectionPolarity": "incorrect",
+      "source": {
+        "label": "AWS Backup 還原測試",
+        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+      },
+      "title": "還原測試",
+      "unitId": "fundamentals.data-protection",
+      "version": "2026-11-learning"
+    },
+    {
+      "category": "データ保護",
+      "choices": [
+        {
+          "id": "A",
+          "text": "測量復原時間並與 RTO 比較",
+          "explanation": "這樣可以實際測量所需時間。"
+        },
+        {
+          "id": "B",
+          "text": "不確認還原後的訂單數量",
+          "explanation": "無法判斷一致性。"
+        },
+        {
+          "id": "C",
+          "text": "確認復原時間點並與 RPO 比較",
+          "explanation": "這樣可以確認復原到什麼程度。"
+        },
+        {
+          "id": "D",
+          "text": "決定隔離的還原目標並進行測試",
+          "explanation": "先準備不會影響生產環境的還原目標。"
+        }
+      ],
+      "correct": [
+        "B"
+      ],
+      "id": "fund-data-108",
+      "objectiveId": "recovery",
+      "prompt": "訂單服務的營運團隊為因應故障，驗證是否能從資料庫備份還原訂單資料。復原時間和可接受的資料遺失量都有目標。請選擇一項錯誤的驗證程序。",
       "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "recovery",
+      "selectionPolarity": "incorrect",
+      "source": {
+        "label": "AWS Backup 還原測試",
+        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+      },
+      "title": "復原目標",
+      "unitId": "fundamentals.data-protection",
+      "version": "2026-11-learning"
+    },
+    {
+      "category": "データ保護",
+      "choices": [
+        {
+          "id": "A",
+          "text": "測量從備份還原所需的時間。",
+          "explanation": "還原所需的時間是用於與目標比較的復原時間的一部分。"
+        },
+        {
+          "id": "B",
+          "text": "從應用程式連線到還原目標，並確認訂單資料的一致性。",
+          "explanation": "還原處理完成後，還要確認應用程式能使用這些資料。"
+        },
+        {
+          "id": "C",
+          "text": "還原測試是刪除備份的操作",
+          "explanation": "還原到隔離的目標並進行確認。"
+        }
+      ],
+      "correct": [
+        "A",
+        "B"
+      ],
+      "id": "fund-data-109",
+      "objectiveId": "recovery",
+      "prompt": "營運團隊將訂單資料庫的備份還原到另一個資料庫，以判斷發生故障時是否能重新啟動訂單服務。請選擇兩項此判斷所需的檢查。",
+      "requiredChoices": 2,
       "revision": 2,
       "sectionId": "recovery",
       "selectionPolarity": "correct",
@@ -456,7 +537,7 @@
         "label": "AWS Backup 還原測試",
         "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
       },
-      "title": "備份",
+      "title": "備份與還原",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -465,238 +546,115 @@
       "choices": [
         {
           "id": "A",
-          "text": "只看成功通知，不檢查還原目標。",
-          "explanation": "無法驗證資料是否可用。"
+          "text": "權杖儲存在 Secrets Manager 中，訂單應用程式透過執行角色取得該權杖。",
+          "explanation": "如此可將應用程式程式碼與機密資訊分離，並透過執行角色控制取得範圍。"
         },
         {
           "id": "B",
-          "text": "將復原點還原至隔離的目標位置。",
-          "explanation": "這樣可以在避免影響正式環境的同時進行驗證。"
+          "text": "權杖以純文字常數的形式記錄在原始碼中，也保留在儲存庫的變更歷程中。",
+          "explanation": "機密資訊處於可從歷程中讀取的狀態。應將其視為已外洩，考慮使其失效或重新簽發，並改用不將其記錄在程式碼中的方法。"
         },
         {
           "id": "C",
-          "text": "檢查訂單數量以及應用程式連線。",
-          "explanation": "這能驗證資料還原後是否可用。"
+          "text": "將 API 錯誤記錄到日誌時，排除了會記錄權杖本身的欄位。",
+          "explanation": "在保留疑難排解所需記錄的同時，減少權杖從日誌外洩的途徑。"
+        }
+      ],
+      "correct": [
+        "B"
+      ],
+      "id": "fund-data-110",
+      "objectiveId": "secrets",
+      "prompt": "一名營運人員正在檢查使用外部 API 權杖的訂單應用程式。為了安全地管理權杖，請選出一個應優先修正的地方。",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "secrets",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Secrets Manager 使用者指南",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
+      },
+      "title": "儲存機密資訊",
+      "unitId": "fundamentals.data-protection",
+      "version": "2026-11-learning"
+    },
+    {
+      "category": "データ保護",
+      "choices": [
+        {
+          "id": "A",
+          "text": "僅允許取得 secret-a",
+          "explanation": "可以限定目標機密資訊。"
+        },
+        {
+          "id": "B",
+          "text": "允許取得所有機密資訊",
+          "explanation": "會暴露不需要的機密資訊。"
+        },
+        {
+          "id": "C",
+          "text": "一律將取得的值寫入日誌",
+          "explanation": "日誌會成為外洩途徑。"
+        }
+      ],
+      "correct": [
+        "A"
+      ],
+      "id": "fund-data-111",
+      "objectiveId": "secrets",
+      "prompt": "開發人員為訂單應用程式的執行角色授予營運所需的最小權限。應用程式需要讀取的唯一機密資訊是 secret-a。請選出一項應授予的權限。",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "secrets",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Secrets Manager 取得機密資訊",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/retrieving-secrets.html"
+      },
+      "title": "取得機密資訊的權限",
+      "unitId": "fundamentals.data-protection",
+      "version": "2026-11-learning"
+    },
+    {
+      "category": "データ保護",
+      "choices": [
+        {
+          "id": "A",
+          "text": "確認應用程式可以使用新值進行連線",
+          "explanation": "可以驗證更新後的使用端。"
+        },
+        {
+          "id": "B",
+          "text": "將舊值輸出到故障日誌中進行比較",
+          "explanation": "舊值也是機密資訊，不得輸出。"
+        },
+        {
+          "id": "C",
+          "text": "將執行角色變更為管理員角色",
+          "explanation": "不需要過度權限。"
         },
         {
           "id": "D",
-          "text": "不檢查還原的資料就立即將其刪除。",
-          "explanation": "這不符合測試目的。"
-        },
-        {
-          "id": "E",
-          "text": "只檢查備份頻率。",
-          "explanation": "確認已執行還原並檢查結果。"
+          "text": "確認日誌或錯誤回應中沒有顯示該值",
+          "explanation": "可以防止值從顯示途徑外洩。"
         }
       ],
       "correct": [
         "B",
         "C"
       ],
-      "id": "fund-data-108",
-      "objectiveId": "recovery",
-      "prompt": "在訂單資料還原測試中，請選擇兩種正確的方法。",
-      "requiredChoices": 2,
-      "revision": 1,
-      "sectionId": "recovery",
-      "selectionPolarity": "correct",
-      "source": {
-        "label": "還原備份",
-        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-a-backup.html"
-      },
-      "title": "訂單還原",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "category": "データ保護",
-      "choices": [
-        {
-          "id": "A",
-          "text": "決定要使用哪個復原點。",
-          "explanation": "需要選擇要還原到的時間點。"
-        },
-        {
-          "id": "B",
-          "text": "還原後不必進行連線檢查。",
-          "explanation": "確認是否可用。"
-        },
-        {
-          "id": "C",
-          "text": "復原工作只能在正式環境中執行。",
-          "explanation": "考慮在隔離環境中進行驗證。"
-        },
-        {
-          "id": "D",
-          "text": "訂定復原時間與驗證標準。",
-          "explanation": "這有助於明確成功條件。"
-        },
-        {
-          "id": "E",
-          "text": "在備份名稱中寫入機密資訊。",
-          "explanation": "避免資訊暴露在名稱中。"
-        }
-      ],
-      "correct": [
-        "A",
-        "D"
-      ],
-      "id": "fund-data-109",
-      "objectiveId": "recovery",
-      "prompt": "請選出復原計畫中兩項正確的內容。",
-      "requiredChoices": 2,
-      "revision": 1,
-      "sectionId": "recovery",
-      "selectionPolarity": "correct",
-      "source": {
-        "label": "AWS Backup 還原測試",
-        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
-      },
-      "title": "復原計畫",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "category": "データ保護",
-      "choices": [
-        {
-          "id": "A",
-          "text": "將 secret 存放在專用位置。",
-          "explanation": "將其與程式碼分開。"
-        },
-        {
-          "id": "B",
-          "text": "一律將權杖值寫入偵錯日誌。",
-          "explanation": "這是錯誤的。日誌可能造成資訊外洩。"
-        },
-        {
-          "id": "C",
-          "text": "僅允許執行角色存取其所需的 secret。",
-          "explanation": "這會限制存取範圍。"
-        },
-        {
-          "id": "D",
-          "text": "所有應用程式共用一個管理員 secret。",
-          "explanation": "這是錯誤的。應區分主體與用途。"
-        },
-        {
-          "id": "E",
-          "text": "確認更新後使用端能否跟上。",
-          "explanation": "這有助於避免輪替期間發生故障。"
-        }
-      ],
-      "correct": [
-        "B",
-        "D"
-      ],
-      "id": "fund-data-110",
-      "objectiveId": "secrets",
-      "prompt": "請選出兩項錯誤的秘密資訊處理方式。",
-      "requiredChoices": 2,
-      "revision": 1,
-      "sectionId": "secrets",
-      "selectionPolarity": "incorrect",
-      "source": {
-        "label": "Secrets Manager 資料保護",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
-      },
-      "title": "秘密資訊",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "category": "データ保護",
-      "choices": [
-        {
-          "id": "A",
-          "text": "以明文形式提交至原始碼中。",
-          "explanation": "這是錯誤的，會讓權杖暴露在儲存庫中。"
-        },
-        {
-          "id": "B",
-          "text": "將其存放在 Secrets Manager 中。",
-          "explanation": "可以在專用的儲存位置中管理。"
-        },
-        {
-          "id": "C",
-          "text": "將執行角色的權限限制在必要的取得權限。",
-          "explanation": "這符合最小權限原則。"
-        },
-        {
-          "id": "D",
-          "text": "即使發生錯誤，也要在記錄中遮蔽該值。",
-          "explanation": "重要的是不要暴露該值本身。"
-        },
-        {
-          "id": "E",
-          "text": "在聊天中將該值分享給整個團隊。",
-          "explanation": "這是錯誤的，會增加複製與暴露的風險。"
-        }
-      ],
-      "correct": [
-        "A",
-        "E"
-      ],
-      "id": "fund-data-111",
-      "objectiveId": "secrets",
-      "prompt": "請選出兩種錯誤的外部 API 權杖處理方式。",
-      "requiredChoices": 2,
-      "revision": 1,
-      "sectionId": "secrets",
-      "selectionPolarity": "incorrect",
-      "source": {
-        "label": "Secrets Manager 資料保護",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
-      },
-      "title": "API 權杖",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "category": "データ保護",
-      "choices": [
-        {
-          "id": "A",
-          "text": "分別檢查儲存位置、取得主體和日誌輸出。",
-          "explanation": "這有助於分別檢查不同的暴露途徑。"
-        },
-        {
-          "id": "B",
-          "text": "考量每個 secret 的必要使用者。",
-          "explanation": "這有助於限制取得範圍。"
-        },
-        {
-          "id": "C",
-          "text": "只要經過加密，就可以將值寫入日誌。",
-          "explanation": "這是錯誤的。在日誌中顯示值會造成暴露。"
-        },
-        {
-          "id": "D",
-          "text": "輪替後不必確認使用方是否仍能使用該 secret。",
-          "explanation": "這是錯誤的。應確認更新後能否使用。"
-        },
-        {
-          "id": "E",
-          "text": "使用應用程式的執行角色取得。",
-          "explanation": "這可避免共用個人金鑰。"
-        }
-      ],
-      "correct": [
-        "C",
-        "D"
-      ],
       "id": "fund-data-112",
       "objectiveId": "secrets",
-      "prompt": "請選出兩項在保護秘密資訊方面錯誤的設計。",
+      "prompt": "訂單應用程式的負責人在 AWS Secrets Manager 中輪換資料庫憑證後，確認應用程式的行為。請選出兩種不正確的確認方法。",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "secrets",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "Secrets Manager 資料保護",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
+        "label": "AWS Secrets Manager 輪換排程",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotate-secrets_schedule.html"
       },
-      "title": "秘密資訊的界線",
+      "title": "輪換機密資訊",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     }
@@ -707,19 +665,19 @@
         {
           "contentRef": "unit:summary",
           "kind": "summary",
-          "label": "概要",
-          "text": "將加密、金鑰、復原和敏感資訊視為各自獨立的職責來判斷。",
-          "words": 14
+          "label": "概覽",
+          "text": "區分傳輸中與靜態資料的加密、KMS 授權、復原測試，以及秘密資訊的取得與顯示。",
+          "words": 23
         },
         {
           "contentRef": "unit:objective",
           "kind": "objective",
           "label": "學習目標",
-          "text": "能夠判斷靜態與傳輸中的保護、金鑰權限、復原，以及機密資訊的處理方式。",
-          "words": 17
+          "text": "能根據具體條件判斷需要保護的情境、使用金鑰的主體、可復原性，以及秘密資訊的暴露途徑。",
+          "words": 22
         }
       ],
-      "estimatedSeconds": 12,
+      "estimatedSeconds": 15,
       "id": "fundamentals.data-protection:intro:orientation:1",
       "kind": "intro",
       "label": "單元概覽",
@@ -737,25 +695,25 @@
           "contentRef": "objective:encryption",
           "kind": "objective",
           "label": "學習目標",
-          "text": "區分傳輸中加密與靜態加密的目的。",
-          "words": 13
+          "text": "區分傳輸中與靜態資料的保護邊界，並確認 S3 加密設定。",
+          "words": 19
         },
         {
           "contentRef": "objective:kms",
           "kind": "objective",
           "label": "學習目標",
-          "text": "說明 KMS 金鑰及其使用權限。",
-          "words": 10
+          "text": "說明 KMS key policy、IAM policy、grant 與執行解密的主體之間的關係。",
+          "words": 15
         },
         {
           "contentRef": "objective:recovery",
           "kind": "objective",
           "label": "學習目標",
-          "text": "分別設計備份與實際還原驗證。",
-          "words": 10
+          "text": "區分備份成功與可復原性，並透過實際復原驗證 RTO/RPO。",
+          "words": 15
         }
       ],
-      "estimatedSeconds": 12,
+      "estimatedSeconds": 19,
       "id": "fundamentals.data-protection:intro:objectives:1",
       "kind": "intro",
       "label": "學習目標",
@@ -773,8 +731,8 @@
           "contentRef": "objective:secrets",
           "kind": "objective",
           "label": "學習目標",
-          "text": "將機密資訊與程式碼和日誌分離，並將其擷取權限降至最低。",
-          "words": 14
+          "text": "將秘密資訊與程式碼和日誌分離，並將取得目標 secret 的權限降至最低。",
+          "words": 17
         }
       ],
       "estimatedSeconds": 12,
@@ -794,29 +752,29 @@
         {
           "contentRef": "section:encryption:paragraph:0",
           "kind": "paragraph",
-          "label": "傳輸中與靜態儲存時：保護情境各不相同",
-          "text": "傳輸中加密旨在提高第三方讀取或竄改用戶端與服務之間傳輸資料的難度。HTTPS 使用 TLS 保護 HTTP。",
-          "words": 42
+          "label": "分別保護傳輸中與靜態資料",
+          "text": "從瀏覽器移動到 API，以及從 API 移動到儲存目的地的資料都屬於傳輸中資料。HTTPS 使用 TLS 保護 HTTP，但通信路徑的保護與儲存目的地的保護是不同的事項。",
+          "words": 37
         },
         {
           "contentRef": "section:encryption:paragraph:1",
           "kind": "paragraph",
-          "label": "靜態資料加密可保護儲存在磁碟、資料庫、物件等媒介中的資料。通訊使用 TLS，並不代表儲存目的地會自動加密。",
-          "text": "在設計中，應分別列出資料傳輸路徑與儲存位置。對於從瀏覽器到 API、從 API 到儲存目的地的路徑，請確認使用 TLS；對於儲存目的地，請確認已設定相應的加密設定。",
-          "words": 40
+          "label": "分別保護傳輸中與靜態資料",
+          "text": "新上傳至 Amazon S3 的物件會在靜態狀態下加密。標準方式是使用由 S3 管理的金鑰的 SSE-S3。如果要求使用指定的 KMS 金鑰，請確認物件的加密方式，以及執行角色是否具備使用該金鑰的權限。",
+          "words": 60
         },
         {
           "contentRef": "section:encryption:paragraph:2",
           "kind": "paragraph",
-          "label": "傳輸中與靜態儲存時：保護情境各不相同",
-          "text": "傳輸中加密旨在提高第三方讀取或竄改用戶端與服務之間傳輸資料的難度。HTTPS 使用 TLS 保護 HTTP。",
-          "words": 39
+          "label": "分別保護傳輸中與靜態資料",
+          "text": "在設計審查中，分別列出路徑、儲存位置與存取主體。不能只確認傳輸中或只確認靜態資料，就視為已完成。",
+          "words": 31
         }
       ],
-      "estimatedSeconds": 40,
+      "estimatedSeconds": 44,
       "id": "fundamentals.data-protection:section:encryption:concept:1",
       "kind": "reading",
-      "label": "靜態資料加密可保護儲存在磁碟、資料庫、物件等媒介中的資料。通訊使用 TLS，並不代表儲存目的地會自動加密。",
+      "label": "分別保護傳輸中與靜態資料",
       "objectiveIds": [
         "encryption"
       ],
@@ -834,28 +792,28 @@
           "contentRef": "section:encryption:scenario",
           "kind": "scenario",
           "label": "情境",
-          "text": "客戶透過網頁介面上傳文件。",
-          "words": 10
+          "text": "客戶從 Web 介面上傳發票，API 將其儲存到 S3。",
+          "words": 17
         },
         {
           "contentRef": "section:encryption:step:0",
           "kind": "steps",
           "label": "步驟 1",
-          "text": "瀏覽器與 API 之間的通訊使用 HTTPS。",
-          "words": 9
+          "text": "從瀏覽器到 API 使用 HTTPS。",
+          "words": 7
         },
         {
           "contentRef": "section:encryption:step:1",
           "kind": "steps",
           "label": "步驟 2",
-          "text": "也要確認 API 與儲存服務之間的通訊已加密。",
-          "words": 13
+          "text": "確認從 API 到 S3 的路徑，以及 S3 的預設加密。",
+          "words": 15
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 20,
       "id": "fundamentals.data-protection:section:encryption:example:1",
       "kind": "example",
-      "label": "範例",
+      "label": "具體範例",
       "objectiveIds": [
         "encryption"
       ],
@@ -873,21 +831,21 @@
           "contentRef": "section:encryption:step:2",
           "kind": "steps",
           "label": "步驟 3",
-          "text": "為已儲存的文件設定靜態加密。",
-          "words": 12
+          "text": "如果要求使用 SSE-KMS，請確認實際物件的加密方式、指定的 KMS 金鑰，以及應用程式使用該金鑰的許可。",
+          "words": 27
         },
         {
           "contentRef": "section:encryption:outcome",
           "kind": "outcome",
           "label": "結論",
-          "text": "如此一來，便能分別處理兩種不同情況：傳輸中的資料遭竊聽，以及儲存媒體遭未經授權存取。",
-          "words": 19
+          "text": "您可以分別驗證傳輸、儲存和金鑰使用這三個不同的防護邊界。",
+          "words": 13
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 21,
       "id": "fundamentals.data-protection:section:encryption:example:2",
       "kind": "example",
-      "label": "範例",
+      "label": "具體範例",
       "objectiveIds": [
         "encryption"
       ],
@@ -905,21 +863,21 @@
           "contentRef": "section:encryption:misconception:claim",
           "kind": "misconception",
           "label": "這是錯誤的",
-          "text": "使用 HTTPS 時，儲存的資料也會自動加密。",
-          "words": 14
+          "text": "透過 HTTPS 上傳，並不表示儲存在 S3 中的檔案也會使用組織指定的 KMS 金鑰。",
+          "words": 22
         },
         {
           "contentRef": "section:encryption:misconception:correction",
           "kind": "correction",
           "label": "更正",
-          "text": "HTTPS 保護傳輸中的資料。請在儲存服務中另外確認靜態資料加密。",
-          "words": 21
+          "text": "HTTPS 保護的是傳輸路徑。對於儲存在 S3 中的物件，請確認 S3 設定中的加密方式和 KMS 金鑰，或確認寫入物件時指定的加密方式和 KMS 金鑰。",
+          "words": 34
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 25,
       "id": "fundamentals.data-protection:section:encryption:misconception:1",
       "kind": "misconception",
-      "label": "錯誤說法與更正",
+      "label": "錯誤與更正",
       "objectiveIds": [
         "encryption"
       ],
@@ -936,37 +894,37 @@
         {
           "contentRef": "section:encryption:takeaway:0",
           "kind": "takeaway",
-          "label": "重點",
-          "text": "保護資料傳輸期間的通訊路徑。",
-          "words": 8
+          "label": "要點",
+          "text": "TLS 保護傳輸中的資料。",
+          "words": 6
         },
         {
           "contentRef": "section:encryption:takeaway:1",
           "kind": "takeaway",
-          "label": "保護靜態儲存的資料。",
-          "text": "分別檢查傳輸路徑和儲存位置。",
-          "words": 11
+          "label": "要點",
+          "text": "在儲存服務中確認靜態資料加密。",
+          "words": 10
         },
         {
           "contentRef": "section:encryption:takeaway:2",
           "kind": "takeaway",
-          "label": "重點",
-          "text": "AWS 資料保護指南。",
-          "words": 10
+          "label": "要點",
+          "text": "分別確認加密方式與金鑰使用權限。",
+          "words": 12
         }
       ],
       "estimatedSeconds": 16,
       "id": "fundamentals.data-protection:section:encryption:takeaway:1",
       "kind": "takeaway",
-      "label": "重點",
+      "label": "要點",
       "objectiveIds": [
         "encryption"
       ],
       "sectionId": "encryption",
       "sources": [
         {
-          "label": "AWS 資料保護",
-          "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
+          "label": "Amazon S3 加密",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingEncryption.html"
         }
       ],
       "style": "normal",
@@ -998,29 +956,29 @@
         {
           "contentRef": "section:kms:paragraph:0",
           "kind": "paragraph",
-          "label": "KMS：金鑰本身及使用金鑰的權限",
-          "text": "AWS Key Management Service (AWS KMS) 會建立及管理加密金鑰，並支援 AWS 服務與應用程式執行加密操作。它不只啟用加密，還會決定要使用哪個金鑰。",
-          "words": 43
+          "label": "分別確認 KMS 金鑰與使用權限",
+          "text": "AWS KMS 管理加密金鑰。僅指定金鑰並不表示任意主體都能執行加密操作。",
+          "words": 31
         },
         {
           "contentRef": "section:kms:paragraph:1",
           "kind": "paragraph",
-          "label": "在 KMS 中，金鑰存取控制至關重要。某個主體即使能存取資料，若未獲授權執行所需的 KMS 操作，仍可能無法解密資料。請檢查金鑰政策與 IAM 權限。",
-          "text": "Secrets Manager 中的秘密會在靜態儲存時透過 KMS 加密。因此，疑難排解時，應分別檢查讀取秘密的權限，以及使用 KMS 金鑰的權限。",
-          "words": 51
+          "label": "分別確認 KMS 金鑰與使用權限",
+          "text": "KMS 是否可使用取決於 key policy、IAM policy 與 grant 的組合。即使 IAM 已允許，如果 key policy 不允許該組態，權限也不會生效。",
+          "words": 40
         },
         {
           "contentRef": "section:kms:paragraph:2",
           "kind": "paragraph",
-          "label": "KMS：金鑰本身及使用金鑰的權限。",
-          "text": "KMS：金鑰本身及使用金鑰的權限。",
-          "words": 36
+          "label": "分別確認 KMS 金鑰與使用權限",
+          "text": "排解故障時，應將讀取目標資料的權限與使用加密金鑰解密的權限分開。只允許必要的主體執行必要的操作。",
+          "words": 29
         }
       ],
-      "estimatedSeconds": 49,
+      "estimatedSeconds": 35,
       "id": "fundamentals.data-protection:section:kms:concept:1",
       "kind": "reading",
-      "label": "KMS：金鑰本身及使用金鑰的權限。",
+      "label": "分別確認 KMS 金鑰與使用權限",
       "objectiveIds": [
         "kms"
       ],
@@ -1037,29 +995,29 @@
         {
           "contentRef": "section:kms:scenario",
           "kind": "scenario",
-          "label": "情境",
-          "text": "應用程式嘗試從 Secrets Manager 讀取資料庫密碼時遭到拒絕。",
-          "words": 16
+          "label": "情況",
+          "text": "應用程式無法讀取使用 SSE-KMS 加密的 S3 物件。",
+          "words": 14
         },
         {
           "contentRef": "section:kms:step:0",
           "kind": "steps",
           "label": "步驟 1",
-          "text": "找出要取得的 secret 和執行角色。",
-          "words": 9
+          "text": "識別目標物件與執行角色。",
+          "words": 8
         },
         {
           "contentRef": "section:kms:step:1",
           "kind": "steps",
           "label": "步驟 2",
-          "text": "檢查 Secrets Manager 的讀取權限。",
-          "words": 8
+          "text": "檢查 S3 讀取權限。",
+          "words": 7
         }
       ],
-      "estimatedSeconds": 22,
+      "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:kms:example:1",
       "kind": "example",
-      "label": "範例",
+      "label": "具體範例",
       "objectiveIds": [
         "kms"
       ],
@@ -1077,21 +1035,21 @@
           "contentRef": "section:kms:step:2",
           "kind": "steps",
           "label": "步驟 3",
-          "text": "也要確認是否具備使用 KMS 金鑰進行加密所需的權限。",
-          "words": 14
+          "text": "在 KMS key policy 與 IAM policy 中確認解密權限。",
+          "words": 12
         },
         {
           "contentRef": "section:kms:outcome",
           "kind": "outcome",
           "label": "結論",
-          "text": "由於存取密鑰本身的權限與使用金鑰的權限彼此獨立，因此可以正確判斷拒絕發生在哪裡。",
-          "words": 21
+          "text": "可以將 S3 端的拒絕與 KMS 端的拒絕分開排查。",
+          "words": 14
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:kms:example:2",
       "kind": "example",
-      "label": "範例",
+      "label": "具體範例",
       "objectiveIds": [
         "kms"
       ],
@@ -1109,21 +1067,21 @@
           "contentRef": "section:kms:misconception:claim",
           "kind": "misconception",
           "label": "這是錯誤的",
-          "text": "只要指定 KMS 金鑰，任何人都可以解密。",
-          "words": 11
+          "text": "只要在 IAM policy 中允許 kms:Decrypt，就能使用任何 KMS 金鑰解密。",
+          "words": 16
         },
         {
           "contentRef": "section:kms:misconception:correction",
           "kind": "correction",
           "label": "更正",
-          "text": "使用該金鑰的主體必須獲得授權。金鑰本身的存在並不代表具有解密權限。",
-          "words": 21
+          "text": "也會評估目標金鑰的 key policy 與 grant。請同時確認金鑰與主體的權限。",
+          "words": 23
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 22,
       "id": "fundamentals.data-protection:section:kms:misconception:1",
       "kind": "misconception",
-      "label": "錯誤說法與更正",
+      "label": "錯誤與更正",
       "objectiveIds": [
         "kms"
       ],
@@ -1140,37 +1098,37 @@
         {
           "contentRef": "section:kms:takeaway:0",
           "kind": "takeaway",
-          "label": "重點",
-          "text": "KMS 管理加密金鑰。",
-          "words": 9
+          "label": "要點",
+          "text": "金鑰的存在不代表已獲准使用。",
+          "words": 8
         },
         {
           "contentRef": "section:kms:takeaway:1",
           "kind": "takeaway",
-          "label": "分別檢查資料權限和金鑰使用權限。",
-          "text": "檢查金鑰政策和 IAM 權限。",
-          "words": 11
+          "label": "要點",
+          "text": "針對目標金鑰和主體檢查 key policy、IAM policy 和 grant。",
+          "words": 13
         },
         {
           "contentRef": "section:kms:takeaway:2",
           "kind": "takeaway",
-          "label": "重點",
-          "text": "AWS KMS 資料保護",
-          "words": 9
+          "label": "要點",
+          "text": "僅允許需要執行解密操作的主體進行解密。",
+          "words": 10
         }
       ],
-      "estimatedSeconds": 16,
+      "estimatedSeconds": 17,
       "id": "fundamentals.data-protection:section:kms:takeaway:1",
       "kind": "takeaway",
-      "label": "重點",
+      "label": "要點",
       "objectiveIds": [
         "kms"
       ],
       "sectionId": "kms",
       "sources": [
         {
-          "label": "重點",
-          "url": "https://docs.aws.amazon.com/kms/latest/developerguide/data-protection.html"
+          "label": "AWS KMS key policies",
+          "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
         }
       ],
       "style": "normal",
@@ -1182,7 +1140,7 @@
     {
       "assessmentId": "fundamentals.data-protection.checkpoint.kms.v1",
       "blocks": [],
-      "estimatedSeconds": 63,
+      "estimatedSeconds": 55,
       "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.kms.v1",
       "kind": "checkpoint",
       "label": "檢查點",
@@ -1202,29 +1160,29 @@
         {
           "contentRef": "section:recovery:paragraph:0",
           "kind": "paragraph",
-          "label": "備份與復原：成功建立備份，不代表能夠復原",
-          "text": "備份是指保留某個時間點的資料或資源，以供復原使用。然而，僅憑備份任務成功，並不能證明可以將其復原至實際需要的狀態。",
-          "words": 37
+          "label": "分別驗證備份成功與可還原性",
+          "text": "備份任務成功表示已建立復原資料，但不代表一定能還原至所需狀態，也不代表應用程式可以使用。",
+          "words": 31
         },
         {
           "contentRef": "section:recovery:paragraph:1",
           "kind": "paragraph",
-          "label": "復原時，必須決定要復原哪個復原點、復原到哪裡、採取哪些步驟，以及如何確認應用程式已可使用。AWS Backup 復原測試是一種定期評估可復原性的機制。",
-          "text": "在設計中，除了保留期間，還要決定復原點目標、復原時間目標，以及復原後的驗證流程。應制定將資料復原至隔離的目標位置並檢查資料與連線的步驟，而不是透過覆寫正式環境來測試。",
-          "words": 41
+          "label": "分別驗證備份成功與可還原性",
+          "text": "決定復原點、還原目的地、RTO、RPO、資料完整性和應用程式連線的驗證方法。如同 AWS Backup restore testing，在隔離環境中實際執行還原並進行評估。",
+          "words": 35
         },
         {
           "contentRef": "section:recovery:paragraph:2",
           "kind": "paragraph",
-          "label": "備份與復原：成功建立備份，不代表能夠復原。",
-          "text": "備份是指保留某個時間點的資料或資源，以供復原使用。然而，僅憑備份任務成功，並不能證明可以將其復原至實際需要的狀態。",
-          "words": 43
+          "label": "分別驗證備份成功與可還原性",
+          "text": "還原測試不會覆寫生產環境。記錄所需時間、遺漏內容和重新連線程序，並更新計畫與實測結果之間的差異。",
+          "words": 29
         }
       ],
-      "estimatedSeconds": 43,
+      "estimatedSeconds": 35,
       "id": "fundamentals.data-protection:section:recovery:concept:1",
       "kind": "reading",
-      "label": "復原時，必須決定要復原哪個復原點、復原到哪裡、採取哪些步驟，以及如何確認應用程式已可使用。AWS Backup 復原測試是一種定期評估可復原性的機制。",
+      "label": "分別驗證備份成功與可還原性",
       "objectiveIds": [
         "recovery"
       ],
@@ -1241,29 +1199,29 @@
         {
           "contentRef": "section:recovery:scenario",
           "kind": "scenario",
-          "label": "情境",
-          "text": "你正在對訂單資料進行夜間備份。",
-          "words": 10
+          "label": "情況",
+          "text": "訂單資料庫的夜間備份成功，但復原程序尚未經過測試。",
+          "words": 16
         },
         {
           "contentRef": "section:recovery:step:0",
           "kind": "steps",
           "label": "步驟 1",
-          "text": "選擇用於還原的復原點，並決定與其隔離的還原目的地。",
-          "words": 12
+          "text": "決定復原點和隔離的復原目標。",
+          "words": 9
         },
         {
           "contentRef": "section:recovery:step:1",
           "kind": "steps",
           "label": "步驟 2",
-          "text": "定期執行還原工作。",
-          "words": 8
+          "text": "執行復原並確認資料庫完整性及應用程式連線。",
+          "words": 11
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:recovery:example:1",
       "kind": "example",
-      "label": "範例",
+      "label": "具體範例",
       "objectiveIds": [
         "recovery"
       ],
@@ -1281,21 +1239,21 @@
           "contentRef": "section:recovery:step:2",
           "kind": "steps",
           "label": "步驟 3",
-          "text": "檢查訂單數量和應用程式連線，並記錄結果。",
-          "words": 12
+          "text": "將所需時間和結果與 RTO/RPO 比較後記錄。",
+          "words": 13
         },
         {
           "contentRef": "section:recovery:outcome",
           "kind": "outcome",
           "label": "結論",
-          "text": "您可以確認備份是否存在，以及能否在所需時間內還原至可用狀態。",
-          "words": 22
+          "text": "可以確認是否能在所需時間內恢復到可用狀態。",
+          "words": 15
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:recovery:example:2",
       "kind": "example",
-      "label": "範例",
+      "label": "具體範例",
       "objectiveIds": [
         "recovery"
       ],
@@ -1313,21 +1271,21 @@
           "contentRef": "section:recovery:misconception:claim",
           "kind": "misconception",
           "label": "這是錯誤的",
-          "text": "僅收到備份建立成功的通知，就認為復原計畫已完成。",
-          "words": 13
+          "text": "只要有備份成功通知，就表示復原計畫已完成。",
+          "words": 11
         },
         {
           "contentRef": "section:recovery:misconception:correction",
           "kind": "correction",
           "label": "更正",
-          "text": "需要實際驗證復原步驟，並確認復原後的資料可用。",
-          "words": 17
+          "text": "實際確認復原程序、復原後的完整性、應用程式連線及所需時間。",
+          "words": 16
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:recovery:misconception:1",
       "kind": "misconception",
-      "label": "錯誤說法與更正",
+      "label": "錯誤與更正",
       "objectiveIds": [
         "recovery"
       ],
@@ -1345,22 +1303,22 @@
           "contentRef": "section:recovery:takeaway:0",
           "kind": "takeaway",
           "label": "要點",
-          "text": "備份與還原測試是兩項不同的工作。",
-          "words": 9
+          "text": "備份與還原驗證是不同的工作。",
+          "words": 8
         },
         {
           "contentRef": "section:recovery:takeaway:1",
           "kind": "takeaway",
-          "label": "決定還原目標位置和檢查標準。",
-          "text": "透過定期測試確認是否能夠復原。",
+          "label": "要點",
+          "text": "先決定還原目的地和驗證標準。",
           "words": 8
         },
         {
           "contentRef": "section:recovery:takeaway:2",
           "kind": "takeaway",
           "label": "要點",
-          "text": "AWS Backup 還原測試",
-          "words": 9
+          "text": "在隔離環境中執行還原測試，並與 RTO/RPO 進行比較。",
+          "words": 12
         }
       ],
       "estimatedSeconds": 16,
@@ -1373,7 +1331,7 @@
       "sectionId": "recovery",
       "sources": [
         {
-          "label": "AWS Backup 還原測試",
+          "label": "AWS Backup restore testing",
           "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
         }
       ],
@@ -1406,29 +1364,29 @@
         {
           "contentRef": "section:secrets:paragraph:0",
           "kind": "paragraph",
-          "label": "機密資訊：區分值、顯示方式和取得者",
-          "text": "密碼、API 金鑰和權杖都屬於機密資訊。若以明文形式將它們放在原始碼、設定檔、聊天內容或日誌中，能查看它們的人和副本存放的位置都會增加，輪替也會變得更加困難。",
-          "words": 34
+          "label": "分離秘密資訊的儲存、取得與顯示",
+          "text": "密碼、API 金鑰和權杖都是秘密資訊。將它們以明文放在原始碼、設定檔、聊天記錄或日誌中，會增加可查看者和複製目的地的數量。",
+          "words": 28
         },
         {
           "contentRef": "section:secrets:paragraph:1",
           "kind": "paragraph",
-          "label": "AWS Secrets Manager 用於儲存密碼，並在靜態儲存時使用 KMS 加密。讓應用程式透過其執行角色僅取得所需的密碼。",
-          "text": "安全地處理機密資訊，僅提供儲存位置還不夠。不要將密碼值寫入日誌，限制涉及的密碼範圍，區分使用它們的主體，並確認更新後使用方能夠及時跟進。",
-          "words": 32
+          "label": "分離秘密資訊的儲存、取得與顯示",
+          "text": "將其儲存在 AWS Secrets Manager 中，並讓應用程式透過執行角色只取得所需的 secret。即使準備了儲存位置，若取得權限過於寬泛，也無法提供保護。",
+          "words": 40
         },
         {
           "contentRef": "section:secrets:paragraph:2",
           "kind": "paragraph",
-          "label": "機密資訊：區分值、顯示方式和取得者",
-          "text": "機密資訊：區分值、顯示方式和取得者",
-          "words": 46
+          "label": "分離秘密資訊的儲存、取得與顯示",
+          "text": "不要在日誌或錯誤回應中輸出值，限制目標 secret 的範圍，並確認使用端能在更新後跟上變更。",
+          "words": 26
         }
       ],
-      "estimatedSeconds": 43,
+      "estimatedSeconds": 33,
       "id": "fundamentals.data-protection:section:secrets:concept:1",
       "kind": "reading",
-      "label": "安全地處理機密資訊，僅提供儲存位置還不夠。不要將密碼值寫入日誌，限制涉及的密碼範圍，區分使用它們的主體，並確認更新後使用方能夠及時跟進。",
+      "label": "分離秘密資訊的儲存、取得與顯示",
       "objectiveIds": [
         "secrets"
       ],
@@ -1445,26 +1403,26 @@
         {
           "contentRef": "section:secrets:scenario",
           "kind": "scenario",
-          "label": "情境",
-          "text": "應用程式使用外部 API 的權杖。",
-          "words": 9
+          "label": "情況",
+          "text": "應用程式使用外部 API 權杖，並在發生故障時將要求資訊記錄到日誌中。",
+          "words": 17
         },
         {
           "contentRef": "section:secrets:step:0",
           "kind": "steps",
           "label": "步驟 1",
-          "text": "將權杖從原始碼中移除，並存放至 Secrets Manager。",
-          "words": 13
+          "text": "將權杖註冊到 Secrets Manager，並從程式碼中移除。",
+          "words": 12
         },
         {
           "contentRef": "section:secrets:step:1",
           "kind": "steps",
           "label": "步驟 2",
-          "text": "僅允許應用程式執行角色取得該 secret。",
-          "words": 12
+          "text": "只允許執行角色取得目標 secret。",
+          "words": 11
         }
       ],
-      "estimatedSeconds": 20,
+      "estimatedSeconds": 22,
       "id": "fundamentals.data-protection:section:secrets:example:1",
       "kind": "example",
       "label": "範例",
@@ -1485,15 +1443,15 @@
           "contentRef": "section:secrets:step:2",
           "kind": "steps",
           "label": "步驟 3",
-          "text": "確認記錄或錯誤訊息中不會顯示權杖值。",
-          "words": 15
+          "text": "確認日誌和錯誤顯示中不會出現值。",
+          "words": 13
         },
         {
           "contentRef": "section:secrets:outcome",
           "kind": "outcome",
           "label": "結論",
-          "text": "如此可避免權杖暴露在儲存庫或記錄中，並限制可取得權杖的主體。",
-          "words": 18
+          "text": "分離儲存位置、取得主體與顯示路徑，有助於限制外洩範圍。",
+          "words": 17
         }
       ],
       "estimatedSeconds": 18,
@@ -1516,22 +1474,22 @@
         {
           "contentRef": "section:secrets:misconception:claim",
           "kind": "misconception",
-          "label": "這是錯誤的",
-          "text": "只要將機密資訊儲存在環境變數中，將其寫入日誌就是安全的。",
+          "label": "這是錯誤",
+          "text": "只要是環境變數，即使將機密資訊輸出至日誌也很安全。",
           "words": 14
         },
         {
           "contentRef": "section:secrets:misconception:correction",
           "kind": "correction",
           "label": "更正",
-          "text": "無論以何種方式儲存，在日誌中顯示都會造成洩漏。不要輸出這些值，並限制擷取範圍。",
-          "words": 23
+          "text": "環境變數也是執行階段的機密資訊。不要將其值輸出至日誌或錯誤訊息，並限制可取得這些值的主體。",
+          "words": 24
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:secrets:misconception:1",
       "kind": "misconception",
-      "label": "錯誤說法與更正",
+      "label": "這是錯誤與更正",
       "objectiveIds": [
         "secrets"
       ],
@@ -1549,22 +1507,22 @@
           "contentRef": "section:secrets:takeaway:0",
           "kind": "takeaway",
           "label": "重點",
-          "text": "將秘密值與程式碼和日誌分開。",
-          "words": 10
+          "text": "將機密資訊與程式碼和日誌分離。",
+          "words": 9
         },
         {
           "contentRef": "section:secrets:takeaway:1",
           "kind": "takeaway",
-          "label": "限制可擷取各個 secret 的主體。",
-          "text": "也要檢查輪換與顯示途徑。",
-          "words": 10
+          "label": "重點",
+          "text": "將取得目標 secret 的權限降至最低。",
+          "words": 9
         },
         {
           "contentRef": "section:secrets:takeaway:2",
           "kind": "takeaway",
           "label": "重點",
-          "text": "AWS Secrets Manager 資料保護",
-          "words": 8
+          "text": "確認輪換後該值仍不會被顯示或收集。",
+          "words": 14
         }
       ],
       "estimatedSeconds": 16,
@@ -1577,8 +1535,8 @@
       "sectionId": "secrets",
       "sources": [
         {
-          "label": "AWS Secrets Manager 資料保護",
-          "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
+          "label": "AWS Secrets Manager 使用者指南",
+          "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
         }
       ],
       "style": "normal",
@@ -1590,10 +1548,10 @@
     {
       "assessmentId": "fundamentals.data-protection.checkpoint.secrets.v1",
       "blocks": [],
-      "estimatedSeconds": 63,
+      "estimatedSeconds": 55,
       "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.secrets.v1",
       "kind": "checkpoint",
-      "label": "階段測驗",
+      "label": "檢查點",
       "objectiveIds": [
         "secrets"
       ],
@@ -1611,7 +1569,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-101",
       "kind": "final",
-      "label": "最終複習",
+      "label": "最終確認",
       "objectiveIds": [
         "encryption"
       ],
@@ -1629,7 +1587,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-102",
       "kind": "final",
-      "label": "最終檢查",
+      "label": "最終確認",
       "objectiveIds": [
         "encryption"
       ],
@@ -1644,7 +1602,7 @@
     {
       "assessmentId": "fund-data-103",
       "blocks": [],
-      "estimatedSeconds": 57,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-103",
       "kind": "final",
       "label": "最終確認",
@@ -1662,7 +1620,7 @@
     {
       "assessmentId": "fund-data-104",
       "blocks": [],
-      "estimatedSeconds": 57,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-104",
       "kind": "final",
       "label": "最終確認",
@@ -1683,7 +1641,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-105",
       "kind": "final",
-      "label": "最終複習",
+      "label": "最終確認",
       "objectiveIds": [
         "kms"
       ],
@@ -1698,10 +1656,10 @@
     {
       "assessmentId": "fund-data-106",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-106",
       "kind": "final",
-      "label": "最終複習",
+      "label": "最終確認",
       "objectiveIds": [
         "kms"
       ],
@@ -1716,10 +1674,10 @@
     {
       "assessmentId": "fund-data-107",
       "blocks": [],
-      "estimatedSeconds": 63,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-107",
       "kind": "final",
-      "label": "最終複習",
+      "label": "最終確認",
       "objectiveIds": [
         "recovery"
       ],
@@ -1734,10 +1692,10 @@
     {
       "assessmentId": "fund-data-108",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 60,
       "id": "fundamentals.data-protection:final:fund-data-108",
       "kind": "final",
-      "label": "最終複習",
+      "label": "最終檢查",
       "objectiveIds": [
         "recovery"
       ],
@@ -1752,10 +1710,10 @@
     {
       "assessmentId": "fund-data-109",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-109",
       "kind": "final",
-      "label": "最終複習",
+      "label": "最終檢查",
       "objectiveIds": [
         "recovery"
       ],
@@ -1770,7 +1728,7 @@
     {
       "assessmentId": "fund-data-110",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-110",
       "kind": "final",
       "label": "最終檢查",
@@ -1788,10 +1746,10 @@
     {
       "assessmentId": "fund-data-111",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-111",
       "kind": "final",
-      "label": "最終複習",
+      "label": "最終檢查",
       "objectiveIds": [
         "secrets"
       ],
@@ -1806,10 +1764,10 @@
     {
       "assessmentId": "fund-data-112",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 68,
       "id": "fundamentals.data-protection:final:fund-data-112",
       "kind": "final",
-      "label": "最終複習",
+      "label": "最終檢查",
       "objectiveIds": [
         "secrets"
       ],
@@ -1823,10 +1781,10 @@
     }
   ],
   "timing": {
-    "checkpointSeconds": 236,
-    "finalSeconds": 774,
-    "readingSeconds": 497,
-    "totalSeconds": 1507
+    "checkpointSeconds": 220,
+    "finalSeconds": 738,
+    "readingSeconds": 494,
+    "totalSeconds": 1452
   },
   "totalSteps": 39,
   "unit": {

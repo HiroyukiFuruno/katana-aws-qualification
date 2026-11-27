@@ -4,18 +4,21 @@ import type { FundamentalsContent } from '../src/fundamentals/types';
 
 const content: FundamentalsContent = await Bun.file('public/fundamentals/content.json').json();
 const withReference = () => {
-  const localized = structuredClone(content);
-  const question = localized.units
-    .flatMap((unit) => unit.questions)
-    .find((item) => item.references?.length);
-  if (!question?.references?.length) throw new Error('Missing real reference fixture.');
-  return { localized, question, references: question.references };
+  const base = structuredClone(content);
+  const [unit] = base.units;
+  const [question] = unit.questions;
+  const source = unit.sections?.find(({ source }) => source.url !== question.source.url)?.source;
+  if (!source) throw new Error('Missing independent lesson reference.');
+  question.references = [{ ...source }];
+  const localized = structuredClone(base);
+  const translated = localized.units[0].questions[0];
+  return { base, localized, question: translated, references: translated.references ?? [] };
 };
 
 test('fundamentals references translate labels while preserving canonical URLs', () => {
-  const { localized, question, references } = withReference();
+  const { base, localized, question, references } = withReference();
   references[0].label = 'Documentation de référence';
-  const result = overlayFundamentalsContent(content, localized);
+  const result = overlayFundamentalsContent(base, localized);
   const translated = result.units
     .flatMap((unit) => unit.questions)
     .find((item) => item.id === question.id);
@@ -23,9 +26,9 @@ test('fundamentals references translate labels while preserving canonical URLs',
 });
 
 test('fundamentals reference localization rejects changed URLs and missing references', () => {
-  const { localized, question, references } = withReference();
+  const { base, localized, question, references } = withReference();
   references[0].url = 'https://example.com/changed';
-  expect(() => overlayFundamentalsContent(content, localized)).toThrow('identity changed');
+  expect(() => overlayFundamentalsContent(base, localized)).toThrow('identity changed');
   question.references = undefined;
-  expect(() => overlayFundamentalsContent(content, localized)).toThrow('identity changed');
+  expect(() => overlayFundamentalsContent(base, localized)).toThrow('identity changed');
 });

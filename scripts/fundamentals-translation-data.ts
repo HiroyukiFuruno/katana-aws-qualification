@@ -90,6 +90,39 @@ export function applyNarrativeUnit(root: NarrativeJson, unit: NarrativeUnit, tex
   }
 }
 
+export function assertLessonNarrativeAlignment(unit: NarrativeUnit, texts: string[], locale: string) {
+  const { context, fields } = unit;
+  if (!context || typeof context !== 'object' || Array.isArray(context) || !('blocks' in context)) {
+    return;
+  }
+  const detail = `${locale}/${context.id ?? unit.hash}`;
+  const labels = new Map<string, string>();
+  const paragraphs = new Map<string, string>();
+  for (const [index, field] of fields.entries()) {
+    const key = field.path.at(-1);
+    if (key === 'label') {
+      const previous = labels.get(field.text);
+      if (previous !== undefined && previous !== texts[index]) {
+        throw new Error(`Same lesson label has different translations: ${detail}`);
+      }
+      labels.set(field.text, texts[index]);
+    }
+    if (key === 'text' && field.path[0] === 'blocks') {
+      const previous = paragraphs.get(texts[index]);
+      if (previous !== undefined && previous !== field.text) {
+        throw new Error(`Different lesson paragraphs have the same translation: ${detail}`);
+      }
+      paragraphs.set(texts[index], field.text);
+    }
+  }
+  for (const [source, translation] of labels) {
+    const paragraph = paragraphs.get(translation);
+    if (paragraph !== undefined && paragraph !== source) {
+      throw new Error(`Lesson heading appears in a paragraph: ${detail}`);
+    }
+  }
+}
+
 export async function fundamentalsTranslationJobs(
   directory = 'public/fundamentals',
 ): Promise<{ path: string; data: NarrativeJson }[]> {

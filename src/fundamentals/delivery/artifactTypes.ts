@@ -29,6 +29,7 @@ export type DeliveryQuestion = Pick<
   | 'choices'
   | 'correct'
   | 'id'
+  | 'learning'
   | 'objectiveId'
   | 'prompt'
   | 'requiredChoices'

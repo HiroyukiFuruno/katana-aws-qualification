@@ -1,7 +1,10 @@
 import { expect, test } from 'bun:test';
 import { officialGuideLink } from '../src/certificationGuides';
+import type { FundamentalsContent } from '../src/fundamentals/types';
+import japanese from '../src/source-url-aliases.ja.json' with { type: 'json' };
 import aliases from '../src/source-url-aliases.json' with { type: 'json' };
-import { sourceDocumentationUrl } from '../src/sourceDocumentationUrl';
+import { localizedDocumentationSource, sourceDocumentationUrl } from '../src/sourceDocumentationUrl';
+import type { CheckpointDocument } from './fundamentals-delivery/source';
 
 test('source URL aliases are exact HTTPS destinations without chains or cycles', () => {
   expect(Object.keys(aliases)).toHaveLength(8);
@@ -18,6 +21,43 @@ test('only own known aliases are applied', () => {
   expect(sourceDocumentationUrl(original)).toBe(aliases[original as keyof typeof aliases]);
   expect(sourceDocumentationUrl('https://example.com/unknown')).toBe('https://example.com/unknown');
   expect(sourceDocumentationUrl('toString')).toBe('toString');
+});
+
+test('verified Japanese AWS references use the actual Japanese destination and a clear Japanese label', () => {
+  for (const [url, expected] of Object.entries(japanese)) {
+    const shown = localizedDocumentationSource({ url, label: 'Original source' }, 'ja');
+    expect(shown).toEqual({ ...expected, locale: 'ja' });
+    expect(new URL(shown.url).pathname).toMatch(/^\/(?:ja_jp|jp)\//);
+    expect(shown.label).toMatch(/[ぁ-んァ-ン一-龯]/);
+    expect(localizedDocumentationSource({ url, label: 'Original source' }, 'de')).toEqual({
+      url: sourceDocumentationUrl(url),
+      label: 'Original source',
+      locale: undefined,
+    });
+  }
+  expect(localizedDocumentationSource({ url: 'toString', label: 'Original source' }, 'ja')).toEqual({
+    url: 'toString',
+    label: 'Original source',
+    locale: undefined,
+  });
+});
+
+test('AWS references in the current fundamentals material have verified Japanese sources', async () => {
+  const content: FundamentalsContent = await Bun.file('public/fundamentals/content.json').json();
+  const checkpointData: CheckpointDocument = await Bun.file(
+    'public/fundamentals/checkpoints.json',
+  ).json();
+  const sources = [
+    ...content.units.flatMap((unit) => [
+      ...unit.sections.map(({ source }) => source),
+      ...unit.questions.map(({ source }) => source),
+    ]),
+    ...checkpointData.units.flatMap((unit) => unit.checkpoints.map(({ source }) => source)),
+  ];
+  const official = new Set(['aws.amazon.com', 'docs.aws.amazon.com']);
+  for (const source of sources.filter(({ url }) => official.has(new URL(url).hostname))) {
+    expect(localizedDocumentationSource(source, 'ja').locale, source.url).toBe('ja');
+  }
 });
 
 test('guide link corrects the English MLA guide and retains live localized paths and languages', () => {

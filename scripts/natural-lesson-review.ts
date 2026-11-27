@@ -1,12 +1,9 @@
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import {
-  fundamentalsTranslationJobs,
-  narrativeUnits,
-  type NarrativeUnit,
-} from './fundamentals-translation-data';
-import { validateNaturalReview, type NaturalQuestionReview } from './natural-question-review';
+import { fundamentalsNarrativeJobs } from './fundamentals-narrative-jobs';
+import type { NarrativeUnit } from './fundamentals-translation-data';
+import { type NaturalQuestionReview, validateNaturalReview } from './natural-question-review';
 import { runNaturalTranslationAgent } from './natural-translation-agent';
 import { schemaFor } from './natural-translation-schema';
 
@@ -32,11 +29,11 @@ export async function readLessonReview(unit: NarrativeUnit) {
 
 async function generateLessonReviews() {
   await mkdir(join(root, 'cache'), { recursive: true });
+  const jobs = await fundamentalsNarrativeJobs();
   const unique = new Map(
-    (await fundamentalsTranslationJobs())
-      .flatMap((job) => narrativeUnits(job.data))
-      .filter(lessonQuestion)
-      .map((unit) => [unit.hash, unit]),
+    jobs.flatMap(({ units }) =>
+      units.filter(({ source }) => lessonQuestion(source)).map(({ source }) => [source.hash, source]),
+    ),
   );
   const pending: NarrativeUnit[] = [];
   for (const unit of unique.values()) {

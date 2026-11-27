@@ -3,24 +3,28 @@ import { readFile } from 'node:fs/promises';
 import { assertNarrativeCachePayload } from './content-translation-cache-binding';
 import { assertContentPayloadHash, directoryExists } from './content-translation-provenance';
 import { validateTranslation } from './content-translation-validation';
+import { fundamentalsAuthoringPath, fundamentalsNarrativeJobs } from './fundamentals-narrative-jobs';
 import {
   applyNarrativeUnit,
-  fundamentalsTranslationJobs,
+  assertLessonNarrativeAlignment,
   type NarrativeJson,
   narrativeHash,
-  narrativeUnits,
 } from './fundamentals-translation-data';
 import { lessonQuestion } from './natural-lesson-review';
 import { narrativeLocales, narrativeRoot } from './natural-narrative-translation';
 import { validateNaturalReview } from './natural-question-review';
+import { assertLessonTranslationSource, lessonNarrativeTexts } from './project-lesson-translation';
 
 export async function checkFundamentalsContentTranslations() {
   const narrativeCacheExists = await directoryExists(`${narrativeRoot}/cache`);
+  const jobs = await fundamentalsNarrativeJobs();
   let count = 0;
-  for (const { path, data } of await fundamentalsTranslationJobs()) {
-    const units = narrativeUnits(data);
-    for (const locale of narrativeLocales) {
-      const root = `public/translations/${locale}`;
+  for (const locale of narrativeLocales) {
+    const root = `public/translations/${locale}`;
+    const authoring: NarrativeJson = JSON.parse(
+      await readFile(`${root}/${fundamentalsAuthoringPath}`, 'utf8'),
+    );
+    for (const { path, data, units } of jobs) {
       const translation: NarrativeJson = JSON.parse(await readFile(`${root}/${path}`, 'utf8'));
       const payloadManifest: Record<string, string> = JSON.parse(
         await readFile(`${root}/payload-manifest.json`, 'utf8'),
@@ -40,7 +44,8 @@ export async function checkFundamentalsContentTranslations() {
         `${locale}/${path}: incomplete lesson translation`,
       );
       const expected = structuredClone(data);
-      for (const [index, unit] of units.entries()) {
+      for (const [index, plan] of units.entries()) {
+        const { unit } = plan;
         const record = provenance.units[index];
         assert.equal(record.hash, unit.hash, `${locale}/${path}: stale lesson translation`);
         assert(
@@ -60,24 +65,26 @@ export async function checkFundamentalsContentTranslations() {
             `${locale}/${path}: missing lesson review provenance`,
           );
         }
-        const texts = unit.fields.map((field) => {
-          let value = translation;
-          for (const segment of [...unit.path, ...field.path]) {
-            assert(value && typeof value === 'object', `${locale}/${path}: missing lesson field`);
-            value = (value as Record<string, NarrativeJson>)[segment];
-          }
-          validateTranslation(field.text, value, locale, `${locale}/${path}/${field.path.join('.')}`);
-          assert(typeof value === 'string', `${locale}/${path}: invalid lesson text`);
-          return value;
-        });
+        const context = `${locale}/${path}/${index}`;
+        const texts = lessonNarrativeTexts(translation, unit, context);
+        for (const [fieldIndex, field] of unit.fields.entries()) {
+          validateTranslation(
+            field.text,
+            texts[fieldIndex],
+            locale,
+            `${context}/${field.path.join('.')}`,
+            field.path.at(-1),
+          );
+        }
+        assertLessonTranslationSource(plan, authoring, texts, context);
+        assertLessonNarrativeAlignment(unit, texts, locale);
         assertContentPayloadHash(texts, record?.payloadHash, `${locale}/${path}/${index}`);
         await assertNarrativeCachePayload(
           narrativeCacheExists,
-          unit,
+          plan,
           locale,
-          texts,
-          record.review,
-          `${locale}/${path}/${index}`,
+          { texts, model: record.model, thread: record.thread, review: record.review },
+          context,
         );
         applyNarrativeUnit(expected, unit, texts);
       }

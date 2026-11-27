@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+import active from '../public/fundamentals/delivery/index.json';
 import compatibility from '../src/fundamentals/delivery/compatibleAnswers.json';
 import legacy from '../src/fundamentals/delivery/legacyRecordAssets.json';
 import { readLessonRecordAsset } from '../src/fundamentals/delivery/recordAsset';
@@ -37,4 +38,14 @@ test('compatibility never applies a changed grading rule or an invalid saved sel
   ).toBeUndefined();
   expect(copyCompatibleSelection(previous, updated, ['B', 'B'], aliases)).toBeUndefined();
   expect(copyCompatibleSelection(previous, updated, ['B', 'unknown'], aliases)).toBeUndefined();
+});
+
+test('reviewed compatibility applies only to the generated current versions', () => {
+  const knownVersions = new Map(
+    active.units.map(({ unitId, contentVersion }) => [unitId, contentVersion]),
+  );
+  for (const unit of compatibility.units) {
+    expect(unit.contentVersion, unit.unitId).toBe(knownVersions.get(unit.unitId));
+    expect(unit.previous, unit.unitId).not.toContain(unit.contentVersion);
+  }
 });

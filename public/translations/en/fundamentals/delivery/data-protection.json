@@ -1,178 +1,196 @@
 {
   "checkpoints": [
     {
+      "unitId": "fundamentals.data-protection",
       "id": "fundamentals.data-protection.checkpoint.encryption.v1",
-      "sectionId": "encryption",
-      "objectiveId": "encryption",
-      "prompt": "HTTPS traffic is encrypted, but the encryption settings for the backup stored in S3 have not been checked. What else should you verify?",
+      "revision": 1,
+      "category": "fundamentals.data-protection",
+      "version": "2026-11-learning",
+      "title": "Protect data in transit and at rest separately",
+      "prompt": "A developer stores invoices sent from users’ browsers to an order API in S3. The organization requires HTTPS for communication and SSE-KMS using a specified KMS key for storage. Choose one way to verify both requirements.",
       "selectionPolarity": "correct",
       "requiredChoices": 1,
-      "choices": [
-        {
-          "id": "A",
-          "text": "Check the settings for encryption at rest and the key used for decryption.",
-          "explanation": "TLS protects data in transit, so protection at rest must be checked separately."
-        },
-        {
-          "id": "B",
-          "text": "Assume that HTTPS means no at-rest settings are needed.",
-          "explanation": "Protection in transit does not guarantee protection for stored data."
-        },
-        {
-          "id": "C",
-          "text": "Remove encryption and recheck only the communication.",
-          "explanation": "This only weakens protection without addressing the risk at rest."
-        },
-        {
-          "id": "D",
-          "text": "Give everyone permission to decrypt without checking who uses the key.",
-          "explanation": "Decryption permissions should be limited to the principals that need them."
-        }
-      ],
+      "objectiveId": "encryption",
+      "sectionId": "encryption",
+      "application": "integrate",
       "correct": [
         "A"
       ],
-      "source": {
-        "label": "Amazon S3 encryption",
-        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingEncryption.html"
-      },
-      "category": "fundamentals.data-protection",
-      "revision": 1,
-      "title": "In transit and at rest: Different stages require different protections",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "id": "fundamentals.data-protection.checkpoint.kms.v1",
-      "sectionId": "kms",
-      "objectiveId": "kms",
-      "prompt": "The app can’t read an encrypted object. Select two things to check when troubleshooting KMS.",
-      "selectionPolarity": "correct",
-      "requiredChoices": 2,
       "choices": [
         {
           "id": "A",
-          "text": "Whether the app’s role has permission to use the key",
-          "explanation": "Key users need permission to use KMS."
+          "text": "Separately verify HTTPS across the entire path and the SSE-KMS configuration and KMS key applied to the object in S3.",
+          "explanation": "This verifies the requirements for encrypting communications and the storage destination’s encryption method and key separately."
         },
         {
           "id": "B",
-          "text": "Whether the key policy allows that role to use the key",
-          "explanation": "You need to evaluate the KMS key policy as well as the IAM policy."
+          "text": "Verify only that HTTPS is used between the browser and the order API.",
+          "explanation": "This does not verify the path from the API to S3 or the specified-key requirement for data at rest."
         },
         {
           "id": "C",
-          "text": "Changing the key’s name to a shorter one will grant permission",
-          "explanation": "Renaming the key does not add permission to its policy."
+          "text": "Do not verify the KMS key used because S3 default encryption protects new objects.",
+          "explanation": "S3 default SSE-S3 encryption alone may not satisfy the requirement to use the KMS key specified by the organization."
         },
         {
           "id": "D",
-          "text": "Grant kms:* to all principals",
-          "explanation": "Granting unrestricted permissions does not fix the cause and violates least privilege."
+          "text": "Verify only that the S3 object uses SSE-KMS.",
+          "explanation": "This does not verify the specified key or HTTPS for the communication path."
         }
       ],
-      "correct": [
-        "A",
-        "B"
-      ],
       "source": {
-        "label": "AWS KMS policy evaluation",
-        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/policy-evaluation.html"
+        "label": "Amazon S3 default encryption",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html"
       },
-      "category": "fundamentals.data-protection",
-      "revision": 1,
-      "title": "KMS: The key itself and permission to use it",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
+      "learning": {
+        "reason": "Communication and storage are separate boundaries.",
+        "concept": "Data in transit and at rest"
+      }
     },
     {
-      "id": "fundamentals.data-protection.checkpoint.recovery.v1",
-      "sectionId": "recovery",
-      "objectiveId": "recovery",
-      "prompt": "The backup job succeeded. Choose one appropriate way to confirm that the recovery objectives are met.",
+      "unitId": "fundamentals.data-protection",
+      "id": "fundamentals.data-protection.checkpoint.kms.v1",
+      "revision": 1,
+      "category": "fundamentals.data-protection",
+      "version": "2026-11-learning",
+      "title": "Verify the KMS key and access permissions separately",
+      "prompt": "When an operations engineer tries to read an S3 object encrypted with SSE-KMS from an application, access is denied. Choose one way to isolate the cause.",
       "selectionPolarity": "correct",
       "requiredChoices": 1,
+      "objectiveId": "kms",
+      "sectionId": "kms",
+      "application": "apply",
+      "correct": [
+        "C"
+      ],
       "choices": [
         {
-          "id": "B",
-          "text": "Actually restore to an isolated destination, then verify the data and the time required.",
-          "explanation": "Successful backup creation alone does not prove that recovery is possible or that the RTO can be met."
+          "id": "A",
+          "text": "Verify only whether the key ARN is known.",
+          "explanation": "Identification information is not permission."
         },
         {
-          "id": "A",
-          "text": "Judge recovery to be possible based only on the job showing “Success.”",
-          "explanation": "Backup creation results and restore tests are separate checks."
+          "id": "B",
+          "text": "Grant kms:Decrypt to everyone.",
+          "explanation": "This grants excessive permissions."
         },
         {
           "id": "C",
-          "text": "Delete the production data before trying a restore for the first time.",
-          "explanation": "There is no need to destroy production data for verification."
+          "text": "Verify the read permission for the S3 object and the decrypt permission allowed by the KMS key policy or IAM policy.",
+          "explanation": "This verifies the authorization boundaries for the data and the key."
         },
         {
           "id": "D",
-          "text": "Increase the number of runs without deciding on a restore destination or verification criteria.",
-          "explanation": "The number of runs alone cannot assess the recovered data or the time required."
+          "text": "Delete and recreate the bucket.",
+          "explanation": "This does not resolve the cause and risks data loss."
         }
       ],
+      "source": {
+        "label": "AWS KMS key policies",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
+      },
+      "learning": {
+        "reason": "This verifies the authorization boundaries for the data and the key.",
+        "concept": "KMS permissions"
+      }
+    },
+    {
+      "unitId": "fundamentals.data-protection",
+      "id": "fundamentals.data-protection.checkpoint.recovery.v1",
+      "revision": 1,
+      "category": "fundamentals.data-protection",
+      "version": "2026-11-learning",
+      "title": "Verify backup success and restorability separately",
+      "prompt": "A database administrator confirmed that the backup was created successfully. It has not been verified whether order processing can resume within the recovery time objective (RTO). Choose one verification to perform next.",
+      "selectionPolarity": "correct",
+      "requiredChoices": 1,
+      "objectiveId": "recovery",
+      "sectionId": "recovery",
+      "application": "integrate",
       "correct": [
         "B"
+      ],
+      "choices": [
+        {
+          "id": "A",
+          "text": "Treat the success notification as an audit trail and finish.",
+          "explanation": "This does not demonstrate restorability."
+        },
+        {
+          "id": "B",
+          "text": "Restore to an isolated destination and record the elapsed time, integrity, and application connectivity.",
+          "explanation": "This allows comparison of the objective with the measured result."
+        },
+        {
+          "id": "C",
+          "text": "Delete the production data and try a restore.",
+          "explanation": "This is not a safe test."
+        },
+        {
+          "id": "D",
+          "text": "Change the RTO to match the measured result.",
+          "explanation": "The measurement must come first."
+        }
       ],
       "source": {
         "label": "AWS Backup restore testing",
         "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
       },
-      "category": "fundamentals.data-protection",
-      "revision": 1,
-      "title": "Backup and restore: Creating a backup and being able to restore from it are different things.",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
+      "learning": {
+        "reason": "This allows comparison of the objective with the measured result.",
+        "concept": "Restore verification"
+      }
     },
     {
+      "unitId": "fundamentals.data-protection",
       "id": "fundamentals.data-protection.checkpoint.secrets.v1",
-      "sectionId": "secrets",
-      "objectiveId": "secrets",
-      "prompt": "In a design that passes a DB password to an application, select 2 choices that reduce the exposure surface.",
+      "revision": 1,
+      "category": "fundamentals.data-protection",
+      "version": "2026-11-learning",
+      "title": "Separate secret storage, retrieval, and display",
+      "prompt": "An operations administrator found a token for an external API used by an order-processing application in the source code and error logs. Choose one action to improve secret management.",
       "selectionPolarity": "correct",
-      "requiredChoices": 2,
+      "requiredChoices": 1,
+      "objectiveId": "secrets",
+      "sectionId": "secrets",
+      "application": "apply",
+      "correct": [
+        "D"
+      ],
       "choices": [
         {
+          "id": "A",
+          "text": "Make the logs public to everyone for monitoring",
+          "explanation": "This broadens the scope of the leak."
+        },
+        {
           "id": "B",
-          "text": "Retrieve the password from a managed secret instead of hard-coding it in the code.",
-          "explanation": "Separating the value from the source code reduces exposure if the code is leaked."
+          "text": "Move it to another source file",
+          "explanation": "The plaintext problem remains."
         },
         {
           "id": "C",
-          "text": "Limit the role that reads the secret to only the applications that need it.",
-          "explanation": "Restricting who can retrieve it supports least privilege."
-        },
-        {
-          "id": "A",
-          "text": "Output the password to logs for troubleshooting.",
-          "explanation": "Logs are often accessible to a broader audience, so secret values should not be output."
+          "text": "Make the execution role an administrator",
+          "explanation": "This does not solve the storage and display problems."
         },
         {
           "id": "D",
-          "text": "Copy the same secret to every developer's environment.",
-          "explanation": "This increases the number of copies and people who can view them, widening the exposure surface."
+          "text": "Move it to Secrets Manager, restrict who can retrieve it, and remove the value from the logs",
+          "explanation": "This separates storage, retrieval, and display."
         }
       ],
-      "correct": [
-        "B",
-        "C"
-      ],
       "source": {
-        "label": "Secrets Manager Data Protection",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
+        "label": "AWS Secrets Manager User Guide",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
       },
-      "category": "fundamentals.data-protection",
-      "revision": 1,
-      "title": "Secrets: Separate the value, its display, and who can retrieve it.",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
+      "learning": {
+        "reason": "This separates storage, retrieval, and display.",
+        "concept": "Secrets"
+      }
     }
   ],
-  "contentHash": "7464eb67f645a7878578a2382c527c1a64db599afdbfec615be9f91fbf2ad38a",
-  "contentVersion": "6303c286a1d7a24e430a15478babcc44523eff89e2859a4e99802a5d68933316",
+  "contentHash": "a80808814e84dda26f4597759edacafe630040e01fd72df1e6ae1ce0658ea90e",
+  "contentVersion": "423e408963109275ec57a7ffc1a2755e9c6f37683101ee11186402db1aac3e16",
   "finalPolicy": {
     "attemptScope": "current-attempt-only",
     "passCorrect": 10,
@@ -185,18 +203,18 @@
       "choices": [
         {
           "id": "A",
-          "text": "Protect data as it moves across a communication channel.",
-          "explanation": "HTTPS/TLS is used to protect data in transit."
+          "text": "Use HTTPS/TLS",
+          "explanation": "HTTPS/TLS protects data in transit."
         },
         {
           "id": "B",
-          "text": "Automatically encrypt data stored on disk.",
-          "explanation": "Check the settings for encryption at rest separately."
+          "text": "Enable only S3 encryption at rest",
+          "explanation": "Encrypting only the storage destination does not protect the path to the API."
         },
         {
           "id": "C",
-          "text": "Eliminate the need for IAM permissions.",
-          "explanation": "Encryption and authorization are separate."
+          "text": "Log the name of the KMS key",
+          "explanation": "Displaying key information does not encrypt communications."
         }
       ],
       "correct": [
@@ -204,16 +222,16 @@
       ],
       "id": "fund-data-101",
       "objectiveId": "encryption",
-      "prompt": "Select one correct statement about encryption in transit.",
+      "prompt": "A web administrator wants to prevent third parties on the communication path from reading customer information when it is sent from a browser to an order API. Select one setting that directly addresses this requirement.",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "encryption",
       "selectionPolarity": "correct",
       "source": {
         "label": "AWS data protection",
         "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
       },
-      "title": "In transit",
+      "title": "Protection in Transit",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -222,35 +240,35 @@
       "choices": [
         {
           "id": "A",
-          "text": "Check HTTPS only and do not check encryption at rest.",
-          "explanation": "Data in transit and data at rest are separate."
+          "text": "If you confirm that HTTPS is being used, you can determine that the invoice was stored with the specified KMS key.",
+          "explanation": "HTTPS protects communications. You must separately verify the encryption method and key for the object stored in S3."
         },
         {
           "id": "B",
-          "text": "Check TLS for the communication path and encryption at the destination separately.",
-          "explanation": "Protect the two stages separately."
+          "text": "Verify that the encryption method for the stored invoice is SSE-KMS and that the key is the one specified by the organization.",
+          "explanation": "This verifies whether the stored object meets the data protection requirements."
         },
         {
           "id": "C",
-          "text": "Grant everyone administrator permissions instead of using encryption.",
-          "explanation": "Broadening permissions does not provide encryption."
+          "text": "Verify that the execution role used by the application for writing has permission to use the target KMS key.",
+          "explanation": "In addition to permissions allowing writes to S3, verify the key-use permissions required for SSE-KMS."
         }
       ],
       "correct": [
-        "B"
+        "A"
       ],
       "id": "fund-data-102",
       "objectiveId": "encryption",
-      "prompt": "Choose one appropriate check for document uploads from the web.",
+      "prompt": "A web administrator stores invoices received over HTTPS in S3. The organization requires the stored invoices to use a specified KMS key. Select the one incorrect judgment when verifying this requirement.",
       "requiredChoices": 1,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "encryption",
-      "selectionPolarity": "correct",
+      "selectionPolarity": "incorrect",
       "source": {
-        "label": "AWS data protection",
-        "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
+        "label": "Amazon S3 SSE-KMS",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html"
       },
-      "title": "Document Uploads",
+      "title": "Protection at Rest",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -259,35 +277,36 @@
       "choices": [
         {
           "id": "A",
-          "text": "Can be used to protect data in transit between a browser and an API.",
-          "explanation": "TLS protects the communication."
+          "text": "Check TLS from the browser to the API",
+          "explanation": "This protects communication from the user to the API."
         },
         {
           "id": "B",
-          "text": "Check the encryption settings for the storage destination separately.",
-          "explanation": "They protect data in different situations."
+          "text": "Do not check the path from the API to S3",
+          "explanation": "Communication from the API to the storage destination is also protected."
         },
         {
           "id": "C",
-          "text": "Using HTTPS eliminates the need to manage keys for stored data.",
-          "explanation": "This is incorrect. Encryption at rest and key management are separate responsibilities."
+          "text": "Check the storage encryption and the principal that uses the key",
+          "explanation": "Check the encryption at rest and the permissions to use the key."
         }
       ],
       "correct": [
+        "A",
         "C"
       ],
       "id": "fund-data-103",
       "objectiveId": "encryption",
-      "prompt": "Select the one incorrect statement about HTTPS.",
-      "requiredChoices": 1,
-      "revision": 1,
+      "prompt": "Customer information is stored in S3 through an API from a browser. Select two correct objects to check for protection.",
+      "requiredChoices": 2,
+      "revision": 2,
       "sectionId": "encryption",
-      "selectionPolarity": "incorrect",
+      "selectionPolarity": "correct",
       "source": {
         "label": "AWS data protection",
         "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
       },
-      "title": "The limits of HTTPS",
+      "title": "Organizing Protection Boundaries",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -296,35 +315,36 @@
       "choices": [
         {
           "id": "A",
-          "text": "A service for creating and managing encryption keys.",
-          "explanation": "KMS helps with key management."
+          "text": "S3 read permissions and KMS key decrypt permissions",
+          "explanation": "The data and the key are separate authorization boundaries."
         },
         {
           "id": "B",
-          "text": "If a key exists, every principal can use it unconditionally.",
-          "explanation": "This is incorrect. Permission to use the key is required."
+          "text": "Only the name of the KMS key",
+          "explanation": "Identification information is not permission to use the key."
         },
         {
           "id": "C",
-          "text": "You can check data permissions and key-use permissions separately.",
-          "explanation": "Both permissions are involved."
+          "text": "Change the execution role's trust policy to allow principals from all AWS accounts as trusted entities.",
+          "explanation": "Expanding the trusted entities does not verify the permissions required for S3 or KMS. It unnecessarily broadens who can assume the role."
         }
       ],
       "correct": [
-        "B"
+        "B",
+        "C"
       ],
       "id": "fund-data-104",
       "objectiveId": "kms",
-      "prompt": "Choose one statement about KMS that is incorrect.",
-      "requiredChoices": 1,
-      "revision": 1,
+      "prompt": "When the order API attempts to read an S3 object, AccessDenied is returned. The object is encrypted with SSE-KMS. Select two items that are incorrect as investigations or responses to the cause.",
+      "requiredChoices": 2,
+      "revision": 2,
       "sectionId": "kms",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "AWS KMS data protection",
-        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/data-protection.html"
+        "label": "AWS KMS key policies",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
       },
-      "title": "KMS",
+      "title": "KMS Access Permissions",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -333,18 +353,18 @@
       "choices": [
         {
           "id": "A",
-          "text": "Check only the permission to read the secret and do not check permissions for the KMS key.",
-          "explanation": "This is incorrect. You should also check permissions to use the encryption key."
+          "text": "Decryption is always possible with only an IAM policy",
+          "explanation": "The key policy cannot be ignored."
         },
         {
           "id": "B",
-          "text": "Identify the application's execution role.",
-          "explanation": "This clarifies which principal made the request."
+          "text": "Check the key policy, IAM policy, and, if necessary, grants together",
+          "explanation": "KMS usage permissions are determined by a combination of authorization elements."
         },
         {
           "id": "C",
-          "text": "Check the required permissions for both the secret and the KMS key.",
-          "explanation": "Both retrieval and decryption are involved."
+          "text": "If the configuration does not use grants, verify that grants are unnecessary",
+          "explanation": "Even when grants are not used, check the combination of the key policy and IAM policy."
         }
       ],
       "correct": [
@@ -352,16 +372,16 @@
       ],
       "id": "fund-data-105",
       "objectiveId": "kms",
-      "prompt": "The application was denied when it tried to read the secret. Choose the one incorrect item for investigating the cause.",
+      "prompt": "We allowed kms:Decrypt for an IAM role, but the key policy for the target KMS key does not allow the use of IAM policies. Select one incorrect check.",
       "requiredChoices": 1,
       "revision": 2,
       "sectionId": "kms",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "Secrets Manager encryption",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/security-encryption.html"
+        "label": "AWS KMS key policies",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
       },
-      "title": "Secret retrieval denied",
+      "title": "KMS Authorization",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -370,46 +390,36 @@
       "choices": [
         {
           "id": "A",
-          "text": "Do not check authorization based only on the key name.",
-          "explanation": "You need to verify authorization to use the key."
+          "text": "Allow only the necessary operations to the required principals that need to use the target key",
+          "explanation": "This limits the target, principals, and operations."
         },
         {
           "id": "B",
-          "text": "Identify the requesting principal and the KMS operation.",
-          "explanation": "Check who requested which key operation."
+          "text": "Allow kms:* for all roles",
+          "explanation": "This expands permissions to include unnecessary administrative and decryption permissions."
         },
         {
           "id": "C",
-          "text": "Expose the secret value in logs to investigate.",
-          "explanation": "You must not expose secret values."
-        },
-        {
-          "id": "D",
-          "text": "Check data access authorization separately from key access authorization.",
-          "explanation": "These are separate control points."
-        },
-        {
-          "id": "E",
-          "text": "Disable TLS to investigate the cause.",
-          "explanation": "There is no need to remove protection in transit."
+          "text": "Use the key policy to verify that the principal can use the target key",
+          "explanation": "The key policy is also an element of KMS authorization."
         }
       ],
       "correct": [
-        "B",
-        "D"
+        "A",
+        "C"
       ],
       "id": "fund-data-106",
       "objectiveId": "kms",
-      "prompt": "When a read of stored data fails, choose two correct investigation steps.",
+      "prompt": "The order application retrieves only database credentials from AWS Secrets Manager. The secret is encrypted with a customer managed KMS key. Select two appropriate actions when allowing the application to decrypt it.",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "kms",
       "selectionPolarity": "correct",
       "source": {
-        "label": "AWS KMS data protection",
-        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/data-protection.html"
+        "label": "AWS KMS key access and permissions",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/control-access.html"
       },
-      "title": "Isolating key usage",
+      "title": "Least privilege",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -418,37 +428,108 @@
       "choices": [
         {
           "id": "A",
-          "text": "Backup success alone does not prove that a restore produces a usable state.",
-          "explanation": "Availability can be determined only after running the restore procedure and checking the data and connections."
+          "text": "Save the success notification and stop.",
+          "explanation": "Successful creation alone does not demonstrate usability."
         },
         {
           "id": "B",
-          "text": "You do not need to define verification criteria for a restore test.",
-          "explanation": "Incorrect. You need post-restore verification criteria, such as record counts and connections."
+          "text": "Unconditionally overwrite-restore to the production database.",
+          "explanation": "This is not a safe testing procedure."
         },
         {
           "id": "C",
-          "text": "Always test by overwriting production.",
-          "explanation": "Incorrect. To avoid impact, consider designing the test to use an isolated restore destination."
-        },
-        {
-          "id": "D",
-          "text": "Setting a retention period is enough; recovery time does not need to be specified.",
-          "explanation": "Incorrect. Include the required recovery time in the plan as well."
-        },
-        {
-          "id": "E",
-          "text": "Once you have chosen a restore destination, you do not need to check whether it is usable afterward.",
-          "explanation": "Incorrect. Verify both the restore destination and post-restore usability."
+          "text": "Restore to an isolated destination and verify integrity and application connectivity.",
+          "explanation": "You can verify this through an actual restore and usability check."
         }
       ],
       "correct": [
-        "A"
+        "A",
+        "B"
       ],
       "id": "fund-data-107",
       "objectiveId": "recovery",
-      "prompt": "Choose one correct statement about the relationship between backups and restores.",
+      "prompt": "The AWS Backup job succeeded. Select two incorrect next steps for verifying recoverability.",
+      "requiredChoices": 2,
+      "revision": 2,
+      "sectionId": "recovery",
+      "selectionPolarity": "incorrect",
+      "source": {
+        "label": "AWS Backup restore testing",
+        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+      },
+      "title": "Restore Testing",
+      "unitId": "fundamentals.data-protection",
+      "version": "2026-11-learning"
+    },
+    {
+      "category": "データ保護",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Measure the recovery time and compare it with the RTO",
+          "explanation": "This allows the required time to be measured in practice."
+        },
+        {
+          "id": "B",
+          "text": "Do not check the number of orders after restoration",
+          "explanation": "This makes it impossible to determine consistency."
+        },
+        {
+          "id": "C",
+          "text": "Check the recovery point and compare it with the RPO",
+          "explanation": "This verifies how far the recovery progressed."
+        },
+        {
+          "id": "D",
+          "text": "Select and test an isolated restoration target",
+          "explanation": "Prepare a restoration target that does not affect production first."
+        }
+      ],
+      "correct": [
+        "B"
+      ],
+      "id": "fund-data-108",
+      "objectiveId": "recovery",
+      "prompt": "The operations team for the order service verifies whether it can restore order data from a database backup in preparation for a failure. There are objectives for recovery time and the amount of data that may be lost. Select one procedure that is incorrect for the verification.",
       "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "recovery",
+      "selectionPolarity": "incorrect",
+      "source": {
+        "label": "AWS Backup restore testing",
+        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+      },
+      "title": "Recovery objectives",
+      "unitId": "fundamentals.data-protection",
+      "version": "2026-11-learning"
+    },
+    {
+      "category": "データ保護",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Measure the time required to restore from the backup.",
+          "explanation": "The time required for restoration is part of the recovery time used for comparison with the objective."
+        },
+        {
+          "id": "B",
+          "text": "Connect to the restoration target from the application and verify the integrity of the order data.",
+          "explanation": "After the restoration completes, also verify that the application can use the data."
+        },
+        {
+          "id": "C",
+          "text": "A restoration test is an operation that deletes the backup",
+          "explanation": "Restore to an isolated target and verify it."
+        }
+      ],
+      "correct": [
+        "A",
+        "B"
+      ],
+      "id": "fund-data-109",
+      "objectiveId": "recovery",
+      "prompt": "The operations team restores a backup of the order database to another database and determines whether the order service can be restarted during a failure. Select two checks needed for that determination.",
+      "requiredChoices": 2,
       "revision": 2,
       "sectionId": "recovery",
       "selectionPolarity": "correct",
@@ -456,7 +537,7 @@
         "label": "AWS Backup restore testing",
         "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
       },
-      "title": "Backup",
+      "title": "Backup and restoration",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     },
@@ -465,238 +546,115 @@
       "choices": [
         {
           "id": "A",
-          "text": "Do not check the restore destination; look only at the success notification.",
-          "explanation": "Availability cannot be verified."
+          "text": "The token is stored in Secrets Manager, and the order application retrieves it using an execution role.",
+          "explanation": "This separates the application code from the secret and allows the retrieval scope to be controlled through the execution role."
         },
         {
           "id": "B",
-          "text": "Restore the recovery point to an isolated destination.",
-          "explanation": "This lets you verify the restore while avoiding impact on production."
+          "text": "The token is recorded as a plaintext constant in the source code and remains in the repository's change history.",
+          "explanation": "The secret can be read from the history. Consider it compromised, revoke or reissue it, and move to a method that does not record it in the code."
         },
         {
           "id": "C",
-          "text": "Check the number of orders and the application connection.",
-          "explanation": "This verifies that the data can be used after restoration."
+          "text": "When recording API errors in logs, the field that would record the token itself is omitted.",
+          "explanation": "This preserves the records needed for troubleshooting while reducing the paths through which the token could leak from the logs."
+        }
+      ],
+      "correct": [
+        "B"
+      ],
+      "id": "fund-data-110",
+      "objectiveId": "secrets",
+      "prompt": "An operations engineer is reviewing an order application that uses a token for an external API. Select one area that should be prioritized for remediation to manage the token securely.",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "secrets",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Secrets Manager User Guide",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
+      },
+      "title": "Storing Secrets",
+      "unitId": "fundamentals.data-protection",
+      "version": "2026-11-learning"
+    },
+    {
+      "category": "データ保護",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Allow retrieval of only secret-a",
+          "explanation": "This limits the target secret."
+        },
+        {
+          "id": "B",
+          "text": "Allow retrieval of all secrets",
+          "explanation": "This exposes unnecessary secrets."
+        },
+        {
+          "id": "C",
+          "text": "Always write retrieved values to the logs",
+          "explanation": "The logs become a path for leakage."
+        }
+      ],
+      "correct": [
+        "A"
+      ],
+      "id": "fund-data-111",
+      "objectiveId": "secrets",
+      "prompt": "A developer gives the order application's execution role only the minimum permissions required for operations. The only secret the application needs to read is secret-a. Select one permission that should be granted.",
+      "requiredChoices": 1,
+      "revision": 2,
+      "sectionId": "secrets",
+      "selectionPolarity": "correct",
+      "source": {
+        "label": "AWS Secrets Manager retrieving secrets",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/retrieving-secrets.html"
+      },
+      "title": "Secret Retrieval Permissions",
+      "unitId": "fundamentals.data-protection",
+      "version": "2026-11-learning"
+    },
+    {
+      "category": "データ保護",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Verify that the application can connect using the new value",
+          "explanation": "This verifies the consumer after the update."
+        },
+        {
+          "id": "B",
+          "text": "Output the old value to an incident log for comparison",
+          "explanation": "The old value is also a secret and must not be output."
+        },
+        {
+          "id": "C",
+          "text": "Change the execution role to an administrator role",
+          "explanation": "Excessive permissions are unnecessary."
         },
         {
           "id": "D",
-          "text": "Immediately delete the restored data without checking it.",
-          "explanation": "This does not meet the purpose of the test."
-        },
-        {
-          "id": "E",
-          "text": "Check only the backup frequency.",
-          "explanation": "Verify that the restore was performed and review the result."
+          "text": "Verify that the value does not appear in logs or error responses",
+          "explanation": "This prevents leakage through display paths."
         }
       ],
       "correct": [
         "B",
         "C"
       ],
-      "id": "fund-data-108",
-      "objectiveId": "recovery",
-      "prompt": "Choose two correct methods for testing the restoration of order data.",
-      "requiredChoices": 2,
-      "revision": 1,
-      "sectionId": "recovery",
-      "selectionPolarity": "correct",
-      "source": {
-        "label": "Restore a backup",
-        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-a-backup.html"
-      },
-      "title": "Order restoration",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "category": "データ保護",
-      "choices": [
-        {
-          "id": "A",
-          "text": "Choose which recovery point to use.",
-          "explanation": "You need to select the point in time to restore to."
-        },
-        {
-          "id": "B",
-          "text": "Make connectivity checks unnecessary after restoration.",
-          "explanation": "Verify that it is usable."
-        },
-        {
-          "id": "C",
-          "text": "Do not run restore jobs anywhere other than production.",
-          "explanation": "Consider testing in an isolated environment."
-        },
-        {
-          "id": "D",
-          "text": "Set the recovery time and verification criteria.",
-          "explanation": "This clarifies the success criteria."
-        },
-        {
-          "id": "E",
-          "text": "Include confidential information in the backup name.",
-          "explanation": "Avoid exposing information in the name."
-        }
-      ],
-      "correct": [
-        "A",
-        "D"
-      ],
-      "id": "fund-data-109",
-      "objectiveId": "recovery",
-      "prompt": "Choose two correct elements of a recovery plan.",
-      "requiredChoices": 2,
-      "revision": 1,
-      "sectionId": "recovery",
-      "selectionPolarity": "correct",
-      "source": {
-        "label": "AWS Backup restore testing",
-        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
-      },
-      "title": "Recovery plan",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "category": "データ保護",
-      "choices": [
-        {
-          "id": "A",
-          "text": "Store the secret in a dedicated location.",
-          "explanation": "Separate it from the code."
-        },
-        {
-          "id": "B",
-          "text": "Always write token values to debug logs.",
-          "explanation": "This is incorrect. Logs are a path for exposure."
-        },
-        {
-          "id": "C",
-          "text": "Allow the execution role to access only the secrets it needs.",
-          "explanation": "This limits the scope of access."
-        },
-        {
-          "id": "D",
-          "text": "Share a single administrator secret across all applications.",
-          "explanation": "This is incorrect. Separate principals and purposes."
-        },
-        {
-          "id": "E",
-          "text": "Check whether consumers can keep up after the update.",
-          "explanation": "This helps avoid failures during rotation."
-        }
-      ],
-      "correct": [
-        "B",
-        "D"
-      ],
-      "id": "fund-data-110",
-      "objectiveId": "secrets",
-      "prompt": "Choose two statements that are incorrect ways to handle secrets.",
-      "requiredChoices": 2,
-      "revision": 1,
-      "sectionId": "secrets",
-      "selectionPolarity": "incorrect",
-      "source": {
-        "label": "Secrets Manager data protection",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
-      },
-      "title": "Secrets",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "category": "データ保護",
-      "choices": [
-        {
-          "id": "A",
-          "text": "Commit it to source code in plaintext.",
-          "explanation": "This is incorrect. It exposes the token in the repository."
-        },
-        {
-          "id": "B",
-          "text": "Store it in Secrets Manager.",
-          "explanation": "It can be handled in a dedicated storage location."
-        },
-        {
-          "id": "C",
-          "text": "Limit the execution role to the retrieval permissions it needs.",
-          "explanation": "This follows the principle of least privilege."
-        },
-        {
-          "id": "D",
-          "text": "Keep logs even when errors occur, while redacting the value.",
-          "explanation": "It is important not to expose the value itself."
-        },
-        {
-          "id": "E",
-          "text": "Share the value with the entire team in chat.",
-          "explanation": "This is incorrect. It increases duplication and exposure."
-        }
-      ],
-      "correct": [
-        "A",
-        "E"
-      ],
-      "id": "fund-data-111",
-      "objectiveId": "secrets",
-      "prompt": "Choose the two incorrect ways to handle an external API token.",
-      "requiredChoices": 2,
-      "revision": 1,
-      "sectionId": "secrets",
-      "selectionPolarity": "incorrect",
-      "source": {
-        "label": "Secrets Manager data protection",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
-      },
-      "title": "API token",
-      "unitId": "fundamentals.data-protection",
-      "version": "2026-11-learning"
-    },
-    {
-      "category": "データ保護",
-      "choices": [
-        {
-          "id": "A",
-          "text": "Check the storage location, the principals that retrieve the secret, and log output separately.",
-          "explanation": "This helps identify separate exposure paths."
-        },
-        {
-          "id": "B",
-          "text": "Consider who needs to use each secret.",
-          "explanation": "This limits who can retrieve it."
-        },
-        {
-          "id": "C",
-          "text": "It is acceptable to log the value as long as it is encrypted.",
-          "explanation": "This is incorrect. Displaying it in logs is an exposure."
-        },
-        {
-          "id": "D",
-          "text": "There is no need to check whether consumers can still use the secret after rotation.",
-          "explanation": "This is incorrect. Confirm that it can be used after it is updated."
-        },
-        {
-          "id": "E",
-          "text": "Retrieve it using the application's execution role.",
-          "explanation": "This avoids sharing personal keys."
-        }
-      ],
-      "correct": [
-        "C",
-        "D"
-      ],
       "id": "fund-data-112",
       "objectiveId": "secrets",
-      "prompt": "Choose two designs that are incorrect for protecting secrets.",
+      "prompt": "A person responsible for the order application verifies its behavior after rotating database credentials in AWS Secrets Manager. Select two methods that are incorrect for verification.",
       "requiredChoices": 2,
-      "revision": 1,
+      "revision": 2,
       "sectionId": "secrets",
       "selectionPolarity": "incorrect",
       "source": {
-        "label": "Secrets Manager data protection",
-        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
+        "label": "AWS Secrets Manager rotation schedules",
+        "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotate-secrets_schedule.html"
       },
-      "title": "The boundary of a secret",
+      "title": "Secret Rotation",
       "unitId": "fundamentals.data-protection",
       "version": "2026-11-learning"
     }
@@ -707,19 +665,19 @@
         {
           "contentRef": "unit:summary",
           "kind": "summary",
-          "label": "Summary",
-          "text": "Treat encryption, keys, recovery, and sensitive information as separate responsibilities.",
-          "words": 14
+          "label": "Overview",
+          "text": "Distinguish between encryption in transit and at rest, KMS authorization, restoration testing, and the retrieval and display of secrets.",
+          "words": 23
         },
         {
           "contentRef": "unit:objective",
           "kind": "objective",
-          "label": "Learning objectives",
-          "text": "Be able to assess protection at rest and in transit, key permissions, recovery, and the handling of secrets.",
-          "words": 17
+          "label": "Learning objective",
+          "text": "Determine from specific conditions the protection scenario, the entity using the key, recoverability, and the exposure path for secrets.",
+          "words": 22
         }
       ],
-      "estimatedSeconds": 12,
+      "estimatedSeconds": 15,
       "id": "fundamentals.data-protection:intro:orientation:1",
       "kind": "intro",
       "label": "Unit overview",
@@ -736,29 +694,29 @@
         {
           "contentRef": "objective:encryption",
           "kind": "objective",
-          "label": "Learning objectives",
-          "text": "Distinguish the purpose of encryption in transit from encryption at rest.",
-          "words": 13
+          "label": "Learning objective",
+          "text": "Distinguish the protection boundaries for data in transit and at rest, and verify S3 encryption settings.",
+          "words": 19
         },
         {
           "contentRef": "objective:kms",
           "kind": "objective",
-          "label": "Learning objectives",
-          "text": "Explain KMS keys and permissions for using keys.",
-          "words": 10
+          "label": "Learning objective",
+          "text": "Explain the relationship between a KMS key policy, IAM policy, grant, and the principal that performs decryption.",
+          "words": 15
         },
         {
           "contentRef": "objective:recovery",
           "kind": "objective",
-          "label": "Learning objectives",
-          "text": "Design backups and actual restore testing separately.",
-          "words": 10
+          "label": "Learning objective",
+          "text": "Separate backup success from recoverability, and verify RTO/RPO through an actual restoration.",
+          "words": 15
         }
       ],
-      "estimatedSeconds": 12,
+      "estimatedSeconds": 19,
       "id": "fundamentals.data-protection:intro:objectives:1",
       "kind": "intro",
-      "label": "Learning objectives",
+      "label": "Learning objective",
       "objectiveIds": [],
       "sources": [],
       "style": "normal",
@@ -772,15 +730,15 @@
         {
           "contentRef": "objective:secrets",
           "kind": "objective",
-          "label": "Learning objectives",
-          "text": "Separate secrets from code and logs, and minimize permissions to retrieve them.",
-          "words": 14
+          "label": "Learning objective",
+          "text": "Separate secrets from code and logs, and minimize permissions to retrieve the target secret.",
+          "words": 17
         }
       ],
       "estimatedSeconds": 12,
       "id": "fundamentals.data-protection:intro:objectives:2",
       "kind": "intro",
-      "label": "Learning objectives",
+      "label": "Learning objective",
       "objectiveIds": [],
       "sources": [],
       "style": "normal",
@@ -794,29 +752,29 @@
         {
           "contentRef": "section:encryption:paragraph:0",
           "kind": "paragraph",
-          "label": "In transit and at rest: Different protection scenarios",
-          "text": "Encryption in transit is intended to make it harder for third parties to read or tamper with data moving between a client and a service. HTTPS protects HTTP with TLS.",
-          "words": 42
+          "label": "Protect data in transit and at rest separately",
+          "text": "Data moving from the browser to the API and from the API to the storage destination is in transit. HTTPS protects HTTP with TLS, but protecting the communication path and protecting the storage destination are separate concerns.",
+          "words": 37
         },
         {
           "contentRef": "section:encryption:paragraph:1",
           "kind": "paragraph",
-          "label": "Encryption at rest protects data stored on disks, in databases, in objects, and in other storage locations. Using TLS for communications does not automatically mean that the destination storage is encrypted.",
-          "text": "In a design, list data paths and storage locations separately. Check that TLS is used for the paths from the browser to the API and from the API to the storage destination, and check that the destination has the appropriate encryption settings.",
-          "words": 40
+          "label": "Protect data in transit and at rest separately",
+          "text": "Objects newly uploaded to Amazon S3 are encrypted at rest. The standard method is SSE-S3, which uses keys managed by S3. When a requirement specifies using a KMS key, verify both the object's encryption method and that the execution role has permission to use that key.",
+          "words": 60
         },
         {
           "contentRef": "section:encryption:paragraph:2",
           "kind": "paragraph",
-          "label": "In transit and at rest: Different protection scenarios.",
-          "text": "Encryption in transit is intended to make it harder for third parties to read or tamper with data moving between a client and a service. HTTPS protects HTTP with TLS.",
-          "words": 39
+          "label": "Protect data in transit and at rest separately",
+          "text": "In a design review, list the path, storage location, and accessing principal separately. Do not consider the review complete after checking only data in transit or only data at rest.",
+          "words": 31
         }
       ],
-      "estimatedSeconds": 40,
+      "estimatedSeconds": 44,
       "id": "fundamentals.data-protection:section:encryption:concept:1",
       "kind": "reading",
-      "label": "Encryption at rest protects data stored on disks, in databases, in objects, and in other storage locations. Using TLS for communications does not automatically mean that the destination storage is encrypted.",
+      "label": "Protect data in transit and at rest separately",
       "objectiveIds": [
         "encryption"
       ],
@@ -834,25 +792,25 @@
           "contentRef": "section:encryption:scenario",
           "kind": "scenario",
           "label": "Scenario",
-          "text": "A customer uploads a document through a web interface.",
-          "words": 10
+          "text": "A customer uploads an invoice from a web interface, and the API stores it in S3.",
+          "words": 17
         },
         {
           "contentRef": "section:encryption:step:0",
           "kind": "steps",
           "label": "Step 1",
-          "text": "Use HTTPS for communication between the browser and the API.",
-          "words": 9
+          "text": "Use HTTPS from the browser to the API.",
+          "words": 7
         },
         {
           "contentRef": "section:encryption:step:1",
           "kind": "steps",
           "label": "Step 2",
-          "text": "Also verify that communication from the API to the storage service is encrypted.",
-          "words": 13
+          "text": "Verify the path from the API to S3 and S3's default encryption.",
+          "words": 15
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 20,
       "id": "fundamentals.data-protection:section:encryption:example:1",
       "kind": "example",
       "label": "Example",
@@ -873,18 +831,18 @@
           "contentRef": "section:encryption:step:2",
           "kind": "steps",
           "label": "Step 3",
-          "text": "Configure encryption at rest for the saved documents.",
-          "words": 12
+          "text": "If SSE-KMS is required, verify the encryption method for the actual object, the specified KMS key, and the permissions that allow the application to use that key.",
+          "words": 27
         },
         {
           "contentRef": "section:encryption:outcome",
           "kind": "outcome",
           "label": "Conclusion",
-          "text": "This lets you address two distinct scenarios: eavesdropping on data in transit and unauthorized access to storage media.",
-          "words": 19
+          "text": "You can verify separate protection boundaries for data in transit, data at rest, and key usage.",
+          "words": 13
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 21,
       "id": "fundamentals.data-protection:section:encryption:example:2",
       "kind": "example",
       "label": "Example",
@@ -905,21 +863,21 @@
           "contentRef": "section:encryption:misconception:claim",
           "kind": "misconception",
           "label": "This is incorrect",
-          "text": "Data stored is also encrypted automatically when using HTTPS.",
-          "words": 14
+          "text": "Uploading over HTTPS means that the organization-designated KMS key is also used for files stored in S3.",
+          "words": 22
         },
         {
           "contentRef": "section:encryption:misconception:correction",
           "kind": "correction",
           "label": "Correction",
-          "text": "HTTPS protects data in transit. Check encryption at rest separately on the storage service.",
-          "words": 21
+          "text": "HTTPS protects the network path. For objects stored in S3, verify the encryption method and KMS key in the S3 configuration or in the specification made when writing the object.",
+          "words": 34
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 25,
       "id": "fundamentals.data-protection:section:encryption:misconception:1",
       "kind": "misconception",
-      "label": "This is incorrect and the correction",
+      "label": "This is incorrect and correction",
       "objectiveIds": [
         "encryption"
       ],
@@ -936,37 +894,37 @@
         {
           "contentRef": "section:encryption:takeaway:0",
           "kind": "takeaway",
-          "label": "Key takeaway",
-          "text": "Protect the communication path while data is in transit.",
-          "words": 8
+          "label": "Takeaway",
+          "text": "TLS protects data in transit.",
+          "words": 6
         },
         {
           "contentRef": "section:encryption:takeaway:1",
           "kind": "takeaway",
-          "label": "Protect stored data at rest.",
-          "text": "Check the path and the storage destination separately.",
-          "words": 11
+          "label": "Takeaway",
+          "text": "Verify encryption at rest in the storage service.",
+          "words": 10
         },
         {
           "contentRef": "section:encryption:takeaway:2",
           "kind": "takeaway",
-          "label": "Key takeaway",
-          "text": "AWS data protection guide.",
-          "words": 10
+          "label": "Takeaway",
+          "text": "Verify the encryption method and key usage permissions separately.",
+          "words": 12
         }
       ],
       "estimatedSeconds": 16,
       "id": "fundamentals.data-protection:section:encryption:takeaway:1",
       "kind": "takeaway",
-      "label": "Key takeaway",
+      "label": "Takeaway",
       "objectiveIds": [
         "encryption"
       ],
       "sectionId": "encryption",
       "sources": [
         {
-          "label": "AWS data protection",
-          "url": "https://docs.aws.amazon.com/security/latest/userguide/data-protection.html"
+          "label": "Amazon S3 encryption",
+          "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingEncryption.html"
         }
       ],
       "style": "normal",
@@ -981,7 +939,7 @@
       "estimatedSeconds": 55,
       "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.encryption.v1",
       "kind": "checkpoint",
-      "label": "checkpoint",
+      "label": "Checkpoint",
       "objectiveIds": [
         "encryption"
       ],
@@ -998,29 +956,29 @@
         {
           "contentRef": "section:kms:paragraph:0",
           "kind": "paragraph",
-          "label": "KMS: The key itself and permission to use it",
-          "text": "AWS Key Management Service (AWS KMS) creates and manages encryption keys and supports encryption operations for AWS services and applications. It does more than enable encryption: it determines which key to use.",
-          "words": 43
+          "label": "Verify KMS keys and usage permissions separately",
+          "text": "AWS KMS manages encryption keys. Merely specifying a key does not mean that arbitrary principals can perform encryption operations.",
+          "words": 31
         },
         {
           "contentRef": "section:kms:paragraph:1",
           "kind": "paragraph",
-          "label": "KMS access control for keys is important. A principal may be able to access data but still be unable to decrypt it if it is not authorized to perform the required KMS operation. Check the key policy and IAM permissions.",
-          "text": "Secrets in Secrets Manager are encrypted with KMS at rest. Therefore, when troubleshooting, check permission to read the secret separately from permission to use the KMS key.",
-          "words": 51
+          "label": "Verify KMS keys and usage permissions separately",
+          "text": "Whether KMS can be used is determined by the combination of the key policy, IAM policy, and grant. Even if IAM allows it, the permission is not effective unless the key policy permits that configuration.",
+          "words": 40
         },
         {
           "contentRef": "section:kms:paragraph:2",
           "kind": "paragraph",
-          "label": "KMS: The key itself and permission to use it.",
-          "text": "KMS: The key itself and permission to use it.",
-          "words": 36
+          "label": "Verify KMS keys and usage permissions separately",
+          "text": "During troubleshooting, separate the permission to read the target data from the permission to decrypt it with the encryption key. Allow only the required principals and operations.",
+          "words": 29
         }
       ],
-      "estimatedSeconds": 49,
+      "estimatedSeconds": 35,
       "id": "fundamentals.data-protection:section:kms:concept:1",
       "kind": "reading",
-      "label": "KMS: The key itself and permission to use it.",
+      "label": "Verify KMS keys and usage permissions separately",
       "objectiveIds": [
         "kms"
       ],
@@ -1038,25 +996,25 @@
           "contentRef": "section:kms:scenario",
           "kind": "scenario",
           "label": "Situation",
-          "text": "The application was denied when it tried to retrieve the database password from Secrets Manager.",
-          "words": 16
+          "text": "The application cannot read an S3 object encrypted with SSE-KMS.",
+          "words": 14
         },
         {
           "contentRef": "section:kms:step:0",
           "kind": "steps",
           "label": "Step 1",
-          "text": "Identify the secret to retrieve and the execution role.",
-          "words": 9
+          "text": "Identify the target object and the execution role.",
+          "words": 8
         },
         {
           "contentRef": "section:kms:step:1",
           "kind": "steps",
           "label": "Step 2",
-          "text": "Check the read permissions for Secrets Manager.",
-          "words": 8
+          "text": "Check the S3 read permission.",
+          "words": 7
         }
       ],
-      "estimatedSeconds": 22,
+      "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:kms:example:1",
       "kind": "example",
       "label": "Example",
@@ -1077,15 +1035,15 @@
           "contentRef": "section:kms:step:2",
           "kind": "steps",
           "label": "Step 3",
-          "text": "Also check that you have the permissions required to use the KMS key for encryption.",
-          "words": 14
+          "text": "Check the decryption permission in the KMS key policy and IAM policy.",
+          "words": 12
         },
         {
           "contentRef": "section:kms:outcome",
           "kind": "outcome",
           "label": "Conclusion",
-          "text": "Because permission to access the secret itself is separate from permission to use the key, you can correctly identify where the denial occurs.",
-          "words": 21
+          "text": "You can troubleshoot the denial on the S3 side separately from the denial on the KMS side.",
+          "words": 14
         }
       ],
       "estimatedSeconds": 18,
@@ -1109,21 +1067,21 @@
           "contentRef": "section:kms:misconception:claim",
           "kind": "misconception",
           "label": "This is incorrect",
-          "text": "If you specify a KMS key, anyone can decrypt.",
-          "words": 11
+          "text": "Allowing kms:Decrypt in an IAM policy lets you decrypt with any KMS key.",
+          "words": 16
         },
         {
           "contentRef": "section:kms:misconception:correction",
           "kind": "correction",
           "label": "Correction",
-          "text": "The principal using the key must be authorized. The mere existence of the key does not grant permission to decrypt.",
-          "words": 21
+          "text": "The target key’s key policy and grant are also evaluated. Check the permission for both the key and the principal.",
+          "words": 23
         }
       ],
-      "estimatedSeconds": 18,
+      "estimatedSeconds": 22,
       "id": "fundamentals.data-protection:section:kms:misconception:1",
       "kind": "misconception",
-      "label": "This is incorrect and its correction",
+      "label": "Incorrect claim and correction",
       "objectiveIds": [
         "kms"
       ],
@@ -1140,37 +1098,37 @@
         {
           "contentRef": "section:kms:takeaway:0",
           "kind": "takeaway",
-          "label": "Key takeaway",
-          "text": "KMS manages encryption keys.",
-          "words": 9
+          "label": "Key point",
+          "text": "The existence of a key does not grant permission to use it.",
+          "words": 8
         },
         {
           "contentRef": "section:kms:takeaway:1",
           "kind": "takeaway",
-          "label": "Check data permissions and key usage permissions separately.",
-          "text": "Check the key policy and IAM permissions.",
-          "words": 11
+          "label": "Key point",
+          "text": "Check the key policy, IAM policy, and grant for the target key and principal.",
+          "words": 13
         },
         {
           "contentRef": "section:kms:takeaway:2",
           "kind": "takeaway",
-          "label": "Key takeaway",
-          "text": "AWS KMS data protection",
-          "words": 9
+          "label": "Key point",
+          "text": "Allow decryption operations only for the principals that need them.",
+          "words": 10
         }
       ],
-      "estimatedSeconds": 16,
+      "estimatedSeconds": 17,
       "id": "fundamentals.data-protection:section:kms:takeaway:1",
       "kind": "takeaway",
-      "label": "Key takeaway",
+      "label": "Key point",
       "objectiveIds": [
         "kms"
       ],
       "sectionId": "kms",
       "sources": [
         {
-          "label": "Key takeaway",
-          "url": "https://docs.aws.amazon.com/kms/latest/developerguide/data-protection.html"
+          "label": "AWS KMS key policies",
+          "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html"
         }
       ],
       "style": "normal",
@@ -1182,10 +1140,10 @@
     {
       "assessmentId": "fundamentals.data-protection.checkpoint.kms.v1",
       "blocks": [],
-      "estimatedSeconds": 63,
+      "estimatedSeconds": 55,
       "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.kms.v1",
       "kind": "checkpoint",
-      "label": "Checkpoint",
+      "label": "checkpoint",
       "objectiveIds": [
         "kms"
       ],
@@ -1202,29 +1160,29 @@
         {
           "contentRef": "section:recovery:paragraph:0",
           "kind": "paragraph",
-          "label": "Backup and recovery: creating a backup and being able to restore are different",
-          "text": "A backup retains data or resources from a particular point in time for recovery. However, a successful backup job alone does not prove that you can restore them to the state you actually need.",
-          "words": 37
+          "label": "Verify backup success and restorability separately",
+          "text": "A successful backup job shows that recovery data was created, but it does not prove that you can restore the required state or that the application can be used.",
+          "words": 31
         },
         {
           "contentRef": "section:recovery:paragraph:1",
           "kind": "paragraph",
-          "label": "For a restore, decide which recovery point to restore, where to restore it, what steps to follow, and how to confirm that the application is usable. AWS Backup restore testing is a mechanism for regularly assessing recoverability.",
-          "text": "In the design, define not only the retention period but also the recovery point objective, recovery time objective, and post-restore validation. Have a procedure for restoring to an isolated destination and checking the data and connections, rather than testing by overwriting production.",
-          "words": 41
+          "label": "Verify backup success and restorability separately",
+          "text": "Define how to verify the recovery point, restore destination, RTO, RPO, data integrity, and application connectivity. Perform an actual restore in an isolated environment and evaluate it, as with AWS Backup restore testing.",
+          "words": 35
         },
         {
           "contentRef": "section:recovery:paragraph:2",
           "kind": "paragraph",
-          "label": "Backup and recovery: creating a backup and being able to restore are different.",
-          "text": "A backup retains data or resources from a particular point in time for recovery. However, a successful backup job alone does not prove that you can restore them to the state you actually need.",
-          "words": 43
+          "label": "Verify backup success and restorability separately",
+          "text": "A restore test does not overwrite production. Record the time required, omissions, and reconnection procedure, then update the difference between the plan and the measured results.",
+          "words": 29
         }
       ],
-      "estimatedSeconds": 43,
+      "estimatedSeconds": 35,
       "id": "fundamentals.data-protection:section:recovery:concept:1",
       "kind": "reading",
-      "label": "For a restore, decide which recovery point to restore, where to restore it, what steps to follow, and how to confirm that the application is usable. AWS Backup restore testing is a mechanism for regularly assessing recoverability.",
+      "label": "Verify backup success and restorability separately",
       "objectiveIds": [
         "recovery"
       ],
@@ -1241,23 +1199,23 @@
         {
           "contentRef": "section:recovery:scenario",
           "kind": "scenario",
-          "label": "Scenario",
-          "text": "You operate nightly backups of order data.",
-          "words": 10
+          "label": "Situation",
+          "text": "The overnight backup of the orders database succeeds, but the restoration procedure has not been tested.",
+          "words": 16
         },
         {
           "contentRef": "section:recovery:step:0",
           "kind": "steps",
           "label": "Step 1",
-          "text": "Choose a recovery point to use for the restore and a separate restore destination.",
-          "words": 12
+          "text": "Choose a recovery point and an isolated restoration target.",
+          "words": 9
         },
         {
           "contentRef": "section:recovery:step:1",
           "kind": "steps",
           "label": "Step 2",
-          "text": "Run restore jobs regularly.",
-          "words": 8
+          "text": "Restore the database and verify its integrity and application connectivity.",
+          "words": 11
         }
       ],
       "estimatedSeconds": 18,
@@ -1281,15 +1239,15 @@
           "contentRef": "section:recovery:step:2",
           "kind": "steps",
           "label": "Step 3",
-          "text": "Check the order count and application connections, and record the results.",
-          "words": 12
+          "text": "Record the duration and results by comparing them with the RTO/RPO.",
+          "words": 13
         },
         {
           "contentRef": "section:recovery:outcome",
           "kind": "outcome",
           "label": "Conclusion",
-          "text": "You can verify not only that a backup exists, but also that it can be restored to an available state within the required time.",
-          "words": 22
+          "text": "You can verify whether the system can be returned to an available state within the required time.",
+          "words": 15
         }
       ],
       "estimatedSeconds": 18,
@@ -1313,21 +1271,21 @@
           "contentRef": "section:recovery:misconception:claim",
           "kind": "misconception",
           "label": "This is incorrect",
-          "text": "A notification that the backup was created successfully is enough to complete the recovery plan.",
-          "words": 13
+          "text": "A backup success notification means that the recovery plan is complete.",
+          "words": 11
         },
         {
           "contentRef": "section:recovery:misconception:correction",
           "kind": "correction",
           "label": "Correction",
-          "text": "You need to verify the restoration procedure and confirm that the data is usable after restoration.",
-          "words": 17
+          "text": "Actually verify the restoration procedure, post-restoration integrity, application connectivity, and duration.",
+          "words": 16
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:recovery:misconception:1",
       "kind": "misconception",
-      "label": "This Is Incorrect and Correction",
+      "label": "Incorrect statement and correction",
       "objectiveIds": [
         "recovery"
       ],
@@ -1344,29 +1302,29 @@
         {
           "contentRef": "section:recovery:takeaway:0",
           "kind": "takeaway",
-          "label": "Key takeaway",
-          "text": "Backup and restore testing are separate tasks.",
-          "words": 9
+          "label": "Key point",
+          "text": "Backup and restore validation are separate tasks.",
+          "words": 8
         },
         {
           "contentRef": "section:recovery:takeaway:1",
           "kind": "takeaway",
-          "label": "Decide where to restore and what criteria to check.",
-          "text": "Verify recoverability through regular testing.",
+          "label": "Key point",
+          "text": "Determine the restore destination and validation criteria first.",
           "words": 8
         },
         {
           "contentRef": "section:recovery:takeaway:2",
           "kind": "takeaway",
-          "label": "Key takeaway",
-          "text": "AWS Backup restore testing",
-          "words": 9
+          "label": "Key point",
+          "text": "Perform restore testing in an isolated environment and compare the results with the RTO/RPO.",
+          "words": 12
         }
       ],
       "estimatedSeconds": 16,
       "id": "fundamentals.data-protection:section:recovery:takeaway:1",
       "kind": "takeaway",
-      "label": "Key takeaway",
+      "label": "Key point",
       "objectiveIds": [
         "recovery"
       ],
@@ -1389,7 +1347,7 @@
       "estimatedSeconds": 55,
       "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.recovery.v1",
       "kind": "checkpoint",
-      "label": "checkpoint",
+      "label": "Checkpoint",
       "objectiveIds": [
         "recovery"
       ],
@@ -1406,29 +1364,29 @@
         {
           "contentRef": "section:secrets:paragraph:0",
           "kind": "paragraph",
-          "label": "Secrets: Separate the value, its display, and who retrieves it",
-          "text": "Passwords, API keys, and tokens are secrets. Storing them in plaintext in source code, configuration files, chats, or logs increases the number of people who can view them and places where they are copied, and makes rotation more difficult.",
-          "words": 34
+          "label": "Separate the storage, retrieval, and display of secrets",
+          "text": "Passwords, API keys, and tokens are secrets. Placing them in plaintext in source code, configuration files, chats, or logs increases the number of viewers and replication locations.",
+          "words": 28
         },
         {
           "contentRef": "section:secrets:paragraph:1",
           "kind": "paragraph",
-          "label": "AWS Secrets Manager stores secrets and encrypts them with KMS at rest. Let the application retrieve only the secrets it needs through its execution role.",
-          "text": "Safely handling secrets takes more than providing a place to store them. Keep their values out of logs, limit which secrets are in scope, separate the principals that use them, and confirm that consumers can keep up after an update.",
-          "words": 32
+          "label": "Separate the storage, retrieval, and display of secrets",
+          "text": "Store them in AWS Secrets Manager, and have the application retrieve only the secrets it needs using its execution role. Preparing a storage location does not provide protection if retrieval permissions are too broad.",
+          "words": 40
         },
         {
           "contentRef": "section:secrets:paragraph:2",
           "kind": "paragraph",
-          "label": "Secrets: Separate the value, its display, and who retrieves it.",
-          "text": "Secrets: Separate the value, its display, and who retrieves it.",
-          "words": 46
+          "label": "Separate the storage, retrieval, and display of secrets",
+          "text": "Do not output values in logs or error responses, limit access to the relevant secrets, and confirm that dependent applications can keep up after an update.",
+          "words": 26
         }
       ],
-      "estimatedSeconds": 43,
+      "estimatedSeconds": 33,
       "id": "fundamentals.data-protection:section:secrets:concept:1",
       "kind": "reading",
-      "label": "Safely handling secrets takes more than providing a place to store them. Keep their values out of logs, limit which secrets are in scope, separate the principals that use them, and confirm that consumers can keep up after an update.",
+      "label": "Separate the storage, retrieval, and display of secrets",
       "objectiveIds": [
         "secrets"
       ],
@@ -1445,26 +1403,26 @@
         {
           "contentRef": "section:secrets:scenario",
           "kind": "scenario",
-          "label": "Scenario",
-          "text": "The application uses a token for an external API.",
-          "words": 9
+          "label": "Situation",
+          "text": "The application uses an external API token and records request information in logs when a failure occurs.",
+          "words": 17
         },
         {
           "contentRef": "section:secrets:step:0",
           "kind": "steps",
           "label": "Step 1",
-          "text": "Remove the token from the source code and store it in Secrets Manager.",
-          "words": 13
+          "text": "Register the token in Secrets Manager and remove it from the code.",
+          "words": 12
         },
         {
           "contentRef": "section:secrets:step:1",
           "kind": "steps",
           "label": "Step 2",
-          "text": "Allow the application execution role to retrieve only that secret.",
-          "words": 12
+          "text": "Allow the execution role to retrieve only the target secret.",
+          "words": 11
         }
       ],
-      "estimatedSeconds": 20,
+      "estimatedSeconds": 22,
       "id": "fundamentals.data-protection:section:secrets:example:1",
       "kind": "example",
       "label": "Example",
@@ -1485,15 +1443,15 @@
           "contentRef": "section:secrets:step:2",
           "kind": "steps",
           "label": "Step 3",
-          "text": "Check that the token value does not appear in logs or error messages.",
-          "words": 15
+          "text": "Verify that values do not appear in logs or error displays.",
+          "words": 13
         },
         {
           "contentRef": "section:secrets:outcome",
           "kind": "outcome",
           "label": "Conclusion",
-          "text": "You can prevent exposure in repositories and logs, and restrict which principals can retrieve it.",
-          "words": 18
+          "text": "Separating the storage location, retrieval principal, and display path helps limit the scope of a leak.",
+          "words": 17
         }
       ],
       "estimatedSeconds": 18,
@@ -1517,21 +1475,21 @@
           "contentRef": "section:secrets:misconception:claim",
           "kind": "misconception",
           "label": "This is incorrect",
-          "text": "It is safe to write secrets to logs if they are stored in environment variables.",
+          "text": "It is safe to expose secrets in logs if they are environment variables.",
           "words": 14
         },
         {
           "contentRef": "section:secrets:misconception:correction",
           "kind": "correction",
           "label": "Correction",
-          "text": "Regardless of how they are stored, displaying values in logs exposes them. Do not output the values, and limit the scope of retrieval.",
-          "words": 23
+          "text": "Environment variables are also runtime secrets. Do not expose their values in logs or errors, and limit who can retrieve them.",
+          "words": 24
         }
       ],
       "estimatedSeconds": 18,
       "id": "fundamentals.data-protection:section:secrets:misconception:1",
       "kind": "misconception",
-      "label": "Incorrect claim and correction",
+      "label": "This is incorrect and correction",
       "objectiveIds": [
         "secrets"
       ],
@@ -1548,37 +1506,37 @@
         {
           "contentRef": "section:secrets:takeaway:0",
           "kind": "takeaway",
-          "label": "Key takeaways",
-          "text": "Separate secret values from code and logs.",
-          "words": 10
+          "label": "Key point",
+          "text": "Separate secrets from code and logs.",
+          "words": 9
         },
         {
           "contentRef": "section:secrets:takeaway:1",
           "kind": "takeaway",
-          "label": "Limit which principals can retrieve each secret.",
-          "text": "Also review rotation and display paths.",
-          "words": 10
+          "label": "Key point",
+          "text": "Minimize permissions to retrieve the target secret.",
+          "words": 9
         },
         {
           "contentRef": "section:secrets:takeaway:2",
           "kind": "takeaway",
-          "label": "Key takeaways",
-          "text": "AWS Secrets Manager data protection",
-          "words": 8
+          "label": "Key point",
+          "text": "Confirm that the value is not displayed or collected even after rotation.",
+          "words": 14
         }
       ],
       "estimatedSeconds": 16,
       "id": "fundamentals.data-protection:section:secrets:takeaway:1",
       "kind": "takeaway",
-      "label": "Key takeaways",
+      "label": "Key point",
       "objectiveIds": [
         "secrets"
       ],
       "sectionId": "secrets",
       "sources": [
         {
-          "label": "AWS Secrets Manager data protection",
-          "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/data-protection.html"
+          "label": "AWS Secrets Manager User Guide",
+          "url": "https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html"
         }
       ],
       "style": "normal",
@@ -1590,7 +1548,7 @@
     {
       "assessmentId": "fundamentals.data-protection.checkpoint.secrets.v1",
       "blocks": [],
-      "estimatedSeconds": 63,
+      "estimatedSeconds": 55,
       "id": "fundamentals.data-protection:checkpoint:fundamentals.data-protection.checkpoint.secrets.v1",
       "kind": "checkpoint",
       "label": "Checkpoint",
@@ -1611,7 +1569,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-101",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final check",
       "objectiveIds": [
         "encryption"
       ],
@@ -1629,7 +1587,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-102",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final check",
       "objectiveIds": [
         "encryption"
       ],
@@ -1644,7 +1602,7 @@
     {
       "assessmentId": "fund-data-103",
       "blocks": [],
-      "estimatedSeconds": 57,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-103",
       "kind": "final",
       "label": "Final Check",
@@ -1662,7 +1620,7 @@
     {
       "assessmentId": "fund-data-104",
       "blocks": [],
-      "estimatedSeconds": 57,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-104",
       "kind": "final",
       "label": "Final Check",
@@ -1683,7 +1641,7 @@
       "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-105",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final Check",
       "objectiveIds": [
         "kms"
       ],
@@ -1698,10 +1656,10 @@
     {
       "assessmentId": "fund-data-106",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-106",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final Check",
       "objectiveIds": [
         "kms"
       ],
@@ -1716,10 +1674,10 @@
     {
       "assessmentId": "fund-data-107",
       "blocks": [],
-      "estimatedSeconds": 63,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-107",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final Check",
       "objectiveIds": [
         "recovery"
       ],
@@ -1734,10 +1692,10 @@
     {
       "assessmentId": "fund-data-108",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 60,
       "id": "fundamentals.data-protection:final:fund-data-108",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final review",
       "objectiveIds": [
         "recovery"
       ],
@@ -1752,10 +1710,10 @@
     {
       "assessmentId": "fund-data-109",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 65,
       "id": "fundamentals.data-protection:final:fund-data-109",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final review",
       "objectiveIds": [
         "recovery"
       ],
@@ -1770,10 +1728,10 @@
     {
       "assessmentId": "fund-data-110",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-110",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final review",
       "objectiveIds": [
         "secrets"
       ],
@@ -1788,10 +1746,10 @@
     {
       "assessmentId": "fund-data-111",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 57,
       "id": "fundamentals.data-protection:final:fund-data-111",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final review",
       "objectiveIds": [
         "secrets"
       ],
@@ -1806,10 +1764,10 @@
     {
       "assessmentId": "fund-data-112",
       "blocks": [],
-      "estimatedSeconds": 71,
+      "estimatedSeconds": 68,
       "id": "fundamentals.data-protection:final:fund-data-112",
       "kind": "final",
-      "label": "Final Review",
+      "label": "Final review",
       "objectiveIds": [
         "secrets"
       ],
@@ -1823,10 +1781,10 @@
     }
   ],
   "timing": {
-    "checkpointSeconds": 236,
-    "finalSeconds": 774,
-    "readingSeconds": 497,
-    "totalSeconds": 1507
+    "checkpointSeconds": 220,
+    "finalSeconds": 738,
+    "readingSeconds": 494,
+    "totalSeconds": 1452
   },
   "totalSteps": 39,
   "unit": {
@@ -1836,6 +1794,6 @@
     "prerequisites": [
       "fundamentals.identity-access"
     ],
-    "title": "Data Protection"
+    "title": "Data protection"
   }
 }

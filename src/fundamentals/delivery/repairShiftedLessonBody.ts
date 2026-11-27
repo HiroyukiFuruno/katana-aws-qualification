@@ -10,16 +10,31 @@ export function repairShiftedLessonBody(step: LessonStep): LessonStep {
   const last = step.blocks.at(-1);
   if (!previous || !last || previous.kind !== last.kind) return step;
   const heading = comparable(step.label);
+  const tail = comparable(last.text);
+  const lastLabel = comparable(last.label);
+  if (
+    heading &&
+    step.kind === 'reading' &&
+    last.kind === 'paragraph' &&
+    tail === heading &&
+    comparable(previous.label) === heading &&
+    lastLabel.length > heading.length * 1.25
+  ) {
+    // 最終段落の見出しと本文だけが入れ替わっている。
+    return {
+      ...step,
+      blocks: [...step.blocks.slice(0, -1), { ...last, label: last.text, text: last.label }],
+    };
+  }
   const misplaced = comparable(previous.label);
   if (
     !heading ||
     misplaced.length <= heading.length * 1.25 ||
-    comparable(last.label) !== heading ||
+    lastLabel !== heading ||
     !previous.text.trim()
   ) {
     return step;
   }
-  const tail = comparable(last.text);
   const repeatedHeading = step.kind === 'reading' && last.kind === 'paragraph' && tail === heading;
   const copiedSource =
     step.kind === 'takeaway' &&

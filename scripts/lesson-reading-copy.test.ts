@@ -4,15 +4,15 @@ import type { DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTyp
 import { lessonReadingCopy } from '../src/fundamentals/delivery/lessonReadingCopy';
 import { type Locale, locales } from '../src/locales';
 
-async function deployment(locale: Locale) {
+async function deliveryUnit(locale: Locale, slug = 'release-rollback') {
   const root = locale === 'ja' ? 'public' : `public/translations/${locale}`;
   return JSON.parse(
-    await readFile(`${root}/fundamentals/delivery/release-rollback.json`, 'utf8'),
+    await readFile(`${root}/fundamentals/delivery/${slug}.json`, 'utf8'),
   ) as DeliveryUnitAsset;
 }
 
 test('Japanese release copy replaces misleading wording while preserving step and question identities', async () => {
-  const asset = await deployment('ja');
+  const asset = await deliveryUnit('ja');
   const copy = asset.steps.map((step) => lessonReadingCopy(step, 'ja'));
   expect(copy.map((step) => step.id)).toEqual(asset.steps.map((step) => step.id));
   expect(copy.filter((step) => step.kind === 'misconception').map((step) => step.label)).toEqual(
@@ -28,7 +28,7 @@ test('Japanese release copy replaces misleading wording while preserving step an
 
 test('all nine translations keep the two monitoring paragraphs and outcome in their body fields', async () => {
   for (const locale of locales.filter((item) => item !== 'ja')) {
-    const asset = await deployment(locale);
+    const asset = await deliveryUnit(locale);
     const reading = asset.steps[10];
     const outcome = asset.steps[6];
     expect(reading.sectionId).toBe('observation-abort');
@@ -41,12 +41,53 @@ test('all nine translations keep the two monitoring paragraphs and outcome in th
 });
 
 test('a chapter outside deployment also recovers a paragraph stored in a heading', async () => {
-  const data = JSON.parse(
-    await readFile('public/translations/it/fundamentals/delivery/networking-basics.json', 'utf8'),
-  ) as DeliveryUnitAsset;
+  const data = await deliveryUnit('it', 'networking-basics');
   const step = data.steps[9];
   const fixed = lessonReadingCopy(step, 'it');
   expect(fixed.blocks.at(-2)?.text).toBe(step.blocks.at(-2)?.label);
   expect(fixed.blocks.at(-1)?.text).toBe(step.blocks.at(-2)?.text);
   expect(lessonReadingCopy(fixed, 'it')).toBe(fixed);
+});
+
+test('all nine translations restore a final paragraph with a swapped heading and body', async () => {
+  for (const locale of locales.filter((item) => item !== 'ja')) {
+    const asset = await deliveryUnit(locale, 'cloud-concepts');
+    const onDemand = asset.steps.find(
+      (step) => step.sectionId === 'on-demand' && step.kind === 'reading',
+    );
+    if (!onDemand) throw new Error(`Missing on-demand reading for ${locale}`);
+    const fixed = lessonReadingCopy(onDemand, locale);
+    expect(fixed.blocks[0]).toEqual(onDemand.blocks[0]);
+    expect(fixed.blocks[1].text).toBe(onDemand.blocks[1].label);
+    expect(fixed.blocks[1].label).toBe(onDemand.blocks[1].text);
+    expect(lessonReadingCopy(fixed, locale)).toBe(fixed);
+  }
+});
+
+test('all nine translations keep the IAM role definition when replacing the heading', async () => {
+  for (const locale of locales.filter((item) => item !== 'ja')) {
+    const asset = await deliveryUnit(locale, 'identity-access');
+    const step = asset.steps.find((item) => item.id.endsWith(':principal-role:concept:1'));
+    if (!step) throw new Error(`Missing IAM role slide for ${locale}`);
+    const fixed = lessonReadingCopy(step, locale);
+    expect(fixed.label).not.toBe(step.label);
+    expect(fixed.blocks.map((block) => block.text)).toEqual([
+      step.blocks[0].text,
+      step.blocks[1].label,
+      step.blocks[1].text,
+    ]);
+  }
+});
+
+test('all nine translations retain the CI/CD approval and artifact objectives', async () => {
+  for (const locale of locales.filter((item) => item !== 'ja')) {
+    const asset = await deliveryUnit(locale, 'cicd');
+    const step = asset.steps.find((item) => item.id.endsWith(':intro:objectives:1'));
+    if (!step) throw new Error(`Missing CI/CD objectives slide for ${locale}`);
+    expect(lessonReadingCopy(step, locale).blocks.map((block) => block.text)).toEqual([
+      step.blocks[0].text,
+      step.blocks[1].label,
+      step.blocks[1].text,
+    ]);
+  }
 });

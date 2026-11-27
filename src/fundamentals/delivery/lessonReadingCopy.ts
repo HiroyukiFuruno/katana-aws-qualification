@@ -3,6 +3,7 @@ import headingEdits from './lesson-heading-edits.json' with { type: 'json' };
 import labels from './misconception-labels.json' with { type: 'json' };
 import japaneseEdits from './release-reading-edits.ja.json' with { type: 'json' };
 import translatedRepairs from './release-translation-repairs.json' with { type: 'json' };
+import { repairLessonFieldOrder } from './repairLessonFieldOrder.ts';
 import { repairShiftedLessonBody } from './repairShiftedLessonBody.ts';
 import type { LessonSlideBlock, LessonStep } from './slideTypes.ts';
 
@@ -51,7 +52,8 @@ export function lessonReadingCopy(step: LessonStep, locale: Locale): LessonStep 
   };
 }
 
-function repairLocalizedLesson(step: LessonStep, locale: Locale) {
+function repairLocalizedLesson(original: LessonStep, locale: Locale) {
+  const step = repairLessonFieldOrder(original, locale);
   if (step.unitId !== releaseUnit) return repairShiftedLessonBody(step);
   return repairShiftedLessonBody({
     ...step,

@@ -3,9 +3,11 @@ import { lessonPath } from '../../src/fundamentals/delivery/navigation';
 import {
   lessonAssets,
   lessonCatalogCard,
+  lessonSlideCount,
   nextButton,
   selectLessonAnswer,
   visibleLessonQuestion,
+  visibleLessonSteps,
   walkLessonReading,
 } from './fundamentals.helpers';
 import { createSessions, setRealSession } from './sessions';
@@ -25,10 +27,11 @@ async function reachFirstCheckpoint(page: Parameters<typeof lessonCatalogCard>[0
   if (step?.kind !== 'checkpoint') throw new Error('Missing checkpoint fixture.');
   const question = asset.checkpoints.find((candidate) => candidate.id === step.assessmentId);
   if (!question) throw new Error('Missing checkpoint question fixture.');
-  for (let position = 1; position < step.position; position += 1) {
+  const positionInDeck = visibleLessonSteps(asset).indexOf(step) + 1;
+  for (let position = 1; position < positionInDeck; position += 1) {
     await nextButton(page).click();
     await expect(page.locator('.lesson-slide-meta')).toContainText(
-      `STEP ${position + 1} / ${asset.totalSteps}`,
+      `STEP ${position + 1} / ${lessonSlideCount(asset)}`,
     );
   }
   return { question, step };
@@ -41,11 +44,15 @@ test('a consented guest exits reading to the catalog and resumes the same step',
     await openConsentedGuest(page);
     await lessonCatalogCard(page, asset).getByRole('link').click();
     await nextButton(page).click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${asset.totalSteps}`);
+    await expect(page.locator('.lesson-slide-meta')).toContainText(
+      `STEP 2 / ${lessonSlideCount(asset)}`,
+    );
     await page.getByRole('button', { name: exitLabel, exact: true }).click();
     await expect(page).toHaveURL(/\/study\/fundamentals\/$/);
     await lessonCatalogCard(page, asset).getByRole('link').click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${asset.totalSteps}`);
+    await expect(page.locator('.lesson-slide-meta')).toContainText(
+      `STEP 2 / ${lessonSlideCount(asset)}`,
+    );
   } finally {
     await context.close();
   }
@@ -62,7 +69,7 @@ test('a revisited checkpoint requires a new confirmation before proceeding', asy
   await nextButton(page).click();
   await page.getByRole('link', { name: '前へ', exact: true }).click();
   await expect(page.locator('.lesson-slide-meta')).toContainText(
-    `STEP ${step.position} / ${asset.totalSteps}`,
+    `STEP ${visibleLessonSteps(asset).indexOf(step) + 1} / ${lessonSlideCount(asset)}`,
   );
   await expect(nextButton(page)).toBeDisabled();
 

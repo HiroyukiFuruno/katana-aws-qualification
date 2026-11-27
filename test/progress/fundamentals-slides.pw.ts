@@ -5,6 +5,7 @@ import {
   finishLessonFinal,
   lessonAssets,
   lessonPrefix,
+  lessonSlideCount,
   nextButton,
   walkLessonReading,
 } from './fundamentals.helpers';
@@ -20,9 +21,13 @@ test('a transient mobile guest keeps slide progress through SPA catalog navigati
     const page = await context.newPage();
     await page.goto(lessonPath({ locale: 'ja', unitId: first.unit.id, stage: 'resume' }));
     await page.getByRole('button', { name: '必要なもののみ', exact: true }).click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${first.totalSteps}`);
+    await expect(page.locator('.lesson-slide-meta')).toContainText(
+      `STEP 1 / ${lessonSlideCount(first)}`,
+    );
     await nextButton(page).click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${first.totalSteps}`);
+    await expect(page.locator('.lesson-slide-meta')).toContainText(
+      `STEP 2 / ${lessonSlideCount(first)}`,
+    );
     const geometry = await page.locator('.lesson-slide-shell').evaluate((shell) => ({
       width: document.documentElement.scrollWidth,
       viewport: innerWidth,
@@ -33,7 +38,9 @@ test('a transient mobile guest keeps slide progress through SPA catalog navigati
     expect(geometry.height).toBeLessThanOrEqual(geometry.viewportHeight + 2);
     await page.getByRole('link', { name: '基礎学習の目次', exact: true }).click();
     await page.locator('.lesson-catalog-card').first().getByRole('link').click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 2 / ${first.totalSteps}`);
+    await expect(page.locator('.lesson-slide-meta')).toContainText(
+      `STEP 2 / ${lessonSlideCount(first)}`,
+    );
     expect(
       await page.evaluate(
         (prefix) => Object.keys(localStorage).filter((key) => key.startsWith(prefix)),
@@ -41,7 +48,9 @@ test('a transient mobile guest keeps slide progress through SPA catalog navigati
       ),
     ).toEqual([]);
     await page.reload();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${first.totalSteps}`);
+    await expect(page.locator('.lesson-slide-meta')).toContainText(
+      `STEP 1 / ${lessonSlideCount(first)}`,
+    );
   } finally {
     await context.close();
   }
@@ -82,5 +91,5 @@ test('a consented guest passes only one complete final attempt and reloads that 
       first,
     ),
   );
-  await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${first.totalSteps}`);
+  await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${lessonSlideCount(first)}`);
 });

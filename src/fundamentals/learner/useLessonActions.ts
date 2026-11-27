@@ -7,6 +7,7 @@ import type { LessonStep } from '../delivery/slideTypes';
 import type { LessonServices } from '../state/services';
 import type { LessonSnapshot } from '../state/types';
 import { useLessonMutation } from '../state/useLessonMutation';
+import { advanceReading } from './advanceReading';
 import { finalizeLessonCommand } from './finalizeLessonCommand';
 import { createRandomizedFinalSessionId } from './lesson-presentation';
 
@@ -16,6 +17,7 @@ type Input = {
   snapshot: LessonSnapshot;
   step: LessonStep;
   locale: Locale;
+  lastPosition: number;
   contentVersion?: string;
   finalPosition?: number;
   presentationPosition: number;
@@ -29,6 +31,7 @@ export function useLessonActions({
   asset,
   snapshot,
   step,
+  lastPosition,
   locale,
   contentVersion,
   finalPosition,
@@ -87,11 +90,14 @@ export function useLessonActions({
         },
       },
       (result) => confirm(result, href),
-      submit ? (result) => finalizeLessonCommand(result, base()) : undefined,
+      submit
+        ? (result, completed) =>
+            completed.kind === 'saveResponse' ? finalizeLessonCommand(result, base()) : undefined
+        : undefined,
     );
   }
   function next() {
-    const next = asset.steps[step.position];
+    const next = asset.steps[lastPosition];
     const href = next ? stepHref(locale, next, asset, contentVersion) : resultHref;
     if (step.kind === 'final') {
       const nextPosition = Math.min(presentationPosition + 1, 11);
@@ -111,19 +117,16 @@ export function useLessonActions({
       confirm(snapshot, href);
       return Promise.resolve();
     }
-    return mutation.execute(
-      {
-        ...base(),
-        kind: 'recordStep',
-        input: {
-          stepId: step.id,
-          expectedRevision: snapshot.progress.revision,
-          receiptId: crypto.randomUUID(),
-          durationMs: duration(),
-        },
-      },
-      (result) => confirm(result, href),
-    );
+    return advanceReading({
+      asset,
+      step,
+      lastPosition,
+      snapshot,
+      base,
+      duration,
+      execute: mutation.execute,
+      done: (result) => confirm(result, href),
+    });
   }
   function checkpoint() {
     return mutation.execute(

@@ -42,10 +42,6 @@ export function LessonCatalogCard({
           <dd>{unit.minutes}</dd>
         </div>
         <div>
-          <dt>{t('fundamentalsSteps')}</dt>
-          <dd>{unit.totalSteps}</dd>
-        </div>
-        <div>
           <dt>{t('fundamentalsCheckpoints')}</dt>
           <dd>{unit.checkpointCount}</dd>
         </div>

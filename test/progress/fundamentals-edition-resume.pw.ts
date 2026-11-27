@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { lessonAssets, lessonPrefix, lessonSlideCount, nextButton } from './fundamentals.helpers';
 import { archivedAsset, archivedGuestFinal } from './fundamentals-edition.fixture';
-import { lessonAssets, lessonPrefix, nextButton } from './fundamentals.helpers';
 
 const current = lessonAssets[0];
 if (!current) throw new Error('Missing revised fixture');
@@ -55,7 +55,9 @@ for (const submitted of [false, true]) {
     await expect(nextButton(page)).toBeDisabled();
     await page.getByRole('button', { name: '学習を終了', exact: true }).click();
     await page.locator('.lesson-catalog-card').first().getByRole('link').click();
-    await expect(page.locator('.lesson-slide-meta')).toContainText(`STEP 1 / ${current.totalSteps}`);
+    await expect(page.locator('.lesson-slide-meta')).toContainText(
+      `STEP 1 / ${lessonSlideCount(current)}`,
+    );
     expect(new URL(page.url()).search).toBe('');
     const revisedKey = `${lessonPrefix}${current.unit.id}.${current.contentVersion}`;
     expect(await page.evaluate((key) => localStorage.getItem(key), revisedKey)).toBeNull();

@@ -19,6 +19,35 @@ async function localizedContent(locale: (typeof locales)[number]) {
   return JSON.parse(await readFile(`public/translations/${locale}/site.json`, 'utf8')) as SiteContent;
 }
 
+async function renderLanding(locale: (typeof locales)[number]) {
+  const copy = messages[locale];
+  const path = join('dist', localePath(locale), 'index.html');
+  const html = await readFile(path, 'utf8');
+  const landing = renderToStaticMarkup(
+    <main id="main" className="shell">
+      <h1>{copy.landingTitle}</h1>
+      <p>{copy.landingIntro}</p>
+      <section>
+        <h2>{copy.landingConceptTitle}</h2>
+        <p>{copy.landingConceptIntro}</p>
+        <h3>{copy.landingUsesTitle}</h3>
+        <p>{copy.landingConceptUses}</p>
+      </section>
+      <nav aria-label={copy.landingStartTitle}>
+        <a href={localePath(locale, 'certifications/overview')}>{copy.certOverviewTitle}</a>
+        <a href={localePath(locale, 'study')}>{copy.study}</a>
+        <a href={localePath(locale, 'assessment')}>{copy.skillsAssessment}</a>
+      </nav>
+      <footer>
+        <a href={`https://katana-series.katana-projects.org${localePath(locale)}`}>
+          {copy.katanaWebsite}
+        </a>
+      </footer>
+    </main>,
+  );
+  await writeFile(path, withRootContent(html, landing));
+}
+
 async function renderEntrance(locale: (typeof locales)[number], page: string) {
   const path = join('dist', localePath(locale, page), 'index.html');
   const html = await readFile(path, 'utf8');
@@ -44,6 +73,8 @@ for (const locale of locales) {
     />,
   );
   await writeFile(path, withRootContent(html, overview));
-  await renderEntrance(locale, '');
+  await renderLanding(locale);
   await renderEntrance(locale, 'certifications');
 }
+
+await import('./render-public-directories.tsx');

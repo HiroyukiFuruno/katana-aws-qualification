@@ -17,6 +17,19 @@ for (const locale of locales) {
   const html = await readFile(join('dist', path, 'index.html'), 'utf8');
   const { landingTitle, landingSearchTitle, landingTitleEmphasis, landingIntro, landingDescription } =
     messages[locale];
+  for (const content of [landingTitle, landingIntro, messages[locale].landingConceptUses]) {
+    assert(
+      html.includes(escapeHtml(content).replaceAll("'", '&#x27;')),
+      `${locale}: include landing content in initial HTML`,
+    );
+  }
+  for (const page of ['study', 'assessment', 'certifications/overview']) {
+    assert(html.includes(`href="${localePath(locale, page)}"`), `${locale}: link to ${page}`);
+  }
+  assert(
+    html.includes(`href="https://katana-series.katana-projects.org${localePath(locale)}"`),
+    `${locale}: link to the KatanA series`,
+  );
   assert(landingTitle.includes(landingTitleEmphasis), `${locale}: highlight a word in the title`);
   assert(landingIntro.includes('KAQ'), `${locale}: introduce the KAQ brand`);
   assert.notEqual(landingDescription, landingIntro, `${locale}: explain uses separately from the hero`);

@@ -118,4 +118,13 @@ export const qualificationLearningCases: QualificationLearningCase[] = [
     answer: /コミット、テスト結果、署名済みの不変アーティファクト、承認、環境昇格を一つの配信記録/,
     choiceCount: 3,
   },
+  {
+    courseId: 'ai-business-strategist',
+    firstTitle: 'AIの基礎とリテラシー',
+    nextUnit: 'strategy-value',
+    prompt: /営業部長は固定の価格表に従う見積作成を自動化します。最初に選ぶ方式はどれです/,
+    answer: /規則ベースの自動化/,
+    choiceCount: 4,
+    figureInNextUnit: true,
+  },
 ];

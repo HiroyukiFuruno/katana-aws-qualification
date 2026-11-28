@@ -1,0 +1,135 @@
+{
+  "id": "incident-and-event-response",
+  "title": "Responder a incidentes e eventos",
+  "objective": "Processar eventos no contexto adequado, implementar alterações com impacto limitado e solucionar problemas.",
+  "prerequisites": [
+    {
+      "slug": "monitoring-and-logging",
+      "title": "Projetar monitoramento e registro em log",
+      "courseId": "dop-c02"
+    }
+  ],
+  "sections": [
+    {
+      "id": "event-routing",
+      "title": "Encaminhar eventos corretamente para notificações e processamento",
+      "paragraphs": [
+        "Em uma resposta orientada por eventos, defina a origem, o formato do evento, as condições de correspondência, as duplicações, a ordenação, as novas tentativas e o destino quando o processamento falhar. Mesmo ao receber eventos de serviços como AWS Health, EventBridge e CloudTrail, não encaminhe tudo para o mesmo processo automatizado. Em vez disso, separe notificações, tíquetes, investigações e automações de acordo com a gravidade e o impacto.",
+        "Ao usar fan-out, filas ou fluxos de trabalho, projete um processamento idempotente e o tratamento de mensagens na fila de mensagens não entregues, partindo do princípio de que a entrega pode ocorrer pelo menos uma vez e que podem ocorrer duplicações. Descartar um evento como falha pode causar respostas perdidas e lacunas na investigação da causa raiz."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame DOP-C02: Resposta a incidentes e eventos",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "bounded-remediation",
+      "title": "Estabelecer limites de segurança para a remediação automatizada",
+      "paragraphs": [
+        "Implemente respostas automatizadas a desvios de configuração e incidentes como runbooks que definam o escopo, os pré-requisitos, as permissões de execução, os limites de simultaneidade, os critérios de sucesso, as condições de parada e os procedimentos de rollback. Alterar todos os ambientes sem limitar o escopo pode transformar falsos positivos ou falhas temporárias de dependências em uma interrupção que afete todo o ambiente.",
+        "Após a remediação, verifique o histórico de alterações e as mesmas métricas de impacto nos usuários. Se não houver melhoria, não continue tentando indefinidamente; interrompa a execução, faça a escalada e transfira as hipóteses e as evidências."
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ]
+    },
+    {
+      "id": "troubleshoot-with-evidence",
+      "title": "Solucionar incidentes com base em evidências",
+      "paragraphs": [
+        "Os responsáveis pela resposta a incidentes comparam, em uma única linha do tempo, o horário da ocorrência, as operações e os usuários afetados, as implantações e alterações de configuração imediatamente anteriores, as dependências, o caminho das solicitações, os logs e as métricas. Eles não determinam a causa com base apenas em um único aumento de CPU ou em uma única entrada de log.",
+        "As alterações feitas para solucionar o incidente devem limitar o escopo do impacto e registrar a hipótese, a mudança esperada, os valores observados e o procedimento de reversão. Mesmo quando a recuperação é urgente, não se deve apagar evidências nem remover todas as proteções."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame DOP-C02: Solução de problemas de incidentes",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dop-incident-1",
+      "prompt": "A pessoa responsável por executar o processamento automatizado em resposta a eventos de alteração da infraestrutura quer evitar que a mesma alteração seja aplicada duas vezes devido a eventos duplicados. Escolha um único design de processamento de eventos mais adequado.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Processe os eventos de forma idempotente usando o ID do evento ou o estado do destino e projete verificações para novas tentativas e para a fila de mensagens não entregues.",
+          "explanation": "Isso permite processar os eventos com segurança mesmo quando ocorrem duplicações ou falhas temporárias."
+        },
+        {
+          "id": "b",
+          "text": "Pressuponha que cada evento seja entregue apenas uma vez e descarte-o se o processamento falhar.",
+          "explanation": "Isso pode causar tanto falhas no atendimento quanto alterações duplicadas."
+        },
+        {
+          "id": "c",
+          "text": "Execute todos os eventos incondicionalmente usando o mesmo script de administrador.",
+          "explanation": "Isso não permite distinguir a importância nem o escopo do impacto."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-incident-2",
+      "prompt": "Você quer evitar que um runbook que corrige automaticamente desvios de configuração afete todo o ambiente de produção em caso de um falso positivo. Selecione um único design de runbook mais apropriado.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Definir os alvos, os pré-requisitos, as permissões de privilégio mínimo, o número de execuções simultâneas e as condições de sucesso, parada e reversão, e então executá-lo de forma limitada.",
+          "explanation": "Isso permite controlar o escopo do impacto da automação."
+        },
+        {
+          "id": "b",
+          "text": "Aplicá-lo imediatamente a todos os ambientes quando a detecção ocorrer, sem definir condições de parada.",
+          "explanation": "Isso ampliaria um falso positivo para um incidente que afetaria todo o ambiente."
+        },
+        {
+          "id": "c",
+          "text": "Não verificar as métricas após a correção.",
+          "explanation": "Não é possível verificar a eficácia nem a ocorrência de incidentes secundários."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-incident-3",
+      "prompt": "Após uma nova implantação, as falhas de pedidos aumentaram. Selecione uma única ação inicial de diagnóstico mais apropriada para o responsável pelo incidente.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Reiniciar todos os serviços porque o uso de CPU está alto.",
+          "explanation": "Isso amplia o impacto sem confirmar a causa."
+        },
+        {
+          "id": "a",
+          "text": "Comparar, na mesma linha do tempo, as operações afetadas, os horários, os usuários, o histórico de alterações, os caminhos das solicitações, as dependências, os logs e as métricas.",
+          "explanation": "Isso permite testar como hipótese a relação com a alteração."
+        },
+        {
+          "id": "c",
+          "text": "Excluir os logs para facilitar a investigação.",
+          "explanation": "Isso causa a perda de evidências necessárias."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EventBridge",
+    "Event-driven architecture",
+    "DLQ",
+    "Idempotency",
+    "Runbook",
+    "CloudTrail",
+    "Incident response",
+    "Correlation ID",
+    "Rollback"
+  ]
+}

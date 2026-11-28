@@ -1,0 +1,135 @@
+{
+  "id": "incident-and-event-response",
+  "title": "インシデントとイベントへ対応する",
+  "objective": "イベントを文脈付きで処理し、影響範囲を限定した変更とトラブルシューティングを実行できる。",
+  "prerequisites": [
+    {
+      "slug": "monitoring-and-logging",
+      "title": "モニタリングとロギングを設計する",
+      "courseId": "dop-c02"
+    }
+  ],
+  "sections": [
+    {
+      "id": "event-routing",
+      "title": "イベントを通知と処理へ正しくルーティングする",
+      "paragraphs": [
+        "イベント駆動の対応では、発生元、イベント形式、対象条件、重複、順序、再試行、失敗時の行き先を定義します。AWS Health、EventBridge、CloudTrail などのイベントを受けても、すべてを同じ自動処理へ流すのではなく、重要度と影響範囲で通知、チケット、調査、自動化を分けます。",
+        "ファンアウト、キュー、ワークフローを使うときは、少なくとも一度の配信や重複を前提に冪等な処理とデッドレターの確認を設計します。イベントを失敗として捨てると、対応漏れと原因調査の欠落を生みます。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 試験ガイド: インシデントとイベントへの対応",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "bounded-remediation",
+      "title": "自動修復に安全境界を置く",
+      "paragraphs": [
+        "設定逸脱や障害への自動対応は、対象、事前条件、実行権限、同時実行数、成功条件、停止条件、ロールバックを持つランブックとして実装します。対象を絞らずに全環境へ変更すると、誤検知や一時的な依存障害を全体障害へ変えるおそれがあります。",
+        "修復後には、変更履歴と同じ利用者影響の指標を確認します。改善しない場合は再試行を無限に続けず、実行を止めてエスカレーションし、仮説と証拠を引き継ぎます。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ]
+    },
+    {
+      "id": "troubleshoot-with-evidence",
+      "title": "証拠から障害を切り分ける",
+      "paragraphs": [
+        "障害対応者は、発生時刻、影響を受けた操作と利用者、直前のデプロイ・設定変更、依存先、要求経路、ログ、メトリクスを一つの時系列で比較します。単一の CPU 上昇や一件のログだけで原因を断定しません。",
+        "切り分けの変更は、影響範囲を限定し、仮説、期待する変化、観測値、戻し方を記録します。復旧を急ぐ場合でも、証跡を消去したり、すべての保護を外したりしてはいけません。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 試験ガイド: 障害のトラブルシューティング",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dop-incident-1",
+      "prompt": "インフラストラクチャの変更イベントを受けて自動処理を実行する担当者は、重複イベントで同じ変更を二度適用しないようにしたいと考えています。最も適切なイベント処理設計を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "イベント ID や対象状態を用いて冪等に処理し、再試行とデッドレターの確認を設計する。",
+          "explanation": "重複や一時的失敗があっても安全に処理できます。"
+        },
+        {
+          "id": "b",
+          "text": "イベントを一度しか届かないものと仮定し、失敗時は捨てる。",
+          "explanation": "対応漏れと重複変更の両方を招きます。"
+        },
+        {
+          "id": "c",
+          "text": "全イベントを同じ管理者スクリプトで無条件に実行する。",
+          "explanation": "重要度と影響範囲を区別できません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-incident-2",
+      "prompt": "設定逸脱を自動修復するランブックが、誤検知時に全本番環境へ影響することを避けたいと考えています。最も適切なランブック設計を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "対象、事前条件、最小権限、同時実行数、成功・停止・ロールバック条件を定義して限定実行する。",
+          "explanation": "自動化の作用範囲を制御できます。"
+        },
+        {
+          "id": "b",
+          "text": "検知時にすべての環境へ即時適用し、停止条件を設けない。",
+          "explanation": "誤検知を全体障害へ拡大します。"
+        },
+        {
+          "id": "c",
+          "text": "修復後の指標を確認しない。",
+          "explanation": "効果と二次障害を確認できません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-incident-3",
+      "prompt": "新しいデプロイ後に注文失敗が増えました。障害担当者が最初に実施する最も適切な切り分けを1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "CPU が高いため、全サービスを再起動する。",
+          "explanation": "原因確認なしに影響を拡大します。"
+        },
+        {
+          "id": "a",
+          "text": "影響操作・時刻・利用者、変更履歴、要求経路、依存先、ログ、メトリクスを同じ時系列で比較する。",
+          "explanation": "変更との関係を仮説として検証できます。"
+        },
+        {
+          "id": "c",
+          "text": "調査を容易にするためログを削除する。",
+          "explanation": "必要な証拠を失います。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EventBridge",
+    "Event-driven architecture",
+    "DLQ",
+    "Idempotency",
+    "Runbook",
+    "CloudTrail",
+    "Incident response",
+    "Correlation ID",
+    "Rollback"
+  ]
+}

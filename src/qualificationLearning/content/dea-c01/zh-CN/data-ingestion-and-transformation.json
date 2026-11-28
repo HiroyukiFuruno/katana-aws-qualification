@@ -1,0 +1,189 @@
+{
+  "id": "data-ingestion-and-transformation",
+  "title": "数据摄取与转换",
+  "objective": "根据数据来源、到达频率、是否需要重新处理以及转换后数据的使用目的，说明数据摄取与转换流程，并选择适当的设计决策。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服务"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    },
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    }
+  ],
+  "sections": [
+    {
+      "id": "batch-and-streaming-inputs",
+      "title": "根据数据到达方式区分批处理和流处理",
+      "paragraphs": [
+        "摄取数据时，首先要明确谁发送什么数据、数据何时可用，以及使用者最迟需要在什么时间点获得结果。例如，每晚确定的销售文件可以按批处理方式处理。另一方面，如果必须按记录到达的顺序进行处理，例如配送车辆持续发送的位置数据，则应按流处理方式处理。",
+        "Amazon Kinesis Data Streams 是一项用于实时收集和处理大量流记录的服务。选择流处理并不意味着所有处理都必须立即完成。为了能够在之后验证和重新处理摄取的记录，应将输入、已处理的位置以及失败记录的处理方式分开设计。",
+        "批处理和流处理的选择不是从服务名称开始的。应先整理到达频率、可接受的延迟、数据量、顺序以及重新处理要求，然后确定从数据源到使用者的责任边界，再选择摄取方式。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 1：数据摄取与转换",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "什么是 Amazon Kinesis Data Streams？",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-data-ingestion-flow"
+    },
+    {
+      "id": "repeatable-raw-data-and-schema",
+      "title": "不要混淆原始数据、架构和转换结果",
+      "paragraphs": [
+        "在可复现的管道中，应区分接收的原始数据、用于转换的规则和转换后的结果。当发现转换逻辑存在缺陷时，如果能够确定原始数据和处理范围，就可以使用修正后的逻辑仅重新处理所需的范围。如果用转换后的内容覆盖原始数据，就会失去日后验证所需的材料。",
+        "在 AWS Glue 中，数据目录、爬网程序、ETL 作业和触发器承担不同的角色。Data Catalog 表不是数据本身，而是描述数据位置、架构等信息的元数据。不要无条件地使用爬网程序推断的结果，而应与数据提供者就架构变更的条件达成一致，并确认对下游使用者的影响。",
+        "将格式从 CSV 更改为列式格式、按日期和时间进行分区、删除不必要的列等转换，应根据要使用的查询和运营条件来决定。记录转换目的、输入版本、输出位置和验证结果，有助于说明如何得到相同的结果。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Glue 概念",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        },
+        {
+          "label": "DEA-C01 领域 1：数据摄取与转换",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "orchestration-and-failure-handling",
+      "title": "定义处理顺序和失败时的去向",
+      "paragraphs": [
+        "管道编排并不只是按顺序启动作业。它是一种机制，只有在确认前一个处理步骤已成功、输入已齐备且满足质量条件后，才会进入下一个处理步骤。应根据数据变得可用的条件，决定以计划、事件还是手动运行作为入口。",
+        "在处理失败的设计中，应区分可以重试的临时故障和需要由人员检查内容的无效数据。如果不先确定重试次数、等待时间、隔离位置、通知目标以及恢复处理的单位，只是一味增加自动重试，就可能反复处理同一个错误输入。",
+        "如果同一个输入可能被接收多次，应设计用于识别已处理输入的键，或设计不会产生重复输出的更新方法。这并不是某项特定服务独有的功能，而是一种需要将输入、状态和输出联系起来考虑的特性。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 1：数据摄取与转换",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "AWS Glue 概念",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ]
+    },
+    {
+      "id": "transformation-quality-contract",
+      "title": "明确转换前后的质量标准",
+      "paragraphs": [
+        "不能仅凭作业是否无错误地结束来判断转换处理是否完成。对于订单数据，应根据使用目的定义质量标准，例如订单号重复、必填项缺失、金额范围以及被引用记录是否存在。同时还要确定不符合条件的行应隔离到哪里、由谁确认，以及在什么条件下重新投入处理。",
+        "质量标准应由数据来源负责人、数据工程师和使用部门共同共享。如果提供方新增或删除列，或更改列的含义，应记录变更从何时起适用于哪些输入，并确认转换侧与使用侧的兼容性。必须区分应检测架构变更并停止处理的场景，以及可以使用默认值予以接受的场景。",
+        "将质量检查划分为输入时、转换时和发布前，可以追踪失败发生的位置及责任归属。监控时不仅要测量记录数，还要测量隔离记录数、延迟，以及更新所覆盖的期间。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 1：数据摄取与转换",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "使用 AWS Glue 进行数据发现和编目",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-ingestion-001",
+      "prompt": "某制造工厂的数据工程师需要将设备每次状态变化时发出的事件在 30 秒内显示到维护团队的仪表板上。如果发现转换程序有缺陷，团队需要在修复后重新处理过去 14 天内任意指定 1 小时的数据。哪种设计符合要求？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "将设备事件汇总成每日文件，于次日早晨转换并更新仪表板。",
+          "explanation": "次日早晨处理无法在事件到达后的 30 秒内更新仪表板。"
+        },
+        {
+          "id": "c",
+          "text": "接收事件后仅保存汇总值，并保留转换代码的变更历史。",
+          "explanation": "即使有代码变更历史，没有原始事件也无法重新处理指定时段。"
+        },
+        {
+          "id": "b",
+          "text": "以流式方式接收事件，并将原始事件保留 14 天。单独记录处理位置，并支持重新处理指定时段的原始数据。",
+          "explanation": "管道可在事件到达时进行转换并更新仪表板。分别管理输入数据和处理位置，使团队在修复转换程序后只重处理指定时段的输入。"
+        },
+        {
+          "id": "d",
+          "text": "每收到一个事件就更新仪表板，并且只保留最近 1 小时的原始数据。",
+          "explanation": "需要重新处理的时段虽只有 1 小时，却可能在过去 14 天中的任何时候。仅保留最近 1 小时无法满足要求。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-002",
+      "prompt": "零售公司的数据提供商每天早晨将订单 CSV 文件放入 Amazon S3。数据工程师希望在修正转换逻辑后只重新运行特定日期的数据处理，并在审计时确认已接收的内容。首先应采取哪种策略？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "不验证接收到的 CSV 文件，直接用转换后的表覆盖它们，只保留最新结果。",
+          "explanation": "这样无法区分接收到的内容和转换结果，之后很难验证或重新运行特定日期的处理。"
+        },
+        {
+          "id": "c",
+          "text": "即使 CSV 列名发生变化，也假定它们始终表示相同含义，不经确认就进行转换。",
+          "explanation": "列名、数据类型或值的含义发生变化，可能导致下游汇总出错，因此必须确认架构变更的条件。"
+        },
+        {
+          "id": "d",
+          "text": "忽略转换作业的所有失败，以免需要重新运行。",
+          "explanation": "忽略失败可能会发布不完整的输出，从而损害质量和可审计性。"
+        },
+        {
+          "id": "b",
+          "text": "按日期等条件识别输入范围，并分别记录原始数据、转换规则和输出目标。",
+          "explanation": "正确。保留处理范围及其依据后，修正逻辑时即可只重新处理所需日期，并对结果作出说明。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-003",
+      "prompt": "保险公司的数据工程师希望在转换保单数据后，检测保单号重复以及必需的保单开始日期缺失。对于包括检测到的无效行在内的数据，采用哪种方法最适合维护后续分析人员所使用的数据质量？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "作业以退出代码 0 完成后，直接发布所有行。",
+          "explanation": "仅凭作业的完成状态无法保证内容质量，例如不存在重复项或必需值缺失。"
+        },
+        {
+          "id": "c",
+          "text": "随机修正无效行，并且不记录修正内容。",
+          "explanation": "如果不保留修正依据及其影响范围，就无法验证修正是否正确，也无法在问题再次发生时进行调查。"
+        },
+        {
+          "id": "d",
+          "text": "由于质量条件因用户而异，因此不与提供者共享这些条件。",
+          "explanation": "如果提供者、转换团队和用户不共享这些条件，就无法安全地判断变更的影响。"
+        },
+        {
+          "id": "b",
+          "text": "执行质量检查，隔离无效行，记录其数量和范围，并将其与要发布的行分开。",
+          "explanation": "正确。结合符合使用目的的质量条件、隔离和记录，可以保持分析数据的质量与可追溯性。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Kinesis Data Streams",
+    "Data Catalog",
+    "Glue crawler",
+    "ETL job",
+    "Schema evolution",
+    "Data quality"
+  ]
+}

@@ -1,0 +1,190 @@
+{
+  "id": "data-store-management",
+  "title": "Gestione degli archivi dati",
+  "objective": "Spiegare e selezionare strategie di gestione degli archivi dati e dei metadati in base ai modelli di accesso degli utenti, ai periodi di conservazione, agli schemi e ai requisiti di prestazioni e costi.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Servizi AWS principali"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protezione dei dati"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoraggio e miglioramento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "storage-by-access-pattern",
+      "title": "Scegliere l’archiviazione in base al modo in cui vengono utilizzati i dati, non alla loro forma",
+      "paragraphs": [
+        "Quando scegli un archivio dati, considera innanzitutto non solo la quantità di dati da archiviare, ma anche chi leggerà e scriverà i dati e in quali condizioni. I pattern di accesso e i metodi di ottimizzazione necessari sono diversi per recuperare con bassa latenza il valore corrente tramite una chiave specifica, eseguire aggregazioni che coprono più periodi ed eseguire query analitiche sui file conservati a lungo termine.",
+        "Quando archivi i dati per l’analisi, combina partizionamento, compressione, formato dei file e colonne e periodi da leggere per ridurre le letture non necessarie. Le partizioni devono essere progettate per restringere l’intervallo di dati in base alle condizioni di ricerca degli utenti, non semplicemente per aumentare il numero di nomi delle cartelle.",
+        "Se scegli la destinazione di archiviazione basandoti solo sulle prestazioni, in seguito potrebbero risultare insufficienti i requisiti di conservazione, ripristino, controllo degli accessi e costi. Per ogni set di dati, registra e confronta la frequenza di aggiornamento, le condizioni di ricerca, il periodo di conservazione, l’ambito necessario durante il ripristino e gli utenti."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 2: gestione degli archivi dati",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Rilevamento e catalogazione dei dati con AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "catalog-is-metadata-not-data",
+      "title": "Un catalogo dati contiene informazioni guida per usare i dati, non i dati effettivi",
+      "paragraphs": [
+        "AWS Glue Data Catalog è un repository centrale di metadati che archivia informazioni come le posizioni delle origini dati, gli schemi e le proprietà. La creazione di una tabella nel catalogo non sposta né replica i dati di origine. È necessario distinguere la posizione in cui sono archiviati i dati effettivi dalla definizione della tabella che aiuta gli utenti a comprenderli e utilizzarli.",
+        "Un crawler può individuare le origini dati e dedurre i metadati. Tuttavia, uno schema dedotto non garantisce il significato aziendale dei dati. I fornitori dei dati e gli amministratori devono integrarlo con il significato delle colonne, il responsabile degli aggiornamenti, i requisiti di qualità e i vincoli di utilizzo.",
+        "Se le posizioni, gli schemi o le partizioni del catalogo differiscono dal contenuto effettivamente archiviato, gli utenti potrebbero eseguire query sull’ambito sbagliato o non trovare i dati necessari. Come parte della pipeline, stabilire quali processi aggiorneranno e convalideranno il catalogo quando i dati vengono aggiunti o modificati."
+      ],
+      "sources": [
+        {
+          "label": "Individuazione e catalogazione dei dati con AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        },
+        {
+          "label": "Concetti di AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ],
+      "figureId": "dea-data-ownership-and-catalog"
+    },
+    {
+      "id": "schema-evolution-and-lineage",
+      "title": "Trattare le modifiche dello schema come modifiche al contratto con gli utenti",
+      "paragraphs": [
+        "Le modifiche dello schema includono l'aggiunta di colonne, la modifica dei nomi delle colonne o dei tipi di dati e la modifica del significato dei valori. Aggiungere una nuova colonna non è necessariamente sicuro. Verifica in che modo le aggregazioni, le join, i controlli di qualità e le impostazioni delle autorizzazioni a valle gestiranno la colonna e determina una procedura di migrazione compatibile.",
+        "Conservare gli schemi prima e dopo la modifica, la data e l'ora di applicazione, i dati interessati e la versione della trasformazione consente di risalire al motivo per cui i risultati sono cambiati. AWS Glue Data Catalog può gestire schemi e partizioni e fornisce informazioni sulla lineage dei dati tramite i record delle trasformazioni e delle operazioni eseguite sui dati.",
+        "La lineage dei dati non consiste nel decorare il flusso con una sola freccia dall'input all'output. È un record che consente di tracciare quale versione di quale set di dati è stata utilizzata da quale processo, quando è stata utilizzata e chi ne è responsabile."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 2: Gestione degli archivi dati",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Individuazione e catalogazione dei dati con AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-and-recovery-scope",
+      "title": "Determina la conservazione e il ripristino per ogni set di dati",
+      "paragraphs": [
+        "Il ciclo di vita dei dati definisce ogni fase: creazione, utilizzo, archiviazione ed eliminazione. Invece di conservare tutto per lo stesso periodo, verifica per ogni set di dati i requisiti legali e contrattuali, lo storico necessario per l’analisi, gli input necessari per la rielaborazione e il modo in cui vengono gestite le informazioni personali.",
+        "I requisiti di ripristino non sono soddisfatti dalla sola presenza di backup. Definisci chi ripristinerà quali dati di quale momento e con quale ambito, e quali utenti non devono essere interessati. In alcuni casi, può essere più appropriato ricreare i dati derivati destinati all’analisi a partire da input affidabili e procedure di trasformazione.",
+        "Prima di automatizzare i periodi di conservazione e i processi di eliminazione, verifica che rimangano disponibili i riferimenti agli utenti che stanno consultando i dati, le evidenze per l’audit e la base per la rielaborazione. Separare i record degli obiettivi di eliminazione, dei responsabili e delle approvazioni delle eccezioni consente di conciliare i costi di conservazione e la responsabilità."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 2: gestione degli archivi dati",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Individuazione e catalogazione dei dati con AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-store-001",
+      "prompt": "Un analista di un’agenzia di viaggi aggrega ripetutamente lo storico delle prenotazioni degli ultimi 3 anni archiviato in Amazon S3, filtrandolo per data e regione. Qual è l’approccio più appropriato per supportare questo utilizzo riducendo al contempo la quantità di dati letti?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Concatenare tutti gli anni e tutte le regioni in un unico file non partizionato e leggere ogni volta tutti i record.",
+          "explanation": "Leggere ogni volta tutti i record quando i dati vengono filtrati per data o regione aumenta le letture non necessarie."
+        },
+        {
+          "id": "c",
+          "text": "Duplicare l’intero stesso storico per ogni analista in posizioni separate.",
+          "explanation": "La duplicazione aumenta i dati da gestire e le possibilità di incoerenza; non è una progettazione che riduce la quantità di dati letti."
+        },
+        {
+          "id": "b",
+          "text": "Progettare partizioni e un formato dei dati corrispondenti alle condizioni di filtraggio per data e regione e sincronizzare anche le definizioni del catalogo.",
+          "explanation": "Corretto. Le partizioni e la gestione dei metadati allineate alle condizioni di filtraggio degli utenti consentono di leggere in modo efficiente l’intervallo di dati pertinente."
+        },
+        {
+          "id": "d",
+          "text": "Ritenere che la creazione di una tabella nel catalogo ottimizzi automaticamente i file già archiviati.",
+          "explanation": "Un catalogo contiene metadati; la sua sola creazione non modifica la posizione né il formato dei dati effettivi."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-002",
+      "prompt": "Un fornitore di dati di un’azienda di dispositivi medici aggiunge una nuova colonna ai dati di misurazione. Le analisi esistenti aggregano i dati in base allo schema precedente. Che cosa deve fare per prima cosa il data engineer per evitare un’aggregazione errata causata dalla modifica?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Verificare solo che sia stata aggiunta una colonna e applicare la modifica in produzione senza analizzarne l’impatto sugli utenti.",
+          "explanation": "Anche quando viene aggiunta una colonna, è necessario valutare l’impatto sulle trasformazioni downstream, sui controlli di qualità, sulle autorizzazioni e sulle aggregazioni."
+        },
+        {
+          "id": "b",
+          "text": "Verificare l’ambito della modifica, il momento di applicazione, la versione dello schema e la compatibilità con i sistemi downstream, quindi documentare la procedura di aggiornamento.",
+          "explanation": "Corretto. Trattare la modifica dello schema come una modifica del contratto per gli utenti dei dati consente di convalidarne l’impatto e di tracciare le differenze nei risultati."
+        },
+        {
+          "id": "c",
+          "text": "Eliminare la tabella del catalogo e poi chiedere al fornitore di dati di inviare nuovamente i dati di misurazione.",
+          "explanation": "L’eliminazione della tabella nasconde soltanto l’impatto; non consente di verificare la compatibilità della modifica né la correttezza dei dati effettivi."
+        },
+        {
+          "id": "d",
+          "text": "Convertire sempre la nuova colonna in una stringa vuota e non informare il fornitore di dati.",
+          "explanation": "Scartare senza autorizzazione informazioni nuove e significative danneggia la qualità dei dati e il contratto con il fornitore."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-003",
+      "prompt": "Il responsabile delle operazioni di un’azienda di streaming video vuole poter recuperare i dati se l’aggregazione mensile delle visualizzazioni viene eliminata per errore. Gli eventi di visualizzazione originali e la procedura di trasformazione sono ancora disponibili. Dal punto di vista dell’ambito del recupero e della responsabilità, qual è la decisione più appropriata?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Stabilire il mese di riferimento, gli input da utilizzare e la versione della trasformazione, quindi rigenerare l’aggregazione mensile verificando i risultati.",
+          "explanation": "Corretto. Quando sono disponibili input e procedure affidabili, definire esplicitamente l’ambito di riferimento e rigenerare i dati derivati consente di verificare e spiegare il risultato."
+        },
+        {
+          "id": "a",
+          "text": "Stimare e ripristinare manualmente solo l’aggregazione mensile corrente, senza confrontarla con i dati originali.",
+          "explanation": "Un ripristino basato su stime non consente di dimostrare l’accuratezza dell’aggregazione né l’ambito di ciò che è stato recuperato."
+        },
+        {
+          "id": "c",
+          "text": "Conservare tutti i dati storici a tempo indeterminato e non definire una procedura di recupero.",
+          "explanation": "La sola conservazione non chiarisce chi debba ripristinare quale ambito né come farlo; pertanto, non soddisfa i requisiti di recupero."
+        },
+        {
+          "id": "d",
+          "text": "Non informare gli utenti che l’aggregazione è stata eliminata e aspettare il successivo processo mensile.",
+          "explanation": "Lasciare irrisolto un output che si sa essere mancante potrebbe indurre gli utenti a prendere decisioni basate su informazioni errate."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "Data lake",
+    "Data Catalog",
+    "Partition key",
+    "Schema evolution",
+    "Data lineage",
+    "TTL"
+  ]
+}

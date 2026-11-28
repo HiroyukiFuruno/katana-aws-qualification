@@ -1,0 +1,190 @@
+{
+  "id": "data-store-management",
+  "title": "資料儲存管理",
+  "objective": "根據使用者的存取模式、保留期間、結構描述、效能需求與成本條件，說明並選擇資料儲存與中繼資料管理策略。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服務"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    },
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    }
+  ],
+  "sections": [
+    {
+      "id": "storage-by-access-pattern",
+      "title": "根據資料的使用方式，而不是資料形態選擇儲存位置",
+      "paragraphs": [
+        "選擇資料存放區時，應先考量的不只是要儲存多少資料，還包括由誰在什麼條件下讀取和寫入資料。對於以特定索引鍵低延遲查詢目前值的處理、跨越多個期間的彙總，以及針對長期保存檔案的分析查詢，所需的存取模式和最佳化方式各不相同。",
+        "將資料用於分析而儲存時，應結合分割、壓縮、檔案格式，以及要讀取的欄和期間，以減少不必要的讀取。設計分割的目的不是增加資料夾名稱，而是根據使用者的搜尋條件，以適當的單位縮小資料範圍。",
+        "如果只根據效能選擇儲存位置，保留、復原、存取控制和費用方面的條件之後可能會不足。應針對每項資料記錄並比較更新頻率、搜尋條件、保留期限、復原時所需的範圍，以及使用者。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 2：資料存放區管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "使用 AWS Glue 進行資料探索與編目",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "catalog-is-metadata-not-data",
+      "title": "資料目錄不是實際資料，而是供使用的導引資訊",
+      "paragraphs": [
+        "AWS Glue Data Catalog 是中央中繼資料儲存庫，會儲存資料來源位置、結構描述和屬性等資訊。在目錄中建立資料表，不會移動或複製來源資料。請區分實際資料的儲存位置，以及協助使用者理解和使用資料的資料表定義。",
+        "爬蟲程式可以探索資料來源並推斷中繼資料。但是，推斷出的結構描述並不保證資料的業務含義。資料提供者和管理員必須補充欄位含義、更新責任人、品質要求及使用限制。",
+        "如果目錄中的位置、結構描述或分割區與實際儲存內容不一致，使用者可能會查詢錯誤的資料範圍，或遺漏所需資料。應將此作為管道的一部分，決定在新增或變更資料時由哪些處理程序更新並驗證目錄。"
+      ],
+      "sources": [
+        {
+          "label": "使用 AWS Glue 進行資料探索與目錄化",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        },
+        {
+          "label": "AWS Glue 概念",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ],
+      "figureId": "dea-data-ownership-and-catalog"
+    },
+    {
+      "id": "schema-evolution-and-lineage",
+      "title": "將結構描述變更視為對使用者契約的變更",
+      "paragraphs": [
+        "結構描述變更包括新增資料欄、變更資料欄名稱或資料類型，以及變更值的意義。新增資料欄不一定安全。請確認下游彙總、聯結、品質檢查和許可設定將如何處理該資料欄，並決定具相容性的遷移程序。",
+        "保留變更前後的結構描述、套用日期與時間、目標資料，以及轉換版本，就能追蹤結果發生變化的原因。AWS Glue Data Catalog 可以管理結構描述和分割區，並透過記錄對資料執行的轉換和操作來提供資料譜系資訊。",
+        "資料譜系不是用一條從輸入指向輸出的箭頭來裝飾流程。它是一份記錄，讓人能追蹤使用了哪個資料集的哪個版本、由哪個處理程序在何時使用，以及由誰負責。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 2：資料存放區管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "使用 AWS Glue 進行資料探索與編目",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-and-recovery-scope",
+      "title": "依資料集決定保留與復原方式",
+      "paragraphs": [
+        "資料生命週期包含建立、使用、儲存和刪除等各個階段。不要將所有資料都保留相同的期間，而應針對每個資料集確認法令與合約要求、分析所需的歷史記錄、重新處理所需的輸入，以及個人資料的處理方式。",
+        "復原需求不只是「有備份」就足夠。需要定義由誰復原哪個時間點的資料、復原多大的範圍，以及不影響哪些使用者。在某些情況下，從可信任的輸入和轉換程序重新建立分析用衍生資料，可能更為適當。",
+        "在自動化保留期限和刪除處理之前，請確認仍會保留目前正在參照資料的使用者資訊、稽核用的佐證，以及重新處理的依據。分開記錄刪除目標、負責人和例外核准，即可兼顧保留成本與當責性。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 2：資料存放區管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "使用 AWS Glue 進行資料探索與編目",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-store-001",
+      "prompt": "旅行公司的分析人員會反覆彙總儲存在 Amazon S3 中、過去 3 年的預訂歷史記錄，並依日期和區域進行篩選。資料工程師若要在抑制讀取量的同時支援這種使用方式，最適合的方針是哪一項？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將所有年份和區域串接到一個未分割的檔案中，每次都讀取全部記錄。",
+          "explanation": "在依日期或區域篩選資料的使用情境中，每次都讀取全部記錄會增加不必要的讀取量。"
+        },
+        {
+          "id": "c",
+          "text": "針對每位分析人員，將相同的全部歷史記錄複製到不同的位置。",
+          "explanation": "複製會增加需要管理的資料量和發生不一致的機會，並不是能減少讀取量的設計。"
+        },
+        {
+          "id": "b",
+          "text": "根據日期和區域的搜尋條件設計相應的分割區和資料格式，同時同步目錄定義。",
+          "explanation": "正確。透過符合使用者篩選條件的分割區和中繼資料管理，可以有效率地讀取相關範圍的資料。"
+        },
+        {
+          "id": "d",
+          "text": "認為只要建立目錄資料表，已儲存的檔案就會自動最佳化。",
+          "explanation": "目錄包含中繼資料；僅建立目錄不會改變實際資料的配置位置或格式。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-002",
+      "prompt": "醫療設備公司的資料提供者在測量資料中新增一個欄位。現有分析是以舊結構描述為前提進行彙總。為避免變更造成錯誤彙總，資料工程師首先應該做什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只確認新增了欄位，未調查對使用者的影響就將變更套用到生產環境。",
+          "explanation": "即使是新增欄位，也必須確認其對下游轉換、品質檢查、權限和彙總的影響。"
+        },
+        {
+          "id": "b",
+          "text": "確認變更範圍、生效時間、結構描述版本，以及下游相容性，並記錄更新程序。",
+          "explanation": "正確。將結構描述變更視為對資料使用者的合約變更，可以驗證影響並追蹤結果差異。"
+        },
+        {
+          "id": "c",
+          "text": "刪除目錄中的資料表，然後要求資料提供者重新傳送測量資料。",
+          "explanation": "刪除資料表只會掩蓋影響，無法用來確認變更的相容性或實際資料的正確性。"
+        },
+        {
+          "id": "d",
+          "text": "一律將新欄位轉換為空字串，且不通知資料提供者。",
+          "explanation": "未經授權捨棄有意義的新資訊，會損害資料品質以及與資料提供者之間的合約。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-003",
+      "prompt": "一家影音串流公司的營運負責人希望在每月觀看彙總遭到誤刪時能夠復原。原始觀看事件與轉換步驟仍然保留。從復原範圍與責任可追溯性的角度來看，哪項判斷最適當？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "確定目標月份、要使用的輸入資料與轉換版本，並在驗證的同時重新產生每月彙總。",
+          "explanation": "正確。若有可信賴的輸入資料與處理步驟，明確界定目標範圍並重新產生衍生資料，就能驗證並說明結果。"
+        },
+        {
+          "id": "a",
+          "text": "只靠手工作業推測並復原目前的每月彙總，不與原始資料核對。",
+          "explanation": "依靠推測進行復原，無法說明彙總結果的正確性以及實際復原的範圍。"
+        },
+        {
+          "id": "c",
+          "text": "無限期保留所有歷史資料，但不制定復原程序。",
+          "explanation": "僅保留資料並不能說明由誰、依照何種範圍與方式進行復原，因此無法滿足復原需求。"
+        },
+        {
+          "id": "d",
+          "text": "不告知使用者彙總已遭刪除，等到下一次每月處理時再處理。",
+          "explanation": "放任已知缺漏的輸出不予處理，可能導致使用者根據錯誤資訊做出判斷。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "Data lake",
+    "Data Catalog",
+    "Partition key",
+    "Schema evolution",
+    "Data lineage",
+    "TTL"
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "id": "data-ingestion-and-transformation",
+  "title": "資料擷取與轉換",
+  "objective": "根據資料來源、到達頻率、是否需要重新處理，以及轉換後資料的使用目的，說明資料擷取與轉換流程，並選擇適當的設計決策。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服務"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    },
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    }
+  ],
+  "sections": [
+    {
+      "id": "batch-and-streaming-inputs",
+      "title": "依資料到達方式區分批次處理與串流處理",
+      "paragraphs": [
+        "擷取資料時，首先要釐清誰要傳送哪些資料、資料何時可用，以及使用者最晚需要在什麼時間點取得結果。例如，每晚確定的銷售檔案可以採用批次處理。另一方面，如果必須依記錄到達的順序處理資料，例如配送車輛持續傳送的位置資料，則應採用串流處理。",
+        "Amazon Kinesis Data Streams 是一項用於即時收集和處理大量串流記錄的服務。選擇串流處理並不表示所有處理都必須立即完成。為了之後能夠驗證和重新處理擷取的記錄，應將輸入、已處理的位置，以及失敗記錄的處理方式分開設計。",
+        "批次處理與串流處理的選擇不是從服務名稱開始。應先整理到達頻率、可接受的延遲、資料量、順序及重新處理需求，再決定從來源到使用者之間的責任邊界，然後選擇擷取方式。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 1：資料擷取與轉換",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "什麼是 Amazon Kinesis Data Streams？",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-data-ingestion-flow"
+    },
+    {
+      "id": "repeatable-raw-data-and-schema",
+      "title": "不要混淆原始資料、結構描述與轉換結果",
+      "paragraphs": [
+        "在可重現的管線中，應區分所接收的原始資料、用於轉換的規則，以及轉換後的結果。當發現轉換邏輯有缺陷時，只要能確定原始資料和處理範圍，就可以使用修正後的邏輯，只重新處理必要的範圍。如果以轉換後的內容覆寫原始資料，就會失去日後驗證所需的資料。",
+        "在 AWS Glue 中，資料目錄、爬蟲程式、ETL 工作和觸發器各自扮演不同的角色。Data Catalog 的資料表不是資料本身，而是描述資料位置、結構描述等資訊的中繼資料。不要無條件採用爬蟲程式推測的結果，而應與資料提供者就結構描述變更的條件達成共識，並確認對下游使用者的影響。",
+        "將格式從 CSV 變更為欄式格式、依日期和時間進行分割，以及移除不必要的欄等轉換，應根據要使用的查詢和操作條件來決定。記錄轉換目的、輸入版本、輸出位置和驗證結果，有助於說明如何產生相同的結果。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Glue 概念",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        },
+        {
+          "label": "DEA-C01 領域 1：資料擷取與轉換",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "orchestration-and-failure-handling",
+      "title": "定義處理順序與失敗時的去向",
+      "paragraphs": [
+        "管線協調不只是依序啟動工作。它是一種機制，會先確認前一個處理步驟已成功、輸入已備齊且符合品質條件，然後才進入下一個處理步驟。應根據資料可供使用的條件，決定以排程、事件或手動執行作為入口。",
+        "在處理失敗的設計中，應區分可以重試的暫時性故障，以及需要由人員檢查內容的無效資料。如果未先決定重試次數、等待時間、隔離位置、通知對象與恢復處理的單位，只是一味增加自動重試，就可能反覆處理相同的錯誤輸入。",
+        "如果同一個輸入可能被接收多次，應設計用來識別已處理輸入的金鑰，或設計不會產生重複輸出的更新方法。這不是某項特定服務專有的功能，而是一種需要將輸入、狀態與輸出連結起來思考的特性。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 1：資料擷取與轉換",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "AWS Glue 概念",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ]
+    },
+    {
+      "id": "transformation-quality-contract",
+      "title": "明確定義轉換前後的品質條件",
+      "paragraphs": [
+        "不能僅根據工作是否無錯誤結束來判斷轉換處理是否完成。對於訂單資料，應根據使用目的定義品質條件，例如訂單編號重複、必要欄位缺漏、金額範圍，以及參照目標是否存在。同時也要決定不符合條件的資料列應隔離到哪裡、由誰確認，以及在什麼條件下重新投入處理。",
+        "品質條件應由資料來源負責人、資料工程師和使用部門共同分享。如果提供者新增或刪除欄位，或變更欄位意義，應記錄變更從何時起適用於哪些輸入，並確認轉換端與使用端的相容性。重要的是區分應偵測結構描述變更並停止處理的情況，以及可以使用預設值接受的情況。",
+        "將品質檢查分為輸入時、轉換時和發布前，就能追蹤失敗發生的位置與責任歸屬。監控時不僅要測量記錄數，也要測量隔離記錄數、延遲，以及更新涵蓋的期間。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 1：資料擷取與轉換",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "使用 AWS Glue 進行資料探索與編目",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-ingestion-001",
+      "prompt": "某製造工廠的資料工程師需要將設備每次狀態變更時送出的事件，在 30 秒內顯示於維護團隊的儀表板。如果發現轉換程序有缺陷，團隊必須在修正後重新處理過去 14 天內任意指定 1 小時的資料。哪種設計符合需求？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將設備事件彙整為每日檔案，隔天早上才轉換並更新儀表板。",
+          "explanation": "隔天早上處理，無法在事件抵達後 30 秒內更新儀表板。"
+        },
+        {
+          "id": "c",
+          "text": "收到事件後只儲存彙總值，並保留轉換程式碼的變更記錄。",
+          "explanation": "即使有程式碼的變更記錄，缺少原始事件也無法重新處理指定時段。"
+        },
+        {
+          "id": "b",
+          "text": "以串流方式擷取事件，並保留原始事件 14 天。另行記錄處理位置，並支援重新處理指定時段內的原始資料。",
+          "explanation": "資料管道可在事件抵達時進行轉換並更新儀表板。分開管理輸入資料與處理位置，便能在修正轉換程序後，只重新處理指定時段的輸入資料。"
+        },
+        {
+          "id": "d",
+          "text": "每次收到事件就更新儀表板，只保留最近 1 小時的原始資料。",
+          "explanation": "要重新處理的時段雖然只有 1 小時，卻可能在過去 14 天內的任意時間。只保留最近 1 小時並不足夠。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-002",
+      "prompt": "零售公司的資料提供者每天早上將訂單 CSV 檔案放入 Amazon S3。資料工程師希望在修正轉換邏輯後，只重新執行特定日期的處理，並在稽核時確認已接收的內容。首先應採取哪種策略？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "不驗證接收的 CSV 檔案，直接以轉換後的資料表覆寫，只保留最新結果。",
+          "explanation": "如此一來便無法區分接收的內容與轉換結果，之後難以驗證或重新執行特定日期的處理。"
+        },
+        {
+          "id": "c",
+          "text": "即使 CSV 欄名稱變更，也假定它們始終具有相同意義，不經確認就進行轉換。",
+          "explanation": "欄名稱、資料類型或值的意義變更可能導致下游彙總錯誤，因此必須確認結構描述變更的條件。"
+        },
+        {
+          "id": "d",
+          "text": "忽略轉換任務的所有失敗，以免需要重新執行。",
+          "explanation": "忽略失敗可能會發布不完整的輸出，進而損害品質與可稽核性。"
+        },
+        {
+          "id": "b",
+          "text": "依日期等條件識別輸入範圍，並分別記錄原始資料、轉換規則和輸出目的地。",
+          "explanation": "正確。保留處理範圍及其依據後，修正邏輯時即可只重新處理必要的日期，並說明結果。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-003",
+      "prompt": "保險公司的資料工程師希望在轉換保單資料後，偵測保單號碼重複以及必要的保單開始日期遺漏。針對包含所偵測到的無效列在內的資料，以下哪種方法最適合維持後續分析人員所處理的資料品質？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "工作以結束代碼 0 完成後，直接發布所有列。",
+          "explanation": "僅憑工作的完成狀態，無法保證內容品質，例如沒有重複項目或遺漏必要值。"
+        },
+        {
+          "id": "c",
+          "text": "隨機修正無效列，且不記錄修正內容。",
+          "explanation": "如果不保留修正依據及其影響範圍，就無法驗證修正是否正確，也無法在問題再次發生時進行調查。"
+        },
+        {
+          "id": "d",
+          "text": "由於品質條件因使用者而異，因此不與提供者共用這些條件。",
+          "explanation": "如果提供者、轉換團隊和使用者不共用這些條件，就無法安全地判斷變更的影響。"
+        },
+        {
+          "id": "b",
+          "text": "執行品質檢查、隔離無效列、記錄其數量與涵蓋範圍，並將其與要發布的列分開。",
+          "explanation": "正確。結合符合使用目的的品質條件、隔離和記錄，可以維持分析資料的品質與可追溯性。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Kinesis Data Streams",
+    "Data Catalog",
+    "Glue crawler",
+    "ETL job",
+    "Schema evolution",
+    "Data quality"
+  ]
+}

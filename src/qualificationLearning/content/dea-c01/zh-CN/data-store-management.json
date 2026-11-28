@@ -1,0 +1,190 @@
+{
+  "id": "data-store-management",
+  "title": "数据存储管理",
+  "objective": "根据用户的访问模式、保留期限、架构、性能要求和成本条件，说明并选择数据存储和元数据管理策略。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服务"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    },
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    }
+  ],
+  "sections": [
+    {
+      "id": "storage-by-access-pattern",
+      "title": "根据数据的使用方式而非数据形态选择存储位置",
+      "paragraphs": [
+        "选择数据存储时，应首先考虑的不仅是要存储多少数据，还要考虑由谁在什么条件下读取和写入数据。对于按特定键以低延迟读取当前值的处理、跨多个时间段的聚合，以及针对长期保存文件的分析查询，所需的访问模式和优化方法各不相同。",
+        "将数据用于分析存储时，应结合分区、压缩、文件格式以及要读取的列和时间段，减少不必要的读取。设计分区的目的不是增加文件夹名称，而是根据用户的搜索条件，以合适的粒度缩小数据范围。",
+        "如果只关注性能来选择存储位置，保留、恢复、访问控制和成本方面的要求之后可能会变得不足。应针对每个数据集记录并比较更新频率、搜索条件、保留期限、恢复时所需的范围以及使用者。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 2：数据存储管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "使用 AWS Glue 进行数据发现和目录编制",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "catalog-is-metadata-not-data",
+      "title": "数据目录不是实际数据，而是供使用的数据指南信息",
+      "paragraphs": [
+        "AWS Glue Data Catalog 是一个中央元数据存储库，用于存储数据源位置、架构和属性等信息。在目录中创建表并不会移动或复制源数据。应区分实际数据的存储位置与帮助用户理解和使用数据的表定义。",
+        "爬网程序可以发现数据源并推断元数据。但是，推断出的架构并不保证数据的业务含义。数据提供者和管理员需要补充列的含义、更新责任人、质量要求以及使用限制。",
+        "如果目录中的位置、架构或分区与实际存储的内容不一致，用户可能会查询错误的数据范围，或遗漏所需的数据。应将其作为管道的一部分，确定在添加或更改数据时由哪些处理过程更新和验证目录。"
+      ],
+      "sources": [
+        {
+          "label": "使用 AWS Glue 进行数据发现和目录化",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        },
+        {
+          "label": "AWS Glue 概念",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ],
+      "figureId": "dea-data-ownership-and-catalog"
+    },
+    {
+      "id": "schema-evolution-and-lineage",
+      "title": "将架构变更视为对使用者契约的变更",
+      "paragraphs": [
+        "架构变更包括添加列、修改列名或数据类型，以及改变值的含义。添加新列并不一定安全。请确认下游聚合、联接、质量检查和权限设置将如何处理该列，并确定兼容的迁移步骤。",
+        "保留变更前后的架构、应用日期和时间、目标数据以及转换版本，就可以追踪结果发生变化的原因。AWS Glue Data Catalog 可以管理架构和分区，并通过记录对数据执行的转换和操作来提供数据血缘信息。",
+        "数据血缘并不是用一条从输入指向输出的箭头来装饰流程。它是一种记录，使人能够追溯：哪个数据集的哪个版本由哪个处理过程在何时使用，以及由谁负责。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 2：数据存储管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "使用 AWS Glue 进行数据发现和编目",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-and-recovery-scope",
+      "title": "按数据集确定保留和恢复策略",
+      "paragraphs": [
+        "数据生命周期包括创建、使用、存储和删除等各个阶段。不要将所有数据都保存相同的期限，而应针对每个数据集确认法律和合同要求、分析所需的历史记录、重新处理所需的输入，以及个人信息的处理方式。",
+        "恢复要求并不只是“有备份”就足够了。需要确定由谁恢复哪个时间点的数据、恢复多大范围，并且不影响哪些用户。对于分析用派生数据，在某些情况下，从可信的输入和转换步骤重新构建可能更为合适。",
+        "在自动化保留期限和删除处理之前，请确认仍会保留正在引用这些数据的用户信息、用于审计的证据以及重新处理的依据。将删除对象、负责人和例外批准记录分开，可以兼顾保留成本和问责要求。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 2：数据存储管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "使用 AWS Glue 进行数据发现和编目",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-store-001",
+      "prompt": "一家旅行公司的分析人员会反复汇总存储在 Amazon S3 中的过去 3 年预订历史记录，并按日期和区域进行筛选。数据工程师要在减少读取量的同时支持这种使用方式，最合适的做法是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "将所有年份和区域连接到一个未分区的文件中，并且每次都读取全部记录。",
+          "explanation": "在按日期或区域筛选数据的使用场景中，每次都读取全部记录会增加不必要的读取量。"
+        },
+        {
+          "id": "c",
+          "text": "为每名分析人员将相同的全部历史记录复制到不同的位置。",
+          "explanation": "复制会增加需要管理的数据和出现不一致的机会，并不是减少读取量的设计。"
+        },
+        {
+          "id": "b",
+          "text": "根据日期和区域筛选条件设计相应的分区和数据格式，同时同步目录定义。",
+          "explanation": "正确。通过与用户筛选条件相匹配的分区和元数据管理，可以高效地读取相关范围的数据。"
+        },
+        {
+          "id": "d",
+          "text": "认为只要创建目录表，就会自动优化已经存储的文件。",
+          "explanation": "目录包含元数据；仅创建目录不会改变实际数据的存储位置或格式。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-002",
+      "prompt": "一家医疗设备公司的数据提供者向测量数据中添加了新列。现有分析基于旧架构进行聚合。为避免变更导致错误聚合，数据工程师首先应采取哪项措施？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只确认增加了列，然后不调查对使用者的影响就将变更应用到生产环境。",
+          "explanation": "即使只是增加列，也必须确认其对下游转换、质量检查、权限和聚合的影响。"
+        },
+        {
+          "id": "b",
+          "text": "确认变更范围、生效时间、架构版本和下游兼容性，并记录更新步骤。",
+          "explanation": "正确。将架构变更作为面向数据使用者的合同变更来处理，可以验证影响并跟踪结果差异。"
+        },
+        {
+          "id": "c",
+          "text": "删除目录中的表，然后让数据提供者重新发送测量数据。",
+          "explanation": "删除表只会掩盖影响，并不能验证变更的兼容性或实际数据的正确性。"
+        },
+        {
+          "id": "d",
+          "text": "始终将新列转换为空字符串，并且不通知数据提供者。",
+          "explanation": "未经许可丢弃有意义的新信息，会损害数据质量以及与数据提供者之间的合同。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-003",
+      "prompt": "一家视频流媒体公司的运营负责人希望在月度观看汇总被误删时能够恢复。原始观看事件和转换步骤仍然保留。从恢复范围和问责的角度来看，哪项判断最合适？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "确定目标月份、要使用的输入数据和转换版本，并在验证的同时重新生成月度汇总。",
+          "explanation": "正确。如果有可信的输入数据和处理步骤，明确目标范围并重新生成派生数据，就可以验证并说明结果。"
+        },
+        {
+          "id": "a",
+          "text": "仅凭手工推测恢复当前的月度汇总，不与原始数据进行核对。",
+          "explanation": "通过推测进行恢复，无法说明汇总结果的正确性以及实际恢复的范围。"
+        },
+        {
+          "id": "c",
+          "text": "无限期保留所有历史数据，但不制定恢复步骤。",
+          "explanation": "仅保留数据并不能明确由谁、按照什么范围和方式进行恢复，因此无法满足恢复要求。"
+        },
+        {
+          "id": "d",
+          "text": "不告知用户汇总已被删除，等到下一个月度处理周期再处理。",
+          "explanation": "放任已知缺失的输出不予处理，可能导致用户依据错误信息做出判断。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "Data lake",
+    "Data Catalog",
+    "Partition key",
+    "Schema evolution",
+    "Data lineage",
+    "TTL"
+  ]
+}

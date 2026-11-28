@@ -1,0 +1,190 @@
+{
+  "id": "data-store-management",
+  "title": "Gerenciamento de armazenamentos de dados",
+  "objective": "Explicar e selecionar estratégias de gerenciamento de armazenamentos de dados e metadados com base nos padrões de acesso dos usuários, nos períodos de retenção, nos esquemas e nos requisitos de desempenho e custo.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Serviços essenciais da AWS"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Proteção de dados"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    }
+  ],
+  "sections": [
+    {
+      "id": "storage-by-access-pattern",
+      "title": "Escolha o armazenamento com base na forma de uso dos dados, não no formato dos dados",
+      "paragraphs": [
+        "Ao escolher um armazenamento de dados, considere primeiro não apenas a quantidade de dados a ser armazenada, mas também quem os lerá e gravará e em quais condições. Os padrões de acesso e os métodos de otimização necessários são diferentes para recuperar o valor atual com baixa latência usando uma chave específica, realizar agregações que abrangem vários períodos e executar consultas analíticas em arquivos mantidos por longo prazo.",
+        "Ao armazenar dados para análise, combine particionamento, compressão, formato de arquivo e as colunas e os períodos a serem lidos para reduzir leituras desnecessárias. As partições devem ser projetadas para restringir o intervalo de dados de acordo com as condições de pesquisa dos usuários, e não apenas para aumentar o número de nomes de pastas.",
+        "Se você escolher o armazenamento considerando apenas o desempenho, os requisitos de retenção, recuperação, controle de acesso e custo poderão ficar insuficientes posteriormente. Para cada conjunto de dados, registre e compare a frequência de atualização, as condições de pesquisa, o período de retenção, o escopo necessário durante a recuperação e os usuários."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domínio 2: Gerenciamento de armazenamentos de dados",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Descoberta e catalogação de dados com o AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "catalog-is-metadata-not-data",
+      "title": "O catálogo de dados não contém os dados reais, mas informações de orientação para seu uso",
+      "paragraphs": [
+        "O AWS Glue Data Catalog é um repositório central de metadados que armazena informações como locais das fontes de dados, esquemas e propriedades. Criar uma tabela no catálogo não move nem replica os dados de origem. É preciso distinguir o local onde os dados reais estão armazenados da definição da tabela que ajuda os usuários a compreender e usar esses dados.",
+        "Um crawler pode descobrir fontes de dados e inferir metadados. No entanto, um esquema inferido não garante o significado comercial dos dados. Os provedores de dados e administradores devem complementar essas informações com o significado das colunas, o responsável pelas atualizações, os requisitos de qualidade e as restrições de uso.",
+        "Se os locais, esquemas ou partições do catálogo forem diferentes do conteúdo realmente armazenado, os usuários poderão consultar o escopo errado ou deixar de encontrar os dados necessários. Como parte do pipeline, determine quais processos atualizarão e validarão o catálogo quando os dados forem adicionados ou alterados."
+      ],
+      "sources": [
+        {
+          "label": "Descoberta e catalogação de dados com o AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        },
+        {
+          "label": "Conceitos do AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ],
+      "figureId": "dea-data-ownership-and-catalog"
+    },
+    {
+      "id": "schema-evolution-and-lineage",
+      "title": "Trate as alterações de esquema como alterações no contrato com os usuários",
+      "paragraphs": [
+        "As alterações de esquema incluem adicionar colunas, alterar nomes de colunas ou tipos de dados e alterar o significado dos valores. Adicionar uma nova coluna nem sempre é seguro. Confirme como as agregações, junções, verificações de qualidade e configurações de permissões downstream tratarão essa coluna e determine um procedimento de migração compatível.",
+        "Manter os esquemas antes e depois da alteração, a data e a hora de aplicação, os dados afetados e a versão da transformação permite rastrear por que os resultados mudaram. O AWS Glue Data Catalog pode gerenciar esquemas e partições e fornece informações de linhagem de dados por meio de registros das transformações e operações executadas nos dados.",
+        "A linhagem de dados não consiste em decorar o fluxo com uma única seta da entrada até a saída. É um registro que permite rastrear qual versão de qual conjunto de dados foi usada por qual processo, quando foi usada e quem é responsável por ela."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domínio 2: Gerenciamento de armazenamentos de dados",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Descoberta e catalogação de dados com o AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-and-recovery-scope",
+      "title": "Defina a retenção e a recuperação para cada conjunto de dados",
+      "paragraphs": [
+        "O ciclo de vida dos dados define cada etapa: criação, uso, armazenamento e exclusão. Em vez de reter tudo pelo mesmo período, verifique cada conjunto de dados quanto aos requisitos legais e contratuais, ao histórico necessário para a análise, às entradas necessárias para o reprocessamento e ao tratamento das informações pessoais.",
+        "Os requisitos de recuperação não são atendidos apenas por haver backups. Defina quem restaurará quais dados de qual ponto no tempo e em qual escopo, e quais usuários não devem ser afetados. Em alguns casos, pode ser mais apropriado reconstruir os dados derivados usados na análise a partir de entradas confiáveis e procedimentos de transformação.",
+        "Antes de automatizar os períodos de retenção e os processos de exclusão, confirme se permanecerão disponíveis as referências aos usuários que estão acessando os dados, as evidências para auditoria e a justificativa para o reprocessamento. Separar os registros dos alvos de exclusão, dos responsáveis e das aprovações de exceção permite equilibrar os custos de retenção e a responsabilização."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domínio 2: Gerenciamento de armazenamentos de dados",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Descoberta e catalogação de dados com o AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-store-001",
+      "prompt": "Um analista de uma empresa de viagens agrega repetidamente o histórico de reservas dos últimos 3 anos armazenado no Amazon S3, filtrando-o por data e região. Qual abordagem é mais adequada para dar suporte a esse uso e, ao mesmo tempo, reduzir a quantidade de dados lidos?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Concatenar todos os anos e regiões em um único arquivo não particionado e ler todos os registros sempre.",
+          "explanation": "Ler todos os registros sempre que os dados são filtrados por data ou região aumenta as leituras desnecessárias."
+        },
+        {
+          "id": "c",
+          "text": "Duplicar todo o mesmo histórico para cada analista em locais separados.",
+          "explanation": "A duplicação aumenta os dados que precisam ser gerenciados e as oportunidades de inconsistência; não é um design que reduza a quantidade de dados lidos."
+        },
+        {
+          "id": "b",
+          "text": "Projetar partições e um formato de dados que correspondam às condições de filtragem por data e região e também sincronizar as definições do catálogo.",
+          "explanation": "Correto. Partições e gerenciamento de metadados alinhados às condições de filtragem dos usuários permitem ler com eficiência o intervalo de dados relevante."
+        },
+        {
+          "id": "d",
+          "text": "Considerar que a criação de uma tabela no catálogo otimiza automaticamente os arquivos que já estão armazenados.",
+          "explanation": "Um catálogo contém metadados; criá-lo, por si só, não altera a localização nem o formato dos dados reais."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-002",
+      "prompt": "Um fornecedor de dados de uma empresa de dispositivos médicos adiciona uma nova coluna aos dados de medição. As análises existentes agregam os dados com base no esquema antigo. O que o engenheiro de dados deve fazer primeiro para evitar uma agregação incorreta causada pela alteração?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Confirmar apenas que uma coluna foi adicionada e aplicar a alteração em produção sem investigar o impacto para os usuários.",
+          "explanation": "Mesmo quando uma coluna é adicionada, é necessário avaliar o impacto nas transformações downstream, nas verificações de qualidade, nas permissões e nas agregações."
+        },
+        {
+          "id": "b",
+          "text": "Confirmar o escopo da alteração, o momento de aplicação, a versão do esquema e a compatibilidade com os sistemas downstream, e documentar o procedimento de atualização.",
+          "explanation": "Correto. Tratar a alteração do esquema como uma mudança de contrato para os usuários dos dados permite validar o impacto e rastrear as diferenças nos resultados."
+        },
+        {
+          "id": "c",
+          "text": "Excluir a tabela do catálogo e depois solicitar que os dados de medição sejam enviados novamente.",
+          "explanation": "Excluir a tabela apenas oculta o impacto; isso não permite verificar a compatibilidade da alteração nem a correção dos dados reais."
+        },
+        {
+          "id": "d",
+          "text": "Converter sempre a nova coluna em uma cadeia vazia e não informar o fornecedor de dados.",
+          "explanation": "Descartar informações novas e significativas sem autorização prejudica a qualidade dos dados e o contrato com o fornecedor."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-003",
+      "prompt": "O responsável pelas operações de uma empresa de streaming de vídeo quer poder recuperar os dados caso a agregação mensal de visualizações seja excluída por engano. Os eventos de visualização originais e o procedimento de transformação ainda estão disponíveis. Considerando o escopo da recuperação e a prestação de contas, qual decisão é mais adequada?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Definir o mês de destino, as entradas a serem usadas e a versão da transformação, e então gerar novamente a agregação mensal enquanto valida os resultados.",
+          "explanation": "Correto. Quando há entradas e procedimentos confiáveis, definir explicitamente o escopo de destino e gerar novamente os dados derivados permite validar e explicar o resultado."
+        },
+        {
+          "id": "a",
+          "text": "Estimar e restaurar manualmente apenas a agregação mensal atual, sem conciliá-la com os dados originais.",
+          "explanation": "Uma restauração baseada em estimativas não permite demonstrar a exatidão da agregação nem o escopo do que foi recuperado."
+        },
+        {
+          "id": "c",
+          "text": "Reter todos os dados históricos indefinidamente e não definir um procedimento de recuperação.",
+          "explanation": "A retenção, por si só, não esclarece quem restaurará qual escopo nem como isso será feito; portanto, não atende aos requisitos de recuperação."
+        },
+        {
+          "id": "d",
+          "text": "Não informar aos usuários que a agregação foi excluída e esperar até o próximo processamento mensal.",
+          "explanation": "Deixar sem tratamento uma saída que se sabe estar ausente pode levar os usuários a tomar decisões com base em informações incorretas."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "Data lake",
+    "Data Catalog",
+    "Partition key",
+    "Schema evolution",
+    "Data lineage",
+    "TTL"
+  ]
+}

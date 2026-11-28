@@ -1,0 +1,189 @@
+{
+  "id": "data-ingestion-and-transformation",
+  "title": "Data Ingestion and Transformation",
+  "objective": "Explain the data ingestion and transformation flow and choose appropriate design decisions based on the data source, arrival frequency, need for reprocessing, and intended use of the transformed data.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    }
+  ],
+  "sections": [
+    {
+      "id": "batch-and-streaming-inputs",
+      "title": "Distinguishing batch and streaming by how data arrives",
+      "paragraphs": [
+        "When ingesting data, first clarify who sends what, when it becomes available, and by what point users need the results. For example, sales files finalized each night can be handled as batch data. In contrast, when records must be processed in sequence as they arrive, such as location data continuously sent by delivery vehicles, the data should be handled as streaming data.",
+        "Amazon Kinesis Data Streams is a service for collecting and processing large volumes of stream records in real time. Choosing streaming does not mean that all processing must finish immediately. To enable later validation and reprocessing of ingested records, design the system so that the input, the processed position, and the handling of failed records are treated separately.",
+        "The choice between batch and streaming does not start with a service name. First tabulate the arrival frequency, acceptable latency, data volume, ordering, and reprocessing requirements. Then define the responsibility boundaries from the source to the users before choosing the ingestion method."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 1: Data Ingestion and Transformation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "What is Amazon Kinesis Data Streams?",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-data-ingestion-flow"
+    },
+    {
+      "id": "repeatable-raw-data-and-schema",
+      "title": "Do Not Confuse Raw Data, Schemas, and Transformation Results",
+      "paragraphs": [
+        "In a reproducible pipeline, distinguish the raw data you receive, the rules used for transformation, and the transformed results. When a defect is found in the transformation logic, identifying the raw data and the scope of the processing allows you to rerun only the necessary portion with the corrected logic. If you overwrite the raw data with the transformed content, you lose the material needed for later verification.",
+        "In AWS Glue, the Data Catalog, crawlers, ETL jobs, and triggers have different roles. A Data Catalog table is not the data itself; it is metadata describing such things as the data location and schema. Rather than using crawler inferences unconditionally, agree with data providers on the conditions for schema changes and assess the impact on downstream users.",
+        "Transformations such as changing the format from CSV to a columnar format, partitioning by date and time, and removing unnecessary columns should be determined based on the queries that will be used and the operational requirements. Recording the purpose of the transformation, the input version, the output destination, and the validation results makes it easier to explain how the same result was produced."
+      ],
+      "sources": [
+        {
+          "label": "AWS Glue Concepts",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        },
+        {
+          "label": "DEA-C01 Domain 1: Data Ingestion and Transformation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "orchestration-and-failure-handling",
+      "title": "Define processing order and where failures should go",
+      "paragraphs": [
+        "Pipeline orchestration is more than simply starting jobs in sequence. It is a mechanism that moves to the next process only after confirming that the previous process succeeded, all inputs are available, and the quality requirements have been met. Whether the entry point is a schedule, an event, or a manual run is determined by the conditions under which the data becomes available.",
+        "A failure-handling design distinguishes temporary failures that can be retried from invalid data whose contents should be reviewed by a person. If you only increase automatic retries without deciding the retry count, waiting time, quarantine location, notification destination, and unit of resumption, you may process the same incorrect input repeatedly.",
+        "When the same input may be received multiple times, design a key that identifies processed inputs or an update method that prevents duplicate output. This is not a capability limited to a particular service; it is a property that requires considering inputs, state, and outputs together."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 1: Data Ingestion and Transformation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "AWS Glue concepts",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ]
+    },
+    {
+      "id": "transformation-quality-contract",
+      "title": "Define Quality Criteria Before and After Transformation",
+      "paragraphs": [
+        "Completion of a transformation process cannot be judged solely by whether the job finishes without errors. For order data, define quality criteria aligned with its intended use, such as duplicate order numbers, missing required fields, amount ranges, and the existence of referenced records. Also decide where rows that fail the criteria will be quarantined, who will review them, and under what conditions they will be reprocessed.",
+        "Share the quality criteria with the source-data owners, data engineers, and business users. If a provider adds or removes columns or changes their meaning, record when and for which inputs the change applies, and verify compatibility between the transformation and the consuming side. It is important to distinguish situations where a schema change should be detected and halt processing from those where it can be accepted using a default value.",
+        "Separating quality checks into input, transformation, and pre-publication stages makes it possible to trace where failures occurred and who is responsible. Monitoring should measure not only record counts, but also quarantine counts, delays, and the period covered by the updates."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 1: Data Ingestion and Transformation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Data Discovery and Cataloging with AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-ingestion-001",
+      "prompt": "A manufacturing plant's data engineer needs events emitted on equipment state changes to appear on the maintenance team's dashboard within 30 seconds. If a transformation defect is found, the team must be able to fix it and reprocess any specified hour from the past 14 days. Which design meets these requirements?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Collect equipment events in daily files, transform them the next morning, and then update the dashboard.",
+          "explanation": "Processing events the next morning cannot update the dashboard within 30 seconds of their arrival."
+        },
+        {
+          "id": "c",
+          "text": "Keep only aggregates after receiving events and track changes to the transformation code.",
+          "explanation": "Even with code history, the team cannot reprocess the specified interval without the original events."
+        },
+        {
+          "id": "b",
+          "text": "Ingest events as a stream and retain the original events for 14 days. Record processing position separately and support reprocessing the raw input for the specified interval.",
+          "explanation": "The pipeline can transform events as they arrive and update the dashboard. Keeping the inputs and processing position separate lets the team replay only the specified input interval after fixing the transformation."
+        },
+        {
+          "id": "d",
+          "text": "Update the dashboard as each event arrives and retain only the most recent hour of raw data.",
+          "explanation": "The interval to reprocess is one hour long, but it may be anywhere in the past 14 days. Keeping only the last hour is insufficient."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-002",
+      "prompt": "A data provider at a retail company places order CSV files in Amazon S3 every morning. After correcting the transformation logic, the data engineer wants to rerun processing for only specific dates and verify the received content during audits. Which approach should be taken first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Overwrite the received CSV files with the transformed tables without validating them, retaining only the latest results.",
+          "explanation": "The received content cannot be distinguished from the transformation results, making it difficult to verify or rerun processing for a specific date later."
+        },
+        {
+          "id": "c",
+          "text": "Assume that CSV column names always have the same meaning even when they change, and transform the data without verification.",
+          "explanation": "Changes to column names, data types, or the meaning of values can cause downstream aggregations to be incorrect, so the conditions for schema changes must be verified."
+        },
+        {
+          "id": "d",
+          "text": "Ignore all transformation-job failures to eliminate the need for reruns.",
+          "explanation": "Ignoring failures can publish incomplete output, compromising quality and auditability."
+        },
+        {
+          "id": "b",
+          "text": "Identify the input scope by date or other criteria, and record the source data, transformation rules, and output destinations separately.",
+          "explanation": "Correct. Retaining the scope and its rationale makes it possible to reprocess only the necessary dates after a correction and explain the results."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-003",
+      "prompt": "A data engineer at an insurance company wants to detect duplicate policy numbers and missing required policy start dates after transforming policy data. What is the most appropriate way to maintain the quality of the data handled by downstream analysts, including the invalid rows detected?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Once the job completes with exit code 0, publish all rows as they are.",
+          "explanation": "The job's completion status alone cannot guarantee content quality, such as the absence of duplicates or missing required values."
+        },
+        {
+          "id": "c",
+          "text": "Randomly correct the invalid rows without recording what was changed.",
+          "explanation": "Without retaining the rationale for the corrections and their scope of impact, it is impossible to verify their correctness or investigate recurrence."
+        },
+        {
+          "id": "d",
+          "text": "Because quality requirements differ by user, do not share them with the provider.",
+          "explanation": "Unless the provider, transformation team, and users share the requirements, they cannot safely assess the impact of changes."
+        },
+        {
+          "id": "b",
+          "text": "Execute the quality checks, quarantine the invalid rows, record their count and scope, and separate them from the rows to be published.",
+          "explanation": "Correct. Combining quality checks aligned with the intended use, quarantine, and recordkeeping preserves the quality and traceability of data for analysis."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Kinesis Data Streams",
+    "Data Catalog",
+    "Glue crawler",
+    "ETL job",
+    "Schema evolution",
+    "Data quality"
+  ]
+}

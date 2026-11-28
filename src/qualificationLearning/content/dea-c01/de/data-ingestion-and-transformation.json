@@ -1,0 +1,189 @@
+{
+  "id": "data-ingestion-and-transformation",
+  "title": "Datenaufnahme und -transformation",
+  "objective": "Den Ablauf der Datenaufnahme und -transformation erläutern und geeignete Designentscheidungen auf Grundlage der Datenquelle, der Eingangshäufigkeit, des Bedarfs an einer erneuten Verarbeitung und des vorgesehenen Verwendungszwecks der transformierten Daten auswählen.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Zentrale AWS-Services"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Datenschutz"
+    },
+    {
+      "slug": "observability",
+      "title": "Überwachung und Verbesserung"
+    }
+  ],
+  "sections": [
+    {
+      "id": "batch-and-streaming-inputs",
+      "title": "Batchverarbeitung und Streaming anhand der Art des Dateneingangs unterscheiden",
+      "paragraphs": [
+        "Klären Sie bei der Datenaufnahme zunächst, wer welche Daten sendet, wann sie verfügbar werden und bis zu welchem Zeitpunkt die Benutzer die Ergebnisse benötigen. Beispielsweise können Verkaufsdateien, die jeden Abend abgeschlossen werden, als Batchdaten verarbeitet werden. Wenn Datensätze dagegen in der Reihenfolge ihres Eintreffens verarbeitet werden müssen, etwa von Lieferfahrzeugen kontinuierlich gesendete Positionsdaten, sollten sie als Streamingdaten verarbeitet werden.",
+        "Amazon Kinesis Data Streams ist ein Service zum Sammeln und Verarbeiten großer Mengen von Stream-Datensätzen in Echtzeit. Die Entscheidung für Streaming bedeutet nicht, dass die gesamte Verarbeitung sofort abgeschlossen sein muss. Damit aufgenommene Datensätze später validiert und erneut verarbeitet werden können, sollten Eingaben, die verarbeitete Position und der Umgang mit fehlgeschlagenen Datensätzen getrennt konzipiert werden.",
+        "Die Entscheidung zwischen Batchverarbeitung und Streaming beginnt nicht mit einem Servicenamen. Erfassen Sie zunächst Ankunftshäufigkeit, zulässige Latenz, Datenvolumen, Reihenfolge und Anforderungen an die erneute Verarbeitung in einer Tabelle. Legen Sie anschließend die Verantwortungsgrenzen von der Quelle bis zu den Benutzern fest, bevor Sie die Aufnahmemethode auswählen."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domäne 1: Datenaufnahme und -transformation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Was ist Amazon Kinesis Data Streams?",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-data-ingestion-flow"
+    },
+    {
+      "id": "repeatable-raw-data-and-schema",
+      "title": "Rohdaten, Schemas und Transformationsergebnisse nicht verwechseln",
+      "paragraphs": [
+        "In einer reproduzierbaren Pipeline müssen die empfangenen Rohdaten, die für die Transformation verwendeten Regeln und die transformierten Ergebnisse unterschieden werden. Wenn ein Fehler in der Transformationslogik gefunden wird, können Sie anhand der Rohdaten und des Verarbeitungsumfangs mit der korrigierten Logik nur den erforderlichen Bereich erneut verarbeiten. Wenn Sie die Rohdaten mit dem transformierten Inhalt überschreiben, verlieren Sie die Grundlage für spätere Überprüfungen.",
+        "In AWS Glue haben der Datenkatalog, Crawler, ETL-Aufträge und Trigger unterschiedliche Aufgaben. Eine Tabelle im Data Catalog enthält nicht die Daten selbst, sondern Metadaten, die unter anderem den Speicherort der Daten und das Schema beschreiben. Übernehmen Sie die von einem Crawler abgeleiteten Ergebnisse nicht bedingungslos. Vereinbaren Sie mit den Datenanbietern, unter welchen Bedingungen das Schema geändert werden darf, und prüfen Sie die Auswirkungen auf nachgelagerte Nutzer.",
+        "Transformationen wie die Änderung des Formats von CSV in ein spaltenorientiertes Format, die Partitionierung nach Datum und Uhrzeit oder das Entfernen unnötiger Spalten sollten anhand der verwendeten Abfragen und der betrieblichen Bedingungen festgelegt werden. Wenn Sie den Zweck der Transformation, die Version der Eingabedaten, das Ausgabeziel und die Validierungsergebnisse dokumentieren, lässt sich leichter erklären, wie dasselbe Ergebnis erzielt wurde."
+      ],
+      "sources": [
+        {
+          "label": "AWS-Glue-Konzepte",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        },
+        {
+          "label": "DEA-C01 Bereich 1: Datenaufnahme und -transformation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "orchestration-and-failure-handling",
+      "title": "Verarbeitungsreihenfolge und Ziel bei Fehlern festlegen",
+      "paragraphs": [
+        "Die Orchestrierung einer Pipeline besteht nicht nur darin, Jobs der Reihe nach zu starten. Sie ist ein Mechanismus, der erst dann mit der nächsten Verarbeitung fortfährt, wenn bestätigt wurde, dass die vorherige Verarbeitung erfolgreich war, alle Eingaben verfügbar sind und die Qualitätsanforderungen erfüllt wurden. Ob ein Zeitplan, ein Ereignis oder eine manuelle Ausführung als Einstieg dient, wird anhand der Bedingungen festgelegt, unter denen die Daten verfügbar werden.",
+        "Bei der Entwicklung einer Fehlerbehandlung werden vorübergehende Fehler, bei denen ein erneuter Versuch zulässig ist, von ungültigen Daten getrennt, deren Inhalt von einer Person überprüft werden muss. Wenn Sie nur die Anzahl automatischer Wiederholungsversuche erhöhen, ohne die Anzahl der Versuche, die Wartezeit, den Quarantäneort, das Benachrichtigungsziel und die Einheit für die Wiederaufnahme festzulegen, kann dieselbe fehlerhafte Eingabe wiederholt verarbeitet werden.",
+        "Wenn dieselbe Eingabe möglicherweise mehrmals empfangen wird, sollten Sie einen Schlüssel zur Identifizierung bereits verarbeiteter Eingaben oder eine Aktualisierungsmethode entwerfen, die doppelte Ausgaben verhindert. Dies ist keine Funktion, die auf einen bestimmten Service beschränkt ist, sondern eine Eigenschaft, bei der Eingaben, Status und Ausgaben gemeinsam betrachtet werden müssen."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domäne 1: Datenaufnahme und -transformation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Konzepte von AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ]
+    },
+    {
+      "id": "transformation-quality-contract",
+      "title": "Qualitätskriterien vor und nach der Transformation eindeutig festlegen",
+      "paragraphs": [
+        "Der Abschluss eines Transformationsprozesses lässt sich nicht allein daran beurteilen, dass der Job fehlerfrei beendet wurde. Für Bestelldaten müssen anhand des Verwendungszwecks Qualitätskriterien definiert werden, etwa doppelte Bestellnummern, fehlende Pflichtfelder, Wertebereiche für Beträge und das Vorhandensein referenzierter Datensätze. Außerdem muss festgelegt werden, wohin Zeilen, die die Kriterien nicht erfüllen, isoliert werden, wer sie prüft und unter welchen Bedingungen sie erneut verarbeitet werden.",
+        "Die Qualitätskriterien müssen von den Verantwortlichen für die Quelldaten, den Dateningenieuren und der nutzenden Abteilung gemeinsam getragen werden. Wenn ein Anbieter Spalten hinzufügt oder entfernt oder ihre Bedeutung ändert, muss dokumentiert werden, ab wann und für welche Eingaben die Änderung gilt. Außerdem muss die Kompatibilität zwischen der Transformation und der Verbraucherseite überprüft werden. Wichtig ist, zwischen Situationen zu unterscheiden, in denen eine Schemaänderung erkannt und die Verarbeitung angehalten werden muss, und solchen, in denen sie mit einem Standardwert akzeptiert werden kann.",
+        "Wenn die Qualität wie beschrieben auf die Eingabe-, Transformations- und Vorveröffentlichungsphase aufgeteilt wird, lassen sich Fehlerort und Verantwortlichkeit nachverfolgen. Bei der Überwachung müssen nicht nur die Datensatzanzahl, sondern auch die Anzahl isolierter Datensätze, Verzögerungen und der von den Aktualisierungen abgedeckte Zeitraum gemessen werden."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domäne 1: Datenaufnahme und -transformation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Datenerkennung und Katalogisierung mit AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-ingestion-001",
+      "prompt": "Eine Dateningenieurin in einem Fertigungswerk muss Ereignisse zu Zustandsänderungen von Anlagen innerhalb von 30 Sekunden im Dashboard des Instandhaltungsteams anzeigen. Findet das Team einen Fehler in der Transformation, muss es nach der Korrektur eine beliebige vorgegebene Stunde aus den letzten 14 Tagen erneut verarbeiten können. Welcher Entwurf erfüllt die Anforderungen?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Anlagenereignisse in Tagesdateien sammeln, sie am nächsten Morgen transformieren und dann das Dashboard aktualisieren.",
+          "explanation": "Die Verarbeitung am nächsten Morgen aktualisiert das Dashboard nicht innerhalb von 30 Sekunden nach Eingang der Ereignisse."
+        },
+        {
+          "id": "c",
+          "text": "Nach Empfang der Ereignisse nur aggregierte Werte speichern und die Änderungen am Transformationscode nachverfolgen.",
+          "explanation": "Auch mit der Versionshistorie des Codes kann das Team den vorgegebenen Zeitraum ohne die ursprünglichen Ereignisse nicht erneut verarbeiten."
+        },
+        {
+          "id": "b",
+          "text": "Ereignisse als Stream aufnehmen und die ursprünglichen Ereignisse 14 Tage lang aufbewahren. Die Verarbeitungsposition getrennt erfassen und die Rohdaten des vorgegebenen Zeitraums erneut verarbeiten können.",
+          "explanation": "Das System kann Ereignisse beim Eintreffen transformieren und das Dashboard aktualisieren. Bleiben Eingabedaten und Verarbeitungsposition getrennt, lässt sich nach der Korrektur genau der vorgegebene Eingabezeitraum erneut verarbeiten."
+        },
+        {
+          "id": "d",
+          "text": "Das Dashboard beim Eingang jedes Ereignisses aktualisieren und nur die Rohdaten der letzten Stunde speichern.",
+          "explanation": "Der neu zu verarbeitende Zeitraum ist zwar nur eine Stunde lang, kann aber irgendwo in den letzten 14 Tagen liegen. Die Daten der jüngsten Stunde reichen dafür nicht aus."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-002",
+      "prompt": "Ein Datenanbieter eines Einzelhandelsunternehmens legt jeden Morgen Bestellungs-CSV-Dateien in Amazon S3 ab. Nach einer Korrektur der Transformationslogik möchte der Dateningenieur die Verarbeitung nur für Daten bestimmter Tage erneut ausführen und bei einer Prüfung den empfangenen Inhalt verifizieren können. Welche Vorgehensweise sollte zuerst gewählt werden?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Die empfangenen CSV-Dateien ohne Validierung mit den transformierten Tabellen überschreiben und nur die neuesten Ergebnisse behalten.",
+          "explanation": "Dadurch lassen sich die empfangenen Inhalte nicht von den Transformationsergebnissen unterscheiden, sodass die Verarbeitung für ein bestimmtes Datum später nur schwer überprüft oder erneut ausgeführt werden kann."
+        },
+        {
+          "id": "c",
+          "text": "Annehmen, dass CSV-Spaltennamen auch nach einer Änderung immer dieselbe Bedeutung haben, und die Transformation ohne Prüfung durchführen.",
+          "explanation": "Änderungen an Spaltennamen, Datentypen oder der Bedeutung von Werten können nachgelagerte Aggregationen verfälschen. Daher müssen die Bedingungen für Schemaänderungen geprüft werden."
+        },
+        {
+          "id": "d",
+          "text": "Alle Fehler des Transformationsauftrags ignorieren, damit keine erneute Ausführung erforderlich ist.",
+          "explanation": "Das Ignorieren von Fehlern kann dazu führen, dass unvollständige Ausgaben veröffentlicht werden, und dadurch Qualität und Prüfbarkeit beeinträchtigen."
+        },
+        {
+          "id": "b",
+          "text": "Den Eingabebereich anhand des Datums oder anderer Kriterien identifizieren und Quelldaten, Transformationsregeln und Ausgabeziele getrennt dokumentieren.",
+          "explanation": "Richtig. Wenn der Bereich und seine Begründung erhalten bleiben, können nach einer Korrektur nur die Daten für die erforderlichen Tage erneut verarbeitet und die Ergebnisse erläutert werden."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-003",
+      "prompt": "Ein Dateningenieur eines Versicherungsunternehmens möchte nach der Transformation von Vertragsdaten doppelte Vertragsnummern und fehlende erforderliche Vertragsbeginn-Daten erkennen. Welche Methode eignet sich am besten, um die Qualität der von nachgelagerten Analysten verarbeiteten Daten einschließlich der erkannten ungültigen Zeilen zu erhalten?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Wenn der Job mit Exit-Code 0 abgeschlossen wird, alle Zeilen unverändert veröffentlichen.",
+          "explanation": "Der Abschlussstatus des Jobs allein kann die inhaltliche Qualität nicht gewährleisten, etwa das Fehlen von Duplikaten oder fehlenden Pflichtwerten."
+        },
+        {
+          "id": "c",
+          "text": "Die ungültigen Zeilen zufällig korrigieren und nicht protokollieren, was geändert wurde.",
+          "explanation": "Wenn die Begründung für die Korrekturen und ihr Auswirkungsbereich nicht erhalten bleiben, können ihre Richtigkeit nicht überprüft und wiederkehrende Probleme nicht untersucht werden."
+        },
+        {
+          "id": "d",
+          "text": "Da sich die Qualitätsbedingungen je nach Benutzer unterscheiden, sie nicht mit dem Anbieter teilen.",
+          "explanation": "Wenn Anbieter, Transformationsteam und Benutzer die Bedingungen nicht gemeinsam nutzen, können sie die Auswirkungen von Änderungen nicht sicher beurteilen."
+        },
+        {
+          "id": "b",
+          "text": "Qualitätsprüfungen durchführen, die ungültigen Zeilen isolieren, ihre Anzahl und ihren Umfang protokollieren und sie von den zu veröffentlichenden Zeilen trennen.",
+          "explanation": "Richtig. Durch die Kombination von auf den Verwendungszweck abgestimmten Qualitätsbedingungen, Isolation und Protokollierung bleiben Qualität und Nachvollziehbarkeit der Analysedaten erhalten."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Kinesis Data Streams",
+    "Data Catalog",
+    "Glue crawler",
+    "ETL job",
+    "Schema evolution",
+    "Data quality"
+  ]
+}

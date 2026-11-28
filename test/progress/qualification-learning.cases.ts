@@ -65,4 +65,12 @@ export const qualificationLearningCases: QualificationLearningCase[] = [
     answer: /データイベントを選択して記録し/,
     choiceCount: 3,
   },
+  {
+    courseId: 'dea-c01',
+    firstTitle: 'データの取り込みと変換',
+    nextUnit: 'data-store-management',
+    prompt: /設備の状態が変わるたびに届くイベント/,
+    answer: /イベントをストリームで取り込み、元のイベントを14日間保持する/,
+    choiceCount: 4,
+  },
 ];

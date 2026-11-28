@@ -1,0 +1,176 @@
+{
+  "id": "testing-validation-and-troubleshooting",
+  "title": "Tests, Validierung und Fehlerbehebung",
+  "objective": "Trennen Sie das Bewertungsziel, die Bewertungskriterien sowie die Nachweise für Suche, Generierung und Sicherheit, damit Sie die Ursachen von Qualitätsveränderungen reproduzierbar untersuchen und verbessern können.",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "Tests und Qualitätsschranken"
+    },
+    {
+      "slug": "observability",
+      "title": "Überwachung und Verbesserung"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Bereitstellung und Wiederherstellung"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Datenschutz"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evaluation-is-a-contract",
+      "title": "Zweck und Bewertungskriterien der Evaluierung zuerst festlegen",
+      "paragraphs": [
+        "Bei der Evaluierung generativer KI reicht eine einzelne Zeichenfolge mit der richtigen Antwort unter Umständen nicht aus, um die Qualität zu messen. Teilen Sie die Bewertungskriterien je nach Anwendungsfall auf. Berücksichtigen Sie dabei die Relevanz für die Frage, die sachliche Richtigkeit, die Übereinstimmung mit den Belegen, die Konsistenz, das Format, die Sicherheit und die Frage, ob der Benutzer sein Ziel erreichen konnte. Auch wenn Sie eine menschliche und eine automatisierte Evaluierung verwenden, müssen Sie vorab definieren, was eine gute Antwort ausmacht.",
+        "Ein Evaluierungsset sollte nicht nur repräsentative normale Beispiele enthalten, sondern auch unzureichende Informationen, Mehrdeutigkeiten, lange Kontexte, veraltete Dokumente, adversariale Eingaben und erwartete Ablehnungen. Evaluierungsdaten dürfen nicht ohne Genehmigung aus personenbezogenen Daten von Benutzern in der Produktionsumgebung kopiert werden. Verwalten Sie die Nutzungsgenehmigung, Anonymisierung, Speicherung und Aktualisierung.",
+        "Mit Evaluierungsaufträgen in Amazon Bedrock können Sie Modelle anhand integrierter oder eigener Prompt-Datensätze evaluieren. Stellen Sie bei der Evaluierung von RAG getrennte Daten und Metriken für Abruf und Generierung bereit, um zu bestimmen, welche Phase verbessert wurde."
+      ],
+      "sources": [
+        {
+          "label": "Einen Prompt-Datensatz für die RAG-Evaluierung in Amazon Bedrock erstellen",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        },
+        {
+          "label": "Einen automatischen Modellevaluierungsauftrag in Amazon Bedrock starten",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-evaluation-jobs-management-create.html"
+        }
+      ]
+    },
+    {
+      "id": "rag-and-agent-evaluation",
+      "title": "RAG und Agenten in jeder Phase bewerten",
+      "paragraphs": [
+        "Ungenaue RAG-Antworten können unterschiedliche Ursachen haben: Der Abruf war ungeeignet; die abgerufenen Textpassagen waren zwar passend, aber die Generierung hat die Belege falsch interpretiert; oder die Quellen waren korrekt, aber die Antwort erfüllte die Bedingungen der Frage nicht. Bereiten Sie die Frage, die erwarteten Belege und die erwarteten Merkmale der Antwort vor und bewerten Sie Abruf und Generierung getrennt.",
+        "Bei Agenten bewerten Sie nicht nur die endgültige Antwort, sondern auch, ob die erforderlichen Informationen überprüft, nur die zulässigen Tools verwendet, die Argumente korrekt validiert und zum richtigen Zeitpunkt angehalten wurden. Selbst wenn ein Tool scheinbar erfolgreich war, muss geprüft werden, ob der Vorgang nicht für den falschen Kunden oder das falsche Ziel ausgeführt wurde.",
+        "Betrachten Sie die Bewertungsergebnisse nach Fehlertyp und nicht nur anhand des Durchschnittswerts. Lassen Sie Fehlerfälle von Menschen prüfen und überarbeiten Sie die Bewertungskriterien, damit Anfragen, die sicher abgelehnt werden sollten, nicht als erfolgreich gezählt und korrekte Antworten nicht unnötig blockiert werden."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01-Prüfungsleitfaden",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Erstellen eines Prompt-Datasets zur RAG-Bewertung in Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        }
+      ]
+    },
+    {
+      "id": "trace-before-changing-configurations",
+      "title": "Ursachen mithilfe von Traces isolieren, bevor Sie Konfigurationen ändern",
+      "paragraphs": [
+        "Wenn sich die Antwortqualität verschlechtert, ändern Sie nicht sofort das Modell oder den Prompt. Verwenden Sie eine Anforderungs-ID, um die Benutzereingabe, die Versionen des angewendeten Modells, Prompts und der Guardrails, Suchergebnisse, Tool-Ergebnisse, die endgültige Ausgabe und Fehler miteinander zu verknüpfen. So können Sie dasselbe Verhalten reproduzieren und die Phase ermitteln, in der das Problem aufgetreten ist.",
+        "Wenn die Suchergebnisse beispielsweise leer sind, untersuchen Sie die Dokumentaufnahme, Berechtigungen, die Abfrage und den Index – nicht eine Halluzination des Modells. Wenn die Tool-Argumente ungültig sind, prüfen Sie die Eingabevalidierung, die Tool-Definition und die Anweisungen im Prompt – nicht die Abrufkonfiguration. Wenn Sie Konfigurationen, die nicht mit der Ursache zusammenhängen, gleichzeitig ändern, können Sie bei einem erneuten Auftreten des Problems nichts daraus lernen.",
+        "Führen Sie nach der Korrektur den ursprünglichen Fehlerfall, zugehörige Regressionsfälle und Sicherheitsfälle unter denselben Bedingungen aus. Bestätigen Sie die Verbesserung, bevor Sie die Änderung schrittweise ausrollen. Bei einer unerwarteten Verschlechterung führen Sie ein Rollback auf die aufgezeichnete stabile Version durch."
+      ],
+      "sources": [
+        {
+          "label": "Modellaufrufe mit CloudWatch Logs und Amazon S3 überwachen",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-invocation-logging.html"
+        },
+        {
+          "label": "Amazon-Bedrock-Modellaufrufe",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-evaluation-001",
+      "prompt": "Die GenAI-Entwickler eines Bildungsunternehmens evaluieren eine RAG-Funktion, die Fragen anhand interner Lernmaterialien beantwortet, bevor sie veröffentlicht wird. Die Nutzer wünschen nicht nur genaue Antworten, sondern auch die Möglichkeit, die zugrunde liegenden Lernmaterialien zu überprüfen. Welches Evaluationsdesign ist am geeignetsten?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Automatisch nur bewerten, ob die endgültige Antwort in natürlichem Japanisch formuliert ist.",
+          "explanation": "Die Natürlichkeit allein zeigt weder, ob relevante Lernmaterialien abgerufen wurden, noch, ob die Antwort mit den Belegen übereinstimmt."
+        },
+        {
+          "id": "c",
+          "text": "Fragen ohne vorhandene Lernmaterialien höher bewerten und damit die Kreativität des Modells messen.",
+          "explanation": "Bei einer auf Lernmaterialien gestützten Anwendung sollte bewertet werden, ob das System bei unzureichenden Informationen angemessen antwortet oder die Antwort verweigert, anstatt unbelegte Erfindungen zu belohnen."
+        },
+        {
+          "id": "d",
+          "text": "Nur Fragen, zu denen nach der Veröffentlichung Beschwerden von Nutzern eingehen, in den Evaluationsdatensatz aufnehmen.",
+          "explanation": "Vor der Veröffentlichung muss die Evaluation repräsentative Beispiele, Fragen mit unzureichenden Informationen, mehrdeutige Fragen und sicherheitsrelevante Fälle enthalten."
+        },
+        {
+          "id": "b",
+          "text": "Legen Sie für jede Frage die erwarteten Belege fest und bewerten Sie die Relevanz des Abrufs, die Übereinstimmung der Antwort mit den Belegen, die Anzeige der Quellen und die Erreichung des Nutzerziels getrennt voneinander.",
+          "explanation": "Richtig. So lassen sich Abruf und Generierung von RAG getrennt überprüfen und außerdem die Anforderung der Nutzer validieren, die Belege überprüfen zu können."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-002",
+      "prompt": "Ein GenAI-Entwickler eines Bauunternehmens bewertet einen Agenten, der Anfragen zu Baukostenvoranschlägen bearbeitet. Die endgültige Antwort wirkt zwar korrekt, aber bei einigen Ausführungen hat der Agent die Kostenvoranschlags-API für ein anderes Projekt aufgerufen. Welcher zusätzliche Aspekt ist bei der Bewertung am wichtigsten?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Im Ausführungs-Trace die Toolauswahl, das Zielprojekt, die Argumentvalidierung, die Berechtigungen sowie die Bedingungen zum Anhalten und Bestätigen bewerten.",
+          "explanation": "Richtig. Bei Agenten müssen Sie nicht nur die endgültige Antwort bewerten, sondern auch die Ziele der Tooloperationen und die Sicherheit der einzelnen Schritte."
+        },
+        {
+          "id": "a",
+          "text": "Nur die Grammatik des Antworttexts noch genauer bewerten.",
+          "explanation": "Die Grammatik zeigt nicht, ob der Agent das richtige Tool für das richtige Ziel aufgerufen hat, was für die operative Korrektheit entscheidend ist."
+        },
+        {
+          "id": "c",
+          "text": "Die Anzahl der API-Aufrufe des Agenten erhöhen und hoffen, dass er zufällig das richtige Projekt trifft.",
+          "explanation": "Mehr Aufrufe lösen weder Fehler bei der Projekterkennung noch bei der Autorisierung und können deren Auswirkungen sogar vergrößern."
+        },
+        {
+          "id": "d",
+          "text": "Die Zielvalidierung auf Agentenseite weglassen, weil die Kostenvoranschlags-API immer korrekte Ergebnisse liefert.",
+          "explanation": "Selbst wenn die API selbst korrekt ist, kann die Angabe des falschen Ziels dazu führen, dass ungeeignete Informationen bereitgestellt oder ungeeignete Operationen ausgeführt werden."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-003",
+      "prompt": "Ein GenAI-Entwickler eines Verlags hat bestätigt, dass Antworten nach einer Modellaktualisierung nur bei bestimmten langen Fragen mittendrin abgebrochen werden. Welche Maßnahme ist vor der Ursachenanalyse am besten geeignet?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Das Modell, den Prompt, die Anzahl der abgerufenen Ergebnisse und das Ausgabeformat gleichzeitig ändern und anschließend die Ergebnisse in der Produktion beobachten.",
+          "explanation": "Wenn mehrere Einstellungen gleichzeitig geändert werden, lassen sich weder die Ursache des Problems noch die Wirkung der Korrektur feststellen."
+        },
+        {
+          "id": "c",
+          "text": "Die abgebrochenen Antworten manuell vervollständigen lassen, ohne die Konfiguration zu dokumentieren.",
+          "explanation": "Eine vorübergehende manuelle Ergänzung behebt die Ursache nicht und verhindert nicht, dass derselbe Fehler erneut auftritt."
+        },
+        {
+          "id": "d",
+          "text": "Benutzern, die lange Fragen senden, den Zugriff dauerhaft untersagen.",
+          "explanation": "Wenn das Problem unter legitimen Nutzungsbedingungen auftritt, sollten die Kontextverarbeitung und das Ausgabedesign untersucht werden; der Ausschluss von Benutzern ist keine Lösung."
+        },
+        {
+          "id": "b",
+          "text": "Die fehlgeschlagene Anfrage reproduzieren und untersuchen, indem Eingabelänge, Version der angewendeten Konfiguration, abgerufene Dokumente, Tokenverbrauch, Antwort und Fehler einander zugeordnet werden.",
+          "explanation": "Richtig. Nachdem durch Tracing die betroffene Phase ermittelt wurde, können Sie die minimale, ursachenbezogene Korrektur anwenden und einen Regressionstest durchführen."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model evaluation",
+    "Regression test",
+    "Acceptance criteria",
+    "Prompt injection",
+    "Request ID",
+    "Trace",
+    "Model artifact",
+    "Rollback",
+    "Quality gate"
+  ]
+}

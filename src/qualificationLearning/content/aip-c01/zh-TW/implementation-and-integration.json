@@ -1,0 +1,178 @@
+{
+  "id": "implementation-and-integration",
+  "title": "實作與整合",
+  "objective": "設計模型、代理程式、工具與人工確認之間的責任界線，並安全地整合外部操作。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服務"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身分驗證與授權"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CD 流程"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署與復原"
+    }
+  ],
+  "sections": [
+    {
+      "id": "agent-is-not-an-unbounded-operator",
+      "title": "為代理設定目的、工具與停止條件",
+      "paragraphs": [
+        "代理是一種由模型根據對話內容選擇下一個處理或工具呼叫的系統。然而，只指示代理「為客戶盡力而為」，不足以確保業務處理安全。應明確定義可執行的目的、可使用的工具、必要的輸入、輸出、失敗時的處理方式，以及停止條件。",
+        "工具不僅要定義名稱和說明，還要定義輸入類型、必要欄位、允許的值、呼叫主體、逾時時間和錯誤回應。對於 Amazon Bedrock 動作群組，也要規定執行所需的參數，以及應將這些資訊傳遞到哪裡。模型提出的引數必須在工具端重新驗證。",
+        "對於付款、合約變更、向外部傳送資訊等影響重大的操作，應將人工確認納入工作流程。人工確認不只是放置一個「核准」按鈕，而是要透過設計，讓人員能夠確認目標、變更內容、依據，以及執行前後的狀態。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Amazon Bedrock Guardrails 使用案例",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-use.html"
+        }
+      ],
+      "figureId": "agent-is-not-an-unbounded-operator"
+    },
+    {
+      "id": "state-errors-and-retries",
+      "title": "實作狀態、重試與失敗的界線",
+      "paragraphs": [
+        "對於對話和多階段處理，請決定哪些內容要儲存為狀態。對話目的、使用者確認的值、工具執行結果和待核准內容，不應與單純的候選文字或不必要的個人資訊以相同方式保留。請為狀態設定期限和刪除條件。",
+        "對於外部 API 的暫時性失敗，重試有時會有效。然而，以相同方式重試輸入不足、權限不足或違反業務規則的情況並不會成功。請區分應重試的失敗、需要向使用者要求確認的失敗，以及必須立即停止的失敗，並確保重複相同操作不會造成重複執行。",
+        "錯誤時的回應應在向使用者指出下一步行動的同時，不洩露內部機密資訊。請記錄請求識別碼、執行階段、工具和失敗原因分類，以便營運人員進行調查。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "使用 Amazon Bedrock 中的提示管理建置並儲存可重複使用的提示",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    },
+    {
+      "id": "integration-versioning-and-release",
+      "title": "透過版本與設定管理整合元件",
+      "paragraphs": [
+        "GenAI 應用程式的行為並不只由應用程式程式碼決定，而是由模型、提示、擷取設定、工具定義、護欄和資料來源的版本與設定組合決定。如果未記錄變更單位就將變更部署到生產環境，便無法釐清品質變化的原因。",
+        "發行前，請執行回歸案例，其中不僅包括具代表性的成功範例，也包括資訊不足、應拒絕的要求、工具故障以及過時的對話狀態。請分階段推出設定，以便在評估指標惡化時恢復到先前的組合。",
+        "切換模型或提供者並不只是變更 API 連線端點。請在相同的驗收條件下，確認其對輸入格式、輸出格式、權杖上限、工具使用、護欄以及評估集的影響。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "在 Amazon Bedrock 中使用提示管理建置並儲存可重複使用的提示",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-integration-001",
+      "prompt": "一家旅行公司的 GenAI 開發人員正在建立一個代理程式，依照使用者的要求變更預訂。變更需要預訂編號、變更內容和費用差額，確認後會產生取消手續費。為了防止錯誤變更，下列哪種設計最適當？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "模型提出預訂變更後，不驗證預訂編號或費用差額，立即執行變更。",
+          "explanation": "由於未確認必要輸入和業務影響，可能會變更錯誤的預訂，或產生非預期費用。"
+        },
+        {
+          "id": "c",
+          "text": "將預訂變更 API 的管理員權限與所有代理程式共用。",
+          "explanation": "這會允許執行超出預期用途的變更，並損害執行主體追蹤和最低權限原則。"
+        },
+        {
+          "id": "b",
+          "text": "驗證工具輸入，向使用者顯示變更內容和費用差額並取得確認後，再使用受限權限執行變更。",
+          "explanation": "正確。將模型的提議與執行分開，並結合輸入驗證、人工確認和最低權限，以保護高影響操作。"
+        },
+        {
+          "id": "d",
+          "text": "預訂變更失敗時，不通知使用者而無限期重試相同要求。",
+          "explanation": "輸入不足或違反業務規則無法透過重試解決，而且可能造成重複執行。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-002",
+      "prompt": "某電信公司的 GenAI 開發人員正在實作一項協助功能：針對線路故障的詢問搜尋客戶的合約資訊，並在必要時將問題轉交給負責人員。對於外部合約 API 暫時沒有回應，以及使用者未輸入合約編號這兩種情況，以下哪種方法最適合安全地加以區分？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "無論是哪種情況，都以相同的間隔無限重試合約 API。",
+          "explanation": "輸入資訊不足無法透過重試解決，而無限重試會增加負載和重複處理的風險。"
+        },
+        {
+          "id": "b",
+          "text": "對於暫時性的 API 故障，限制重試次數和等待時間後再試；對於輸入資訊不足，請使用者確認並補充缺少的項目。",
+          "explanation": "正確。依失敗類型分別處理重試、使用者確認和停止操作，就能安全地復原。"
+        },
+        {
+          "id": "c",
+          "text": "即使沒有合約編號，也使用對話中包含的任意數字搜尋客戶資訊。",
+          "explanation": "這可能導致查閱其他客戶的資訊，並且違反輸入驗證和隱私保護要求。"
+        },
+        {
+          "id": "d",
+          "text": "將 API 的內部錯誤詳細資訊原樣顯示給使用者。",
+          "explanation": "應向使用者說明下一步應採取的行動，不得公開可能包含內部結構或機密資訊的詳細內容。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-003",
+      "prompt": "某地方政府的 GenAI 開發人員修改了用來產生通知的提示。更新後，系統只為部分使用者產生了錯誤的聯絡方式。若要找出原因並安全回復，最適當的做法是什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只覆寫提示本文，不記錄版本、評估結果或套用時間。",
+          "explanation": "如此一來便無法確定何時修改了什麼，也難以判斷與錯誤輸出之間的因果關係或確定復原目標。"
+        },
+        {
+          "id": "c",
+          "text": "即使產生了錯誤的聯絡方式，只要文章自然，就繼續進行修改。",
+          "explanation": "自然流暢不代表業務上的正確性，而錯誤的聯絡方式會直接影響使用者。"
+        },
+        {
+          "id": "b",
+          "text": "將提示、模型和設定記錄為版本，使用回歸案例進行驗證，分階段推出，並在情況惡化時復原至前一版本。",
+          "explanation": "正確。追蹤決定行為的組成要素後，就能安全地復原至已驗證的前一版本。"
+        },
+        {
+          "id": "d",
+          "text": "同時向正式環境中的所有使用者推出，之後再考慮評估方法。",
+          "explanation": "擴大影響範圍後，會更難偵測品質惡化並安全復原。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "AI agent",
+    "Action group",
+    "Tool calling",
+    "Human oversight",
+    "Idempotency",
+    "Request ID",
+    "Audit log",
+    "Model artifact",
+    "Deployment pipeline",
+    "Rollback"
+  ]
+}

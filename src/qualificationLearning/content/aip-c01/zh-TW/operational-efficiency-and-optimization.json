@@ -1,0 +1,176 @@
+{
+  "id": "operational-efficiency-and-optimization",
+  "title": "GenAI 應用程式的營運效率與最佳化",
+  "objective": "同時觀測品質、安全性、回應時間、吞吐量與成本，並根據假設和測量結果判斷改進方式。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "測試與品質閘門"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署與復原"
+    },
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服務"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure-end-to-end-not-only-model",
+      "title": "測量使用者路徑，而不只是模型回應",
+      "paragraphs": [
+        "GenAI 應用程式的延遲並不只由模型推論決定。身分驗證、輸入檢查、擷取、重新排序、工具呼叫、輸出檢查和網路等各個階段，都會影響總耗時與失敗率。在進行改善之前，應觀測從使用者要求到回應之間各階段的耗時與結果。",
+        "監控 Amazon Bedrock 模型呼叫可以追蹤呼叫次數、權杖使用量、錯誤等項目。將這些資料與擷取延遲、工具失敗率、護欄介入及使用者完成率建立關聯後，就能將單純的「速度慢」現象拆解為可能的原因。",
+        "應在相同條件下比較測量結果。如果同時變更模型、提示、擷取設定、輸入長度及同時使用人數，就無法判斷是哪項變更帶來改善或劣化。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon Bedrock 模型呼叫",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        },
+        {
+          "label": "AIP-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        }
+      ]
+    },
+    {
+      "id": "optimize-context-with-quality-guardrails",
+      "title": "在不犧牲依據與品質的範圍內減少權杖",
+      "paragraphs": [
+        "減少不必要的冗長對話歷史記錄、重複的文件片段和未使用的指示，有助於降低成本與延遲。然而，單純縮短輸入可能會遺失必要的條件與依據，導致準確性和安全性下降。應在評估集上確認品質後，再決定要刪減哪些內容。",
+        "對於可在類似請求中重複使用的結果或穩定的通用指示，可以考慮使用快取。不過，不要在快取內容中不慎包含個人資訊或使用者特有的狀態；應評估其範圍、失效條件和存取控制。",
+        "搜尋設定也不是結果數量增加就一定能提升品質。無關的文件片段增加後，模型會更難以進行判斷，同時也會增加時間和權杖用量。應一併評估擷取品質、引用正確性、回應品質和延遲。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Amazon Bedrock 知識庫擷取資料並產生 AI 回應",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base.html"
+        },
+        {
+          "label": "Amazon Bedrock 模型呼叫",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    },
+    {
+      "id": "capacity-cost-and-graceful-degradation",
+      "title": "預先決定高負載時的優先順序與優雅降級策略",
+      "paragraphs": [
+        "使用量急遽增加時，可能無法以相同的品質和延遲處理所有要求。請決定哪些業務功能最重要、哪些功能可以延後，以及哪些降級功能可以明確提供給使用者。例如，可以考慮先回傳搜尋結果與來源，之後再產生額外摘要的設計。",
+        "優雅降級並不代表回傳沒有佐證的答案。如果模型或搜尋無法使用，應向使用者說明目前狀態，並提供安全的替代途徑，例如重試、轉交給負責人，或引導使用者查看已核准的資訊。",
+        "評估成本時，不只要看權杖數量，也要納入失敗的重試、搜尋、日誌、工具，以及對等待中的使用者提供支援所產生的成本。請觀測特定使用者、輸入或功能造成成本急遽增加的因素，並根據品質與業務影響採取措施，而不是等超出預算後才一律停止服務。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Amazon Bedrock 模型呼叫",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-operations-001",
+      "prompt": "某零售公司的 GenAI 開發人員正在調查商品資訊聊天回應變慢的原因。最近同時變更了模型、擷取和工具呼叫的設定。首先進行下列哪項分析最為適當？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "立即只變更模型類型，而不檢查各階段所需的時間或失敗率。",
+          "explanation": "即使原因在擷取或工具等其他階段，變更模型也無法解決問題，還可能讓根本原因更難判斷。"
+        },
+        {
+          "id": "b",
+          "text": "分階段量測從要求到回應的整個流程，並在相同條件下比較模型、擷取、工具和護欄的時間與結果。",
+          "explanation": "正確。觀測整個路徑並分開驗證同時進行的變更，就能逐步隔離延遲的可能原因。"
+        },
+        {
+          "id": "c",
+          "text": "忽略使用者完成率和錯誤，只比較平均回應時間。",
+          "explanation": "只看平均值無法掌握失敗、長時間等待或對特定使用者造成的不良影響。"
+        },
+        {
+          "id": "d",
+          "text": "在延遲解決之前，停用所有日誌和指標。",
+          "explanation": "這會失去調查原因所需的證據，也無法驗證改善結果。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-operations-002",
+      "prompt": "一家律師事務所的 GenAI 開發人員想要降低 RAG 聊天的成本。目前，許多與使用者問題無關的文件片段也會被加入提示中，可能會削弱回答的依據。最適合的改善方法是哪一項？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "評估擷取相關性、引用正確性、回應品質和延遲，並加以調整，使系統只提供必要的文件片段。",
+          "explanation": "正確。這不僅能最佳化成本，還能同時維持 RAG 擷取、生成和佐證呈現的品質。"
+        },
+        {
+          "id": "a",
+          "text": "一律將文件片段增加到最大數量，而且不進行評估。",
+          "explanation": "增加無關的文件片段可能提高成本和延遲，並降低支持性佐證的品質。"
+        },
+        {
+          "id": "c",
+          "text": "完全不提供佐證文件，只使用模型的一般知識產生法律回答。",
+          "explanation": "對於需要案件特定依據和來源驗證的用途，這會降低準確性和問責性。"
+        },
+        {
+          "id": "d",
+          "text": "永久快取每位使用者的完整對話記錄，且不設置存取條件。",
+          "explanation": "這會增加不必要的個人資訊和案件資訊的保留與暴露，並不是安全使用快取的方式。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-operations-003",
+      "prompt": "支援災害應變的 GenAI 開發人員，即使在大量查詢集中湧入時，也會將不回傳毫無依據的疏散資訊列為最高優先事項。當模型推論暫時無法使用時，哪種設計最適當？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "模型無法使用時，毫無依據地回傳過去的任意回應。",
+          "explanation": "緊急情況下錯誤資訊的風險更高，因此不得毫無依據地回傳舊回應。"
+        },
+        {
+          "id": "b",
+          "text": "顯示故障狀態，並提供安全的降級路徑，例如引導使用者查看已核准的資訊，或將請求轉交給負責人。",
+          "explanation": "正確。即使可用性降低，也能向使用者傳達狀態，並提供維持依據與安全性的替代方式。"
+        },
+        {
+          "id": "c",
+          "text": "向使用者隱瞞失敗，並在內部無限期重試相同的要求。",
+          "explanation": "使用者無法判斷目前情況，負載會進一步升高，回應延遲也會持續增加。"
+        },
+        {
+          "id": "d",
+          "text": "停用所有安全篩選器，只改善回應速度。",
+          "explanation": "這違反了將安全性列為最高優先事項的要求，並可能在高負載時增加危險輸出。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Latency",
+    "Throughput",
+    "Token",
+    "Caching",
+    "Monitoring",
+    "CloudWatch alarm",
+    "Cost allocation tags",
+    "Error rate",
+    "SLO"
+  ]
+}

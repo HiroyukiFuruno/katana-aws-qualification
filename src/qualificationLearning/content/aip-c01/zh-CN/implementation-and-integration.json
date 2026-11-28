@@ -1,0 +1,178 @@
+{
+  "id": "implementation-and-integration",
+  "title": "实现与集成",
+  "objective": "设计模型、代理、工具和人工确认之间的责任边界，并安全地集成外部操作。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服务"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CD 流程"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署与恢复"
+    }
+  ],
+  "sections": [
+    {
+      "id": "agent-is-not-an-unbounded-operator",
+      "title": "为代理设定目标、工具和停止条件",
+      "paragraphs": [
+        "代理是一种由模型根据对话内容选择下一步操作或工具调用的系统。但是，仅仅指示代理“为客户尽力而为”，并不足以确保业务处理安全。应明确规定可执行的目标、可使用的工具、所需输入、输出、失败时的处理方式以及停止条件。",
+        "对于工具，不仅要定义名称和说明，还要定义输入类型、必填项、允许的值、调用主体、超时和错误响应。对于 Amazon Bedrock 操作组，也要规定执行所需的参数以及应将这些信息传递到何处。模型提出的参数必须由工具侧重新验证。",
+        "对于支付、合同变更、向外部发送信息等影响重大的操作，应将人工确认纳入工作流。人工确认并不只是设置一个“批准”按钮，而应通过设计让人员能够确认目标、变更内容、依据以及执行前后的状态。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Amazon Bedrock 防护机制用例",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-use.html"
+        }
+      ],
+      "figureId": "agent-is-not-an-unbounded-operator"
+    },
+    {
+      "id": "state-errors-and-retries",
+      "title": "实现状态、重试和失败的边界",
+      "paragraphs": [
+        "对于会话和多阶段处理，需要决定哪些内容应保存为状态。不要以相同方式保留会话目的、用户确认的值、工具执行结果和待审批内容，以及普通的候选文本或不必要的个人信息。为状态设置有效期限和删除条件。",
+        "对于外部 API 的临时故障，重试有时会有效。但是，以相同方式重试输入不足、权限不足或违反业务规则的情况并不会成功。区分应重试的故障、需要向用户请求确认的故障，以及必须立即停止的故障，并确保重复执行同一操作不会导致重复执行。",
+        "发生错误时的响应应在向用户说明下一步操作的同时，不泄露内部机密信息。记录请求标识符、执行阶段、工具和失败原因类别，以便运维人员进行调查。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "使用 Amazon Bedrock 中的提示管理构建和存储可重复使用的提示",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    },
+    {
+      "id": "integration-versioning-and-release",
+      "title": "通过版本和配置管理集成组件",
+      "paragraphs": [
+        "GenAI 应用程序的行为并不只由应用程序代码决定，而是由模型、提示、检索设置、工具定义、护栏和数据源的版本与配置组合决定。如果在未记录变更单元的情况下将变更部署到生产环境，就无法区分质量变化的原因。",
+        "发布前，应运行回归案例，其中不仅包括具有代表性的成功示例，还包括信息不足、应当拒绝的请求、工具故障以及过时的会话状态。应分阶段推出配置，以便在评估指标恶化时恢复到之前的组合。",
+        "切换模型或提供商并不只是更改 API 连接端点。应在相同的验收条件下，确认其对输入格式、输出格式、令牌上限、工具使用、护栏以及评估集的影响。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "在 Amazon Bedrock 中使用提示管理构建并存储可重复使用的提示",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-integration-001",
+      "prompt": "一家旅行公司的 GenAI 开发者正在构建一个代理，以根据用户请求修改预订。修改需要预订编号、修改内容和费用差额，确认后会产生取消手续费。为了防止错误修改，以下哪种设计最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "模型提出修改预订后，不验证预订编号或费用差额，立即执行修改。",
+          "explanation": "由于未核对必要输入和业务影响，可能会修改错误的预订，或产生意外费用。"
+        },
+        {
+          "id": "c",
+          "text": "向所有代理共享预订修改 API 的管理员权限。",
+          "explanation": "这样会允许执行超出预期用途的修改，并损害执行主体的追踪和最小权限原则。"
+        },
+        {
+          "id": "b",
+          "text": "验证工具输入，向用户展示修改内容和费用差额并在获得确认后，再使用受限权限执行修改。",
+          "explanation": "正确。将模型提议与执行分开，并结合输入验证、人工确认和最小权限，可以保护高影响操作。"
+        },
+        {
+          "id": "d",
+          "text": "预订修改失败时，不通知用户而无限期重试相同的请求。",
+          "explanation": "输入缺失或违反业务规则无法通过重试解决，而且可能导致重复执行。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-002",
+      "prompt": "某电信公司的 GenAI 开发人员正在实现一项辅助功能：针对线路故障咨询，搜索客户的合同信息，并在必要时将问题转交给客服人员。对于外部合同 API 暂时无响应，以及用户未输入合同编号这两种情况，以下哪种方法最适合安全地区分它们？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "无论是哪种情况，都以相同的间隔无限重试合同 API。",
+          "explanation": "输入信息不足无法通过重试解决，而无限重试会增加负载和重复处理的风险。"
+        },
+        {
+          "id": "b",
+          "text": "对于暂时性的 API 故障，限制重试次数和等待时间后进行重试；对于输入信息不足，请用户确认并补充缺失项目。",
+          "explanation": "正确。根据失败类型分别处理重试、用户确认和停止操作，可以安全地恢复服务。"
+        },
+        {
+          "id": "c",
+          "text": "即使没有合同编号，也使用对话中包含的任意数字搜索客户信息。",
+          "explanation": "这可能导致查询到其他客户的信息，并且违反输入验证和隐私保护要求。"
+        },
+        {
+          "id": "d",
+          "text": "将 API 的内部错误详细信息原样显示给用户。",
+          "explanation": "应当向用户说明下一步应采取的行动，不得公开可能包含内部结构或机密信息的详细内容。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-003",
+      "prompt": "某市政府的 GenAI 开发人员修改了用于生成通知的提示词。更新后，系统只为一部分用户生成了错误的联系方式。为了查明原因并安全回退，最合适的做法是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只覆盖提示词正文，不记录版本、评估结果或生效时间。",
+          "explanation": "这样无法确定何时更改了什么，也就难以判断与错误输出的因果关系或确定回退目标。"
+        },
+        {
+          "id": "c",
+          "text": "即使生成了错误的联系方式，只要文章自然，就继续进行修改。",
+          "explanation": "自然流畅并不能保证业务上的准确性，而错误的联系方式会直接影响用户。"
+        },
+        {
+          "id": "b",
+          "text": "将提示词、模型和设置作为一个版本记录下来，使用回归案例进行验证，分阶段发布，并在情况恶化时回退到上一版本。",
+          "explanation": "正确。通过追踪决定行为的组成要素，可以安全地回退到经过验证的上一版本。"
+        },
+        {
+          "id": "d",
+          "text": "同时向生产环境中的所有用户发布，然后再考虑评估方法。",
+          "explanation": "扩大影响范围后，将更难检测质量恶化并安全回退。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "AI agent",
+    "Action group",
+    "Tool calling",
+    "Human oversight",
+    "Idempotency",
+    "Request ID",
+    "Audit log",
+    "Model artifact",
+    "Deployment pipeline",
+    "Rollback"
+  ]
+}

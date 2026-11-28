@@ -1,0 +1,181 @@
+{
+  "id": "foundation-model-integration-data-and-compliance",
+  "title": "Foundation Model Integration, Data Management, and Compliance",
+  "objective": "Choose an approach for designing foundation models and retrieval-augmented generation based on intended use, quality, data, and constraints, and for providing responses supported by evidence.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentication and Authorization"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    }
+  ],
+  "sections": [
+    {
+      "id": "select-model-by-acceptance-criteria",
+      "title": "Choose Models by Acceptance Criteria, Not by Name",
+      "paragraphs": [
+        "Foundation model selection should not be based solely on a model’s popularity or a single benchmark. First define acceptance criteria for the tasks users want to complete, the required output format, accuracy, response time, languages, inputs to be handled, and unacceptable failures. For contract summarization, source-grounded explanations and output in the specified format are important. For creative assistance, evaluate textual variety and tone separately.",
+        "For a proof of concept, prepare inputs that resemble actual use and compare multiple candidates under the same conditions. Include not only questions with expected answers, but also questions with insufficient information, long inputs, ambiguous instructions, and requests that should be prohibited. Recording the evaluation targets, data, measurement methods, and reasons for acceptance or rejection makes the decision reproducible when models or settings are changed later.",
+        "Applications should invoke models by explicitly specifying their purpose, version, and settings instead of embedding a model ID directly in business logic. This enables teams to consider comparing candidates against requirements, switching gradually, and reverting when problems occur."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Request access to Amazon Bedrock models",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-access.html"
+        }
+      ]
+    },
+    {
+      "id": "rag-retrieval-and-grounding",
+      "title": "Verify Retrieval Results and Generated Results Separately in RAG",
+      "paragraphs": [
+        "Retrieval-augmented generation (RAG) is a method that retrieves information from within an organization relevant to a question and adds it to the response, rather than relying solely on the model’s general knowledge. Amazon Bedrock Knowledge Bases can retrieve relevant information from data sources and use it to generate responses with improved relevance and accuracy. RAG is particularly useful for questions where up-to-date or proprietary internal information is important.",
+        "You cannot assess RAG quality by looking only at the generated text. Evaluate separately whether appropriate document chunks were retrieved for the question, whether the retrieved chunks are sufficient evidence for the answer, whether the answer contradicts the retrieved chunks, and whether users can verify the sources. If retrieval is inappropriate, adjusting only the model’s wording will not resolve the root cause.",
+        "Before ingestion, determine the document owner, publication scope, update frequency, deletion conditions, and chunking method. Including unauthorized documents among search candidates or retaining outdated documents can lead to plausible but incorrect answers and information leakage."
+      ],
+      "sources": [
+        {
+          "label": "Retrieve Data and Generate AI Responses with Amazon Bedrock Knowledge Bases",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base.html"
+        },
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        }
+      ],
+      "figureId": "rag-grounded-response"
+    },
+    {
+      "id": "prompt-contracts-and-data-lifecycle",
+      "title": "Managing Changes to Prompts and Data",
+      "paragraphs": [
+        "A prompt is not merely temporary text for a model; it is an application component that defines the output format, prohibited content, and context to use. Amazon Bedrock prompt management lets you combine prompts, variables, models, and inference settings, compare variants, and save them. When changing a prompt, record what was changed and which evaluation results justified its adoption.",
+        "When passing conversation history or search results, select only the information needed for the intended purpose. Adding all past conversations or documents without limits can expose unnecessary confidential information and degrade the focus and cost of responses. Define the retention period, viewers, and deletion method for each type of data.",
+        "When passing output to machine processing, do not turn free-form text directly into an execution command. Define the required fields, types, and allowed values, and decide how to handle failed format validation. Even if model output appears plausible, verify it in the application before passing it to an external system."
+      ],
+      "sources": [
+        {
+          "label": "Build and Save Reusable Prompts Using Prompt Management in Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        },
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-foundation-001",
+      "prompt": "A GenAI developer at a pharmaceutical company is building an assistance feature that answers field personnel’s questions using only internally approved procedures as its source. Which design is most appropriate to ensure that personnel can verify the basis for each answer and that revised procedures are not mixed into the answers?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Pass only the question to the foundation model and have it answer using only the model’s general knowledge.",
+          "explanation": "This does not satisfy the requirements to use internally approved procedures as the source or to verify their revision status."
+        },
+        {
+          "id": "b",
+          "text": "Search documents whose approval status and revisions are managed, pass the retrieved passages to the response-generation process, and show the sources.",
+          "explanation": "Correct. Use RAG to retrieve approved information and separate the response from its supporting evidence so users can verify it."
+        },
+        {
+          "id": "c",
+          "text": "Paste all old and new procedures into a single prompt as fixed content.",
+          "explanation": "Revised documents will be mixed in, and it will not be possible to maintain the prompt during updates or select the information needed for each question."
+        },
+        {
+          "id": "d",
+          "text": "Evaluate only the most fluent answer without checking the content of the retrieved document passages.",
+          "explanation": "Fluency alone cannot verify whether relevant documents were retrieved or whether the answer matches its supporting evidence."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-foundation-002",
+      "prompt": "An insurance company’s GenAI developers must choose a model for an accident-report summarization feature from two candidate foundation models. The legal department requires summaries to include specified items, suppress unsupported additions, and respond within an acceptable time limit. Which selection method is most appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Choose the generally most popular model and do not evaluate it using actual accident reports.",
+          "explanation": "This does not verify the format, accuracy, or response-time requirements of the target business operation."
+        },
+        {
+          "id": "c",
+          "text": "Automatically judge the model that generates the longest text to be the highest quality.",
+          "explanation": "Text length is not an indicator of whether the specified items, supporting basis, accuracy, and response time requirements are met."
+        },
+        {
+          "id": "b",
+          "text": "Using an appropriately protected evaluation set based on real data and defined acceptance criteria, compare the candidates under the same conditions and record the reasons for the decision.",
+          "explanation": "Correct. Using inputs similar to those encountered in the business and clear acceptance criteria makes it possible to compare the models’ capabilities and limitations in an explainable way."
+        },
+        {
+          "id": "d",
+          "text": "Do not conduct evaluations or keep records until complaints are received from production users.",
+          "explanation": "Skipping proof-of-concept and acceptance-criteria validation means discovering in production that the requirements have not been met."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-foundation-003",
+      "prompt": "A GenAI developer at an online retailer is implementing a feature that extracts the return-request type and order number from model output and passes them to an existing business system. To avoid starting a process with an incorrect order number, which policy is most appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Send the generated free-form text directly to the business system as an execution command.",
+          "explanation": "Because the format and values of the model output are not checked, misrecognitions or explanatory text could directly trigger an operation."
+        },
+        {
+          "id": "c",
+          "text": "Treat every string that looks like an order number as valid, and choose one at random if there are multiple matches.",
+          "explanation": "The target order cannot be identified reliably, which could trigger incorrect processing."
+        },
+        {
+          "id": "d",
+          "text": "Pass the entire conversation history to the prompt indefinitely and use it as a substitute for validation.",
+          "explanation": "Adding conversation history does not replace format validation and also increases the exposure of unnecessary information."
+        },
+        {
+          "id": "b",
+          "text": "Define the required fields, types, and permitted values; validate the output, and request confirmation or stop if it is invalid.",
+          "explanation": "Correct. Validate the structured output on the application side and prevent incorrect operations before passing it to the external system."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Foundation model",
+    "RAG",
+    "Embedding",
+    "Vector database",
+    "Prompt",
+    "Prompt engineering",
+    "Context window",
+    "Token",
+    "Model evaluation",
+    "Acceptance criteria",
+    "Bedrock Prompt Management",
+    "Data minimization",
+    "Data lineage"
+  ]
+}

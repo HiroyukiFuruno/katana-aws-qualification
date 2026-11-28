@@ -1,0 +1,176 @@
+{
+  "id": "testing-validation-and-troubleshooting",
+  "title": "Testes, validação e solução de problemas",
+  "objective": "Separe o objeto da avaliação, os critérios de pontuação e as evidências de pesquisa, geração e segurança para investigar e melhorar de forma reproduzível as causas das mudanças na qualidade.",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "Testes e gates de qualidade"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Implantação e recuperação"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Proteção de dados"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evaluation-is-a-contract",
+      "title": "Fixe primeiro o objetivo e os critérios de pontuação da avaliação",
+      "paragraphs": [
+        "Na avaliação de IA generativa, uma única string de resposta correta pode não ser suficiente para medir a qualidade. Separe os critérios de pontuação de acordo com o caso de uso, abrangendo a relevância para a pergunta, a precisão factual, a consistência com as evidências, a consistência, o formato, a segurança e se o usuário conseguiu atingir seu objetivo. Mesmo ao usar avaliação humana e automatizada, defina antecipadamente o que caracteriza uma boa resposta.",
+        "O conjunto de avaliação deve incluir não apenas exemplos normais representativos, mas também informações insuficientes, ambiguidades, contextos longos, documentos desatualizados, entradas adversariais e recusas esperadas. Os dados de avaliação não devem ser copiados de informações pessoais de usuários em produção sem autorização. Gerencie a permissão de uso, a anonimização, o armazenamento e as atualizações.",
+        "Os trabalhos de avaliação do Amazon Bedrock podem avaliar modelos usando conjuntos de dados de prompts integrados ou personalizados. Ao avaliar RAG, prepare dados e métricas separados para recuperação e geração, para determinar qual etapa foi aprimorada."
+      ],
+      "sources": [
+        {
+          "label": "Criar um conjunto de dados de prompts para avaliação de RAG no Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        },
+        {
+          "label": "Iniciar um trabalho automático de avaliação de modelos no Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-evaluation-jobs-management-create.html"
+        }
+      ]
+    },
+    {
+      "id": "rag-and-agent-evaluation",
+      "title": "Avaliar RAG e agentes em cada etapa",
+      "paragraphs": [
+        "Respostas imprecisas de RAG podem ter causas diferentes: a recuperação foi inadequada; os trechos recuperados eram apropriados, mas a geração interpretou incorretamente as evidências; ou as fontes estavam corretas, mas a resposta não atendia às condições da pergunta. Prepare a pergunta, as evidências esperadas e as características esperadas da resposta, e avalie a recuperação e a geração separadamente.",
+        "Para agentes, avalie não apenas a resposta final, mas também se o agente confirmou as informações necessárias, usou somente as ferramentas permitidas, validou corretamente os argumentos e parou quando deveria parar. Mesmo quando uma ferramenta parece ter sido executada com sucesso, verifique se a operação não foi realizada para o cliente ou destino errado.",
+        "Analise os resultados da avaliação por tipo de falha, e não apenas pela média. Faça com que pessoas revisem os casos de falha e reavaliem os critérios para evitar contar como sucesso solicitações que deveriam ser recusadas com segurança ou bloquear desnecessariamente respostas precisas."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame AIP-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Criar um conjunto de dados de prompts para avaliação de RAG no Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        }
+      ]
+    },
+    {
+      "id": "trace-before-changing-configurations",
+      "title": "Isolar a causa por meio de rastreamento antes de alterar as configurações",
+      "paragraphs": [
+        "Quando a qualidade das respostas piorar, não altere imediatamente o modelo nem o prompt. Use um identificador de solicitação para correlacionar a entrada do usuário, as versões do modelo, do prompt e das barreiras de segurança aplicadas, os resultados da pesquisa, os resultados das ferramentas, a saída final e os erros. Isso permite reproduzir o mesmo fenômeno e identificar em que etapa ocorreu o problema.",
+        "Por exemplo, se os resultados da pesquisa estiverem vazios, investigue problemas de ingestão de documentos, permissões, consulta e índice, e não uma alucinação do modelo. Se os argumentos da ferramenta forem inválidos, verifique a validação da entrada, a definição da ferramenta e as instruções do prompt, e não a configuração de recuperação. Alterar de uma só vez configurações sem relação com a causa impede que você aprenda quando o problema ocorrer novamente.",
+        "Após a correção, execute o caso de falha original, os casos de regressão relacionados e os casos de segurança sob as mesmas condições. Confirme a melhoria antes de fazer uma implantação gradual e, se houver uma piora inesperada, reverta para a versão estável registrada."
+      ],
+      "sources": [
+        {
+          "label": "Monitorar invocações de modelos usando o CloudWatch Logs e o Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-invocation-logging.html"
+        },
+        {
+          "label": "Invocações de modelos do Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-evaluation-001",
+      "prompt": "Os desenvolvedores de GenAI de uma empresa de educação avaliam um recurso de RAG que responde a perguntas usando materiais didáticos internos antes de disponibilizá-lo publicamente. Os usuários querem não apenas respostas precisas, mas também poder verificar os materiais que servem de base para elas. Qual é o projeto de avaliação mais apropriado?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Avaliar automaticamente apenas se a resposta final está escrita em japonês natural.",
+          "explanation": "A naturalidade, por si só, não permite verificar se materiais didáticos relevantes foram recuperados nem se a resposta corresponde às evidências."
+        },
+        {
+          "id": "c",
+          "text": "Dar notas mais altas às perguntas para as quais não existem materiais didáticos e medir a criatividade do modelo.",
+          "explanation": "Em um caso de uso fundamentado em materiais didáticos, a avaliação deve verificar se o sistema responde ou recusa adequadamente quando faltam informações, em vez de recompensar invenções sem evidências."
+        },
+        {
+          "id": "d",
+          "text": "Adicionar ao conjunto de avaliação somente as perguntas que receberem reclamações dos usuários após a publicação.",
+          "explanation": "Antes da publicação, a avaliação deve incluir exemplos representativos, perguntas com informações insuficientes, perguntas ambíguas e casos relacionados à segurança."
+        },
+        {
+          "id": "b",
+          "text": "Para cada pergunta, defina as evidências esperadas e avalie separadamente a relevância da recuperação, a correspondência entre a resposta e as evidências, a exibição das fontes e o alcance do objetivo do usuário.",
+          "explanation": "Correto. Isso permite verificar separadamente a recuperação e a geração do RAG e também validar o requisito do usuário de que as evidências possam ser verificadas."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-002",
+      "prompt": "Um desenvolvedor de GenAI de uma empresa de construção avalia um agente que processa consultas sobre orçamentos de obras. A resposta final parece correta, mas, em algumas execuções, o agente chamou a API de orçamento de outro projeto. Qual é o aspecto adicional mais importante a avaliar?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Avaliar no rastreamento da execução a seleção da ferramenta, o projeto-alvo, a validação dos argumentos, as permissões e as condições de parada e confirmação.",
+          "explanation": "Correto. No caso de agentes, é necessário avaliar não apenas a resposta final, mas também os alvos das operações de ferramentas e se as etapas são seguras."
+        },
+        {
+          "id": "a",
+          "text": "Avaliar com ainda mais detalhes apenas a gramática do texto da resposta.",
+          "explanation": "A gramática não mostra se o agente chamou a ferramenta correta para o alvo correto, o que é um aspecto crítico da correção operacional."
+        },
+        {
+          "id": "c",
+          "text": "Aumentar o número de vezes que o agente chama a API e esperar que ele acerte o projeto correto por acaso.",
+          "explanation": "Aumentar o número de chamadas não resolve erros de identificação do projeto nem de autorização e pode ampliar o impacto desses erros."
+        },
+        {
+          "id": "d",
+          "text": "Dispensar a validação do alvo pelo agente porque os resultados da API de orçamento são sempre corretos.",
+          "explanation": "Mesmo que a própria API esteja correta, especificar o alvo errado pode expor informações inadequadas ou causar operações inadequadas."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-003",
+      "prompt": "Um desenvolvedor de GenAI de uma editora confirmou que, após uma atualização do modelo, as respostas são interrompidas no meio apenas para determinadas perguntas longas. Qual é a ação mais apropriada a ser tomada antes de investigar a causa?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Alterar simultaneamente o modelo, o prompt, o número de resultados recuperados e o formato de saída e, em seguida, observar os resultados em produção.",
+          "explanation": "Alterar várias configurações ao mesmo tempo impede identificar a causa do problema e o efeito da correção."
+        },
+        {
+          "id": "c",
+          "text": "Fazer com que uma pessoa complete manualmente as respostas interrompidas, sem registrar a configuração.",
+          "explanation": "A complementação manual temporária não resolve a causa nem impede a recorrência da mesma falha."
+        },
+        {
+          "id": "d",
+          "text": "Proibir permanentemente o acesso dos usuários que enviarem perguntas longas.",
+          "explanation": "Se o problema ocorrer em condições legítimas de uso, é necessário investigar o processamento do contexto e o design da saída; excluir usuários não resolverá o problema."
+        },
+        {
+          "id": "b",
+          "text": "Reproduzir a solicitação que falhou e investigá-la correlacionando o comprimento da entrada, a versão da configuração aplicada, os documentos recuperados, o uso de tokens, a resposta e os erros.",
+          "explanation": "Correto. Depois de rastrear a etapa em que o problema ocorre, é possível aplicar a correção mínima correspondente à causa e realizar testes de regressão."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model evaluation",
+    "Regression test",
+    "Acceptance criteria",
+    "Prompt injection",
+    "Request ID",
+    "Trace",
+    "Model artifact",
+    "Rollback",
+    "Quality gate"
+  ]
+}

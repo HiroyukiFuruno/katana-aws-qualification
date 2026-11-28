@@ -1,0 +1,178 @@
+{
+  "id": "implementation-and-integration",
+  "title": "Implementación e integración",
+  "objective": "Diseñar los límites de responsabilidad entre modelos, agentes, herramientas y verificación humana, e integrar operaciones externas de forma segura.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Servicios principales de AWS"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Autenticación y autorización"
+    },
+    {
+      "slug": "cicd",
+      "title": "Flujo de CI/CD"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Despliegue y recuperación"
+    }
+  ],
+  "sections": [
+    {
+      "id": "agent-is-not-an-unbounded-operator",
+      "title": "Proporcione al agente un objetivo, herramientas y condiciones de detención",
+      "paragraphs": [
+        "Un agente es un sistema en el que el modelo selecciona la siguiente operación o llamada a una herramienta basándose en el contenido de la conversación. Sin embargo, indicar al agente únicamente que «haga todo lo posible por el cliente» no basta para garantizar unas operaciones empresariales seguras. Defina claramente el objetivo ejecutable, las herramientas que se pueden utilizar, las entradas necesarias, las salidas, el tratamiento de los fallos y las condiciones de detención.",
+        "Para cada herramienta, defina no solo su nombre y descripción, sino también los tipos de entrada, los campos obligatorios, los valores permitidos, la entidad principal que realiza la llamada, el tiempo de espera y la respuesta de error. En los grupos de acciones de Amazon Bedrock, especifique también los parámetros necesarios para la ejecución y dónde se debe enviar esa información. Las herramientas deben volver a validar los argumentos propuestos por el modelo.",
+        "Para las operaciones de gran impacto, como los pagos, los cambios contractuales y el envío de información a terceros, incluya una revisión humana en el flujo de trabajo. La revisión humana no consiste simplemente en colocar un botón «Aprobar», sino en diseñar el proceso de modo que se puedan comprobar el objeto de la operación, los cambios, la justificación y los estados anteriores y posteriores a la ejecución."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen AIP-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Casos de uso de Amazon Bedrock Guardrails",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-use.html"
+        }
+      ],
+      "figureId": "agent-is-not-an-unbounded-operator"
+    },
+    {
+      "id": "state-errors-and-retries",
+      "title": "Implementar los límites entre el estado, los reintentos y los errores",
+      "paragraphs": [
+        "En las conversaciones y los procesos de varias etapas, determine qué debe guardarse como estado. El objetivo de la conversación, los valores confirmados por el usuario, los resultados de la ejecución de herramientas y el contenido pendiente de aprobación no deben conservarse de la misma manera que los simples textos candidatos o la información personal innecesaria. Defina un periodo de expiración y condiciones de eliminación para el estado.",
+        "Los reintentos pueden ser eficaces para los errores temporales de las API externas. Sin embargo, repetir el intento de la misma manera ante una entrada insuficiente, permisos insuficientes o infracciones de las reglas empresariales no tendrá éxito. Distinga entre los errores que deben reintentarse, los que requieren confirmación del usuario y los que exigen una detención inmediata, y asegúrese de que repetir la misma operación no provoque una ejecución duplicada.",
+        "Las respuestas de error deben indicar al usuario la siguiente acción sin revelar información confidencial interna. Registre el identificador de la solicitud, la etapa de ejecución, la herramienta y la categoría del motivo del error para que los operadores puedan investigarlo."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen AIP-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Crear y almacenar prompts reutilizables mediante la administración de prompts en Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    },
+    {
+      "id": "integration-versioning-and-release",
+      "title": "Gestionar componentes integrados mediante versiones y configuración",
+      "paragraphs": [
+        "El comportamiento de una aplicación GenAI no está determinado únicamente por el código de la aplicación. Está determinado por la combinación de las versiones y configuraciones de los modelos, los prompts, la configuración de recuperación, las definiciones de herramientas, las barreras de protección y las fuentes de datos. Si se implementan cambios en producción sin registrar la unidad de cambio, resulta imposible aislar la causa de las variaciones de calidad.",
+        "Antes del lanzamiento, ejecuta casos de regresión que incluyan no solo ejemplos representativos de éxito, sino también información insuficiente, solicitudes que deben rechazarse, fallos de herramientas y estados de conversación obsoletos. Implementa las configuraciones de forma gradual para poder volver a la combinación anterior si empeoran las métricas de evaluación.",
+        "Cambiar de modelo o de proveedor no consiste simplemente en cambiar el endpoint de la API. Verifica, con los mismos criterios de aceptación, el impacto en los formatos de entrada y salida, los límites de tokens, el uso de herramientas, las barreras de protección y el conjunto de evaluación."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen AIP-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Crear y almacenar prompts reutilizables mediante la gestión de prompts en Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-integration-001",
+      "prompt": "El desarrollador de GenAI de una empresa de viajes está creando un agente que modifica reservas en respuesta a las solicitudes de los usuarios. La modificación requiere el número de reserva, los detalles del cambio y la diferencia de tarifa; una vez confirmada, se cobra una tarifa de cancelación. ¿Qué diseño es el más adecuado para evitar modificaciones incorrectas?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Ejecutar inmediatamente la modificación de la reserva cuando el modelo la proponga, sin validar el número de reserva ni la diferencia de tarifa.",
+          "explanation": "Como no se comprueban las entradas necesarias ni el impacto empresarial, podría modificarse la reserva equivocada o generarse un cargo no previsto."
+        },
+        {
+          "id": "c",
+          "text": "Compartir con todos los agentes los permisos de administrador de la API de modificación de reservas.",
+          "explanation": "Esto permite realizar cambios que exceden el uso previsto y perjudica la trazabilidad del ejecutor y el principio de mínimo privilegio."
+        },
+        {
+          "id": "b",
+          "text": "Validar las entradas de la herramienta, mostrar al usuario los detalles del cambio y la diferencia de tarifa para obtener su confirmación y, después, ejecutar la modificación con permisos limitados.",
+          "explanation": "Correcto. Separar la propuesta del modelo de la ejecución y combinar la validación de entradas, la confirmación humana y el mínimo privilegio protege las operaciones de alto impacto."
+        },
+        {
+          "id": "d",
+          "text": "Si falla la modificación de la reserva, reintentar indefinidamente la misma solicitud sin informar al usuario.",
+          "explanation": "Las entradas que faltan o las infracciones de las reglas empresariales no se resuelven reintentando, y además existe el riesgo de ejecutar la operación varias veces."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-002",
+      "prompt": "Un desarrollador de GenAI de una empresa de telecomunicaciones está implementando una función de asistencia que busca la información contractual de los clientes en respuesta a consultas sobre fallos de red y, cuando es necesario, deriva el caso a un representante. ¿Cuál es la forma más adecuada de distinguir de manera segura entre una falta de respuesta temporal de la API externa de contratos y el caso en que el usuario no ha introducido un número de contrato?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "En ambos casos, reintente indefinidamente la API de contratos con el mismo intervalo.",
+          "explanation": "La falta de datos no se resuelve reintentando, y los reintentos ilimitados aumentan el riesgo de sobrecarga y procesamiento duplicado."
+        },
+        {
+          "id": "b",
+          "text": "Para un fallo temporal de la API, reintente limitando el número de intentos y el tiempo de espera; si faltan datos, pida al usuario que confirme y proporcione el elemento que falta.",
+          "explanation": "Correcto. Separar los reintentos, la confirmación del usuario y la detención según el tipo de fallo permite recuperarse de forma segura."
+        },
+        {
+          "id": "c",
+          "text": "Aunque no haya un número de contrato, busque la información del cliente utilizando cualquier número incluido en la conversación.",
+          "explanation": "Esto podría exponer la información de otro cliente y vulnera los requisitos de validación de entradas y protección de la privacidad."
+        },
+        {
+          "id": "d",
+          "text": "Muestre directamente al usuario los detalles internos del error de la API.",
+          "explanation": "Se debe indicar al usuario qué acción debe realizar a continuación; no deben divulgarse detalles internos que puedan contener información de implementación o datos confidenciales."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-003",
+      "prompt": "Un desarrollador de GenAI de una administración local revisa un prompt en una función que genera mensajes informativos. Si, después de la revisión, solo se generan datos de contacto incorrectos para algunos usuarios, ¿qué práctica operativa es la más adecuada para confirmar la causa y poder revertirla de forma segura?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Sobrescribir únicamente el texto del prompt sin registrar la versión, los resultados de la evaluación ni la fecha y hora de aplicación.",
+          "explanation": "No se podrá determinar cuándo se cambió algo ni qué se cambió, por lo que será difícil evaluar la relación causal con la salida incorrecta o identificar un punto de reversión."
+        },
+        {
+          "id": "c",
+          "text": "Continuar con la revisión aunque aparezcan datos de contacto incorrectos, siempre que el texto sea natural.",
+          "explanation": "La naturalidad no garantiza la exactitud operativa, y unos datos de contacto incorrectos afectan directamente a los usuarios."
+        },
+        {
+          "id": "b",
+          "text": "Registrar el prompt, el modelo y la configuración como una versión, validarlos con casos de regresión, realizar un despliegue gradual y volver a la versión anterior si el resultado empeora.",
+          "explanation": "Correcto. El seguimiento de los componentes que determinan el comportamiento permite volver de forma segura a una versión anterior validada."
+        },
+        {
+          "id": "d",
+          "text": "Desplegar simultáneamente para todos los usuarios de producción y pensar después en el método de evaluación.",
+          "explanation": "Después de ampliar el alcance del impacto, resulta más difícil detectar el deterioro de la calidad y revertir de forma segura."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "AI agent",
+    "Action group",
+    "Tool calling",
+    "Human oversight",
+    "Idempotency",
+    "Request ID",
+    "Audit log",
+    "Model artifact",
+    "Deployment pipeline",
+    "Rollback"
+  ]
+}

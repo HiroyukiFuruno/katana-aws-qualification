@@ -1,0 +1,182 @@
+{
+  "id": "ml-monitoring-maintenance-and-security",
+  "title": "MLソリューションのモニタリング、保守、セキュリティ",
+  "objective": "データ、予測、実測結果、インフラストラクチャ、権限を分けて観測し、問題の影響範囲を安全に調査・対応できる。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "監視と改善"
+    },
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    },
+    {
+      "slug": "data-protection",
+      "title": "データ保護"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "デプロイと復旧"
+    }
+  ],
+  "sections": [
+    {
+      "id": "monitor-data-prediction-and-ground-truth",
+      "title": "データの変化とモデル性能の変化を分けて観測する",
+      "paragraphs": [
+        "本番モデルの監視では、リクエスト数やエラーだけではなく、入力データの分布、予測の分布、後から得られる実測結果を確認します。入力分布が学習時と変わるデータドリフトと、予測を実測ラベルと比べたモデル品質の低下は、同じ現象ではありません。",
+        "Amazon SageMaker Model Monitorは、入力・出力をキャプチャし、ベースラインと比較してデータ品質やモデル品質の偏差を監視できます。モデル品質を測るには、予測だけでなく、後から確定するGround Truthラベルを対応付ける必要があります。",
+        "図を読む: Training baselineがInput and prediction captureと比較される経路と、Delayed ground truthがPredictionと結合される経路を分けて見ます。前者は入力の変化、後者は実際の予測性能を示し、同じアラートとして扱いません。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon SageMaker Model Monitorを使用したデータとモデルの品質モニタリング",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker AIのモデルの質",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor-model-quality.html"
+        }
+      ],
+      "figureId": "ground-truth-monitoring-boundaries"
+    },
+    {
+      "id": "incident-triage-and-maintenance",
+      "title": "アラートは原因ではなく調査の開始点である",
+      "paragraphs": [
+        "アラートが出たとき、ただちに再学習やモデル置換を行うとは限りません。入力収集の不具合、前処理の変更、推論エンドポイントの障害、ラベル到着の遅れ、実際のデータ分布変化を区別します。対象期間、モデル版、入力・出力、インフラストラクチャの状態を照合します。",
+        "データドリフトが検出されても、性能が必ず低下しているとは限りません。逆に、入力分布が安定していても、ラベルの定義変更や利用状況の変化で性能が低下することがあります。実測ラベルが得られる時期と、対処の緊急度を分けます。",
+        "再学習は万能な対処ではありません。原因が欠損、権限、入力形式の変更であれば、同じ問題を含むデータで再学習しても改善しません。修正後は、再現ケース、データ品質、モデル品質、運用指標を確認してから展開します。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon SageMaker Model Monitorを使用したデータとモデルの品質モニタリング",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker Model Dashboard",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-dashboard.html"
+        }
+      ]
+    },
+    {
+      "id": "security-and-access-evidence",
+      "title": "モデル、データ、推論、ログを別々に保護する",
+      "paragraphs": [
+        "MLシステムでは、学習データ、特徴量、モデル成果物、推論エンドポイント、シークレット、ログがそれぞれ異なる機密性を持ちます。一つの実行ロールに全てのS3バケット、モデル、ログへの権限を与えるのではなく、処理ごとの役割に必要な対象と操作だけを許可します。",
+        "暗号化、ネットワーク境界、シークレット管理、IAMの最小権限、監査ログを組み合わせます。暗号化していても、不要な主体に復号や読み取りを許可すれば保護にはなりません。ログも入力や予測を含み得るため、閲覧・保持・削除を管理します。",
+        "監査では、どの主体が、どのモデル版を、どのデータに対して、いつ実行したかを追える必要があります。アクセス拒否の原因を調査するときも、広い権限を一時的に与える前に、対象リソース、実行ロール、ポリシー、ネットワーク到達性を分けて確認します。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "MLA-C01 試験ガイドPDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-monitor-001",
+      "prompt": "配送会社のMLエンジニアは、到着遅延を予測する本番モデルを監視します。入力分布は学習時から変化しましたが、実際の到着時刻のラベルは遅れて届くため、モデル品質はまだ比較できません。この時点で最も適切な判断はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "入力分布が変わったので、性能低下を確認せずに直ちにモデルを削除する。",
+          "explanation": "データドリフトは調査の開始点であり、実測ラベルによるモデル品質の確認なしに性能低下と断定できません。"
+        },
+        {
+          "id": "b",
+          "text": "入力の変化を調査・記録し、ラベル到着後に予測と実測ラベルを結合してモデル品質を評価する。",
+          "explanation": "正解です。現時点では入力分布を調査し、ラベル到着後に図の別経路で実際の予測性能を確認します。"
+        },
+        {
+          "id": "c",
+          "text": "予測の記録を捨て、入力分布だけを長期保存する。",
+          "explanation": "予測とGround Truthを比較できなくなり、モデル品質を測定できません。"
+        },
+        {
+          "id": "d",
+          "text": "Ground Truthが来るまで、入力変化の原因や影響範囲を確認しない。",
+          "explanation": "入力収集、前処理、利用条件の変更を早期に調査できるため、何もしない判断は適切ではありません。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-monitor-002",
+      "prompt": "小売会社のMLエンジニアは、需要予測モデルの品質アラートを受けました。同じ日に、入力データの収集ジョブが一部失敗し、実測売上ラベルの到着も2日遅れています。最初に取るべき最も適切な行動はどれですか。",
+      "choices": [
+        {
+          "id": "c",
+          "text": "対象期間、モデル版、入力収集、予測、ラベル到着を照合し、データ・インフラ・性能のどこに問題があるかを分ける。",
+          "explanation": "正解です。アラートを原因と同一視せず、必要な証跡を結び付けて安全な対処を判断します。"
+        },
+        {
+          "id": "a",
+          "text": "原因を区別せず、直ちに同じデータで再学習を開始する。",
+          "explanation": "収集失敗やラベル遅延が原因なら、再学習しても問題を再現・悪化させる可能性があります。"
+        },
+        {
+          "id": "b",
+          "text": "品質アラートを無視し、実測ラベルが到着するまで記録を確認しない。",
+          "explanation": "入力収集の失敗や影響範囲は直ちに確認でき、無視すると誤った予測が継続します。"
+        },
+        {
+          "id": "d",
+          "text": "アラート通知を停止し、利用者からの苦情だけで品質を判断する。",
+          "explanation": "早期検知と調査の根拠を失い、利用者影響が広がってからしか対応できません。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-monitor-003",
+      "prompt": "医療機器会社のMLエンジニアは、推論ジョブが入力データへアクセスできない問題を調査します。実行ロールへ広い管理者権限を一時付与する前に、最も適切な確認順序はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "管理者権限を全ジョブへ付与し、問題が解消したら原因を調べる。",
+          "explanation": "過剰な権限で機密データへのアクセス範囲を広げ、根本原因の特定も困難にします。"
+        },
+        {
+          "id": "c",
+          "text": "入力データとログを削除し、新しいバケットを作る。",
+          "explanation": "監査と障害調査の証跡を失い、権限や到達性の問題を解決しません。"
+        },
+        {
+          "id": "d",
+          "text": "同じ認証情報を開発者全員で共有し、誰でも推論ジョブを実行できるようにする。",
+          "explanation": "実行主体を追跡できず、最小権限と監査要件に反します。"
+        },
+        {
+          "id": "b",
+          "text": "実行ロール、対象データ、必要な操作、関連ポリシー、ネットワーク到達性を分けて確認する。",
+          "explanation": "正解です。最小権限を保ちながら、アクセス拒否のどの境界で問題が起きているかを調査できます。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model drift",
+    "Data drift",
+    "Data quality",
+    "Model quality",
+    "Ground truth",
+    "Model Monitor",
+    "Prediction capture",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "Encryption at rest",
+    "Encryption in transit",
+    "Audit log",
+    "Data lineage"
+  ]
+}

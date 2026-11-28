@@ -1,0 +1,182 @@
+{
+  "id": "ml-monitoring-maintenance-and-security",
+  "title": "ML 解決方案的監控、維護與安全性",
+  "objective": "分別觀測資料、預測結果、實測結果、基礎設施和權限，以便安全地調查問題的影響範圍並採取應對措施。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身分驗證與授權"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署與復原"
+    }
+  ],
+  "sections": [
+    {
+      "id": "monitor-data-prediction-and-ground-truth",
+      "title": "分開觀測資料變化與模型效能變化",
+      "paragraphs": [
+        "監控生產環境中的模型時，不僅要查看請求數量和錯誤，還要檢查輸入資料分布、預測分布，以及之後取得的實際結果。輸入分布與訓練時不同所造成的資料漂移，和將預測結果與實際標籤比較後發現的模型品質下降，並不是同一種現象。",
+        "Amazon SageMaker Model Monitor 可以擷取輸入和輸出，並與基準進行比較，以監控資料品質和模型品質的偏差。若要衡量模型品質，不僅需要預測結果，還必須將預測結果與之後確定的 Ground Truth 標籤建立關聯。",
+        "圖示解讀：分別查看 Training baseline 與 Input and prediction capture 進行比較的路徑，以及 Delayed ground truth 與 Prediction 合併的路徑。前者表示輸入的變化，後者表示實際的預測效能；不要將它們視為同一個警示。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Amazon SageMaker Model Monitor 監控資料與模型品質",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker AI 的模型品質",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor-model-quality.html"
+        }
+      ],
+      "figureId": "ground-truth-monitoring-boundaries"
+    },
+    {
+      "id": "incident-triage-and-maintenance",
+      "title": "警示不是原因，而是調查的起點",
+      "paragraphs": [
+        "出現警示時，不一定要立即重新訓練模型或替換模型。請區分輸入收集故障、前處理變更、推論端點故障、標籤延遲到達，以及實際的資料分布變化。比對目標期間、模型版本、輸入與輸出，以及基礎設施狀態。",
+        "即使偵測到資料漂移，效能也不一定已經下降。相反地，即使輸入分布保持穩定，標籤定義變更或使用情況變化也可能導致效能下降。請將實際觀測標籤可取得的時間與處理措施的緊急程度區分開來。",
+        "重新訓練不是萬能的處理方式。如果原因是資料遺失、權限問題或輸入格式變更，使用含有相同問題的資料重新訓練也不會改善情況。完成修正後，請先確認重現案例、資料品質、模型品質和營運指標，再進行部署。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Amazon SageMaker Model Monitor 監控資料與模型品質",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker Model Dashboard",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-dashboard.html"
+        }
+      ]
+    },
+    {
+      "id": "security-and-access-evidence",
+      "title": "分別保護模型、資料、推論和日誌",
+      "paragraphs": [
+        "在 ML 系統中，訓練資料、特徵、模型構件、推論端點、祕密和日誌分別具有不同的敏感度。不要將所有 S3 儲存貯體、模型和日誌的許可授予單一執行角色，而應只允許每個處理角色所需的資源和操作。",
+        "結合使用加密、網路邊界、祕密管理、IAM 最小權限和稽核日誌。即使已加密，如果允許不必要的主體解密或讀取，仍無法提供保護。日誌也可能包含輸入或預測結果，因此必須管理其檢視、保留和刪除。",
+        "稽核必須能夠追蹤哪個主體在何時針對哪些資料執行了哪個模型版本。調查存取遭拒的原因時，也應在暫時授予廣泛許可之前，分別檢查目標資源、執行角色、政策和網路可達性。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "MLA-C01 考試指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-monitor-001",
+      "prompt": "一家物流公司的 ML 工程師正在監控一個用於預測配送延遲的正式環境模型。輸入分布已與訓練時不同，但實際到達時間的標籤會延遲送達，因此目前還無法比較模型品質。此時最適當的判斷是什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "因為輸入分布發生變化，所以在確認效能下降之前就立即刪除模型。",
+          "explanation": "資料漂移是開始調查的線索；如果沒有透過實際量測標籤確認模型品質，就不能斷定效能已經下降。"
+        },
+        {
+          "id": "b",
+          "text": "調查並記錄輸入的變化，並在標籤到達後，將預測結果與實測標籤結合，以評估模型品質。",
+          "explanation": "正確。此時應調查輸入分布，並在標籤到達後，透過圖中所示的另一條路徑確認實際的預測效能。"
+        },
+        {
+          "id": "c",
+          "text": "捨棄預測記錄，只長期保存輸入分布。",
+          "explanation": "這樣就無法比較預測結果與 Ground Truth，因此無法測量模型品質。"
+        },
+        {
+          "id": "d",
+          "text": "在 Ground Truth 到達之前，不確認輸入變化的原因或影響範圍。",
+          "explanation": "可以及早調查輸入收集、前處理和使用條件的變化，因此什麼都不做並不恰當。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-monitor-002",
+      "prompt": "某零售公司的 ML 工程師收到需求預測模型的品質警報。同一天，輸入資料收集工作有一部分失敗，實際銷售標籤也延遲 2 天到達。首先應採取的最適當行動是什麼？",
+      "choices": [
+        {
+          "id": "c",
+          "text": "核對目標期間、模型版本、輸入資料收集、預測結果和標籤到達情況，區分問題究竟出在資料、基礎設施還是效能。",
+          "explanation": "正確。不要將警報直接等同於原因，而應連結必要的佐證，以判斷安全的處理方式。"
+        },
+        {
+          "id": "a",
+          "text": "不區分原因，立即使用相同的資料開始重新訓練。",
+          "explanation": "如果原因是收集失敗或標籤延遲，重新訓練可能會重現或加重問題。"
+        },
+        {
+          "id": "b",
+          "text": "忽略品質警報，在實際銷售標籤到達之前不檢查記錄。",
+          "explanation": "輸入資料收集失敗及其影響範圍可以立即確認；忽略這些問題會讓錯誤預測持續下去。"
+        },
+        {
+          "id": "d",
+          "text": "停止警報通知，只根據使用者的抱怨判斷品質。",
+          "explanation": "這會失去早期偵測與調查的依據，只有在使用者受到的影響擴大後才能採取行動。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-monitor-003",
+      "prompt": "一家醫療設備公司的 ML 工程師正在調查推論工作無法存取輸入資料的問題。在暫時向執行角色授予廣泛的管理員權限之前，最適當的檢查順序是什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將管理員權限授予所有工作；如果問題解決，再調查原因。",
+          "explanation": "過度授予權限會擴大對機密資料的存取範圍，也會使根本原因更難確定。"
+        },
+        {
+          "id": "c",
+          "text": "刪除輸入資料和日誌，然後建立新的儲存貯體。",
+          "explanation": "這會失去稽核和故障調查的證據，也無法解決權限或可達性的問題。"
+        },
+        {
+          "id": "d",
+          "text": "讓所有開發人員共用相同的憑證，使任何人都能執行推論工作。",
+          "explanation": "這樣無法追蹤執行操作的主體，並且違反最小權限和稽核要求。"
+        },
+        {
+          "id": "b",
+          "text": "分別檢查執行角色、目標資料、必要操作、相關政策，以及網路可達性。",
+          "explanation": "正確。這樣可以在維持最小權限的同時，調查問題發生在哪個存取控制邊界。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model drift",
+    "Data drift",
+    "Data quality",
+    "Model quality",
+    "Ground truth",
+    "Model Monitor",
+    "Prediction capture",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "Encryption at rest",
+    "Encryption in transit",
+    "Audit log",
+    "Data lineage"
+  ]
+}

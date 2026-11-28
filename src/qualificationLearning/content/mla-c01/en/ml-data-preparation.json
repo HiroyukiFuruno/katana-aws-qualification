@@ -1,0 +1,173 @@
+{
+  "id": "ml-data-preparation",
+  "title": "Data Preparation for Machine Learning",
+  "objective": "Explain and select datasets suitable for training and evaluation based on the prediction target, the time periods represented by the data, data quality, and the splitting method.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    }
+  ],
+  "sections": [
+    {
+      "id": "define-label-features-and-time-boundary",
+      "title": "Create features only from information available at prediction time",
+      "paragraphs": [
+        "When preparing data for ML, first define what you are predicting and when. For example, if you are predicting returns before shipment, you cannot use the return reason or refund result, which are confirmed after shipment, as features. Separate the label being predicted from the features available at prediction time.",
+        "If you get the time boundary wrong, data that reveals the answer only during training can become mixed in. With this data leakage, offline evaluation may be high, but the results will not be reproducible in production. Record the time each item of data was generated, became available, and is used for prediction, and verify these times for every feature.",
+        "How to read the figure: Follow the flow from left to right: raw data, time-based splitting, feature processing, and data for training, validation, and testing. Future outcome, shown with a dashed line, may be used as the label, but must not be fed back into the features available at prediction time."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "MLA-C01 Exam Guide PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "feature-time-boundary"
+    },
+    {
+      "id": "quality-and-representative-splits",
+      "title": "Aligning Quality Checks and Data Splits with Usage Conditions",
+      "paragraphs": [
+        "Check missing values, duplicates, outliers, unit discrepancies, and labeling errors before working with the model. Quality checks are not limited to measuring the missing-data rate; they also verify the meaning of the data and how it was collected. For example, the appropriate treatment differs depending on whether sales are truly zero or were not collected.",
+        "When splitting data into training, validation, and test sets, preserve its relationship to the data encountered in production. When forecasting demand that changes over time, a random split alone may not measure future performance appropriately. For data in which the same customers or devices appear multiple times, prevent the same entity from being mixed into both the training and test sets.",
+        "Do not conveniently change evaluation data every time you tune the model. If you continue selecting settings based on test-data results, the test data itself becomes part of training, and performance on unseen data can no longer be measured accurately."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 Exam Guide PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "reproducible-feature-processing",
+      "title": "Managing preprocessing as a reproducible process",
+      "paragraphs": [
+        "If preprocessing differs between training and inference, the results can change even with the same model. Manage missing-value imputation, categorical transformations, normalization, and feature-column order as code and configuration, and use the same definitions for training and inference.",
+        "Record not only the dataset location but also the target period, extraction conditions, schema, preprocessing version, and quality inspection results. This makes it possible to trace which inputs a model was built from and what changed during retraining.",
+        "For features containing personal or confidential information, verify the purpose of use, access permissions, masking, and retention period. Do not add information that is unnecessary for prediction to the features without restriction simply because it improves performance."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-001",
+      "prompt": "An ML engineer at an online retailer predicts the likelihood of a return at the time an order is received. The reason for the return, which is determined after shipment, can be used only as the target label. Which selection of features available when the order is received is most appropriate?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Use the carrier acceptance timestamp, which is determined when the shipment is handed over after the order is received, as a feature.",
+          "explanation": "The carrier acceptance timestamp is not determined when the order is received, so using it introduces data leakage by including information from after the prediction time."
+        },
+        {
+          "id": "a",
+          "text": "Use the product, order time, and destination region that are known when the order is received as features.",
+          "explanation": "Correct. This information is available when the order is received, so it can be provided under the same conditions in production."
+        },
+        {
+          "id": "c",
+          "text": "Use whether the refund has been completed as a feature.",
+          "explanation": "A refund is the result of processing after a return and cannot be used for a prediction made when the order is received."
+        },
+        {
+          "id": "d",
+          "text": "Add the future number of returns as the same value for every order.",
+          "explanation": "Because it contains future information, this would improperly make the prediction for each order at the time it is received appear more accurate."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-002",
+      "prompt": "An ML engineer at an electric utility evaluates a model that forecasts demand for the following day. Demand varies substantially by season and day of the week. Which split is most appropriate for measuring performance on unknown future dates?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Randomly shuffle rows from the entire period and distribute records from the same dates between the training and test sets.",
+          "explanation": "This does not produce an evaluation close to future conditions, and mixing information from the same periods may overestimate performance."
+        },
+        {
+          "id": "c",
+          "text": "While viewing the results for the test period, repeatedly use that same test period for feature selection.",
+          "explanation": "This reuses test results for tuning and causes the test set to lose its role of measuring performance on unknown data."
+        },
+        {
+          "id": "d",
+          "text": "Use only the days with the lowest demand as the test set to stabilize the evaluation.",
+          "explanation": "This does not represent the variation encountered in production and therefore cannot show performance under operational conditions."
+        },
+        {
+          "id": "b",
+          "text": "Use an older period for training, the next period for validation, and the final period for testing, while preserving the time-series order.",
+          "explanation": "Correct. This split resembles the conditions of forecasting, in which time progresses from the past to the future, and evaluates generalization to a future period."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-data-003",
+      "prompt": "A hospital ML engineer prepares features to predict readmission risk. It has been discovered that the missing-value imputation method differs between training and production inference. Which correction is most appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Keep the imputation methods separate for training and inference, and do not explain the difference in the results to users.",
+          "explanation": "The input distribution and the meaning of the features change, so the model's behavior cannot be reproduced in production."
+        },
+        {
+          "id": "b",
+          "text": "Always replace missing values with zero without checking the meaning of the data.",
+          "explanation": "Whether zero represents an observed value or an uncollected value changes its meaning, so unconditional replacement reduces quality."
+        },
+        {
+          "id": "c",
+          "text": "Manage the imputation rules and their version as shared preprocessing, and apply the same definitions during both training and inference.",
+          "explanation": "Correct. Making preprocessing reproducible prevents feature discrepancies between training and inference."
+        },
+        {
+          "id": "d",
+          "text": "Remove only patients with missing values from both training and inference.",
+          "explanation": "Excluding patients without investigating the reasons for and impact of missingness may compromise fairness and the scope of use for the affected patients."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Label",
+    "Feature",
+    "Data lineage",
+    "Data leakage",
+    "Time-based split",
+    "Group split",
+    "Imputation",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

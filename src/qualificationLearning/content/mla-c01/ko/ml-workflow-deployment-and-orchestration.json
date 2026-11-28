@@ -1,0 +1,184 @@
+{
+  "id": "ml-workflow-deployment-and-orchestration",
+  "title": "ML 워크플로 배포 및 오케스트레이션",
+  "objective": "추론 방식, 품질 게이트, 승인, 배포 및 롤백을 연결하여 재현 가능한 ML 워크플로를 설계할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CD 흐름"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "배포 및 복구"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "테스트 및 품질 게이트"
+    },
+    {
+      "slug": "observability",
+      "title": "모니터링 및 개선"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-batch-or-real-time-by-decision-timing",
+      "title": "의사 결정에 걸리는 시간을 기준으로 추론 방식 선택",
+      "paragraphs": [
+        "각 요청에 대해 짧은 시간 안에 예측이 필요한 경우 실시간 추론을 사용합니다. 많은 대상을 함께 처리하고 그 결과를 후속 업무에서 사용할 수 있는 경우에는 배치 추론이 적합합니다. 선택할 때는 예측이 필요한 시점, 요청량, 허용 가능한 지연 시간, 재실행, 입력 크기 및 운영 비용을 확인합니다.",
+        "배포 후 추론 방식을 변경하기 전에 입력 계약과 출력을 받는 방식을 확인합니다. 실시간 호출 측에 배치용 대량 입력을 보내면 사용자의 대기 시간이나 실패 시 처리 방식에 맞지 않을 수 있습니다.",
+        "그림의 위쪽에서는 호출자가 엔드포인트(Endpoint)에 예측을 요청하고 즉시 응답을 받습니다. 아래쪽에서는 배치 변환 작업(Batch job)이 Amazon S3에 준비된 입력 데이터 세트(Input dataset)를 처리하고 예측 결과(Output dataset)를 Amazon S3에 저장합니다. 검토와 같은 후속 업무에서는 나중에 저장된 예측을 사용합니다."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 시험 가이드",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker AI 실시간 추론",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/realtime-endpoints.html"
+        },
+        {
+          "label": "SageMaker AI 배치 변환",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-decision-timing"
+    },
+    {
+      "id": "pipeline-gates-and-artifacts",
+      "title": "파이프라인에는 처리 순서뿐 아니라 품질 게이트도 필요합니다",
+      "paragraphs": [
+        "ML 파이프라인에서는 데이터 준비, 학습, 평가, 등록, 배포를 순서대로 실행합니다. 하지만 이전 처리가 끝났다는 이유만으로 다음 단계로 진행해서는 안 되며, 데이터 품질, 평가 지표, 보안 검사, 승인 등의 조건을 충족한 경우에만 다음 단계로 진행해야 합니다.",
+        "Amazon SageMaker Pipelines에서는 처리, 학습, 평가, 조건 분기, 품질 검사와 같은 단계를 조합할 수 있습니다. 단계 사이에 전달되는 아티팩트와 통과·실패 조건을 명시하면 수작업으로 판단할 때 발생하는 누락을 줄일 수 있습니다.",
+        "동일한 입력과 설정으로 동일한 처리를 재현할 수 있도록 파이프라인 정의, 종속성, 컨테이너, 파라미터, 아티팩트 위치를 관리합니다. 프로덕션 절차를 노트북의 수작업 단계로만 남겨 두지 않습니다."
+      ],
+      "sources": [
+        {
+          "label": "Amazon SageMaker AI에서 단계 추가",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/build-and-manage-steps-types.html"
+        },
+        {
+          "label": "MLA-C01 시험 가이드 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "progressive-release-and-rollback",
+      "title": "프로덕션 배포는 관측과 롤백을 함께 고려해야 합니다",
+      "paragraphs": [
+        "후보 모델이 평가를 통과하더라도 모든 프로덕션 트래픽에 한 번에 적용하는 것은 아닙니다. 제한된 대상에 단계적으로 배포하고 예측 품질, 지연 시간, 오류 및 사용자 영향을 관찰하여 배포를 확대할지 중지할지 판단합니다.",
+        "롤백할 때는 이전에 승인된 모델, 입력 및 출력 계약, 라우팅, 모니터링 설정을 확인합니다. 전처리 또는 특성 계약이 변경되었다면 모델만 되돌려도 이전 품질로 복원된다고 보장할 수 없습니다.",
+        "배포의 성공은 엔드포인트가 시작되었다는 뜻이 아니라, 정해진 조건에서 안전하게 예측을 제공할 수 있다는 뜻입니다. 배포 전에 성공, 중지, 롤백 조건과 책임자를 정하고 실제 관측값을 바탕으로 판단합니다."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 시험 가이드",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker Model Registry의 모델, 모델 버전 및 Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-001",
+      "prompt": "한 은행의 ML 엔지니어는 매일 밤 확정되는 1,000만 건의 거래를 다음 날 아침까지 사기 위험도에 따라 순위를 매겨 심사 담당자에게 전달합니다. 거래별 즉시 응답은 요구 사항이 아니며, 확정된 데이터를 일괄 처리할 수 있다면 가장 적절한 추론 방식은 무엇입니까?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "확정된 거래 데이터 세트를 배치 추론으로 처리하고, 예측된 사기 위험도가 높은 순서로 거래를 정렬하여 심사 담당자에게 전달합니다.",
+          "explanation": "당일 거래 데이터는 밤에 모두 준비되고 예측 결과는 다음 날 아침에 사용됩니다. 파일을 모아서 추론하고 각 거래의 위험 점수로 심사 순서를 정하면, 거래가 발생할 때마다 엔드포인트에서 응답을 받을 필요가 없습니다."
+        },
+        {
+          "id": "a",
+          "text": "각 거래가 발생할 때마다 실시간 엔드포인트로 보내고 매일 아침까지 응답을 기다립니다.",
+          "explanation": "요청마다 즉시 판단해야 한다는 조건이 없으므로, 대량의 데이터를 한꺼번에 처리하여 다음 날 아침까지 사용해야 하는 요구 사항에는 비효율적입니다."
+        },
+        {
+          "id": "c",
+          "text": "모델을 사용하지 않고 전날의 순위를 그대로 다음 날 아침 심사에 전달합니다.",
+          "explanation": "당일 확정된 거래를 평가한다는 목적을 충족하지 못하며, 예측 결과가 오래된 상태가 됩니다."
+        },
+        {
+          "id": "d",
+          "text": "입력 검증을 생략하고 형식이 서로 다른 거래를 동일한 배치에 섞습니다.",
+          "explanation": "입력 계약과 데이터 품질을 확인하지 않으면 추론 실패나 잘못된 순위 산정이 발생할 수 있습니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-002",
+      "prompt": "공장의 ML 엔지니어는 이상 탐지 모델의 재학습부터 프로덕션 등록까지를 자동화합니다. 평가 지표가 기준 미만인 모델이 실수로 프로덕션 후보로 진행되지 않도록 하려면 가장 적절한 파이프라인 설계는 무엇입니까?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "평가 단계의 출력을 조건 분기로 전달하고, 기준을 충족한 모델만 등록, 승인 및 배포 단계로 진행한다.",
+          "explanation": "정답입니다. 평가 결과를 품질 게이트로 사용하면 불합격 후보가 후속 단계로 진행되는 것을 방지할 수 있습니다."
+        },
+        {
+          "id": "a",
+          "text": "학습 작업이 종료되면 평가 결과를 확인하지 않고 최신 모델을 배포한다.",
+          "explanation": "학습이 완료되었다고 해서 모델이 승인 기준을 충족한다는 의미는 아닙니다."
+        },
+        {
+          "id": "c",
+          "text": "매번 평가 지표를 수동으로 변경하여 모든 모델을 합격시킨다.",
+          "explanation": "품질 기준을 임의로 변경하면 파이프라인의 승인 조건과 설명 책임을 잃게 됩니다."
+        },
+        {
+          "id": "d",
+          "text": "프로덕션에서 문제가 발생한 경우에만 데이터 품질을 확인한다.",
+          "explanation": "데이터 품질은 배포 후에만이 아니라 학습 및 평가의 전단계부터 확인해야 합니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-003",
+      "prompt": "보험 회사의 ML 엔지니어가 일부 사건에 새 손해 사정 모델을 단계적으로 배포하고 있습니다. 배포 후 오류율이 증가했고, 전처리 버전도 동시에 변경된 사실이 확인되었습니다. 가장 적절한 롤백 조치는 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "모델만 이전 버전으로 롤백하고 전처리와 입력 계약은 확인하지 않는다.",
+          "explanation": "전처리가 변경되었다면 이전 모델도 기대하는 입력을 받지 못할 수 있으므로 품질이 회복되지 않을 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "오류율을 무시하고 더 많은 사건에 배포하여 평균값을 안정화한다.",
+          "explanation": "이는 문제의 영향을 확대하며, 안전하게 관찰하고 필요할 때 중지하려는 단계적 배포의 목적에 어긋납니다."
+        },
+        {
+          "id": "c",
+          "text": "이전에 승인된 모델과 이에 대응하는 전처리, 입력 계약, 라우팅, 모니터링 설정을 하나의 묶음으로 롤백하고 원인을 조사한다.",
+          "explanation": "정답입니다. 모델과 주변 구성을 함께 연계하여 롤백하고, 동일한 장애가 재발하지 않도록 필요한 증거를 확보합니다."
+        },
+        {
+          "id": "d",
+          "text": "새 모델의 로그를 삭제하고 이전 모델만 남긴다.",
+          "explanation": "이렇게 하면 원인 조사에 필요한 새 모델의 실행 기록을 잃게 되어 개선과 재배포의 근거를 마련할 수 없습니다."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Quality gate",
+    "Deployment pipeline",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact"
+  ]
+}

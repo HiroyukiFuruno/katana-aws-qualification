@@ -1,0 +1,184 @@
+{
+  "id": "ml-workflow-deployment-and-orchestration",
+  "title": "Distribuzione e orchestrazione dei flussi di lavoro ML",
+  "objective": "Progettare flussi di lavoro ML riproducibili collegando i metodi di inferenza, i gate di qualità, le approvazioni, la distribuzione e il rollback.",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "Flusso CI/CD"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Distribuzione e ripristino"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Test e gate di qualità"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoraggio e miglioramento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-batch-or-real-time-by-decision-timing",
+      "title": "Scegliere il metodo di inferenza in base al tempo necessario per prendere la decisione",
+      "paragraphs": [
+        "Usa l'inferenza in tempo reale quando è necessaria una previsione in breve tempo per ogni richiesta. L'inferenza batch è adatta quando è possibile elaborare molti elementi insieme e utilizzare i risultati nelle attività aziendali successive. Nella scelta, verifica quando serve la previsione, il volume delle richieste, la latenza accettabile, le riesecuzioni, le dimensioni dell'input e i costi operativi.",
+        "Prima di modificare il metodo di inferenza dopo la distribuzione, verifica il contratto di input e il modo in cui vengono ricevuti gli output. L'invio di un input di grandi dimensioni destinato all'elaborazione batch a un chiamante in tempo reale potrebbe non essere compatibile con il tempo di attesa dell'utente né con la gestione degli errori.",
+        "Nella parte superiore del diagramma, il chiamante richiede una previsione all’endpoint (Endpoint) e riceve immediatamente una risposta. Nella parte inferiore, un processo di trasformazione batch (Batch job) elabora il set di dati di input (Input dataset) preparato in Amazon S3 e salva i risultati delle previsioni (Output dataset) in Amazon S3. Le operazioni successive, come le revisioni, utilizzano in seguito le previsioni salvate."
+      ],
+      "sources": [
+        {
+          "label": "Guida all'esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "Inferenza in tempo reale di SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/realtime-endpoints.html"
+        },
+        {
+          "label": "Trasformazione batch di SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-decision-timing"
+    },
+    {
+      "id": "pipeline-gates-and-artifacts",
+      "title": "Le pipeline hanno gate di qualità, non solo un ordine di esecuzione",
+      "paragraphs": [
+        "Nelle pipeline di ML, la preparazione dei dati, l'addestramento, la valutazione, la registrazione e la distribuzione vengono eseguiti in sequenza. Tuttavia, non si deve passare alla fase successiva solo perché l'elaborazione precedente è terminata; si deve procedere solo quando sono soddisfatte condizioni quali la qualità dei dati, le metriche di valutazione, i controlli di sicurezza e le approvazioni.",
+        "Amazon SageMaker Pipelines offre metodi per combinare fasi quali elaborazione, addestramento, valutazione, diramazione condizionale e controlli di qualità. Specificare esplicitamente gli artefatti trasferiti tra le fasi e le condizioni di superamento o mancato superamento può ridurre le omissioni nelle decisioni manuali.",
+        "Per riprodurre la stessa elaborazione con gli stessi input e le stesse impostazioni, gestire la definizione della pipeline, le dipendenze, i container, i parametri e le posizioni degli artefatti. Non lasciare la procedura di produzione esclusivamente come attività manuali in un notebook."
+      ],
+      "sources": [
+        {
+          "label": "Aggiunta di fasi in Amazon SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/build-and-manage-steps-types.html"
+        },
+        {
+          "label": "PDF della guida all'esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "progressive-release-and-rollback",
+      "title": "Il deployment in produzione combina osservazione e rollback",
+      "paragraphs": [
+        "Anche se un modello candidato supera la valutazione, non viene necessariamente applicato a tutto il traffico di produzione in una sola volta. Viene distribuito gradualmente a un ambito limitato, osservando la qualità delle previsioni, la latenza, gli errori e l'impatto sugli utenti per decidere se ampliare il deployment o interromperlo.",
+        "Durante il rollback, verifica il modello approvato in precedenza, i contratti di input e output, il routing e le impostazioni di monitoraggio. Il ripristino del solo modello non garantisce il ritorno alla qualità precedente se sono cambiati i contratti di pre-elaborazione o delle caratteristiche.",
+        "Il successo di un deployment non significa che l'endpoint sia stato avviato, ma che possa fornire previsioni in modo sicuro nelle condizioni definite. Prima del deployment, stabilisci le condizioni di successo, arresto e rollback, nonché il responsabile, e prendi decisioni basate sulle osservazioni effettive."
+      ],
+      "sources": [
+        {
+          "label": "Guida all'esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "Modelli, versioni del modello e Model Group di SageMaker Model Registry",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-001",
+      "prompt": "L’ingegnere ML di una banca assegna un ordine a 10 milioni di transazioni finalizzate ogni notte in base al rischio di frode entro la mattina successiva e le consegna agli addetti alla revisione. Non sono necessarie risposte immediate per le singole transazioni. Se i dati finalizzati possono essere elaborati in blocco, qual è il metodo di inferenza più appropriato?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Elaborare il set di dati delle transazioni finalizzate con l’inferenza batch, ordinare le transazioni dalla più alta alla più bassa in base al rischio di frode previsto e consegnarle agli addetti alla revisione.",
+          "explanation": "I dati delle transazioni della giornata sono disponibili durante la notte e le previsioni vengono utilizzate la mattina successiva. Raggruppando i file per l’inferenza e determinando l’ordine di revisione in base al punteggio di rischio di ogni transazione, non è necessario ricevere una risposta da un endpoint ogni volta che si verifica una transazione."
+        },
+        {
+          "id": "a",
+          "text": "Inviare ogni transazione a un endpoint in tempo reale non appena si verifica e attendere le risposte fino a ogni mattina.",
+          "explanation": "Poiché non sono richieste decisioni immediate per ogni richiesta, questo approccio è inefficiente rispetto al requisito di elaborare insieme una grande quantità di dati e utilizzarla entro la mattina successiva."
+        },
+        {
+          "id": "c",
+          "text": "Non utilizzare il modello e passare direttamente alla revisione della mattina successiva le classifiche del giorno precedente.",
+          "explanation": "Questo non soddisfa l’obiettivo di valutare le transazioni finalizzate quel giorno e i risultati delle previsioni saranno obsoleti."
+        },
+        {
+          "id": "d",
+          "text": "Saltare la convalida degli input e mescolare nello stesso batch transazioni con formati diversi.",
+          "explanation": "La mancata verifica del contratto di input e della qualità dei dati può causare errori di inferenza o classifiche errate."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-002",
+      "prompt": "Gli ingegneri ML dello stabilimento automatizzano il processo dal riaddestramento di un modello di rilevamento delle anomalie fino alla sua registrazione per la produzione. Per impedire che un modello con metriche di valutazione inferiori alla soglia venga fatto avanzare per errore come candidato per la produzione, qual è il design di pipeline più appropriato?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Passare l’output della fase di valutazione a un ramo condizionale e far avanzare alla registrazione, all’approvazione e alla distribuzione solo i modelli che soddisfano la soglia.",
+          "explanation": "Corretto. Trattare i risultati della valutazione come un gate di qualità impedisce ai candidati non approvati di procedere alle fasi successive."
+        },
+        {
+          "id": "a",
+          "text": "Al termine del processo di addestramento, distribuire il modello più recente senza esaminare i risultati della valutazione.",
+          "explanation": "Il completamento dell’addestramento non indica che il modello soddisfi i criteri di accettazione."
+        },
+        {
+          "id": "c",
+          "text": "Modificare manualmente le metriche di valutazione ogni volta, in modo che tutti i modelli risultino approvati.",
+          "explanation": "Modificare arbitrariamente la soglia di qualità fa perdere alla pipeline i criteri di accettazione e la responsabilità delle decisioni."
+        },
+        {
+          "id": "d",
+          "text": "Controllare la qualità dei dati solo quando si verifica un problema in produzione.",
+          "explanation": "La qualità dei dati deve essere verificata prima e durante l’addestramento e la valutazione, non soltanto dopo la distribuzione."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-003",
+      "prompt": "Un ingegnere ML di una compagnia assicurativa sta distribuendo gradualmente un nuovo modello per la valutazione dei sinistri a una parte dei casi. Dopo la distribuzione, il tasso di errore è aumentato e si è scoperto che anche la versione del pre-processing era stata modificata nello stesso momento. Qual è l’azione di ripristino più appropriata?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Ripristinare solo il modello alla versione precedente, senza verificare il pre-processing né il contratto di input.",
+          "explanation": "Se il pre-processing è cambiato, anche il modello precedente potrebbe non ricevere gli input previsti e la qualità potrebbe non ripristinarsi."
+        },
+        {
+          "id": "b",
+          "text": "Ignorare il tasso di errore e distribuire il modello a più casi per stabilizzare la media.",
+          "explanation": "Questo amplia l’impatto del problema e contraddice lo scopo di una distribuzione graduale: osservare in sicurezza e poter interrompere la distribuzione."
+        },
+        {
+          "id": "c",
+          "text": "Ripristinare come un unico insieme il modello approvato in precedenza, il pre-processing corrispondente, il contratto di input, il routing e le impostazioni di monitoraggio, quindi analizzare la causa.",
+          "explanation": "Corretto. Ripristinare il modello insieme alla configurazione circostante e conservare le evidenze necessarie per evitare il ripetersi dello stesso incidente."
+        },
+        {
+          "id": "d",
+          "text": "Eliminare i log del nuovo modello e conservare solo il modello precedente.",
+          "explanation": "In questo modo si perdono i record di esecuzione del nuovo modello necessari per l’analisi e non si può creare una base per il miglioramento e una nuova distribuzione."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Quality gate",
+    "Deployment pipeline",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact"
+  ]
+}

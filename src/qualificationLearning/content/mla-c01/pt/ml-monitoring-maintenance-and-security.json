@@ -1,0 +1,182 @@
+{
+  "id": "ml-monitoring-maintenance-and-security",
+  "title": "Monitoramento, manutenção e segurança de soluções de ML",
+  "objective": "Observe separadamente os dados, as previsões, os resultados medidos, a infraestrutura e as permissões para investigar com segurança o alcance do impacto de um problema e responder a ele.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Autenticação e autorização"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Proteção de dados"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Implantação e recuperação"
+    }
+  ],
+  "sections": [
+    {
+      "id": "monitor-data-prediction-and-ground-truth",
+      "title": "Observar separadamente as mudanças nos dados e no desempenho do modelo",
+      "paragraphs": [
+        "Ao monitorar um modelo em produção, verifique não apenas o número de solicitações e os erros, mas também as distribuições dos dados de entrada e das previsões, além dos resultados reais obtidos posteriormente. O desvio de dados, no qual a distribuição de entrada muda em relação à distribuição usada no treinamento, e a redução da qualidade do modelo medida pela comparação das previsões com os rótulos observados não são o mesmo fenômeno.",
+        "O Amazon SageMaker Model Monitor pode capturar entradas e saídas e monitorar desvios na qualidade dos dados e do modelo comparando-os com uma linha de base. Para medir a qualidade do modelo, é necessário associar as previsões aos rótulos Ground Truth confirmados posteriormente.",
+        "Como ler o diagrama: diferencie o caminho em que Training baseline é comparado com Input and prediction capture do caminho em que Delayed ground truth é associado a Prediction. O primeiro mostra mudanças na entrada, enquanto o segundo mostra o desempenho real das previsões; não trate ambos como o mesmo alerta."
+      ],
+      "sources": [
+        {
+          "label": "Monitoramento da qualidade dos dados e do modelo usando o Amazon SageMaker Model Monitor",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Qualidade do modelo no Amazon SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor-model-quality.html"
+        }
+      ],
+      "figureId": "ground-truth-monitoring-boundaries"
+    },
+    {
+      "id": "incident-triage-and-maintenance",
+      "title": "Os alertas são o ponto de partida da investigação, não a causa",
+      "paragraphs": [
+        "Quando um alerta é acionado, isso nem sempre significa que você deve treinar novamente ou substituir imediatamente o modelo. Diferencie problemas na coleta de entradas, alterações no pré-processamento, falhas do endpoint de inferência, atrasos na chegada dos rótulos e mudanças reais na distribuição dos dados. Correlacione o período analisado, a versão do modelo, as entradas e saídas e o estado da infraestrutura.",
+        "Mesmo quando um desvio de dados é detectado, o desempenho não necessariamente diminui. Por outro lado, o desempenho pode diminuir devido a alterações nas definições dos rótulos ou nos padrões de uso, mesmo quando a distribuição das entradas permanece estável. Separe o momento em que os rótulos observados ficam disponíveis da urgência da resposta.",
+        "O retreinamento não é uma solução universal. Se a causa for ausência de dados, permissões ou uma alteração no formato das entradas, retreinar com dados que contenham o mesmo problema não melhorará a situação. Depois de corrigir o problema, verifique o caso reproduzido, a qualidade dos dados, a qualidade do modelo e as métricas operacionais antes da implantação."
+      ],
+      "sources": [
+        {
+          "label": "Monitoramento da qualidade dos dados e do modelo usando o Amazon SageMaker Model Monitor",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker Model Dashboard",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-dashboard.html"
+        }
+      ]
+    },
+    {
+      "id": "security-and-access-evidence",
+      "title": "Proteger modelos, dados, inferência e logs separadamente",
+      "paragraphs": [
+        "Nos sistemas de ML, dados de treinamento, características, artefatos de modelo, endpoints de inferência, segredos e logs têm níveis de sensibilidade diferentes. Em vez de conceder a uma única função de execução permissões para todos os buckets do S3, modelos e logs, permita apenas os recursos e as operações necessários para cada função de processamento.",
+        "Combine criptografia, limites de rede, gerenciamento de segredos, privilégio mínimo do IAM e logs de auditoria. Mesmo com a criptografia, não haverá proteção se entidades principais desnecessárias puderem descriptografar ou ler os dados. Os logs também podem conter entradas ou previsões; portanto, gerencie seu acesso, retenção e exclusão.",
+        "A auditoria deve permitir rastrear qual entidade principal executou qual versão do modelo, em quais dados e quando. Ao investigar a causa de um acesso negado, verifique separadamente o recurso de destino, a função de execução, a política e a alcançabilidade da rede antes de conceder temporariamente permissões amplas."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "PDF do guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-monitor-001",
+      "prompt": "O engenheiro de ML de uma empresa de logística monitora um modelo de produção que prevê atrasos nas entregas. A distribuição das entradas mudou em relação à usada no treinamento, mas os rótulos dos horários reais de chegada chegam com atraso; portanto, ainda não é possível comparar a qualidade do modelo. Qual é a decisão mais apropriada neste momento?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Excluir imediatamente o modelo porque a distribuição das entradas mudou, sem verificar se houve queda de desempenho.",
+          "explanation": "O desvio de dados é o ponto de partida da investigação; não é possível concluir que o desempenho caiu sem verificar a qualidade do modelo usando rótulos observados."
+        },
+        {
+          "id": "b",
+          "text": "Investigar e registrar as mudanças nos dados de entrada e, depois que os rótulos chegarem, avaliar a qualidade do modelo combinando as previsões com os rótulos medidos.",
+          "explanation": "Correto. Neste momento, investigue a distribuição dos dados de entrada e, depois que os rótulos chegarem, confirme o desempenho real das previsões por meio do caminho separado mostrado no diagrama."
+        },
+        {
+          "id": "c",
+          "text": "Descartar os registros das previsões e manter apenas a distribuição das entradas por longo prazo.",
+          "explanation": "Isso impossibilita comparar as previsões com o Ground Truth e, portanto, medir a qualidade do modelo."
+        },
+        {
+          "id": "d",
+          "text": "Não investigar as causas nem o escopo das mudanças nas entradas até que o Ground Truth chegue.",
+          "explanation": "É possível investigar precocemente as mudanças na coleta de entradas, no pré-processamento e nas condições de uso; portanto, não fazer nada não é apropriado."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-monitor-002",
+      "prompt": "O engenheiro de ML de uma empresa de varejo recebeu um alerta de qualidade sobre um modelo de previsão de demanda. No mesmo dia, parte do trabalho de coleta dos dados de entrada falhou, e os rótulos de vendas reais também estão chegando com dois dias de atraso. Qual é a ação inicial mais apropriada?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Correlacionar o período-alvo, a versão do modelo, a coleta de entradas, as previsões e a chegada dos rótulos, distinguindo se o problema está nos dados, na infraestrutura ou no desempenho.",
+          "explanation": "Correto. Não se deve confundir o alerta com a causa; é preciso associar as evidências necessárias para decidir uma resposta segura."
+        },
+        {
+          "id": "a",
+          "text": "Sem distinguir a causa, iniciar imediatamente o retreinamento usando os mesmos dados.",
+          "explanation": "Se a causa for a falha na coleta ou o atraso dos rótulos, o retreinamento poderá reproduzir ou agravar o problema."
+        },
+        {
+          "id": "b",
+          "text": "Ignorar o alerta de qualidade e não verificar os registros até que os rótulos de vendas reais cheguem.",
+          "explanation": "A falha na coleta de entrada e seu impacto podem ser verificados imediatamente; ignorá-los permitiria que previsões incorretas continuassem."
+        },
+        {
+          "id": "d",
+          "text": "Interromper as notificações de alerta e avaliar a qualidade apenas com base nas reclamações dos usuários.",
+          "explanation": "Isso eliminaria a base para a detecção precoce e a investigação, permitindo que o impacto sobre os usuários se ampliasse antes que fosse possível agir."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-monitor-003",
+      "prompt": "Um engenheiro de ML de uma empresa de dispositivos médicos está investigando um problema em que um trabalho de inferência não consegue acessar os dados de entrada. Antes de conceder temporariamente permissões amplas de administrador à função de execução, qual é a ordem mais apropriada para as verificações?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Conceder permissões de administrador a todos os trabalhos e investigar a causa se o problema for resolvido.",
+          "explanation": "Isso amplia o acesso a dados confidenciais por meio de permissões excessivas e também dificulta a identificação da causa raiz."
+        },
+        {
+          "id": "c",
+          "text": "Excluir os dados de entrada e os logs e, em seguida, criar um novo bucket.",
+          "explanation": "Isso elimina as evidências para auditoria e investigação do incidente e não resolve o problema de permissões ou de acessibilidade."
+        },
+        {
+          "id": "d",
+          "text": "Compartilhar as mesmas credenciais entre todos os desenvolvedores para que qualquer pessoa possa executar o trabalho de inferência.",
+          "explanation": "Isso impede o rastreamento da entidade que realizou a execução e viola os requisitos de privilégio mínimo e auditoria."
+        },
+        {
+          "id": "b",
+          "text": "Verificar separadamente a função de execução, os dados de destino, as operações necessárias, as políticas relacionadas e a acessibilidade da rede.",
+          "explanation": "Correto. Isso permite investigar em qual limite de controle de acesso o problema ocorre, mantendo o princípio do privilégio mínimo."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model drift",
+    "Data drift",
+    "Data quality",
+    "Model quality",
+    "Ground truth",
+    "Model Monitor",
+    "Prediction capture",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "Encryption at rest",
+    "Encryption in transit",
+    "Audit log",
+    "Data lineage"
+  ]
+}

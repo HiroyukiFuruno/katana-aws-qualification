@@ -1,0 +1,179 @@
+{
+  "id": "ml-model-development",
+  "title": "ML Model Development",
+  "objective": "Explain decisions about models, tuning, and version control by relating the impact of business errors to evaluation metrics.",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CD Flow"
+    },
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    }
+  ],
+  "sections": [
+    {
+      "id": "metric-follows-decision-cost",
+      "title": "Choose evaluation metrics based on the impact of errors",
+      "paragraphs": [
+        "When evaluating a model, do not decide whether to accept it based only on a single value such as accuracy. Confirm with the business users whether missing an anomaly or treating a normal item as anomalous would have the greater impact. When the items of interest are rare, predicting every item as normal can produce a high apparent accuracy.",
+        "For classification, use precision, recall, thresholds, and a confusion matrix to distinguish the types of errors. For regression, consider the size of the errors and whether underprediction or overprediction is the greater problem. Evaluation metrics do not replace operational judgment; they provide evidence to support it.",
+        "Reading the figure: Look at the four cells where the actual conditions on the left intersect with the predicted results at the top. Decide whether to reduce False negative or False positive based on business losses and response capability, and compare the results using the same validation data after changing the threshold."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 Exam Guide PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "threshold-decision-cost"
+    },
+    {
+      "id": "validation-tuning-and-overfitting",
+      "title": "Tune with validation data and use test data only at the end",
+      "paragraphs": [
+        "Hyperparameter tuning and feature selection cannot be decided using training data alone. Compare candidates using validation data, finalize the selection, and then check the final expected performance with untouched test data. Repeatedly using test data for tuning leads to overestimating performance on unseen data.",
+        "If only the training metric improves while the validation metric worsens, the model may be overfitting to accidental patterns in the training data. Do not change the data volume, features, model complexity, regularization, and training time all at once; compare them one hypothesis at a time.",
+        "When comparing model candidates, record the metrics, dataset version, code, configuration, handling of randomness, and execution environment. A good result that cannot be reproduced cannot be explained or validated as a production candidate."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    },
+    {
+      "id": "model-registry-and-approval",
+      "title": "Identify the model to deploy through its artifacts and evidence",
+      "paragraphs": [
+        "What goes into production is not the “latest model file,” but an artifact that identifies the data, code, configuration, and evaluation results used to create the model. In Amazon SageMaker Model Registry, each retraining produces a versioned model package that is associated with a Model Group.",
+        "Model registration links the evaluation metrics, intended scope of use, known limitations, approver, training-data version, container, and dependencies. This makes it possible to determine which model was used where and which candidate can be restored if a problem occurs.",
+        "Approval is not automated solely because one metric exceeds a single threshold. The responsible person for the intended use reviews safety, bias, usage conditions, and whether the model can be monitored operationally before approving it."
+      ],
+      "sources": [
+        {
+          "label": "Models, model versions, and Model Group in SageMaker Model Registry",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        },
+        {
+          "label": "MLA-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-model-001",
+      "prompt": "An ML engineer at an airport operator is evaluating a classification model for detecting attempts to bring hazardous materials into the airport as a candidate for production. Misses allow hazardous materials to pass through, while false positives trigger additional inspections. If the impact of misses is greater for safety, what should be decided first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Predict that all items are normal to make the apparent accuracy high.",
+          "explanation": "This would increase False negative cases involving missed hazardous materials and violate safety requirements."
+        },
+        {
+          "id": "c",
+          "text": "Do not use the detection model in order to eliminate additional inspections entirely.",
+          "explanation": "Stopping detection without evaluating the safety risk of misses is not an appropriate decision."
+        },
+        {
+          "id": "d",
+          "text": "Rewrite the correct labels in the evaluation data to match the predictions.",
+          "explanation": "This changes the evaluation criteria rather than the model's performance, making it impossible to measure the impact of errors."
+        },
+        {
+          "id": "b",
+          "text": "Review the counts and impacts of False negative and False positive cases, then evaluate the balance between a threshold that limits misses and the inspection capacity.",
+          "explanation": "Correct. Relate the two types of errors shown in the diagram to their operational impacts, and compare the results of changing the threshold on the same data."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-model-002",
+      "prompt": "An ML engineer at a real estate company compares several hyperparameter candidates. Candidate A has the highest metric on the training data, but its metric is lower than candidate B's on the validation data. What is the most appropriate next action?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Register candidate A for production based only on its training metric.",
+          "explanation": "This overlooks overfitting to the training data and does not verify performance on unseen data."
+        },
+        {
+          "id": "b",
+          "text": "Use the test data to make repeated adjustments until the candidates reverse their ranking.",
+          "explanation": "Using the test data for tuning causes it to lose its role as the final evaluation set."
+        },
+        {
+          "id": "c",
+          "text": "Select candidate B using the validation data, then verify final performance with untouched test data after selection.",
+          "explanation": "Correct. Tune and select using the validation data, then verify generalization performance with independent test data."
+        },
+        {
+          "id": "d",
+          "text": "Average candidates A and B and skip the evaluation.",
+          "explanation": "Averaging does not reveal the causes of errors or whether the result meets operational requirements, so it does not provide a basis for selection."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-model-003",
+      "prompt": "A financial company's ML engineer registers a retrained fraud detection model as a production candidate. Later, they need to investigate the basis of a prediction and, if there is a problem, revert to a previous candidate. What is the most important record to create at registration?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Overwrite only the model filename with the latest date.",
+          "explanation": "You cannot trace which data, code, settings, or evaluation results were used to create the model."
+        },
+        {
+          "id": "d",
+          "text": "Register the model version together with the data, code, settings, evaluation results, constraints, and approval.",
+          "explanation": "Correct. This makes it possible to trace the model's provenance and the basis for its approval, supporting investigation and safe rollback when problems occur."
+        },
+        {
+          "id": "b",
+          "text": "Keep only the evaluation metrics and do not record the versions of the training data and preprocessing.",
+          "explanation": "Metrics alone cannot be used to verify differences in the inputs or preprocessing, the reproduction procedure, or the scope of impact."
+        },
+        {
+          "id": "c",
+          "text": "Keep only the approver's name and do not assign a version to the candidate model.",
+          "explanation": "Although the person responsible for the approval is known, you cannot identify which artifact was approved."
+        }
+      ],
+      "correct": ["d"]
+    }
+  ],
+  "glossaryTerms": [
+    "Classification",
+    "Regression",
+    "Precision",
+    "Recall",
+    "Accuracy",
+    "Threshold",
+    "Confusion matrix",
+    "False positive",
+    "False negative",
+    "Hyperparameter",
+    "Overfitting",
+    "Regularization",
+    "Model artifact",
+    "Model Registry",
+    "Model Group",
+    "Model package",
+    "Model evaluation",
+    "Model bias",
+    "Reproducibility"
+  ]
+}

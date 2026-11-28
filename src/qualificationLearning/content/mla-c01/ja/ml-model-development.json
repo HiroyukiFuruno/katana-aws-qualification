@@ -1,0 +1,179 @@
+{
+  "id": "ml-model-development",
+  "title": "MLモデルの開発",
+  "objective": "業務上の誤りの影響と評価指標を結び付け、モデル、チューニング、版管理の判断を説明できる。",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "テストと品質ゲート"
+    },
+    {
+      "slug": "observability",
+      "title": "監視と改善"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CDの流れ"
+    },
+    {
+      "slug": "core-services",
+      "title": "主要AWSサービス"
+    }
+  ],
+  "sections": [
+    {
+      "id": "metric-follows-decision-cost",
+      "title": "評価指標は誤りの影響から選ぶ",
+      "paragraphs": [
+        "モデル評価では、精度という一つの値だけで採否を決めません。異常を見逃すことと、正常なものを異常として扱うことのどちらが大きな影響を持つかを、利用部門と確認します。検出対象が少ない場合、全件を正常と答えても見かけ上の精度が高くなることがあります。",
+        "分類では、適合率、再現率、しきい値、混同行列を使い、誤りの種類を分けて見ます。回帰では、誤差の大きさと、過小予測・過大予測のどちらが問題かを考えます。評価指標は運用時の判断を置き換えるものではなく、判断を支える証拠です。",
+        "図を読む: 左の実際の状態と上の予測結果が交わる四つの枠を見ます。False negativeとFalse positiveのどちらを減らすかは、業務の損失と対応能力によって決め、しきい値変更後も同じ検証データで比較します。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 試験ガイドPDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "threshold-decision-cost"
+    },
+    {
+      "id": "validation-tuning-and-overfitting",
+      "title": "検証データで調整し、テストデータは最後に使う",
+      "paragraphs": [
+        "ハイパーパラメータの調整や特徴量の選択は、学習データだけでは判断できません。検証データで候補を比較し、選択を確定した後に、触れていないテストデータで最終的な見込みを確認します。テストデータを何度も調整に使うと、未知データでの性能を過大評価します。",
+        "学習指標だけが改善して検証指標が悪化する場合、モデルが学習データの偶然の特徴へ過度に適合している可能性があります。データ量、特徴量、モデルの複雑さ、正則化、学習時間を一度に変えず、仮説ごとに比較します。",
+        "モデルの候補を比較するときは、指標、データセットの版、コード、設定、乱数の扱い、実行環境を記録します。再現できない良い結果は、本番候補として説明・検証できません。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    },
+    {
+      "id": "model-registry-and-approval",
+      "title": "採用するモデルを成果物と証跡で特定する",
+      "paragraphs": [
+        "本番へ出す対象は『最新のモデルファイル』ではなく、どのデータ、コード、設定、評価結果から作られたモデルかを特定できる成果物です。Amazon SageMaker Model Registryでは、再トレーニングごとにモデルパッケージへ版を付け、Model Groupへ関連付けられます。",
+        "モデル登録には、評価指標、利用範囲、既知の制約、承認者、学習データの版、コンテナや依存関係を結び付けます。これにより、問題が起きたときに、どのモデルがどこで使われ、どの候補へ戻れるかを判断できます。",
+        "承認は、指標が一つのしきい値を超えたかだけで自動的に行いません。安全性、バイアス、利用条件、運用上の監視可否を確認し、用途に応じた責任者が承認します。"
+      ],
+      "sources": [
+        {
+          "label": "SageMaker Model Registryのモデル、モデルバージョン、Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        },
+        {
+          "label": "MLA-C01 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-model-001",
+      "prompt": "空港運営会社のMLエンジニアは、危険物の持ち込みを検出する分類モデルを本番候補として評価します。見逃しは危険物を通過させ、誤検知は追加検査を発生させます。安全上、見逃しの影響がより大きい場合、最初に行うべき判断はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "全件を正常と予測し、見かけの精度を高くする。",
+          "explanation": "危険物を見逃すFalse negativeを増やし、安全要件に反します。"
+        },
+        {
+          "id": "c",
+          "text": "追加検査を完全になくすため、検出モデルを使わない。",
+          "explanation": "安全上の見逃しリスクを評価せずに検出自体をやめる判断にはなりません。"
+        },
+        {
+          "id": "d",
+          "text": "評価データの正解ラベルを予測結果に合わせて書き換える。",
+          "explanation": "モデルの性能ではなく評価の基準を変えてしまい、誤りの影響を測れません。"
+        },
+        {
+          "id": "b",
+          "text": "False negativeとFalse positiveの件数・影響を確認し、見逃しを抑えるしきい値と検査能力の均衡を評価する。",
+          "explanation": "正解です。図の二種類の誤りを業務影響へ結び付け、しきい値を変更した結果を同じデータで比較します。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-model-002",
+      "prompt": "不動産会社のMLエンジニアは、複数のハイパーパラメータ候補を比較します。候補Aは学習データで最高の指標ですが、検証データでは候補Bより低い指標です。最も適切な次の行動はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "学習指標だけを基に候補Aを本番へ登録する。",
+          "explanation": "学習データへの過度な適合を見逃し、未知のデータでの性能を確認できません。"
+        },
+        {
+          "id": "b",
+          "text": "テストデータを使って候補が逆転するまで何度も調整する。",
+          "explanation": "テストデータを調整に使うと、最終評価としての役割を失います。"
+        },
+        {
+          "id": "c",
+          "text": "検証データで候補Bを選び、選択後に触れていないテストデータで最終性能を確認する。",
+          "explanation": "正解です。検証データで調整・選択し、独立したテストデータで一般化性能を確認します。"
+        },
+        {
+          "id": "d",
+          "text": "候補AとBの平均を取り、評価を省略する。",
+          "explanation": "平均化は誤りの原因や運用要件への適合を示さず、選択の根拠になりません。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-model-003",
+      "prompt": "金融会社のMLエンジニアは、再学習した不正検知モデルを本番候補として登録します。後日、ある予測の根拠を調査し、問題があれば以前の候補へ戻す必要があります。登録時に最も重要な記録はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "モデルファイル名だけを最新の日付で上書きする。",
+          "explanation": "どのデータ、コード、設定、評価結果から作られたモデルかを追跡できません。"
+        },
+        {
+          "id": "d",
+          "text": "モデルの版、データ・コード・設定、評価結果、制約、承認を結び付けて登録する。",
+          "explanation": "正解です。モデルの由来と承認根拠を追跡でき、問題時の調査と安全な復帰に使えます。"
+        },
+        {
+          "id": "b",
+          "text": "評価指標だけを残し、学習データと前処理の版は記録しない。",
+          "explanation": "指標だけでは、入力や前処理の違い、再現手順、影響範囲を確認できません。"
+        },
+        {
+          "id": "c",
+          "text": "承認者名だけを残し、候補モデルの版を付けない。",
+          "explanation": "承認の責任者は分かっても、どの成果物を承認したのか特定できません。"
+        }
+      ],
+      "correct": ["d"]
+    }
+  ],
+  "glossaryTerms": [
+    "Classification",
+    "Regression",
+    "Precision",
+    "Recall",
+    "Accuracy",
+    "Threshold",
+    "Confusion matrix",
+    "False positive",
+    "False negative",
+    "Hyperparameter",
+    "Overfitting",
+    "Regularization",
+    "Model artifact",
+    "Model Registry",
+    "Model Group",
+    "Model package",
+    "Model evaluation",
+    "Model bias",
+    "Reproducibility"
+  ]
+}

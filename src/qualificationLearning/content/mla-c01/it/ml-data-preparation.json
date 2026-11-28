@@ -1,0 +1,173 @@
+{
+  "id": "ml-data-preparation",
+  "title": "Preparazione dei dati per il machine learning",
+  "objective": "Spiegare e selezionare set di dati adatti all’addestramento e alla valutazione in base all’obiettivo della previsione, al periodo rappresentato dai dati, alla qualità dei dati e al metodo di suddivisione.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Servizi AWS principali"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protezione dei dati"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Test e gate di qualità"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoraggio e miglioramento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "define-label-features-and-time-boundary",
+      "title": "Creare caratteristiche solo dalle informazioni disponibili al momento della previsione",
+      "paragraphs": [
+        "Quando si preparano i dati per il ML, occorre innanzitutto definire che cosa si prevede e quando. Ad esempio, se si prevedono i resi prima della spedizione, non è possibile usare come caratteristiche il motivo del reso o l’esito del rimborso, che vengono confermati dopo la spedizione. Separare l’etichetta oggetto della previsione dalle caratteristiche disponibili al momento della previsione.",
+        "Se il limite temporale viene definito in modo errato, possono essere inclusi dati che rivelano la risposta solo durante l’addestramento. Con questa fuga di dati (data leakage), la valutazione offline può essere elevata, ma i risultati non saranno riproducibili in produzione. Registrare l’ora di generazione dei dati, l’ora in cui sono diventati disponibili e l’ora della previsione, quindi verificare questi orari per ogni caratteristica.",
+        "Come leggere la figura: seguire da sinistra a destra i dati grezzi, la suddivisione basata sul tempo, l’elaborazione delle caratteristiche e i dati per addestramento, convalida e test. Future outcome, indicato da una linea tratteggiata, può essere usato come etichetta, ma non deve essere reintrodotto nelle caratteristiche disponibili al momento della previsione."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "PDF della guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "feature-time-boundary"
+    },
+    {
+      "id": "quality-and-representative-splits",
+      "title": "Allineare i controlli di qualità e le suddivisioni dei dati alle condizioni d’uso",
+      "paragraphs": [
+        "Controllare i valori mancanti, i duplicati, i valori anomali, le differenze nelle unità e gli errori di etichettatura prima di lavorare con il modello. I controlli di qualità non si limitano a verificare il tasso di dati mancanti: verificano anche il significato dei dati e il percorso con cui sono stati raccolti. Ad esempio, il trattamento varia a seconda che le vendite siano realmente pari a zero oppure non siano state raccolte.",
+        "Quando si suddividono i dati in set di addestramento, convalida e test, occorre preservare la loro relazione con i dati che si incontreranno in produzione. Se si prevede una domanda che cambia nel tempo, una suddivisione casuale da sola potrebbe non misurare adeguatamente le prestazioni future. Nei dati in cui gli stessi clienti o dispositivi compaiono più volte, evitare che la stessa entità venga inclusa sia nel set di addestramento sia in quello di test.",
+        "Non modificare opportunisticamente i dati di valutazione ogni volta che si esegue il tuning del modello. Se si continuano a scegliere le impostazioni in base ai risultati dei dati di test, i dati di test stessi vengono usati per l’addestramento e non è più possibile misurare correttamente le prestazioni su dati non osservati."
+      ],
+      "sources": [
+        {
+          "label": "PDF della guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "reproducible-feature-processing",
+      "title": "Gestire il pre-processing come un processo riproducibile",
+      "paragraphs": [
+        "Se il pre-processing durante l’addestramento è diverso da quello durante l’inferenza, i risultati possono cambiare anche utilizzando lo stesso modello. Gestire l’imputazione dei valori mancanti, le trasformazioni delle categorie, la normalizzazione e l’ordine delle colonne delle caratteristiche come codice e configurazione, utilizzando le stesse definizioni durante l’addestramento e l’inferenza.",
+        "Registrare non solo la posizione del set di dati, ma anche il periodo di riferimento, le condizioni di estrazione, lo schema, la versione del pre-processing e i risultati dei controlli di qualità. In questo modo è possibile risalire agli input da cui è stato creato un modello e a ciò che è cambiato durante il riaddestramento.",
+        "Per le caratteristiche che contengono informazioni personali o riservate, verificare lo scopo dell’utilizzo, le autorizzazioni di accesso, il mascheramento e il periodo di conservazione. Non aggiungere senza limiti alle caratteristiche informazioni non necessarie per la previsione solo perché migliorano le prestazioni."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-001",
+      "prompt": "Un ingegnere ML di un’azienda di commercio elettronico prevede la probabilità di un reso al momento della ricezione dell’ordine. Il motivo del reso, determinato dopo la spedizione, può essere usato solo come etichetta target. Quale selezione di caratteristiche disponibili al momento della ricezione dell’ordine è la più appropriata?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Usare come caratteristica l’orario di presa in carico da parte del corriere, determinato durante la spedizione dopo la ricezione dell’ordine.",
+          "explanation": "L’orario di presa in carico da parte del corriere non è ancora determinato quando l’ordine viene ricevuto. Usarlo causa quindi data leakage, perché include informazioni successive al momento della previsione."
+        },
+        {
+          "id": "a",
+          "text": "Usare come caratteristiche il prodotto, l’orario dell’ordine e la regione di destinazione, determinati al momento della ricezione dell’ordine.",
+          "explanation": "Corretto. Queste informazioni sono disponibili quando l’ordine viene ricevuto, quindi possono essere fornite alle stesse condizioni anche in produzione."
+        },
+        {
+          "id": "c",
+          "text": "Usare come caratteristica l’indicazione che il rimborso è stato completato.",
+          "explanation": "Il rimborso è il risultato dell’elaborazione successiva a un reso e non può essere usato per una previsione effettuata al momento della ricezione dell’ordine."
+        },
+        {
+          "id": "d",
+          "text": "Aggiungere a tutti gli ordini il numero futuro di resi con lo stesso valore.",
+          "explanation": "Poiché contiene informazioni future, ciò farebbe apparire indebitamente più precisa la previsione per ogni ordine effettuata al momento della ricezione."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-002",
+      "prompt": "Un ingegnere ML di un’azienda elettrica valuta un modello che prevede la domanda del giorno successivo. La domanda varia notevolmente in base alla stagione e al giorno della settimana. Quale suddivisione è più appropriata per misurare le prestazioni su date future sconosciute?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Mescolare casualmente le righe dell’intero periodo e distribuire i record delle stesse date tra i set di addestramento e di test.",
+          "explanation": "Questa suddivisione non produce una valutazione vicina alle condizioni future e la commistione di informazioni provenienti dagli stessi periodi può sovrastimare le prestazioni."
+        },
+        {
+          "id": "c",
+          "text": "Esaminare i risultati del periodo di test e usare ripetutamente lo stesso periodo di test per la selezione delle caratteristiche.",
+          "explanation": "In questo modo i risultati del test vengono riutilizzati per la regolazione e il set di test perde il suo ruolo di misurare le prestazioni su dati sconosciuti."
+        },
+        {
+          "id": "d",
+          "text": "Usare solo i giorni con la domanda più bassa come set di test per stabilizzare la valutazione.",
+          "explanation": "Questo non rappresenta la variabilità riscontrata in produzione e quindi non può mostrare le prestazioni in condizioni operative."
+        },
+        {
+          "id": "b",
+          "text": "Usare un periodo più vecchio per l’addestramento, il periodo successivo per la convalida e il periodo finale per il test, mantenendo l’ordine della serie temporale.",
+          "explanation": "Corretto. Questa suddivisione è simile alle condizioni della previsione, in cui il tempo procede dal passato al futuro, e valuta la generalizzazione a un periodo futuro."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-data-003",
+      "prompt": "Un ingegnere ML di un ospedale prepara le caratteristiche per prevedere il rischio di riammissione. È stato rilevato che il metodo di imputazione dei valori mancanti è diverso durante l’addestramento e durante l’inferenza in produzione. Qual è la correzione più appropriata?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Mantenere separati i metodi di imputazione per l’addestramento e l’inferenza e non spiegare agli utenti la differenza nei risultati.",
+          "explanation": "La distribuzione degli input e il significato delle caratteristiche cambiano, quindi il comportamento del modello non può essere riprodotto in produzione."
+        },
+        {
+          "id": "b",
+          "text": "Sostituire sempre i valori mancanti con zero senza verificare il significato dei dati.",
+          "explanation": "Zero ha un significato diverso a seconda che rappresenti un valore misurato o un valore non raccolto; pertanto, la sostituzione incondizionata riduce la qualità."
+        },
+        {
+          "id": "c",
+          "text": "Gestire le regole di imputazione e la relativa versione come pre-elaborazione comune e applicare le stesse definizioni sia durante l’addestramento sia durante l’inferenza.",
+          "explanation": "Corretto. Rendere riproducibile la pre-elaborazione previene le discrepanze tra le caratteristiche usate durante l’addestramento e quelle usate durante l’inferenza."
+        },
+        {
+          "id": "d",
+          "text": "Rimuovere dall’addestramento e dall’inferenza solo i pazienti con valori mancanti.",
+          "explanation": "Escludere i pazienti senza analizzare le cause e gli effetti dei valori mancanti può compromettere l’equità nei loro confronti e l’ambito di utilizzo."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Label",
+    "Feature",
+    "Data lineage",
+    "Data leakage",
+    "Time-based split",
+    "Group split",
+    "Imputation",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

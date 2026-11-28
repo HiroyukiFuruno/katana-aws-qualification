@@ -1,0 +1,173 @@
+{
+  "id": "ml-data-preparation",
+  "title": "Preparación de datos para aprendizaje automático",
+  "objective": "Explicar y seleccionar conjuntos de datos adecuados para el entrenamiento y la evaluación en función del objetivo de predicción, del período que representan los datos, de la calidad de los datos y del método de división.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Servicios principales de AWS"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protección de datos"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Pruebas y puertas de calidad"
+    },
+    {
+      "slug": "observability",
+      "title": "Supervisión y mejora"
+    }
+  ],
+  "sections": [
+    {
+      "id": "define-label-features-and-time-boundary",
+      "title": "Crear características únicamente a partir de la información disponible en el momento de la predicción",
+      "paragraphs": [
+        "Al preparar datos para ML, primero defina qué va a predecir y cuándo. Por ejemplo, si predice devoluciones antes del envío, no puede usar como características el motivo de la devolución ni el resultado del reembolso, que se confirman después del envío. Separe la etiqueta que se va a predecir de las características disponibles en el momento de la predicción.",
+        "Si se delimita incorrectamente el momento temporal, pueden mezclarse datos que solo revelan la respuesta durante el entrenamiento. Con esta fuga de datos, la evaluación offline puede ser alta, pero los resultados no se reproducirán en producción. Registre cuándo se generaron los datos, cuándo estuvieron disponibles y cuándo se realiza la predicción, y verifique esos momentos para cada característica.",
+        "Cómo leer la figura: siga de izquierda a derecha los datos sin procesar, la división basada en el tiempo, el procesamiento de características y los datos para entrenamiento, validación y prueba. Future outcome, representado con una línea discontinua, puede usarse como etiqueta, pero no debe reincorporarse a las características disponibles en el momento de la predicción."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "PDF de la guía del examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "feature-time-boundary"
+    },
+    {
+      "id": "quality-and-representative-splits",
+      "title": "Ajustar las comprobaciones de calidad y las divisiones de datos a las condiciones de uso",
+      "paragraphs": [
+        "Compruebe los valores faltantes, los duplicados, los valores atípicos, las diferencias de unidades y los errores de etiquetado antes de trabajar con el modelo. Las comprobaciones de calidad no se limitan a verificar la tasa de datos faltantes; también verifican el significado de los datos y la ruta por la que se recopilaron. Por ejemplo, el tratamiento adecuado difiere según si las ventas son realmente cero o si no se recopilaron.",
+        "Al dividir los datos en conjuntos de entrenamiento, validación y prueba, conserve su relación con los datos que se encontrarán en producción. Si predice una demanda que cambia con el tiempo, una división aleatoria por sí sola puede no medir adecuadamente el rendimiento futuro. En los datos en los que los mismos clientes o dispositivos aparecen varias veces, evite que la misma entidad se mezcle en los conjuntos de entrenamiento y prueba.",
+        "No cambie convenientemente los datos de evaluación cada vez que ajuste el modelo. Si sigue seleccionando la configuración basándose en los resultados de los datos de prueba, los propios datos de prueba pasan a utilizarse para el entrenamiento y ya no se puede medir correctamente el rendimiento con datos no vistos."
+      ],
+      "sources": [
+        {
+          "label": "PDF de la guía del examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "reproducible-feature-processing",
+      "title": "Gestionar el preprocesamiento como un proceso reproducible",
+      "paragraphs": [
+        "Si el preprocesamiento durante el entrenamiento difiere del preprocesamiento durante la inferencia, los resultados pueden cambiar incluso con el mismo modelo. Gestione la imputación de valores faltantes, las transformaciones de categorías, la normalización y el orden de las columnas de características como código y configuración, y use las mismas definiciones para el entrenamiento y la inferencia.",
+        "Registre no solo la ubicación del conjunto de datos, sino también el período objetivo, las condiciones de extracción, el esquema, la versión del preprocesamiento y los resultados de las comprobaciones de calidad. Esto permite rastrear a partir de qué entradas se creó un modelo y qué cambió durante el reentrenamiento.",
+        "En el caso de características que contengan información personal o confidencial, compruebe la finalidad de uso, los permisos de acceso, el enmascaramiento y el periodo de retención. No añada sin restricciones a las características información que no sea necesaria para la predicción solo porque mejore el rendimiento."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-001",
+      "prompt": "Un ingeniero de ML de una empresa de comercio electrónico predice la probabilidad de devolución en el momento en que se recibe el pedido. El motivo de la devolución, que se determina después del envío, solo puede utilizarse como etiqueta objetivo. ¿Cuál de las siguientes selecciones de características disponibles al recibir el pedido es la más adecuada?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Usar como característica la hora de aceptación por parte del transportista, que se determina durante el envío después de recibir el pedido.",
+          "explanation": "La hora de aceptación por parte del transportista no está determinada cuando se recibe el pedido, por lo que usarla provoca una fuga de datos al incluir información posterior al momento de la predicción."
+        },
+        {
+          "id": "a",
+          "text": "Usar como características el producto, la hora del pedido y la región de destino, que ya están determinados cuando se recibe el pedido.",
+          "explanation": "Correcto. Esta información está disponible cuando se recibe el pedido, por lo que también puede introducirse en producción en las mismas condiciones."
+        },
+        {
+          "id": "c",
+          "text": "Usar como característica si se ha completado el reembolso.",
+          "explanation": "El reembolso es el resultado del procesamiento posterior a una devolución y no puede utilizarse para una predicción realizada cuando se recibe el pedido."
+        },
+        {
+          "id": "d",
+          "text": "Añadir a todos los pedidos el número futuro de devoluciones con el mismo valor.",
+          "explanation": "Como contiene información futura, esto haría que la predicción para cada pedido en el momento de su recepción pareciera indebidamente más precisa."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-002",
+      "prompt": "Un ingeniero de ML de una empresa eléctrica evalúa un modelo que pronostica la demanda del día siguiente. La demanda varía considerablemente según la estación y el día de la semana. ¿Qué división es la más adecuada para medir el rendimiento en fechas futuras desconocidas?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Mezclar aleatoriamente las filas de todo el período y distribuir los registros de las mismas fechas entre los conjuntos de entrenamiento y prueba.",
+          "explanation": "Esta división no produce una evaluación cercana a las condiciones futuras, y mezclar información de los mismos períodos puede sobreestimar el rendimiento."
+        },
+        {
+          "id": "c",
+          "text": "Observar los resultados del período de prueba y usar repetidamente ese mismo período de prueba para seleccionar características.",
+          "explanation": "Esto reutiliza los resultados de la prueba para el ajuste y hace que el conjunto de prueba pierda su función de medir el rendimiento con datos desconocidos."
+        },
+        {
+          "id": "d",
+          "text": "Usar únicamente los días con la demanda más baja como conjunto de prueba para estabilizar la evaluación.",
+          "explanation": "Esto no representa la variación que se encuentra en producción y, por lo tanto, no puede mostrar el rendimiento en condiciones operativas."
+        },
+        {
+          "id": "b",
+          "text": "Usar un período antiguo para el entrenamiento, el período siguiente para la validación y el último período para la prueba, manteniendo el orden de la serie temporal.",
+          "explanation": "Correcto. Esta división se asemeja a las condiciones de pronóstico, en las que el tiempo avanza del pasado al futuro, y evalúa la generalización a un período futuro."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-data-003",
+      "prompt": "Un ingeniero de ML de un hospital prepara características para predecir el riesgo de readmisión. Se ha descubierto que el método de imputación de valores faltantes difiere entre el entrenamiento y la inferencia en producción. ¿Cuál es la corrección más adecuada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Mantener métodos de imputación separados para el entrenamiento y la inferencia, y no explicar a los usuarios la diferencia en los resultados.",
+          "explanation": "La distribución de entrada y el significado de las características cambian, por lo que el comportamiento del modelo no puede reproducirse en producción."
+        },
+        {
+          "id": "b",
+          "text": "Reemplazar siempre los valores faltantes por cero sin comprobar el significado de los datos.",
+          "explanation": "El significado de cero cambia según represente un valor medido o un valor no recopilado; por tanto, el reemplazo incondicional reduce la calidad."
+        },
+        {
+          "id": "c",
+          "text": "Gestionar las reglas de imputación y su versión como un preprocesamiento común, y aplicar las mismas definiciones durante el entrenamiento y la inferencia.",
+          "explanation": "Correcto. Hacer reproducible el preprocesamiento evita discrepancias entre las características del entrenamiento y las de la inferencia."
+        },
+        {
+          "id": "d",
+          "text": "Eliminar únicamente a los pacientes con valores faltantes tanto del entrenamiento como de la inferencia.",
+          "explanation": "Excluir a los pacientes sin investigar las causas y los efectos de los valores faltantes puede comprometer la equidad para esos pacientes y el alcance de uso."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Label",
+    "Feature",
+    "Data lineage",
+    "Data leakage",
+    "Time-based split",
+    "Group split",
+    "Imputation",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "id": "ml-data-preparation",
+  "title": "Preparação de dados para machine learning",
+  "objective": "Explicar e selecionar conjuntos de dados adequados para treinamento e avaliação com base no alvo da previsão, no período representado pelos dados, na qualidade dos dados e no método de divisão.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Serviços essenciais da AWS"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Proteção de dados"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testes e gates de qualidade"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    }
+  ],
+  "sections": [
+    {
+      "id": "define-label-features-and-time-boundary",
+      "title": "Criar atributos apenas com informações disponíveis no momento da previsão",
+      "paragraphs": [
+        "Na preparação de dados para ML, defina primeiro o que será previsto e quando. Por exemplo, se você prevê devoluções antes do envio, não pode usar como atributos o motivo da devolução nem o resultado do reembolso, que só são confirmados após o envio. Separe o rótulo que é o objeto da previsão dos atributos disponíveis no momento da previsão.",
+        "Se o limite temporal for definido incorretamente, dados que revelam a resposta apenas durante o treinamento poderão ser misturados. Com esse vazamento de dados, a avaliação offline pode ser alta, mas os resultados não serão reproduzidos em produção. Registre o horário em que os dados foram gerados, se tornaram disponíveis e são usados para fazer a previsão, e verifique esses horários para cada atributo.",
+        "Como ler a figura: acompanhe da esquerda para a direita a sequência de dados brutos, divisão baseada no tempo, processamento de atributos e dados para treinamento, validação e teste. Future outcome, indicado por uma linha tracejada, pode ser usado como rótulo, mas não deve ser reutilizado nos atributos disponíveis no momento da previsão."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "PDF do guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "feature-time-boundary"
+    },
+    {
+      "id": "quality-and-representative-splits",
+      "title": "Alinhar as verificações de qualidade e as divisões de dados às condições de uso",
+      "paragraphs": [
+        "Verifique valores ausentes, duplicatas, valores discrepantes, diferenças de unidade e erros de rotulagem antes de trabalhar com o modelo. As verificações de qualidade não se limitam à taxa de dados ausentes; elas também confirmam o significado dos dados e o caminho pelo qual foram coletados. Por exemplo, o tratamento adequado é diferente quando as vendas são realmente zero e quando não foram coletadas.",
+        "Ao dividir os dados em conjuntos de treinamento, validação e teste, preserve a relação deles com os dados encontrados em produção. Ao prever uma demanda que muda ao longo do tempo, uma divisão aleatória por si só pode não medir adequadamente o desempenho futuro. Em dados nos quais os mesmos clientes ou dispositivos aparecem várias vezes, evite que a mesma entidade seja misturada nos conjuntos de treinamento e teste.",
+        "Não altere convenientemente os dados de avaliação a cada ajuste do modelo. Se continuar escolhendo as configurações com base nos resultados dos dados de teste, os próprios dados de teste passarão a ser usados no treinamento, e o desempenho em dados não vistos deixará de ser medido corretamente."
+      ],
+      "sources": [
+        {
+          "label": "PDF do guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "reproducible-feature-processing",
+      "title": "Gerenciar o pré-processamento como um processo reproduzível",
+      "paragraphs": [
+        "Se o pré-processamento durante o treinamento for diferente do pré-processamento durante a inferência, os resultados poderão mudar mesmo com o mesmo modelo. Gerencie a imputação de valores ausentes, as transformações de categorias, a normalização e a ordem das colunas de atributos como código e configuração, e use as mesmas definições no treinamento e na inferência.",
+        "Registre não apenas o local do conjunto de dados, mas também o período abrangido, as condições de extração, o esquema, a versão do pré-processamento e os resultados das verificações de qualidade. Isso permite rastrear a partir de quais entradas um modelo foi criado e o que mudou durante o retreinamento.",
+        "Para atributos que contêm informações pessoais ou confidenciais, verifique a finalidade de uso, as permissões de acesso, o mascaramento e o período de retenção. Não adicione ilimitadamente aos atributos informações desnecessárias para a previsão apenas porque elas melhoram o desempenho."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-001",
+      "prompt": "Um engenheiro de ML de uma empresa de comércio eletrônico prevê a probabilidade de devolução no momento em que o pedido é recebido. O motivo da devolução, determinado após o envio, pode ser usado somente como rótulo de resposta. Qual seleção de atributos disponíveis no momento do recebimento do pedido é a mais adequada?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Usar como atributo o horário de aceite pela transportadora, determinado no envio após o recebimento do pedido.",
+          "explanation": "O horário de aceite pela transportadora ainda não está determinado quando o pedido é recebido. Portanto, seu uso causa vazamento de dados ao incluir informações posteriores ao momento da previsão."
+        },
+        {
+          "id": "a",
+          "text": "Usar como atributos o produto, o horário do pedido e a região de destino, todos determinados no momento em que o pedido é recebido.",
+          "explanation": "Correto. Essas informações estão disponíveis quando o pedido é recebido, portanto podem ser fornecidas nas mesmas condições em produção."
+        },
+        {
+          "id": "c",
+          "text": "Usar como atributo a indicação de que o reembolso foi concluído.",
+          "explanation": "O reembolso é o resultado do processamento após uma devolução e não pode ser usado para uma previsão feita quando o pedido é recebido."
+        },
+        {
+          "id": "d",
+          "text": "Adicionar o número futuro de devoluções com o mesmo valor a todos os pedidos.",
+          "explanation": "Como contém informações futuras, isso faria indevidamente com que a previsão para cada pedido no momento do recebimento parecesse mais precisa."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-002",
+      "prompt": "Um engenheiro de ML de uma empresa de energia elétrica avalia um modelo que prevê a demanda do dia seguinte. A demanda varia muito conforme a estação do ano e o dia da semana. Qual divisão é mais adequada para medir o desempenho em datas futuras desconhecidas?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Misturar aleatoriamente as linhas de todo o período e distribuir os registros das mesmas datas entre os conjuntos de treinamento e teste.",
+          "explanation": "Essa divisão não produz uma avaliação próxima das condições futuras, e misturar informações do mesmo período pode superestimar o desempenho."
+        },
+        {
+          "id": "c",
+          "text": "Observar os resultados do período de teste e usar repetidamente esse mesmo período de teste para a seleção de características.",
+          "explanation": "Isso reutiliza os resultados do teste no ajuste e faz com que o conjunto de teste perca a função de medir o desempenho em dados desconhecidos."
+        },
+        {
+          "id": "d",
+          "text": "Usar somente os dias de menor demanda como conjunto de teste para estabilizar a avaliação.",
+          "explanation": "Isso não representa a variação encontrada em produção e, portanto, não mostra o desempenho em condições operacionais."
+        },
+        {
+          "id": "b",
+          "text": "Usar um período mais antigo para treinamento, o período seguinte para validação e o período final para teste, preservando a ordem da série temporal.",
+          "explanation": "Correto. Essa divisão se aproxima das condições da previsão, em que o tempo avança do passado para o futuro, e avalia a generalização para um período futuro."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-data-003",
+      "prompt": "Um engenheiro de ML de um hospital prepara atributos para prever o risco de readmissão. Foi constatado que o método de imputação de valores ausentes é diferente durante o treinamento e durante a inferência em produção. Qual é a correção mais apropriada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Manter métodos de imputação separados para treinamento e inferência e não explicar aos usuários a diferença nos resultados.",
+          "explanation": "A distribuição de entrada e o significado dos atributos mudam, portanto o comportamento do modelo não pode ser reproduzido em produção."
+        },
+        {
+          "id": "b",
+          "text": "Substituir sempre os valores ausentes por zero sem verificar o significado dos dados.",
+          "explanation": "O significado é diferente quando zero representa um valor medido ou um valor não coletado; portanto, a substituição incondicional reduz a qualidade."
+        },
+        {
+          "id": "c",
+          "text": "Gerenciar as regras de imputação e sua versão como um pré-processamento comum e aplicar as mesmas definições durante o treinamento e a inferência.",
+          "explanation": "Correto. Tornar o pré-processamento reproduzível evita divergências nos atributos entre o treinamento e a inferência."
+        },
+        {
+          "id": "d",
+          "text": "Remover apenas os pacientes com valores ausentes tanto do treinamento quanto da inferência.",
+          "explanation": "Excluir pacientes sem investigar as causas e os impactos dos valores ausentes pode comprometer a equidade para esses pacientes e o escopo de uso."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Label",
+    "Feature",
+    "Data lineage",
+    "Data leakage",
+    "Time-based split",
+    "Group split",
+    "Imputation",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

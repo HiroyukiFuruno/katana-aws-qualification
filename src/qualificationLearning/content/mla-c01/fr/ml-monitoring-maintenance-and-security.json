@@ -1,0 +1,182 @@
+{
+  "id": "ml-monitoring-maintenance-and-security",
+  "title": "Surveillance, maintenance et sécurité des solutions de ML",
+  "objective": "Observez séparément les données, les prédictions, les résultats mesurés, l’infrastructure et les autorisations afin d’enquêter en toute sécurité sur l’étendue de l’impact d’un problème et d’y répondre.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Surveillance et amélioration"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentification et autorisation"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protection des données"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Déploiement et récupération"
+    }
+  ],
+  "sections": [
+    {
+      "id": "monitor-data-prediction-and-ground-truth",
+      "title": "Observer séparément les changements des données et ceux des performances du modèle",
+      "paragraphs": [
+        "Lors de la surveillance d’un modèle en production, vérifiez non seulement le nombre de requêtes et les erreurs, mais aussi les distributions des données d’entrée et des prédictions, ainsi que les résultats réels obtenus ultérieurement. La dérive des données, qui se produit lorsque la distribution des entrées change par rapport à celle de l’entraînement, et la baisse de la qualité du modèle mesurée en comparant les prédictions aux étiquettes observées ne sont pas le même phénomène.",
+        "Amazon SageMaker Model Monitor peut capturer les entrées et les sorties, puis surveiller les écarts de qualité des données et du modèle en les comparant à une référence. Pour mesurer la qualité du modèle, il faut associer les prédictions aux étiquettes Ground Truth confirmées ultérieurement.",
+        "Lecture du schéma : distinguez le chemin où Training baseline est comparé à Input and prediction capture du chemin où Delayed ground truth est joint à Prediction. Le premier montre les changements des entrées, tandis que le second montre les performances réelles des prédictions ; ne les traitez pas comme une seule et même alerte."
+      ],
+      "sources": [
+        {
+          "label": "Surveillance de la qualité des données et du modèle avec Amazon SageMaker Model Monitor",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Qualité des modèles dans Amazon SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor-model-quality.html"
+        }
+      ],
+      "figureId": "ground-truth-monitoring-boundaries"
+    },
+    {
+      "id": "incident-triage-and-maintenance",
+      "title": "Les alertes sont le point de départ de l’enquête, pas la cause",
+      "paragraphs": [
+        "Lorsqu’une alerte se déclenche, cela ne signifie pas toujours qu’il faut immédiatement réentraîner le modèle ou le remplacer. Il faut distinguer les problèmes de collecte des entrées, les modifications du prétraitement, les pannes du point de terminaison d’inférence, les retards d’arrivée des étiquettes et les changements réels de la distribution des données. Mettez en corrélation la période concernée, la version du modèle, les entrées et les sorties, ainsi que l’état de l’infrastructure.",
+        "Même lorsqu’une dérive des données est détectée, les performances ne diminuent pas nécessairement. À l’inverse, les performances peuvent diminuer en raison d’une modification de la définition des étiquettes ou des habitudes d’utilisation, même si la distribution des entrées reste stable. Distinguez le moment où les étiquettes observées deviennent disponibles de l’urgence de l’intervention.",
+        "Le réentraînement n’est pas une solution universelle. Si la cause est une donnée manquante, un problème d’autorisations ou une modification du format des entrées, réentraîner le modèle avec des données contenant le même problème n’améliorera pas la situation. Après les corrections, vérifiez le cas reproductible, la qualité des données, la qualité du modèle et les métriques opérationnelles avant le déploiement."
+      ],
+      "sources": [
+        {
+          "label": "Surveillance de la qualité des données et du modèle avec Amazon SageMaker Model Monitor",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker Model Dashboard",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-dashboard.html"
+        }
+      ]
+    },
+    {
+      "id": "security-and-access-evidence",
+      "title": "Protéger séparément les modèles, les données, l’inférence et les journaux",
+      "paragraphs": [
+        "Dans les systèmes de ML, les données d’entraînement, les caractéristiques, les artefacts de modèle, les points de terminaison d’inférence, les secrets et les journaux présentent chacun un niveau de sensibilité différent. Au lieu d’accorder à un seul rôle d’exécution des autorisations sur tous les compartiments S3, les modèles et les journaux, n’autorisez que les ressources et les opérations nécessaires à chaque rôle de traitement.",
+        "Combinez le chiffrement, les frontières réseau, la gestion des secrets, le principe du moindre privilège IAM et les journaux d’audit. Même si les données sont chiffrées, elles ne sont pas protégées si des principaux qui n’en ont pas besoin peuvent les déchiffrer ou les lire. Les journaux peuvent également contenir des entrées ou des prédictions ; gérez donc leur consultation, leur conservation et leur suppression.",
+        "L’audit doit permettre de retracer quel principal a exécuté quelle version du modèle sur quelles données et à quel moment. Pour rechercher la cause d’un refus d’accès, vérifiez également séparément la ressource cible, le rôle d’exécution, la politique et l’accessibilité réseau avant d’accorder temporairement des autorisations étendues."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "PDF du guide de l’examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-monitor-001",
+      "prompt": "L’ingénieur ML d’une entreprise de logistique surveille un modèle de production qui prédit les retards de livraison. La distribution des entrées a changé par rapport aux données d’entraînement, mais les étiquettes correspondant aux heures d’arrivée réelles arrivent tardivement ; il n’est donc pas encore possible de comparer la qualité du modèle. Quelle est la décision la plus appropriée à ce stade ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Supprimer immédiatement le modèle parce que la distribution des entrées a changé, sans vérifier la baisse de ses performances.",
+          "explanation": "La dérive des données est le point de départ d’une enquête ; sans vérifier la qualité du modèle à l’aide d’étiquettes observées, il est impossible d’affirmer que ses performances ont diminué."
+        },
+        {
+          "id": "b",
+          "text": "Examiner et consigner les changements des entrées, puis évaluer la qualité du modèle en associant les prédictions aux libellés mesurés après l’arrivée de ces libellés.",
+          "explanation": "Correct. À ce stade, examinez la distribution des entrées, puis confirmez les performances réelles des prédictions par le chemin distinct illustré dans le schéma après l’arrivée des libellés."
+        },
+        {
+          "id": "c",
+          "text": "Supprimer les enregistrements des prédictions et conserver uniquement la distribution des entrées à long terme.",
+          "explanation": "Il ne serait alors plus possible de comparer les prédictions au Ground Truth et donc de mesurer la qualité du modèle."
+        },
+        {
+          "id": "d",
+          "text": "Ne pas vérifier les causes ni l’étendue des changements dans les entrées avant l’arrivée du Ground Truth.",
+          "explanation": "Il est possible d’enquêter rapidement sur les changements touchant la collecte des entrées, le prétraitement et les conditions d’utilisation ; il n’est donc pas approprié de ne rien faire."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-monitor-002",
+      "prompt": "L’ingénieur ML d’une entreprise de vente au détail a reçu une alerte de qualité concernant un modèle de prévision de la demande. Le même jour, une partie du processus de collecte des données d’entrée a échoué et les libellés correspondant aux ventes réelles arrivent également avec deux jours de retard. Quelle est la première action la plus appropriée ?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Comparer la période cible, la version du modèle, la collecte des entrées, les prévisions et l’arrivée des libellés afin de déterminer si le problème concerne les données, l’infrastructure ou les performances.",
+          "explanation": "Correct. Il ne faut pas assimiler l’alerte à sa cause ; il faut relier les éléments de preuve nécessaires pour décider d’une intervention sûre."
+        },
+        {
+          "id": "a",
+          "text": "Sans distinguer la cause, lancer immédiatement un réentraînement avec les mêmes données.",
+          "explanation": "Si la cause est l’échec de la collecte ou le retard des libellés, le réentraînement risque de reproduire ou d’aggraver le problème."
+        },
+        {
+          "id": "b",
+          "text": "Ignorer l’alerte de qualité et ne pas vérifier les journaux avant l’arrivée des libellés de ventes réelles.",
+          "explanation": "L’échec de la collecte des données d’entrée et son impact peuvent être vérifiés immédiatement ; les ignorer permettrait à des prévisions incorrectes de continuer."
+        },
+        {
+          "id": "d",
+          "text": "Désactiver les notifications d’alerte et évaluer la qualité uniquement à partir des réclamations des utilisateurs.",
+          "explanation": "Cela ferait perdre les fondements de la détection précoce et de l’enquête, de sorte que l’impact sur les utilisateurs s’étendrait avant toute intervention."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-monitor-003",
+      "prompt": "Un ingénieur ML d’une entreprise de dispositifs médicaux enquête sur un problème empêchant une tâche d’inférence d’accéder à ses données d’entrée. Avant d’accorder temporairement des autorisations d’administrateur étendues au rôle d’exécution, quel est l’ordre de vérification le plus approprié ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Accorder des autorisations d’administrateur à toutes les tâches, puis rechercher la cause si le problème est résolu.",
+          "explanation": "Cela élargit l’accès aux données sensibles au moyen d’autorisations excessives et rend également plus difficile l’identification de la cause racine."
+        },
+        {
+          "id": "c",
+          "text": "Supprimer les données d’entrée et les journaux, puis créer un nouveau compartiment.",
+          "explanation": "Cela fait perdre les éléments nécessaires à l’audit et à l’investigation de l’incident, sans résoudre le problème d’autorisations ou d’accessibilité."
+        },
+        {
+          "id": "d",
+          "text": "Partager les mêmes informations d’identification entre tous les développeurs afin que chacun puisse exécuter la tâche d’inférence.",
+          "explanation": "Cela empêche de tracer l’entité à l’origine de l’exécution et enfreint les exigences de moindre privilège et d’audit."
+        },
+        {
+          "id": "b",
+          "text": "Vérifier séparément le rôle d’exécution, les données cibles, les opérations nécessaires, les politiques associées et l’accessibilité du réseau.",
+          "explanation": "Correct. Cela permet de déterminer à quelle limite du contrôle d’accès le problème se produit tout en maintenant le principe du moindre privilège."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model drift",
+    "Data drift",
+    "Data quality",
+    "Model quality",
+    "Ground truth",
+    "Model Monitor",
+    "Prediction capture",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "Encryption at rest",
+    "Encryption in transit",
+    "Audit log",
+    "Data lineage"
+  ]
+}

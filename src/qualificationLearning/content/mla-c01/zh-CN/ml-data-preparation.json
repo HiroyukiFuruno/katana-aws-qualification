@@ -1,0 +1,173 @@
+{
+  "id": "ml-data-preparation",
+  "title": "机器学习的数据准备",
+  "objective": "根据预测目标、数据所代表的时间点、数据质量和划分方法，说明并选择可用于训练和评估的数据集。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服务"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "测试与质量门禁"
+    },
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    }
+  ],
+  "sections": [
+    {
+      "id": "define-label-features-and-time-boundary",
+      "title": "仅使用预测时点可用的信息创建特征",
+      "paragraphs": [
+        "准备 ML 数据时，首先要确定要预测什么以及何时进行预测。例如，如果要在发货前预测退货，就不能将发货后才确定的退货原因或退款结果用作特征。应将作为预测目标的标签与预测时点可用的特征分开。",
+        "如果错误划定时间边界，就可能混入只有在训练时才知道答案的数据。存在这种数据泄漏时，离线评估结果可能很高，但在生产环境中无法复现。记录数据的生成时间、变得可用的时间以及进行预测的时间，并逐一检查每个特征。",
+        "图解读方法：从左到右依次查看原始数据、基于时间点的划分、特征处理，以及用于训练、验证和测试的数据。虚线表示的 Future outcome 可以用作标签，但不得将其反馈到预测时点可用的特征中。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "MLA-C01 考试指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "feature-time-boundary"
+    },
+    {
+      "id": "quality-and-representative-splits",
+      "title": "让质量检查和数据划分符合使用条件",
+      "paragraphs": [
+        "在使用模型之前，先检查缺失值、重复值、异常值、单位差异和标签错误。质量检查不仅要确认缺失率，还要确认数据的含义和收集路径。例如，销售额是真正为零，还是尚未收集，会导致不同的处理方式。",
+        "将数据划分为训练集、验证集和测试集时，要保持数据与生产环境中将遇到的数据之间的关系。如果要预测随时间变化的需求，仅使用随机划分可能无法恰当地衡量未来的性能。对于同一客户或设备会多次出现的数据，要避免同一主体同时混入训练集和测试集。",
+        "不要在每次调优时都为了方便而更改评估数据。如果持续根据测试数据的结果选择设置，测试数据本身就会被用于训练，从而无法正确衡量模型对未知数据的性能。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考试指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "reproducible-feature-processing",
+      "title": "将预处理作为可复现的流程进行管理",
+      "paragraphs": [
+        "如果训练时的预处理与推理时的预处理不同，即使使用同一个模型，结果也可能发生变化。应将缺失值填补、类别转换、归一化以及特征列顺序作为代码和配置进行管理，并在训练和推理中使用相同的定义。",
+        "除了记录数据集的位置，还要记录目标期间、提取条件、架构、预处理版本和质量检查结果。这样可以追踪某个模型是根据哪些输入构建的，以及重新训练时发生了哪些变化。",
+        "对于包含个人信息或机密信息的特征，应确认使用目的、查看权限、掩码处理和保留期限。即使某些信息能够提升性能，也不要因此将预测用途不需要的信息无限制地加入特征中。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-001",
+      "prompt": "一家电商公司的 ML 工程师会在接收订单时预测订单发生退货的可能性。发货后才能确定的退货原因只能用作正确标签。以下哪组特征是在接收订单时可用的最合适选择？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "使用订单接收后、发货时才确定的承运商接收时间作为特征。",
+          "explanation": "承运商接收时间在接收订单时尚未确定，因此其中包含预测时间之后的信息，会造成数据泄漏。"
+        },
+        {
+          "id": "a",
+          "text": "使用在接收订单时已经确定的商品、下单时间和配送目的地区域作为特征。",
+          "explanation": "正确。由于这些信息在接收订单时即可获得，因此在生产环境中也可以在相同条件下输入。"
+        },
+        {
+          "id": "c",
+          "text": "将是否已经完成退款用作特征。",
+          "explanation": "退款是退货后的处理结果，不能用于在接收订单时进行的预测。"
+        },
+        {
+          "id": "d",
+          "text": "将未来的退货件数以相同的值添加到所有订单中。",
+          "explanation": "由于包含未来信息，这会不当地使针对每个订单在接收时进行的预测看起来更准确。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-002",
+      "prompt": "一家电力公司的 ML 工程师正在评估一个预测次日需求的模型。需求会随季节和星期几而显著变化。要衡量模型在未知未来日期上的性能，哪种数据划分最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "将整个期间的行随机混合，并把同一日期的记录分散到训练集和测试集中。",
+          "explanation": "这种划分无法得到接近未来条件的评估结果，而且混入同一时期的信息可能会高估性能。"
+        },
+        {
+          "id": "c",
+          "text": "一边查看测试期间的结果，一边反复使用同一个测试期间进行特征选择。",
+          "explanation": "这会将测试结果用于调优，使测试集失去衡量未知数据性能的作用。"
+        },
+        {
+          "id": "d",
+          "text": "只将需求最低的日期作为测试集，以稳定评估结果。",
+          "explanation": "这不能代表生产环境中会遇到的波动，因此无法体现模型在实际运行条件下的性能。"
+        },
+        {
+          "id": "b",
+          "text": "使用较早的时间段进行训练、下一时间段进行验证、最后的时间段进行测试，同时保持时间序列的顺序。",
+          "explanation": "正确。这种划分接近预测时从过去向未来推进的条件，可以评估模型对未来时间段的泛化能力。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-data-003",
+      "prompt": "一家医院的 ML 工程师正在准备用于预测再入院风险的特征。现已发现，训练时与生产推理时采用的缺失值填补方法不同。最适合的修正是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "保留训练时和推理时各自独立的填补方法，并且不向用户说明结果差异。",
+          "explanation": "输入分布和特征含义会发生变化，因此无法在生产环境中重现模型的行为。"
+        },
+        {
+          "id": "b",
+          "text": "始终将缺失值替换为零，而不确认数据的含义。",
+          "explanation": "零是实测值还是未采集值，其含义并不相同，因此无条件替换会降低质量。"
+        },
+        {
+          "id": "c",
+          "text": "将填补规则及其版本作为通用预处理进行管理，并在训练和推理中应用相同的定义。",
+          "explanation": "正确。使预处理具有可复现性，可以防止训练时与推理时的特征发生偏差。"
+        },
+        {
+          "id": "d",
+          "text": "仅将存在缺失值的患者同时从训练和推理中删除。",
+          "explanation": "如果不调查缺失的原因及其影响就进行排除，可能会损害对相关患者的公平性以及适用范围。"
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Label",
+    "Feature",
+    "Data lineage",
+    "Data leakage",
+    "Time-based split",
+    "Group split",
+    "Imputation",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

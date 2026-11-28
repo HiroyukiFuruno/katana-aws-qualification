@@ -1,0 +1,179 @@
+{
+  "id": "ml-model-development",
+  "title": "ML 模型开发",
+  "objective": "能够将业务错误的影响与评估指标联系起来，并解释有关模型、调优和版本管理的决策。",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "测试与质量门禁"
+    },
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CD 流程"
+    },
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服务"
+    }
+  ],
+  "sections": [
+    {
+      "id": "metric-follows-decision-cost",
+      "title": "根据错误的影响选择评估指标",
+      "paragraphs": [
+        "在模型评估中，不能仅根据准确率这一个数值来决定是否接受模型。应与业务部门确认：漏掉异常，还是把正常对象当作异常处理，哪一种影响更大。当检测对象很少时，即使把所有对象都判定为正常，也可能得到表面上很高的准确率。",
+        "在分类中，使用精确率、召回率、阈值和混淆矩阵来区分错误类型。在回归中，应考虑误差的大小，以及低估或高估哪一种更成问题。评估指标不能取代运营时的判断，而是为判断提供证据。",
+        "阅读图表：查看左侧的实际状态与顶部的预测结果相交形成的四个单元格。应根据业务损失和响应能力决定减少 False negative 还是 False positive，并在更改阈值后继续使用相同的验证数据进行比较。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考试指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "threshold-decision-cost"
+    },
+    {
+      "id": "validation-tuning-and-overfitting",
+      "title": "使用验证数据进行调优，最后再使用测试数据",
+      "paragraphs": [
+        "仅凭训练数据无法决定超参数调优或特征选择。使用验证数据比较候选方案并确定选择后，再使用未接触过的测试数据确认最终的预期表现。反复将测试数据用于调优，会高估模型在未知数据上的性能。",
+        "如果只有训练指标得到改善，而验证指标恶化，则模型可能过度适配了训练数据中的偶然特征。不要同时改变数据量、特征、模型复杂度、正则化和训练时间；应针对每个假设分别进行比较。",
+        "比较模型候选方案时，应记录指标、数据集版本、代码、配置、随机性的处理方式以及运行环境。无法复现的良好结果，不能作为生产候选方案进行说明和验证。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    },
+    {
+      "id": "model-registry-and-approval",
+      "title": "通过成果物和证据确定要采用的模型",
+      "paragraphs": [
+        "要投入生产的并不是“最新的模型文件”，而是能够确定模型由哪些数据、代码、配置和评估结果构建而成的成果物。在 Amazon SageMaker Model Registry 中，每次重新训练都会为模型包创建版本，并将其关联到 Model Group。",
+        "模型注册会关联评估指标、使用范围、已知限制、批准人、训练数据版本、容器和依赖项。这样，在发生问题时，就可以判断使用的是哪个模型、模型在哪里使用，以及可以回退到哪个候选模型。",
+        "模型不会仅因为某个指标超过一个阈值就自动获得批准。负责该用途的人员会确认安全性、偏差、使用条件以及是否能够在运营中进行监控，然后作出批准决定。"
+      ],
+      "sources": [
+        {
+          "label": "SageMaker Model Registry 中的模型、模型版本和 Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        },
+        {
+          "label": "MLA-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-model-001",
+      "prompt": "一家机场运营公司的 ML 工程师正在评估一个用于检测携带危险品进入机场的分类模型，准备将其作为生产环境候选模型。漏检会使危险品通过，误检则会触发额外检查。如果从安全角度看，漏检的影响更大，首先应作出哪项判断？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "将所有对象预测为正常，以提高表面准确率。",
+          "explanation": "这会增加漏检危险品的 False negative，并违反安全要求。"
+        },
+        {
+          "id": "c",
+          "text": "为了完全消除额外检查，不使用检测模型。",
+          "explanation": "在未评估安全方面的漏检风险之前就停止检测，并不是恰当的判断。"
+        },
+        {
+          "id": "d",
+          "text": "将评估数据中的正确标签改写为与预测结果一致。",
+          "explanation": "这改变的是评估标准，而不是模型性能，因此无法衡量错误的影响。"
+        },
+        {
+          "id": "b",
+          "text": "确认 False negative 和 False positive 的数量及其影响，然后评估能够抑制漏检的阈值与检查能力之间的平衡。",
+          "explanation": "正确。将图中所示的两类错误与业务影响联系起来，并使用相同的数据比较修改阈值后的结果。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-model-002",
+      "prompt": "一家房地产公司的 ML 工程师正在比较多个超参数候选方案。候选方案 A 在训练数据上的指标最高，但在验证数据上的指标低于候选方案 B。下一步最合适的操作是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "仅根据训练指标，将候选方案 A 注册到生产环境中。",
+          "explanation": "这会忽略对训练数据的过拟合，也无法确认模型在未知数据上的性能。"
+        },
+        {
+          "id": "b",
+          "text": "使用测试数据反复调整，直到候选方案的排名发生逆转。",
+          "explanation": "如果使用测试数据进行调整，测试数据就会失去作为最终评估数据的作用。"
+        },
+        {
+          "id": "c",
+          "text": "根据验证数据选择候选方案 B，然后在选择完成后，使用未接触过的测试数据确认最终性能。",
+          "explanation": "正确。使用验证数据进行调整和选择，再使用独立的测试数据确认泛化性能。"
+        },
+        {
+          "id": "d",
+          "text": "取候选方案 A 和 B 的平均值，并省略评估。",
+          "explanation": "取平均值无法说明错误的原因，也无法表明结果是否符合运营要求，因此不能作为选择依据。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-model-003",
+      "prompt": "一家金融公司的 ML 工程师将重新训练的欺诈检测模型注册为生产候选模型。之后，他们需要调查某个预测的依据，并在出现问题时回退到之前的候选模型。注册时最重要的记录是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只用最新日期覆盖模型文件名。",
+          "explanation": "无法追溯模型是根据哪些数据、代码、设置和评估结果创建的。"
+        },
+        {
+          "id": "d",
+          "text": "将模型版本与数据、代码、设置、评估结果、约束条件和审批信息关联起来进行注册。",
+          "explanation": "正确。这样可以追踪模型的来源和审批依据，并在出现问题时用于调查和安全回退。"
+        },
+        {
+          "id": "b",
+          "text": "只保留评估指标，不记录训练数据和预处理的版本。",
+          "explanation": "仅凭指标无法确认输入或预处理的差异、复现步骤或影响范围。"
+        },
+        {
+          "id": "c",
+          "text": "只保留审批者姓名，不为候选模型标注版本。",
+          "explanation": "即使知道审批负责人，也无法确定批准的是哪个构件。"
+        }
+      ],
+      "correct": ["d"]
+    }
+  ],
+  "glossaryTerms": [
+    "Classification",
+    "Regression",
+    "Precision",
+    "Recall",
+    "Accuracy",
+    "Threshold",
+    "Confusion matrix",
+    "False positive",
+    "False negative",
+    "Hyperparameter",
+    "Overfitting",
+    "Regularization",
+    "Model artifact",
+    "Model Registry",
+    "Model Group",
+    "Model package",
+    "Model evaluation",
+    "Model bias",
+    "Reproducibility"
+  ]
+}

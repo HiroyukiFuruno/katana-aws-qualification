@@ -23,6 +23,7 @@ for (const {
   answer,
   choiceCount,
   figureInNextUnit,
+  additionalFigure,
 } of qualificationLearningCases) {
   test(`${courseId} teaches and checks understanding before the separate mock exam`, async ({
     page,
@@ -53,6 +54,12 @@ for (const {
       await expect(
         page.locator('.qualification-related a[href$="/learn/secure-architecture/"]'),
       ).toHaveText(firstTitle);
+    }
+    if (additionalFigure) {
+      await page.goto(`${learningIndex}${additionalFigure.unit}/`);
+      const asset = `${figureAsset}${courseId}/${additionalFigure.asset}.svg`;
+      const comparison = page.locator(figure).filter({ has: page.locator(`img[src="${asset}"]`) });
+      await expectTeachingFigure(comparison);
     }
     await page.goto(learningIndex);
     const examRequests: string[] = [];

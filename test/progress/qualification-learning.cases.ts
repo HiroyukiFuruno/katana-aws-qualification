@@ -6,6 +6,7 @@ type QualificationLearningCase = {
   answer: RegExp;
   choiceCount: number;
   figureInNextUnit?: boolean;
+  additionalFigure?: { unit: string; asset: string };
 };
 
 export const qualificationLearningCases: QualificationLearningCase[] = [
@@ -80,5 +81,17 @@ export const qualificationLearningCases: QualificationLearningCase[] = [
     prompt: /決済サービスのアーキテクトは、単一 AZ 障害では継続し、リージョン障害では/,
     answer: /操作ごとの RTO、RPO、依存関係、障害範囲を確認し、AZ とリージョンの障害に対/,
     choiceCount: 3,
+  },
+  {
+    courseId: 'mla-c01',
+    firstTitle: '機械学習のためのデータ準備',
+    nextUnit: 'ml-model-development',
+    prompt: /通販会社のMLエンジニアは、注文受付時点で返品の可能性を予測します/,
+    answer: /注文受付時点で確定している商品、注文時刻、配送先地域を特徴量に使う。/,
+    choiceCount: 4,
+    additionalFigure: {
+      unit: 'ml-workflow-deployment-and-orchestration',
+      asset: 'mla-inference-decision-timing',
+    },
   },
 ];

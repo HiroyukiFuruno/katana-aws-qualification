@@ -1,0 +1,182 @@
+{
+  "id": "ml-monitoring-maintenance-and-security",
+  "title": "ML 솔루션 모니터링, 유지 관리 및 보안",
+  "objective": "데이터, 예측, 실제 측정 결과, 인프라 및 권한을 구분하여 관찰함으로써 문제의 영향 범위를 안전하게 조사하고 대응할 수 있습니다.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "모니터링 및 개선"
+    },
+    {
+      "slug": "identity-access",
+      "title": "인증 및 권한 부여"
+    },
+    {
+      "slug": "data-protection",
+      "title": "데이터 보호"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "배포 및 복구"
+    }
+  ],
+  "sections": [
+    {
+      "id": "monitor-data-prediction-and-ground-truth",
+      "title": "데이터 변화와 모델 성능 변화를 구분하여 관찰하기",
+      "paragraphs": [
+        "프로덕션 모델을 모니터링할 때는 요청 수와 오류뿐 아니라 입력 데이터 분포, 예측 분포, 그리고 나중에 얻는 실제 결과도 확인해야 합니다. 입력 분포가 학습 당시와 달라지는 데이터 드리프트와 예측을 실제 레이블과 비교하여 측정한 모델 품질 저하는 동일한 현상이 아닙니다.",
+        "Amazon SageMaker Model Monitor는 입력과 출력을 캡처하고 기준선과 비교하여 데이터 품질 및 모델 품질의 편차를 모니터링할 수 있습니다. 모델 품질을 측정하려면 예측 결과뿐 아니라 나중에 확정되는 Ground Truth 레이블도 연결해야 합니다.",
+        "그림 읽기: Training baseline을 Input and prediction capture와 비교하는 경로와 Delayed ground truth를 Prediction과 결합하는 경로를 구분해서 봅니다. 전자는 입력의 변화를 나타내고 후자는 실제 예측 성능을 나타내므로, 동일한 알림으로 처리하지 않습니다."
+      ],
+      "sources": [
+        {
+          "label": "Amazon SageMaker Model Monitor를 사용한 데이터 및 모델 품질 모니터링",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker AI의 모델 품질",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor-model-quality.html"
+        }
+      ],
+      "figureId": "ground-truth-monitoring-boundaries"
+    },
+    {
+      "id": "incident-triage-and-maintenance",
+      "title": "알림은 원인이 아니라 조사의 시작점입니다",
+      "paragraphs": [
+        "알림이 발생했다고 해서 항상 즉시 모델을 재학습하거나 교체해야 하는 것은 아닙니다. 입력 수집 문제, 전처리 변경, 추론 엔드포인트 장애, 레이블 도착 지연, 실제 데이터 분포 변화를 구분해야 합니다. 대상 기간, 모델 버전, 입력 및 출력, 인프라 상태를 대조합니다.",
+        "데이터 드리프트가 감지되더라도 성능이 반드시 저하된 것은 아닙니다. 반대로 입력 분포가 안정적이어도 레이블 정의 변경이나 사용 방식의 변화로 성능이 저하될 수 있습니다. 실제 레이블을 확보할 수 있는 시점과 대응의 긴급성을 구분해야 합니다.",
+        "재학습이 만능 해결책은 아닙니다. 원인이 데이터 누락, 권한 또는 입력 형식 변경이라면 동일한 문제가 포함된 데이터로 재학습해도 개선되지 않습니다. 수정한 후에는 재현 사례, 데이터 품질, 모델 품질 및 운영 지표를 확인한 다음 배포합니다."
+      ],
+      "sources": [
+        {
+          "label": "Amazon SageMaker Model Monitor를 사용한 데이터 및 모델 품질 모니터링",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker Model Dashboard",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-dashboard.html"
+        }
+      ]
+    },
+    {
+      "id": "security-and-access-evidence",
+      "title": "모델, 데이터, 추론 및 로그를 별도로 보호하기",
+      "paragraphs": [
+        "ML 시스템에서는 학습 데이터, 특성, 모델 아티팩트, 추론 엔드포인트, 보안 암호 및 로그가 각각 서로 다른 민감도를 가집니다. 하나의 실행 역할에 모든 S3 버킷, 모델 및 로그에 대한 권한을 부여하는 대신, 각 처리 역할에 필요한 리소스와 작업만 허용합니다.",
+        "암호화, 네트워크 경계, 보안 암호 관리, IAM 최소 권한 및 감사 로그를 함께 사용합니다. 암호화되어 있더라도 불필요한 보안 주체에 복호화 또는 읽기 권한을 허용하면 보호가 되지 않습니다. 로그에는 입력이나 예측이 포함될 수도 있으므로 조회, 보존 및 삭제를 관리해야 합니다.",
+        "감사를 통해 어떤 보안 주체가 언제 어떤 데이터에 어떤 모델 버전을 실행했는지 추적할 수 있어야 합니다. 액세스 거부의 원인을 조사할 때도 광범위한 권한을 일시적으로 부여하기 전에 대상 리소스, 실행 역할, 정책 및 네트워크 연결 가능성을 개별적으로 확인합니다."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 시험 안내서",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "MLA-C01 시험 안내서 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-monitor-001",
+      "prompt": "물류 회사의 ML 엔지니어가 배송 지연을 예측하는 프로덕션 모델을 모니터링합니다. 입력 분포가 학습 시점과 달라졌지만 실제 도착 시간 레이블은 늦게 도착하므로 아직 모델 품질을 비교할 수 없습니다. 이 시점에서 가장 적절한 판단은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "입력 분포가 변경되었으므로 성능 저하를 확인하지 않고 즉시 모델을 삭제한다.",
+          "explanation": "데이터 드리프트는 조사를 시작하는 지점일 뿐이며, 실제 측정 레이블을 사용해 모델 품질을 확인하지 않고는 성능이 저하되었다고 단정할 수 없습니다."
+        },
+        {
+          "id": "b",
+          "text": "입력의 변화를 조사하고 기록한 다음, 레이블이 도착하면 예측값과 측정된 레이블을 결합하여 모델 품질을 평가한다.",
+          "explanation": "정답입니다. 현재는 입력 분포를 조사하고, 레이블이 도착한 후 그림에 표시된 별도의 경로를 통해 실제 예측 성능을 확인합니다."
+        },
+        {
+          "id": "c",
+          "text": "예측 기록을 삭제하고 입력 분포만 장기간 보존한다.",
+          "explanation": "그러면 예측과 Ground Truth를 비교할 수 없게 되어 모델 품질을 측정할 수 없습니다."
+        },
+        {
+          "id": "d",
+          "text": "Ground Truth가 도착할 때까지 입력 변화의 원인이나 영향 범위를 확인하지 않는다.",
+          "explanation": "입력 수집, 전처리, 사용 조건의 변화를 조기에 조사할 수 있으므로 아무것도 하지 않는 판단은 적절하지 않습니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-monitor-002",
+      "prompt": "한 소매 회사의 ML 엔지니어가 수요 예측 모델의 품질 알림을 받았습니다. 같은 날 입력 데이터 수집 작업의 일부가 실패했고, 실제 매출 레이블의 도착도 2일 지연되고 있습니다. 가장 먼저 취해야 할 조치는 무엇입니까?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "대상 기간, 모델 버전, 입력 수집, 예측 결과, 레이블 도착을 대조하여 문제가 데이터, 인프라 또는 성능 중 어디에 있는지 구분한다.",
+          "explanation": "정답입니다. 알림을 원인과 동일시하지 말고 필요한 증거를 연결하여 안전한 대응을 판단해야 합니다."
+        },
+        {
+          "id": "a",
+          "text": "원인을 구분하지 않고 즉시 동일한 데이터로 재학습을 시작한다.",
+          "explanation": "수집 실패나 레이블 지연이 원인이라면 재학습으로 문제가 재현되거나 악화될 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "품질 알림을 무시하고 실제 매출 레이블이 도착할 때까지 기록을 확인하지 않는다.",
+          "explanation": "입력 수집 실패와 그 영향 범위는 즉시 확인할 수 있으며, 이를 무시하면 잘못된 예측이 계속됩니다."
+        },
+        {
+          "id": "d",
+          "text": "알림을 중지하고 사용자 불만만으로 품질을 판단한다.",
+          "explanation": "이렇게 하면 조기 탐지와 조사의 근거를 잃게 되어 사용자 영향이 확산된 뒤에야 대응할 수 있습니다."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-monitor-003",
+      "prompt": "의료 기기 회사의 ML 엔지니어가 추론 작업이 입력 데이터에 액세스하지 못하는 문제를 조사하고 있습니다. 실행 역할에 광범위한 관리자 권한을 일시적으로 부여하기 전에 가장 적절한 확인 순서는 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "모든 작업에 관리자 권한을 부여하고 문제가 해결되면 원인을 조사합니다.",
+          "explanation": "과도한 권한으로 기밀 데이터에 대한 액세스 범위를 확대하며, 근본 원인을 파악하기도 더 어려워집니다."
+        },
+        {
+          "id": "c",
+          "text": "입력 데이터와 로그를 삭제한 다음 새 버킷을 만듭니다.",
+          "explanation": "감사 및 장애 조사 증거를 잃게 되며 권한이나 연결 가능성 문제도 해결하지 못합니다."
+        },
+        {
+          "id": "d",
+          "text": "모든 개발자가 동일한 자격 증명을 공유하여 누구나 추론 작업을 실행할 수 있게 합니다.",
+          "explanation": "실행 주체를 추적할 수 없으며 최소 권한과 감사 요구 사항을 위반합니다."
+        },
+        {
+          "id": "b",
+          "text": "실행 역할, 대상 데이터, 필요한 작업, 관련 정책, 네트워크 연결 가능성을 각각 확인합니다.",
+          "explanation": "정답입니다. 최소 권한을 유지하면서 액세스 거부 문제가 어느 경계에서 발생하는지 조사할 수 있습니다."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model drift",
+    "Data drift",
+    "Data quality",
+    "Model quality",
+    "Ground truth",
+    "Model Monitor",
+    "Prediction capture",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "Encryption at rest",
+    "Encryption in transit",
+    "Audit log",
+    "Data lineage"
+  ]
+}

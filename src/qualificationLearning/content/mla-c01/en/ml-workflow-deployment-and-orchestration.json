@@ -1,0 +1,184 @@
+{
+  "id": "ml-workflow-deployment-and-orchestration",
+  "title": "ML Workflow Deployment and Orchestration",
+  "objective": "Design reproducible ML workflows by connecting inference methods, quality gates, approvals, deployment, and rollback.",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CD Flow"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Deployment and Recovery"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-batch-or-real-time-by-decision-timing",
+      "title": "Choose the Inference Method Based on Decision Timing",
+      "paragraphs": [
+        "Use real-time inference when a prediction is needed within a short time for each request. Batch inference is suitable when many items can be processed together and the results can be used in subsequent business operations. When choosing, check when the prediction is needed, request volume, acceptable latency, reruns, input size, and operating cost.",
+        "Before changing the inference method after deployment, verify the input contract and how outputs are received. Sending a large batch-oriented input to a real-time caller may not fit the user's wait time or the way failures are handled.",
+        "In the upper section of the diagram, the caller requests a prediction from the endpoint (Endpoint) and receives a response immediately. In the lower section, a batch transform job (Batch job) processes the input dataset (Input dataset) prepared in Amazon S3 and saves the prediction results (Output dataset) in Amazon S3. Subsequent operations, such as reviews, use the saved predictions later."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker AI real-time inference",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/realtime-endpoints.html"
+        },
+        {
+          "label": "SageMaker AI batch transform",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-decision-timing"
+    },
+    {
+      "id": "pipeline-gates-and-artifacts",
+      "title": "Pipelines have quality gates, not just an execution order",
+      "paragraphs": [
+        "ML pipelines execute data preparation, training, evaluation, registration, and deployment in sequence. However, they do not proceed merely because the preceding operation has finished; they proceed only when conditions such as data quality, evaluation metrics, security checks, and approvals have been satisfied.",
+        "Amazon SageMaker Pipelines provides ways to combine steps such as processing, training, evaluation, conditional branching, and quality checks. Explicitly specifying the artifacts passed between steps and the pass/fail conditions can reduce omissions in manual decision-making.",
+        "To reproduce the same processing with the same inputs and settings, manage the pipeline definition, dependencies, containers, parameters, and artifact locations. Do not leave the production procedure only as manual steps in a notebook."
+      ],
+      "sources": [
+        {
+          "label": "Adding steps in Amazon SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/build-and-manage-steps-types.html"
+        },
+        {
+          "label": "MLA-C01 Exam Guide PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "progressive-release-and-rollback",
+      "title": "Production deployment combines observation with rollback",
+      "paragraphs": [
+        "Even if a candidate model passes evaluation, it is not necessarily applied to all production traffic at once. It is rolled out gradually to a limited target audience, while prediction quality, latency, errors, and user impact are observed to decide whether to expand the rollout or stop it.",
+        "During rollback, verify the previously approved model, the input and output contracts, routing, and monitoring settings. Reverting only the model does not necessarily restore the previous quality if the preprocessing or feature contracts have changed.",
+        "A deployment is successful not when the endpoint has started, but when it can safely provide predictions under the defined conditions. Before rollout, determine the conditions for success, stopping, and rollback, as well as the responsible person, and make decisions based on actual observations."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker Model Registry models, model versions, and Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-001",
+      "prompt": "A bank’s ML engineer ranks 10 million transactions finalized each night by fraud risk by the following morning and passes them to the review team. Immediate responses for individual transactions are not required. If the finalized data can be processed in bulk, which inference method is most appropriate?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Process the finalized transaction dataset with batch inference, rank the transactions from highest to lowest predicted fraud risk, and provide them to the reviewers.",
+          "explanation": "The day’s transaction data is available at night, and the predictions are used the following morning. By grouping the files for inference and determining the review order from each transaction’s risk score, there is no need to receive a response from an endpoint every time a transaction occurs."
+        },
+        {
+          "id": "a",
+          "text": "Send each transaction to a real-time endpoint as it occurs and wait for responses until every morning.",
+          "explanation": "Because immediate per-request decisions are not required, this is inefficient for the requirement to process a large volume of data together and use it by the following morning."
+        },
+        {
+          "id": "c",
+          "text": "Do not use the model; pass the previous day’s rankings directly to the review team the following morning.",
+          "explanation": "This does not meet the goal of evaluating the finalized transactions from that day, and the prediction results will be outdated."
+        },
+        {
+          "id": "d",
+          "text": "Skip input validation and mix transactions with different formats into the same batch.",
+          "explanation": "Failing to verify the input contract and data quality can cause inference failures or incorrect rankings."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-002",
+      "prompt": "Factory ML engineers automate the process from retraining an anomaly-detection model through registering it for production. To prevent a model whose evaluation metrics fall below the threshold from being mistakenly advanced as a production candidate, which pipeline design is most appropriate?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Pass the evaluation step's output to a conditional branch, and advance only models that meet the threshold to registration, approval, and deployment.",
+          "explanation": "Correct. Treating the evaluation results as a quality gate prevents failing candidates from proceeding to subsequent stages."
+        },
+        {
+          "id": "a",
+          "text": "When the training job finishes, deploy the latest model without reviewing the evaluation results.",
+          "explanation": "Completion of training does not indicate that the model meets the acceptance criteria."
+        },
+        {
+          "id": "c",
+          "text": "Manually change the evaluation metrics every time so that every model passes.",
+          "explanation": "Arbitrarily changing the quality threshold sacrifices the pipeline's acceptance criteria and accountability."
+        },
+        {
+          "id": "d",
+          "text": "Check data quality only when a problem occurs in production.",
+          "explanation": "Data quality must be checked before and during training and evaluation, not only after deployment."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-003",
+      "prompt": "An insurance company's ML engineer is phasing in a new claims assessment model for a portion of cases. After the rollout, the error rate increased, and it was discovered that the preprocessing version had also changed at the same time. Which rollback action is most appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Roll back only the model to its previous version without checking the preprocessing or input contract.",
+          "explanation": "If the preprocessing has changed, even the old model may not receive the input it expects, so quality may not recover."
+        },
+        {
+          "id": "b",
+          "text": "Ignore the error rate and roll out to more cases to stabilize the average.",
+          "explanation": "This expands the impact of the problem and conflicts with the purpose of a phased rollout: safe observation and the ability to stop."
+        },
+        {
+          "id": "c",
+          "text": "Roll back the previously approved model together with the corresponding preprocessing, input contract, routing, and monitoring settings, and investigate the cause.",
+          "explanation": "Correct. Roll back the model together with its surrounding configuration and preserve the evidence needed to prevent the same incident from recurring."
+        },
+        {
+          "id": "d",
+          "text": "Delete the new model's logs and retain only the old model.",
+          "explanation": "This loses the new model's execution records needed for the investigation and prevents you from establishing a basis for improvement and redeployment."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Quality gate",
+    "Deployment pipeline",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact"
+  ]
+}

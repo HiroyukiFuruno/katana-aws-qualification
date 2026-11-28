@@ -1,0 +1,179 @@
+{
+  "id": "ml-model-development",
+  "title": "Sviluppo di modelli di ML",
+  "objective": "Spiegare le decisioni relative a modelli, tuning e gestione delle versioni collegando l’impatto degli errori aziendali alle metriche di valutazione.",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "Test e gate di qualità"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoraggio e miglioramento"
+    },
+    {
+      "slug": "cicd",
+      "title": "Flusso CI/CD"
+    },
+    {
+      "slug": "core-services",
+      "title": "Servizi AWS principali"
+    }
+  ],
+  "sections": [
+    {
+      "id": "metric-follows-decision-cost",
+      "title": "Scegliere le metriche di valutazione in base all’impatto degli errori",
+      "paragraphs": [
+        "Nella valutazione di un modello, non decidere se accettarlo basandosi solo su un singolo valore, come l’accuratezza. Verifica con gli utenti aziendali se avrebbe un impatto maggiore non rilevare un’anomalia oppure trattare un elemento normale come anomalo. Quando gli elementi di interesse sono rari, prevedere che tutti gli elementi siano normali può produrre un’accuratezza apparente elevata.",
+        "Nella classificazione, usa precisione, richiamo, soglie e una matrice di confusione per distinguere i tipi di errore. Nella regressione, considera l’entità degli errori e se il problema maggiore sia la sottostima o la sovrastima. Le metriche di valutazione non sostituiscono il giudizio operativo, ma forniscono prove a suo supporto.",
+        "Lettura della figura: osserva le quattro celle formate dall’intersezione tra le condizioni effettive a sinistra e i risultati previsti in alto. Decidi se ridurre False negative o False positive in base alle perdite aziendali e alla capacità di risposta, quindi confronta i risultati usando gli stessi dati di convalida dopo aver modificato la soglia."
+      ],
+      "sources": [
+        {
+          "label": "PDF della guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "threshold-decision-cost"
+    },
+    {
+      "id": "validation-tuning-and-overfitting",
+      "title": "Regolare con i dati di convalida e usare i dati di test solo alla fine",
+      "paragraphs": [
+        "La regolazione degli iperparametri e la selezione delle caratteristiche non possono essere decise utilizzando soltanto i dati di addestramento. Confronta i candidati usando i dati di convalida, definisci la selezione e quindi verifica le prestazioni finali previste con dati di test non utilizzati. Usare ripetutamente i dati di test per le regolazioni porta a sovrastimare le prestazioni su dati sconosciuti.",
+        "Se migliora soltanto la metrica di addestramento mentre la metrica di convalida peggiora, il modello potrebbe essersi adattato eccessivamente a caratteristiche casuali dei dati di addestramento. Non modificare contemporaneamente la quantità di dati, le caratteristiche, la complessità del modello, la regolarizzazione e il tempo di addestramento; confronta un’ipotesi alla volta.",
+        "Quando confronti i candidati del modello, registra le metriche, la versione del set di dati, il codice, la configurazione, la gestione della casualità e l’ambiente di esecuzione. Un buon risultato che non può essere riprodotto non può essere spiegato né convalidato come candidato per la produzione."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    },
+    {
+      "id": "model-registry-and-approval",
+      "title": "Identificare il modello da adottare tramite artefatti ed evidenze",
+      "paragraphs": [
+        "Ciò che viene portato in produzione non è il “file del modello più recente”, ma un artefatto che consente di identificare i dati, il codice, la configurazione e i risultati di valutazione utilizzati per creare il modello. In Amazon SageMaker Model Registry, ogni nuovo addestramento assegna una versione al pacchetto del modello e la associa a un Model Group.",
+        "La registrazione del modello collega le metriche di valutazione, l’ambito di utilizzo, le limitazioni note, il responsabile dell’approvazione, la versione dei dati di addestramento, il container e le dipendenze. In questo modo, quando si verifica un problema, è possibile determinare quale modello è stato utilizzato e dove, nonché a quale soluzione candidata è possibile tornare.",
+        "L’approvazione non viene eseguita automaticamente solo perché una metrica supera una singola soglia. La persona responsabile dell’uso previsto verifica la sicurezza, i bias, le condizioni di utilizzo e la possibilità di monitorare il modello durante l’operatività, quindi lo approva."
+      ],
+      "sources": [
+        {
+          "label": "Modelli, versioni dei modelli e Model Group in SageMaker Model Registry",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        },
+        {
+          "label": "Guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-model-001",
+      "prompt": "Un ingegnere ML di una società che gestisce aeroporti sta valutando un modello di classificazione per rilevare l’introduzione di materiali pericolosi, come candidato per l’ambiente di produzione. Le mancate rilevazioni permettono ai materiali pericolosi di passare, mentre i falsi positivi provocano controlli aggiuntivi. Se, per motivi di sicurezza, l’impatto delle mancate rilevazioni è maggiore, quale decisione bisogna prendere per prima?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Prevedere che tutti gli elementi siano normali per aumentare l’accuratezza apparente.",
+          "explanation": "Questo aumenterebbe i casi di False negative in cui i materiali pericolosi non vengono rilevati e violerebbe i requisiti di sicurezza."
+        },
+        {
+          "id": "c",
+          "text": "Non usare il modello di rilevamento per eliminare completamente i controlli aggiuntivi.",
+          "explanation": "Interrompere il rilevamento senza valutare il rischio per la sicurezza dovuto alle mancate rilevazioni non è una decisione appropriata."
+        },
+        {
+          "id": "d",
+          "text": "Riscrivere le etichette corrette dei dati di valutazione in modo che corrispondano alle previsioni.",
+          "explanation": "In questo modo si modifica il criterio di valutazione, non le prestazioni del modello, impedendo di misurare l’impatto degli errori."
+        },
+        {
+          "id": "b",
+          "text": "Verificare il numero e l’impatto di False negative e False positive, quindi valutare l’equilibrio tra una soglia che riduca le mancate rilevazioni e la capacità di controllo.",
+          "explanation": "Corretto. Collegare i due tipi di errore mostrati nel diagramma ai relativi impatti operativi e confrontare, sugli stessi dati, i risultati della modifica della soglia."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-model-002",
+      "prompt": "Un ingegnere ML di un’azienda immobiliare confronta diversi candidati di iperparametri. Il candidato A ha la metrica più alta sui dati di addestramento, ma sui dati di convalida la sua metrica è inferiore a quella del candidato B. Qual è la prossima azione più appropriata?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Registrare il candidato A in produzione basandosi solo sulla sua metrica di addestramento.",
+          "explanation": "Questo ignora l’overfitting sui dati di addestramento e non verifica le prestazioni su dati mai osservati."
+        },
+        {
+          "id": "b",
+          "text": "Usare i dati di test per apportare regolazioni ripetute finché l’ordine dei candidati non si inverte.",
+          "explanation": "Usare i dati di test per la regolazione fa perdere loro il ruolo di valutazione finale."
+        },
+        {
+          "id": "c",
+          "text": "Selezionare il candidato B usando i dati di convalida e, dopo la selezione, verificare le prestazioni finali con dati di test non utilizzati.",
+          "explanation": "Corretto. Eseguire la regolazione e la selezione usando i dati di convalida, quindi verificare le prestazioni di generalizzazione con dati di test indipendenti."
+        },
+        {
+          "id": "d",
+          "text": "Calcolare la media dei candidati A e B e omettere la valutazione.",
+          "explanation": "Il calcolo della media non mostra le cause degli errori né se il risultato soddisfa i requisiti operativi, quindi non fornisce una base per la selezione."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-model-003",
+      "prompt": "L’ingegnere ML di una società finanziaria registra un modello di rilevamento delle frodi riaddestrato come candidato per la produzione. In seguito deve analizzare la base di una previsione e, in caso di problemi, tornare a un candidato precedente. Qual è il record più importante da creare al momento della registrazione?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Sovrascrivere solo il nome del file del modello con la data più recente.",
+          "explanation": "Non è possibile risalire ai dati, al codice, alle impostazioni e ai risultati della valutazione utilizzati per creare il modello."
+        },
+        {
+          "id": "d",
+          "text": "Registrare la versione del modello collegandola ai dati, al codice, alle impostazioni, ai risultati della valutazione, ai vincoli e all’approvazione.",
+          "explanation": "Corretto. In questo modo è possibile risalire alla provenienza del modello e alla motivazione dell’approvazione, supportando l’analisi e il ripristino sicuro di una versione precedente in caso di problemi."
+        },
+        {
+          "id": "b",
+          "text": "Conservare solo le metriche di valutazione e non registrare le versioni dei dati di addestramento e del pre-processing.",
+          "explanation": "Le sole metriche non consentono di verificare le differenze negli input o nel pre-processing, la procedura di riproduzione né l’ambito dell’impatto."
+        },
+        {
+          "id": "c",
+          "text": "Conservare solo il nome dell’approvatore e non assegnare una versione al modello candidato.",
+          "explanation": "Anche se si conosce il responsabile dell’approvazione, non è possibile identificare quale artefatto sia stato approvato."
+        }
+      ],
+      "correct": ["d"]
+    }
+  ],
+  "glossaryTerms": [
+    "Classification",
+    "Regression",
+    "Precision",
+    "Recall",
+    "Accuracy",
+    "Threshold",
+    "Confusion matrix",
+    "False positive",
+    "False negative",
+    "Hyperparameter",
+    "Overfitting",
+    "Regularization",
+    "Model artifact",
+    "Model Registry",
+    "Model Group",
+    "Model package",
+    "Model evaluation",
+    "Model bias",
+    "Reproducibility"
+  ]
+}

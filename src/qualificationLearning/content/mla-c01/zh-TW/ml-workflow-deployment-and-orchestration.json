@@ -1,0 +1,184 @@
+{
+  "id": "ml-workflow-deployment-and-orchestration",
+  "title": "ML 工作流程的部署與編排",
+  "objective": "透過串聯推論方式、品質閘門、核准、部署與復原，設計可重現的 ML 工作流程。",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CD 流程"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署與復原"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "測試與品質閘門"
+    },
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-batch-or-real-time-by-decision-timing",
+      "title": "根據決策所需時間選擇推論方式",
+      "paragraphs": [
+        "當每個請求都需要在短時間內取得預測結果時，請使用即時推論。當可以將大量對象集中處理，並在後續業務中使用結果時，批次推論較為適合。選擇時，請確認需要預測的時間、請求量、可接受的延遲、重新執行、輸入大小和營運成本。",
+        "在部署後變更推論方式之前，請確認輸入契約以及接收輸出的方式。即使向即時呼叫端傳送用於批次處理的大量輸入，也可能不符合使用者的等待時間要求或失敗時的處理方式。",
+        "圖的上方顯示應用程式向端點（Endpoint）送出預測請求，隨即收到回應。圖的下方顯示批次轉換工作（Batch job）讀取 Amazon S3 中備妥的輸入資料集（Input dataset），並將預測結果（Output dataset）儲存到 Amazon S3，供後續審查等作業使用。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker AI 即時推論",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/realtime-endpoints.html"
+        },
+        {
+          "label": "SageMaker AI 批次轉換",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-decision-timing"
+    },
+    {
+      "id": "pipeline-gates-and-artifacts",
+      "title": "管線不只有處理順序，還要具備品質閘門",
+      "paragraphs": [
+        "在 ML 管線中，資料準備、訓練、評估、註冊和部署會依序執行。但是，不能只因前一項處理已完成就進入下一步；只有在符合資料品質、評估指標、安全性檢查和核准等條件時，才能繼續執行。",
+        "Amazon SageMaker Pipelines 提供組合處理、訓練、評估、條件分支和品質檢查等步驟的方法。明確指定步驟之間傳遞的成品，以及通過或不通過的條件，可以減少手動判斷時的遺漏。",
+        "為了在輸入和設定相同時重現相同的處理，請管理管線定義、相依性、容器、參數和成品位置。不要只將正式環境的操作流程保留為筆記本中的手動步驟。"
+      ],
+      "sources": [
+        {
+          "label": "在 Amazon SageMaker AI 中新增步驟",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/build-and-manage-steps-types.html"
+        },
+        {
+          "label": "MLA-C01 考試指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "progressive-release-and-rollback",
+      "title": "生產環境部署應與觀測和復原配套",
+      "paragraphs": [
+        "即使候選模型通過評估，也不一定會一次套用到所有生產流量。應先針對有限的目標範圍分階段部署，觀測預測品質、延遲、錯誤和對使用者的影響，再據此決定是否擴大部署或停止部署。",
+        "復原時，應確認先前核准的模型、輸入與輸出契約、路由以及監控設定。即使只復原模型，如果前處理或特徵契約已經變更，也不一定能恢復到先前的品質。",
+        "部署成功並不只是端點已啟動，而是能在既定條件下安全地提供預測。在部署前，應決定成功、停止和復原的條件以及負責人，並根據實際觀測值作出判斷。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker Model Registry 中的模型、模型版本和 Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-001",
+      "prompt": "某銀行的機器學習工程師需要在每天早上之前，依詐欺風險對每晚確定的1,000萬筆交易排序，並交給審查人員。不要求對每筆交易即時回應；如果可以批次處理已確定的資料，最適合的推論方式是哪一種？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "使用批次推論處理已確認的交易資料集，依預測的詐欺風險由高至低排列交易，並交給審查人員。",
+          "explanation": "當天的交易資料會在晚上備妥，而預測結果會在隔天早上使用。將檔案集中進行推論，並根據每筆交易的風險分數決定審查順序，就不需要在每筆交易發生時都從端點取得回應。"
+        },
+        {
+          "id": "a",
+          "text": "每筆交易發生時都將其傳送至即時端點，並持續等待回應直到每天早上。",
+          "explanation": "題目沒有要求對每個請求立即判斷，因此，對於需要集中處理大量資料並在隔天早上前使用的需求而言，這種方式效率不佳。"
+        },
+        {
+          "id": "c",
+          "text": "不使用模型，直接將前一天的排序結果交給隔天早上的審查人員。",
+          "explanation": "這無法達成評估當天已確定交易的目的，而且預測結果會過時。"
+        },
+        {
+          "id": "d",
+          "text": "省略輸入驗證，將格式不同的交易混入同一個批次。",
+          "explanation": "如果不驗證輸入契約和資料品質，可能導致推論失敗或排序錯誤。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-002",
+      "prompt": "工廠的 ML 工程師將異常偵測模型從重新訓練到註冊至正式環境的流程自動化。為避免將評估指標低於基準的模型誤推進為正式環境候選模型，最適合的管線設計是哪一項？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "將評估步驟的輸出傳遞給條件分支，只有符合基準的模型才能進入註冊、核准和部署階段。",
+          "explanation": "正確。將評估結果視為品質閘門，可以防止未通過的候選模型進入後續階段。"
+        },
+        {
+          "id": "a",
+          "text": "訓練工作完成後，不查看評估結果，直接部署最新模型。",
+          "explanation": "訓練完成並不表示模型符合驗收條件。"
+        },
+        {
+          "id": "c",
+          "text": "每次都手動修改評估指標，讓所有模型通過。",
+          "explanation": "任意更改品質基準會使管線失去驗收條件和責任可追溯性。"
+        },
+        {
+          "id": "d",
+          "text": "只有在正式環境發生問題時，才檢查資料品質。",
+          "explanation": "資料品質必須在訓練和評估的前置階段進行檢查，而不是只在部署後檢查。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-003",
+      "prompt": "保險公司的 ML 工程師正在針對部分案件分階段部署新的理賠評估模型。部署後，錯誤率上升，並發現前處理版本也同時變更了。最適當的回復措施是哪一項？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只將模型回復到先前的版本，不檢查前處理和輸入契約。",
+          "explanation": "如果前處理已變更，即使使用舊模型，也可能無法收到其預期的輸入，因此品質可能無法恢復。"
+        },
+        {
+          "id": "b",
+          "text": "忽略錯誤率，將部署擴大到更多案件，以穩定平均值。",
+          "explanation": "這會擴大問題的影響範圍，並違反分階段部署的目的，也就是安全地觀測並在必要時停止。"
+        },
+        {
+          "id": "c",
+          "text": "將先前核准的模型，以及相應的前處理、輸入契約、路由和監控設定作為一個整體回復，並調查原因。",
+          "explanation": "正確。將模型與周邊組態連結後一併回復，並保留防止相同故障再次發生所需的佐證。"
+        },
+        {
+          "id": "d",
+          "text": "刪除新模型的日誌，只保留舊模型。",
+          "explanation": "這會遺失調查所需的新模型執行記錄，也無法建立改進和重新部署的依據。"
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Quality gate",
+    "Deployment pipeline",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact"
+  ]
+}

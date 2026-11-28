@@ -1,0 +1,179 @@
+{
+  "id": "ml-model-development",
+  "title": "ML 모델 개발",
+  "objective": "업무상 오류의 영향을 평가 지표와 연관 지어 모델, 튜닝 및 버전 관리에 관한 결정을 설명할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "테스트 및 품질 게이트"
+    },
+    {
+      "slug": "observability",
+      "title": "모니터링 및 개선"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CD 흐름"
+    },
+    {
+      "slug": "core-services",
+      "title": "주요 AWS 서비스"
+    }
+  ],
+  "sections": [
+    {
+      "id": "metric-follows-decision-cost",
+      "title": "오류의 영향에 따라 평가 지표 선택하기",
+      "paragraphs": [
+        "모델 평가에서는 정확도라는 하나의 값만으로 채택 여부를 결정하지 않습니다. 이상을 놓치는 것과 정상 항목을 이상으로 처리하는 것 중 어느 쪽이 더 큰 영향을 미치는지 업무 담당자와 확인합니다. 탐지 대상이 적은 경우 모든 항목을 정상이라고 예측해도 겉보기 정확도가 높아질 수 있습니다.",
+        "분류에서는 정밀도, 재현율, 임계값, 혼동 행렬을 사용해 오류 유형을 구분하여 확인합니다. 회귀에서는 오류의 크기와 과소 예측과 과대 예측 중 어느 쪽이 문제인지 고려합니다. 평가 지표는 운영 중인 판단을 대체하는 것이 아니라 판단을 뒷받침하는 증거입니다.",
+        "그림 읽기: 왼쪽의 실제 상태와 위쪽의 예측 결과가 교차하는 네 개의 셀을 확인합니다. False negative와 False positive 중 어느 것을 줄일지는 업무 손실과 대응 능력에 따라 결정하고, 임계값을 변경한 후에도 동일한 검증 데이터로 비교합니다."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 시험 가이드 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "threshold-decision-cost"
+    },
+    {
+      "id": "validation-tuning-and-overfitting",
+      "title": "검증 데이터로 조정하고 테스트 데이터는 마지막에 사용하기",
+      "paragraphs": [
+        "하이퍼파라미터 조정이나 특성 선택은 학습 데이터만으로 결정할 수 없습니다. 검증 데이터로 후보를 비교해 선택을 확정한 후, 사용하지 않은 테스트 데이터로 최종적인 예상 성능을 확인합니다. 테스트 데이터를 조정에 반복해서 사용하면 미지의 데이터에서의 성능을 과대평가하게 됩니다.",
+        "학습 지표만 개선되고 검증 지표가 악화된다면, 모델이 학습 데이터의 우연한 특성에 과도하게 적합되었을 가능성이 있습니다. 데이터 양, 특성, 모델 복잡도, 정규화, 학습 시간을 한꺼번에 변경하지 말고, 가설별로 비교해야 합니다.",
+        "모델 후보를 비교할 때는 지표, 데이터 세트 버전, 코드, 설정, 난수 처리 방식, 실행 환경을 기록합니다. 재현할 수 없는 좋은 결과는 프로덕션 후보로 설명하거나 검증할 수 없습니다."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 시험 가이드",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    },
+    {
+      "id": "model-registry-and-approval",
+      "title": "아티팩트와 증거를 통해 채택할 모델 식별하기",
+      "paragraphs": [
+        "프로덕션에 배포할 대상은 ‘최신 모델 파일’이 아니라, 모델이 어떤 데이터, 코드, 구성 및 평가 결과로 만들어졌는지 식별할 수 있는 아티팩트입니다. Amazon SageMaker Model Registry에서는 재학습할 때마다 모델 패키지에 버전을 부여하고 Model Group에 연결합니다.",
+        "모델 등록에는 평가 지표, 사용 범위, 알려진 제한 사항, 승인자, 학습 데이터 버전, 컨테이너 및 종속 항목을 연결합니다. 이를 통해 문제가 발생했을 때 어떤 모델이 어디에서 사용되었는지, 어떤 후보 모델로 되돌릴 수 있는지 판단할 수 있습니다.",
+        "지표 하나가 단일 임계값을 초과했다는 이유만으로 승인이 자동으로 이루어지지는 않습니다. 해당 용도의 책임자는 안전성, 편향, 사용 조건 및 운영 환경에서 모니터링할 수 있는지를 확인한 후 승인합니다."
+      ],
+      "sources": [
+        {
+          "label": "SageMaker Model Registry의 모델, 모델 버전 및 Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        },
+        {
+          "label": "MLA-C01 시험 가이드",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-model-001",
+      "prompt": "공항 운영 회사의 ML 엔지니어가 위험물 반입을 탐지하는 분류 모델을 프로덕션 후보로 평가하고 있습니다. 미탐지는 위험물이 통과하도록 만들고, 오탐지는 추가 검사를 발생시킵니다. 안전 측면에서 미탐지의 영향이 더 큰 경우, 가장 먼저 내려야 할 판단은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "겉보기 정확도를 높이기 위해 모든 항목을 정상으로 예측한다.",
+          "explanation": "이렇게 하면 위험물을 놓치는 False negative가 증가하여 안전 요구 사항을 위반하게 됩니다."
+        },
+        {
+          "id": "c",
+          "text": "추가 검사를 완전히 없애기 위해 탐지 모델을 사용하지 않는다.",
+          "explanation": "안전 측면의 미탐지 위험을 평가하지 않고 탐지를 중단하는 것은 적절한 판단이 아닙니다."
+        },
+        {
+          "id": "d",
+          "text": "평가 데이터의 정답 레이블을 예측 결과에 맞게 다시 작성한다.",
+          "explanation": "이는 모델 성능이 아니라 평가 기준을 변경하는 것이므로 오류의 영향을 측정할 수 없습니다."
+        },
+        {
+          "id": "b",
+          "text": "False negative와 False positive의 건수 및 영향을 확인한 다음, 미탐지를 줄이는 임계값과 검사 역량 사이의 균형을 평가합니다.",
+          "explanation": "정답입니다. 그림에 나온 두 가지 오류를 업무 영향과 연결하고, 동일한 데이터에서 임계값을 변경한 결과를 비교합니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-model-002",
+      "prompt": "부동산 회사의 ML 엔지니어가 여러 하이퍼파라미터 후보를 비교하고 있습니다. 후보 A는 학습 데이터에서 가장 높은 지표를 보이지만, 검증 데이터에서는 후보 B보다 지표가 낮습니다. 다음으로 취할 가장 적절한 조치는 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "학습 지표만을 기준으로 후보 A를 프로덕션에 등록합니다.",
+          "explanation": "이렇게 하면 학습 데이터에 대한 과적합을 간과하게 되며, 보지 못한 데이터에서의 성능을 확인할 수 없습니다."
+        },
+        {
+          "id": "b",
+          "text": "후보의 순위가 역전될 때까지 테스트 데이터를 사용해 반복적으로 조정합니다.",
+          "explanation": "테스트 데이터를 조정에 사용하면 최종 평가 데이터로서의 역할을 잃게 됩니다."
+        },
+        {
+          "id": "c",
+          "text": "검증 데이터로 후보 B를 선택한 다음, 선택 후 한 번도 사용하지 않은 테스트 데이터로 최종 성능을 확인합니다.",
+          "explanation": "정답입니다. 검증 데이터로 조정하고 선택한 후, 독립적인 테스트 데이터로 일반화 성능을 확인합니다."
+        },
+        {
+          "id": "d",
+          "text": "후보 A와 B의 평균을 구하고 평가를 생략합니다.",
+          "explanation": "평균을 내는 것만으로는 오류의 원인이나 운영 요구 사항 충족 여부를 알 수 없으므로, 선택의 근거가 되지 않습니다."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-model-003",
+      "prompt": "금융 회사의 ML 엔지니어가 재학습한 사기 탐지 모델을 프로덕션 후보로 등록합니다. 나중에 특정 예측의 근거를 조사하고 문제가 있으면 이전 후보로 되돌려야 합니다. 등록할 때 가장 중요한 기록은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "모델 파일 이름만 최신 날짜로 덮어씁니다.",
+          "explanation": "어떤 데이터, 코드, 설정 및 평가 결과로 모델이 만들어졌는지 추적할 수 없습니다."
+        },
+        {
+          "id": "d",
+          "text": "모델 버전을 데이터, 코드, 설정, 평가 결과, 제약 조건 및 승인 정보와 연결하여 등록합니다.",
+          "explanation": "정답입니다. 모델의 출처와 승인 근거를 추적할 수 있으므로 문제가 발생했을 때 조사하고 안전하게 되돌리는 데 사용할 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "평가 지표만 남기고 학습 데이터와 전처리 버전은 기록하지 않습니다.",
+          "explanation": "지표만으로는 입력 또는 전처리의 차이, 재현 절차, 영향 범위를 확인할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "승인자의 이름만 남기고 후보 모델에 버전을 부여하지 않습니다.",
+          "explanation": "승인 책임자는 알 수 있지만 어떤 산출물을 승인했는지는 확인할 수 없습니다."
+        }
+      ],
+      "correct": ["d"]
+    }
+  ],
+  "glossaryTerms": [
+    "Classification",
+    "Regression",
+    "Precision",
+    "Recall",
+    "Accuracy",
+    "Threshold",
+    "Confusion matrix",
+    "False positive",
+    "False negative",
+    "Hyperparameter",
+    "Overfitting",
+    "Regularization",
+    "Model artifact",
+    "Model Registry",
+    "Model Group",
+    "Model package",
+    "Model evaluation",
+    "Model bias",
+    "Reproducibility"
+  ]
+}

@@ -72,9 +72,9 @@ test('new fundamentals answers use separate revisions from the archived grading 
   expect((await resolve(after.id, after.revision))?.question.correct).toEqual(['A', 'B']);
 });
 
-test('all 18 prior grading catalogs can resolve their saved question identities', async () => {
+test('all 19 prior grading catalogs can resolve their saved question identities', async () => {
   const resolve = createQuestionResolver(fetchAsset);
-  expect(legacy.assets).toHaveLength(18);
+  expect(legacy.assets).toHaveLength(19);
   for (const asset of legacy.assets) {
     for (const question of [...asset.checkpoints, ...asset.finalQuestions]) {
       const resolved = await resolve(question.id, question.revision);

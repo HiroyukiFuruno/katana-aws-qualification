@@ -16,6 +16,11 @@ test('the immutable grading migrations and their retained lesson records agree',
       '202611210001_fundamentals_catalog_revision.sql',
       'ced5b3c019767a1a1fe0e1bf22fb408337a2427c156f58ae141d63beb83145cf',
     ],
+    [
+      '202611280002_fundamentals_catalog_rebuild.sql',
+      'b06bb8bd5ebf4ac9c39975d5d20298280b1f079ac4b0f532a3b0c6161e83f14d',
+      'fundamentals.routing-connectivity',
+    ],
   ];
   const readQuestion = (question: TrustedQuestion) => ({
     category: question.category,
@@ -28,13 +33,14 @@ test('the immutable grading migrations and their retained lesson records agree',
     version: question.sourceVersion,
   });
   let matched = 0;
-  for (const [name, digest] of published) {
+  for (const [name, digest, retainedUnit] of published) {
     const sql = await readFile(`supabase/migrations/${name}`, 'utf8');
     expect(createHash('sha256').update(sql).digest('hex')).toBe(digest);
     const rows = sql.matchAll(
       /^ {2}\('([^']+)', '([a-f0-9]{64})', decode\('([a-f0-9]{64})', 'hex'\),\n {4}\$kaq_plan_\d+_\d+\$(.*?)\$kaq_plan_\d+_\d+\$::jsonb,\n {4}\$kaq_final_\d+_\d+\$(.*?)\$kaq_final_\d+_\d+\$::jsonb\)/gms,
     );
     for (const [, unitId, version, hash, plan, final] of rows) {
+      if (retainedUnit && unitId !== retainedUnit) continue;
       const record = legacy.assets.find(
         (asset) => asset.unit.id === unitId && asset.contentVersion === version,
       );
@@ -54,7 +60,7 @@ test('the immutable grading migrations and their retained lesson records agree',
       matched++;
     }
   }
-  expect(matched).toBe(18);
+  expect(matched).toBe(19);
   expect(legacy.assets).toHaveLength(matched);
 });
 

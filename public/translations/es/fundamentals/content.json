@@ -5162,62 +5162,62 @@
         },
         {
           "id": "internet-egress",
-          "title": "La ruta de entrada desde Internet y la ruta de salida",
+          "title": "Tres arquitecturas para comunicarse con Internet mediante IPv4",
           "paragraphs": [
-            "Una puerta de enlace de Internet (IGW) se conecta a una VPC y actúa como destino del tráfico dirigido a Internet en la tabla de enrutamiento. Para que una EC2 sea accesible desde el exterior mediante IPv4, se necesitan una ruta hacia la IGW, una dirección IPv4 pública o Elastic IP y los permisos necesarios.",
-            "Una EC2 de una subred privada puede iniciar comunicaciones, como obtener archivos de actualización, mediante una puerta de enlace NAT pública. El diagrama muestra una arquitectura por zona de disponibilidad. La ruta predeterminada de la subred privada apunta a la puerta de enlace NAT y la ruta predeterminada de la subred pública que contiene el NAT apunta a la IGW.",
-            "Una puerta de enlace NAT no es un dispositivo para aceptar nuevas conexiones SSH desde el exterior hacia una EC2 privada. No determine que existe una incidencia únicamente porque no se pueda hacer ping a la IP de la puerta de enlace NAT; compruebe su estado disponible, las dos rutas y los permisos de origen y destino."
+            "El diagrama compara primero qué lado abre la conexión y dónde se necesita una IPv4 pública. En una arquitectura que se conecta directamente a EC2 desde el exterior, se necesitan una IPv4 pública, una ruta desde la subred hasta la puerta de enlace de Internet (IGW) y permiso para los puertos necesarios.",
+            "En la arquitectura en la que EC2, ubicado en una subred privada, obtiene archivos de actualización, EC2 inicia la comunicación. La ruta de la subred privada apunta a una puerta de enlace NAT pública, y la ruta de la subred donde se encuentra el NAT apunta a la IGW. Asigne una Elastic IP al NAT público.",
+            "En una arquitectura que ofrece un servicio sin exponer EC2, los usuarios se conectan a un ALB orientado a Internet. El ALB termina esa conexión y abre otra conexión dentro de la VPC hacia EC2 en la subred privada. EC2 no necesita una IPv4 pública."
           ],
           "example": {
-            "scenario": "En una arquitectura que utiliza una puerta de enlace NAT pública por zona de disponibilidad, una EC2 de una subred privada no puede conectarse al destino de las actualizaciones del sistema operativo.",
+            "scenario": "En una arquitectura que utiliza una puerta de enlace NAT pública por zona, EC2 en una subred privada no puede conectarse al destino de las actualizaciones del sistema operativo.",
             "steps": [
-              "Compruebe si 0.0.0.0/0 de la subred privada tiene como destino la puerta de enlace NAT.",
-              "Compruebe que la puerta de enlace NAT esté en una subred pública y que 0.0.0.0/0 de esa subred tenga como destino la IGW.",
-              "Compruebe las reglas de salida de la EC2 y las condiciones externas o NACL que puedan bloquear el tráfico de retorno."
+              "Confirme que 0.0.0.0/0 de la subred privada tiene como destino la puerta de enlace NAT.",
+              "Confirme que la puerta de enlace NAT está en una subred pública y que 0.0.0.0/0 de esa subred tiene como destino la IGW.",
+              "Compruebe las reglas de salida de EC2, así como las NACL o las condiciones del lado externo que puedan bloquear el tráfico de retorno."
             ],
-            "outcome": "Puede comprobar conjuntamente el origen, la ruta y la accesibilidad externa, sin detenerse después de crear el NAT."
+            "outcome": "En lugar de detenerse después de crear el NAT, puede comprobar conjuntamente el origen de la comunicación, la ruta y la accesibilidad externa."
           },
           "misconception": {
-            "claim": "Crear una puerta de enlace NAT en una subred privada permite conectarse por SSH desde el exterior a las EC2 de esa subred.",
-            "correction": "NAT es una salida para el tráfico iniciado desde el lado privado. No está destinado a retransmitir nuevas conexiones entrantes desde el exterior hacia EC2 privadas."
+            "claim": "Si crea una puerta de enlace NAT en una subred privada, podrá conectarse mediante SSH a EC2 en esa subred desde el exterior.",
+            "correction": "NAT es una salida para las comunicaciones iniciadas desde el lado privado. No está destinado a retransmitir conexiones entrantes nuevas desde el exterior hacia un EC2 privado."
           },
           "takeaways": [
             "NAT es una salida para el tráfico iniciado desde el lado privado.",
-            "Compruebe las dos rutas: subred privada → NAT → IGW."
+            "Compruebe estas dos rutas: subred privada → NAT → IGW."
           ],
           "source": {
-            "label": "Ejemplos de opciones de enrutamiento",
-            "url": "https://docs.aws.amazon.com/vpc/latest/userguide/route-table-options.html"
+            "label": "Comprobar el enrutamiento de VPC con un ejemplo",
+            "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-table-options.html"
           }
         },
         {
           "id": "traffic-controls",
-          "title": "La diferencia entre los grupos de seguridad y las ACL de red",
+          "title": "Diferencias entre los grupos de seguridad y las ACL de red",
           "paragraphs": [
-            "Un grupo de seguridad (SG) es un firewall asociado a interfaces de red y recursos similares. Como tiene estado, las respuestas al tráfico permitido pasan sin añadir una regla de permiso en la dirección inversa. Para el tráfico iniciado de nuevo, permita únicamente los pares y puertos necesarios.",
-            "Una ACL de red (NACL) se aplica a una subred. No tiene estado y evalúa por separado el tráfico entrante y saliente. Aunque se permita una solicitud, la respuesta no vuelve si no se permite el puerto efímero utilizado para ella.",
-            "Las rutas, las NACL y los grupos de seguridad no se sustituyen entre sí. Las rutas se ocupan de los destinos, las NACL de los límites de las subredes y los grupos de seguridad de los límites de las interfaces de red."
+            "El diagrama compara los límites y puertos por los que pasan las solicitudes y las respuestas, usando como ejemplo una conexión HTTPS de un ALB a EC2. Un grupo de seguridad (SG) se aplica a una interfaz de red y permite las respuestas de las conexiones autorizadas.",
+            "Una ACL de red (NACL) se aplica a una subred. No registra el estado de la comunicación y evalúa por separado el tráfico entrante y saliente. En el diagrama, la solicitud va desde el lado del ALB hacia TCP 443, y la respuesta vuelve a TCP 49152, que el ALB utilizó como puerto de origen.",
+            "Las rutas determinan adónde se envía el tráfico. Permita el tráfico en ambas direcciones con la NACL y restrinja en el SG el par y el puerto de las conexiones iniciadas. Si no se puede establecer la conexión, compruebe qué reglas se aplican en cada dirección."
           ],
           "example": {
-            "scenario": "Una solicitud HTTPS llega desde un ALB a una EC2 web, pero la respuesta no vuelve.",
+            "scenario": "La solicitud HTTPS del ALB llega a la instancia Web EC2, pero la respuesta no regresa.",
             "steps": [
-              "Compruebe las dos direcciones de la solicitud y del tráfico de retorno en las NACL de la subred del ALB y de la subred de la EC2.",
-              "En el grupo de seguridad de la EC2, permita TCP 443 desde el grupo de seguridad del ALB.",
-              "Compruebe las rutas de origen y destino y si el servicio está escuchando."
+              "Compruebe ambas direcciones —la solicitud y el tráfico de retorno— en las NACL de la subred del ALB y de la subred de EC2.",
+              "En el grupo de seguridad de EC2, permita TCP 443 desde el grupo de seguridad del ALB.",
+              "Compruebe las rutas del origen y el destino, así como el listener del servicio."
             ],
-            "outcome": "Puede explicar por qué no se puede omitir la regla saliente de una NACL aunque el grupo de seguridad tenga estado."
+            "outcome": "Explique por qué no se puede omitir la regla saliente de la NACL aunque el grupo de seguridad tenga estado."
           },
           "misconception": {
-            "claim": "Si un grupo de seguridad tiene estado, la NACL de la misma ruta permite automáticamente el tráfico de retorno.",
-            "correction": "Una NACL es un filtro sin estado independiente del grupo de seguridad. Las NACL requieren reglas en ambas direcciones."
+            "claim": "Si el grupo de seguridad tiene estado, la NACL de la misma ruta también permite automáticamente el tráfico de retorno.",
+            "correction": "Una NACL es un filtro sin estado independiente del grupo de seguridad. Se necesitan reglas de la NACL en ambas direcciones."
           },
           "takeaways": [
-            "Los SG tienen estado en el límite de la interfaz de red.",
-            "Las NACL no tienen estado en el límite de la subred."
+            "Un SG tiene estado en el límite de la interfaz de red.",
+            "Una NACL no tiene estado en el límite de la subred."
           ],
           "source": {
-            "label": "ACL de red",
-            "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+            "label": "Controlar el tráfico de las subredes con ACL de red",
+            "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
           }
         },
         {

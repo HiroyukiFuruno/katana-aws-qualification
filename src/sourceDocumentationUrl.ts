@@ -4,6 +4,7 @@ import aliases from './source-url-aliases.json' with { type: 'json' };
 
 const sourceUrlAliases: Readonly<Record<string, string>> = aliases;
 const japaneseSources: Readonly<Record<string, { label: string; url: string }>> = japanese;
+const verifiedJapaneseUrls = new Set(Object.values(japaneseSources).map(({ url }) => url));
 
 export function sourceDocumentationUrl(url: string): string {
   return Object.hasOwn(sourceUrlAliases, url) ? sourceUrlAliases[url] : url;
@@ -12,6 +13,9 @@ export function sourceDocumentationUrl(url: string): string {
 export function localizedDocumentationSource(source: { label: string; url: string }, locale: Locale) {
   if (locale === 'ja' && Object.hasOwn(japaneseSources, source.url)) {
     return { ...japaneseSources[source.url], locale: 'ja' as const };
+  }
+  if (locale === 'ja' && verifiedJapaneseUrls.has(source.url)) {
+    return { ...source, locale: 'ja' as const };
   }
   return { label: source.label, url: sourceDocumentationUrl(source.url), locale: undefined };
 }

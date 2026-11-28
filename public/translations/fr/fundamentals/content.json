@@ -5162,62 +5162,62 @@
         },
         {
           "id": "internet-egress",
-          "title": "Le chemin entrant depuis Internet et le chemin sortant",
+          "title": "Trois architectures pour communiquer avec Internet en IPv4",
           "paragraphs": [
-            "Une passerelle Internet (IGW) est attachée à un VPC et sert de cible au trafic à destination d’Internet dans la table de routage. Pour rendre une instance EC2 accessible depuis l’extérieur en IPv4, il faut une route vers l’IGW, une adresse IPv4 publique ou une Elastic IP, ainsi que les autorisations nécessaires.",
-            "Une instance EC2 dans un sous-réseau privé peut initier des communications, comme la récupération de fichiers de mise à jour, via une passerelle NAT publique. Le schéma montre une architecture par zone de disponibilité. La route par défaut du sous-réseau privé pointe vers la passerelle NAT, et la route par défaut du sous-réseau public qui contient le NAT pointe vers l’IGW.",
-            "Une passerelle NAT n’est pas un dispositif destiné à accepter de nouvelles connexions SSH venant de l’extérieur vers une EC2 privée. Ne concluez pas à une panne uniquement parce que l’adresse IP de la passerelle NAT ne répond pas au ping ; vérifiez son état disponible, les deux routes et les autorisations de la source et de la destination."
+            "Le schéma compare d’abord le côté qui ouvre la connexion et les endroits où une adresse IPv4 publique est nécessaire. Dans une architecture qui se connecte directement à EC2 depuis l’extérieur, prévoyez une adresse IPv4 publique, une route du sous-réseau vers la passerelle Internet (IGW) et l’autorisation des ports nécessaires.",
+            "Dans l’architecture où EC2, placé dans un sous-réseau privé, récupère des fichiers de mise à jour, EC2 initie la communication. La route du sous-réseau privé pointe vers une passerelle NAT publique, et la route du sous-réseau qui héberge le NAT pointe vers l’IGW. Attribuez une Elastic IP au NAT public.",
+            "Dans l’architecture qui fournit un service sans exposer EC2, les utilisateurs se connectent à un ALB accessible depuis Internet. L’ALB termine cette connexion et en ouvre une autre, au sein du VPC, vers EC2 dans le sous-réseau privé. EC2 n’a pas besoin d’une adresse IPv4 publique."
           ],
           "example": {
-            "scenario": "Dans une architecture utilisant une passerelle NAT publique par zone de disponibilité, une EC2 d’un sous-réseau privé ne peut pas se connecter à la destination des mises à jour du système d’exploitation.",
+            "scenario": "Dans une architecture utilisant une passerelle NAT publique par zone, EC2, situé dans un sous-réseau privé, ne peut pas se connecter à la destination des mises à jour du système d’exploitation.",
             "steps": [
               "Vérifiez que 0.0.0.0/0 du sous-réseau privé cible la passerelle NAT.",
-              "Vérifiez que la passerelle NAT se trouve dans un sous-réseau public et que le 0.0.0.0/0 de ce sous-réseau cible l’IGW.",
-              "Vérifiez les règles de sortie de l’EC2 ainsi que les conditions externes ou les NACL susceptibles de bloquer le trafic de retour."
+              "Vérifiez que la passerelle NAT se trouve dans un sous-réseau public et que 0.0.0.0/0 de ce sous-réseau cible l’IGW.",
+              "Vérifiez les règles de sortie d’EC2 ainsi que les NACL ou les conditions du côté externe susceptibles de bloquer le trafic de retour."
             ],
-            "outcome": "Vous pouvez vérifier ensemble l’initiateur, le chemin et l’accessibilité externe, au lieu de vous arrêter après avoir créé le NAT."
+            "outcome": "Au lieu de vous arrêter après avoir créé le NAT, vous pouvez vérifier ensemble l’origine de la communication, le chemin et l’accessibilité externe."
           },
           "misconception": {
-            "claim": "Créer une passerelle NAT dans un sous-réseau privé permet d’établir une connexion SSH depuis l’extérieur vers les EC2 de ce sous-réseau.",
-            "correction": "Le NAT est une sortie pour les communications initiées depuis le côté privé. Il ne sert pas à relayer de nouvelles connexions entrantes de l’extérieur vers des EC2 privées."
+            "claim": "Si vous créez une passerelle NAT dans un sous-réseau privé, vous pouvez vous connecter en SSH à EC2 dans ce sous-réseau depuis l’extérieur.",
+            "correction": "Le NAT est une sortie pour les communications initiées depuis le côté privé. Il n’est pas destiné à relayer de nouvelles connexions entrantes depuis l’extérieur vers un EC2 privé."
           },
           "takeaways": [
-            "Le NAT est une sortie pour les communications initiées depuis le côté privé.",
-            "Vérifiez les deux routes : sous-réseau privé → NAT → IGW."
+            "Le NAT est une sortie pour le trafic initié depuis le côté privé.",
+            "Vérifiez ces deux routes : sous-réseau privé → NAT → IGW."
           ],
           "source": {
-            "label": "Exemples d’options de routage",
-            "url": "https://docs.aws.amazon.com/vpc/latest/userguide/route-table-options.html"
+            "label": "Vérifier le routage VPC à l’aide d’un exemple",
+            "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-table-options.html"
           }
         },
         {
           "id": "traffic-controls",
-          "title": "La différence entre les groupes de sécurité et les ACL réseau",
+          "title": "Différences entre les groupes de sécurité et les ACL réseau",
           "paragraphs": [
-            "Un groupe de sécurité (SG) est un pare-feu associé aux interfaces réseau et à d’autres ressources similaires. Comme il est à état, les réponses au trafic autorisé passent sans qu’il soit nécessaire d’ajouter une règle d’autorisation dans la direction inverse. Pour les nouvelles communications, autorisez uniquement les pairs et les ports nécessaires.",
-            "Une ACL réseau (NACL) s’applique à un sous-réseau. Elle est sans état et évalue séparément le trafic entrant et sortant. Même si une requête est autorisée, la réponse ne revient pas si le port éphémère utilisé pour la réponse n’est pas autorisé.",
-            "Les routes, les NACL et les groupes de sécurité ne se remplacent pas mutuellement. Les routes gèrent les destinations, les NACL les limites des sous-réseaux et les groupes de sécurité les limites des interfaces réseau."
+            "Le schéma compare les frontières et les ports par lesquels passent les requêtes et les réponses, en prenant comme exemple une connexion HTTPS d’un ALB vers EC2. Un groupe de sécurité (SG) s’applique à une interface réseau et laisse passer les réponses des connexions autorisées.",
+            "Une ACL réseau (NACL) s’applique à un sous-réseau. Elle ne mémorise pas l’état des communications et évalue séparément le trafic entrant et sortant. Dans le schéma, la requête va du côté de l’ALB vers TCP 443, et la réponse revient vers TCP 49152, que l’ALB a utilisé comme port source.",
+            "Les routes déterminent la destination du trafic. Autorisez les communications dans les deux sens avec la NACL, tout en limitant dans le SG le pair et le port des connexions nouvellement initiées. Si la connexion échoue, vérifiez quelles règles s’appliquent dans chaque sens."
           ],
           "example": {
-            "scenario": "Une requête HTTPS provenant d’un ALB atteint une EC2 Web, mais la réponse ne revient pas.",
+            "scenario": "La requête HTTPS de l’ALB atteint l’instance Web EC2, mais la réponse ne revient pas.",
             "steps": [
-              "Dans les NACL du sous-réseau de l’ALB et du sous-réseau de l’EC2, vérifiez les deux directions de la requête et du trafic de retour.",
-              "Dans le groupe de sécurité de l’EC2, autorisez TCP 443 depuis le groupe de sécurité de l’ALB.",
-              "Vérifiez les routes de la source et de la destination, ainsi que l’écoute du service."
+              "Vérifiez les deux sens — la requête et le trafic de retour — dans les NACL du sous-réseau de l’ALB et du sous-réseau EC2.",
+              "Dans le groupe de sécurité EC2, autorisez TCP 443 depuis le groupe de sécurité de l’ALB.",
+              "Vérifiez les routes de la source et de la destination, ainsi que le listener du service."
             ],
-            "outcome": "Vous pouvez expliquer pourquoi la règle sortante d’une NACL ne peut pas être omise même lorsqu’un groupe de sécurité est à état."
+            "outcome": "Expliquez pourquoi la règle sortante de la NACL ne peut pas être omise même lorsque le groupe de sécurité est stateful."
           },
           "misconception": {
-            "claim": "Si un groupe de sécurité est à état, la NACL du même chemin autorise automatiquement le trafic de retour.",
-            "correction": "Une NACL est un filtre sans état indépendant du groupe de sécurité. Les NACL nécessitent des règles dans les deux directions."
+            "claim": "Si le groupe de sécurité est stateful, la NACL du même chemin autorise également automatiquement le trafic de retour.",
+            "correction": "Une NACL est un filtre stateless indépendant du groupe de sécurité. Des règles NACL sont nécessaires dans les deux sens."
           },
           "takeaways": [
-            "Les SG sont à état à la limite de l’interface réseau.",
-            "Les NACL sont sans état à la limite du sous-réseau."
+            "Un SG est stateful à la frontière de l’interface réseau.",
+            "Une NACL est stateless à la frontière du sous-réseau."
           ],
           "source": {
-            "label": "ACL réseau",
-            "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+            "label": "Contrôler le trafic des sous-réseaux avec des ACL réseau",
+            "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
           }
         },
         {

@@ -19,6 +19,14 @@ const courses = [
     answer: /教師あり学習/,
     choiceCount: 3,
   },
+  {
+    courseId: 'ans-c01',
+    firstTitle: 'グローバルな入口、DNS、負荷分散を設計する',
+    nextUnit: 'hybrid-and-multivpc',
+    prompt: /障害リージョンから別リージョンへ/,
+    answer: /DNSフェイルオーバーは新しい名前解決で返す宛先を変える/,
+    choiceCount: 4,
+  },
 ];
 const figure = '.qualification-figure';
 

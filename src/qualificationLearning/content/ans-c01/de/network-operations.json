@@ -1,0 +1,175 @@
+{
+  "id": "network-operations",
+  "title": "Netzwerke beobachten und Störungen eingrenzen",
+  "objective": "Ausgehend von den Symptomen Hypothesen aufstellen, je nach Situation Pfad-, Berechtigungs-, Protokoll-, Metrik- und Erreichbarkeitsanalysen einsetzen und Änderungen durch den Vergleich des Zustands davor und danach überprüfen.",
+  "prerequisites": [
+    {
+      "slug": "domain-dns",
+      "title": "Domänen und DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Konnektivität und Routing"
+    },
+    {
+      "slug": "observability",
+      "title": "Überwachung und Verbesserung"
+    }
+  ],
+  "sections": [
+    {
+      "id": "question",
+      "title": "Symptome in reproduzierbare Beobachtungen umwandeln",
+      "paragraphs": [
+        "Die Angaben „Es ist langsam“ oder „Es wird keine Verbindung hergestellt“ reichen allein nicht aus, um den Untersuchungsgegenstand zu bestimmen. Erfassen Sie Quelle, Ziel, Protokoll, Port, Zeitpunkt und einen erfolgreichen Vergleichsfall. Namensauflösung, Routen, Kommunikationsberechtigungen, Zielstatus und Paketgröße können allesamt ähnliche Symptome verursachen.",
+        "Metriken zeigen Trends und Mengen, Logs zeigen aufgetretene Ereignisse und Traces zeigen den Verarbeitungspfad einer Anfrage. VPC Flow Logs liefern Anhaltspunkte zur Überprüfung von Kommunikationsflüssen, erklären jedoch nicht allein die Verarbeitungszeit der Anwendung."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Netzwerkverwaltung und -betrieb",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Sowohl die beabsichtigte Route als auch das beobachtete Verhalten überprüfen",
+      "paragraphs": [
+        "Reachability Analyzer analysiert die Erreichbarkeit zwischen der angegebenen Quelle und dem angegebenen Ziel auf Grundlage der Konfiguration. Damit lassen sich andere Fragen beantworten als mit VPC Flow Logs, die tatsächlich aufgetretene Datenmengen und Ablehnungen untersuchen, oder mit CloudWatch-Metriken, die Leistungstrends untersuchen.",
+        "Leiten Sie die Erreichbarkeit nicht allein aus der Topologieansicht ab. Gleichen Sie das Transit-Gateway-Attachment, Zuordnungen, Weitergabe und die Routen auf der VPC-Seite ab. Vergleichen Sie die Zeiträume vor und nach der Änderung mit demselben Quell-CIDR, Ziel, Port und Zeitfenster."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Erreichbarkeit, Logs und Metriken",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Konfigurationsbasierte Erreichbarkeit mit Reachability Analyzer untersuchen",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/reachability-analyzer.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "Hypothesen, Änderungen und Verifizierungsergebnisse verknüpfen",
+      "paragraphs": [
+        "Wenn nur einige VPCs nicht erreichbar sind, listen Sie die Quell- und Ziel-CIDRs, Attachments, TGW-Routen, VPC-Subnetzrouten und die Verkehrssteuerung in der Reihenfolge des Pfads auf. Grenzen Sie die Hypothese mithilfe von Reachability Analyzer und VPC Flow Logs ein und ändern Sie anschließend nur die eine betreffende Route.",
+        "Überprüfen Sie nach der Änderung erneut mit derselben Quelle, demselben Ziel und demselben Port. Prüfen Sie außerdem, ob die Erreichbarkeit zu unbeabsichtigten CIDRs zugenommen hat. Verbesserungen bei CPU oder Anfrageanzahl allein sind kein Beleg für eine verbesserte Erreichbarkeit für Benutzer.",
+        "Prüfen Sie in der linken Spalte der Abbildung, wie der konfigurierte Durchgangspfad und mögliche Blockierungsstellen untersucht werden. Untersuchen Sie in der rechten Spalte den in VPC Flow Logs aufgezeichneten Verkehr. Vergleichen Sie beide Belegarten, um die Änderung auf eine einzige Stelle einzugrenzen, und testen Sie den tatsächlichen Verkehr nach der Änderung unter denselben Bedingungen erneut."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Konnektivität und Fehlerbehebung",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Tatsächlichen Verkehr mit VPC Flow Logs überprüfen",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "ans-network-operations-evidence"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-operations-check-1",
+      "prompt": "Das Betriebsteam der Order API erhielt die Meldung, dass kurz nach 9 Uhr nur einige Benutzer keine Verbindung herstellen konnten. Der Fehler tritt sporadisch auf, während andere Benutzer den Dienst normal nutzen können. Was sollte vor der Ursachenanalyse als Reproduktionsbedingung erfasst werden? Wählen Sie eine Antwort aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Die täglichen durchschnittlichen CPU- und Speicherauslastungen aller Backends zusammengefasst erfassen.",
+          "explanation": "Damit lässt sich die allgemeine Auslastung erkennen, aber nicht die Kommunikationsbedingungen bestimmen, unter denen die Verbindungsfehler nur bei einigen Benutzern aufgetreten sind."
+        },
+        {
+          "id": "c",
+          "text": "Nur die Nummer des letzten Deployments und den Zeitpunkt erfassen, zu dem die Fehlermeldung erstmals entgegengenommen wurde.",
+          "explanation": "Diese Angaben können einen Hinweis für die Untersuchung eines Zusammenhangs mit einer Änderung liefern, aber die für die Reproduktion der Verbindung erforderliche Quelle und das Ziel fehlen."
+        },
+        {
+          "id": "d",
+          "text": "Die Gesamtzahl der API-Anfragen an diesem Tag mit der Anzahl im Normalbetrieb vergleichen.",
+          "explanation": "Die Kommunikation, bei der keine Verbindung hergestellt werden konnte, hat die Anwendung möglicherweise nicht erreicht. Der fehlgeschlagene Pfad lässt sich aus der Gesamtzahl der Anfragen nicht rekonstruieren."
+        },
+        {
+          "id": "a",
+          "text": "Quelle, Ziel, Protokoll, Port und Zeitpunkt des Auftretens sowohl für fehlgeschlagene als auch für erfolgreiche Verbindungsversuche erfassen.",
+          "explanation": "Dadurch kann verglichen werden, unter welchen Bedingungen eine Verbindung zu demselben Ziel möglich ist. So lässt sich der Untersuchungsbereich auf die relevanten Routen und Kommunikationsberechtigungen eingrenzen."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-2",
+      "prompt": "Ein Cloud-Betriebsmitarbeiter hat zwei VPCs in derselben Region per Peering verbunden. Er möchte feststellen, ob der aktuelle AWS-Aufbau Datenverkehr von der Quell-EC2-Instanz zum TCP-443-Port der Ziel-EC2-Instanz zulässt. Während dieser Prüfung kann er keinen Testverkehr an die Anwendung senden. Wählen Sie eine geeignete Methode aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Die VPC Flow Logs der Quell-VPC aktivieren und ohne gesendeten Testverkehr abwarten, ob ein neues ACCEPT-Protokoll erscheint.",
+          "explanation": "VPC Flow Logs zeichnen auf, welcher Datenverkehr stattgefunden hat. Wenn kein Datenverkehr gesendet wird, liefern sie keinen Nachweis dafür, dass diese Verbindung zugelassen wurde."
+        },
+        {
+          "id": "a",
+          "text": "In Reachability Analyzer Quelle, Ziel und TCP 443 angeben und anschließend den konfigurierten Pfad sowie die Stelle untersuchen, an der der Datenverkehr blockiert wird.",
+          "explanation": "Reachability Analyzer analysiert die Konfiguration und kann daher die Erreichbarkeit prüfen, ohne ein tatsächliches Testpaket zu senden."
+        },
+        {
+          "id": "c",
+          "text": "In CloudWatch die Anzahl der über das Netzwerk empfangenen Bytes der Ziel-EC2-Instanz prüfen und bei einem Anstieg feststellen, dass die Verbindung möglich ist.",
+          "explanation": "Die aggregierte Metrik kann weder die Quelle des Datenverkehrs noch den Port unterscheiden und zeigt daher nicht, ob diese Verbindung erreichbar ist."
+        },
+        {
+          "id": "d",
+          "text": "In CloudTrail die Operation zum Erstellen der Peering-Verbindung prüfen und feststellen, dass TCP 443 erreichbar ist.",
+          "explanation": "Aus dem Protokoll der Erstellungsoperation geht nicht hervor, ob die Kombination aus Route, Sicherheitsgruppe und Netzwerk-ACL TCP 443 passieren lässt."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-3",
+      "prompt": "Ein Betriebsverantwortlicher eines Vertriebsunternehmens hat eine dedizierte Route geändert, um ein Timeout bei TCP 443 von Niederlassung A zur Bestell-API zu beheben. Nach der Bereitstellung müssen die Kommunikationsbeschränkungen zu den anderen Niederlassungen und zum Verwaltungs-Subnetz weiterhin bestehen. Wählen Sie ein Abnahmekriterium für die Korrektur aus.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Bestätigen Sie, dass die Verbindung von derselben Quelle, Niederlassung A, zum API-Ziel über TCP 443 wiederhergestellt ist und dass weiterhin keine Verbindung zu Zielen möglich ist, die unerreichbar bleiben müssen.",
+          "explanation": "Damit werden sowohl die korrigierte Route als auch die Routen, die von der Änderung nicht betroffen sein dürfen, unter denselben Bedingungen überprüft."
+        },
+        {
+          "id": "b",
+          "text": "Messen Sie die durchschnittliche CPU-Auslastung der EC2-Instance, auf der die API ausgeführt wird, vor und nach der Änderung, und betrachten Sie das Problem als behoben, wenn sie sinkt.",
+          "explanation": "Eine geringere CPU-Auslastung allein zeigt nicht, ob Niederlassung A über TCP 443 eine Verbindung herstellen kann."
+        },
+        {
+          "id": "c",
+          "text": "Prüfen Sie die API aus dem für die interne Überwachung verwendeten VPC und betrachten Sie Niederlassung A als wiederhergestellt, wenn die API antwortet.",
+          "explanation": "Das Überwachungs-VPC und Niederlassung A haben unterschiedliche Konfigurationen und Routen. Daher lässt sich damit nicht nachweisen, dass die tatsächlich betroffene Route wiederhergestellt wurde."
+        },
+        {
+          "id": "d",
+          "text": "Wenn das Transit-Gateway-Attachment verfügbar ist, betrachten Sie die Kommunikation von Niederlassung A als wiederhergestellt und die Beschränkungen der anderen Routen als bestätigt.",
+          "explanation": "Der Status des Attachments liefert Informationen über die Konnektivitätsgrundlage. Die Zielrouten und die Zulässigkeit jeder Kommunikation müssen separat überprüft werden."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Observability",
+    "Metric",
+    "Log",
+    "Trace",
+    "CIDR",
+    "IP address",
+    "Port",
+    "DNS",
+    "MTU",
+    "Path MTU",
+    "Reachability Analyzer",
+    "VPC Flow Logs",
+    "CloudWatch",
+    "CloudTrail",
+    "Transit Gateway route propagation",
+    "Transit Gateway route table association",
+    "Return path"
+  ]
+}

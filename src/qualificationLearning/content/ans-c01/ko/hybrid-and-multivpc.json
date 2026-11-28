@@ -1,0 +1,186 @@
+{
+  "id": "hybrid-and-multivpc",
+  "title": "하이브리드 연결 및 다중 VPC 도달 가능성 설계",
+  "objective": "온프레미스 환경, Direct Connect 또는 Site-to-Site VPN, Transit Gateway, 여러 VPC 간의 양방향 경로를 설계할 때 CIDR, BGP 광고, 라우팅 테이블 및 어태치먼트의 역할을 구분하여 설명할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR 및 서브넷"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "연결 및 라우팅"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements",
+      "title": "연결 방식을 선택하기 전에 통신 경계를 정합니다",
+      "paragraphs": [
+        "먼저 어느 CIDR 범위 간에 연결을 허용할지, 어떤 통신을 격리할지, 장애 발생 시 어떤 경로를 사용할지 정의합니다. 대역폭, 암호화, 이중화, 연결된 VPC 수, 운영 책임을 기준으로 Direct Connect, Site-to-Site VPN, Transit Gateway를 비교합니다.",
+        "CIDR이 겹치는 네트워크는 일반적인 대상 CIDR 라우팅만으로 구분할 수 없습니다. 통신 대상을 제한하는 연결 방식을 검토하고, 네트워크 간 상호 연결이 가능하다고 잘못 가정하지 않습니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 네트워크 설계",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 네트워크 구현",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "tgw",
+      "title": "Transit Gateway 연결과 전파를 구분하여 이해하기",
+      "paragraphs": [
+        "Transit Gateway에서는 패킷이 TGW로 들어오는 소스 어태치먼트의 연결이 해당 패킷이 참조하는 TGW 라우팅 테이블을 결정합니다. 라우트 전파는 어태치먼트에서 학습한 접두사를 지정된 TGW 라우팅 테이블에 등록하는 기능입니다. 연결과 라우트 전파는 동일한 설정이 아닙니다.",
+        "검사 VPC를 경유하도록 설계한 경우, 소스 어태치먼트의 TGW 테이블뿐 아니라 검사 VPC 어태치먼트에 사용되는 서브넷의 라우트, Firewall endpoint 또는 상태 저장 어플라이언스를 통과하는 경로, 공유 서비스 VPC 측과 소스 측의 반환 경로를 확인합니다. 상태 저장 어플라이언스를 사용하는 검사 VPC 어태치먼트에서는 요구 사항에 따라 동일한 AZ 내의 왕복 흐름을 유지하는 appliance mode도 평가합니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS Transit Gateway 작동 방식",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "Transit Gateway 라우팅 테이블",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/tgw-route-tables.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 멀티 VPC 연결",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "왕복 경로를 패킷으로 추적하기",
+      "paragraphs": [
+        "이 예제는 온프레미스 10.10.0.0/16에서 공유 서비스가 있는 10.20.10.0/24로 연결하는 경우를 보여 줍니다. Transit Gateway는 내부 네트워크에서 들어온 패킷을 검사 VPC로 보냅니다. 검사 후 패킷은 동일한 Transit Gateway로 돌아와 공유 서비스 VPC로 전달됩니다. 각 방향에서 어태치먼트, 대상 접두사 및 다음 홉을 확인합니다.",
+        "검사 VPC에 상태 저장 어플라이언스를 배치하는 경우 요청과 응답은 동일한 검사 흐름을 통과해야 합니다. Appliance mode는 흐름이 유지되는 동안 검사 VPC 어태치먼트에서 선택한 AZ를 유지하는 기능이며, 다른 VPC 라우트나 TGW 라우팅 테이블을 자동으로 구성하지는 않습니다.",
+        "다이어그램에서 검사 전후에 동일한 Transit Gateway를 통과하는 지점을 찾으세요. 응답은 공유 서비스 측에서 시작하여 동일한 검사 AZ를 거쳐 내부 네트워크로 돌아옵니다. 한 방향의 트래픽만 검사하는 경로가 되지 않도록 왕복 방향 모두에서 구성을 확인하세요."
+      ],
+      "sources": [
+        {
+          "label": "AWS Transit Gateway 작동 방식",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 하이브리드 연결 및 라우팅",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        },
+        {
+          "label": "Transit Gateway와 검사 VPC의 왕복 경로",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/integrate-third-party-services/architecture-3.html"
+        }
+      ],
+      "figureId": "ans-hybrid-multivpc-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "hybrid-check-1",
+      "prompt": "네트워크 설계자는 개발 VPC에서 검사 VPC의 상태 저장 어플라이언스를 거쳐 공유 서비스 VPC로 트래픽을 전달하려고 합니다. 양방향 경로를 구성하기 위해 가장 먼저 확인해야 할 설계 하나를 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "개발 VPC의 DNS 레코드만 검사 VPC를 가리키도록 설정합니다.",
+          "explanation": "DNS만으로는 패킷을 검사 VPC로 전달할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "공유 서비스 VPC의 보안 그룹을 삭제합니다.",
+          "explanation": "이렇게 해도 라우팅 제어가 구현되지 않으며 통신 보호 기능도 잃게 됩니다."
+        },
+        {
+          "id": "a",
+          "text": "개발 VPC의 소스 어태치먼트에 연결된 TGW 라우팅 테이블에서 검사 VPC 어태치먼트로 보내는 경로, 검사 VPC에서 어플라이언스와 공유 서비스 CIDR로 연결되는 경로, 그리고 각 VPC와 TGW의 반환 경로가 있어야 합니다.",
+          "explanation": "진입 TGW 라우팅 테이블만으로는 충분하지 않습니다. 검사 VPC 내부의 경로, 어플라이언스 및 양방향 경로를 각각 확인해야 합니다."
+        },
+        {
+          "id": "d",
+          "text": "온프레미스 측의 BGP 광고를 중지합니다.",
+          "explanation": "이는 VPC 간 TGW 경로에 필요한 조건이 아닙니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-2",
+      "prompt": "네트워크 설계 담당자는 온프레미스 네트워크와 VPC가 모두 10.0.0.0/16을 사용하는 환경에서 특정 애플리케이션과 통신해야 합니다. 가장 적절한 설명을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Transit Gateway가 중복되는 CIDR을 자동으로 변환합니다.",
+          "explanation": "자동으로 변환하지 않습니다."
+        },
+        {
+          "id": "a",
+          "text": "CIDR이 중복되므로 일반적인 대상 CIDR 라우팅만으로는 두 네트워크를 고유하게 구분할 수 없습니다.",
+          "explanation": "동일한 프리픽스에서는 대상을 고유하게 선택할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "BGP만으로 동일한 CIDR을 사용하는 두 대상에 동시에 트래픽을 보낼 수 있습니다.",
+          "explanation": "중복 네트워크의 식별 문제를 해결하지 못합니다."
+        },
+        {
+          "id": "d",
+          "text": "서로 다른 보안 그룹이 경로를 자동으로 선택합니다.",
+          "explanation": "SG는 허용 여부를 판단합니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-3",
+      "prompt": "네트워크 운영 담당자는 온프레미스에서 AWS 애플리케이션으로 연결은 시작할 수 있지만 응답이 돌아오지 않는 문제를 조사하고 있습니다. 우선 조사할 항목을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "사용자의 DNS 캐시만 확인합니다.",
+          "explanation": "연결을 시작할 수 있는데 응답을 받지 못하는 현상을 설명할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "로드 밸런서의 TLS 인증서만 확인합니다.",
+          "explanation": "반환 경로와 권한을 먼저 확인해야 합니다."
+        },
+        {
+          "id": "a",
+          "text": "애플리케이션 ENI의 SG, 송신 및 수신 서브넷의 NACL, 그리고 사용자 CIDR로 향하는 VPC, TGW 및 온프레미스 측의 반환 경로입니다.",
+          "explanation": "응답을 받으려면 권한 평가와 전체 경로의 반환 경로가 필요합니다."
+        },
+        {
+          "id": "d",
+          "text": "소스 CIDR을 0.0.0.0/0으로 변경합니다.",
+          "explanation": "원인을 확인하지 않고 액세스 범위를 확대하는 것은 부적절합니다."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "On-premises network",
+    "CIDR",
+    "BGP",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Site-to-Site VPN",
+    "VPC peering",
+    "Transit Gateway attachment",
+    "Transit Gateway route table",
+    "Transit Gateway route table association",
+    "Transit Gateway route propagation",
+    "Inspection VPC",
+    "Appliance mode",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "Stateful filtering",
+    "Return path",
+    "AZ",
+    "Subnet",
+    "Route table"
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "id": "network-operations",
+  "title": "Observer le réseau et diagnostiquer les pannes",
+  "objective": "Formuler des hypothèses à partir des symptômes, choisir judicieusement entre l’analyse des chemins, des autorisations, des journaux, des métriques et de l’accessibilité, puis vérifier les modifications en comparant les états avant et après.",
+  "prerequisites": [
+    {
+      "slug": "domain-dns",
+      "title": "Domaines et DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connectivité et routage"
+    },
+    {
+      "slug": "observability",
+      "title": "Surveillance et amélioration"
+    }
+  ],
+  "sections": [
+    {
+      "id": "question",
+      "title": "Transformer les symptômes en observations reproductibles",
+      "paragraphs": [
+        "Dire seulement que « c’est lent » ou que « la connexion ne fonctionne pas » ne suffit pas pour déterminer ce qu’il faut examiner. Consignez la source, la destination, le protocole, le port, l’heure et un cas de comparaison qui fonctionne. La résolution de noms, les routes, les autorisations de communication, l’état de la cible et la taille des paquets peuvent tous provoquer des symptômes similaires.",
+        "Les métriques indiquent les tendances et les quantités, les journaux indiquent les événements survenus et les traces indiquent le chemin de traitement de la requête. Les journaux de flux VPC permettent de vérifier les flux de communication, mais ils ne peuvent pas, à eux seuls, expliquer le temps de traitement de l’application."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty : Gestion et opérations réseau",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Vérifier à la fois l’intention du chemin et le comportement observé",
+      "paragraphs": [
+        "Reachability Analyzer analyse l’accessibilité entre la source et la destination spécifiées en fonction de la configuration. Il répond à des questions différentes de celles des VPC Flow Logs, qui servent à examiner les volumes de trafic et les refus réellement survenus, et des métriques CloudWatch, qui servent à examiner les tendances de performance.",
+        "Ne déduisez pas l’accessibilité de la seule vue de la topologie. Vérifiez l’attachement Transit Gateway, les associations, la propagation et les routes du côté de la VPC. Comparez les périodes avant et après la modification avec le même CIDR source, la même destination, le même port et la même plage horaire."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty : accessibilité, journaux et métriques",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Examiner l’accessibilité fondée sur la configuration avec Reachability Analyzer",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/reachability-analyzer.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "Relier les hypothèses, les modifications et les résultats de vérification",
+      "paragraphs": [
+        "Si seuls certains VPC sont inaccessibles, énumérez, dans l’ordre du chemin, les CIDR source et destination, les attachements, les routes TGW, les routes de sous-réseau du VPC et les contrôles du trafic. Affinez l’hypothèse à l’aide de Reachability Analyzer et de VPC Flow Logs, puis ne modifiez qu’une seule route concernée.",
+        "Après la modification, vérifiez à nouveau avec la même source, la même destination et le même port, et vérifiez également que l’accessibilité à des CIDR non prévus n’a pas augmenté. Ne considérez pas à elles seules les améliorations du processeur ou du nombre de requêtes comme une preuve d’une amélioration de l’accessibilité pour les utilisateurs.",
+        "Dans la colonne de gauche du schéma, vérifiez comment examiner le chemin de transit configuré et les points où le trafic peut être bloqué. Dans la colonne de droite, examinez le trafic enregistré dans VPC Flow Logs. Comparez les deux types de preuves afin de limiter la modification à un seul emplacement, puis retestez le trafic réel dans les mêmes conditions après la modification."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty : connectivité et dépannage",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Vérifier le trafic réel avec VPC Flow Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "ans-network-operations-evidence"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-operations-check-1",
+      "prompt": "Peu après 9 h, l’équipe qui exploite l’API de commandes a appris que certains utilisateurs ne parvenaient pas à se connecter. Le problème est intermittent et d’autres utilisateurs peuvent accéder au service. Que doit consigner l’équipe pour reproduire le problème avant d’en rechercher la cause ? Choisissez une réponse.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Consigner l’utilisation moyenne quotidienne du processeur et de la mémoire, agrégée sur tous les backends.",
+          "explanation": "Cela donne une vue d’ensemble de la charge, mais ne permet pas d’identifier les conditions de communication associées aux échecs de connexion qui ne touchent que certains utilisateurs."
+        },
+        {
+          "id": "c",
+          "text": "Consigner uniquement le numéro du déploiement le plus récent et l’heure à laquelle le signalement de l’incident a été reçu pour la première fois.",
+          "explanation": "Ces informations peuvent fournir un indice pour rechercher une corrélation avec une modification, mais il manque la source et la destination nécessaires pour reproduire la connexion."
+        },
+        {
+          "id": "d",
+          "text": "Comparer le nombre total de requêtes API du jour au nombre observé en temps normal.",
+          "explanation": "Les communications qui n’ont pas pu se connecter peuvent ne pas être arrivées jusqu’à l’application. Le chemin ayant échoué ne peut pas être reconstitué à partir du nombre total de requêtes."
+        },
+        {
+          "id": "a",
+          "text": "Consigner la source, la destination, le protocole, le port et l’heure de survenue pour les tentatives de connexion ayant échoué comme pour celles ayant réussi.",
+          "explanation": "Cela permet de comparer les conditions dans lesquelles une connexion à la même destination est possible et de cibler les routes et les autorisations de communication à examiner."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-2",
+      "prompt": "Un professionnel des opérations cloud a établi une connexion d’égal à égal entre deux VPC situés dans la même Region. Il souhaite déterminer si, avec la configuration AWS actuelle, le trafic peut aller de l’instance EC2 source au port TCP 443 de l’instance EC2 de destination. Pendant cette vérification, il ne peut pas envoyer de trafic de test à l’application. Choisissez une méthode appropriée.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Activer les VPC Flow Logs du VPC source et attendre, sans envoyer de trafic de test, qu’un nouveau journal ACCEPT apparaisse.",
+          "explanation": "Les VPC Flow Logs enregistrent le trafic qui s’est produit. Si aucun trafic n’est envoyé, ils ne peuvent pas fournir d’enregistrement indiquant que cette connexion a été autorisée."
+        },
+        {
+          "id": "a",
+          "text": "Spécifier la source, la destination et TCP 443 dans Reachability Analyzer, puis examiner le chemin configuré et l’endroit où le trafic est bloqué.",
+          "explanation": "Reachability Analyzer analyse la configuration ; il peut donc vérifier l’accessibilité sans envoyer de paquet de test réel."
+        },
+        {
+          "id": "c",
+          "text": "Vérifier dans CloudWatch le nombre d’octets reçus sur le réseau de l’instance EC2 de destination et conclure que la connexion est possible si la valeur a augmenté.",
+          "explanation": "La métrique agrégée ne permet pas de distinguer la source qui a envoyé le trafic ni le port ; elle n’indique donc pas si cette connexion est accessible."
+        },
+        {
+          "id": "d",
+          "text": "Vérifier dans CloudTrail l’opération de création de la connexion d’égal à égal et conclure que TCP 443 est accessible.",
+          "explanation": "L’enregistrement de l’opération de création ne permet pas de savoir si la combinaison de la route, du groupe de sécurité et de l’ACL réseau autorise le passage de TCP 443."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-3",
+      "prompt": "Un responsable des opérations d’une entreprise commerciale a modifié une route dédiée pour résoudre un problème d’expiration du délai sur TCP 443 entre la succursale A et l’API de commandes. Après la mise en production, les restrictions de communication vers les autres succursales et le sous-réseau de gestion doivent rester en place. Choisissez un critère d’acceptation pour la correction.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Vérifier que la connexion est rétablie depuis la même source, la succursale A, vers la destination de l’API sur TCP 443, et qu’il reste impossible de se connecter aux destinations qui doivent demeurer inaccessibles.",
+          "explanation": "Cela vérifie dans les mêmes conditions à la fois la route corrigée et les routes qui ne doivent pas être affectées par la modification."
+        },
+        {
+          "id": "b",
+          "text": "Mesurer l’utilisation moyenne du processeur de l’instance EC2 qui héberge l’API avant et après la modification, puis considérer le problème comme résolu si elle diminue.",
+          "explanation": "Une baisse de l’utilisation du processeur ne permet pas à elle seule de savoir si la succursale A peut se connecter sur TCP 443."
+        },
+        {
+          "id": "c",
+          "text": "Vérifier l’API depuis le VPC utilisé pour la surveillance interne et considérer la succursale A comme rétablie si l’API répond.",
+          "explanation": "Le VPC de surveillance et la succursale A ont des configurations et des routes différentes ; cela ne peut donc pas prouver que la route réellement affectée est rétablie."
+        },
+        {
+          "id": "d",
+          "text": "Si l’attachement Transit Gateway est disponible, considérer que la communication de la succursale A est rétablie et que les restrictions des autres routes sont vérifiées.",
+          "explanation": "L’état de l’attachement fournit des informations sur l’infrastructure de connectivité. Les routes de destination et l’autorisation de chaque communication doivent être vérifiées séparément."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Observability",
+    "Metric",
+    "Log",
+    "Trace",
+    "CIDR",
+    "IP address",
+    "Port",
+    "DNS",
+    "MTU",
+    "Path MTU",
+    "Reachability Analyzer",
+    "VPC Flow Logs",
+    "CloudWatch",
+    "CloudTrail",
+    "Transit Gateway route propagation",
+    "Transit Gateway route table association",
+    "Return path"
+  ]
+}

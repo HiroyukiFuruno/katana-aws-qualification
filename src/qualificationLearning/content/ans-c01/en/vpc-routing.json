@@ -1,0 +1,230 @@
+{
+  "id": "vpc-routing",
+  "title": "Implement routing within and outside a VPC",
+  "objective": "Distinguish the route tables associated with subnets, destination CIDRs, targets, and security controls, and verify the reachability of requests and responses.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Communication Fundamentals"
+    },
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR and Subnets"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connectivity and Routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-table",
+      "title": "Connecting Destinations and Targets",
+      "paragraphs": [
+        "A VPC route table determines the path for traffic leaving a subnet or gateway. Each route has a destination CIDR or prefix list and a target, such as an internet gateway, NAT gateway, VPC peering connection, Transit Gateway, or VPN connection.",
+        "When a packet's destination matches multiple routes, the route with the longest CIDR prefix is selected. For example, when sending traffic from a VPC with 10.20.0.0/16 to 10.40.20.25 in a peer VPC, the destination matches both 10.40.20.0/24, which routes to the peering connection, and 0.0.0.0/0, which routes to the NAT gateway. In this case, the /24 route, which specifies the destination more narrowly, is selected. If multiple routes have the same destination or prefix length, check AWS priority rules.",
+        "A subnet's type is determined by its routing. A private subnet does not have a direct route to an internet gateway; when outbound internet communication is required, it uses another path, such as a NAT device."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: Configure route tables",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: How routing priority works",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "Amazon VPC: Subnets in your VPC",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/configure-subnets.html"
+        },
+        {
+          "label": "How VPC peering connections work",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/peering/vpc-peering-basics.html"
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "title": "Evaluate routing and communication permissions separately",
+      "paragraphs": [
+        "A VPC route table selects the next hop for packets leaving a subnet or gateway. A TGW route table selects the forwarding destination for packets entering through a TGW attachment and is evaluated separately from the VPC route table.",
+        "A security group is evaluated statefully at the ENI or associated resource boundary, so responses to permitted traffic are automatically allowed. A network ACL is evaluated statelessly at the subnet boundary, so both the request and response directions must be explicitly allowed. Network Firewall inspects only packets whose routes are configured to pass through a Firewall endpoint.",
+        "When making changes, verify the VPC routes, TGW routes, SG, NACL, routes to the Firewall endpoint when necessary, name resolution, and return traffic for both the source and destination."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: Configure route tables",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: Infrastructure security",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/infrastructure-security.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Network security",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "packet-walk",
+      "title": "Tracing Traffic from Users to External APIs",
+      "paragraphs": [
+        "In a configuration where users send HTTPS requests through a public load balancer to applications in private subnets in AZ-a and AZ-b, verify the path from the users to the ALB separately from the path from the ALB to the targets.",
+        "When traffic leaves the targets for an external API, verify destination evaluation in the application subnets, the public NAT gateway placed in the public subnets, the internet gateway, and the return traffic. Do not confuse the roles of the IGW, NAT, and VPC endpoints.",
+        "Even from the same EC2 instance, the next hop differs for an external API and an API in a peered VPC. Examine the private routes in the diagram and confirm which route is selected for traffic destined for 10.40.20.25 and which address range the response returns to."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: NAT gateways",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-nat-gateway.html"
+        },
+        {
+          "label": "Amazon VPC: How route-table priority works",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Network implementation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ],
+      "figureId": "ans-vpc-routing-packet-walk"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "vpc-routing-check-1",
+      "prompt": "A network operations engineer verified a route from 0.0.0.0/0 to a NAT gateway to enable HTTPS connections from an EC2 instance in a private subnet to an external API. Select one additional item that should be verified.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The public NAT gateway is in a public subnet, the NAT side has a route to the IGW, and the EC2 security group (SG) and network ACL (NACL) allow the required bidirectional traffic.",
+          "explanation": "The private-side route alone does not verify the NAT placement, the outbound path, or the required communication permissions."
+        },
+        {
+          "id": "b",
+          "text": "The subnet name does not include public.",
+          "explanation": "A name does not guarantee reachability."
+        },
+        {
+          "id": "c",
+          "text": "Registering a DNS record with the IGW.",
+          "explanation": "The IGW is not a destination for DNS registration."
+        },
+        {
+          "id": "d",
+          "text": "Stopping the target health check.",
+          "explanation": "This is unrelated to the outbound path."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-2",
+      "prompt": "A network operations engineer at a logistics company is investigating whether a connection can be made over TCP 443 from a source EC2 instance to an EC2 instance in another VPC connected through a Transit Gateway. Routes exist in the outbound VPC and on the Transit Gateway, but the connection times out. Choose one item to check next.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "If a route exists, all ports are automatically permitted.",
+          "explanation": "Route tables do not grant permission for ports."
+        },
+        {
+          "id": "c",
+          "text": "Security groups are not evaluated when using a Transit Gateway.",
+          "explanation": "A TGW does not disable security group evaluation on the destination ENI side."
+        },
+        {
+          "id": "d",
+          "text": "A TCP rejection is always caused by DNS TTL.",
+          "explanation": "TTL alone cannot explain the issue."
+        },
+        {
+          "id": "a",
+          "text": "Check the security groups and network ACLs for both the source and destination, and also examine the return path from the destination to the source.",
+          "explanation": "Whether a TCP 443 connection can be initiated depends not only on the outbound route but also on the security groups of each resource. Network ACLs must allow traffic in both directions, and you must also verify that a route exists for the response to return."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-3",
+      "prompt": "A cloud architect explains the basis for calling a subnet a private subnet. Choose the most appropriate answer.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "That its name begins with private-.",
+          "explanation": "A name is not a technical guarantee."
+        },
+        {
+          "id": "c",
+          "text": "Only that the VPC has no IGW.",
+          "explanation": "This does not allow you to determine the route for each subnet."
+        },
+        {
+          "id": "a",
+          "text": "That the associated route table has no direct route to an internet gateway. If outbound communication is required, configure another path, such as a NAT device.",
+          "explanation": "A private subnet is a subnet that does not have a direct route to an IGW."
+        },
+        {
+          "id": "d",
+          "text": "That the application uses TLS.",
+          "explanation": "TLS does not define whether the subnet is public."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-4",
+      "prompt": "A network engineer at a logistics company connects from a private subnet in VPC 10.20.0.0/16 to API 10.40.20.25 in peered VPC 10.40.0.0/16. The source route table has a local route for 10.20.0.0/16, a route to VPC peering for 10.40.20.0/24, and a route to a NAT gateway for 0.0.0.0/0. When forwarding traffic to destination IP address 10.40.20.25, select one route that is preferred at the source.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "The route to VPC peering for 10.40.20.0/24.",
+          "explanation": "10.40.20.25 is included in both /24 and /0, and /24 is preferred because it has the longer prefix. A return route and permission for the traffic are also required for the connection to be established."
+        },
+        {
+          "id": "a",
+          "text": "The local route for 10.20.0.0/16.",
+          "explanation": "10.40.20.25 is not included in 10.20.0.0/16. Even if the source IP address is within this range, this route is not used to select the destination route."
+        },
+        {
+          "id": "c",
+          "text": "The route to the NAT gateway for 0.0.0.0/0.",
+          "explanation": "0.0.0.0/0 matches the destination, but it is not selected because a more specific /24 route exists."
+        },
+        {
+          "id": "d",
+          "text": "No route is selected because a private subnet cannot have a route to VPC peering.",
+          "explanation": "A private subnet can also be configured with a route to VPC peering. Whether a subnet is public depends on whether it has a direct route to an internet gateway."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC",
+    "AZ",
+    "Subnet",
+    "Public subnet",
+    "Private subnet",
+    "IGW",
+    "NAT gateway",
+    "ENI",
+    "ALB",
+    "Security group",
+    "NACL",
+    "CIDR",
+    "Route table",
+    "Local route",
+    "Default route",
+    "Longest prefix match",
+    "Prefix list",
+    "VPC peering",
+    "Transit Gateway route table",
+    "VPC endpoint",
+    "Stateful filtering",
+    "Stateless filtering",
+    "Return path"
+  ]
+}

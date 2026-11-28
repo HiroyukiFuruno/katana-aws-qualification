@@ -1,0 +1,186 @@
+{
+  "id": "hybrid-and-multivpc",
+  "title": "Erreichbarkeit für hybride Konnektivität und mehrere VPCs entwerfen",
+  "objective": "Die Zuständigkeiten von CIDR-Blöcken, BGP-Ankündigungen, Routentabellen und Attachments erläutern können, wenn bidirektionale Pfade zwischen On-Premises-Umgebungen, Direct Connect oder Site-to-Site VPN, Transit Gateway und mehreren VPCs entworfen werden.",
+  "prerequisites": [
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR und Subnetze"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Konnektivität und Routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements",
+      "title": "Kommunikationsgrenzen vor der Auswahl der Verbindungsart festlegen",
+      "paragraphs": [
+        "Definieren Sie zunächst, zwischen welchen CIDR-Bereichen Erreichbarkeit bestehen soll, welche Kommunikation isoliert werden soll und welche Pfade bei einem Ausfall verwendet werden sollen. Vergleichen Sie Direct Connect, Site-to-Site VPN und Transit Gateway anhand von Bandbreite, Verschlüsselung, Redundanz, der Anzahl verbundener VPCs und der betrieblichen Verantwortung.",
+        "Netzwerke mit überlappenden CIDRs können allein durch ein gewöhnliches Routing anhand des Ziel-CIDR nicht unterschieden werden. Ziehen Sie Verbindungsarten in Betracht, die die Kommunikationsziele begrenzen, und nehmen Sie nicht fälschlicherweise an, dass die Netzwerke gegenseitig erreichbar sind."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Netzwerkdesign",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Netzwerkimplementierung",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "tgw",
+      "title": "Transit-Gateway-Zuordnungen und -Weitergabe unterscheiden",
+      "paragraphs": [
+        "Bei Transit Gateway bestimmt die Zuordnung des Quell-Attachments, über das ein Paket in das TGW gelangt, die TGW-Routing-Tabelle, auf die das Paket zugreift. Bei der Routenweitergabe werden aus einem Attachment gelernte Präfixe in der angegebenen TGW-Routing-Tabelle registriert. Eine Zuordnung und eine Routenweitergabe sind nicht dieselbe Einstellung.",
+        "Wenn der Datenverkehr über eine Inspektions-VPC geleitet wird, prüfen Sie die TGW-Tabelle des Quell-Attachments, die Routen der Attachment-Subnetze in der Inspektions-VPC, den Pfad durch den Firewall-Endpunkt oder die zustandsbehaftete Appliance sowie die Rückwege zur Shared-Services-VPC und zur Quelle. Prüfen Sie bei einer zustandsbehafteten Appliance auch, ob am Attachment der Inspektions-VPC der Appliance-Modus benötigt wird, damit Hin- und Rückverkehr in derselben AZ bleiben."
+      ],
+      "sources": [
+        {
+          "label": "Funktionsweise von AWS Transit Gateway",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "Transit-Gateway-Routing-Tabellen",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/tgw-route-tables.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Multi-VPC-Konnektivität",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "Den Hin- und Rückweg als Pakete nachverfolgen",
+      "paragraphs": [
+        "Dieses Beispiel zeigt eine Verbindung von On-Premises 10.10.0.0/16 zu 10.20.10.0/24, wo sich gemeinsam genutzte Services befinden. Transit Gateway sendet die aus dem internen Netzwerk kommenden Pakete an die Inspektions-VPC. Nach der Inspektion werden sie an dasselbe Transit Gateway zurückgesendet und anschließend von dort an die VPC mit den gemeinsam genutzten Services weitergeleitet. Prüfen Sie für jede Richtung das Attachment, das Zielpräfix und den nächsten Hop.",
+        "Wenn in der Inspektions-VPC eine zustandsbehaftete Appliance platziert wird, müssen Anfragen und Antworten denselben Inspektionspfad durchlaufen. Der Appliance-Modus behält die AZ-Auswahl am Attachment der Inspektions-VPC bei, solange der Datenfluss besteht. Die übrigen VPC-Routen und die TGW-Routingtabellen müssen separat eingerichtet werden.",
+        "Ermitteln Sie im Diagramm, an welcher Stelle der Datenverkehr vor und nach der Inspektion dasselbe Transit Gateway durchläuft. Die Antwort startet auf der Seite der gemeinsam genutzten Services und kehrt über dieselbe Inspektions-AZ zum internen Netzwerk zurück. Prüfen Sie die Konfiguration für den Hin- und Rückweg, damit nicht nur eine Richtung inspiziert wird."
+      ],
+      "sources": [
+        {
+          "label": "Funktionsweise von AWS Transit Gateway",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Hybride Konnektivität und Routing",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        },
+        {
+          "label": "Hin- und Rückweg zwischen Transit Gateway und der Inspektions-VPC",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/integrate-third-party-services/architecture-3.html"
+        }
+      ],
+      "figureId": "ans-hybrid-multivpc-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "hybrid-check-1",
+      "prompt": "Ein Netzwerkdesigner möchte Datenverkehr von der Entwicklungs-VPC über eine zustandsbehaftete Appliance in der Inspektions-VPC zur VPC mit gemeinsam genutzten Services leiten. Wählen Sie einen Entwurf aus, der zuerst geprüft werden sollte, um einen bidirektionalen Pfad herzustellen.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Nur die DNS-Einträge der Entwicklungs-VPC auf die Inspektions-VPC verweisen lassen.",
+          "explanation": "DNS allein kann keine Pakete an die Inspektions-VPC weiterleiten."
+        },
+        {
+          "id": "c",
+          "text": "Die Sicherheitsgruppe der VPC mit gemeinsam genutzten Services löschen.",
+          "explanation": "Dadurch wird kein Routing eingerichtet, und außerdem geht der Kommunikationsschutz verloren."
+        },
+        {
+          "id": "a",
+          "text": "Es gibt eine Route von der TGW-Routingtabelle, die dem Quell-Attachment der Entwicklungs-VPC zugeordnet ist, zum Attachment der Inspektions-VPC, Routen innerhalb der Inspektions-VPC zur Appliance und zum CIDR der gemeinsam genutzten Services sowie Rückrouten von jeder VPC und vom TGW.",
+          "explanation": "Die eingehende TGW-Routingtabelle allein reicht nicht aus. Prüfen Sie die Routen innerhalb der Inspektions-VPC, die Appliance und die bidirektionalen Pfade getrennt."
+        },
+        {
+          "id": "d",
+          "text": "Die BGP-Ankündigungen von der On-Premises-Seite stoppen.",
+          "explanation": "Dies ist keine notwendige Voraussetzung für eine TGW-Route zwischen VPCs."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-2",
+      "prompt": "Ein Netzwerkdesigner muss mit einer bestimmten Anwendung kommunizieren, während sowohl das On-Premises-Netzwerk als auch die VPC 10.0.0.0/16 verwenden. Wählen Sie die am besten geeignete Aussage aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Transit Gateway übersetzt überlappende CIDRs automatisch.",
+          "explanation": "Es führt keine automatische Übersetzung durch."
+        },
+        {
+          "id": "a",
+          "text": "Da sich die CIDRs überschneiden, können die beiden Netzwerke allein anhand des herkömmlichen Routings nach dem Ziel-CIDR nicht eindeutig unterschieden werden.",
+          "explanation": "Bei demselben Präfix kann das Ziel nicht eindeutig ausgewählt werden."
+        },
+        {
+          "id": "c",
+          "text": "BGP allein kann gleichzeitig Datenverkehr an zwei Ziele mit demselben CIDR senden.",
+          "explanation": "Damit wird die Identifizierung überlappender Netzwerke nicht gelöst."
+        },
+        {
+          "id": "d",
+          "text": "Unterschiedliche Sicherheitsgruppen wählen automatisch die Route aus.",
+          "explanation": "SGs treffen Zulassungsentscheidungen."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-3",
+      "prompt": "Ein Netzwerkbetriebsverantwortlicher untersucht ein Problem, bei dem eine Verbindung vom On-Premises-Netzwerk zu einer AWS-Anwendung aufgebaut werden kann, aber keine Antwort zurückkommt. Wählen Sie ein Element aus, das zuerst untersucht werden soll.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Nur den DNS-Cache des Benutzers.",
+          "explanation": "Damit lässt sich nicht erklären, warum bei einer Verbindung, die aufgebaut werden kann, keine Antwort empfangen wird."
+        },
+        {
+          "id": "c",
+          "text": "Nur das TLS-Zertifikat des Load Balancers.",
+          "explanation": "Prüfen Sie zuerst den Rückweg und die Berechtigungen."
+        },
+        {
+          "id": "a",
+          "text": "Die SG der Anwendungs-ENI, die NACLs der sendenden und empfangenden Subnetze sowie die Rückwege auf der VPC-, TGW- und On-Premises-Seite zum CIDR des Benutzers.",
+          "explanation": "Eine Antwort erfordert eine Berechtigungsprüfung und einen Rückweg über die gesamte Strecke."
+        },
+        {
+          "id": "d",
+          "text": "Das Quell-CIDR in 0.0.0.0/0 ändern.",
+          "explanation": "Den Zugriff ohne Bestätigung der Ursache auszuweiten, ist unangemessen."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "On-premises network",
+    "CIDR",
+    "BGP",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Site-to-Site VPN",
+    "VPC peering",
+    "Transit Gateway attachment",
+    "Transit Gateway route table",
+    "Transit Gateway route table association",
+    "Transit Gateway route propagation",
+    "Inspection VPC",
+    "Appliance mode",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "Stateful filtering",
+    "Return path",
+    "AZ",
+    "Subnet",
+    "Route table"
+  ]
+}

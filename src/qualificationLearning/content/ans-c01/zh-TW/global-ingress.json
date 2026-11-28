@@ -1,0 +1,180 @@
+{
+  "id": "global-ingress",
+  "title": "設計全球入口、DNS 與負載平衡",
+  "objective": "區分使用者、名稱解析、邊緣、負載平衡器及 VPC 內目標的職責，並根據可用性、延遲與安全性需求說明入口。",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "通訊基礎"
+    },
+    {
+      "slug": "domain-dns",
+      "title": "網域與 DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "連線與路由"
+    }
+  ],
+  "sections": [
+    {
+      "id": "goal",
+      "title": "將入口需求拆解為通訊角色",
+      "paragraphs": [
+        "在入口設計中，首先定義誰以哪個名稱連線，以及應到達哪個區域中的哪個工作負載。閱讀圖表時，請分開思考 DNS 針對查詢回傳哪個目的地、邊緣節點連線到哪個來源，以及負載平衡器將流量轉送到哪個目標。",
+        "從鄰近位置傳遞靜態內容的需求、使用固定 IP 位址接收 TCP 連線的需求，以及決定 TLS 在何處終止的需求並不相同。不要依據服務名稱選擇，而應比較通訊協定、使用者所在區域、故障時的切換條件，以及回應應返回的位置。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：網路設計",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "dns",
+      "title": "不要混淆 DNS 控制與封包轉送",
+      "paragraphs": [
+        "Route 53 公有託管區域處理網際網路上的名稱，而私有託管區域處理關聯 VPC 內的命名空間。在混合式 DNS 中，必須明確指定哪些查詢要轉送至哪個區域、Resolver 端點或條件式轉送設定。",
+        "DNS 加權、延遲路由和容錯移轉會在名稱解析時選取要回傳的記錄。連線至回傳的目的地後，HTTPS 流量會遵循負載平衡器、VPC 路由和流量控制。僅切換 DNS 不會移動現有連線。",
+        "若要讓內部 DNS 解析 VPC 內的私有託管區域，請將目標網域的查詢轉送至 Route 53 VPC Resolver 的入站端點。從 VPC 解析內部 DNS 名稱時，請使用出站端點和轉送規則。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：DNS 與全球流量管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "使用 Route 53 VPC Resolver 連接內部與 VPC 的名稱解析",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "確認從入口到回應的往返路徑",
+      "paragraphs": [
+        "網際網路使用者會使用 DNS 回應連線至邊緣服務或負載平衡器。請依據需求，將 CloudFront 的 HTTP/HTTPS 內容傳遞功能，與作為 TCP 或 UDP L4 入口的 AWS Global Accelerator 進行比較。負載平衡器會根據接聽程式、目標群組，以及每個 AZ 中狀態良好的目標來轉送要求。",
+        "圖中的虛線表示名稱解析，實線表示 HTTPS 連線。瀏覽器透過解析器從 Route 53 取得回應後，會連線至解析出的目的地。即使名稱解析成功，也必須另外確認 HTTPS 是否已到達應用程式。",
+        "在圖中找出 DNS 虛線在哪裡終止。接著沿著實線，從瀏覽器經過 CloudFront 和 ALB 追蹤至應用程式。ALB 會對私有子網中的目標開啟個別連線，而回應會透過各自的連線返回。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：邊緣、DNS 與負載平衡",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ],
+      "figureId": "ans-global-ingress-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "global-ingress-check-1",
+      "prompt": "某企業認為，可以在維持現有 HTTPS 連線的情況下，立即將其從發生故障的區域移轉到另一個區域。請選擇一項關於 DNS 容錯移轉的正確說明。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "將所有現有 TCP 連線轉送到另一個區域的負載平衡器。",
+          "explanation": "移轉現有 TCP 連線不是 DNS 的功能。"
+        },
+        {
+          "id": "a",
+          "text": "DNS 容錯移轉會變更新名稱解析所傳回的目的地。它不是會自動移轉現有連線的機制。",
+          "explanation": "DNS 是名稱解析的控制平面。"
+        },
+        {
+          "id": "c",
+          "text": "自動改寫 VPC 內的路由表。",
+          "explanation": "DNS 記錄選擇與 VPC 路由屬於不同的控制平面。"
+        },
+        {
+          "id": "d",
+          "text": "不再需要安全群組的傳入規則。",
+          "explanation": "名稱解析不會授予通訊許可。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "global-ingress-check-2",
+      "prompt": "預約服務的網路管理員在面向網際網路的 Application Load Balancer（ALB）後方，將 Web 應用程式部署在跨越兩個 AZ 的私有子網路中。公開名稱透過 Route 53 指向 ALB，其中一個已註冊的目標運作正常。請選擇一種機制，說明使用者的 HTTPS 請求如何到達應用程式。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Route 53 讀取請求 URL，並將 HTTPS 請求轉送到目標的私有 IP 位址。",
+          "explanation": "Route 53 回應 DNS 查詢。讀取 HTTP 請求內容並選擇目標的是 ALB。"
+        },
+        {
+          "id": "c",
+          "text": "目標的優先順序由 Route 53 的 TTL 決定。",
+          "explanation": "TTL 是 DNS 回應被快取的時間。它不會控制註冊到 ALB 的目標狀態或選擇。"
+        },
+        {
+          "id": "d",
+          "text": "瀏覽器使用 VPC 的本機路由，並與目標直接建立 TLS 連線。",
+          "explanation": "本機路由用於 VPC 內部。外部瀏覽器會經由公開的 ALB。"
+        },
+        {
+          "id": "b",
+          "text": "瀏覽器連線至透過 DNS 取得的 ALB，而 ALB 會依照接聽程式規則將請求轉送至運作正常的目標。",
+          "explanation": "DNS 提供 ALB 的目的地。ALB 將收到的請求傳遞給適用目標群組中運作正常的目標。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "global-ingress-check-3",
+      "prompt": "一家製造公司的網路管理員需要讓 VPC 私有託管區域中的 inventory.example.internal 也能由公司內部網路的 DNS 伺服器解析。公司內部網路與目標 VPC 之間已有網路連線路徑。請選擇公司 DNS 端適用的一項設定。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將目標網域的查詢轉送至與目標託管區域建立關聯的 VPC 中的 Route 53 Resolver 入站端點。",
+          "explanation": "入站端點可接收來自 VPC 外部（例如公司內部網路）的 DNS 查詢，並解析相關託管區域中的內部名稱。"
+        },
+        {
+          "id": "b",
+          "text": "將公司 DNS 的查詢傳送至用來從 VPC 向公司內部網路查詢的出站端點。",
+          "explanation": "出站端點用於將查詢從 VPC 轉送至外部 DNS。這次的查詢方向正好相反。"
+        },
+        {
+          "id": "c",
+          "text": "建立私有託管區域後，讓公司 DNS 透過公開 DNS 路徑解析目標網域。",
+          "explanation": "私有託管區域的內容不會公開至公開 DNS。必須設定一條讓公司 DNS 能解析該網域的路徑。"
+        },
+        {
+          "id": "d",
+          "text": "將目標網域的託管區域與 VPC 建立關聯，並讓公司 DNS 維持原有的轉送設定。",
+          "explanation": "將託管區域與 VPC 建立關聯是必要的，但也必須設定一條讓公司 DNS 查詢該託管區域的路徑。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Region",
+    "AZ",
+    "CloudFront",
+    "AWS Global Accelerator",
+    "ALB",
+    "NLB",
+    "HTTPS",
+    "TCP",
+    "UDP",
+    "DNS",
+    "Route 53",
+    "DNS failover",
+    "TTL",
+    "Health check",
+    "Route 53 VPC Resolver",
+    "Resolver inbound endpoint",
+    "Resolver outbound endpoint",
+    "Private hosted zone",
+    "DNS conditional forwarding",
+    "Origin",
+    "Target group",
+    "Cross-zone load balancing",
+    "IGW",
+    "Public subnet",
+    "Private subnet"
+  ]
+}

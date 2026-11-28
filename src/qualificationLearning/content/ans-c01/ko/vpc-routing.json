@@ -1,0 +1,230 @@
+{
+  "id": "vpc-routing",
+  "title": "VPC 안팎의 라우팅 구현",
+  "objective": "서브넷에 연결된 라우팅 테이블, 대상 CIDR, 대상, 보안 제어를 구분하고 요청과 응답의 연결 가능성을 검증할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "통신 기초"
+    },
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR 및 서브넷"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "연결 및 라우팅"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-table",
+      "title": "대상과 타깃 연결",
+      "paragraphs": [
+        "VPC 라우팅 테이블은 서브넷 또는 게이트웨이에서 나가는 트래픽의 경로를 결정합니다. 각 라우팅에는 대상 CIDR 또는 접두사 목록과 인터넷 게이트웨이, NAT 게이트웨이, VPC 피어링 연결, Transit Gateway, VPN 연결 등의 타깃이 있습니다.",
+        "패킷의 대상이 여러 라우팅과 일치하면 CIDR 접두사가 가장 긴 라우팅이 선택됩니다. 예를 들어 10.20.0.0/16 VPC에서 피어 VPC의 10.40.20.25로 트래픽을 보낼 때 대상은 피어링 연결로 전달되는 10.40.20.0/24와 NAT 게이트웨이로 전달되는 0.0.0.0/0 모두와 일치합니다. 이 경우 대상을 더 좁은 범위로 지정하는 /24 라우팅이 선택됩니다. 대상 또는 접두사 길이가 같은 라우팅이 여러 개 있으면 AWS 우선순위 규칙을 확인합니다.",
+        "서브넷의 유형은 라우팅에 따라 결정됩니다. 프라이빗 서브넷에는 인터넷 게이트웨이로 직접 연결되는 라우팅이 없으며, 아웃바운드 인터넷 통신이 필요하면 NAT 디바이스와 같은 다른 경로를 사용합니다."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: 라우팅 테이블 구성",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: 라우팅 우선순위 작동 방식",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "Amazon VPC: VPC의 서브넷",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/configure-subnets.html"
+        },
+        {
+          "label": "VPC 피어링 연결 작동 방식",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/peering/vpc-peering-basics.html"
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "title": "라우팅 선택과 통신 권한을 별도로 판단하기",
+      "paragraphs": [
+        "VPC 라우팅 테이블은 서브넷 또는 게이트웨이에서 나가는 패킷의 다음 홉을 선택합니다. TGW 라우팅 테이블은 TGW attachment에서 들어오는 패킷의 전달 대상을 선택하며, VPC 측 라우팅 테이블과 별도로 평가됩니다.",
+        "보안 그룹은 ENI 또는 연결된 리소스 경계에서 상태 저장 방식으로 평가되므로, 허용된 통신에 대한 응답은 자동으로 허용됩니다. 네트워크 ACL은 서브넷 경계에서 상태 비저장 방식으로 평가되므로 요청 방향과 응답 방향을 모두 명시적으로 허용해야 합니다. Network Firewall은 Firewall endpoint를 통과하도록 경로가 구성된 패킷만 검사합니다.",
+        "변경할 때는 소스와 대상 양쪽의 VPC 경로, TGW 경로, SG, NACL, 필요한 경우 Firewall endpoint로 가는 경로, 이름 확인 및 반환 트래픽을 확인합니다."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: 라우팅 테이블 구성",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: 인프라 보안",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/infrastructure-security.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 네트워크 보안",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "packet-walk",
+      "title": "사용자에서 외부 API로의 트래픽 추적",
+      "paragraphs": [
+        "사용자가 퍼블릭 로드 밸런서를 거쳐 AZ-a 및 AZ-b의 프라이빗 서브넷에 있는 애플리케이션으로 HTTPS 요청을 보내는 구성에서는 사용자에서 ALB로 이어지는 경로와 ALB에서 대상까지 이어지는 경로를 나누어 확인합니다.",
+        "대상에서 외부 API로 트래픽이 나가는 경우 애플리케이션 서브넷의 대상 평가, 퍼블릭 서브넷에 배치된 퍼블릭 NAT 게이트웨이, 인터넷 게이트웨이 및 반환 트래픽을 확인합니다. IGW, NAT, VPC 엔드포인트의 역할을 혼동하지 마세요.",
+        "동일한 EC2에서 시작하더라도 외부 API로 보낼 때와 피어링된 VPC 내부의 API로 보낼 때 다음 홉이 달라집니다. 그림의 프라이빗 라우트를 보고 10.40.20.25로 향하는 트래픽에 어떤 라우트가 선택되는지, 응답이 어느 주소 범위로 돌아오는지 확인하세요."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: NAT 게이트웨이",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-nat-gateway.html"
+        },
+        {
+          "label": "Amazon VPC: 라우팅 우선순위 작동 방식",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 네트워크 구현",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ],
+      "figureId": "ans-vpc-routing-packet-walk"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "vpc-routing-check-1",
+      "prompt": "네트워크 운영 담당자는 프라이빗 서브넷의 EC2 인스턴스가 외부 API에 HTTPS로 연결할 수 있도록 0.0.0.0/0에서 NAT 게이트웨이로 가는 경로를 확인했습니다. 추가로 확인해야 할 사항을 하나 선택하십시오.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "퍼블릭 NAT 게이트웨이가 퍼블릭 서브넷에 있고, NAT 측에 IGW로 연결되는 경로가 있으며, EC2의 보안 그룹(SG)과 네트워크 ACL(NACL)이 필요한 양방향 통신을 허용하는지 확인합니다.",
+          "explanation": "프라이빗 측 경로만으로는 NAT 배치, 외부로 나가는 경로 또는 필요한 통신 권한을 확인할 수 없습니다."
+        },
+        {
+          "id": "b",
+          "text": "서브넷 이름에 public이 포함되지 않는지 확인합니다.",
+          "explanation": "이름만으로는 연결 가능성을 보장할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "IGW에 DNS 레코드를 등록합니다.",
+          "explanation": "IGW는 DNS 등록 대상이 아닙니다."
+        },
+        {
+          "id": "d",
+          "text": "대상의 상태 확인을 중지합니다.",
+          "explanation": "이는 외부로 나가는 경로와 관련이 없습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-2",
+      "prompt": "물류 회사의 네트워크 운영 담당자는 소스 EC2에서 Transit Gateway로 연결된 다른 VPC의 EC2로 TCP 443 연결을 설정할 수 있는지 조사하고 있습니다. 출발하는 VPC와 Transit Gateway에는 라우팅이 존재하지만 연결 시간이 초과됩니다. 다음으로 확인할 항목을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "라우팅이 존재하면 모든 포트가 자동으로 허용됩니다.",
+          "explanation": "라우팅 테이블은 포트 허용을 부여하지 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "Transit Gateway를 사용하면 보안 그룹이 평가되지 않습니다.",
+          "explanation": "TGW는 대상 ENI 측의 보안 그룹 평가를 비활성화하지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "TCP 거부는 항상 DNS TTL이 원인입니다.",
+          "explanation": "TTL만으로는 이 문제를 설명할 수 없습니다."
+        },
+        {
+          "id": "a",
+          "text": "소스와 대상의 보안 그룹 및 네트워크 ACL을 확인하고, 대상에서 소스로 돌아오는 경로도 조사하세요.",
+          "explanation": "TCP 443 연결을 시작할 수 있는지는 출발 경로뿐 아니라 각 리소스의 보안 그룹에도 좌우됩니다. 네트워크 ACL에는 양방향 허용이 필요하며, 응답이 돌아갈 수 있는 라우팅도 확인해야 합니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-3",
+      "prompt": "클라우드 설계자가 특정 서브넷을 프라이빗 서브넷이라고 부를 수 있는 근거를 설명합니다. 가장 적절한 것을 하나 선택하십시오.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "이름이 private-로 시작한다는 것.",
+          "explanation": "이름은 기술적 보장이 아닙니다."
+        },
+        {
+          "id": "c",
+          "text": "VPC에 IGW가 없다는 것뿐입니다.",
+          "explanation": "이것만으로는 각 서브넷의 경로를 판단할 수 없습니다."
+        },
+        {
+          "id": "a",
+          "text": "연결된 라우팅 테이블에 인터넷 게이트웨이로 가는 직접 경로가 없다는 것. 아웃바운드 통신이 필요하면 NAT 디바이스와 같은 다른 경로를 구성합니다.",
+          "explanation": "프라이빗 서브넷은 IGW로 가는 직접 경로가 없는 서브넷입니다."
+        },
+        {
+          "id": "d",
+          "text": "애플리케이션이 TLS를 사용한다는 것.",
+          "explanation": "TLS는 서브넷의 공개 여부를 정의하지 않습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-4",
+      "prompt": "물류 회사의 네트워크 엔지니어가 VPC 10.20.0.0/16의 프라이빗 서브넷에서 피어링된 VPC 10.40.0.0/16의 API 10.40.20.25에 연결합니다. 소스 라우팅 테이블에는 10.20.0.0/16에 대한 로컬 라우트, 10.40.20.0/24에 대한 VPC 피어링 라우트, 0.0.0.0/0에 대한 NAT 게이트웨이 라우트가 있습니다. 대상 IP 주소 10.40.20.25로 트래픽을 전달할 때 소스에서 우선되는 라우트를 하나 선택하십시오.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "10.40.20.0/24에 대한 VPC 피어링 라우트입니다.",
+          "explanation": "10.40.20.25는 /24와 /0에 모두 포함되지만, /24의 접두사 길이가 더 길기 때문에 우선 선택됩니다. 연결을 설정하려면 반환 경로와 트래픽을 허용하는 권한도 필요합니다."
+        },
+        {
+          "id": "a",
+          "text": "10.20.0.0/16에 대한 로컬 라우트입니다.",
+          "explanation": "10.40.20.25는 10.20.0.0/16에 포함되지 않습니다. 소스 IP 주소가 이 범위에 있더라도 대상 라우트를 선택할 때는 이 라우트를 사용하지 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "0.0.0.0/0에 대한 NAT 게이트웨이 라우트입니다.",
+          "explanation": "0.0.0.0/0은 대상과 일치하지만, 더 구체적인 /24 라우트가 있으므로 선택되지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "프라이빗 서브넷에는 VPC 피어링 라우트를 배치할 수 없으므로 어떤 라우트도 선택되지 않습니다.",
+          "explanation": "프라이빗 서브넷에도 VPC 피어링 라우트를 구성할 수 있습니다. 서브넷의 퍼블릭 여부는 인터넷 게이트웨이에 대한 직접 라우트가 있는지에 따라 결정됩니다."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC",
+    "AZ",
+    "Subnet",
+    "Public subnet",
+    "Private subnet",
+    "IGW",
+    "NAT gateway",
+    "ENI",
+    "ALB",
+    "Security group",
+    "NACL",
+    "CIDR",
+    "Route table",
+    "Local route",
+    "Default route",
+    "Longest prefix match",
+    "Prefix list",
+    "VPC peering",
+    "Transit Gateway route table",
+    "VPC endpoint",
+    "Stateful filtering",
+    "Stateless filtering",
+    "Return path"
+  ]
+}

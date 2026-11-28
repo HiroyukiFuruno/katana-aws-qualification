@@ -1,0 +1,182 @@
+{
+  "id": "network-security",
+  "title": "Sécuriser le réseau et le rendre auditable",
+  "objective": "Concevoir le trafic entrant, le trafic sortant, les communications entre VPC, le chiffrement en transit, ainsi que la journalisation et l’audit comme des points de contrôle distincts, puis les mettre en correspondance avec les exigences.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Fondamentaux des communications"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentification et autorisation"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protection des données"
+    }
+  ],
+  "sections": [
+    {
+      "id": "threat-model",
+      "title": "Créer un modèle de menace à partir des ressources à protéger et des limites",
+      "paragraphs": [
+        "En sécurité réseau, définissez, pour chaque limite entre Internet, les environnements sur site, les autres comptes, les couches internes du VPC et les magasins de données, qui se connecte à quoi et via quels protocoles.",
+        "Pour le trafic entrant, distinguez les rôles de WAF, Shield, Network Firewall, des équilibreurs de charge et des groupes de sécurité selon la menace et le point de contrôle. Pour le trafic sortant, combinez NAT, des proxys, Network Firewall et d’autres composants en fonction des exigences."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty : Sécurité réseau",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "confidentiality",
+      "title": "Séparer les responsabilités liées aux chemins réseau et au chiffrement",
+      "paragraphs": [
+        "Pour protéger les données en transit, indiquez explicitement quels segments utilisent TLS ou IPsec. La protection du protocole HTTPS entre les utilisateurs et l’équilibreur de charge ne garantit pas nécessairement les mêmes conditions entre l’équilibreur de charge et la cible, ni entre le VPC et l’environnement sur site.",
+        "Même si vous choisissez Direct Connect, évaluez les exigences de chiffrement en incluant des options telles qu’un VPN via Direct Connect. Ne traitez pas la protection du DNS et le chiffrement du trafic de données applicatif comme une seule et même configuration."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty : Confidentialité des communications",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "Relier à l’audit les éléments probants des autorisations, des communications et des modifications",
+      "paragraphs": [
+        "Dans un réseau auditable, il doit être possible de vérifier non seulement les paramètres d’autorisation, mais aussi les communications réelles, les détections et les rejets, ainsi que les modifications de configuration. Les journaux de flux VPC, les journaux d’accès du load balancer, CloudTrail, CloudWatch et les journaux de Network Firewall ont des périmètres et des usages différents.",
+        "Dans un environnement multi-compte, concevez la durée de conservation, la protection contre la falsification, la destination d’agrégation, les autorisations de consultation et le responsable des alertes. Vérifiez non seulement que les chemins autorisés fonctionnent, mais aussi que les chemins interdits sont rejetés.",
+        "Dans le schéma, suivez séparément la connexion entre le point d’entrée public et EC2, ainsi que la connexion qu’EC2 ouvre vers S3. Les journaux d’accès de l’ALB et les journaux de flux VPC permettent de vérifier des types de communication différents. Examinez les modifications des routes ou des autorisations de communication au moyen des événements de gestion CloudTrail."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty : Audit et journaux réseau",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ],
+      "figureId": "ans-network-security-layered-controls"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-security-check-1",
+      "prompt": "L’équipe de la plateforme applicative doit autoriser uniquement le trafic HTTPS d’EC2 vers un SaaS externe de facturation et pouvoir auditer les destinations contactées. Le fournisseur du SaaS publie le domaine de destination, mais son adresse IP peut changer. Choisissez une approche de conception appropriée.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Configurez une route par défaut vers une passerelle NAT et contrôlez les domaines autorisés à l’aide des métriques de volume de trafic de la passerelle NAT.",
+          "explanation": "Les métriques NAT mesurent notamment le volume de trafic ; elles ne permettent pas de spécifier des domaines et d’autoriser le passage du trafic."
+        },
+        {
+          "id": "c",
+          "text": "Autorisez le port de destination 443 vers l’ensemble d’Internet dans le groupe de sécurité EC2, puis collectez séparément les journaux d’audit.",
+          "explanation": "Cette configuration autorise les connexions à tous les sites HTTPS externes ; elle ne respecte donc pas la condition d’autoriser uniquement le SaaS spécifié."
+        },
+        {
+          "id": "a",
+          "text": "Regroupez le trafic sortant d’EC2 via un proxy géré ou un composant similaire, configurez les domaines autorisés et conservez les journaux de connexion.",
+          "explanation": "Cette approche contrôle les destinations visées par domaine et permet d’auditer les résultats d’autorisation ou de refus. Elle limite également les chemins permettant à EC2 de sortir directement vers l’extérieur."
+        },
+        {
+          "id": "d",
+          "text": "Configurez AWS WAF sur l’ALB destiné aux utilisateurs et gérez une liste d’autorisation.",
+          "explanation": "Dans cette configuration, WAF contrôle les requêtes Web qui entrent dans l’ALB. Il ne s’applique pas au trafic sortant d’EC2 vers le SaaS."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-2",
+      "prompt": "Le responsable réseau d’un établissement financier connecte le site de l’établissement à une application AWS à l’aide de Direct Connect. Des données sensibles devant être échangées, le chiffrement en transit est requis entre l’application source et l’application destinataire. Choisissez une seule approche à adopter ensuite.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Vérifier que la connexion physique Direct Connect est établie, sans configurer TLS entre les applications.",
+          "explanation": "Une connexion dédiée ne chiffre pas à elle seule les communications applicatives entre la source et la destination."
+        },
+        {
+          "id": "a",
+          "text": "Configurer et valider TLS entre les deux applications, puis choisir également une méthode de chiffrement pour les segments réseau requis par le contrat.",
+          "explanation": "TLS entre les applications protège le transfert des données concernées. Après avoir déterminé le type de connexion réseau, il est possible de vérifier séparément quels segments doivent être chiffrés."
+        },
+        {
+          "id": "c",
+          "text": "Chiffrer uniquement les disques qui stockent les données de l’application et utiliser la connexion existante pour les données en transit.",
+          "explanation": "Le chiffrement des disques protège les données au repos. Pour protéger les données qui circulent sur le réseau, il faut chiffrer la connexion."
+        },
+        {
+          "id": "d",
+          "text": "Établir la connexion TLS uniquement côté AWS, tandis que le site on-premises traite les données en texte brut reçues.",
+          "explanation": "Puisqu’un segment du trajet utilise du texte brut, cette approche ne satisfait pas à l’exigence de chiffrement entre les applications source et destinataire."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-3",
+      "prompt": "Un auditeur qui gère plusieurs comptes AWS vérifie que le compte de développement ne peut pas se connecter au port d’administration de la production. Les connexions normales au service de production doivent continuer. Sélectionnez une combinaison à recueillir comme preuve d’audit.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Conserver uniquement les journaux d’accès ALB montrant la réussite de requêtes Web normales et les métriques d’intégrité de l’application.",
+          "explanation": "Ces éléments fournissent une preuve de la connectivité normale, mais ne prouvent pas que le côté développement ne peut pas se connecter au port d’administration."
+        },
+        {
+          "id": "c",
+          "text": "Utiliser CloudTrail pour identifier l’auteur de la modification du groupe de sécurité, puis conclure que le port d’administration est refusé sur le chemin actuel.",
+          "explanation": "Vous pouvez identifier l’auteur de la modification et sa date, mais vous devez également vérifier le résultat réel en combinant le chemin actuel et les contrôles de communication."
+        },
+        {
+          "id": "d",
+          "text": "Contabiliser par mois les entrées REJECT des journaux de flux de l’ensemble du réseau, puis conclure que le port d’administration est bloqué si le total augmente.",
+          "explanation": "Le nombre total ne permet pas de déterminer si un refus s’est produit pour la source et le port d’administration concernés."
+        },
+        {
+          "id": "a",
+          "text": "Tester une connexion depuis la source spécifiée côté développement vers le port d’administration cible, puis la comparer au trafic autorisé. Mettre en correspondance les journaux de flux avec les enregistrements des modifications des contrôles de communication.",
+          "explanation": "Cela permet de vérifier séparément le trafic qui doit être refusé et celui qui doit rester autorisé. Les résultats réels peuvent être mis en relation avec la configuration et l’historique des modifications."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Threat model",
+    "Traffic",
+    "WAF",
+    "Shield",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "ALB",
+    "ALB access log",
+    "Security group",
+    "NACL",
+    "NAT gateway",
+    "Forward proxy",
+    "TLS",
+    "IPsec",
+    "AWS Direct Connect",
+    "DNSSEC",
+    "VPC Flow Logs",
+    "CloudTrail",
+    "CloudWatch",
+    "VPC endpoint policy",
+    "Audit log",
+    "Return path",
+    "CloudFront",
+    "S3",
+    "Bucket policy",
+    "Gateway endpoint",
+    "Prefix list",
+    "Public subnet",
+    "Private subnet",
+    "ENI",
+    "AWS Region",
+    "EC2"
+  ]
+}

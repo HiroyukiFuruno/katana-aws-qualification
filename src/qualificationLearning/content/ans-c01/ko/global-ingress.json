@@ -1,0 +1,180 @@
+{
+  "id": "global-ingress",
+  "title": "글로벌 진입점, DNS 및 로드 밸런싱 설계",
+  "objective": "사용자, 이름 확인, 엣지, 로드 밸런서, VPC 내 대상의 책임을 구분하고 가용성, 지연 시간 및 보안 요구 사항을 바탕으로 진입점을 설명할 수 있습니다.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "통신 기초"
+    },
+    {
+      "slug": "domain-dns",
+      "title": "도메인 및 DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "연결 및 라우팅"
+    }
+  ],
+  "sections": [
+    {
+      "id": "goal",
+      "title": "진입 요구 사항을 통신 역할로 분해하기",
+      "paragraphs": [
+        "진입 지점을 설계할 때는 누가 어떤 이름으로 연결하고, 어느 리전의 어떤 워크로드에 도달해야 하는지를 먼저 정의합니다. 다이어그램을 읽을 때는 DNS가 쿼리에 어떤 대상 주소를 반환하는지, 엣지가 어떤 오리진에 연결하는지, 로드 밸런서가 어떤 대상에 트래픽을 전달하는지를 구분해서 생각해야 합니다.",
+        "정적 콘텐츠를 가까운 위치에서 제공해야 하는 요구 사항, 고정 IP 주소로 TCP 연결을 수신해야 하는 요구 사항, TLS를 어디에서 종료할지 정해야 하는 요구 사항은 서로 동일하지 않습니다. 서비스 이름만 보고 선택하지 말고 프로토콜, 사용자의 지역, 장애 발생 시 전환 조건, 응답이 돌아가야 할 위치를 비교합니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 네트워크 설계",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "dns",
+      "title": "DNS 제어와 패킷 전달을 혼동하지 마세요",
+      "paragraphs": [
+        "Route 53 퍼블릭 호스팅 영역은 인터넷상의 이름을 처리하고, 프라이빗 호스팅 영역은 연결된 VPC 내의 네임스페이스를 처리합니다. 하이브리드 DNS에서는 어떤 쿼리를 어떤 영역, Resolver 엔드포인트 또는 조건부 전달 구성으로 전달할지 명시해야 합니다.",
+        "DNS 가중치 기반 라우팅, 지연 시간 기반 라우팅 및 장애 조치는 이름을 확인할 때 반환할 레코드를 선택합니다. 반환된 대상에 연결한 후의 HTTPS 트래픽은 로드 밸런서, VPC 라우팅 및 트래픽 제어를 따릅니다. DNS만 전환한다고 해서 기존 연결이 이동하지는 않습니다.",
+        "온프레미스 DNS가 VPC 내의 프라이빗 호스팅 영역을 확인하도록 하려면 대상 도메인에 대한 쿼리를 Route 53 VPC Resolver의 인바운드 엔드포인트로 전달합니다. VPC에서 온프레미스 DNS 이름을 확인할 때는 아웃바운드 엔드포인트와 전달 규칙을 사용합니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: DNS 및 글로벌 트래픽 관리",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "Route 53 VPC Resolver로 온프레미스와 VPC 이름 확인 연결",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "진입 지점에서 응답까지의 왕복 경로 확인",
+      "paragraphs": [
+        "인터넷 사용자는 DNS 응답을 사용하여 엣지 서비스 또는 로드 밸런서에 연결합니다. 요구 사항에 따라 CloudFront의 HTTP/HTTPS 콘텐츠 전송 기능과 TCP 또는 UDP L4 진입점인 AWS Global Accelerator를 비교합니다. 로드 밸런서는 리스너, 대상 그룹, 각 AZ의 정상 대상에 따라 요청을 전달합니다.",
+        "그림의 점선은 이름 확인을, 실선은 HTTPS 연결을 나타냅니다. 브라우저는 리졸버를 통해 Route 53에서 응답을 받은 후 확인된 대상에 연결합니다. 이름을 성공적으로 확인했더라도 HTTPS가 애플리케이션에 도달하는지는 별도로 확인해야 합니다.",
+        "그림에서 DNS 점선이 어디에서 끝나는지 찾으세요. 그런 다음 브라우저에서 CloudFront, ALB를 거쳐 애플리케이션까지 실선을 따라가세요. ALB는 프라이빗 서브넷의 대상에 별도의 연결을 열고, 응답은 각 연결을 통해 돌아옵니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 엣지, DNS, 로드 밸런싱",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ],
+      "figureId": "ans-global-ingress-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "global-ingress-check-1",
+      "prompt": "한 기업은 기존 HTTPS 연결을 유지한 채 장애가 발생한 리전에서 다른 리전으로 즉시 이동할 수 있다고 생각합니다. DNS 장애 조치에 대한 설명으로 올바른 것을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "모든 기존 TCP 연결을 다른 리전의 로드 밸런서로 전달한다.",
+          "explanation": "기존 TCP 연결을 이동하는 것은 DNS의 기능이 아닙니다."
+        },
+        {
+          "id": "a",
+          "text": "DNS 장애 조치는 새로운 이름 확인에서 반환되는 대상을 변경합니다. 기존 연결을 자동으로 이동하는 메커니즘은 아닙니다.",
+          "explanation": "DNS는 이름 확인을 위한 제어 플레인입니다."
+        },
+        {
+          "id": "c",
+          "text": "VPC 내 라우팅 테이블을 자동으로 다시 작성한다.",
+          "explanation": "DNS 레코드 선택과 VPC 라우팅은 서로 다른 제어 플레인입니다."
+        },
+        {
+          "id": "d",
+          "text": "보안 그룹의 인바운드 규칙이 필요하지 않게 한다.",
+          "explanation": "이름 확인은 통신 권한을 부여하지 않습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "global-ingress-check-2",
+      "prompt": "예약 서비스의 네트워크 관리자는 인터넷 연결형 Application Load Balancer(ALB) 뒤에 두 AZ의 프라이빗 서브넷에서 실행되는 웹 애플리케이션을 배포했습니다. 공개 이름은 Route 53을 통해 ALB를 가리키며, 등록된 대상 하나는 정상 상태입니다. 사용자의 HTTPS 요청이 애플리케이션에 도달하는 메커니즘을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Route 53이 요청 URL을 읽고 HTTPS 요청을 대상의 프라이빗 IP 주소로 전달합니다.",
+          "explanation": "Route 53은 DNS 쿼리에 응답합니다. HTTP 요청의 내용을 읽고 대상을 선택하는 것은 ALB입니다."
+        },
+        {
+          "id": "c",
+          "text": "대상의 우선순위는 Route 53의 TTL로 결정됩니다.",
+          "explanation": "TTL은 DNS 응답이 캐시되는 시간입니다. ALB에 등록된 대상의 상태나 선택을 제어하지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "브라우저가 VPC 로컬 라우트를 사용하여 대상과 직접 TLS 연결을 설정합니다.",
+          "explanation": "로컬 라우트는 VPC 내부에서 사용됩니다. 외부 브라우저는 공개된 ALB를 거칩니다."
+        },
+        {
+          "id": "b",
+          "text": "브라우저는 DNS로 얻은 ALB에 연결하고, ALB는 리스너 규칙에 따라 정상 상태인 대상으로 요청을 전달합니다.",
+          "explanation": "DNS는 ALB의 대상을 알려 줍니다. ALB는 수신한 요청을 해당 대상 그룹의 정상 상태인 대상에 전달합니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "global-ingress-check-3",
+      "prompt": "제조 회사의 네트워크 관리자는 VPC의 프라이빗 호스팅 영역에 있는 inventory.example.internal을 사내 네트워크의 DNS 서버에서도 확인할 수 있도록 하려고 합니다. 사내 네트워크와 대상 VPC 사이에는 네트워크 통신 경로가 있습니다. 사내 DNS 측에 적절한 설정을 하나 선택하십시오.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "대상 도메인에 대한 쿼리를 대상 영역과 연결된 VPC의 Route 53 Resolver 인바운드 엔드포인트로 전달합니다.",
+          "explanation": "인바운드 엔드포인트는 사내 네트워크처럼 VPC 외부에서 들어오는 DNS 쿼리를 수신하고, 연결된 영역의 내부 이름을 확인할 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "사내 DNS의 쿼리를 VPC에서 사내 네트워크로 쿼리를 보내기 위한 아웃바운드 엔드포인트로 보냅니다.",
+          "explanation": "아웃바운드 엔드포인트는 VPC에서 외부 DNS로 쿼리를 전달할 때 사용합니다. 이번 경우에는 쿼리 방향이 반대입니다."
+        },
+        {
+          "id": "c",
+          "text": "프라이빗 호스팅 영역을 만든 후 사내 DNS에서 공개 DNS 경로를 통해 대상 도메인을 확인합니다.",
+          "explanation": "프라이빗 호스팅 영역의 내용은 공개 DNS에 게시되지 않습니다. 사내 DNS에서 도메인을 확인할 수 있는 경로를 설정해야 합니다."
+        },
+        {
+          "id": "d",
+          "text": "대상 도메인의 영역을 VPC에 연결하고 사내 DNS는 기존 전달 설정을 그대로 유지합니다.",
+          "explanation": "영역을 VPC에 연결해야 하지만, 사내 DNS가 해당 영역에 쿼리할 수 있는 경로도 구성해야 합니다."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Region",
+    "AZ",
+    "CloudFront",
+    "AWS Global Accelerator",
+    "ALB",
+    "NLB",
+    "HTTPS",
+    "TCP",
+    "UDP",
+    "DNS",
+    "Route 53",
+    "DNS failover",
+    "TTL",
+    "Health check",
+    "Route 53 VPC Resolver",
+    "Resolver inbound endpoint",
+    "Resolver outbound endpoint",
+    "Private hosted zone",
+    "DNS conditional forwarding",
+    "Origin",
+    "Target group",
+    "Cross-zone load balancing",
+    "IGW",
+    "Public subnet",
+    "Private subnet"
+  ]
+}

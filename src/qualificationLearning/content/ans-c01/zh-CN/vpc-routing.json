@@ -1,0 +1,230 @@
+{
+  "id": "vpc-routing",
+  "title": "实施 VPC 内外的路由",
+  "objective": "区分与子网关联的路由表、目标 CIDR、目标以及安全控制，并验证请求和响应的可达性。",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "通信基础"
+    },
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR 与子网"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "连接与路由"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-table",
+      "title": "连接目的地与目标",
+      "paragraphs": [
+        "VPC 路由表决定从子网或网关发出的流量所采用的路径。每条路由都包含一个目标 CIDR 或前缀列表，以及一个目标资源，例如互联网网关、NAT 网关、VPC 对等连接、Transit Gateway 或 VPN 连接。",
+        "当数据包的目的地与多条路由匹配时，系统会选择 CIDR 前缀最长的路由。例如，从使用 10.20.0.0/16 的 VPC 向对等 VPC 中的 10.40.20.25 发送流量时，该目的地同时匹配指向对等连接的 10.40.20.0/24 和指向 NAT 网关的 0.0.0.0/0。在这种情况下，系统会选择以更窄范围指定目的地的 /24 路由。如果存在目的地或前缀长度相同的多条路由，请查看 AWS 的优先级规则。",
+        "子网的类型由其路由决定。私有子网没有指向互联网网关的直接路由；如果需要出站互联网通信，则使用 NAT 设备等其他路径。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC：配置路由表",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC：路由优先级的工作原理",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "Amazon VPC：VPC 中的子网",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/configure-subnets.html"
+        },
+        {
+          "label": "VPC 对等连接的工作原理",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/peering/vpc-peering-basics.html"
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "title": "分别判定路由选择和通信权限",
+      "paragraphs": [
+        "VPC 路由表会为离开子网或网关的数据包选择下一跳。TGW 路由表会为通过 TGW attachment 进入的数据包选择转发目标，并且与 VPC 侧的路由表分开评估。",
+        "安全组会在 ENI 或关联资源边界进行有状态评估，因此对已允许通信的响应会自动获准。网络 ACL 会在子网边界进行无状态评估，因此必须分别明确允许请求方向和响应方向的通信。Network Firewall 只检查路由配置为经过 Firewall endpoint 的数据包。",
+        "进行更改时，请检查源端和目标端双方的 VPC 路由、TGW 路由、SG、NACL、必要时通往 Firewall endpoint 的路径、名称解析以及返回通信。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC：配置路由表",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC：基础设施安全",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/infrastructure-security.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：网络安全",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "packet-walk",
+      "title": "跟踪从用户到外部 API 的通信",
+      "paragraphs": [
+        "在用户通过公有负载均衡器向位于 AZ-a 和 AZ-b 私有子网中的应用程序发送 HTTPS 请求的配置中，请分别确认从用户到 ALB 的路径，以及从 ALB 到目标的路径。",
+        "当流量从目标前往外部 API 时，请确认应用程序子网中的目标评估、放置在公有子网中的公有 NAT 网关、互联网网关以及返回流量。不要混淆 IGW、NAT 和 VPC 端点的作用。",
+        "即使来自同一个 EC2 实例，前往外部 API 与前往对等 VPC 内 API 时的下一跳也不同。请查看图中的私有路由，确认发往 10.40.20.25 的流量选择了哪条路由，以及响应返回到哪个地址范围。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC：NAT 网关",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-nat-gateway.html"
+        },
+        {
+          "label": "Amazon VPC：路由优先级的工作原理",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：网络实施",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ],
+      "figureId": "ans-vpc-routing-packet-walk"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "vpc-routing-check-1",
+      "prompt": "网络运维人员已确认存在一条从 0.0.0.0/0 指向 NAT 网关的路由，以便私有子网中的 EC2 实例通过 HTTPS 连接到外部 API。请选择还应确认的一项。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "公有 NAT 网关位于公有子网中，NAT 侧存在指向 IGW 的路由，并且 EC2 的安全组（SG）和网络 ACL（NACL）允许所需的双向通信。",
+          "explanation": "仅确认私有侧的路由，无法确认 NAT 的位置、出站路径或通信所需的权限。"
+        },
+        {
+          "id": "b",
+          "text": "子网名称中不包含 public。",
+          "explanation": "名称不能保证可达性。"
+        },
+        {
+          "id": "c",
+          "text": "将 DNS 记录注册到 IGW。",
+          "explanation": "IGW 不是 DNS 记录的注册目标。"
+        },
+        {
+          "id": "d",
+          "text": "停止目标的运行状况检查。",
+          "explanation": "这与出站路径无关。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-2",
+      "prompt": "一家物流公司的网络运营人员正在调查：从源 EC2 实例通过 Transit Gateway 连接到另一个 VPC 中的 EC2 实例时，是否可以使用 TCP 443 建立连接。出站 VPC 和 Transit Gateway 中都存在路由，但连接超时。请选择下一步要检查的一项。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只要存在路由，所有端口就会自动获得允许。",
+          "explanation": "路由表不会授予端口访问权限。"
+        },
+        {
+          "id": "c",
+          "text": "使用 Transit Gateway 时不会评估安全组。",
+          "explanation": "TGW 不会禁用目标 ENI 一侧的安全组评估。"
+        },
+        {
+          "id": "d",
+          "text": "TCP 被拒绝一定是 DNS TTL 导致的。",
+          "explanation": "仅凭 TTL 无法解释该问题。"
+        },
+        {
+          "id": "a",
+          "text": "检查源端和目标端的安全组与网络 ACL，并调查从目标端返回源端的路径。",
+          "explanation": "能否发起 TCP 443 连接，不仅取决于出站路径，还取决于各资源的安全组。网络 ACL 必须允许往返方向的流量，还要确认存在能够使响应返回的路由。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-3",
+      "prompt": "一名云架构师正在说明将某个子网称为私有子网的依据。请选择最恰当的一项。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "名称以 private- 开头。",
+          "explanation": "名称不是技术保证。"
+        },
+        {
+          "id": "c",
+          "text": "仅仅是 VPC 中没有 IGW。",
+          "explanation": "这无法判断每个子网的路由。"
+        },
+        {
+          "id": "a",
+          "text": "关联的路由表没有指向互联网网关的直接路由。如果需要出站通信，应配置其他路径，例如 NAT 设备。",
+          "explanation": "私有子网是没有指向 IGW 的直接路由的子网。"
+        },
+        {
+          "id": "d",
+          "text": "应用程序使用 TLS。",
+          "explanation": "TLS 不决定子网是否为公有子网。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-4",
+      "prompt": "某物流公司的网络工程师从 VPC 10.20.0.0/16 的私有子网连接到对等 VPC 10.40.0.0/16 中的 API 10.40.20.25。源路由表包含 10.20.0.0/16 的本地路由、指向 VPC 对等连接的 10.40.20.0/24 路由，以及指向 NAT 网关的 0.0.0.0/0 路由。转发目标 IP 地址 10.40.20.25 的流量时，请选择源端优先使用的一条路由。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "指向 VPC 对等连接的 10.40.20.0/24 路由。",
+          "explanation": "10.40.20.25 同时包含在 /24 和 /0 中，而 /24 的前缀长度更长，因此优先级更高。要建立连接，还需要返回路由和允许通信的权限。"
+        },
+        {
+          "id": "a",
+          "text": "10.20.0.0/16 的本地路由。",
+          "explanation": "10.40.20.25 不包含在 10.20.0.0/16 中。即使源 IP 地址属于此范围，也不会使用该路由来选择目标路由。"
+        },
+        {
+          "id": "c",
+          "text": "指向 NAT 网关的 0.0.0.0/0 路由。",
+          "explanation": "0.0.0.0/0 与目标匹配，但由于存在更具体的 /24 路由，因此不会选择它。"
+        },
+        {
+          "id": "d",
+          "text": "不会选择任何路由，因为私有子网无法配置指向 VPC 对等连接的路由。",
+          "explanation": "私有子网也可以配置指向 VPC 对等连接的路由。子网是否为公有子网取决于是否存在指向互联网网关的直接路由。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC",
+    "AZ",
+    "Subnet",
+    "Public subnet",
+    "Private subnet",
+    "IGW",
+    "NAT gateway",
+    "ENI",
+    "ALB",
+    "Security group",
+    "NACL",
+    "CIDR",
+    "Route table",
+    "Local route",
+    "Default route",
+    "Longest prefix match",
+    "Prefix list",
+    "VPC peering",
+    "Transit Gateway route table",
+    "VPC endpoint",
+    "Stateful filtering",
+    "Stateless filtering",
+    "Return path"
+  ]
+}

@@ -1,0 +1,182 @@
+{
+  "id": "network-security",
+  "title": "ネットワークを保護し、監査できる状態にする",
+  "objective": "インバウンド、アウトバウンド、VPC間通信、転送中暗号化、ログ・監査を別々の制御点として設計し、要件に対応付けられる。",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "通信の基礎"
+    },
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    },
+    {
+      "slug": "data-protection",
+      "title": "データ保護"
+    }
+  ],
+  "sections": [
+    {
+      "id": "threat-model",
+      "title": "守る対象と境界から脅威モデルを作る",
+      "paragraphs": [
+        "ネットワークセキュリティでは、インターネット、オンプレミス、別アカウント、VPC内層、データストアの境界ごとに、誰がどのプロトコルで何へ接続するかを定義します。",
+        "インバウンドではWAF、Shield、Network Firewall、ロードバランサー、セキュリティグループの役割を脅威と制御点で分けます。アウトバウンドではNAT、プロキシ、Network Firewallなどを要件に応じて組み合わせます。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ネットワークセキュリティ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "confidentiality",
+      "title": "経路と暗号化の責任を分ける",
+      "paragraphs": [
+        "転送中のデータを守るには、どの区間でTLSまたはIPsecを使うかを明示します。利用者とロードバランサー間のHTTPSを保護しても、ロードバランサーからターゲット、VPCからオンプレミスまで同じ条件になるとは限りません。",
+        "Direct Connectを選ぶ場合も、暗号化要件ではDirect Connect経由のVPNなどを含めて評価します。DNSの保護とアプリケーションデータ通信の暗号化を同一の設定として扱いません。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 通信の機密性",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "許可、通信、変更の証跡を監査につなげる",
+      "paragraphs": [
+        "監査可能なネットワークでは、許可設定だけでなく、実際の通信、検出・拒否、設定変更を確認できる必要があります。VPCフローログ、ロードバランサーアクセスログ、CloudTrail、CloudWatch、Network Firewallログは対象と用途が異なります。",
+        "複数アカウントでは、保持期間、改ざん防止、集約先、閲覧権限、アラート責任者を設計します。許可経路だけでなく、禁止経路が拒否されることも確認します。",
+        "図で、公開の入口からEC2までの接続と、EC2がS3へ開く接続を分けてたどってください。ALBのアクセスログとVPCフローログは、確認できる通信の種類が異なります。ルートや通信許可の設定変更は、CloudTrailの管理イベントで調べます。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ネットワーク監査とログ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ],
+      "figureId": "ans-network-security-layered-controls"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-security-check-1",
+      "prompt": "アプリ基盤チームは、EC2から外部の請求SaaSへのHTTPSのみを許可し、どの宛先へ接続したかを監査できるようにします。SaaS事業者は送信先ドメインを公開し、IPアドレスは変わることがあります。適切な設計方針を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "NATゲートウェイへ既定ルートを設定し、NATゲートウェイの通信量メトリクスで許可ドメインを制御する。",
+          "explanation": "NATのメトリクスは通信量などを計測するもので、ドメインを指定して通過を許可する機能はありません。"
+        },
+        {
+          "id": "c",
+          "text": "EC2のセキュリティグループで宛先ポート443をインターネット全体に許可し、監査ログを別に集める。",
+          "explanation": "通信先がすべての外部HTTPSサイトになるため、指定したSaaSだけを許可する条件を満たしません。"
+        },
+        {
+          "id": "a",
+          "text": "EC2の外向き通信を管理対象のプロキシなどに集約し、許可ドメインを設定して接続ログを保存する。",
+          "explanation": "目的の宛先をドメインで制御し、許可・拒否の結果を監査できます。EC2から直接外へ出る経路も制限します。"
+        },
+        {
+          "id": "d",
+          "text": "利用者向けのALBにAWS WAFを設定し、許可リストを管理する。",
+          "explanation": "この構成のWAFはALBに入るWebリクエストを制御します。EC2からSaaSに向かう外向き通信には適用されません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-2",
+      "prompt": "金融機関のネットワーク担当者が、自社拠点とAWSのアプリケーションをDirect Connectで接続します。機密データをやり取りするため、送信元アプリケーションから受信先アプリケーションまで転送中の暗号化が必要です。次に取る方針を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Direct Connectの物理接続ができたことを確認し、アプリケーション間のTLSは設定しない。",
+          "explanation": "専用接続だけで送信元から受信先までのアプリケーション通信が暗号化されるわけではありません。"
+        },
+        {
+          "id": "a",
+          "text": "両方のアプリケーション間のTLSを構成して検証し、契約上必要なネットワーク区間についても暗号化方式を選ぶ。",
+          "explanation": "アプリケーション間のTLSは対象データの転送を保護します。ネットワーク接続の種類を決めたうえで、必要な暗号化区間を別に確認できます。"
+        },
+        {
+          "id": "c",
+          "text": "アプリケーションのデータを保管するディスクだけを暗号化し、転送中は既存の接続を使う。",
+          "explanation": "ディスク暗号化は保存中のデータを保護します。ネットワークを流れるデータの保護には接続の暗号化が必要です。"
+        },
+        {
+          "id": "d",
+          "text": "AWS側だけでTLS接続を開始し、オンプレミス側は到着した平文データを処理する。",
+          "explanation": "平文の区間があるため、送受信アプリケーション間での暗号化要件を満たしません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-3",
+      "prompt": "複数のAWSアカウントを管理する監査担当者は、開発アカウントから本番の管理ポートへ接続できないことを検証します。本番サービスへの通常の接続は続ける必要があります。監査証拠として集める組み合わせを1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "通常のWebリクエストが成功したALBアクセスログと、アプリの正常性メトリクスだけを保管する。",
+          "explanation": "通常接続の証拠になりますが、開発側から管理ポートに接続できないことの証明にはなりません。"
+        },
+        {
+          "id": "c",
+          "text": "CloudTrailでセキュリティグループの変更者を確認し、現在の経路で管理ポートが拒否されると判断する。",
+          "explanation": "変更者と日時は把握できますが、現在の経路と通信制御を組み合わせた実際の結果も確かめます。"
+        },
+        {
+          "id": "d",
+          "text": "ネットワーク全体のフローログのREJECT件数を月別に集計し、件数が増えれば管理ポートは遮断されたと判定する。",
+          "explanation": "合計件数からは、対象の送信元と管理ポートで拒否が発生したか分かりません。"
+        },
+        {
+          "id": "a",
+          "text": "指定した開発側の送信元から対象の管理ポートへの接続を試し、許可済みの通信も比較する。フローログと、通信制御の変更記録を照合する。",
+          "explanation": "拒否されるべき通信と、引き続き許可される通信を分けて検証できます。実際の結果を構成と変更履歴に関連付けられます。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Threat model",
+    "Traffic",
+    "WAF",
+    "Shield",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "ALB",
+    "ALB access log",
+    "Security group",
+    "NACL",
+    "NAT gateway",
+    "Forward proxy",
+    "TLS",
+    "IPsec",
+    "AWS Direct Connect",
+    "DNSSEC",
+    "VPC Flow Logs",
+    "CloudTrail",
+    "CloudWatch",
+    "VPC endpoint policy",
+    "Audit log",
+    "Return path",
+    "CloudFront",
+    "S3",
+    "Bucket policy",
+    "Gateway endpoint",
+    "Prefix list",
+    "Public subnet",
+    "Private subnet",
+    "ENI",
+    "AWS Region",
+    "EC2"
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "id": "cloud-architecture",
+  "title": "Design and Implement Cloud Architecture",
+  "objective": "Explain cloud architecture and its trade-offs based on constraints related to requirements, failure domains, communication, data, and AI integration.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "Fundamentals of Cloud"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connectivity and Routing"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentication and Authorization"
+    },
+    {
+      "slug": "",
+      "title": "Solutions Architect – Associate",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements-to-boundaries",
+      "title": "Turning requirements into failure boundaries and responsibility boundaries",
+      "paragraphs": [
+        "An architect does not turn a “high availability” requirement directly into an instruction to deploy multiple resources. The architect clarifies user operations, the allowable downtime, the amount of data that may be lost, dependent services, and how Regional failures will be handled, then maps single points of failure to recovery procedures.",
+        "The AWS Well-Architected Framework provides a way to evaluate the advantages and disadvantages of design decisions. Choices that improve availability also affect costs, operational burden, data consistency, and failover procedures during failures, so the design record should state which requirements were prioritized."
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03.html"
+        },
+        {
+          "label": "AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "hybrid-network-path",
+      "title": "Designing Hybrid Communications with Bidirectional Paths",
+      "paragraphs": [
+        "Designers of hybrid environments do not consider a design complete merely because one-way reachability from on-premises to a VPC is available. They verify the source CIDR, name resolution, connection method, routes in each subnet, security groups, network ACLs, and the return path on the destination side, then clearly define the boundaries that allow communication.",
+        "Each route in a route table has a destination and a target. Having a route is separate from allowing a port. For multi-VPC or on-premises connectivity, validate overlapping CIDRs, the scope of route propagation, alternate paths for failures, and centralized inspection first; do not choose unrestricted full connectivity.",
+        "In the diagram, the solid line represents the primary Direct Connect path, and the dashed line represents an independent backup VPN path. Even if the VPN is established, communication will not succeed unless the router and Transit Gateway after the failover have learned the required routes. Verify both the path from the site to the VPC and the return path from the destination subnet to the site, and also cross-check the permissions granted by the security groups and network ACLs."
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 Exam Guide: Architectures for the Cloud",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain1.html"
+        },
+        {
+          "label": "Configure Route Tables",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Associating a Direct Connect Gateway with a Transit Gateway",
+          "url": "https://docs.aws.amazon.com/ja_jp/directconnect/latest/UserGuide/direct-connect-transit-gateways.html"
+        }
+      ],
+      "figureId": "sap-hybrid-network-boundaries"
+    },
+    {
+      "id": "data-and-ai-integration",
+      "title": "Separating Responsibility Boundaries for Data and AI Integration",
+      "paragraphs": [
+        "When designing an AI integration, plan not only the path for invoking the model, but also the classification of input data, the provenance of the data used for retrieval, the retention of prompts and outputs, access permissions, evaluation, and auditing. Choose among foundation models, retrieval-augmented generation, and custom models by comparing accuracy, latency, cost, data boundaries, and update frequency.",
+        "Choose data stores based on access patterns, consistency, scalability, retention, and sharing scope. Unless freshness after updates and cache invalidation are designed, a cache intended to improve read performance can make stale data appear to have been returned correctly."
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 Exam Guide: Data, Storage, and Databases",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain1.html"
+        },
+        {
+          "label": "Overview of Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/what-is-bedrock.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-cloud-1",
+      "prompt": "The architect of a payment service must design it to continue operating during a single-AZ failure and resume within the defined recovery time after a Regional failure. What should be done first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Confirm the RTO, RPO, dependencies, and failure scope for each operation, then map the configurations and failover procedures for AZ and Regional failures.",
+          "explanation": "This translates the availability requirements into concrete failure boundaries and recovery methods."
+        },
+        {
+          "id": "b",
+          "text": "Without documenting the requirements, make all resources the maximum size in a single AZ.",
+          "explanation": "This does not prepare for an AZ failure, and the recovery objectives cannot be evaluated."
+        },
+        {
+          "id": "c",
+          "text": "Do not define backups or failover procedures; let the person in charge decide during the failure.",
+          "explanation": "The recovery time and outcome would depend on the person in charge."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-cloud-2",
+      "prompt": "The on-premises network 172.20.0.0/16 and the API in the private subnet (10.20.1.0/24) are connected to a Transit Gateway, with a BGP-based Direct Connect serving as the primary path and an independent Site-to-Site VPN serving as the backup path. After a Direct Connect failure, the VPN tunnel is established, but requests to the API receive no response. Which check is most appropriate before concluding that failover succeeded?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Open all ports in all VPCs to one another.",
+          "explanation": "Even if the VPN is established, opening all ports removes the boundaries for destinations, required ports, and traffic direction, and does not identify the cause of the missing response."
+        },
+        {
+          "id": "b",
+          "text": "Because the VPN tunnel is established, conclude that failover succeeded without checking BGP route advertisements, return routes, or permission settings.",
+          "explanation": "The tunnel state alone does not show that routes for 172.20.0.0/16 and 10.20.1.0/24 are advertised and selected in both directions, that responses can be returned, or that the required ports are permitted."
+        },
+        {
+          "id": "a",
+          "text": "Confirm that, through the VPN, routes for both CIDRs are advertised and received through BGP; that the Transit Gateway and the API subnet's route tables contain a return route to 172.20.0.0/16; and that the security group and network ACL allow the required API ports.",
+          "explanation": "For an independent backup path, bidirectional communication can be verified only after separately satisfying tunnel establishment, route advertisement and selection, the return path on the destination side, and network policies at both ends."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-cloud-3",
+      "prompt": "You are designing a generative AI feature that references internal policies. The policies are revised frequently, and answers must provide supporting evidence. Which approach is most appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Make documents searchable while retaining their update units and access permissions, and design a RAG solution and evaluation that can return the sources.",
+          "explanation": "This addresses the requirements for update frequency, evidence provision, and data boundaries."
+        },
+        {
+          "id": "b",
+          "text": "Have the model answer using only its general knowledge without referring to the policies.",
+          "explanation": "This cannot guarantee that the latest policies are used or that supporting evidence is provided."
+        },
+        {
+          "id": "c",
+          "text": "Remove access controls so that everyone can search all policies.",
+          "explanation": "This does not satisfy the data-boundary requirements."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Well-Architected Framework",
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "CIDR",
+    "Route table",
+    "Security group",
+    "NACL",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Network Firewall",
+    "Route 53 VPC Resolver",
+    "VPC peering",
+    "PrivateLink",
+    "RAG",
+    "Bedrock",
+    "Cache invalidation",
+    "Data classification"
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "id": "cloud-architecture",
+  "title": "クラウド向けアーキテクチャを設計・実装する",
+  "objective": "要件、障害範囲、通信、データ、AI 統合の制約から、クラウド向けの構成とトレードオフを説明できる。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "クラウドの基本概念"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "接続とルーティング"
+    },
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    },
+    {
+      "slug": "",
+      "title": "Solutions Architect – Associate",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements-to-boundaries",
+      "title": "要件を障害境界と責任境界へ変換する",
+      "paragraphs": [
+        "アーキテクトは「高可用性」という要求を、そのまま複数のリソースを置く指示にしません。利用者の操作、許容停止時間、失ってよいデータ量、依存サービス、リージョン障害の扱いを明確にし、単一障害点と復旧手順を対応付けます。",
+        "AWS Well-Architected フレームワークは、設計上の決定の長所と短所を評価するための枠組みです。可用性を上げる選択は、費用、運用負荷、データ整合性、障害時の切替手順にも影響するため、どの要件を優先したかを設計記録に残します。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03.html"
+        },
+        {
+          "label": "AWS Well-Architected フレームワーク",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "hybrid-network-path",
+      "title": "ハイブリッド通信を往復経路で設計する",
+      "paragraphs": [
+        "ハイブリッド環境の設計者は、オンプレミスから VPC への片方向の到達性だけで設計を完了しません。送信元 CIDR、名前解決、接続方式、各サブネットのルート、セキュリティグループ、ネットワーク ACL、宛先側の戻り経路を確認し、通信を許可する境界を明示します。",
+        "ルートテーブルの各ルートは送信先とターゲットを持ちます。経路があることと、ポートが許可されることは別です。マルチ VPC やオンプレミス接続では、重複 CIDR、経路の伝播範囲、障害時の代替経路、集中検査を先に検証し、無条件の全接続を選びません。",
+        "図の実線は Direct Connect の主経路、破線は独立した VPN の予備経路です。VPN が確立していても、切替後のルーターと Transit Gateway が必要な経路を学習していなければ通信は成立しません。拠点から VPC への経路と、宛先サブネットから拠点へ戻る経路をそれぞれ確認し、セキュリティグループとネットワーク ACL の許可も照合します。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 試験ガイド: クラウド向けアーキテクチャ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain1.html"
+        },
+        {
+          "label": "ルートテーブルを設定する",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Direct Connect ゲートウェイと Transit Gateway の関連付け",
+          "url": "https://docs.aws.amazon.com/ja_jp/directconnect/latest/UserGuide/direct-connect-transit-gateways.html"
+        }
+      ],
+      "figureId": "sap-hybrid-network-boundaries"
+    },
+    {
+      "id": "data-and-ai-integration",
+      "title": "データと AI 統合の責任範囲を分ける",
+      "paragraphs": [
+        "AI を統合する設計では、モデルを呼び出す経路だけでなく、入力データの分類、検索対象の出所、プロンプトと出力の保持、アクセス権限、評価、監査を設計します。基盤モデル、検索拡張生成、カスタムモデルの選択は、正確性、レイテンシー、費用、データ境界、更新頻度を比較して決めます。",
+        "データストアは、アクセスパターン、整合性、スケーリング、保持、共有範囲から選びます。読取り性能のためのキャッシュは、更新後の鮮度と無効化を設計しなければ、古いデータを正しく返しているように見せる原因になります。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 試験ガイド: データ、ストレージ、データベース",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain1.html"
+        },
+        {
+          "label": "Amazon Bedrock の概要",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/what-is-bedrock.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-cloud-1",
+      "prompt": "決済サービスのアーキテクトは、単一 AZ 障害では継続し、リージョン障害では定めた復旧時間内に再開する設計を求められています。最初に行うべきことはどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "操作ごとの RTO、RPO、依存関係、障害範囲を確認し、AZ とリージョンの障害に対する構成と切替手順を対応付ける。",
+          "explanation": "可用性の要件を障害境界と復旧方式へ具体化できます。"
+        },
+        {
+          "id": "b",
+          "text": "要件を記録せず、すべてのリソースを一つの AZ で最大サイズにする。",
+          "explanation": "AZ 障害に備えられず、復旧目標も評価できません。"
+        },
+        {
+          "id": "c",
+          "text": "バックアップと切替手順を決めず、障害時に担当者が判断する。",
+          "explanation": "復旧時間と結果が担当者依存になります。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-cloud-2",
+      "prompt": "オンプレミスの 172.20.0.0/16 と、プライベートサブネットの API（10.20.1.0/24）は、BGP を使う Direct Connect を主経路、独立した Site-to-Site VPN をバックアップ経路として Transit Gateway へ接続しています。Direct Connect 障害後、VPN トンネルは確立済みですが、API への要求に応答がありません。フェイルオーバー成功と判断する前に最も適切な確認はどれですか。",
+      "choices": [
+        {
+          "id": "c",
+          "text": "全 VPC の全ポートを相互に開放する。",
+          "explanation": "VPN が確立していても、全ポート開放は送信先、必要ポート、通信方向の境界を失わせ、応答不能の原因を特定しません。"
+        },
+        {
+          "id": "b",
+          "text": "VPN トンネルが確立しているため、BGP の経路広告、戻り経路、許可設定は確認せずにフェイルオーバー成功とする。",
+          "explanation": "トンネル状態だけでは、172.20.0.0/16 と 10.20.1.0/24 の経路が両方向に広告・選択され、応答を返せることや必要ポートの許可を示せません。"
+        },
+        {
+          "id": "a",
+          "text": "VPN 経由で両 CIDR の経路が BGP で広告・受信され、Transit Gateway と API サブネットのルートテーブルに 172.20.0.0/16 への戻り経路があり、必要な API ポートをセキュリティグループとネットワーク ACL が許可することを確認する。",
+          "explanation": "独立したバックアップ経路では、トンネル確立、経路の広告・選択、宛先側の復路、両端のネットワークポリシーを別々に満たして初めて往復通信を確認できます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-cloud-3",
+      "prompt": "社内規程を参照する生成 AI 機能を設計します。規程は頻繁に改訂され、回答には根拠の提示が必要です。最も適切な方針はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "更新単位とアクセス権限を持つ文書を検索可能にし、出所を返せる RAG と評価を設計する。",
+          "explanation": "更新頻度、根拠提示、データ境界の要件に対応できます。"
+        },
+        {
+          "id": "b",
+          "text": "規程を参照せず、モデルの一般知識だけで回答させる。",
+          "explanation": "最新規程と根拠提示を保証できません。"
+        },
+        {
+          "id": "c",
+          "text": "アクセス制御を削除し、すべての規程を誰でも検索できるようにする。",
+          "explanation": "データ境界を満たしません。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Well-Architected Framework",
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "CIDR",
+    "Route table",
+    "Security group",
+    "NACL",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Network Firewall",
+    "Route 53 VPC Resolver",
+    "VPC peering",
+    "PrivateLink",
+    "RAG",
+    "Bedrock",
+    "Cache invalidation",
+    "Data classification"
+  ]
+}

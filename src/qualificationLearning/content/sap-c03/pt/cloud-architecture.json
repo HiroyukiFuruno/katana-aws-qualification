@@ -1,0 +1,175 @@
+{
+  "id": "cloud-architecture",
+  "title": "Projetar e implementar uma arquitetura para a nuvem",
+  "objective": "Explicar a arquitetura para a nuvem e seus trade-offs com base nas restrições relacionadas a requisitos, domínios de falha, comunicação, dados e integração de IA.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "Fundamentos da nuvem"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Conectividade e roteamento"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Autenticação e autorização"
+    },
+    {
+      "slug": "",
+      "title": "Solutions Architect – Associate",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements-to-boundaries",
+      "title": "Transformando requisitos em limites de falha e limites de responsabilidade",
+      "paragraphs": [
+        "Um arquiteto não transforma um requisito de “alta disponibilidade” diretamente em uma instrução para implantar vários recursos. Ele esclarece as operações dos usuários, o tempo de inatividade aceitável, a quantidade de dados que pode ser perdida, os serviços dependentes e o tratamento de falhas de uma Região, e relaciona os pontos únicos de falha aos procedimentos de recuperação.",
+        "O AWS Well-Architected Framework é uma estrutura para avaliar as vantagens e desvantagens das decisões de arquitetura. As escolhas que aumentam a disponibilidade também afetam os custos, a carga operacional, a consistência dos dados e os procedimentos de failover durante falhas. Por isso, o registro de arquitetura deve indicar quais requisitos foram priorizados."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAP-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03.html"
+        },
+        {
+          "label": "AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "hybrid-network-path",
+      "title": "Projetar comunicações híbridas com caminhos de ida e volta",
+      "paragraphs": [
+        "Os arquitetos de ambientes híbridos não consideram o projeto concluído apenas porque existe alcançabilidade unidirecional do ambiente on-premises para uma VPC. Eles verificam o CIDR de origem, a resolução de nomes, o método de conexão, as rotas em cada sub-rede, os grupos de segurança, as ACLs de rede e o caminho de retorno no lado do destino, definindo claramente os limites que permitem a comunicação.",
+        "Cada rota em uma tabela de rotas tem um destino e um alvo. A existência de uma rota é diferente da permissão para uma porta. Em conexões entre várias VPCs ou com ambientes on-premises, valide primeiro os CIDRs sobrepostos, o escopo da propagação de rotas, os caminhos alternativos em caso de falha e a inspeção centralizada; não escolha conectividade total sem restrições.",
+        "No diagrama, a linha contínua representa o caminho principal do Direct Connect, e a linha tracejada representa um caminho de backup independente por VPN. Mesmo que a VPN esteja estabelecida, a comunicação não funcionará se o roteador e o Transit Gateway após o failover não tiverem aprendido as rotas necessárias. Verifique separadamente o caminho do site para a VPC e o caminho de retorno da sub-rede de destino para o site, e confira também as permissões dos grupos de segurança e das ACLs de rede."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAP-C03: Arquiteturas para a nuvem",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain1.html"
+        },
+        {
+          "label": "Configurar tabelas de rotas",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Associar um gateway do Direct Connect a um Transit Gateway",
+          "url": "https://docs.aws.amazon.com/ja_jp/directconnect/latest/UserGuide/direct-connect-transit-gateways.html"
+        }
+      ],
+      "figureId": "sap-hybrid-network-boundaries"
+    },
+    {
+      "id": "data-and-ai-integration",
+      "title": "Separar os limites de responsabilidade na integração de dados e IA",
+      "paragraphs": [
+        "Ao projetar uma integração de IA, planeje não apenas o caminho para invocar o modelo, mas também a classificação dos dados de entrada, a origem dos dados usados na pesquisa, a retenção de prompts e saídas, as permissões de acesso, a avaliação e a auditoria. Escolha entre modelos de base, geração aumentada por recuperação e modelos personalizados comparando precisão, latência, custo, limites dos dados e frequência de atualização.",
+        "Escolha os armazenamentos de dados com base nos padrões de acesso, na consistência, na escalabilidade, na retenção e no escopo de compartilhamento. Um cache destinado a melhorar o desempenho de leitura, sem um projeto de atualização após alterações e invalidação do cache, pode fazer com que dados desatualizados pareçam ter sido retornados corretamente."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAP-C03: dados, armazenamento e bancos de dados",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain1.html"
+        },
+        {
+          "label": "Visão geral do Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/what-is-bedrock.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-cloud-1",
+      "prompt": "O arquiteto de um serviço de pagamentos precisa projetar uma solução que continue operando durante uma falha em uma única AZ e seja retomada dentro do tempo de recuperação definido após uma falha regional. O que deve ser feito primeiro?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Confirmar o RTO, o RPO, as dependências e o escopo da falha de cada operação e, em seguida, associar as configurações e os procedimentos de failover às falhas de AZ e regionais.",
+          "explanation": "Isso transforma os requisitos de disponibilidade em limites de falha e métodos de recuperação concretos."
+        },
+        {
+          "id": "b",
+          "text": "Sem documentar os requisitos, dimensionar todos os recursos para o tamanho máximo em uma única AZ.",
+          "explanation": "Isso não prepara o serviço para uma falha de AZ, e os objetivos de recuperação não podem ser avaliados."
+        },
+        {
+          "id": "c",
+          "text": "Não definir backups nem procedimentos de failover e deixar que a pessoa responsável decida durante a falha.",
+          "explanation": "O tempo e o resultado da recuperação dependeriam da pessoa responsável."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-cloud-2",
+      "prompt": "A rede on-premises 172.20.0.0/16 e a API na sub-rede privada (10.20.1.0/24) estão conectadas a um Transit Gateway, com uma Direct Connect que usa BGP como caminho principal e uma Site-to-Site VPN independente como caminho de backup. Após uma falha na Direct Connect, o túnel da VPN está estabelecido, mas as solicitações à API não recebem resposta. Qual é a verificação mais apropriada antes de concluir que o failover foi bem-sucedido?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Abrir todas as portas de todas as VPCs umas para as outras.",
+          "explanation": "Mesmo que a VPN esteja estabelecida, abrir todas as portas elimina os limites de destino, portas necessárias e direção do tráfego, e não identifica a causa da ausência de resposta."
+        },
+        {
+          "id": "b",
+          "text": "Como o túnel da VPN está estabelecido, considerar o failover bem-sucedido sem verificar os anúncios de rotas BGP, as rotas de retorno ou as configurações de permissão.",
+          "explanation": "O estado do túnel, por si só, não mostra que as rotas para 172.20.0.0/16 e 10.20.1.0/24 são anunciadas e selecionadas nas duas direções, que as respostas podem retornar ou que as portas necessárias estão permitidas."
+        },
+        {
+          "id": "a",
+          "text": "Confirmar que, pela VPN, as rotas dos dois CIDRs são anunciadas e recebidas por BGP; que as tabelas de rotas do Transit Gateway e da sub-rede da API contêm uma rota de retorno para 172.20.0.0/16; e que o security group e a network ACL permitem as portas necessárias da API.",
+          "explanation": "Em um caminho de backup independente, a comunicação bidirecional só pode ser verificada depois que o estabelecimento do túnel, o anúncio e a seleção das rotas, o caminho de retorno no lado do destino e as políticas de rede em ambas as extremidades forem atendidos separadamente."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-cloud-3",
+      "prompt": "Você está projetando um recurso de IA generativa que consulta políticas internas. As políticas são revisadas com frequência, e as respostas precisam apresentar evidências. Qual é a abordagem mais adequada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Tornar pesquisáveis os documentos, preservando suas unidades de atualização e permissões de acesso, e projetar uma solução RAG e uma avaliação capazes de retornar as fontes.",
+          "explanation": "Isso atende aos requisitos de frequência de atualização, apresentação de evidências e limites de dados."
+        },
+        {
+          "id": "b",
+          "text": "Fazer o modelo responder apenas com base em seu conhecimento geral, sem consultar as políticas.",
+          "explanation": "Isso não pode garantir o uso das políticas mais recentes nem a apresentação de evidências."
+        },
+        {
+          "id": "c",
+          "text": "Remover os controles de acesso para que qualquer pessoa possa pesquisar todas as políticas.",
+          "explanation": "Isso não atende aos requisitos de limites de dados."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Well-Architected Framework",
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "CIDR",
+    "Route table",
+    "Security group",
+    "NACL",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Network Firewall",
+    "Route 53 VPC Resolver",
+    "VPC peering",
+    "PrivateLink",
+    "RAG",
+    "Bedrock",
+    "Cache invalidation",
+    "Data classification"
+  ]
+}

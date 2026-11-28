@@ -1,0 +1,152 @@
+{
+  "id": "resilience-migration-continuity",
+  "title": "設計韌性、遷移與業務持續性",
+  "objective": "能將相依關係、遷移波次、RTO/RPO、資料完整性與切換驗證整合到同一項計畫中。",
+  "prerequisites": [
+    {
+      "slug": "cloud-architecture",
+      "title": "設計與實作雲端架構",
+      "courseId": "sap-c03"
+    },
+    {
+      "slug": "security-governance",
+      "title": "設計安全性、合規性與治理",
+      "courseId": "sap-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "portfolio-and-waves",
+      "title": "根據相依性建立移轉波次",
+      "paragraphs": [
+        "移轉團隊不會只根據伺服器清單決定移轉順序。他們會將應用程式、資料庫、共用身分驗證、網路、批次工作及外部整合之間的相依性視覺化，再根據可接受的停機時間和業務優先順序規劃移轉波次。",
+        "AWS Migration Hub 提供相關資訊，讓您在單一位置探索現有伺服器、規劃移轉，並依應用程式追蹤進度。探索結果只是起點，不能取代對實際通訊、資料同步、操作程序或回復（rollback）的驗證。",
+        "在圖的上方部分，請在切換前確認資料庫同步狀態和目標環境的運作狀態。如果切換後沒有寫入目標環境，且舊環境仍可運作，就可以將路由切回。若已在目標環境確認新訂單，之後只切回路由會使舊環境中沒有該訂單。請停止後續切換，並判斷是否能核對新的寫入內容並套用至舊環境，或修正目標環境後繼續業務運作。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考試指南：移轉策略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        },
+        {
+          "label": "什麼是 AWS Migration Hub？",
+          "url": "https://docs.aws.amazon.com/ja_jp/migrationhub/latest/ug/whatishub.html"
+        },
+        {
+          "label": "移轉切換與復原",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/best-practices-migration-cutover/cutover-stage.html"
+        }
+      ],
+      "figureId": "sap-migration-wave-and-cutover"
+    },
+    {
+      "id": "recovery-objectives",
+      "title": "根據 RTO 與 RPO 選擇災難復原方式",
+      "paragraphs": [
+        "在災難復原設計中，RTO 表示恢復業務運作所需的時間，RPO 表示可以遺失的資料量。架構師會針對單一 AZ、區域、資料損毀和驗證基礎設施故障等情境設定目標，並比較備份、持續複寫、暖備援與多區域架構的成本和營運負擔。",
+        "復原方式不會僅因為設定已存在就自動成立。必須透過演練驗證故障轉移的決策者、DNS 或流量切換、資料一致性檢查、相依服務的復原順序，以及復原後的故障切回。如果未達到目標，就必須修改程序或設定。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考試指南：災難復原",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "modernize-in-stages",
+      "title": "分階段推進現代化",
+      "paragraphs": [
+        "遷移舊版應用程式時，不要一概選擇重新託管、重新平台化或重構。應評估可變更性、相依性、支援期限、效能、資料遷移、營運負擔與業務期限，並比較短期遷移風險與長期營運價值。",
+        "對於採用 strangler fig 模式等方式進行的漸進式現代化，應設計舊功能與新功能之間的責任邊界、請求路由、資料一致性、可觀測性與回復條件。在確認新路徑運作正確之前，不得淘汰舊系統。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考試指南：復原能力、遷移與業務持續性",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-resilience-1",
+      "prompt": "遷移負責人確認了相依關係、資料庫複寫延遲及目標環境的健全性，然後只將訂單應用程式的一個波次切換至 AWS。切換後，在目標資料庫開始寫入新訂單之後，業務驗證閘門失敗。為了在不遺失已確認訂單的情況下復原，最適當的做法是什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "停止後續波次，確認新訂單的範圍並執行對帳或向前推進式（fail-forward）復原策略，確認資料完整性後再決定切換策略。",
+          "explanation": "開始新寫入後，若無條件切回舊路徑，可能會遺失已確認的訂單或造成重複處理。應先對寫入進行對帳，選擇能維持資料完整性的復原方式或向前推進式（fail-forward）方案，再作下一步判斷。"
+        },
+        {
+          "id": "b",
+          "text": "不確認新訂單就將路由切回舊環境，並捨棄目標端的寫入。",
+          "explanation": "發生新寫入後，只切回舊環境無法防止資料遺失或重複處理。"
+        },
+        {
+          "id": "c",
+          "text": "不記錄業務驗證失敗，並以相同程序切換剩餘的所有波次。",
+          "explanation": "在失敗閘門的原因和寫入一致性尚未解決的情況下擴大範圍，會擴大復原範圍和使用者影響。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-2",
+      "prompt": "訂單資料最多可容忍遺失 5 分鐘，且必須在區域故障發生後 1 小時內復原。架構師最適合採取哪項措施？",
+      "choices": [
+        {
+          "id": "c",
+          "text": "在故障發生後才設計復原程序。",
+          "explanation": "這無法保證切換決策和復原時間。"
+        },
+        {
+          "id": "a",
+          "text": "選擇符合 RPO 和 RTO 的複寫方案、復原環境及切換程序，並透過演練驗證資料完整性和復原時間。",
+          "explanation": "這可以同時確認復原目標和實際執行的可行性。"
+        },
+        {
+          "id": "b",
+          "text": "只要存在一份備份，就不確認復原時間和資料遺失情況。",
+          "explanation": "無法確定是否能達成目標。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-3",
+      "prompt": "在逐步進行現代化改造的訂單系統中，新舊服務將並行運作。哪一種設計最合適？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "定義各項功能的責任邊界、請求分流方式、資料一致性的處理方法、可觀測性指標，以及回復條件。",
+          "explanation": "如此即可在驗證新路徑的同時，逐步擴大移轉範圍。"
+        },
+        {
+          "id": "b",
+          "text": "推出新服務後立即刪除舊服務及其資料。",
+          "explanation": "發生異常時，將失去回復手段和比較對象。"
+        },
+        {
+          "id": "c",
+          "text": "不記錄請求會傳送到哪個服務。",
+          "explanation": "如此將無法釐清故障，也無法比較品質。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Dependency mapping",
+    "Migration wave",
+    "AWS Migration Hub",
+    "RTO",
+    "RPO",
+    "Backup",
+    "Restore",
+    "Failover",
+    "DNS",
+    "Strangler Fig",
+    "Drift detection"
+  ]
+}

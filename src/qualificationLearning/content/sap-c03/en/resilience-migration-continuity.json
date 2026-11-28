@@ -1,0 +1,152 @@
+{
+  "id": "resilience-migration-continuity",
+  "title": "Designing Resilience, Migration, and Business Continuity",
+  "objective": "Can bring dependencies, migration waves, RTO/RPO, data integrity, and cutover validation together into a single plan.",
+  "prerequisites": [
+    {
+      "slug": "cloud-architecture",
+      "title": "Design and Implement Cloud Architecture",
+      "courseId": "sap-c03"
+    },
+    {
+      "slug": "security-governance",
+      "title": "Design Security, Compliance, and Governance",
+      "courseId": "sap-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "portfolio-and-waves",
+      "title": "Creating Migration Waves from Dependencies",
+      "paragraphs": [
+        "Migration teams do not determine migration order from a server list alone. They visualize dependencies among applications, databases, shared authentication, networks, batch workloads, and external integrations, then plan migration waves based on acceptable downtime and business priorities.",
+        "AWS Migration Hub provides information for discovering existing servers, planning migrations, and tracking progress by application in one place. Discovery results are a starting point; they do not replace validation of actual communications, data synchronization, operational procedures, or rollback.",
+        "In the upper part of the diagram, verify database synchronization and the health of the target environment before cutover. If there are no writes to the target after cutover and the old environment can still operate, the route can be reverted. After a new order has been finalized in the target environment, reverting only the route leaves that order absent from the old environment. Stop the subsequent cutover and determine whether the new writes can be reconciled and applied to the old environment, or whether to correct the target environment and continue business operations."
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 Exam Guide: Migration Strategies",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        },
+        {
+          "label": "What is AWS Migration Hub?",
+          "url": "https://docs.aws.amazon.com/ja_jp/migrationhub/latest/ug/whatishub.html"
+        },
+        {
+          "label": "Migration Cutover and Rollback",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/best-practices-migration-cutover/cutover-stage.html"
+        }
+      ],
+      "figureId": "sap-migration-wave-and-cutover"
+    },
+    {
+      "id": "recovery-objectives",
+      "title": "Choosing a DR Strategy from RTO and RPO",
+      "paragraphs": [
+        "In disaster recovery design, RTO represents the time until business operations can resume, while RPO represents the amount of data that may be lost. Architects set objectives for scenarios such as a single AZ, a Region, data corruption, and an authentication infrastructure failure, then compare the cost and operational burden of backups, continuous replication, warm standby, and multi-Region architectures.",
+        "A recovery strategy is not established merely because its configuration exists. Exercises must validate who decides to fail over, DNS or traffic switching, data integrity checks, the recovery order of dependent services, and failback after recovery. If the objectives are not met, the procedures or configuration must be revised."
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 Exam Guide: Disaster Recovery",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "modernize-in-stages",
+      "title": "Modernization in Stages",
+      "paragraphs": [
+        "When migrating legacy applications, do not apply rehosting, replatforming, or refactoring uniformly. Evaluate changeability, dependencies, support deadlines, performance, data migration, operational workload, and business deadlines, then compare short-term migration risks with long-term operational value.",
+        "For incremental modernization, such as the strangler fig pattern, design the responsibility boundaries between legacy and new functionality, request routing, data consistency, observability, and rollback conditions. Do not retire the legacy system before confirming that the new path works correctly."
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 Exam Guide: Resilience, Migration, and Business Continuity",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-resilience-1",
+      "prompt": "The migration lead verified dependencies, database replication lag, and target health, then switched only one wave of the order application to AWS. After the switch, the business validation gate failed after new order writes had begun on the target database. What is the most appropriate response to recover without losing confirmed orders?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Stop subsequent waves, identify and reconcile the scope of new orders or execute a fail-forward recovery strategy, verify data integrity, and then decide on the cutover strategy.",
+          "explanation": "After new writes have begun, unconditionally reverting to the old route could lose confirmed orders or cause duplicate processing. Reconcile the writes, choose a recovery or fail-forward approach that preserves integrity, and then make the next decision."
+        },
+        {
+          "id": "b",
+          "text": "Route traffic back to the old environment without checking the new orders, and discard the writes on the target.",
+          "explanation": "After new writes have occurred, simply reverting to the old environment cannot prevent data loss or duplicate processing."
+        },
+        {
+          "id": "c",
+          "text": "Do not record the business validation failure, and switch all remaining waves using the same procedure.",
+          "explanation": "Expanding the scope while leaving the failed gate's cause and write consistency unresolved would increase the recovery scope and user impact."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-2",
+      "prompt": "Order data can tolerate a loss of up to 5 minutes and must be recovered within 1 hour of a Regional failure. What is the most appropriate action for the architect?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Design the recovery procedures after a failure occurs.",
+          "explanation": "This cannot guarantee the failover decision or the recovery time."
+        },
+        {
+          "id": "a",
+          "text": "Select replication, a recovery environment, and failover procedures that meet the RPO and RTO, then validate data integrity and recovery time through exercises.",
+          "explanation": "This verifies both the recovery objectives and operational feasibility."
+        },
+        {
+          "id": "b",
+          "text": "If a single backup exists, do not verify the recovery time or data loss.",
+          "explanation": "It is unclear whether the objectives will be met."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-3",
+      "prompt": "In an order system that is being modernized incrementally, legacy and new services will run in parallel. Which design is most appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Define the responsibility boundaries for each function, request routing, the method for maintaining data consistency, observability metrics, and rollback conditions.",
+          "explanation": "This allows you to expand the migration scope while validating the new path."
+        },
+        {
+          "id": "b",
+          "text": "Delete the legacy service and its data immediately after releasing the new service.",
+          "explanation": "This removes both the means to revert during an incident and the basis for comparison."
+        },
+        {
+          "id": "c",
+          "text": "Do not record which service receives each request.",
+          "explanation": "This prevents you from isolating failures and comparing quality."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Dependency mapping",
+    "Migration wave",
+    "AWS Migration Hub",
+    "RTO",
+    "RPO",
+    "Backup",
+    "Restore",
+    "Failover",
+    "DNS",
+    "Strangler Fig",
+    "Drift detection"
+  ]
+}

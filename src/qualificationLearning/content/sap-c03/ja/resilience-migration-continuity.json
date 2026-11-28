@@ -1,0 +1,152 @@
+{
+  "id": "resilience-migration-continuity",
+  "title": "回復力、移行、事業継続性を設計する",
+  "objective": "依存関係、移行波、RTO/RPO、データ整合性、切替検証を一つの計画にできる。",
+  "prerequisites": [
+    {
+      "slug": "cloud-architecture",
+      "title": "クラウド向けアーキテクチャを設計・実装する",
+      "courseId": "sap-c03"
+    },
+    {
+      "slug": "security-governance",
+      "title": "セキュリティ、コンプライアンス、ガバナンスを設計する",
+      "courseId": "sap-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "portfolio-and-waves",
+      "title": "依存関係から移行ウェーブを作る",
+      "paragraphs": [
+        "移行担当者は、サーバー一覧だけで移行順を決めません。アプリケーション、データベース、共有認証、ネットワーク、バッチ、外部連携の依存関係を可視化し、停止許容時間と事業優先度から移行ウェーブを計画します。",
+        "AWS Migration Hub は、既存サーバーの検出、移行計画、アプリケーション単位の進行状況追跡を一か所で行うための情報を提供します。検出結果は出発点であり、実際の通信、データ同期、運用手順、ロールバックの検証を代替しません。",
+        "図の上段では、切替前にデータベースの同期と移行先の正常性を確かめます。切替後に移行先への書き込みがなく、旧環境が稼働できるなら、経路を戻せます。移行先で新しい注文を確定した後は、経路だけ戻すと旧環境にその注文がありません。続く切替を止め、新規の書き込みを照合して旧環境に反映できるか、移行先を修正して業務を続けるかを判断します。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 試験ガイド: 移行戦略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        },
+        {
+          "label": "AWS Migration Hub とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/migrationhub/latest/ug/whatishub.html"
+        },
+        {
+          "label": "移行のカットオーバーとロールバック",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/best-practices-migration-cutover/cutover-stage.html"
+        }
+      ],
+      "figureId": "sap-migration-wave-and-cutover"
+    },
+    {
+      "id": "recovery-objectives",
+      "title": "RTO と RPO から DR 方式を選ぶ",
+      "paragraphs": [
+        "ディザスタリカバリ設計では、RTO は業務を再開できるまでの時間、RPO は失ってよいデータ量を表します。アーキテクトは、単一 AZ、リージョン、データ破損、認証基盤障害などのシナリオ別に目標を定め、バックアップ、継続レプリケーション、ウォームスタンバイ、マルチリージョンの費用と運用負荷を比較します。",
+        "復旧方式は、構成が存在するだけでは成立しません。フェイルオーバーの判断者、DNS またはトラフィック切替、データの整合性確認、依存サービスの復旧順序、復旧後の切り戻しを演習で検証し、目標に届かなければ手順または構成を修正します。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 試験ガイド: ディザスタリカバリ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "modernize-in-stages",
+      "title": "モダナイゼーションを段階的に進める",
+      "paragraphs": [
+        "レガシーアプリケーションを移行するときは、リホスト、リプラットフォーム、リファクタリングを一律に選びません。変更可能性、依存関係、サポート期限、性能、データ移行、運用負荷、事業期限を評価し、短期の移行リスクと長期の運用価値を比較します。",
+        "strangler fig パターンのような段階的モダナイゼーションでは、旧機能と新機能の責任境界、要求の振り分け、データ整合性、観測、切戻し条件を設計します。新しい経路が正しいことを確認する前に、旧システムを廃止してはいけません。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 試験ガイド: 回復力、移行、事業継続性",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-resilience-1",
+      "prompt": "移行責任者は、依存関係とデータベースのレプリケーション遅延、ターゲットの健全性を確認して、注文アプリケーションの1ウェーブだけを AWS へ切り替えました。切替後、ターゲットデータベースへの新規注文書込みが始まった後に、業務確認ゲートが失敗しました。確定済み注文を失わずに復旧するため、最も適切な対応はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "後続ウェーブを停止し、新規注文の範囲を特定して照合またはフェイルフォワードの復旧方針を実行し、データ整合性を確認してから切替方針を決める。",
+          "explanation": "新規書込み後は、無条件に旧経路へ戻すと確定済み注文を失ったり二重処理したりします。書込みを照合し、整合性を保てる復旧またはフェイルフォワードを選んでから次の判断を行います。"
+        },
+        {
+          "id": "b",
+          "text": "新規注文を確認せずにルーティングを旧環境へ戻し、ターゲット側の書込みは破棄する。",
+          "explanation": "新規書込みが発生した後は、旧環境へ戻すだけではデータの欠落や二重処理を防げません。"
+        },
+        {
+          "id": "c",
+          "text": "業務確認の失敗を記録せず、残りの全ウェーブも同じ手順で切り替える。",
+          "explanation": "失敗したゲートの原因と書込み整合性を未解決のまま対象を広げると、復旧対象と利用者影響を拡大します。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-2",
+      "prompt": "受注データは最大 5 分の損失を許容でき、リージョン障害から 1 時間以内に復旧する必要があります。アーキテクトが最も適切に行うことはどれですか。",
+      "choices": [
+        {
+          "id": "c",
+          "text": "復旧手順を障害発生後に設計する。",
+          "explanation": "切替判断と復旧時間を保証できません。"
+        },
+        {
+          "id": "a",
+          "text": "RPO と RTO を満たすレプリケーション、復旧環境、切替手順を選び、データ整合性と復旧時間を演習で検証する。",
+          "explanation": "復旧目標と実行可能性の両方を確認できます。"
+        },
+        {
+          "id": "b",
+          "text": "バックアップが一つ存在すれば、復元時間とデータ損失を確認しない。",
+          "explanation": "目標を満たすか分かりません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-3",
+      "prompt": "段階的にモダナイズする注文システムで、新旧サービスを並行稼働させます。最も適切な設計はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "機能ごとの責任境界、要求振り分け、データ整合性の方法、観測指標、切戻し条件を定義する。",
+          "explanation": "新しい経路を検証しながら移行範囲を広げられます。"
+        },
+        {
+          "id": "b",
+          "text": "新サービスを出した直後に旧サービスとそのデータを削除する。",
+          "explanation": "異常時に戻る手段と比較対象を失います。"
+        },
+        {
+          "id": "c",
+          "text": "要求がどちらのサービスへ行くか記録しない。",
+          "explanation": "障害の切り分けと品質比較ができません。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Dependency mapping",
+    "Migration wave",
+    "AWS Migration Hub",
+    "RTO",
+    "RPO",
+    "Backup",
+    "Restore",
+    "Failover",
+    "DNS",
+    "Strangler Fig",
+    "Drift detection"
+  ]
+}

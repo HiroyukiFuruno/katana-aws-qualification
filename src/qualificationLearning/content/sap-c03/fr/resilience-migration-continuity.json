@@ -1,0 +1,152 @@
+{
+  "id": "resilience-migration-continuity",
+  "title": "Concevoir la résilience, la migration et la continuité d’activité",
+  "objective": "Savoir réunir les dépendances, les vagues de migration, les RTO/RPO, l’intégrité des données et la validation du basculement dans un seul plan.",
+  "prerequisites": [
+    {
+      "slug": "cloud-architecture",
+      "title": "Concevoir et implémenter une architecture cloud",
+      "courseId": "sap-c03"
+    },
+    {
+      "slug": "security-governance",
+      "title": "Concevoir la sécurité, la conformité et la gouvernance",
+      "courseId": "sap-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "portfolio-and-waves",
+      "title": "Créer des vagues de migration à partir des dépendances",
+      "paragraphs": [
+        "Les équipes de migration ne déterminent pas l’ordre des migrations à partir d’une simple liste de serveurs. Elles visualisent les dépendances entre les applications, les bases de données, l’authentification partagée, les réseaux, les traitements par lots et les intégrations externes, puis planifient les vagues de migration en fonction du temps d’arrêt acceptable et des priorités métier.",
+        "AWS Migration Hub fournit des informations permettant de détecter les serveurs existants, de planifier les migrations et de suivre l’avancement par application en un seul endroit. Les résultats de la détection constituent un point de départ ; ils ne remplacent pas la validation des communications réelles, de la synchronisation des données, des procédures opérationnelles ni du retour en arrière.",
+        "Dans la partie supérieure du schéma, vérifiez la synchronisation de la base de données et l’état de santé de l’environnement cible avant le cutover. S’il n’y a aucune écriture vers la cible après le cutover et que l’ancien environnement peut encore fonctionner, vous pouvez rétablir la route. Après avoir confirmé une nouvelle commande dans l’environnement cible, rétablir uniquement la route signifie que cette commande n’existe pas dans l’ancien environnement. Arrêtez le cutover suivant et déterminez s’il est possible de rapprocher les nouvelles écritures et de les appliquer à l’ancien environnement, ou s’il faut corriger l’environnement cible pour poursuivre l’activité."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’examen SAP-C03 : stratégies de migration",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        },
+        {
+          "label": "Qu’est-ce qu’AWS Migration Hub ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/migrationhub/latest/ug/whatishub.html"
+        },
+        {
+          "label": "Cutover et rollback de migration",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/best-practices-migration-cutover/cutover-stage.html"
+        }
+      ],
+      "figureId": "sap-migration-wave-and-cutover"
+    },
+    {
+      "id": "recovery-objectives",
+      "title": "Choisir une stratégie de reprise après sinistre à partir du RTO et du RPO",
+      "paragraphs": [
+        "Dans la conception de la reprise après sinistre, le RTO représente le délai nécessaire pour reprendre les activités, tandis que le RPO représente la quantité de données qui peut être perdue. Les architectes définissent des objectifs pour des scénarios tels qu’une seule AZ, une Région, une corruption de données ou une défaillance de l’infrastructure d’authentification, puis comparent le coût et la charge opérationnelle des sauvegardes, de la réplication continue, du warm standby et des architectures multi-Région.",
+        "Une stratégie de reprise n’est pas établie simplement parce que sa configuration existe. Des exercices doivent vérifier qui décide du basculement, le changement de DNS ou de trafic, les contrôles d’intégrité des données, l’ordre de reprise des services dépendants et le failback après la reprise. Si les objectifs ne sont pas atteints, les procédures ou la configuration doivent être révisées."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’examen SAP-C03 : reprise après sinistre",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "modernize-in-stages",
+      "title": "Moderniser par étapes",
+      "paragraphs": [
+        "Lors de la migration d’applications legacy, ne choisissez pas systématiquement le réhébergement, la replateformisation ou la refactorisation. Évaluez la capacité de changement, les dépendances, les échéances de support, les performances, la migration des données, la charge opérationnelle et les échéances métier, puis comparez les risques de migration à court terme avec la valeur opérationnelle à long terme.",
+        "Dans le cadre d’une modernisation progressive, comme avec le modèle strangler fig, concevez les limites de responsabilité entre les anciennes et les nouvelles fonctionnalités, le routage des requêtes, la cohérence des données, l’observabilité et les conditions de retour en arrière. Ne mettez pas hors service l’ancien système avant d’avoir confirmé que le nouveau chemin fonctionne correctement."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’examen SAP-C03 : résilience, migration et continuité d’activité",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-resilience-1",
+      "prompt": "Le responsable de la migration a vérifié les dépendances, le retard de réplication de la base de données et l’état de santé de la cible, puis n’a basculé vers AWS qu’une seule vague de l’application de commandes. Après le basculement, le contrôle de validation métier a échoué après le début des nouvelles écritures de commandes dans la base de données cible. Quelle est la réponse la plus appropriée pour rétablir le service sans perdre les commandes confirmées ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Arrêter les vagues suivantes, déterminer le périmètre des nouvelles commandes et appliquer une stratégie de rétablissement par rapprochement ou fail-forward, vérifier l’intégrité des données, puis décider de la stratégie de basculement.",
+          "explanation": "Après le début de nouvelles écritures, revenir sans condition à l’ancien chemin peut faire perdre des commandes confirmées ou entraîner un traitement en double. Il faut rapprocher les écritures, choisir un rétablissement ou une approche fail-forward qui préserve l’intégrité, puis prendre la décision suivante."
+        },
+        {
+          "id": "b",
+          "text": "Revenir à l’ancien environnement pour le routage sans vérifier les nouvelles commandes et supprimer les écritures effectuées côté cible.",
+          "explanation": "Après de nouvelles écritures, revenir simplement à l’ancien environnement ne permet pas d’éviter la perte de données ni le traitement en double."
+        },
+        {
+          "id": "c",
+          "text": "Ne pas consigner l’échec de la validation métier et basculer toutes les vagues restantes en suivant la même procédure.",
+          "explanation": "Étendre le périmètre alors que la cause de l’échec du contrôle et la cohérence des écritures ne sont pas résolues augmenterait le périmètre du rétablissement et l’impact sur les utilisateurs."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-2",
+      "prompt": "Les données de commande peuvent tolérer une perte maximale de 5 minutes et doivent être récupérées dans l’heure suivant une défaillance de la région. Quelle est l’action la plus appropriée pour l’architecte ?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Concevoir les procédures de récupération après la survenue d’une défaillance.",
+          "explanation": "Cela ne permet pas de garantir la décision de basculement ni le délai de récupération."
+        },
+        {
+          "id": "a",
+          "text": "Choisir une réplication, un environnement de récupération et des procédures de basculement qui respectent le RPO et le RTO, puis valider l’intégrité des données et le délai de récupération au moyen d’exercices.",
+          "explanation": "Cela permet de vérifier à la fois les objectifs de récupération et la faisabilité opérationnelle."
+        },
+        {
+          "id": "b",
+          "text": "S’il existe une seule sauvegarde, ne pas vérifier le délai de récupération ni la perte de données.",
+          "explanation": "Il est impossible de savoir si les objectifs seront atteints."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-3",
+      "prompt": "Dans un système de commandes modernisé progressivement, les anciens et les nouveaux services fonctionneront en parallèle. Quelle conception est la plus appropriée ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Définir les limites de responsabilité de chaque fonction, le routage des requêtes, la méthode de cohérence des données, les métriques d’observabilité et les conditions de retour en arrière.",
+          "explanation": "Cela permet d’élargir progressivement le périmètre de migration tout en validant le nouveau parcours."
+        },
+        {
+          "id": "b",
+          "text": "Supprimer l’ancien service et ses données immédiatement après la mise en production du nouveau service.",
+          "explanation": "Cela fait perdre à la fois le moyen de revenir en arrière en cas d’incident et la base de comparaison."
+        },
+        {
+          "id": "c",
+          "text": "Ne pas enregistrer vers quel service chaque requête est dirigée.",
+          "explanation": "Cela empêche d’isoler les défaillances et de comparer la qualité."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Dependency mapping",
+    "Migration wave",
+    "AWS Migration Hub",
+    "RTO",
+    "RPO",
+    "Backup",
+    "Restore",
+    "Failover",
+    "DNS",
+    "Strangler Fig",
+    "Drift detection"
+  ]
+}

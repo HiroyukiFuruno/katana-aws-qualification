@@ -1,0 +1,152 @@
+{
+  "id": "resilience-migration-continuity",
+  "title": "设计韧性、迁移和业务连续性",
+  "objective": "能够将依赖关系、迁移波次、RTO/RPO、数据完整性和切换验证整合到一项计划中。",
+  "prerequisites": [
+    {
+      "slug": "cloud-architecture",
+      "title": "设计和实施面向云的架构",
+      "courseId": "sap-c03"
+    },
+    {
+      "slug": "security-governance",
+      "title": "设计安全性、合规性和治理",
+      "courseId": "sap-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "portfolio-and-waves",
+      "title": "根据依赖关系创建迁移波次",
+      "paragraphs": [
+        "迁移团队不会仅根据服务器列表来决定迁移顺序。他们会可视化应用程序、数据库、共享身份验证、网络、批处理作业和外部集成之间的依赖关系，然后根据可接受的停机时间和业务优先级规划迁移波次。",
+        "AWS Migration Hub 提供相关信息，使您能够在一个位置发现现有服务器、制定迁移计划，并按应用程序跟踪进度。发现结果只是起点，不能替代对实际通信、数据同步、运维流程或回滚的验证。",
+        "在图的上方部分，请在切换前确认数据库同步情况和目标环境的运行状况。如果切换后没有向目标环境写入数据，并且旧环境仍可运行，则可以恢复原路由。在目标环境中确认新订单后，仅恢复路由会导致旧环境中不存在该订单。请停止后续切换，并判断能否核对新的写入并将其应用到旧环境，或者修正目标环境后继续业务运行。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考试指南：迁移策略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        },
+        {
+          "label": "什么是 AWS Migration Hub？",
+          "url": "https://docs.aws.amazon.com/ja_jp/migrationhub/latest/ug/whatishub.html"
+        },
+        {
+          "label": "迁移切换与回滚",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/best-practices-migration-cutover/cutover-stage.html"
+        }
+      ],
+      "figureId": "sap-migration-wave-and-cutover"
+    },
+    {
+      "id": "recovery-objectives",
+      "title": "根据 RTO 和 RPO 选择灾难恢复方式",
+      "paragraphs": [
+        "在灾难恢复设计中，RTO 表示恢复业务运行所需的时间，RPO 表示可以丢失的数据量。架构师会针对单个 AZ、区域、数据损坏和身份验证基础设施故障等场景设定目标，并比较备份、持续复制、温备和多区域架构的成本与运维负担。",
+        "恢复方式并不会仅因配置已经存在就自动成立。必须通过演练验证故障转移的决策者、DNS 或流量切换、数据一致性检查、依赖服务的恢复顺序，以及恢复后的故障切回。如果未达到目标，就必须修改操作步骤或配置。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考试指南：灾难恢复",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "modernize-in-stages",
+      "title": "分阶段推进现代化",
+      "paragraphs": [
+        "迁移旧版应用程序时，不要一概选择重新托管、重新平台化或重构。应评估可变更性、依赖关系、支持期限、性能、数据迁移、运维负担和业务期限，并比较短期迁移风险与长期运营价值。",
+        "对于采用 strangler fig 模式等方式进行的渐进式现代化，应设计旧功能与新功能之间的责任边界、请求路由、数据一致性、可观测性和回滚条件。在确认新路径运行正确之前，不得停用旧系统。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考试指南：韧性、迁移与业务连续性",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-resilience-1",
+      "prompt": "迁移负责人确认了依赖关系、数据库复制延迟和目标环境的运行状况，然后仅将订单应用程序的一个波次切换到 AWS。切换后，在目标数据库开始写入新订单之后，业务验证门禁失败了。为了在不丢失已确认订单的情况下恢复，最合适的做法是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "停止后续波次，确定新订单的范围并执行对账或向前推进式（fail-forward）恢复策略，确认数据完整性后再决定切换策略。",
+          "explanation": "开始新写入后，如果无条件地切回旧路径，可能会丢失已确认的订单或造成重复处理。应先对写入进行对账，选择能够保持数据完整性的恢复方式或向前推进式（fail-forward）方案，再作下一步判断。"
+        },
+        {
+          "id": "b",
+          "text": "不确认新订单就将路由切回旧环境，并丢弃目标端的写入。",
+          "explanation": "发生新写入后，仅切回旧环境无法防止数据缺失或重复处理。"
+        },
+        {
+          "id": "c",
+          "text": "不记录业务验证失败，并按照相同流程切换剩余的所有波次。",
+          "explanation": "在失败门禁的原因和写入一致性尚未解决的情况下扩大范围，会扩大恢复范围和用户影响。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-2",
+      "prompt": "订单数据最多可以容忍丢失 5 分钟的数据，并且必须在区域故障发生后 1 小时内恢复。架构师最适合采取哪项措施？",
+      "choices": [
+        {
+          "id": "c",
+          "text": "在故障发生后再设计恢复流程。",
+          "explanation": "这无法保证故障转移决策和恢复时间。"
+        },
+        {
+          "id": "a",
+          "text": "选择满足 RPO 和 RTO 的复制方案、恢复环境和故障转移流程，并通过演练验证数据完整性和恢复时间。",
+          "explanation": "这可以同时确认恢复目标和实际执行的可行性。"
+        },
+        {
+          "id": "b",
+          "text": "只要存在一个备份，就不验证恢复时间和数据丢失情况。",
+          "explanation": "无法确定是否能够满足目标。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-3",
+      "prompt": "在逐步进行现代化改造的订单系统中，新旧服务将并行运行。哪种设计最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "定义各项功能的职责边界、请求分流方式、数据一致性的实现方法、可观测性指标以及回滚条件。",
+          "explanation": "这样可以在验证新路径的同时逐步扩大迁移范围。"
+        },
+        {
+          "id": "b",
+          "text": "发布新服务后立即删除旧服务及其数据。",
+          "explanation": "发生异常时将失去回退手段和比较对象。"
+        },
+        {
+          "id": "c",
+          "text": "不记录请求会发送到哪个服务。",
+          "explanation": "这样无法隔离故障，也无法比较服务质量。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Dependency mapping",
+    "Migration wave",
+    "AWS Migration Hub",
+    "RTO",
+    "RPO",
+    "Backup",
+    "Restore",
+    "Failover",
+    "DNS",
+    "Strangler Fig",
+    "Drift detection"
+  ]
+}

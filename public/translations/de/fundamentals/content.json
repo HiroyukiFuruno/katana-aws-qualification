@@ -5162,62 +5162,62 @@
         },
         {
           "id": "internet-egress",
-          "title": "Der Weg aus dem Internet hinein und der Weg nach außen",
+          "title": "Drei Architekturen für die Kommunikation mit dem Internet über IPv4",
           "paragraphs": [
-            "Ein Internet-Gateway (IGW) wird an eine VPC angefügt und dient in der Routing-Tabelle als Ziel für internetgebundenen Datenverkehr. Damit eine EC2-Instanz von außen über IPv4 erreichbar ist, benötigen Sie eine Route zum IGW, eine öffentliche IPv4-Adresse oder Elastic IP sowie die erforderlichen Berechtigungen.",
-            "Eine EC2-Instanz in einem privaten Subnetz kann über ein öffentliches NAT-Gateway selbst Datenverkehr wie das Abrufen von Aktualisierungsdateien initiieren. Das Diagramm zeigt eine Architektur pro Availability Zone. Die Standardroute des privaten Subnetzes zeigt auf das NAT-Gateway, und die Standardroute des öffentlichen Subnetzes mit dem NAT zeigt auf das IGW.",
-            "Ein NAT-Gateway ist kein Gerät, das neue SSH-Verbindungen von außen zu einer privaten EC2-Instanz annimmt. Schließen Sie nicht allein daraus auf einen Fehler, dass die IP-Adresse des NAT-Gateways nicht per Ping erreichbar ist. Prüfen Sie den verfügbaren Status, die beiden Routen sowie die Berechtigungen von Quelle und Ziel."
+            "Das Diagramm vergleicht zunächst, welche Seite die Verbindung öffnet und an welchen Stellen eine öffentliche IPv4-Adresse erforderlich ist. Bei einer Architektur, die von außen direkt eine Verbindung zu EC2 herstellt, benötigen Sie eine öffentliche IPv4-Adresse, eine Route vom Subnetz zum Internet-Gateway (IGW) sowie die Freigabe der erforderlichen Ports.",
+            "Wenn EC2 in einem privaten Subnetz Aktualisierungsdateien abruft, initiiert EC2 die Kommunikation. Die Route des privaten Subnetzes zeigt auf ein öffentliches NAT-Gateway, und die Route des Subnetzes, in dem sich das NAT befindet, zeigt auf das IGW. Weisen Sie dem öffentlichen NAT eine Elastic IP zu.",
+            "Bei einer Architektur, die einen Service bereitstellt, ohne EC2 öffentlich zugänglich zu machen, verbinden sich die Benutzer mit einem internetseitigen ALB. Der ALB beendet diese Verbindung und öffnet innerhalb der VPC eine separate Verbindung zu EC2 im privaten Subnetz. EC2 benötigt keine öffentliche IPv4-Adresse."
           ],
           "example": {
-            "scenario": "In einer Architektur mit einem öffentlichen NAT-Gateway pro Availability Zone kann eine EC2-Instanz in einem privaten Subnetz das Ziel für Betriebssystemaktualisierungen nicht erreichen.",
+            "scenario": "Bei einer Architektur mit einem zonalen öffentlichen NAT-Gateway kann EC2 in einem privaten Subnetz keine Verbindung zum Ziel für Betriebssystemaktualisierungen herstellen.",
             "steps": [
-              "Prüfen Sie, ob 0.0.0.0/0 im privaten Subnetz das NAT-Gateway als Ziel hat.",
-              "Prüfen Sie, ob sich das NAT-Gateway in einem öffentlichen Subnetz befindet und 0.0.0.0/0 dieses Subnetzes das IGW als Ziel hat.",
-              "Prüfen Sie die ausgehenden Regeln der EC2-Instanz sowie externe Bedingungen oder NACLs, die Rückverkehr blockieren könnten."
+              "Prüfen Sie, ob 0.0.0.0/0 im privaten Subnetz auf das NAT-Gateway als Ziel zeigt.",
+              "Prüfen Sie, ob sich das NAT-Gateway in einem öffentlichen Subnetz befindet und ob 0.0.0.0/0 in diesem Subnetz auf das IGW als Ziel zeigt.",
+              "Prüfen Sie die ausgehenden Regeln von EC2 sowie NACLs oder Bedingungen auf der externen Seite, die den Rückverkehr blockieren könnten."
             ],
-            "outcome": "Sie können Quelle, Pfad und externe Erreichbarkeit gemeinsam prüfen, statt nach dem Erstellen des NATs aufzuhören."
+            "outcome": "Beenden Sie die Prüfung nicht mit der Erstellung des NAT, sondern überprüfen Sie gemeinsam den Ausgangspunkt, den Pfad und die externe Erreichbarkeit."
           },
           "misconception": {
-            "claim": "Wenn Sie ein NAT-Gateway in einem privaten Subnetz erstellen, können Sie von außen per SSH auf EC2-Instanzen in diesem Subnetz zugreifen.",
-            "correction": "NAT ist ein Ausgang für von der privaten Seite initiierten Datenverkehr. Es dient nicht dazu, neue eingehende Verbindungen von außen zu privaten EC2-Instanzen weiterzuleiten."
+            "claim": "Wenn Sie ein NAT-Gateway in einem privaten Subnetz erstellen, können Sie von außen per SSH eine Verbindung zu EC2 in diesem Subnetz herstellen.",
+            "correction": "NAT ist ein Ausgang für Verbindungen, die von der privaten Seite initiiert werden. Es dient nicht dazu, neue eingehende Verbindungen von außen zu einem privaten EC2 weiterzuleiten."
           },
           "takeaways": [
-            "NAT ist ein Ausgang für von der privaten Seite initiierten Datenverkehr.",
-            "Prüfen Sie die beiden Routen: privates Subnetz → NAT → IGW."
+            "NAT ist ein Ausgang für Datenverkehr, der von der privaten Seite initiiert wird.",
+            "Prüfen Sie diese beiden Routen: privates Subnetz → NAT → IGW."
           ],
           "source": {
-            "label": "Beispiele für Routing-Optionen",
-            "url": "https://docs.aws.amazon.com/vpc/latest/userguide/route-table-options.html"
+            "label": "VPC-Routing anhand eines Beispiels prüfen",
+            "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-table-options.html"
           }
         },
         {
           "id": "traffic-controls",
-          "title": "Der Unterschied zwischen Sicherheitsgruppen und Netzwerk-ACLs",
+          "title": "Unterschiede zwischen Sicherheitsgruppen und Netzwerk-ACLs",
           "paragraphs": [
-            "Eine Sicherheitsgruppe (SG) ist eine Firewall, die Netzwerkschnittstellen und ähnlichen Ressourcen zugeordnet ist. Da sie zustandsbehaftet ist, passieren Antworten auf erlaubten Datenverkehr auch ohne eine zusätzliche Erlaubnisregel in Gegenrichtung. Für neu initiierten Datenverkehr erlauben Sie nur die erforderlichen Gegenstellen und Ports.",
-            "Eine Netzwerk-ACL (NACL) wird auf ein Subnetz angewendet. Sie ist zustandslos und bewertet eingehenden und ausgehenden Datenverkehr getrennt. Selbst wenn eine Anfrage erlaubt ist, kommt die Antwort nicht zurück, wenn der für die Antwort verwendete kurzlebige Port nicht erlaubt ist.",
-            "Routen, NACLs und Sicherheitsgruppen sind kein Ersatz füreinander. Routen behandeln Ziele, NACLs Subnetzgrenzen und Sicherheitsgruppen Grenzen von Netzwerkschnittstellen."
+            "Das Diagramm vergleicht am Beispiel einer HTTPS-Verbindung von einem ALB zu EC2 die Grenzen und Ports, die Anfragen und Antworten passieren. Eine Sicherheitsgruppe (SG) wird auf eine Netzwerkschnittstelle angewendet und lässt Antworten auf erlaubte Verbindungen durch.",
+            "Eine Netzwerk-ACL (NACL) wird auf ein Subnetz angewendet. Sie speichert den Kommunikationsstatus nicht und bewertet eingehenden und ausgehenden Datenverkehr getrennt. Im Diagramm geht die Anfrage von der ALB-Seite zu TCP 443, und die Antwort kehrt zu TCP 49152 zurück, das der ALB als Quellport verwendet hat.",
+            "Routen bestimmen, wohin Datenverkehr gesendet wird. Erlauben Sie mit der NACL den Datenverkehr in beide Richtungen, während Sie in der SG den Kommunikationspartner und Port neu initiierter Verbindungen einschränken. Wenn keine Verbindung hergestellt werden kann, prüfen Sie, welche Regeln in welche Richtung angewendet werden."
           ],
           "example": {
-            "scenario": "Eine HTTPS-Anfrage von einem ALB erreicht eine Web-EC2-Instanz, aber die Antwort kommt nicht zurück.",
+            "scenario": "Die HTTPS-Anfrage vom ALB erreicht die Web-EC2-Instanz, aber die Antwort kommt nicht zurück.",
             "steps": [
-              "Prüfen Sie in den NACLs des ALB- und des EC2-Subnetzes beide Richtungen der Anfrage und des Rückverkehrs.",
-              "Erlauben Sie in der Sicherheitsgruppe der EC2-Instanz TCP 443 von der Sicherheitsgruppe des ALB.",
-              "Prüfen Sie die Routen von Quelle und Ziel sowie, ob der Dienst auf Verbindungen wartet."
+              "Prüfen Sie in den NACLs des ALB-Subnetzes und des EC2-Subnetzes beide Richtungen – die Anfrage und den Rückverkehr.",
+              "Erlauben Sie in der EC2-Sicherheitsgruppe TCP 443 von der ALB-Sicherheitsgruppe.",
+              "Prüfen Sie die Routen für Quelle und Ziel sowie den Listener des Dienstes."
             ],
-            "outcome": "Sie können erklären, warum die ausgehende Regel einer NACL auch bei einer zustandsbehafteten Sicherheitsgruppe nicht weggelassen werden kann."
+            "outcome": "Erklären Sie, warum die ausgehende NACL-Regel auch dann nicht weggelassen werden kann, wenn die Sicherheitsgruppe stateful ist."
           },
           "misconception": {
-            "claim": "Wenn eine Sicherheitsgruppe zustandsbehaftet ist, erlaubt die NACL auf demselben Pfad Rückverkehr automatisch.",
-            "correction": "Eine NACL ist ein von der Sicherheitsgruppe unabhängiger zustandsloser Filter. NACLs benötigen Regeln in beide Richtungen."
+            "claim": "Wenn die Sicherheitsgruppe stateful ist, lässt die NACL auf demselben Pfad den Rückverkehr ebenfalls automatisch zu.",
+            "correction": "Eine NACL ist ein von der Sicherheitsgruppe unabhängiger stateless Filter. NACL-Regeln sind in beide Richtungen erforderlich."
           },
           "takeaways": [
-            "SGs sind an der Grenze der Netzwerkschnittstelle zustandsbehaftet.",
-            "NACLs sind an der Subnetzgrenze zustandslos."
+            "Eine SG ist an der Grenze der Netzwerkschnittstelle stateful.",
+            "Eine NACL ist an der Subnetzgrenze stateless."
           ],
           "source": {
-            "label": "Netzwerk-ACLs",
-            "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+            "label": "Subnetzverkehr mit Netzwerk-ACLs steuern",
+            "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
           }
         },
         {

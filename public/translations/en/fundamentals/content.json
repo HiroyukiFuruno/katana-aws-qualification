@@ -5162,62 +5162,62 @@
         },
         {
           "id": "internet-egress",
-          "title": "The path in from the internet and the path out",
+          "title": "Three Architectures for Internet Communication with IPv4",
           "paragraphs": [
-            "An internet gateway (IGW) attaches to a VPC and serves as the target for internet-bound traffic in the route table. To make an EC2 instance reachable from outside over IPv4, you need a route to the IGW, a public IPv4 address or Elastic IP, and the required permissions.",
-            "An EC2 instance in a private subnet can initiate traffic such as retrieving update files through a public NAT gateway. The diagram shows a per-Availability Zone design. The private subnet's default route points to the NAT gateway, and the default route of the public subnet containing the NAT points to the IGW.",
-            "A NAT gateway is not a device for accepting new SSH connections from outside to a private EC2 instance. Do not declare an outage solely because the NAT gateway's IP cannot be pinged; check its available state, the two routes, and the source and destination permissions."
+            "The diagram first compares which side opens the connection and where a public IPv4 address is required. In an architecture that connects directly to EC2 from outside, provide a public IPv4 address, a route from the subnet to the internet gateway (IGW), and permission for the required ports.",
+            "When EC2 in a private subnet retrieves update files, EC2 initiates the communication. The private subnet’s route points to a public NAT gateway, and the route in the subnet containing the NAT points to the IGW. Assign an Elastic IP to the public NAT.",
+            "In an architecture that provides a service without exposing EC2, users connect to an internet-facing ALB. The ALB terminates that connection and opens a separate connection within the VPC to EC2 in the private subnet. EC2 does not need a public IPv4 address."
           ],
           "example": {
-            "scenario": "In a design using a public NAT gateway per Availability Zone, an EC2 instance in a private subnet cannot connect to the OS update destination.",
+            "scenario": "In an architecture using a zonal public NAT gateway, EC2 in a private subnet cannot connect to the OS update destination.",
             "steps": [
-              "Check whether 0.0.0.0/0 in the private subnet targets the NAT gateway.",
-              "Check that the NAT gateway is in a public subnet and that 0.0.0.0/0 in that subnet targets the IGW.",
-              "Check the EC2 egress rules and external conditions or NACLs that could block return traffic."
+              "Confirm that 0.0.0.0/0 in the private subnet targets the NAT gateway.",
+              "Confirm that the NAT gateway is in a public subnet and that 0.0.0.0/0 in that subnet targets the IGW.",
+              "Check EC2’s outbound rules, as well as any NACLs or external-side conditions that could block return traffic."
             ],
-            "outcome": "You can verify the source, path, and external reachability together instead of stopping after creating the NAT."
+            "outcome": "Rather than stopping after creating the NAT, you can verify the initiating side, the route, and external reachability together."
           },
           "misconception": {
-            "claim": "Creating a NAT gateway in a private subnet allows SSH access from outside to EC2 instances in that subnet.",
-            "correction": "A NAT is an egress point for traffic initiated from the private side. It is not intended to relay new inbound connections from outside to private EC2 instances."
+            "claim": "If you create a NAT gateway in a private subnet, you can SSH to EC2 in that subnet from outside.",
+            "correction": "NAT is an egress path for connections initiated from the private side. It is not intended to relay new inbound connections from outside to private EC2."
           },
           "takeaways": [
-            "NAT is an egress point for traffic initiated from the private side.",
+            "NAT is an egress path for traffic initiated from the private side.",
             "Check the two routes: private subnet → NAT → IGW."
           ],
           "source": {
-            "label": "Example routing options",
-            "url": "https://docs.aws.amazon.com/vpc/latest/userguide/route-table-options.html"
+            "label": "VPC Routing Explained with an Example",
+            "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-table-options.html"
           }
         },
         {
           "id": "traffic-controls",
-          "title": "The difference between security groups and network ACLs",
+          "title": "Differences Between Security Groups and Network ACLs",
           "paragraphs": [
-            "A security group (SG) is a firewall associated with network interfaces and similar resources. Because it is stateful, responses to allowed traffic pass without adding an allow rule in the reverse direction. For newly initiated traffic, allow only the required peers and ports.",
-            "A network ACL (NACL) applies to a subnet. It is stateless and evaluates inbound and outbound traffic separately. Even if a request is allowed, the response does not return unless the ephemeral port used for the response is allowed.",
-            "Routes, NACLs, and security groups are not substitutes for one another. Routes handle destinations, NACLs handle subnet boundaries, and security groups handle network interface boundaries."
+            "The diagram compares the boundaries and ports through which requests and responses pass, using an HTTPS connection from an ALB to EC2 as an example. A security group (SG) is applied to a network interface and allows responses to permitted connections.",
+            "A network ACL (NACL) is applied to a subnet. It does not track connection state and evaluates inbound and outbound traffic separately. In the diagram, the request travels from the ALB side to TCP 443, and the response returns to TCP 49152, which the ALB used as the source port.",
+            "Routes determine where traffic is sent. Allow traffic in both directions with the NACL, while restricting the peer and port for newly initiated connections in the SG. If the connection fails, check which rules apply in which direction."
           ],
           "example": {
-            "scenario": "An HTTPS request reaches a web EC2 instance from an ALB, but the response does not return.",
+            "scenario": "The HTTPS request from the ALB reaches the web EC2 instance, but the response does not return.",
             "steps": [
-              "Check both directions for the request and return traffic in the NACLs of the ALB subnet and EC2 subnet.",
-              "In the EC2 security group, allow TCP 443 from the ALB's security group.",
-              "Check the source and destination routes and whether the service is listening."
+              "Check both directions—the request and the return traffic—in the NACLs for the ALB subnet and the EC2 subnet.",
+              "In the EC2 security group, allow TCP 443 from the ALB security group.",
+              "Check the routes for the source and destination, as well as the service listener."
             ],
-            "outcome": "You can explain why a NACL's outbound rule cannot be omitted even when a security group is stateful."
+            "outcome": "Explain why the NACL outbound rule cannot be omitted even when the security group is stateful."
           },
           "misconception": {
-            "claim": "If a security group is stateful, the NACL on the same path automatically allows return traffic.",
-            "correction": "A NACL is a stateless filter independent of a security group. NACLs require rules in both directions."
+            "claim": "If the security group is stateful, the NACL on the same path automatically allows the return traffic.",
+            "correction": "An NACL is a stateless filter independent of the security group. NACL rules are required in both directions."
           },
           "takeaways": [
-            "SGs are stateful at the network interface boundary.",
-            "NACLs are stateless at the subnet boundary."
+            "An SG is stateful at the network-interface boundary.",
+            "An NACL is stateless at the subnet boundary."
           ],
           "source": {
-            "label": "Network ACLs",
-            "url": "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+            "label": "Controlling Subnet Traffic with Network ACLs",
+            "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
           }
         },
         {

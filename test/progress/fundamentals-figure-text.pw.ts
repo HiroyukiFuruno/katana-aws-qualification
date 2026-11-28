@@ -22,6 +22,18 @@ const figures = [
     ],
   },
   {
+    name: 'S3 object encryption and the separate KMS boundary',
+    id: 'fundamentals.data-protection:section:encryption:concept:1',
+    labels: [
+      'Amazon S3 boundary',
+      'S3 object',
+      'AWS KMS boundary',
+      'KMS key',
+      'SSE-KMS: request a data key',
+      'AWS KMS returns the data key',
+    ],
+  },
+  {
     name: 'three IPv4 internet paths',
     id: 'fundamentals.routing-connectivity:section:internet-egress:concept:1',
     labels: [
@@ -66,6 +78,11 @@ for (const [id, asset] of Object.entries(lessonFigures)) {
       await expect
         .poll(() => labels.allTextContents())
         .toEqual(expect.arrayContaining(reference.labels));
+    }
+    if (reference?.id === 'fundamentals.data-protection:section:encryption:concept:1') {
+      const key = '[data-cell-id="kms"]';
+      await expect(page.locator(`[data-cell-id="kms-boundary"] ${key}`)).toHaveCount(1);
+      await expect(page.locator(`[data-cell-id="s3-boundary"] ${key}`)).toHaveCount(0);
     }
     await page.evaluate(() => document.fonts.ready);
     if (reference && 'groups' in reference) {

@@ -1,0 +1,148 @@
+{
+  "id": "data-protection",
+  "title": "保護資料",
+  "objective": "能將傳輸中與靜態資料的加密、金鑰、機密資訊及復原，與資料分類和使用路徑相互對應。",
+  "prerequisites": [
+    {
+      "slug": "identity-and-access",
+      "title": "設計身分與存取管理",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "protect-data-in-transit",
+      "title": "依區段保護傳輸中的資料",
+      "paragraphs": [
+        "在保護傳輸中的資料時，請確認下列各區段中 TLS 或其他保護措施在哪裡終止，以及哪些主體可以建立連線：使用者到入口點、入口點到工作負載、工作負載到資料存放區，以及 AWS 與內部部署環境之間。",
+        "私有存取並不只是移除公有端點就完成。您必須結合名稱解析、VPC 端點、路由、安全群組和服務端政策，確保只能透過預期的路徑進行存取。若要讓 VPC 中的應用程式在不使用 NAT 閘道或網際網路閘道的情況下存取 S3，請建立 S3 閘道端點，並確認目標子網路的路由表中存在指向 S3 字首清單的端點路由。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考試指南：傳輸中的資料",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        },
+        {
+          "label": "Amazon S3 閘道端點",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "keys-and-encryption",
+      "title": "區分加密與金鑰使用權限",
+      "paragraphs": [
+        "AWS Key Management Service（AWS KMS）是受管服務，可讓您更輕鬆地建立及控制用於資料加密與簽章的金鑰。在加密設計中，除了決定哪些資料由哪些金鑰保護之外，還要決定誰可以管理及使用金鑰，以及服務整合、輪換、刪除保護、稽核和災害復原期間的使用方式。",
+        "即使啟用加密，如果解密或使用金鑰的權限過於廣泛，也不符合資料分類要求。應一併評估金鑰政策、IAM 權限、加密內容，以及備份與複製目的地的存取權。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Key Management Service",
+          "url": "https://docs.aws.amazon.com/ja_jp/kms/latest/developerguide/overview.html"
+        },
+        {
+          "label": "SCS-C03 考試指南：靜態資料",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "secrets-and-recovery",
+      "title": "保護機密資訊與復原路徑",
+      "paragraphs": [
+        "請勿將登入資料、API 金鑰或權杖嵌入原始碼、映像、範本或日誌中。請設計僅允許執行階段需要這些資訊的工作負載取得它們的儲存機制，並規劃輪換、稽核及更新後的連線檢查。",
+        "備份是資料保護的一部分。除了建立加密備份之外，還要確認哪些主體可以執行復原、復原目的地、完整性、RTO/RPO、防止誤刪除的保護措施，以及復原演練。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Secrets Manager 使用者指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/secretsmanager/latest/userguide/intro.html"
+        },
+        {
+          "label": "SCS-C03 考試指南：機密資訊與金鑰材料",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-data-1",
+      "prompt": "內部應用程式原本可以透過 S3 閘道端點，從 VPC 的私有子網路 A 儲存檔案。運作人員將應用程式移至相同 VPC 的私有子網路 B 後，連線到相同 S3 儲存貯體時發生逾時。B 使用的路由表與 A 不同，而且兩者都沒有通往 NAT 或網際網路閘道的路由。IAM 角色、政策、安全群組和網路 ACL 都未變更。首先應確認什麼？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "變更儲存貯體的加密設定，然後從子網路 B 再次嘗試連線。",
+          "explanation": "加密是用來保護靜態資料的設定，不會為子網路 B 建立通往 S3 的網路路徑。"
+        },
+        {
+          "id": "a",
+          "text": "確認子網路 B 的路由表是否已與 S3 閘道端點建立關聯，以及是否有以 S3 字首清單為目的地的路由。",
+          "explanation": "通往閘道端點的路由會新增至與該端點建立關聯的路由表。即使應用程式移至相同 VPC 中的另一個子網路，如果該子網路的路由表未與端點建立關聯，仍無法使用該端點。"
+        },
+        {
+          "id": "c",
+          "text": "為應用程式的 IAM 角色新增其他 S3 許可，但不變更路由表。",
+          "explanation": "IAM 會授權已抵達服務的請求所執行的操作。新增許可不會為子網路 B 建立其缺少的網路路徑。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-2",
+      "prompt": "您正在審查一項跨多個帳戶處理加密客戶資料的設計。最適合進行哪項檢查？",
+      "choices": [
+        {
+          "id": "c",
+          "text": "授予所有使用者相同的金鑰管理權限。",
+          "explanation": "這違反職務分離與最低權限原則。"
+        },
+        {
+          "id": "b",
+          "text": "只要資料已加密，就不檢查金鑰的使用權限。",
+          "explanation": "這會忽略過於寬泛的解密權限。"
+        },
+        {
+          "id": "a",
+          "text": "確認資料分類、KMS 金鑰的使用者與管理者、金鑰政策與 IAM 政策，以及對複製目的地和復原目的地的存取權。",
+          "explanation": "這樣可以同時評估加密與實際的解密權限。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-3",
+      "prompt": "我們希望定期更新資料庫憑證，並避免因更新失敗而導致停機。哪項政策最適合？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "將憑證嵌入容器映像中。",
+          "explanation": "這會帶來憑證洩漏及無法更新的風險。"
+        },
+        {
+          "id": "a",
+          "text": "設計由執行角色限制取得權限的秘密儲存，並實施輪替、稽核，以及更新後的連線驗證。",
+          "explanation": "這樣可以保護憑證，並驗證更新程序的可用性。"
+        },
+        {
+          "id": "c",
+          "text": "不驗證還原備份所需的權限。",
+          "explanation": "復原期間可能無法存取資料。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC endpoint",
+    "VPC endpoint policy",
+    "Key policy",
+    "Encryption context",
+    "Secret rotation",
+    "RPO",
+    "RTO",
+    "Gateway endpoint",
+    "Prefix list",
+    "S3"
+  ]
+}

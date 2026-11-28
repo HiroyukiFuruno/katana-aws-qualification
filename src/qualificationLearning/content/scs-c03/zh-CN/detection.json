@@ -1,0 +1,157 @@
+{
+  "id": "detection",
+  "title": "设计检测方案",
+  "objective": "设计安全的日志、检测和通知路径，并以防御性方式调查证据不足或误报。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "云的基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "连接与路由"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coverage-before-alerts",
+      "title": "根据资产和风险确定观测范围",
+      "paragraphs": [
+        "在增加更多警报之前，安全人员会整理需要保护的账户、数据、公开访问路径、具有高权限的主体以及关键操作。检测要求不仅包括要检测什么，还包括由谁进行调查，以及需要哪些信息才能判断影响范围。",
+        "GuardDuty 是一种威胁检测服务，会持续监控、分析和处理 AWS 数据源及日志。由于 GuardDuty 的检测结果（finding）并不能断定原因，因此应根据检测结果的类型，将目标资源、时间与操作历史、网络和应用程序的一手证据进行关联核对。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考试指南：检测",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        },
+        {
+          "label": "什么是 Amazon GuardDuty",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/what-is-guardduty.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-trail",
+      "title": "连接从变更到检测的证据链",
+      "paragraphs": [
+        "CloudTrail 会将用户、角色和 AWS 服务执行的操作记录为事件，为审计、治理和合规提供支持。应确定组织、账户和区域的范围、保留期限、加密方式以及访问权限，以保留调查所需的操作、目标资源、时间和主体。在调查重要 S3 存储桶的 GetObject 或 PutObject 时，应在 CloudTrail 跟踪中选择并记录目标存储桶的读取和写入数据事件。仅有管理事件或事件历史记录无法获得 S3 对象级数据事件。",
+        "图示阅读方法：蓝色表示通过已配置的 CloudTrail 跟踪传送管理操作和已选择的数据事件；红色表示通过分析已配置的数据源生成的 GuardDuty 检测结果；紫色表示负责人从检测结果返回原始事件进行调查。这些都不是应用程序的请求路径。检测结果并不能断定原因，因此应使用原始事件等一手证据核对操作主体、目标和时间。不要广泛公开受保护的集中式归档，也不要仅凭检测结果删除原始事件。",
+        "GuardDuty 的 S3 保护功能会独立分析 S3 数据事件并生成检测结果。为便于运维人员调查原始操作，还应在 CloudTrail 跟踪中另行选择目标存储桶的数据事件，并将其保存为调查日志。"
+      ],
+      "sources": [
+        {
+          "label": "什么是 AWS CloudTrail",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        },
+        {
+          "label": "启用 S3 存储桶和对象的 CloudTrail 事件日志记录",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html"
+        },
+        {
+          "label": "GuardDuty 的 S3 保护",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/s3-protection.html"
+        }
+      ],
+      "figureId": "scs-evidence-trail-boundaries"
+    },
+    {
+      "id": "alert-quality",
+      "title": "将通知转化为可处理的检测结果",
+      "paragraphs": [
+        "警报应包含严重性、目标、时间、检测依据、相关事件、负责团队以及初始响应的判断标准。如果无条件地大量发送相同检测结果的通知，重大信号可能会被淹没。因此，应定义重复通知聚合、优先级排序、升级和抑制的条件。",
+        "检测质量不能仅通过通知数量少来衡量。应审查漏报、误报、调查所需的时间以及证据缺失，并改进检测规则、数据源和负责人员的处理流程。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考试指南：检测与日志记录",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-detect-1",
+      "prompt": "一名管理多个 AWS 账户的安全人员已启用 GuardDuty S3 保护。当出现可疑访问的检测结果时，需要追踪是谁对重要 S3 存储桶中的哪些对象执行了 GetObject 或 PutObject。哪种设计最合适？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只保存检测结果，并删除原始操作历史记录。",
+          "explanation": "这样无法确认检测结果的依据和影响范围。"
+        },
+        {
+          "id": "c",
+          "text": "公开所有存储桶，从而不再需要访问日志。",
+          "explanation": "这会失去防护边界和审计能力。"
+        },
+        {
+          "id": "a",
+          "text": "在组织的 CloudTrail 迹中，选择并记录重要 S3 存储桶的 GetObject 和 PutObject 数据事件，并将其保留在受保护的集中式存档中。对于 GuardDuty 检测结果，应回溯到主体、资源、时间和原始事件，以验证假设。",
+          "explanation": "这样可以将 S3 对象操作的一手证据与检测结果关联起来，从而开展调查，而不会武断地认定检测结果就是原因。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-2",
+      "prompt": "GuardDuty 报告称，运行订单 API 的 EC2 实例向一个已知的可疑 IP 地址发起了通信。在该时间段内没有发现新的 AWS API 操作，但相关网络接口正在收集 VPC 流日志。安全人员首先应检查什么，以确定通信范围？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "根据检测结果中的网络接口和时间戳，在 VPC 流日志中核对源地址、目标地址、端口以及通信是被允许还是被拒绝。",
+          "explanation": "由于该检测结果涉及网络通信，因此可以通过相应的流日志确认相关通信。仅凭日志无法确定实例是否已遭到入侵。"
+        },
+        {
+          "id": "c",
+          "text": "只搜索同一时间的 CloudTrail 管理事件，如果没有找到事件，就判断没有发生通信。",
+          "explanation": "CloudTrail 管理事件记录 AWS API 操作历史。它们无法说明 EC2 实例是否发送了网络通信。"
+        },
+        {
+          "id": "b",
+          "text": "仅根据检测结果中的 IP 地址，就判断同一 VPC 中的所有实例都已遭到入侵。",
+          "explanation": "一个网络接口的检测结果无法说明其他实例的状态，也无法说明它们的通信是否成功。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-3",
+      "prompt": "安全运营团队收到的通知过多，因而错过了重大检测结果。最合适的改进措施是什么？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "禁用所有通知。",
+          "explanation": "这样也将无法检测到重要迹象。"
+        },
+        {
+          "id": "c",
+          "text": "不加区别地增加与事项无关的人员作为通知接收者。",
+          "explanation": "责任和优先级会变得模糊。"
+        },
+        {
+          "id": "a",
+          "text": "定义检测结果的重要性、重复结果聚合、对象、负责人、升级流程和抑制条件，并重新审视漏报和误报。",
+          "explanation": "这样可以将通知改进为可采取行动的通知。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "GuardDuty",
+    "Security finding",
+    "CloudTrail trail",
+    "Management event",
+    "Evidence retention",
+    "CloudTrail data event",
+    "GuardDuty S3 Protection",
+    "EC2",
+    "ENI",
+    "VPC Flow Logs"
+  ]
+}

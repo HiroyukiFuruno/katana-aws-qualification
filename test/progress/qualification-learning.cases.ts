@@ -57,4 +57,12 @@ export const qualificationLearningCases: QualificationLearningCase[] = [
     answer: /同じ時間帯・同じ操作について/,
     choiceCount: 3,
   },
+  {
+    courseId: 'scs-c03',
+    firstTitle: '検出を設計する',
+    nextUnit: 'incident-response',
+    prompt: /GuardDutyのS3保護を有効にしています/,
+    answer: /データイベントを選択して記録し/,
+    choiceCount: 3,
+  },
 ];

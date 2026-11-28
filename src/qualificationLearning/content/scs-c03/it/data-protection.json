@@ -1,0 +1,148 @@
+{
+  "id": "data-protection",
+  "title": "Proteggere i dati",
+  "objective": "È in grado di associare la crittografia in transito e a riposo, le chiavi, i segreti e il ripristino alla classificazione dei dati e ai percorsi di utilizzo.",
+  "prerequisites": [
+    {
+      "slug": "identity-and-access",
+      "title": "Progettare la gestione delle identità e degli accessi",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "protect-data-in-transit",
+      "title": "Proteggere i dati in transito per segmento",
+      "paragraphs": [
+        "Per proteggere i dati in transito, verificare dove terminano TLS o un'altra protezione e quali entità possono connettersi in ciascun segmento: dall'utente al punto di ingresso, dal punto di ingresso al carico di lavoro, dal carico di lavoro all'archivio dati e tra AWS e l'ambiente on-premises.",
+        "L'accesso privato non si completa semplicemente eliminando gli endpoint pubblici. Combina la risoluzione dei nomi, gli endpoint VPC, le route, i gruppi di sicurezza e le policy lato servizio, in modo che l'accesso sia possibile solo attraverso il percorso previsto. Per consentire a un'applicazione in una VPC di raggiungere S3 senza utilizzare un gateway NAT o un gateway Internet, crea un endpoint gateway S3 e verifica che la tabella di routing della sottorete di destinazione contenga una route dell'endpoint verso l'elenco dei prefissi S3."
+      ],
+      "sources": [
+        {
+          "label": "Guida all'esame SCS-C03: dati in transito",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        },
+        {
+          "label": "Endpoint gateway di Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "keys-and-encryption",
+      "title": "Separare la crittografia dalle autorizzazioni per l’uso delle chiavi",
+      "paragraphs": [
+        "AWS Key Management Service (AWS KMS) è un servizio gestito che semplifica la creazione e il controllo delle chiavi utilizzate per la crittografia e la firma dei dati. In un progetto di crittografia, stabilire non solo quali chiavi proteggono quali dati, ma anche chi può gestire e utilizzare le chiavi, oltre alle integrazioni con i servizi, alla rotazione, alla protezione dall’eliminazione, al controllo e all’utilizzo durante il disaster recovery.",
+        "Anche con la crittografia abilitata, autorizzazioni troppo ampie per decrittografare o utilizzare le chiavi non sono compatibili con la classificazione dei dati. Valutare insieme le policy delle chiavi, le autorizzazioni IAM, il contesto di crittografia e l’accesso alle destinazioni di backup e replica."
+      ],
+      "sources": [
+        {
+          "label": "AWS Key Management Service",
+          "url": "https://docs.aws.amazon.com/ja_jp/kms/latest/developerguide/overview.html"
+        },
+        {
+          "label": "Guida all’esame SCS-C03: dati a riposo",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "secrets-and-recovery",
+      "title": "Proteggere i segreti e i percorsi di ripristino",
+      "paragraphs": [
+        "Non incorporare credenziali, chiavi API o token nel codice sorgente, nelle immagini, nei modelli o nei log. Progettare uno storage a cui possano accedere solo i carichi di lavoro che ne hanno bisogno in fase di esecuzione e includere la rotazione, il controllo e le verifiche della connessione dopo gli aggiornamenti.",
+        "I backup fanno parte della protezione dei dati. Oltre a creare backup crittografati, verificare quali entità possono eseguire il ripristino, la destinazione del ripristino, l’integrità, l’RTO/RPO, la protezione dalle eliminazioni accidentali e le esercitazioni di ripristino."
+      ],
+      "sources": [
+        {
+          "label": "Guida per l’utente di AWS Secrets Manager",
+          "url": "https://docs.aws.amazon.com/ja_jp/secretsmanager/latest/userguide/intro.html"
+        },
+        {
+          "label": "Guida all’esame SCS-C03: segreti e materiale delle chiavi",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-data-1",
+      "prompt": "Un'applicazione interna riusciva a salvare file dalla sottorete privata A di una VPC tramite un gateway endpoint S3. Quando un operatore ha spostato l'applicazione nella sottorete privata B della stessa VPC, le connessioni allo stesso bucket S3 hanno iniziato ad andare in timeout. B usa una tabella di routing diversa da quella di A e nessuna delle due contiene una route verso un NAT o un internet gateway. Il ruolo IAM, le policy, i gruppi di sicurezza e le ACL di rete non sono cambiati. Che cosa bisogna verificare per prima cosa?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Modificare le impostazioni di crittografia del bucket e riprovare a connettersi dalla sottorete B.",
+          "explanation": "La crittografia protegge i dati a riposo. Non crea un percorso di rete che consenta alla sottorete B di raggiungere S3."
+        },
+        {
+          "id": "a",
+          "text": "Verificare che la tabella di routing della sottorete B sia associata al gateway endpoint S3 e contenga una route con destinazione la lista di prefissi S3.",
+          "explanation": "Una route verso un gateway endpoint viene aggiunta alla tabella di routing associata a tale endpoint. Anche se l'applicazione viene spostata in un'altra sottorete della stessa VPC, l'endpoint non può essere utilizzato se la tabella di routing di quella sottorete non è associata all'endpoint."
+        },
+        {
+          "id": "c",
+          "text": "Aggiungere altre autorizzazioni S3 al ruolo IAM dell'applicazione senza modificare la tabella di routing.",
+          "explanation": "IAM autorizza le operazioni delle richieste che hanno raggiunto il servizio. Aggiungere autorizzazioni non crea il percorso di rete mancante per la sottorete B."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-2",
+      "prompt": "Stai esaminando una progettazione per gestire dati dei clienti crittografati in più account. Qual è la verifica più appropriata?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Concedere a tutti gli utenti le stesse autorizzazioni di gestione delle chiavi.",
+          "explanation": "Questo viola la separazione delle responsabilità e il principio del privilegio minimo."
+        },
+        {
+          "id": "b",
+          "text": "Se i dati sono crittografati, non verificare le autorizzazioni per usare la chiave.",
+          "explanation": "In questo modo si trascurano autorizzazioni di decrittografia eccessivamente ampie."
+        },
+        {
+          "id": "a",
+          "text": "Verificare la classificazione dei dati, i soggetti che usano e gestiscono la chiave KMS, le policy della chiave e di IAM, nonché l’accesso alle destinazioni di replica e ripristino.",
+          "explanation": "Questo consente di valutare insieme la crittografia e le autorizzazioni effettive di decrittografia."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-3",
+      "prompt": "Vogliamo aggiornare regolarmente le credenziali del database ed evitare interruzioni causate da errori di aggiornamento. Qual è la policy più appropriata?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Incorporare le credenziali nell’immagine del container.",
+          "explanation": "Ciò comporta rischi di divulgazione e di impossibilità di aggiornare le credenziali."
+        },
+        {
+          "id": "a",
+          "text": "Progettare un archivio di segreti il cui recupero sia limitato da un ruolo di esecuzione, insieme a rotazione, audit e verifica della connessione dopo gli aggiornamenti.",
+          "explanation": "In questo modo si proteggono le credenziali e si verifica la disponibilità dell’aggiornamento."
+        },
+        {
+          "id": "c",
+          "text": "Non verificare le autorizzazioni per ripristinare i backup.",
+          "explanation": "Durante il ripristino potrebbe non essere possibile accedere ai dati."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC endpoint",
+    "VPC endpoint policy",
+    "Key policy",
+    "Encryption context",
+    "Secret rotation",
+    "RPO",
+    "RTO",
+    "Gateway endpoint",
+    "Prefix list",
+    "S3"
+  ]
+}

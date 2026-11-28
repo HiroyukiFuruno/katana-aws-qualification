@@ -1,0 +1,157 @@
+{
+  "id": "detection",
+  "title": "設計偵測方案",
+  "objective": "設計安全的日誌、偵測與通知路徑，並以防禦性方式調查證據不足或誤報。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "雲端基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身分驗證與授權"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "連線與路由"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coverage-before-alerts",
+      "title": "根據資產與風險決定觀測範圍",
+      "paragraphs": [
+        "在增加更多警示之前，安全人員會整理需要保護的帳戶、資料、公開存取路徑、具高權限的主體，以及重要操作。偵測需求不僅包括要偵測什麼，也包括由誰進行調查，以及需要哪些資訊才能判斷影響範圍。",
+        "GuardDuty 是一項威脅偵測服務，會持續監控、分析及處理 AWS 資料來源與日誌。由於 GuardDuty 的發現結果（finding）並不能斷定原因，因此應根據發現結果的類型，將目標資源、時間與操作歷程、網路及應用程式的一手證據進行交叉比對。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考試指南：偵測",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        },
+        {
+          "label": "什麼是 Amazon GuardDuty",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/what-is-guardduty.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-trail",
+      "title": "串起從變更到偵測的證據鏈",
+      "paragraphs": [
+        "CloudTrail 會將使用者、角色和 AWS 服務執行的動作記錄為事件，協助進行稽核、治理與合規。應決定組織、帳戶和區域的範圍、保留期限、加密方式及存取權限，以保留調查所需的操作、目標資源、時間和主體。調查重要 S3 儲存貯體的 GetObject 或 PutObject 時，請在 CloudTrail 追蹤中選取並記錄目標儲存貯體的讀取與寫入資料事件。僅有管理事件或事件歷程記錄，無法取得 S3 物件層級的資料事件。",
+        "圖示閱讀方式：藍色表示透過已設定的 CloudTrail 追蹤傳送管理操作和已選取的資料事件；紅色表示分析已設定資料來源後產生的 GuardDuty 尋找結果；紫色表示負責人從尋找結果返回原始事件進行調查。這些都不是應用程式的請求路徑。尋找結果並不能斷定原因，因此應使用原始事件等第一手證據核對操作主體、目標和時間。不要廣泛公開受保護的集中式封存，也不要僅憑尋找結果刪除原始事件。",
+        "GuardDuty 的 S3 保護功能會獨立分析 S3 資料事件並產生發現項目。為了讓營運人員能調查原始操作，還應在 CloudTrail 追蹤中另外選取目標儲存貯體的資料事件，並將其保存為調查日誌。"
+      ],
+      "sources": [
+        {
+          "label": "什麼是 AWS CloudTrail",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        },
+        {
+          "label": "啟用 S3 儲存貯體與物件的 CloudTrail 事件日誌記錄",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html"
+        },
+        {
+          "label": "GuardDuty 的 S3 保護",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/s3-protection.html"
+        }
+      ],
+      "figureId": "scs-evidence-trail-boundaries"
+    },
+    {
+      "id": "alert-quality",
+      "title": "將通知轉化為可處理的偵測結果",
+      "paragraphs": [
+        "警示應包含嚴重性、目標、時間、偵測依據、相關事件、負責團隊，以及判斷初始回應的標準。如果無條件大量傳送相同偵測結果的通知，重大訊號可能會被淹沒。因此，應定義彙整重複通知、設定優先順序、升級和抑制的條件。",
+        "偵測品質不能僅以通知數量少來衡量。應檢視漏報、誤報、調查所需的時間，以及證據缺漏，並改善偵測規則、資料來源與負責人員的處理流程。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考試指南：偵測與記錄",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-detect-1",
+      "prompt": "一名管理多個 AWS 帳戶的安全人員已啟用 GuardDuty S3 保護。當出現可疑存取的偵測結果時，需要追蹤誰對重要 S3 儲存貯體中的哪些物件執行了 GetObject 或 PutObject。哪種設計最適合？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只儲存偵測結果，並刪除原始操作歷程。",
+          "explanation": "如此一來，便無法確認偵測結果的依據和影響範圍。"
+        },
+        {
+          "id": "c",
+          "text": "公開所有儲存貯體，讓存取日誌變得不必要。",
+          "explanation": "這會失去防護邊界和稽核能力。"
+        },
+        {
+          "id": "a",
+          "text": "在組織的 CloudTrail 追蹤中，選取並記錄重要 S3 儲存貯體的 GetObject 和 PutObject 資料事件，並將其保留在受保護的集中式封存中。對於 GuardDuty 偵測結果，應回溯至主體、資源、時間和原始事件，以驗證假設。",
+          "explanation": "這會將 S3 物件操作的一手證據與偵測結果連結起來，讓您能夠進行調查，而不會武斷地認定偵測結果就是原因。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-2",
+      "prompt": "GuardDuty 回報，執行訂單 API 的 EC2 執行個體曾向已知的可疑 IP 位址發起通訊。在該時段內找不到新的 AWS API 操作，但目標網路介面正在收集 VPC 流程記錄。安全人員要先檢查什麼，才能確認通訊範圍？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "根據調查結果中的網路介面和時間戳記，在 VPC 流程記錄中比對來源、目的地、連接埠，以及通訊是允許還是遭到拒絕。",
+          "explanation": "由於此調查結果與網路通訊有關，因此可以從相應的流程記錄確認目標通訊。僅憑記錄無法確定執行個體是否遭到入侵。"
+        },
+        {
+          "id": "c",
+          "text": "只搜尋同一時間的 CloudTrail 管理事件，若找不到事件，就判斷沒有發生通訊。",
+          "explanation": "CloudTrail 管理事件是 AWS API 操作的記錄。它們無法表示 EC2 執行個體是否傳送了網路通訊。"
+        },
+        {
+          "id": "b",
+          "text": "僅根據調查結果中的 IP 位址，就判斷同一 VPC 中的所有執行個體都已遭到入侵。",
+          "explanation": "單一網路介面的調查結果無法說明其他執行個體的狀態，也無法說明其通訊是否成功。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-3",
+      "prompt": "安全營運團隊收到的通知過多，因此忽略了重大偵測結果。最適當的改善措施是哪一項？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "停用所有通知。",
+          "explanation": "如此一來也將無法偵測到重大跡象。"
+        },
+        {
+          "id": "c",
+          "text": "不加區別地增加與事項無關的人員作為通知接收者。",
+          "explanation": "責任和優先順序會變得模糊。"
+        },
+        {
+          "id": "a",
+          "text": "定義偵測結果的重要性、重複結果彙整、適用範圍、負責人、升級流程與抑制條件，並重新檢視漏偵與誤偵。",
+          "explanation": "這樣可以將通知改善為可採取行動的通知。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "GuardDuty",
+    "Security finding",
+    "CloudTrail trail",
+    "Management event",
+    "Evidence retention",
+    "CloudTrail data event",
+    "GuardDuty S3 Protection",
+    "EC2",
+    "ENI",
+    "VPC Flow Logs"
+  ]
+}

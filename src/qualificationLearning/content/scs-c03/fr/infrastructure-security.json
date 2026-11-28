@@ -1,0 +1,165 @@
+{
+  "id": "infrastructure-security",
+  "title": "Défendre l’infrastructure",
+  "objective": "Être capable de placer les limites de défense minimales à chaque couche : le périmètre Internet, les charges de travail et les VPC.",
+  "prerequisites": [
+    {
+      "slug": "detection",
+      "title": "Concevoir la détection",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "incident-response",
+      "title": "Répondre aux incidents",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connectivité et routage"
+    }
+  ],
+  "sections": [
+    {
+      "id": "edge-controls",
+      "title": "Limiter les points d’entrée publics aux chemins nécessaires",
+      "paragraphs": [
+        "Pour les applications publiques, séparez les responsabilités du DNS, du CDN, d’AWS WAF, de l’équilibreur de charge et de l’application. N’acceptez que les protocoles et les hôtes nécessaires, puis vérifiez ensemble le où TLS est terminé, les certificats, la limitation de débit, les règles de la couche applicative et l’accessibilité de l’origine.",
+        "En faisant de CloudFront l’unique point d’entrée public des utilisateurs et en utilisant un ALB interne dans des sous-réseaux privés comme origine VPC, vous pouvez distribuer du contenu sans créer de chemin permettant d’atteindre directement l’ALB au moyen d’une adresse IP publique. Ajouter uniquement des règles WAF ne suffit pas à empêcher le contournement s’il existe un autre chemin public. Une Web ACL n’est pas un saut indépendant placé au milieu du chemin de communication ; c’est une frontière associée à CloudFront ou à l’ALB qui évalue les requêtes. Observez le chemin du point d’entrée jusqu’à l’origine, les journaux et l’effet des règles, puis évaluez l’impact sur les utilisateurs légitimes."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’examen SCS-C03 : périphérie réseau",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        },
+        {
+          "label": "Qu’est-ce qu’AWS WAF ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/waf/latest/developerguide/what-is-aws-waf.html"
+        },
+        {
+          "label": "Limiter l’accès à un Application Load Balancer",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html"
+        },
+        {
+          "label": "Limiter l’accès avec une origine VPC CloudFront",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html"
+        }
+      ],
+      "figureId": "scs-edge-origin-boundary"
+    },
+    {
+      "id": "workload-hardening",
+      "title": "Gérer les autorisations d’exécution et les mises à jour pour chaque charge de travail",
+      "paragraphs": [
+        "Pour les charges de travail informatiques, gérez les rôles d’exécution, la provenance des images ou des packages, la gestion des vulnérabilités, les secrets, les mises à jour du système d’exploitation ou du runtime, ainsi que l’envoi des journaux. Ne placez pas d’identifiants d’administrateur partagés dans la charge de travail et veillez à ce qu’elle n’accède qu’aux API AWS et aux données dont elle a besoin.",
+        "Effectuez les mises à jour dans le cadre d’un processus opérationnel comprenant la validation, le déploiement progressif, les vérifications d’intégrité et le rollback. Si vous arrêtez la surveillance ou les sauvegardes pour accélérer l’application des correctifs, il devient plus difficile d’analyser la cause d’un incident et de rétablir le service."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’examen SCS-C03 : charges de travail informatiques",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "vpc-boundaries",
+      "title": "Vérifier séparément les chemins de communication et les limites d’autorisation",
+      "paragraphs": [
+        "L’accessibilité d’un VPC est déterminée par la combinaison des tables de routage, des groupes de sécurité, des ACL réseau et des paramètres de l’hôte ou du service. La présence d’une route ne signifie pas qu’un port est autorisé ; il faut donc vérifier à la fois le chemin sortant et le chemin de retour.",
+        "Dans une conception défensive, séparez les sous-réseaux publics, privés et isolés selon leur objectif, et n’autorisez que les chemins et protocoles nécessaires. Au lieu de résoudre les problèmes de connectivité en ouvrant tout, utilisez les journaux de flux et les journaux de connexion pour identifier la limite au niveau de laquelle le trafic a été refusé."
+      ],
+      "sources": [
+        {
+          "label": "Configurer les tables de routage",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Guide de l’examen SCS-C03 : sécurité réseau",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-infra-1",
+      "prompt": "L’équipe responsable d’une application web publique veut que les utilisateurs y accèdent uniquement via CloudFront. Quelle conception est la plus appropriée pour fermer les chemins permettant de se connecter à l’origine sans passer par l’inspection d’AWS WAF ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Utiliser un ALB interne dans un sous-réseau privé comme origine VPC de CloudFront, puis associer une Web ACL à CloudFront ou à l’ALB. Ne créer aucun chemin public permettant d’atteindre directement l’ALB depuis un autre point que CloudFront.",
+          "explanation": "Limiter le point d’entrée public des utilisateurs à CloudFront et utiliser un ALB interne garantit qu’il n’existe aucun chemin permettant d’atteindre un ALB public sans évaluation par AWS WAF."
+        },
+        {
+          "id": "b",
+          "text": "Rendre l’origine publique afin que n’importe qui puisse s’y connecter directement.",
+          "explanation": "Cela permet de contourner la frontière de sécurité du point d’entrée."
+        },
+        {
+          "id": "c",
+          "text": "Configurer uniquement des règles WAF sans vérifier l’accessibilité de l’origine.",
+          "explanation": "Cela ne permet pas d’empêcher les accès directs par d’autres chemins."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-2",
+      "prompt": "La personne responsable d’une application métier conteneurisée souhaite réduire au minimum les autorisations de l’API AWS du workload. Quelle est la stratégie la plus appropriée ?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Ne pas vérifier la provenance ni les vulnérabilités de l’image afin de faciliter les mises à jour.",
+          "explanation": "Les risques liés à la chaîne d’approvisionnement et à l’exploitation subsistent."
+        },
+        {
+          "id": "a",
+          "text": "Accorder à un rôle d’exécution dédié au workload uniquement les autorisations nécessaires pour les API et les ressources requises, sans placer d’informations d’identification d’administrateur partagées dans le workload.",
+          "explanation": "Cela permet de limiter le principal d’exécution et l’étendue de ses autorisations."
+        },
+        {
+          "id": "b",
+          "text": "Intégrer la même clé d’accès d’administrateur dans chaque conteneur.",
+          "explanation": "L’impact d’une fuite serait important et il serait impossible d’identifier le principal."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-3",
+      "prompt": "Un client situé dans un autre sous-réseau du même VPC se connecte à une API privée via TCP 443, en utilisant le port source 49152. Les connexions ont commencé à expirer après la modification d’une ACL réseau dans le sous-réseau de l’API. L’API reçoit la demande de connexion et envoie également une réponse. Le groupe de sécurité autorise la connexion et la route n’a pas changé. Que devez-vous vérifier dans l’ACL réseau côté API ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Vérifier qu’une règle sortante autorise TCP 49152 vers la plage CIDR du côté client.",
+          "explanation": "Les ACL réseau sont sans état. Même si la demande de connexion arrive via TCP 443, la réponse revient vers le port source 49152 du client ; une autorisation dans l’autre sens est donc nécessaire."
+        },
+        {
+          "id": "b",
+          "text": "Ajouter, dans les règles sortantes, une autorisation supplémentaire de TCP 443 vers la plage CIDR du côté client.",
+          "explanation": "Le port 443 est le port sur lequel l’API est à l’écoute. Le port de destination de cette réponse est le port 49152 du client."
+        },
+        {
+          "id": "c",
+          "text": "Autoriser TCP 49152 uniquement dans une règle entrante.",
+          "explanation": "Dans ce cas, vous devez vérifier la réponse qui sort du sous-réseau de l’API vers le client. Une autorisation entrante ne permet pas à la réponse de passer."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "WAF",
+    "Web ACL",
+    "Origin",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Public subnet",
+    "Private subnet",
+    "TLS",
+    "CloudFront VPC origin",
+    "CIDR",
+    "TCP",
+    "Ephemeral port"
+  ]
+}

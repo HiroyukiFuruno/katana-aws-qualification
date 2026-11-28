@@ -1,0 +1,153 @@
+{
+  "id": "identity-and-access",
+  "title": "設計身分與存取管理",
+  "objective": "區分身分驗證與授權，並依照最小權限原則管理主體、條件和資源。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "雲端基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身分驗證與授權"
+    },
+    {
+      "slug": "infrastructure-security",
+      "title": "防禦基礎設施",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "authentication-by-actor",
+      "title": "區分人員、應用程式與外部系統進行身分驗證",
+      "paragraphs": [
+        "對於人員存取，應選擇聯合身分驗證與 MFA；對於工作負載，應選擇角色與臨時登入資料；對於外部系統，應選擇具備信任條件的整合。共用長期存取金鑰、導致無法區分主體的設計，會使撤銷權限、進行稽核，以及在發生洩漏時限制影響範圍變得更加困難。",
+        "調查身分驗證問題時，請檢查 IdP、MFA、權杖、角色信任政策、時間，以及相關的 CloudTrail 事件。使用者成功通過身分驗證，與該使用者獲得存取目標資源的授權，是兩個不同的判斷。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考試指南：身分驗證策略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "authorization-boundaries",
+      "title": "跨越多個邊界評估有效權限",
+      "paragraphs": [
+        "在授權中，會結合身分型政策、資源型政策、工作階段政策、許可界限、組織政策和明確拒絕來評估有效權限。請明確指出需要許可的主體、操作、資源和條件，不要將管理員權限設為預設值。",
+        "若要擔任由其他 AWS 帳戶管理的 IAM 角色，呼叫方必須具備 `sts:AssumeRole` 許可，且還必須符合目標角色信任政策中的條件。在客戶帳戶中建立目標角色時，應在該角色的許可政策中只允許目標儲存貯體所需的前綴和操作。委託第三方存取時，也可以將外部 ID 設為信任條件。只有在需要施加明確拒絕或其他條件時，才需要額外加入儲存貯體政策作為邊界；當角色和儲存貯體位於同一個客戶帳戶時，儲存貯體政策並非始終必要。圖中的實線表示擔任角色的請求、包含暫時憑證的回應，以及使用這些憑證向 S3 發出的請求。虛線表示 AWS STS 檢查的信任條件。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考試指南：授權策略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        },
+        {
+          "label": "IAM 使用者指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/introduction.html"
+        },
+        {
+          "label": "存取第三方擁有的 AWS 帳戶",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html"
+        }
+      ],
+      "figureId": "scs-cross-account-assume-role-boundary"
+    },
+    {
+      "id": "access-review",
+      "title": "持續檢視權限",
+      "paragraphs": [
+        "存取設計並不會在首次授予權限時結束。應定期檢視未使用的權限、員工離職或調職、角色變更、緊急存取和例外情況，並保留擁有者、用途、有效期限及核准紀錄。",
+        "Break-glass 存取不是用來取代一般最小權限的日常手段。應定義啟動條件、MFA、較短的有效期間、監控及事後檢視，並務必確認使用原因及其影響。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考試指南：身分與存取管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-iam-1",
+      "prompt": "您正在設計與人事系統整合的管理員存取。如果希望迅速撤銷離職人員的存取權限並強制要求 MFA，哪項政策最適合？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "使用 IdP 和聯合身分驗證，並套用 MFA 與以角色為基礎的暫時工作階段。",
+          "explanation": "這能將人事資訊與身分驗證及存取撤銷串接，同時避免使用長期憑證。"
+        },
+        {
+          "id": "b",
+          "text": "分發一個由部門所有人員共用的管理員存取金鑰。",
+          "explanation": "無法識別個別主體，也無法撤銷存取權限。"
+        },
+        {
+          "id": "c",
+          "text": "停用 MFA，並讓密碼永久有效。",
+          "explanation": "這會降低身分驗證強度。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-2",
+      "prompt": "某稽核公司的工具擔任客戶 AWS 帳戶 A 中的稽核用 IAM 角色。客戶將稽核日誌移至另一個 AWS 帳戶 B 的 S3 儲存貯體。B 擁有這些物件，且物件採用 SSE-S3 加密。若要讓工具繼續使用同一角色，只擷取核准前綴下的物件，需要哪些設定？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "在帳戶 A 的角色許可政策和帳戶 B 的儲存貯體政策中，都允許 A 的角色對核准前綴下的物件執行 s3:GetObject。",
+          "explanation": "AWS 在發出請求的帳戶 A 評估角色的許可政策，在擁有資源的帳戶 B 評估儲存貯體政策。跨帳戶擷取物件需要雙方都授權。"
+        },
+        {
+          "id": "c",
+          "text": "只在帳戶 A 的角色許可政策中，允許對帳戶 B 核准前綴下的物件執行 s3:GetObject。",
+          "explanation": "帳戶 A 的管理員無法單獨授權存取 B 所擁有的儲存貯體。帳戶 B 的儲存貯體政策也必須允許存取。"
+        },
+        {
+          "id": "b",
+          "text": "將帳戶 B 加入帳戶 A 的角色信任政策，維持帳戶 B 的儲存貯體政策不變。",
+          "explanation": "信任政策決定誰可以擔任帳戶 A 的角色。它不會授予已擔任該角色的工具讀取帳戶 B 中物件的權限。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-3",
+      "prompt": "您正在設計一套僅在緊急情況下允許執行生產環境管理操作的緊急破窗存取程序。哪項控制措施最適當？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "讓所有人長期共用緊急管理員憑證。",
+          "explanation": "這會失去最低權限與可稽核性。"
+        },
+        {
+          "id": "c",
+          "text": "不保留緊急操作的記錄。",
+          "explanation": "如此事後便無法確認影響。"
+        },
+        {
+          "id": "a",
+          "text": "定義啟動條件、MFA、較短的有效期間、操作監控及事後檢討。",
+          "explanation": "如此即可將緊急存取視為例外加以追蹤與控管。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Principal",
+    "IAM role",
+    "IAM role trust policy",
+    "Resource-based policy",
+    "External ID",
+    "STS",
+    "Permissions boundary",
+    "SCP",
+    "MFA",
+    "SSE-S3"
+  ]
+}

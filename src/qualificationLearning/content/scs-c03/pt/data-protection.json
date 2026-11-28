@@ -1,0 +1,148 @@
+{
+  "id": "data-protection",
+  "title": "Proteção de dados",
+  "objective": "Consegue associar a criptografia em trânsito e em repouso, as chaves, os segredos e a recuperação à classificação dos dados e aos caminhos de uso.",
+  "prerequisites": [
+    {
+      "slug": "identity-and-access",
+      "title": "Projetar o gerenciamento de identidade e acesso",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "protect-data-in-transit",
+      "title": "Proteger dados em trânsito por segmento",
+      "paragraphs": [
+        "Na proteção de dados em trânsito, verifique onde o TLS ou outra proteção termina e quais entidades podem se conectar em cada segmento: do usuário ao ponto de entrada, do ponto de entrada à carga de trabalho, da carga de trabalho ao armazenamento de dados e entre a AWS e o ambiente on-premises.",
+        "O acesso privado não é concluído apenas com a remoção dos endpoints públicos. Combine a resolução de nomes, os endpoints da VPC, as rotas, os grupos de segurança e as políticas do lado do serviço para permitir o acesso somente pelo caminho pretendido. Para permitir que uma aplicação em uma VPC acesse o S3 sem usar um gateway NAT ou um gateway da Internet, crie um endpoint de gateway do S3 e confirme que a tabela de rotas da sub-rede de destino contém uma rota de endpoint para a lista de prefixos do S3."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SCS-C03: dados em trânsito",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        },
+        {
+          "label": "Endpoints de gateway do Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "keys-and-encryption",
+      "title": "Separe a criptografia das permissões de uso das chaves",
+      "paragraphs": [
+        "O AWS Key Management Service (AWS KMS) é um serviço gerenciado que facilita a criação e o controle de chaves usadas para criptografia e assinatura de dados. Em um projeto de criptografia, determine não apenas quais chaves protegem quais dados, mas também quem pode gerenciar e usar as chaves, além das integrações de serviços, da rotação, da proteção contra exclusão, da auditoria e do uso durante a recuperação de desastres.",
+        "Mesmo com a criptografia habilitada, permissões amplas demais para descriptografar ou usar as chaves não estarão alinhadas à classificação dos dados. Avalie em conjunto as políticas de chaves, as permissões do IAM, o contexto de criptografia e o acesso nos destinos de backup e replicação."
+      ],
+      "sources": [
+        {
+          "label": "AWS Key Management Service",
+          "url": "https://docs.aws.amazon.com/ja_jp/kms/latest/developerguide/overview.html"
+        },
+        {
+          "label": "Guia do exame SCS-C03: dados em repouso",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "secrets-and-recovery",
+      "title": "Proteger segredos e caminhos de recuperação",
+      "paragraphs": [
+        "Não incorpore credenciais, chaves de API ou tokens no código-fonte, em imagens, modelos ou logs. Projete um armazenamento que permita o acesso apenas às cargas de trabalho que precisam desses dados em tempo de execução e inclua rotação, auditoria e verificações de conexão após atualizações.",
+        "Os backups fazem parte da proteção de dados. Além de criar backups criptografados, verifique quais entidades podem realizar a restauração, o destino da restauração, a integridade, o RTO/RPO, a proteção contra exclusão acidental e os exercícios de restauração."
+      ],
+      "sources": [
+        {
+          "label": "Guia do usuário do AWS Secrets Manager",
+          "url": "https://docs.aws.amazon.com/ja_jp/secretsmanager/latest/userguide/intro.html"
+        },
+        {
+          "label": "Guia do exame SCS-C03: segredos e material de chave",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-data-1",
+      "prompt": "Um aplicativo interno conseguia salvar arquivos a partir da sub-rede privada A de uma VPC por meio de um gateway endpoint do S3. Quando um operador moveu o aplicativo para a sub-rede privada B na mesma VPC, as conexões com o mesmo bucket do S3 começaram a atingir o tempo limite. B usa uma tabela de rotas diferente da usada por A, e nenhuma das duas tem uma rota para um NAT ou um internet gateway. A função do IAM, as políticas, os grupos de segurança e as ACLs de rede não foram alterados. O que você deve verificar primeiro?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Altere as configurações de criptografia do bucket e tente conectar-se novamente a partir da sub-rede B.",
+          "explanation": "A criptografia protege os dados em repouso. Ela não cria um caminho de rede para que a sub-rede B alcance o S3."
+        },
+        {
+          "id": "a",
+          "text": "Verifique se a tabela de rotas da sub-rede B está associada ao gateway endpoint do S3 e se contém uma rota cujo destino seja a lista de prefixos do S3.",
+          "explanation": "Uma rota para um gateway endpoint é adicionada à tabela de rotas associada a esse endpoint. Mesmo que o aplicativo seja movido para outra sub-rede na mesma VPC, o endpoint não poderá ser usado se a tabela de rotas dessa sub-rede não estiver associada a ele."
+        },
+        {
+          "id": "c",
+          "text": "Adicione outras permissões do S3 à função do IAM do aplicativo sem alterar a tabela de rotas.",
+          "explanation": "O IAM autoriza as operações realizadas por solicitações que já chegaram ao serviço. Adicionar permissões não cria o caminho de rede ausente para a sub-rede B."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-2",
+      "prompt": "Você está revisando um design para lidar com dados de clientes criptografados em várias contas. Qual é a verificação mais adequada?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Conceder as mesmas permissões de gerenciamento de chaves a todos os usuários.",
+          "explanation": "Isso viola a separação de funções e o princípio do menor privilégio."
+        },
+        {
+          "id": "b",
+          "text": "Se os dados estiverem criptografados, não verificar as permissões de uso da chave.",
+          "explanation": "Isso deixa passar permissões de descriptografia excessivamente amplas."
+        },
+        {
+          "id": "a",
+          "text": "Verificar a classificação dos dados; as entidades que usam e gerenciam a chave do KMS; as políticas da chave e do IAM; e o acesso aos destinos de replicação e restauração.",
+          "explanation": "Isso permite avaliar a criptografia junto com as permissões reais de descriptografia."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-3",
+      "prompt": "Queremos atualizar regularmente as credenciais do banco de dados e evitar indisponibilidade causada por falhas nas atualizações. Qual é a política mais apropriada?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Incorporar as credenciais à imagem do contêiner.",
+          "explanation": "Isso cria riscos de vazamento e de impossibilidade de atualizar as credenciais."
+        },
+        {
+          "id": "a",
+          "text": "Projetar um armazenamento de segredos com a obtenção restrita por uma função de execução, além de rotação, auditoria e verificação da conexão após as atualizações.",
+          "explanation": "Isso protege as credenciais e verifica a disponibilidade do processo de atualização."
+        },
+        {
+          "id": "c",
+          "text": "Não verificar as permissões para restaurar backups.",
+          "explanation": "Talvez não seja possível acessar os dados durante a recuperação."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC endpoint",
+    "VPC endpoint policy",
+    "Key policy",
+    "Encryption context",
+    "Secret rotation",
+    "RPO",
+    "RTO",
+    "Gateway endpoint",
+    "Prefix list",
+    "S3"
+  ]
+}

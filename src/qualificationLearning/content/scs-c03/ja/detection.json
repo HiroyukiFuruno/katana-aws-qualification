@@ -1,0 +1,157 @@
+{
+  "id": "detection",
+  "title": "検出を設計する",
+  "objective": "安全なログ・検知・通知の経路を設計し、証跡不足や誤検知を防御的に調査できる。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "クラウドの基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "接続とルーティング"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coverage-before-alerts",
+      "title": "資産とリスクから観測範囲を決める",
+      "paragraphs": [
+        "セキュリティ担当者は、アラームを増やす前に、保護対象のアカウント、データ、公開経路、権限の強い主体、重要な操作を整理します。検出要件は、何を検知するかだけでなく、誰が調査し、どの情報があれば影響範囲を判断できるかまで含みます。",
+        "GuardDuty は AWS データソースとログを継続的にモニタリング、分析、処理する脅威検出サービスです。GuardDuty の検出結果（finding）は原因の断定ではないため、対象リソース、時刻と、検出結果の種類に応じた操作履歴、ネットワーク、アプリケーションの一次証跡を照合します。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 試験ガイド: 検出",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        },
+        {
+          "label": "Amazon GuardDuty とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/what-is-guardduty.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-trail",
+      "title": "変更から検知までの証跡をつなぐ",
+      "paragraphs": [
+        "CloudTrail は、ユーザー、ロール、AWS サービスが実行したアクションをイベントとして記録し、監査・ガバナンス・コンプライアンスに役立ちます。調査に必要な操作、対象リソース、時刻、主体を残すよう、組織・アカウント・リージョンの範囲、保持、暗号化、アクセス権限を決めます。重要な S3 バケットの GetObject や PutObject を調査対象にする場合は、CloudTrail 証跡で対象バケットの読み取り・書き込みデータイベントを選択して記録します。管理イベントやイベント履歴だけでは、S3 オブジェクトレベルのデータイベントは得られません。",
+        "図の読み方: 青は設定済みの CloudTrail 証跡による管理操作・選択済みデータイベントの配送、赤は設定済みデータソースの分析から生じる GuardDuty 検出結果、紫は担当者が検出結果から元イベントへ戻る調査です。いずれもアプリケーションの要求経路ではありません。検出結果は原因の断定ではないため、操作主体、対象、時刻を元イベントなどの一次証跡で照合します。保護された集約アーカイブを広く公開したり、検出結果だけで元イベントを削除したりしません。",
+        "GuardDutyのS3保護は、S3のデータイベントを独自に分析して検出結果を出します。運用担当者が元の操作を調べられるように、対象バケットのデータイベントはCloudTrailの証跡で別途選び、調査用のログとして保存します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS CloudTrail とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        },
+        {
+          "label": "S3 バケットとオブジェクトの CloudTrail イベントログ記録の有効化",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html"
+        },
+        {
+          "label": "GuardDutyのS3保護",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/s3-protection.html"
+        }
+      ],
+      "figureId": "scs-evidence-trail-boundaries"
+    },
+    {
+      "id": "alert-quality",
+      "title": "通知を対応可能な検出結果にする",
+      "paragraphs": [
+        "アラートには、重要度、対象、時刻、検知根拠、関連イベント、担当チーム、初期対応の判断基準を持たせます。同じ検出結果を無条件に大量通知すると、重大な兆候が埋もれるため、重複の集約、優先順位、エスカレーション、抑制の条件を定義します。",
+        "検知の品質は、通知件数の少なさでは測れません。見逃し、誤検知、調査に要する時間、証跡の欠落をレビューし、検知ルール・データソース・担当導線を改善します。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 試験ガイド: 検出とロギング",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-detect-1",
+      "prompt": "複数のAWSアカウントを管理するセキュリティ担当者は、GuardDutyのS3保護を有効にしています。不審なアクセスの検出結果が出たときに、誰が重要なS3バケットのどのオブジェクトへGetObjectやPutObjectを実行したかを追えるようにします。どの設計が最も適切ですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "検出結果だけを保存し、元の操作履歴は削除する。",
+          "explanation": "検出結果の根拠と影響範囲を確認できません。"
+        },
+        {
+          "id": "c",
+          "text": "すべてのバケットを公開し、アクセスログを不要にする。",
+          "explanation": "防御境界と監査可能性を失います。"
+        },
+        {
+          "id": "a",
+          "text": "組織の CloudTrail 証跡で重要な S3 バケットの GetObject と PutObject のデータイベントを選択して記録し、保護された集約アーカイブに保持する。GuardDuty 検出結果は、主体、リソース、時刻、元イベントへ戻って仮説を確認する。",
+          "explanation": "S3 オブジェクト操作の一次証跡と検出結果を結び付け、検出結果を原因と断定せずに調査できます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-2",
+      "prompt": "GuardDuty が、注文 API を実行する EC2 インスタンスから既知の不審なIPアドレスへの通信を報告しました。その時間帯について、AWS API の新たな操作は見つかっていませんが、対象のネットワークインターフェイスでは VPC フローログを収集しています。セキュリティ担当者が通信の範囲を最初に確かめるには、何を調べますか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "検出結果のインターフェイスと時刻を基に、VPC フローログで送信元・宛先・ポートと通信の許可または拒否を照合する。",
+          "explanation": "この検出結果はネットワーク通信に関するため、対応するフローログから対象の通信を確認できます。ログだけで侵害の有無までは確定しません。"
+        },
+        {
+          "id": "c",
+          "text": "同じ時刻の CloudTrail 管理イベントだけを検索し、見つからなければ通信はなかったと判断する。",
+          "explanation": "CloudTrail 管理イベントは AWS API の操作履歴です。EC2 インスタンスが送ったネットワーク通信の有無は分かりません。"
+        },
+        {
+          "id": "b",
+          "text": "検出結果の IP アドレスだけを根拠に、同じ VPC の全インスタンスが侵害されたと判断する。",
+          "explanation": "一つのネットワークインターフェイスの検出結果から、他のインスタンスの状態や通信の成否までは分かりません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-3",
+      "prompt": "セキュリティ運用チームは、通知が多すぎて重大な検出結果を見落としています。最も適切な改善はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "すべての通知を無効にする。",
+          "explanation": "重大な兆候も検知できなくなります。"
+        },
+        {
+          "id": "c",
+          "text": "通知先を無関係な担当者へ無差別に増やす。",
+          "explanation": "責任と優先度が曖昧になります。"
+        },
+        {
+          "id": "a",
+          "text": "検出結果の重要度、重複集約、対象、担当、エスカレーション、抑制条件を定義し、見逃しと誤検知を見直す。",
+          "explanation": "対応可能な通知へ改善できます。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "GuardDuty",
+    "Security finding",
+    "CloudTrail trail",
+    "Management event",
+    "Evidence retention",
+    "CloudTrail data event",
+    "GuardDuty S3 Protection",
+    "EC2",
+    "ENI",
+    "VPC Flow Logs"
+  ]
+}

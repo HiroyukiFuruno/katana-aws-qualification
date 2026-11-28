@@ -1,0 +1,153 @@
+{
+  "id": "identity-and-access",
+  "title": "자격 증명 및 액세스 관리 설계",
+  "objective": "인증과 권한 부여를 구분하고 최소 권한 원칙에 따라 주체, 조건 및 리소스를 관리할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "클라우드 기본 개념"
+    },
+    {
+      "slug": "identity-access",
+      "title": "인증 및 권한 부여"
+    },
+    {
+      "slug": "infrastructure-security",
+      "title": "인프라 방어",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "authentication-by-actor",
+      "title": "사람, 애플리케이션 및 외부 시스템을 구분하여 인증하기",
+      "paragraphs": [
+        "사람의 액세스에는 페더레이션과 MFA를 선택하고, 워크로드에는 역할과 임시 자격 증명을 선택하며, 외부 시스템에는 신뢰 조건이 있는 통합을 선택합니다. 장기 액세스 키를 공유하여 보안 주체를 구분할 수 없게 만드는 설계는 액세스 취소, 감사, 그리고 정보 유출이 발생했을 때 영향 범위를 제한하는 작업을 어렵게 만듭니다.",
+        "인증 문제를 조사할 때는 IdP, MFA, 토큰, 역할 신뢰 정책, 시간 및 관련 CloudTrail 이벤트를 확인합니다. 사용자가 인증에 성공한 것과 대상 리소스에 액세스하도록 권한을 부여받는 것은 서로 다른 판단입니다."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 시험 가이드: 인증 전략",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "authorization-boundaries",
+      "title": "여러 경계를 통해 유효 권한 평가",
+      "paragraphs": [
+        "권한 부여에서는 ID 기반 정책, 리소스 기반 정책, 세션 정책, 권한 경계, 조직 정책 및 명시적 거부를 함께 고려하여 유효 권한을 평가합니다. 권한이 필요한 보안 주체, 작업, 리소스 및 조건을 명확히 지정하고, 관리자 권한을 기본값으로 사용하지 않습니다.",
+        "다른 AWS 계정에서 관리하는 IAM 역할을 맡으려면 호출자에게 `sts:AssumeRole` 권한이 있어야 하며, 대상 역할의 신뢰 정책 조건도 충족해야 합니다. 고객 계정에 대상 역할을 생성하는 경우 해당 역할의 권한 정책에서 대상 버킷에 필요한 접두사와 작업만 허용합니다. 타사에 액세스를 위임하는 경우 외부 ID도 신뢰 조건으로 설정할 수 있습니다. 명시적 거부나 추가 조건을 적용해야 할 때 버킷 정책을 추가 경계로 사용하며, 역할과 버킷이 동일한 고객 계정에 있는 구성에서는 버킷 정책이 항상 필요한 것은 아닙니다. 그림의 실선은 역할을 맡기 위한 요청, 임시 자격 증명이 포함된 응답, 그리고 해당 자격 증명을 사용하여 S3로 보내는 요청을 나타냅니다. 점선은 AWS STS가 확인하는 신뢰 조건을 나타냅니다."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 시험 가이드: 권한 부여 전략",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        },
+        {
+          "label": "IAM 사용 설명서",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/introduction.html"
+        },
+        {
+          "label": "타사 소유 AWS 계정에 대한 액세스",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html"
+        }
+      ],
+      "figureId": "scs-cross-account-assume-role-boundary"
+    },
+    {
+      "id": "access-review",
+      "title": "권한을 지속적으로 검토하기",
+      "paragraphs": [
+        "액세스 설계는 최초 권한 부여로 끝나지 않습니다. 사용하지 않는 권한, 퇴직·전근, 역할 변경, 긴급 액세스 및 예외를 정기적으로 검토하고, 소유자, 목적, 만료일, 승인 기록을 보관해야 합니다.",
+        "브레이크글래스 액세스는 일반적인 최소 권한을 대체하는 상시 수단이 아닙니다. 발동 조건, MFA, 짧은 유효 기간, 모니터링 및 사후 검토를 정의하고, 사용 이유와 영향을 반드시 확인해야 합니다."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 시험 가이드: 자격 증명 및 액세스 관리",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-iam-1",
+      "prompt": "인사 시스템과 연동되는 관리자 액세스를 설계하고 있습니다. 퇴사자의 액세스를 신속하게 취소하고 MFA를 필수로 적용하려면 어떤 정책이 가장 적절합니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "IdP와 연합을 사용하고 MFA와 역할 기반 임시 세션을 적용합니다.",
+          "explanation": "인사 정보와 인증 및 액세스 취소를 연동하면서 장기 자격 증명을 피할 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "부서 전체가 공유하는 관리자 액세스 키를 배포합니다.",
+          "explanation": "주체를 식별하거나 액세스를 취소할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "MFA를 비활성화하고 비밀번호를 영구적으로 유지합니다.",
+          "explanation": "인증 강도가 낮아집니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-2",
+      "prompt": "감사 업체의 도구는 고객의 AWS 계정 A에 있는 감사용 IAM 역할을 수임합니다. 고객은 감사 로그를 별도의 AWS 계정 B에 있는 S3 버킷으로 옮겼습니다. B는 객체를 소유하고, 객체는 SSE-S3로 암호화되어 있습니다. 도구가 같은 역할로 승인된 접두사 아래의 객체만 가져오려면 어떤 설정이 필요합니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "계정 A의 역할 권한 정책과 계정 B의 버킷 정책 모두에서 계정 A의 역할이 승인된 접두사 아래의 객체에 대해 s3:GetObject를 수행하도록 허용합니다.",
+          "explanation": "AWS는 요청을 보내는 계정 A에서 역할 권한 정책을 평가하고 리소스를 소유한 계정 B에서 버킷 정책을 평가합니다. 계정 간 객체 조회에는 양쪽의 허용이 필요합니다."
+        },
+        {
+          "id": "c",
+          "text": "계정 A의 역할 권한 정책에서만 계정 B의 승인된 접두사에 대해 s3:GetObject를 허용합니다.",
+          "explanation": "계정 A의 관리자가 계정 B 소유 버킷에 대한 액세스를 혼자 허용할 수는 없습니다. 계정 B의 버킷 정책도 해당 액세스를 허용해야 합니다."
+        },
+        {
+          "id": "b",
+          "text": "계정 A의 역할 신뢰 정책에 계정 B를 추가합니다. 계정 B의 버킷 정책은 그대로 둡니다.",
+          "explanation": "신뢰 정책은 누가 계정 A의 역할을 수임할 수 있는지를 정합니다. 이미 그 역할을 수임한 도구에 계정 B의 객체를 읽을 권한을 부여하지는 않습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-3",
+      "prompt": "긴급 상황에서만 프로덕션 관리 작업을 허용하는 브레이크글라스 절차를 설계하고 있습니다. 가장 적절한 제어는 무엇입니까?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "모든 사람이 긴급 관리자 자격 증명을 평상시에도 사용하도록 합니다.",
+          "explanation": "최소 권한과 감사 가능성을 잃게 됩니다."
+        },
+        {
+          "id": "c",
+          "text": "긴급 작업 기록을 남기지 않습니다.",
+          "explanation": "사후에 영향을 확인할 수 없게 됩니다."
+        },
+        {
+          "id": "a",
+          "text": "발동 조건, MFA, 짧은 유효 기간, 작업 모니터링 및 사후 검토를 정의합니다.",
+          "explanation": "이를 통해 긴급 액세스를 예외로 추적하고 통제할 수 있습니다."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Principal",
+    "IAM role",
+    "IAM role trust policy",
+    "Resource-based policy",
+    "External ID",
+    "STS",
+    "Permissions boundary",
+    "SCP",
+    "MFA",
+    "SSE-S3"
+  ]
+}

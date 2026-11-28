@@ -1,0 +1,148 @@
+{
+  "id": "data-protection",
+  "title": "データを保護する",
+  "objective": "転送中・保管中の暗号化、鍵、シークレット、復旧をデータ分類と利用経路に対応付けられる。",
+  "prerequisites": [
+    {
+      "slug": "identity-and-access",
+      "title": "Identity and Access Management を設計する",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "protect-data-in-transit",
+      "title": "転送中のデータを区間ごとに保護する",
+      "paragraphs": [
+        "転送中の保護では、利用者から入口、入口からワークロード、ワークロードからデータストア、AWS とオンプレミスの各区間について、TLS または他の保護がどこで終端し、どの主体が接続できるかを確認します。",
+        "プライベートアクセスは、公開エンドポイントをなくすだけでは完結しません。名前解決、VPC エンドポイント、ルート、セキュリティグループ、サービス側ポリシーを合わせ、意図する経路からだけアクセスできるようにします。VPC 内のアプリケーションから S3 へ NAT ゲートウェイまたはインターネットゲートウェイを使わずに到達させる場合は、S3 ゲートウェイエンドポイントを作成し、対象サブネットのルートテーブルに S3 プレフィックスリスト宛てのエンドポイントルートがあることを確認します。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 試験ガイド: 転送中のデータ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        },
+        {
+          "label": "Amazon S3 のゲートウェイエンドポイント",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "keys-and-encryption",
+      "title": "暗号化と鍵の使用権限を分ける",
+      "paragraphs": [
+        "AWS KMS はデータ暗号化と署名に使うキーの作成と制御を容易にするマネージドサービスです。暗号化設計では、どのデータをどのキーで守るかに加えて、誰がキーを管理・使用できるか、サービス統合、ローテーション、削除保護、監査、災害復旧時の利用を決めます。",
+        "暗号化を有効にしても、復号やキー使用の権限が広すぎればデータ分類に合いません。キーのポリシー、IAM 権限、暗号化コンテキスト、バックアップ・複製先でのアクセスを一緒に評価します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Key Management Service",
+          "url": "https://docs.aws.amazon.com/ja_jp/kms/latest/developerguide/overview.html"
+        },
+        {
+          "label": "SCS-C03 試験ガイド: 保管中のデータ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "secrets-and-recovery",
+      "title": "シークレットと復旧経路を保護する",
+      "paragraphs": [
+        "認証情報、API キー、トークンはソース、イメージ、テンプレート、ログへ埋め込みません。実行時に必要なワークロードだけが取得できる保管、ローテーション、監査、更新後の接続確認を設計します。",
+        "バックアップはデータ保護の一部です。暗号化されたバックアップを作るだけでなく、復元できる主体、復元先、整合性、RTO/RPO、誤削除への保護、復元演習を確認します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Secrets Manager ユーザーガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/secretsmanager/latest/userguide/intro.html"
+        },
+        {
+          "label": "SCS-C03 試験ガイド: シークレットとキーマテリアル",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-data-1",
+      "prompt": "社内アプリは、VPC のプライベートサブネット A から S3 ゲートウェイエンドポイント経由でファイルを保存できていました。運用担当者が同じ VPC のプライベートサブネット B にアプリを移したところ、同じ S3 バケットへの接続がタイムアウトします。B は A と別のルートテーブルを使い、どちらにも NAT やインターネットゲートウェイへの経路はありません。IAM ロール、ポリシー、セキュリティグループ、ネットワーク ACL は変えていません。最初に何を確認しますか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "バケットの暗号化設定を変えて、サブネット B からもう一度接続する。",
+          "explanation": "暗号化は保存データを保護する設定です。サブネット B から S3 に到達する経路は作られません。"
+        },
+        {
+          "id": "a",
+          "text": "サブネット B のルートテーブルが S3 ゲートウェイエンドポイントに関連付けられ、S3 のプレフィックスリストを宛先とするルートがあるか確認する。",
+          "explanation": "ゲートウェイエンドポイントへのルートは、関連付けたルートテーブルに追加されます。同じ VPC の別サブネットへ移しても、そのサブネットのルートテーブルに関連付けがなければ利用できません。"
+        },
+        {
+          "id": "c",
+          "text": "アプリの IAM ロールに別の S3 権限を追加して、ルートテーブルは変えない。",
+          "explanation": "IAM は到達したリクエストの操作を認可します。権限を追加しても、サブネット B に不足しているネットワーク経路は作られません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-2",
+      "prompt": "暗号化された顧客データを複数アカウントで扱う設計をレビューします。最も適切な確認はどれですか。",
+      "choices": [
+        {
+          "id": "c",
+          "text": "同じキー管理権限を全利用者に付与する。",
+          "explanation": "職務分離と最小権限に反します。"
+        },
+        {
+          "id": "b",
+          "text": "暗号化済みであれば、キーの使用権限は確認しない。",
+          "explanation": "広すぎる復号権限を見落とします。"
+        },
+        {
+          "id": "a",
+          "text": "データ分類、KMS キーの使用・管理主体、キーと IAM のポリシー、複製・復元先のアクセスを確認する。",
+          "explanation": "暗号化と実際の復号権限を一緒に評価できます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-3",
+      "prompt": "データベース認証情報を定期的に更新し、更新失敗による停止を避けたいと考えています。最も適切な方針はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "認証情報をコンテナイメージへ埋め込む。",
+          "explanation": "漏えいと更新不能のリスクがあります。"
+        },
+        {
+          "id": "a",
+          "text": "実行ロールで取得を限定したシークレット保管、ローテーション、監査、更新後の接続確認を設計する。",
+          "explanation": "認証情報を保護し、更新の可用性を検証できます。"
+        },
+        {
+          "id": "c",
+          "text": "バックアップの復元権限を確認しない。",
+          "explanation": "復旧時にデータへアクセスできないおそれがあります。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC endpoint",
+    "VPC endpoint policy",
+    "Key policy",
+    "Encryption context",
+    "Secret rotation",
+    "RPO",
+    "RTO",
+    "Gateway endpoint",
+    "Prefix list",
+    "S3"
+  ]
+}

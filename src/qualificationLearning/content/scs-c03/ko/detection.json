@@ -1,0 +1,157 @@
+{
+  "id": "detection",
+  "title": "탐지 설계",
+  "objective": "안전한 로깅·탐지·알림 경로를 설계하고, 증거 부족이나 오탐을 방어적으로 조사할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "클라우드 기본 개념"
+    },
+    {
+      "slug": "identity-access",
+      "title": "인증 및 권한 부여"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "연결 및 라우팅"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coverage-before-alerts",
+      "title": "자산과 위험을 바탕으로 관측 범위 정하기",
+      "paragraphs": [
+        "보안 담당자는 알람을 더 추가하기 전에 보호해야 할 계정, 데이터, 공개 액세스 경로, 높은 권한을 가진 주체, 중요한 작업을 정리합니다. 탐지 요구 사항에는 무엇을 탐지할지뿐만 아니라 누가 조사할지, 영향 범위를 판단하려면 어떤 정보가 필요한지도 포함됩니다.",
+        "GuardDuty는 AWS 데이터 소스와 로그를 지속적으로 모니터링하고 분석하며 처리하는 위협 탐지 서비스입니다. GuardDuty의 탐지 결과(finding)는 원인을 확정하는 것이 아니므로, 탐지 결과의 유형에 따라 대상 리소스와 시간, 작업 기록, 네트워크 및 애플리케이션의 1차 증거를 상호 대조합니다."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 시험 가이드: 탐지",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        },
+        {
+          "label": "Amazon GuardDuty란 무엇입니까?",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/what-is-guardduty.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-trail",
+      "title": "변경부터 탐지까지 증적 연결하기",
+      "paragraphs": [
+        "CloudTrail은 사용자, 역할, AWS 서비스가 수행한 작업을 이벤트로 기록하여 감사, 거버넌스 및 규정 준수를 지원합니다. 조사에 필요한 작업, 대상 리소스, 시간 및 주체를 보존할 수 있도록 조직, 계정 및 리전 범위, 보존 기간, 암호화 및 액세스 권한을 결정합니다. 중요한 S3 버킷의 GetObject 또는 PutObject를 조사하려는 경우 CloudTrail 추적에서 대상 버킷의 읽기 및 쓰기 데이터 이벤트를 선택하여 기록합니다. 관리 이벤트나 이벤트 기록만으로는 S3 객체 수준 데이터 이벤트를 얻을 수 없습니다.",
+        "그림 읽는 방법: 파란색은 구성된 CloudTrail 추적을 통해 관리 작업과 선택한 데이터 이벤트가 전달되는 것을 나타내고, 빨간색은 구성된 데이터 소스를 분석하여 생성된 GuardDuty 결과를 나타내며, 보라색은 담당자가 결과에서 원래 이벤트로 돌아가 조사하는 과정을 나타냅니다. 어느 것도 애플리케이션 요청 경로가 아닙니다. 결과만으로 원인을 단정할 수 없으므로 원래 이벤트와 같은 1차 증적을 사용하여 작업 주체, 대상 및 시간을 대조합니다. 보호된 중앙 아카이브를 광범위하게 공개하거나 결과만을 근거로 원래 이벤트를 삭제하지 않습니다.",
+        "GuardDuty의 S3 보호 기능은 S3 데이터 이벤트를 독립적으로 분석하여 조사 결과를 생성합니다. 운영 담당자가 원래 작업을 조사할 수 있도록 대상 버킷의 데이터 이벤트를 CloudTrail 추적에서 별도로 선택하고 조사용 로그로 보존합니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS CloudTrail이란",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        },
+        {
+          "label": "S3 버킷 및 객체의 CloudTrail 이벤트 로그 기록 활성화",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html"
+        },
+        {
+          "label": "GuardDuty S3 보호",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/s3-protection.html"
+        }
+      ],
+      "figureId": "scs-evidence-trail-boundaries"
+    },
+    {
+      "id": "alert-quality",
+      "title": "알림을 대응 가능한 탐지 결과로 만들기",
+      "paragraphs": [
+        "알림에는 심각도, 대상, 시간, 탐지 근거, 관련 이벤트, 담당 팀, 초기 대응을 판단하는 기준을 포함해야 합니다. 동일한 탐지 결과를 조건 없이 대량으로 알리면 중요한 신호가 묻힐 수 있으므로, 중복 집계, 우선순위 지정, 에스컬레이션 및 억제 조건을 정의해야 합니다.",
+        "탐지 품질은 알림 건수가 적다는 것으로 측정할 수 없습니다. 누락 탐지, 오탐, 조사에 필요한 시간, 증적 누락을 검토하고 탐지 규칙, 데이터 소스 및 담당자 대응 경로를 개선해야 합니다."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 시험 가이드: 탐지 및 로깅",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-detect-1",
+      "prompt": "여러 AWS 계정을 관리하는 보안 담당자가 GuardDuty S3 보호를 활성화했습니다. 의심스러운 액세스에 대한 탐지 결과가 생성되었을 때, 중요한 S3 버킷의 어떤 객체에 누가 GetObject 또는 PutObject를 수행했는지 추적할 수 있어야 합니다. 어떤 설계가 가장 적절합니까?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "탐지 결과만 저장하고 원래 작업 기록은 삭제합니다.",
+          "explanation": "이렇게 하면 탐지 결과의 근거와 영향 범위를 확인할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "모든 버킷을 공개하고 액세스 로그가 필요 없게 만듭니다.",
+          "explanation": "보호 경계와 감사 가능성을 잃게 됩니다."
+        },
+        {
+          "id": "a",
+          "text": "조직의 CloudTrail 추적에서 중요한 S3 버킷의 GetObject 및 PutObject 데이터 이벤트를 선택하여 기록하고, 보호된 중앙 집계 아카이브에 보존합니다. GuardDuty 탐지 결과에 대해서는 주체, 리소스, 시간 및 원래 이벤트까지 거슬러 올라가 가설을 확인합니다.",
+          "explanation": "이렇게 하면 S3 객체 작업에 대한 1차 증거와 탐지 결과를 연결할 수 있으므로, 탐지 결과 자체가 원인이라고 단정하지 않고 조사할 수 있습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-2",
+      "prompt": "GuardDuty가 주문 API를 실행하는 EC2 인스턴스에서 알려진 의심스러운 IP 주소로 통신한 사실을 보고했습니다. 해당 시간대에 새로운 AWS API 작업은 발견되지 않았지만, 대상 네트워크 인터페이스에서는 VPC 흐름 로그를 수집하고 있습니다. 보안 담당자가 통신 범위를 처음 확인하려면 무엇을 조사해야 합니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "탐지 결과의 네트워크 인터페이스와 타임스탬프를 기준으로 VPC 흐름 로그에서 소스, 대상, 포트 및 통신이 허용되었는지 거부되었는지를 대조합니다.",
+          "explanation": "이 탐지 결과는 네트워크 통신과 관련되어 있으므로 해당 흐름 로그에서 관련 통신을 확인할 수 있습니다. 로그만으로는 인스턴스가 침해되었는지 여부를 확정할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "같은 시간의 CloudTrail 관리 이벤트만 검색하고, 이벤트를 찾지 못하면 통신이 없었다고 판단합니다.",
+          "explanation": "CloudTrail 관리 이벤트는 AWS API 작업 기록입니다. EC2 인스턴스가 네트워크 통신을 전송했는지는 확인할 수 없습니다."
+        },
+        {
+          "id": "b",
+          "text": "탐지 결과의 IP 주소만을 근거로 같은 VPC의 모든 인스턴스가 침해되었다고 판단합니다.",
+          "explanation": "하나의 네트워크 인터페이스에 대한 탐지 결과만으로는 다른 인스턴스의 상태나 해당 통신의 성공 여부를 알 수 없습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-3",
+      "prompt": "보안 운영 팀은 알림이 너무 많아 중요한 탐지 결과를 놓치고 있습니다. 가장 적절한 개선 방법은 무엇입니까?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "모든 알림을 비활성화합니다.",
+          "explanation": "중요한 징후도 더 이상 탐지할 수 없게 됩니다."
+        },
+        {
+          "id": "c",
+          "text": "관련 없는 담당자를 알림 수신자에 무차별적으로 추가합니다.",
+          "explanation": "책임과 우선순위가 모호해집니다."
+        },
+        {
+          "id": "a",
+          "text": "탐지 결과의 중요도, 중복 집계, 대상, 담당자, 에스컬레이션 및 억제 조건을 정의하고, 누락과 오탐을 재검토합니다.",
+          "explanation": "이렇게 하면 조치 가능한 알림으로 개선할 수 있습니다."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "GuardDuty",
+    "Security finding",
+    "CloudTrail trail",
+    "Management event",
+    "Evidence retention",
+    "CloudTrail data event",
+    "GuardDuty S3 Protection",
+    "EC2",
+    "ENI",
+    "VPC Flow Logs"
+  ]
+}

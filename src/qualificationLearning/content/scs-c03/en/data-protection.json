@@ -1,0 +1,148 @@
+{
+  "id": "data-protection",
+  "title": "Protecting Data",
+  "objective": "Can align encryption in transit and at rest, keys, secrets, and recovery with data classification and usage paths.",
+  "prerequisites": [
+    {
+      "slug": "identity-and-access",
+      "title": "Designing Identity and Access Management",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "protect-data-in-transit",
+      "title": "Protecting Data in Transit by Segment",
+      "paragraphs": [
+        "For data-in-transit protection, verify where TLS or other protection terminates and which entities can connect across each segment: from the user to the entry point, from the entry point to the workload, from the workload to the data store, and between AWS and on premises.",
+        "Private access is not complete simply because public endpoints have been eliminated. Combine name resolution, VPC endpoints, routes, security groups, and service-side policies so that access is possible only through the intended path. To reach S3 from an application in a VPC without using a NAT gateway or an internet gateway, create an S3 gateway endpoint and verify that the route table for the target subnet contains an endpoint route to the S3 prefix list."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 Exam Guide: Data in Transit",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        },
+        {
+          "label": "Amazon S3 Gateway Endpoints",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "keys-and-encryption",
+      "title": "Separate Encryption from Key-Use Permissions",
+      "paragraphs": [
+        "AWS Key Management Service (AWS KMS) is a managed service that makes it easier to create and control keys used for data encryption and signing. In an encryption design, determine not only which keys protect which data, but also who can manage and use the keys, along with service integrations, rotation, deletion protection, auditing, and use during disaster recovery.",
+        "Enabling encryption does not align with data classification if permissions to decrypt or use the keys are too broad. Evaluate key policies, IAM permissions, encryption context, and access at backup and replication destinations together."
+      ],
+      "sources": [
+        {
+          "label": "AWS Key Management Service",
+          "url": "https://docs.aws.amazon.com/ja_jp/kms/latest/developerguide/overview.html"
+        },
+        {
+          "label": "SCS-C03 Exam Guide: Data at Rest",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "secrets-and-recovery",
+      "title": "Protect secrets and recovery paths",
+      "paragraphs": [
+        "Do not embed credentials, API keys, or tokens in source code, images, templates, or logs. Design storage that only the workloads requiring them at runtime can access, along with rotation, auditing, and connection checks after updates.",
+        "Backups are part of data protection. Do not merely create encrypted backups; also verify which principals can restore them, where they can be restored, their integrity, RTO/RPO, protection against accidental deletion, and restoration exercises."
+      ],
+      "sources": [
+        {
+          "label": "AWS Secrets Manager User Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/secretsmanager/latest/userguide/intro.html"
+        },
+        {
+          "label": "SCS-C03 Exam Guide: Secrets and Key Material",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-data-1",
+      "prompt": "An internal application was able to save files from private subnet A in a VPC through an S3 gateway endpoint. When an operator moved the application to private subnet B in the same VPC, connections to the same S3 bucket began timing out. B uses a different route table from A, and neither has a route to a NAT or an internet gateway. The IAM role, policies, security groups, and network ACLs have not changed. What should you check first?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Change the bucket's encryption settings and try connecting again from subnet B.",
+          "explanation": "Encryption protects data at rest. It does not create a network path for subnet B to reach S3."
+        },
+        {
+          "id": "a",
+          "text": "Check whether subnet B's route table is associated with the S3 gateway endpoint and contains a route whose destination is the S3 prefix list.",
+          "explanation": "A route to a gateway endpoint is added to the route table associated with that endpoint. Even when an application is moved to another subnet in the same VPC, the endpoint cannot be used if that subnet's route table is not associated with it."
+        },
+        {
+          "id": "c",
+          "text": "Add different S3 permissions to the application's IAM role without changing the route table.",
+          "explanation": "IAM authorizes operations for requests that have reached the service. Adding permissions does not create the missing network path for subnet B."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-2",
+      "prompt": "You are reviewing a design for handling encrypted customer data across multiple accounts. Which check is most appropriate?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Grant the same key-management permissions to all users.",
+          "explanation": "This violates separation of duties and least privilege."
+        },
+        {
+          "id": "b",
+          "text": "If the data is encrypted, do not verify permissions to use the key.",
+          "explanation": "This overlooks overly broad decryption permissions."
+        },
+        {
+          "id": "a",
+          "text": "Verify the data classification; who uses and manages the KMS key; the key and IAM policies; and access to replication and restoration destinations.",
+          "explanation": "This lets you evaluate encryption together with actual decryption permissions."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-3",
+      "prompt": "We want to update database credentials regularly and avoid outages caused by update failures. Which policy is most appropriate?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Embed the credentials in the container image.",
+          "explanation": "This creates risks of leakage and inability to update the credentials."
+        },
+        {
+          "id": "a",
+          "text": "Design secret storage with retrieval restricted by an execution role, along with rotation, auditing, and connection verification after updates.",
+          "explanation": "This protects the credentials and verifies the availability of the update process."
+        },
+        {
+          "id": "c",
+          "text": "Do not verify permissions to restore backups.",
+          "explanation": "Data might be inaccessible during recovery."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC endpoint",
+    "VPC endpoint policy",
+    "Key policy",
+    "Encryption context",
+    "Secret rotation",
+    "RPO",
+    "RTO",
+    "Gateway endpoint",
+    "Prefix list",
+    "S3"
+  ]
+}

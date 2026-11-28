@@ -1,0 +1,165 @@
+{
+  "id": "infrastructure-security",
+  "title": "Defending Infrastructure",
+  "objective": "Can place the minimum necessary defensive boundaries at each layer: the internet perimeter, workloads, and VPCs.",
+  "prerequisites": [
+    {
+      "slug": "detection",
+      "title": "Designing Detection",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "incident-response",
+      "title": "Responding to Incidents",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connectivity and Routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "edge-controls",
+      "title": "Restrict public entry points to the required paths",
+      "paragraphs": [
+        "For public applications, separate the responsibilities of DNS, the CDN, AWS WAF, the load balancer, and the application. Accept only the required protocols and hosts, and verify together where TLS terminates, which certificates are used, how rate limiting is applied, which application-layer rules are enforced, and whether the origin is reachable.",
+        "By making CloudFront the only public viewer entry point and using an internal ALB in private subnets as a VPC origin, you can deliver content without creating a path that reaches the ALB directly through a public IP address. Simply adding WAF rules does not prevent bypass if another public path exists. A Web ACL is not an independent hop placed in the middle of the network path; it is a boundary associated with CloudFront or the ALB that evaluates requests. Observe the path from the entry point to the origin, the logs, and the effects of the rules, and evaluate the impact on legitimate users."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 Exam Guide: Network Edge",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        },
+        {
+          "label": "What is AWS WAF?",
+          "url": "https://docs.aws.amazon.com/ja_jp/waf/latest/developerguide/what-is-aws-waf.html"
+        },
+        {
+          "label": "Restrict access to an Application Load Balancer",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html"
+        },
+        {
+          "label": "Restrict access using a CloudFront VPC origin",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html"
+        }
+      ],
+      "figureId": "scs-edge-origin-boundary"
+    },
+    {
+      "id": "workload-hardening",
+      "title": "Manage execution permissions and updates for each workload",
+      "paragraphs": [
+        "For computing workloads, manage execution roles, the provenance of images or packages, vulnerability management, secrets, OS or runtime updates, and log delivery. Do not place shared administrator credentials in the workload; ensure that it can access only the AWS APIs and data it needs.",
+        "Perform updates as an operational process that includes validation, phased deployment, health checks, and rollback. If you stop monitoring or backups to rush patching, investigating the cause of an incident and recovering from it become more difficult."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 Exam Guide: Computing Workloads",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "vpc-boundaries",
+      "title": "Verify Communication Paths and Permission Boundaries Separately",
+      "paragraphs": [
+        "VPC reachability is determined by the combination of route tables, security groups, network ACLs, and host or service settings. Having a route does not mean that a port is permitted, so verify both the outbound path and the return path.",
+        "In a defensive design, separate public, private, and isolated subnets according to their purposes, and allow only the required paths and protocols. Instead of resolving connectivity problems by opening everything, use flow logs and connection logs to identify the boundary at which the traffic was denied."
+      ],
+      "sources": [
+        {
+          "label": "Configure Route Tables",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "SCS-C03 Exam Guide: Network Security",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-infra-1",
+      "prompt": "The team responsible for a public web application wants users to access it only through CloudFront. Which design is most appropriate for closing paths that could connect to the origin without passing AWS WAF inspection?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Use an internal-facing ALB in a private subnet as CloudFront's VPC origin, and associate a Web ACL with CloudFront or the ALB. Do not create a public path that allows direct access to the ALB from anywhere other than CloudFront.",
+          "explanation": "Limiting the viewer's public entry point to CloudFront and using an internal-facing ALB ensures that there is no path to a public ALB without AWS WAF evaluation."
+        },
+        {
+          "id": "b",
+          "text": "Expose the origin so that anyone can connect to it directly.",
+          "explanation": "This allows the entry-point security boundary to be bypassed."
+        },
+        {
+          "id": "c",
+          "text": "Configure only WAF rules and do not verify reachability to the origin.",
+          "explanation": "This cannot prevent direct access through other paths."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-2",
+      "prompt": "The person responsible for a containerized business application wants to minimize the workload’s AWS API permissions. Which policy is most appropriate?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Do not verify the image’s provenance or vulnerabilities in order to make updates easier.",
+          "explanation": "Supply chain and operational risks remain."
+        },
+        {
+          "id": "a",
+          "text": "Grant only the permissions for the APIs and resources required to a workload-dedicated execution role, and do not place shared administrator credentials in the workload.",
+          "explanation": "This limits both the execution principal and the scope of its permissions."
+        },
+        {
+          "id": "b",
+          "text": "Embed the same administrator access key in every container.",
+          "explanation": "The impact of a leak would be significant, and the principal could not be identified."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-3",
+      "prompt": "A client in a different subnet of the same VPC connects to a private API over TCP port 443, using source port 49152. Connections began timing out after a network ACL was changed in the API's subnet. The API receives the connection request and sends a response. The security group allows the connection, and the route has not changed. What should you check in the network ACL on the API side?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Check whether an outbound rule allows TCP port 49152 to the CIDR range on the client side.",
+          "explanation": "Network ACLs are stateless. Even though the connection request arrives over TCP port 443, the response returns to the client's source port, 49152, so permission is required in the opposite direction."
+        },
+        {
+          "id": "b",
+          "text": "Add an outbound rule allowing TCP port 443 to the CIDR range on the client side.",
+          "explanation": "Port 443 is the port on which the API listens. The destination port for this response is the client's port 49152."
+        },
+        {
+          "id": "c",
+          "text": "Allow TCP port 49152 only in an inbound rule.",
+          "explanation": "In this case, you need to check the response traveling from the API subnet to the client. An inbound rule cannot allow the response through."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "WAF",
+    "Web ACL",
+    "Origin",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Public subnet",
+    "Private subnet",
+    "TLS",
+    "CloudFront VPC origin",
+    "CIDR",
+    "TCP",
+    "Ephemeral port"
+  ]
+}

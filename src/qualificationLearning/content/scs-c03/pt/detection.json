@@ -1,0 +1,157 @@
+{
+  "id": "detection",
+  "title": "Projetar a detecção",
+  "objective": "Projetar caminhos seguros para registro de logs, detecção e notificações, e investigar de forma defensiva a insuficiência de evidências ou os falsos positivos.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "Fundamentos da nuvem"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Autenticação e autorização"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Conectividade e roteamento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coverage-before-alerts",
+      "title": "Definição do escopo de observação com base nos ativos e riscos",
+      "paragraphs": [
+        "Antes de adicionar mais alarmes, os profissionais de segurança organizam as contas, os dados, os caminhos de acesso público, as entidades principais com privilégios elevados e as operações críticas que precisam ser protegidos. Os requisitos de detecção incluem não apenas o que detectar, mas também quem fará a investigação e quais informações são necessárias para determinar o escopo do impacto.",
+        "O GuardDuty é um serviço de detecção de ameaças que monitora, analisa e processa continuamente fontes de dados e logs da AWS. Como um finding do GuardDuty não determina a causa, é necessário correlacionar o recurso de destino e o horário com evidências primárias do histórico de atividades, da rede e do aplicativo, de acordo com o tipo de finding."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SCS-C03: Detecção",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        },
+        {
+          "label": "O que é o Amazon GuardDuty?",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/what-is-guardduty.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-trail",
+      "title": "Conectando a trilha de evidências da alteração à detecção",
+      "paragraphs": [
+        "O CloudTrail registra como eventos as ações executadas por usuários, funções e serviços da AWS, ajudando em auditoria, governança e conformidade. Defina o escopo da organização, da conta e da região, a retenção, a criptografia e as permissões de acesso para preservar as operações, os recursos de destino, os horários e as entidades principais necessários para as investigações. Ao investigar GetObject ou PutObject em um bucket S3 importante, selecione e registre os eventos de dados de leitura e gravação do bucket de destino na trilha do CloudTrail. Eventos de gerenciamento e o histórico de eventos, por si só, não fornecem eventos de dados no nível de objeto do S3.",
+        "Como ler a figura: o azul mostra a entrega de operações de gerenciamento e eventos de dados selecionados por meio de uma trilha do CloudTrail configurada; o vermelho mostra descobertas do GuardDuty geradas pela análise de fontes de dados configuradas; e o roxo mostra um responsável investigando a partir de uma descoberta até o evento original. Nenhum deles é um caminho de solicitação da aplicação. Como uma descoberta não determina a causa, confirme a entidade principal da operação, o destino e o horário usando evidências primárias, como o evento original. Não exponha amplamente o arquivo de armazenamento centralizado protegido nem exclua o evento original com base apenas em uma descoberta.",
+        "A proteção do S3 no GuardDuty analisa de forma independente os eventos de dados do S3 e gera descobertas. Para que a equipe de operações possa investigar a operação original, selecione separadamente os eventos de dados do bucket de destino em uma trilha do CloudTrail e retenha-os como logs de investigação."
+      ],
+      "sources": [
+        {
+          "label": "O que é o AWS CloudTrail",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        },
+        {
+          "label": "Ativação do registro de eventos do CloudTrail para buckets e objetos do S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html"
+        },
+        {
+          "label": "Proteção do S3 no GuardDuty",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/s3-protection.html"
+        }
+      ],
+      "figureId": "scs-evidence-trail-boundaries"
+    },
+    {
+      "id": "alert-quality",
+      "title": "Transformar notificações em resultados de detecção acionáveis",
+      "paragraphs": [
+        "Os alertas devem conter a severidade, o alvo, o horário, a base da detecção, os eventos relacionados, a equipe responsável e os critérios para decidir a resposta inicial. Se o mesmo resultado de detecção gerar muitas notificações sem condições, sinais importantes poderão ficar ocultos. Portanto, defina condições para agregar duplicatas, estabelecer prioridades, escalar e suprimir notificações.",
+        "A qualidade da detecção não pode ser medida apenas pela quantidade reduzida de notificações. Revise as detecções perdidas, os falsos positivos, o tempo necessário para a investigação e a ausência de evidências, e melhore as regras de detecção, as fontes de dados e o fluxo de encaminhamento para a equipe responsável."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SCS-C03: Detecção e registro",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-detect-1",
+      "prompt": "Um profissional de segurança que gerencia várias contas da AWS habilitou a proteção do S3 pelo GuardDuty. Quando um resultado de detecção de acesso suspeito é gerado, ele precisa rastrear quem executou GetObject ou PutObject em quais objetos de buckets S3 importantes. Qual design é mais apropriado?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Armazene apenas os resultados da detecção e exclua o histórico das operações originais.",
+          "explanation": "Não será possível verificar a base dos resultados da detecção nem o escopo do impacto."
+        },
+        {
+          "id": "c",
+          "text": "Tornar todos os buckets públicos e eliminar a necessidade de logs de acesso.",
+          "explanation": "Isso elimina o perímetro de proteção e a capacidade de auditoria."
+        },
+        {
+          "id": "a",
+          "text": "Na trilha do CloudTrail da organização, selecione e registre eventos de dados de GetObject e PutObject para os buckets S3 importantes e retenha-os em um arquivo agregado protegido. Para os resultados do GuardDuty, volte até a entidade principal, o recurso, o horário e o evento original para verificar a hipótese.",
+          "explanation": "Isso vincula as evidências primárias das operações de objetos do S3 aos resultados da detecção, permitindo investigar sem concluir que o próprio resultado da detecção seja a causa."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-2",
+      "prompt": "O GuardDuty relatou uma comunicação de uma instância do EC2 que executa a API de pedidos para um endereço IP conhecido como suspeito. Nenhuma nova operação de API da AWS foi encontrada nesse período, mas os VPC Flow Logs estão sendo coletados para a interface de rede relevante. O que a equipe de segurança deve examinar primeiro para determinar o escopo da comunicação?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Com base na interface e no carimbo de data e hora do resultado da detecção, correlacionar nos VPC Flow Logs a origem, o destino, as portas e se a comunicação foi permitida ou rejeitada.",
+          "explanation": "Como esse resultado da detecção diz respeito à comunicação de rede, o tráfego correspondente pode ser verificado nos logs de fluxo. Os logs, por si só, não confirmam se a instância foi comprometida."
+        },
+        {
+          "id": "c",
+          "text": "Pesquisar apenas os eventos de gerenciamento do CloudTrail do mesmo horário e concluir que não houve comunicação se nenhum evento for encontrado.",
+          "explanation": "Os eventos de gerenciamento do CloudTrail registram operações de API da AWS. Eles não mostram se a instância do EC2 enviou tráfego de rede."
+        },
+        {
+          "id": "b",
+          "text": "Com base apenas no endereço IP do resultado da detecção, concluir que todas as instâncias na mesma VPC foram comprometidas.",
+          "explanation": "Um resultado da detecção referente a uma única interface de rede não revela o estado das outras instâncias nem se as comunicações delas foram bem-sucedidas."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-3",
+      "prompt": "A equipe de operações de segurança está recebendo notificações demais e deixando passar descobertas críticas. Qual é a melhoria mais adequada?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Desativar todas as notificações.",
+          "explanation": "Sinais críticos também deixarão de ser detectados."
+        },
+        {
+          "id": "c",
+          "text": "Aumentar indiscriminadamente os destinatários, incluindo pessoas não relacionadas.",
+          "explanation": "As responsabilidades e as prioridades ficarão ambíguas."
+        },
+        {
+          "id": "a",
+          "text": "Definir a criticidade das descobertas, a agregação de duplicatas, o escopo, os responsáveis, a escalada e as condições de supressão, e revisar os casos não detectados e os falsos positivos.",
+          "explanation": "Isso pode melhorar as notificações para que sejam acionáveis."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "GuardDuty",
+    "Security finding",
+    "CloudTrail trail",
+    "Management event",
+    "Evidence retention",
+    "CloudTrail data event",
+    "GuardDuty S3 Protection",
+    "EC2",
+    "ENI",
+    "VPC Flow Logs"
+  ]
+}

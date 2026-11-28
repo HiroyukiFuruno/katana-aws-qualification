@@ -1,0 +1,153 @@
+{
+  "id": "identity-and-access",
+  "title": "设计身份和访问管理",
+  "objective": "区分身份验证与授权，并按照最小权限原则管理主体、条件和资源。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "云的基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    },
+    {
+      "slug": "infrastructure-security",
+      "title": "防御基础设施",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "authentication-by-actor",
+      "title": "区分人员、应用程序和外部系统进行身份验证",
+      "paragraphs": [
+        "对于人员访问，应选择联合身份验证和 MFA；对于工作负载，应选择角色和临时凭证；对于外部系统，应选择带有信任条件的集成。共享长期访问密钥、导致无法区分主体的设计，会使撤销权限、进行审计以及在发生泄露时限制影响范围变得更加困难。",
+        "调查身份验证问题时，应检查 IdP、MFA、令牌、角色信任策略、时间以及相关的 CloudTrail 事件。用户成功通过身份验证，与该用户获得访问目标资源的授权，是两个不同的判断。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考试指南：身份验证策略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "authorization-boundaries",
+      "title": "跨多个边界评估有效权限",
+      "paragraphs": [
+        "在授权过程中，会综合身份策略、资源策略、会话策略、权限边界、组织策略和显式拒绝来评估有效权限。应明确需要权限的主体、操作、资源和条件，不要将管理员权限作为默认值。",
+        "要担任由其他 AWS 账户管理的 IAM 角色，调用方必须拥有 `sts:AssumeRole` 权限，并且还必须满足目标角色的信任策略条件。在客户账户中创建目标角色时，应在该角色的权限策略中仅允许访问目标存储桶所需的前缀和操作。委托第三方访问时，还可以将外部 ID 设置为信任条件。只有在需要施加显式拒绝或其他条件时，才需要额外添加存储桶策略作为边界；当角色和存储桶位于同一个客户账户中时，存储桶策略并非始终必需。图中的实线表示担任角色的请求、包含临时凭证的响应，以及使用这些凭证向 S3 发出的请求。虚线表示 AWS STS 检查的信任条件。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考试指南：授权策略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        },
+        {
+          "label": "IAM 用户指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/introduction.html"
+        },
+        {
+          "label": "访问第三方拥有的 AWS 账户",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html"
+        }
+      ],
+      "figureId": "scs-cross-account-assume-role-boundary"
+    },
+    {
+      "id": "access-review",
+      "title": "持续审查权限",
+      "paragraphs": [
+        "访问权限设计并不止于首次授予。应定期审查未使用的权限、员工离职或调动、角色变更、紧急访问和例外情况，并保留所有者、用途、有效期和审批记录。",
+        "Break-glass 访问不是用来替代常规最小权限的日常手段。应定义触发条件、MFA、较短的有效期、监控和事后审查，并务必确认使用原因及其影响。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考试指南：身份与访问管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-iam-1",
+      "prompt": "您正在设计与人事系统集成的管理员访问。如果希望快速撤销离职人员的访问权限并强制要求 MFA，哪项策略最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "使用 IdP 和联合身份验证，并采用 MFA 和基于角色的临时会话。",
+          "explanation": "这样可以将人事信息与身份验证及访问撤销联动，同时避免使用长期凭证。"
+        },
+        {
+          "id": "b",
+          "text": "分发一个由部门所有人员共享的管理员访问密钥。",
+          "explanation": "无法识别具体主体，也无法撤销访问权限。"
+        },
+        {
+          "id": "c",
+          "text": "禁用 MFA，并使密码永久有效。",
+          "explanation": "这会降低身份验证强度。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-2",
+      "prompt": "某审计公司的工具代入客户 AWS 账户 A 中用于审计的 IAM 角色。客户将审计日志移到另一个 AWS 账户 B 的 S3 存储桶。B 拥有这些对象，并使用 SSE-S3 加密。要让工具继续使用同一角色，且只能获取已批准前缀下的对象，需要哪些设置？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "在账户 A 的角色权限策略和账户 B 的存储桶策略中，都允许 A 中的角色对已批准前缀下的对象执行 s3:GetObject。",
+          "explanation": "AWS 在发起请求的账户 A 中评估角色的权限策略，在拥有资源的账户 B 中评估存储桶策略。跨账户获取对象需要双方都授权。"
+        },
+        {
+          "id": "c",
+          "text": "仅在账户 A 的角色权限策略中，允许对账户 B 中已批准前缀下的对象执行 s3:GetObject。",
+          "explanation": "账户 A 的管理员无法单独授权访问 B 所拥有的存储桶。账户 B 的存储桶策略也必须允许访问。"
+        },
+        {
+          "id": "b",
+          "text": "将账户 B 添加到账户 A 的角色信任策略中，保持账户 B 的存储桶策略不变。",
+          "explanation": "信任策略决定谁能代入账户 A 的角色。它不会向已代入该角色的工具授予读取账户 B 中对象的权限。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-3",
+      "prompt": "您正在设计一种仅在紧急情况下允许执行生产环境管理操作的紧急破窗访问流程。以下哪项控制措施最合适？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "让所有人长期共用紧急管理员凭证。",
+          "explanation": "这会丧失最小权限和可审计性。"
+        },
+        {
+          "id": "c",
+          "text": "不保留紧急操作的记录。",
+          "explanation": "这样事后就无法确认影响。"
+        },
+        {
+          "id": "a",
+          "text": "定义启用条件、MFA、较短的有效期、操作监控以及事后审查。",
+          "explanation": "这样可以将紧急访问作为例外进行跟踪和控制。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Principal",
+    "IAM role",
+    "IAM role trust policy",
+    "Resource-based policy",
+    "External ID",
+    "STS",
+    "Permissions boundary",
+    "SCP",
+    "MFA",
+    "SSE-S3"
+  ]
+}

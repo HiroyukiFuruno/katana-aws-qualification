@@ -35,6 +35,14 @@ const courses = [
     answer: /配下のオブジェクトだけを対象に/,
     choiceCount: 3,
   },
+  {
+    courseId: 'dva-c03',
+    firstTitle: 'AWS のサービスによる開発',
+    nextUnit: 'security',
+    prompt: /通販会社の開発者は/,
+    answer: /SQS キューへ送り/,
+    choiceCount: 4,
+  },
 ];
 const figure = '.qualification-figure';
 

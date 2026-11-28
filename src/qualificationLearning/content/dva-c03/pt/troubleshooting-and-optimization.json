@@ -1,0 +1,189 @@
+{
+  "id": "troubleshooting-and-optimization",
+  "title": "Solução de problemas e otimização",
+  "objective": "Usar logs, métricas e rastreamentos para isolar as causas e otimizar a simultaneidade, o cache e o sistema de mensagens com base em evidências.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testes e gates de qualidade"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Implantação e recuperação"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evidence-based-triage",
+      "title": "Delimite a causa com base em evidências relacionadas, não em hipóteses",
+      "paragraphs": [
+        "Ao responder a um incidente, primeiro identifique o impacto para os usuários, o horário em que ocorreu, a API ou o recurso afetado e a alteração feita imediatamente antes. O diagrama mostra o fluxo para correlacionar métricas, logs estruturados e traces obtidos da aplicação por meio de um ID de correlação, mantendo os alertas separados da confirmação da causa e avançando para investigação, correção e nova validação. Em seguida, use as métricas para verificar quando e o que mudou, use os logs estruturados para localizar o processamento relevante por meio do ID da solicitação ou do ID de correlação e use os traces para verificar a latência entre serviços e os pontos de erro.",
+        "Não determine a causa com base apenas em um indicador, como o aumento da utilização da CPU ou o aumento de erros. As métricas mostram tendências e quantidades, os logs mostram eventos individuais e seu contexto, e os traces mostram o caminho percorrido pela solicitação e o tempo. Ao correlacionar os três, é possível delimitar as possíveis causas com base em evidências, e não em especulação.",
+        "Em caso de falha na implantação, verifique a saída do pipeline, os logs da aplicação, as diferenças de configuração e o estado do ambiente de destino. Antes de reverter alterações de forma ampla, registre a etapa que falhou e a causa, para que seja possível reproduzir e validar a falha nas mesmas condições."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domínio 4: Análise da causa raiz",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ],
+      "figureId": "dva-observability-feedback-loop"
+    },
+    {
+      "id": "logging-monitoring-and-alerts",
+      "title": "Crie logs que possam ser investigados e alertas que levem à ação",
+      "paragraphs": [
+        "Registre de forma estruturada a hora, o ID da solicitação, a etapa do processamento, o resultado, o tipo de erro e outros detalhes relevantes. Não registre as senhas dos usuários, tokens de autenticação, informações pessoais nem informações completas de pagamento. Separar os identificadores necessários para a investigação dos valores confidenciais permite equilibrar a capacidade de pesquisa dos logs e a proteção de dados.",
+        "Use métricas personalizadas para medir quantidades relevantes para o negócio, como o número de processamentos, o número de falhas, o tempo de espera e o acúmulo na fila. Vincule os alarmes a limites que os responsáveis possam verificar e aos quais possam responder, bem como aos destinos de notificação. O monitoramento é inadequado quando há tantas notificações que elas são ignoradas ou quando não há um responsável definido para agir após uma notificação.",
+        "As verificações de integridade, de atividade e de prontidão têm finalidades diferentes. Não confunda o fato de um processo estar em execução, poder aceitar solicitações e estar disponível, incluindo suas dependências. Escolha sinais que permitam avaliar o impacto para os usuários."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domínio 4: registro em log, monitoramento e observabilidade",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        },
+        {
+          "label": "O que é o Amazon CloudWatch?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "concurrency-and-messaging",
+      "title": "Alinhar concorrência e mensagens às características da carga de trabalho",
+      "paragraphs": [
+        "Aumentar o número de execuções simultâneas nem sempre melhora o desempenho. A simultaneidade do Lambda, o pool de threads da aplicação e o pool de conexões do banco de dados têm, cada um, limites de capacidade e cotas nos serviços downstream. Os desenvolvedores analisam a carga de entrada, o tempo de processamento, o número de conexões downstream e a taxa de falhas para determinar onde está a restrição.",
+        "O SQS pode armazenar o processamento em buffer e distribuir a carga, enquanto o SNS pode ser usado para fazer fan-out de um único evento para vários destinatários. Aumentar rapidamente o número de consumidores apenas para reduzir o tamanho da fila pode sobrecarregar sistemas downstream, como bancos de dados.",
+        "Otimize somente depois de observar o gargalo. Falta de memória, restrições de CPU, espera por conexões, latência de APIs externas e throttling exigem medidas diferentes. Após uma alteração, compare os resultados usando as mesmas métricas e condições e confirme que o impacto sobre os usuários melhorou."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domínio 4: Concorrência e mensagens",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-performance-optimization",
+      "title": "Medir o impacto do armazenamento em cache e da capacidade e otimizar",
+      "paragraphs": [
+        "O armazenamento em cache é uma opção para reduzir a latência de dados acessados com frequência e que demoram para ser calculados ou obtidos. Amazon ElastiCache, DynamoDB Accelerator e Amazon CloudFront diferem quanto ao que armazenam em cache e onde são implantados. Decida quais dados armazenar em cache, quando eles devem expirar e qual nível de desatualização é aceitável.",
+        "No Lambda, a configuração de memória também pode afetar a CPU e o desempenho do processamento. Os desenvolvedores medem o tempo de processamento, os erros, o custo e o número de execuções simultâneas antes de alterar a configuração. Aumentar apenas a memória sem identificar um problema de desempenho pode aumentar somente os custos.",
+        "Após a otimização, compare a taxa de acertos do cache, a latência, a taxa de erros e a carga dos serviços downstream sob as mesmas condições de observação. Manter as evidências da melhoria permite rastrear a causa caso o desempenho piore após uma alteração posterior."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domínio 4: armazenamento em cache e otimização de desempenho",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-troubleshoot-001",
+      "prompt": "O tempo de resposta da API de pedidos piorou repentinamente. A equipe de operações quer identificar em qual chamada de serviço a latência aumentou e também verificar os logs relacionados à mesma solicitação. Escolha uma combinação de evidências mais adequada para começar.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Observar apenas a utilização da CPU e concluir que o serviço com a maior utilização é a causa.",
+          "explanation": "Uma única métrica não permite distinguir causas diferentes, como espera de conexão, APIs externas ou alterações de implantação."
+        },
+        {
+          "id": "a",
+          "text": "Correlacionar métricas de latência, logs estruturados que contenham o ID da solicitação e traces que mostrem o caminho entre os serviços.",
+          "explanation": "As métricas mostram tendências, os logs fornecem o contexto de solicitações individuais e os traces mostram o tempo entre os serviços, permitindo restringir as possíveis causas com base em evidências."
+        },
+        {
+          "id": "c",
+          "text": "Excluir os logs para reduzir os custos de armazenamento e inferir a causa apenas a partir dos relatos dos usuários.",
+          "explanation": "Isso elimina as evidências necessárias para a investigação, impossibilitando reproduzir e verificar a causa."
+        },
+        {
+          "id": "d",
+          "text": "Adicionar todos os valores confidenciais aos logs para aumentar a quantidade de informações.",
+          "explanation": "Expor tokens ou informações pessoais nos logs compromete a proteção de dados. Os IDs de correlação necessários para a investigação devem ser mantidos separados dos valores confidenciais."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-002",
+      "prompt": "O desenvolvedor de uma função Lambda que processa lotes noturnos quer aumentar a simultaneidade para reduzir o acúmulo na fila. Selecione o único item mais apropriado a verificar antes de fazer a alteração.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Verificar o número de conexões do banco de dados, as cotas das APIs downstream, o tempo de processamento e a taxa de erros, identificando os pontos que impõem restrições.",
+          "explanation": "Aumentar a simultaneidade também aumenta o número de conexões simultâneas com os serviços downstream. Ajuste-a somente depois de observar o gargalo real."
+        },
+        {
+          "id": "b",
+          "text": "Maximizar a simultaneidade observando apenas o acúmulo na fila, independentemente da capacidade dos serviços downstream.",
+          "explanation": "Isso pode sobrecarregar os bancos de dados ou as APIs downstream e aumentar a taxa de falhas."
+        },
+        {
+          "id": "c",
+          "text": "Excluir as mensagens com falha sem investigá-las, reduzindo apenas o comprimento da fila.",
+          "explanation": "Isso causa a perda de trabalho de negócio não processado e impede a investigação da causa do acúmulo."
+        },
+        {
+          "id": "d",
+          "text": "Desativar os alarmes e os logs sem alterar a configuração de memória.",
+          "explanation": "Interromper a observabilidade impede verificar os efeitos e os efeitos colaterais da alteração."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-003",
+      "prompt": "O desenvolvedor de uma API de detalhes de produtos enfrenta muitas leituras das mesmas informações de produto e quer reduzir a carga e a latência do banco de dados. Escolha o único item mais apropriado para verificar após introduzir um cache.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Depois de adicionar um cache, não monitore a carga do banco de dados nem a latência da API.",
+          "explanation": "Assim, não é possível verificar a eficácia do cache nem seu impacto durante falhas, e não resta uma base para a otimização."
+        },
+        {
+          "id": "c",
+          "text": "Mantenha o cache indefinidamente após cada atualização e não considere a expiração.",
+          "explanation": "Valores antigos podem permanecer após as atualizações e fazer com que informações incorretas do produto sejam retornadas aos usuários."
+        },
+        {
+          "id": "a",
+          "text": "Compare a taxa de acertos do cache, a latência, a taxa de erros e a carga do banco de dados sob as mesmas condições, e verifique como os valores obsoletos são tratados quando o cache expira.",
+          "explanation": "Um cache pode melhorar o desempenho, mas sua eficácia e o nível aceitável de desatualização dos dados precisam ser medidos e verificados."
+        },
+        {
+          "id": "d",
+          "text": "Como um cache foi adicionado, ignore a verificação da autorização e da proteção de dados.",
+          "explanation": "Um cache é um mecanismo de desempenho; ele não substitui os controles de acesso nem a proteção de dados."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Metric",
+    "Structured logging",
+    "Trace",
+    "Correlation ID",
+    "CloudWatch",
+    "CloudWatch alarm",
+    "Concurrency",
+    "Connection pool",
+    "Service Quotas",
+    "Throttling",
+    "SQS",
+    "SNS",
+    "Fan-out",
+    "ElastiCache",
+    "DAX",
+    "Cache hit ratio",
+    "Latency",
+    "Error rate"
+  ]
+}

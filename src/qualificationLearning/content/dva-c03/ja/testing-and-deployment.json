@@ -1,0 +1,189 @@
+{
+  "id": "testing-and-deployment",
+  "title": "テストとデプロイ",
+  "objective": "アーティファクト、環境設定、テスト、CI/CD、段階的デプロイとロールバックを、変更のリスクに応じて実装できる。",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CDの流れ"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "テストと品質ゲート"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "デプロイと復旧"
+    }
+  ],
+  "sections": [
+    {
+      "id": "artifacts-and-environment-configuration",
+      "title": "コード、依存関係、環境設定を別に管理する",
+      "paragraphs": [
+        "デプロイするアーティファクトには、コード、依存関係、設定の扱いを明確にします。Lambda では .zip、コンテナイメージ、レイヤーを処理内容と共有する依存関係に応じて選びます。コンテナイメージは Amazon ECR に保存し、イメージタグとライフサイクルポリシーで版と保持を管理します。",
+        "環境ごとに異なる値は、コードへ直接書かず、AWS AppConfig、Systems Manager Parameter Store、Secrets Manager などを使って管理します。設定、機密値、アーティファクトの版を分けることで、同じコードを開発・検証・本番へ進める際に、何が変わったのかを確認できます。",
+        "API Gateway のステージ固有 URL や Lambda のエイリアスは、環境とリリース対象を分けるための要素です。名前だけで本番・検証を区別するのではなく、参照する設定とデプロイ対象を明示します。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 分野3: アーティファクトと環境設定",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "automated-testing",
+      "title": "テストは入力、依存先、期待結果を固定する",
+      "paragraphs": [
+        "テストでは、何を入力し、どの依存先を使い、何を期待結果とするかを固定します。Lambda や API Gateway のテストイベントでは、実際の呼び出しに近い JSON ペイロードを用意します。外部依存先を直接呼び出せない場合は、モック API を使い、正常・失敗・タイムアウトなどの条件を再現します。",
+        "AWS SAM、AWS CDK、AWS CloudFormation などを使う場合も、テンプレートの構文だけでなく、作成されるリソースと権限が期待どおりかを確認します。AI 支援ツールでテストを生成した場合も、生成された前提、境界条件、期待値を人がレビューします。",
+        "テストの目的は通すことではなく、変更によって利用者へ影響する振る舞いが壊れていないことを確かめることです。単体テスト、統合テスト、デプロイ後の確認を、変更のリスクに応じて組み合わせます。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 分野3: テストの実装と自動化",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "pipeline-and-deployment-strategies",
+      "title": "段階的に進め、戻せる状態を保つ",
+      "paragraphs": [
+        "CI/CD では、ソースの変更、ビルド、テスト、デプロイ、デプロイ後の検証を一貫した経路にします。図は、品質ゲートを通過した改訂だけをステージングと Canary へ進め、監視ゲートの失敗時は事前に定めた安定版へ戻す判断を示します。AWS CodePipeline は工程をオーケストレーションし、AWS CodeDeploy は対象環境へのアプリケーション改訂のデプロイを支援します。パイプラインを通ること自体ではなく、各段階で何を確認するかが重要です。",
+        "変更の影響を抑えたい場合は、Canary、ブルー/グリーン、ローリング更新などのデプロイ戦略を選びます。Canary では一部のトラフィックへ先に新しい版を出し、メトリクスとエラーを確認してから広げます。ブルー/グリーンでは、旧環境と新環境を切り替えられる状態にしておきます。",
+        "ロールバックは失敗時に初めて考える操作ではありません。担当者は、戻す対象の版、発動条件、データ変更の互換性、通知先をリリース前に確認します。CloudFormation や CodeDeploy の自動ロールバックを使う場合も、何が戻り、何が戻らないかを理解します。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 分野3: CI/CD とデプロイ戦略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        },
+        {
+          "label": "AWS CodeDeploy とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/codedeploy/latest/userguide/welcome.html"
+        }
+      ],
+      "figureId": "dva-pipeline-release-gates"
+    },
+    {
+      "id": "infrastructure-and-release-versioning",
+      "title": "構成とリリース版を再現可能にする",
+      "paragraphs": [
+        "Infrastructure as Code では、CloudFormation や AWS SAM のテンプレートでリソースと設定を宣言します。同じテンプレートから再現できることは、手作業の設定漏れを減らし、変更内容をレビューする助けになります。テンプレートもアプリケーションコードと同様に版管理とテストの対象です。",
+        "コンテナイメージタグ、Lambda エイリアス、ソースのブランチやリリースラベルは、何をデプロイしたかを追跡するために使います。可変の名前だけに依存せず、特定のアーティファクトと設定の組み合わせを参照できるようにします。",
+        "デプロイ後の検証では、到達性だけでなく、主要な API の応答、エラー率、認可、必要なバックグラウンド処理を確認します。成功条件を先に定めておくと、段階的な拡大またはロールバックの判断を再現できます。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 分野3: IaC とリリース管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-deploy-001",
+      "prompt": "決済 API の開発者は、本番へ出す Lambda 関数のコードは同じまま、開発・検証・本番で異なる外部エンドポイントと機密値を使いたいと考えています。この条件でコード、設定、機密値を管理する最も適切な方法を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "本番の接続先とシークレットをソースコードに書き、各環境で手作業で書き換える。",
+          "explanation": "手作業の書き換えは差分の追跡と再現性を損ない、機密値の漏えいにもつながります。"
+        },
+        {
+          "id": "c",
+          "text": "環境差をなくすため、全環境で本番データベースを共有する。",
+          "explanation": "検証環境の操作が本番データへ影響するおそれがあり、環境分離と安全なテストの目的に反します。"
+        },
+        {
+          "id": "d",
+          "text": "Lambda のハンドラー名だけを環境ごとに変え、設定とシークレットは共通にする。",
+          "explanation": "ハンドラー名は実行開始点であり、環境固有の接続先や機密値を適切に管理する方法ではありません。"
+        },
+        {
+          "id": "a",
+          "text": "環境固有の設定を AppConfig や Parameter Store、機密値を Secrets Manager で管理し、アーティファクトと分ける。",
+          "explanation": "コードの版、環境設定、機密値を分けることで、同じアーティファクトを環境ごとに安全に利用しやすくなります。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-002",
+      "prompt": "配送サービスの開発チームは、外部の住所検証 API がタイムアウトしたときの動作を、実際の外部 API を呼ばずに自動テストしたいと考えています。この失敗条件を自動テストする最も適切な方法を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "外部 API が常に成功すると仮定し、タイムアウト処理をテストしない。",
+          "explanation": "障害時の振る舞いを確認できず、利用者への影響を把握できません。"
+        },
+        {
+          "id": "a",
+          "text": "外部 API の正常、失敗、タイムアウトを返すモックを用意し、期待する再試行とエラー応答を検証する。",
+          "explanation": "依存先の条件を再現できるモックにより、外部サービスの状態へ左右されずにアプリケーションの振る舞いを検証できます。"
+        },
+        {
+          "id": "c",
+          "text": "本番の住所データを開発環境へ複製し、手作業でタイムアウトを待つ。",
+          "explanation": "本番データの複製はデータ保護の問題があり、固定待機は再現可能な自動テストになりません。"
+        },
+        {
+          "id": "d",
+          "text": "テストの代わりに、デプロイ後に利用者からの障害報告を待つ。",
+          "explanation": "デプロイ前に既知の失敗条件を検証する目的を満たしません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-003",
+      "prompt": "予約サービスのリリース担当者は、新版を一部の利用者へ先に出し、エラー率と遅延を確認してから全体へ広げたいと考えています。この条件に合う最も適切なデプロイ戦略を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "すべての利用者へ同時に配信し、エラーが出た後に旧版を探す。",
+          "explanation": "問題がある場合の影響範囲が大きく、戻す対象を事前に明確にする要件を満たしません。"
+        },
+        {
+          "id": "c",
+          "text": "本番へ直接手作業で変更し、アーティファクトの版を記録しない。",
+          "explanation": "変更内容とロールバック対象を追跡できず、再現性と監査性を損ないます。"
+        },
+        {
+          "id": "d",
+          "text": "テスト環境だけに配信し、本番の指標は確認しない。",
+          "explanation": "テスト環境の確認は必要ですが、本番への段階的な展開と運用指標の確認を置き換えません。"
+        },
+        {
+          "id": "a",
+          "text": "Canary デプロイを使い、少量のトラフィックで監視した後に段階的に拡大する。",
+          "explanation": "Canary は新版を一部へ先行配信し、指標を確認してから拡大またはロールバックする戦略です。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Artifact",
+    "ECR",
+    "AWS AppConfig",
+    "Parameter Store",
+    "Secrets Manager",
+    "Lambda alias",
+    "API Gateway stage",
+    "SAM",
+    "CDK",
+    "CloudFormation",
+    "Mock",
+    "CI/CD",
+    "CodePipeline",
+    "CodeDeploy",
+    "Canary deployment",
+    "Blue/green deployment",
+    "Rolling deployment",
+    "Rollback"
+  ]
+}

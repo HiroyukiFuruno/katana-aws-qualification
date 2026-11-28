@@ -1,0 +1,199 @@
+{
+  "id": "development-with-aws-services",
+  "title": "Desarrollo con servicios de AWS",
+  "objective": "Seleccionar integraciones síncronas y asíncronas, Lambda, almacenes de datos, API y eventos según los requisitos de procesamiento de la aplicación.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Servicios principales de AWS"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Fundamentos de la comunicación"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protección de datos"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coupling-and-message-handling",
+      "title": "Elegir un método de integración en función de la latencia y el impacto de los errores",
+      "paragraphs": [
+        "Para procesos como la recepción de pedidos, en los que el emisor de la llamada necesita un resultado inmediato, puede elegir una invocación síncrona mediante API Gateway. En cambio, para procesos como la conversión de imágenes o la generación de facturas, en los que no es necesario hacer esperar al usuario, considere usar una cola de Amazon SQS para separar de forma asíncrona el procesamiento de la recepción y el procesamiento posterior. El diagrama muestra que la respuesta HTTP durante la recepción y el procesamiento posterior que un trabajador obtiene de SQS tienen límites de error independientes. El objetivo de separar los procesos es evitar que los efectos de los errores o de una carga temporal se propaguen al emisor de la llamada más de lo necesario.",
+        "En el procesamiento asíncrono, tenga en cuenta los casos en los que un mensaje no llega, el procesamiento falla o se vuelve a ejecutar el mismo procesamiento. El equipo responsable combina el backoff, que aumenta gradualmente el tiempo de espera entre reintentos; una cola de mensajes fallidos, que aísla los errores para investigarlos; y un procesamiento idempotente, que no corrompe el resultado aunque se repita la misma solicitud. El simple hecho de colocar una cola no hace que desaparezcan los errores.",
+        "Amazon EventBridge, las notificaciones de eventos de Amazon S3 y Amazon SNS también pueden utilizarse para la integración basada en eventos. Independientemente del servicio que se utilice, defina claramente el emisor del evento, el receptor, el destino en caso de error y la persona responsable de registrar el resultado del procesamiento."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Dominio 1: Integración y arquitectura basada en eventos",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ],
+      "figureId": "dva-event-processing-contract"
+    },
+    {
+      "id": "lambda-integration",
+      "title": "Tratar por separado los eventos, la configuración y los permisos de Lambda",
+      "paragraphs": [
+        "Las funciones de Lambda pueden integrarse con eventos de servicios como API Gateway, SQS, DynamoDB y S3. La persona que implementa la función configura el formato de entrada del evento, el controlador, el runtime, la memoria, el tiempo de espera y el número de ejecuciones simultáneas según las características del procesamiento. La memoria insuficiente, los tiempos de espera y los límites de simultaneidad son problemas distintos y no se pueden resolver aumentando todos los valores de manera uniforme.",
+        "Si la función necesita conectarse a recursos privados dentro de una VPC, especifique las subredes y los grupos de seguridad correspondientes. Conectarse a una VPC por sí solo no concede automáticamente autenticación en la base de datos ni permisos de acceso. Compruebe por separado la conectividad de red, el rol de ejecución de IAM y las credenciales del almacén de datos.",
+        "Si una invocación asíncrona falla, considere configurar el envío del evento fallido a un destino o a una cola de mensajes no entregados. Prepare procedimientos para registrar los fallos y volver a procesarlos antes de aceptar eventos que afecten a las operaciones empresariales."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Dominio 1: configuración y gestión de errores de Lambda",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "Procesamiento de notificaciones de eventos de S3 con Lambda",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "data-store-and-cache",
+      "title": "Elegir un almacén de datos y una caché según los patrones de acceso",
+      "paragraphs": [
+        "Elija un almacén de datos teniendo en cuenta no solo la cantidad de datos que se van a almacenar, sino también cómo se leen y escriben, las condiciones de búsqueda, la coherencia y el periodo de retención. En Amazon DynamoDB, elija una clave de partición que distribuya los accesos, defina los atributos y los índices necesarios y comprenda la diferencia entre Query y Scan. Scan examina todos los elementos, mientras que Query limita el objetivo mediante la clave. Usar Scan habitualmente como si fuera Query puede aumentar las lecturas innecesarias.",
+        "Compare Amazon RDS para los requisitos relacionados con datos relacionales y SQL, Amazon S3 para el almacenamiento de objetos y Amazon ElastiCache para almacenar en caché valores a los que se accede con frecuencia. Una caché no sustituye la corrección de los datos principales. Determine durante cuánto tiempo se pueden tolerar valores obsoletos después de una actualización y quién será responsable de la invalidación.",
+        "Trate los periodos de retención de datos como requisitos. DynamoDB TTL y las políticas de ciclo de vida de S3 son opciones para evitar conservar datos que ya no son necesarios. Aplique requisitos de retención distintos a los registros que no se pueden eliminar o a los datos que deben conservarse durante un periodo prolongado."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Dominio 1: Almacenes de datos y cachés",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "¿Qué es Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "api-sdk-and-ai-integration",
+      "title": "Validar los límites e integrar los servicios",
+      "paragraphs": [
+        "Los desarrolladores que exponen una API validan el formato de entrada y los campos obligatorios, y mantienen la coherencia del formato de los errores que devuelven a los usuarios. En API Gateway, pueden configurar, según el caso de uso, las URL específicas de cada etapa, la validación de solicitudes, las transformaciones y la autenticación. En lugar de pasar directamente al servicio interno la entrada enviada por el cliente, comprueban en el límite que tenga el formato esperado.",
+        "En el código que utiliza el AWS SDK, los desarrolladores no incorporan las credenciales al código; realizan llamadas autenticadas mediante roles de IAM u otros mecanismos. Comprenden la configuración de reintentos del SDK para que no se superponga con los reintentos de la aplicación y no provoque un número excesivo de llamadas.",
+        "Al integrar herramientas de desarrollo asistido por IA o servicios de IA administrados, los desarrolladores tampoco incorporan incondicionalmente los resultados generados a producción. Verifican cómo se tratan los datos de entrada, revisan el código generado, comprueban los permisos y examinan la información confidencial incluida en los registros, integrando estas comprobaciones en el proceso existente de pruebas y aprobación."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Dominio 1: API, SDK y servicios de IA",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-development-001",
+      "prompt": "Un desarrollador de una empresa de comercio electrónico quiere que la API de pedidos devuelva una respuesta de inmediato y que la conversión de imágenes posterior al pedido se pueda reintentar cuando falle. Seleccione la única manera más adecuada de desacoplar el procesamiento posterior.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "La API de pedidos envía la solicitud de procesamiento a una cola de SQS, y un worker independiente realiza reintentos con backoff y aísla los fallos.",
+          "explanation": "Esto separa la aceptación del pedido del procesamiento posterior. El worker proporciona un procesamiento idempotente y seguro para volver a ejecutar la misma solicitud, además de una vía para confirmar los fallos."
+        },
+        {
+          "id": "a",
+          "text": "La API de pedidos espera de forma síncrona hasta que finaliza la conversión de la imagen y, si falla, pide al usuario que vuelva a enviar la misma solicitud cada vez.",
+          "explanation": "Esperar de forma síncrona un procesamiento posterior de larga duración hace que los retrasos o los fallos de la conversión de imágenes afecten directamente a la respuesta de aceptación del pedido."
+        },
+        {
+          "id": "c",
+          "text": "No se registran los fallos de la conversión de imágenes y los mensajes de la cola se eliminan de inmediato.",
+          "explanation": "Eliminar los fallos impide reprocesarlos e investigar la causa, y hace imposible detectar el procesamiento omitido."
+        },
+        {
+          "id": "d",
+          "text": "Las credenciales de la API de pedidos se incorporan al código fuente de cada worker.",
+          "explanation": "Incorporar credenciales no crea un desacoplamiento; aumenta los riesgos de filtración y de actualizaciones difíciles."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dva-development-002",
+      "prompt": "El desarrollador de un servicio interno de análisis desea conectarse desde una función de Lambda a una base de datos privada dentro de una VPC. Después de añadir la configuración de VPC a Lambda, ¿qué elemento se debe comprobar? Elija uno.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Establecer únicamente la memoria de Lambda en su valor máximo y omitir la comprobación de la configuración de conexión.",
+          "explanation": "La memoria es una configuración de recursos de procesamiento y no sustituye la configuración de accesibilidad de red ni de autenticación."
+        },
+        {
+          "id": "c",
+          "text": "Exponer la base de datos a Internet y eliminar la configuración de VPC de Lambda.",
+          "explanation": "Esto no cumple el requisito de una conexión segura a una base de datos privada y provocaría una exposición innecesaria."
+        },
+        {
+          "id": "a",
+          "text": "Comprobar las subredes y los grupos de seguridad de destino, el rol de ejecución, así como las credenciales y los permisos de acceso de la base de datos.",
+          "explanation": "La conectividad de la VPC es solo una parte de la accesibilidad. Compruebe por separado los controles de red, el rol de ejecución de la función y la autenticación y autorización de la base de datos."
+        },
+        {
+          "id": "d",
+          "text": "Cambiar el nombre del controlador de la función concede automáticamente permiso para acceder a la base de datos.",
+          "explanation": "El controlador es el punto de entrada de la ejecución de la función y no concede permisos de red ni de autenticación."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-development-003",
+      "prompt": "Un desarrollador de un servicio de venta de entradas está implementando una tabla de DynamoDB que recupera pedidos mediante el ID del comprador. Cada comprador tiene muchos pedidos y el servicio recupera con frecuencia solo los pedidos de un comprador específico. Seleccione el enfoque más adecuado.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Usar Scan cada vez, leer todos los pedidos y después filtrar por el ID del comprador en la aplicación.",
+          "explanation": "Como Scan se aplica a todos los elementos, puede aumentar las lecturas innecesarias cuando el requisito permite restringirlas mediante una clave."
+        },
+        {
+          "id": "c",
+          "text": "Usar DynamoDB únicamente como caché y no almacenar los datos persistentes de los pedidos.",
+          "explanation": "Las cachés y los almacenes de datos persistentes cumplen funciones diferentes. El diseño debe satisfacer el requisito de conservar los datos de los pedidos."
+        },
+        {
+          "id": "d",
+          "text": "No usar el ID del comprador y buscar los datos de los pedidos únicamente mediante los nombres de archivo de S3.",
+          "explanation": "Buscar por nombre de archivo de S3 no es un diseño adecuado de acceso a datos para el requisito de recuperar pedidos basándose en las claves de DynamoDB."
+        },
+        {
+          "id": "a",
+          "text": "Diseñar el ID del comprador como clave de partición y usar Query especificando el ID del comprador objetivo.",
+          "explanation": "Usar una clave que se ajuste al patrón de acceso junto con Query permite limitar la lectura a los elementos objetivo. Compruebe también que el tráfico no se concentre excesivamente en una clave concreta."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "API Gateway",
+    "Lambda",
+    "SQS",
+    "Event source mapping",
+    "Visibility timeout",
+    "DLQ",
+    "Idempotency",
+    "Backoff",
+    "EventBridge",
+    "SNS",
+    "DynamoDB",
+    "Query",
+    "Scan",
+    "Partition key",
+    "RDS",
+    "S3",
+    "ElastiCache",
+    "Cache invalidation",
+    "TTL",
+    "VPC",
+    "Security group",
+    "IAM role",
+    "API contract",
+    "SDK retry"
+  ]
+}

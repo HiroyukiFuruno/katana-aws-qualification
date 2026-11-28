@@ -23,6 +23,7 @@ if (current.contentVersion === archivedAsset.contentVersion) {
 }
 const archivedKey = `${lessonPrefix}${archivedAsset.unit.id}.${archivedAsset.contentVersion}`;
 const currentKey = `${lessonPrefix}${current.unit.id}.${current.contentVersion}`;
+const currentHref = `/ja/study/fundamentals/${current.unit.id.replace('fundamentals.', '')}/`;
 
 function archivedGuestFinal(submitted: boolean) {
   let source = initialGuestLesson(archivedAsset);
@@ -96,12 +97,8 @@ for (const submitted of [false, true]) {
       await expect(archive).toContainText('最終問題を受験中');
     }
 
-    await page.goto(
-      `/ja/study/fundamentals/${current.unit.id.replace('fundamentals.', '')}/?version=${archivedAsset.contentVersion}`,
-    );
-    await expect(page).toHaveURL(
-      `/ja/study/fundamentals/${current.unit.id.replace('fundamentals.', '')}/`,
-    );
+    await page.goto(`${currentHref}?version=${archivedAsset.contentVersion}`);
+    await expect(page).toHaveURL(`${currentHref}slides/1/`);
     await expect(page.locator('.lesson-slide-meta')).toBeVisible();
     await expect(page.locator('.lesson-result-pass')).toHaveCount(0);
     await expect(page.locator('fieldset input:checked')).toHaveCount(0);
@@ -110,10 +107,11 @@ for (const submitted of [false, true]) {
 
     await page.getByRole('button', { name: '学習を終了', exact: true }).click();
     await archive.locator('summary').click();
-    await archive.getByRole('link', { name: '学習を続ける', exact: true }).click();
-    await expect(page).toHaveURL(
-      `/ja/study/fundamentals/${current.unit.id.replace('fundamentals.', '')}/`,
-    );
+    const resume = archive.getByRole('link', { name: '学習を続ける', exact: true });
+    await expect(resume).toHaveAttribute('href', currentHref);
+    await resume.click();
+    await expect(page.locator('.lesson-slide-meta')).toBeVisible();
+    await expect(page).toHaveURL(`${currentHref}slides/1/`);
     expect(new URL(page.url()).search).toBe('');
     expect(await page.evaluate((key) => localStorage.getItem(key), archivedKey)).toBe(raw);
     expect(await page.evaluate((key) => localStorage.getItem(key), currentKey)).toBeNull();

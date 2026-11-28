@@ -1,0 +1,189 @@
+{
+  "id": "troubleshooting-and-optimization",
+  "title": "Fehlerbehebung und Optimierung",
+  "objective": "Mithilfe von Protokollen, Metriken und Traces Ursachen eingrenzen und Nebenläufigkeit, Caching sowie Messaging evidenzbasiert optimieren.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Überwachung und Verbesserung"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Tests und Qualitätsschranken"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Bereitstellung und Wiederherstellung"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evidence-based-triage",
+      "title": "Die Ursache anhand korrelierter Nachweise eingrenzen, nicht anhand von Hypothesen",
+      "paragraphs": [
+        "Bei der Reaktion auf einen Vorfall ermitteln Sie zunächst die Auswirkungen auf die Benutzer, den Zeitpunkt des Auftretens, die betroffene API oder Funktion sowie die unmittelbar zuvor vorgenommene Änderung. Das Diagramm zeigt den Ablauf, bei dem Metriken, strukturierte Logs und Traces aus der Anwendung mithilfe einer Korrelations-ID verknüpft, Warnungen von der Ursachenbestätigung getrennt und anschließend Untersuchung, Behebung und erneute Validierung durchgeführt werden. Prüfen Sie danach anhand der Metriken, wann sich was geändert hat, suchen Sie in den strukturierten Logs mithilfe der Anforderungs-ID oder Korrelations-ID nach der betreffenden Verarbeitung und überprüfen Sie mit den Traces die Wartezeiten zwischen Services sowie die Fehlerstellen.",
+        "Bestimmen Sie die Ursache nicht allein anhand eines einzelnen Indikators, etwa einer gestiegenen CPU-Auslastung oder einer Zunahme von Fehlern. Metriken zeigen Trends und Mengen, Logs einzelne Ereignisse und deren Kontext, und Traces den von einer Anforderung durchlaufenen Pfad sowie die benötigte Zeit. Durch die Korrelation aller drei können Sie mögliche Ursachen auf der Grundlage von Nachweisen statt von Vermutungen eingrenzen.",
+        "Prüfen Sie bei einer fehlgeschlagenen Bereitstellung die Pipeline-Ausgabe, die Anwendungslogs, die Konfigurationsunterschiede und den Zustand der Zielumgebung. Bevor Sie Änderungen umfassend zurücksetzen, dokumentieren Sie die fehlgeschlagene Phase und ihre Ursache, damit der Fehler unter denselben Bedingungen reproduziert und überprüft werden kann."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 4: Ursachenanalyse",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ],
+      "figureId": "dva-observability-feedback-loop"
+    },
+    {
+      "id": "logging-monitoring-and-alerts",
+      "title": "Untersuchbare Logs und handlungsorientierte Alarme erstellen",
+      "paragraphs": [
+        "Protokollieren Sie die Uhrzeit, die Anforderungs-ID, die Verarbeitungsphase, das Ergebnis, den Fehlertyp und weitere relevante Informationen in strukturierter Form. Protokollieren Sie weder die Passwörter der Benutzer noch Authentifizierungstoken, personenbezogene Daten oder vollständige Zahlungsinformationen. Wenn Sie die für Untersuchungen benötigten Identifikatoren von vertraulichen Werten trennen, lassen sich Durchsuchbarkeit der Logs und Datenschutz miteinander verbinden.",
+        "Verwenden Sie benutzerdefinierte Metriken, um geschäftlich relevante Größen wie die Anzahl der Verarbeitungsvorgänge, die Anzahl der Fehler, die Wartezeit und den Rückstau in einer Warteschlange zu messen. Verknüpfen Sie Alarme mit Schwellenwerten, die die zuständigen Personen überprüfen und bearbeiten können, sowie mit Benachrichtigungszielen. Die Überwachung ist unzureichend, wenn Benachrichtigungen so häufig auftreten, dass sie ignoriert werden, oder wenn nach einer Benachrichtigung kein Agent für die Bearbeitung bestimmt ist.",
+        "Zustandsprüfungen, Liveness-Prüfungen und Readiness-Prüfungen haben unterschiedliche Zwecke. Verwechseln Sie nicht, ob ein Prozess ausgeführt wird, Anforderungen annehmen kann oder einschließlich seiner Abhängigkeiten verfügbar ist. Wählen Sie Signale aus, mit denen sich die Auswirkungen auf die Benutzer beurteilen lassen."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Bereich 4: Protokollierung, Überwachung und Observability",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        },
+        {
+          "label": "Was ist Amazon CloudWatch?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "concurrency-and-messaging",
+      "title": "Nebenläufigkeit und Messaging an die Lastmerkmale anpassen",
+      "paragraphs": [
+        "Eine Erhöhung der Anzahl gleichzeitiger Ausführungen verbessert nicht immer die Leistung. Für die Lambda-Nebenläufigkeit, den Thread-Pool der Anwendung und den Datenbankverbindungspool gelten jeweils Kapazitätsgrenzen und Kontingente der nachgelagerten Services. Entwickler untersuchen die Eingangslast, die Verarbeitungszeit, die Anzahl der nachgelagerten Verbindungen und die Fehlerrate, um festzustellen, wo die Einschränkung liegt.",
+        "SQS kann Verarbeitungen puffern und die Last glätten, während SNS verwendet werden kann, um ein einzelnes Ereignis per Fan-out an mehrere Empfänger zu verteilen. Wenn die Anzahl der Konsumenten nur zur Verkürzung der Warteschlangenlänge schnell erhöht wird, können nachgelagerte Systeme wie Datenbanken überlastet werden.",
+        "Optimieren Sie erst, nachdem Sie den Engpass beobachtet haben. Für Speichermangel, CPU-Einschränkungen, Verbindungswartezeiten, die Latenz externer APIs und Throttling sind unterschiedliche Maßnahmen erforderlich. Vergleichen Sie die Ergebnisse nach einer Änderung anhand derselben Messgrößen und Bedingungen und bestätigen Sie, dass sich die Auswirkungen auf die Benutzer verbessert haben."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 4: Nebenläufigkeit und Messaging",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-performance-optimization",
+      "title": "Die Auswirkungen von Caching und Kapazität messen und optimieren",
+      "paragraphs": [
+        "Ein Cache kann die Latenz für häufig gelesene Daten senken, deren Berechnung oder Abruf viel Zeit benötigt. Amazon ElastiCache, DynamoDB Accelerator und Amazon CloudFront speichern unterschiedliche Daten an unterschiedlichen Stellen zwischen. Legen Sie fest, welche Daten in den Cache kommen, wann sie ablaufen und wie alt sie bei einem Abruf höchstens sein dürfen.",
+        "Bei Lambda kann die Speichereinstellung auch die CPU und die Verarbeitungsleistung beeinflussen. Entwickler messen Verarbeitungszeit, Fehler, Kosten und die Anzahl gleichzeitiger Ausführungen, bevor sie die Einstellung ändern. Wenn der Arbeitsspeicher erhöht wird, ohne ein Leistungsproblem zu identifizieren, können lediglich die Kosten steigen.",
+        "Vergleichen Sie nach der Optimierung die Cache-Trefferrate, die Latenz, die Fehlerrate und die Auslastung nachgelagerter Services unter denselben Beobachtungsbedingungen. Wenn Sie die Nachweise für die Verbesserung aufbewahren, können Sie die Ursache zurückverfolgen, falls sich die Leistung nach einer späteren Änderung verschlechtert."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 4: Caching und Leistungsoptimierung",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-troubleshoot-001",
+      "prompt": "Die Antwortzeit der Bestell-API hat sich plötzlich verschlechtert. Das Betriebsteam möchte feststellen, bei welchem Serviceaufruf die Latenz gestiegen ist, und außerdem die Protokolle zur selben Anfrage prüfen. Wählen Sie eine am besten geeignete Kombination von Belegen für den Einstieg aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Nur die CPU-Auslastung betrachten und daraus schließen, dass der Service mit der höchsten Auslastung die Ursache ist.",
+          "explanation": "Eine einzelne Metrik kann verschiedene Ursachen wie Verbindungswartezeiten, externe APIs oder Änderungen an der Bereitstellung nicht unterscheiden."
+        },
+        {
+          "id": "a",
+          "text": "Latenzmetriken, strukturierte Protokolle mit der Anfrage-ID und Traces, die den Pfad zwischen den Services zeigen, miteinander korrelieren.",
+          "explanation": "Metriken zeigen Trends, Protokolle liefern den Kontext einzelner Anfragen und Traces zeigen die Zeit zwischen den Services. Dadurch lassen sich mögliche Ursachen anhand von Belegen eingrenzen."
+        },
+        {
+          "id": "c",
+          "text": "Die Protokolle löschen, um Speicherkosten zu senken, und die Ursache ausschließlich anhand von Benutzerberichten vermuten.",
+          "explanation": "Dadurch gingen die für die Untersuchung erforderlichen Belege verloren, sodass sich die Ursache nicht reproduzieren und überprüfen ließe."
+        },
+        {
+          "id": "d",
+          "text": "Alle vertraulichen Werte in die Protokolle aufnehmen, um die Informationsmenge zu erhöhen.",
+          "explanation": "Das Protokollieren von Token oder personenbezogenen Informationen beeinträchtigt den Datenschutz. Die für die Untersuchung erforderlichen Korrelations-IDs müssen von vertraulichen Werten getrennt werden."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-002",
+      "prompt": "Der Entwickler einer Lambda-Funktion, die nächtliche Batchverarbeitungen durchführt, möchte die Nebenläufigkeit erhöhen, um den Rückstau in der Warteschlange zu verringern. Wählen Sie die eine am besten geeignete Prüfung aus, die vor der Änderung durchgeführt werden sollte.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Die Anzahl der Datenbankverbindungen, die Kontingente der nachgelagerten APIs, die Verarbeitungszeit und die Fehlerquote prüfen und die begrenzenden Faktoren ermitteln.",
+          "explanation": "Eine höhere Nebenläufigkeit erhöht auch die Anzahl gleichzeitiger Verbindungen zu nachgelagerten Services. Passen Sie sie erst an, nachdem der tatsächliche Engpass beobachtet wurde."
+        },
+        {
+          "id": "b",
+          "text": "Die Nebenläufigkeit ausschließlich anhand des Rückstaus in der Warteschlange maximieren, unabhängig von der Kapazität der nachgelagerten Services.",
+          "explanation": "Dadurch könnten nachgelagerte Datenbanken oder APIs überlastet werden und die Fehlerquote steigen."
+        },
+        {
+          "id": "c",
+          "text": "Fehlgeschlagene Nachrichten löschen, ohne sie zu untersuchen, und dadurch nur die Länge der Warteschlange verringern.",
+          "explanation": "Dadurch gehen noch nicht verarbeitete Geschäftsprozesse verloren, und die Ursache des Rückstaus kann nicht untersucht werden."
+        },
+        {
+          "id": "d",
+          "text": "Alarme und Protokolle deaktivieren, ohne die Speichereinstellung zu ändern.",
+          "explanation": "Wenn die Beobachtbarkeit beendet wird, lassen sich die Auswirkungen und Nebenwirkungen der Änderung nicht überprüfen."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-003",
+      "prompt": "Der Entwickler einer API für Produktdetails verzeichnet viele Lesezugriffe auf dieselben Produktinformationen und möchte die Datenbanklast und die Latenz reduzieren. Wählen Sie die am besten geeignete Prüfung nach der Einführung eines Caches aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Überwachen Sie nach dem Hinzufügen eines Caches weder die Datenbanklast noch die API-Latenz.",
+          "explanation": "Dadurch lassen sich weder die Wirksamkeit des Caches noch seine Auswirkungen bei Ausfällen überprüfen, sodass keine Grundlage für die Optimierung bleibt."
+        },
+        {
+          "id": "c",
+          "text": "Behalten Sie den Cache nach jeder Aktualisierung unbegrenzt bei und berücksichtigen Sie keinen Ablauf.",
+          "explanation": "Nach Aktualisierungen können alte Werte bestehen bleiben, sodass den Benutzern falsche Produktinformationen zurückgegeben werden können."
+        },
+        {
+          "id": "a",
+          "text": "Vergleichen Sie Cache-Trefferrate, Latenz, Fehlerrate und Datenbanklast unter denselben Bedingungen und überprüfen Sie, wie veraltete Werte beim Ablauf des Caches behandelt werden.",
+          "explanation": "Ein Cache kann die Leistung verbessern, aber seine Wirksamkeit und der akzeptable Aktualitätsbereich müssen gemessen und überprüft werden."
+        },
+        {
+          "id": "d",
+          "text": "Da ein Cache hinzugefügt wurde, verzichten Sie auf die Überprüfung der Autorisierung und des Datenschutzes.",
+          "explanation": "Ein Cache ist ein Mechanismus zur Leistungsverbesserung; er ersetzt weder Zugriffskontrollen noch Datenschutz."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Metric",
+    "Structured logging",
+    "Trace",
+    "Correlation ID",
+    "CloudWatch",
+    "CloudWatch alarm",
+    "Concurrency",
+    "Connection pool",
+    "Service Quotas",
+    "Throttling",
+    "SQS",
+    "SNS",
+    "Fan-out",
+    "ElastiCache",
+    "DAX",
+    "Cache hit ratio",
+    "Latency",
+    "Error rate"
+  ]
+}

@@ -1,0 +1,199 @@
+{
+  "id": "development-with-aws-services",
+  "title": "使用 AWS 服务进行开发",
+  "objective": "能够根据应用程序的处理条件，选择同步和异步集成、Lambda、数据存储、API 以及事件。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服务"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "通信基础"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coupling-and-message-handling",
+      "title": "根据等待时间和故障影响选择集成方式",
+      "paragraphs": [
+        "对于订单接收等调用方需要立即获得结果的处理，可以选择通过 API Gateway 进行同步调用。另一方面，对于图像转换或发票生成等无需让用户等待的处理，可以考虑使用 Amazon SQS 队列，将接收处理与后续处理异步分离。图中显示，接收时的 HTTP 响应与工作线程从 SQS 中取出并执行的后续处理具有彼此独立的故障边界。分离处理的目的是避免故障或临时负载的影响过度扩散到调用方。",
+        "对于异步处理，需要考虑消息未到达、处理失败以及同一处理再次执行的情况。负责人员会结合使用退避机制（在重试时逐步延长等待时间）、死信队列（隔离故障以便确认）以及幂等处理（即使重复相同请求也不会破坏结果）。仅仅设置队列并不会让故障消失。",
+        "Amazon EventBridge、Amazon S3 事件通知和 Amazon SNS 也可用于事件驱动的集成。无论使用哪项服务，都必须明确事件发布者、接收者、发生故障时的去向，以及负责记录处理结果的人员。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 领域 1：集成与事件驱动",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ],
+      "figureId": "dva-event-processing-contract"
+    },
+    {
+      "id": "lambda-integration",
+      "title": "分别处理 Lambda 事件、配置和权限",
+      "paragraphs": [
+        "Lambda 函数可以与 API Gateway、SQS、DynamoDB、S3 等服务的事件集成。实现函数的人员会根据处理的特性，配置事件输入格式、处理程序、运行时、内存、超时和并发数。内存不足、超时和并发上限是不同的问题，不能通过统一增大这些数值来解决。",
+        "如果函数需要连接 VPC 内的私有资源，请指定相应的子网和安全组。仅连接到 VPC 并不会自动获得数据库身份验证或访问权限。请分别检查网络可达性、IAM 执行角色和数据存储的凭证。",
+        "如果异步调用失败，请考虑配置，将失败事件传递到目标或死信队列。在接受会影响业务运营的事件之前，应先准备好失败记录和重新处理步骤。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 领域 1：Lambda 配置和错误处理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "使用 Lambda 处理 S3 事件通知",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "data-store-and-cache",
+      "title": "根据访问模式选择数据存储和缓存",
+      "paragraphs": [
+        "选择数据存储时，不仅要考虑要存储的数据量，还要考虑读写方式、搜索条件、一致性和保留期限。在 Amazon DynamoDB 中，应选择能够分散访问的分区键，定义所需的属性和索引，并理解 Query 与 Scan 的区别。Scan 会检查所有项目，而 Query 可以通过键缩小目标范围。如果像常规使用 Query 一样常规使用会检查全部项目的 Scan，可能会增加不必要的读取。",
+        "对于处理关系数据和 SQL 的需求，应比较 Amazon RDS；对于对象存储，应比较 Amazon S3；对于缓存频繁访问的值，应比较 Amazon ElastiCache。缓存不能替代主数据的正确性。需要确定更新后可以容忍旧值存在多长时间，以及由谁执行失效处理。",
+        "将数据保留期限作为一项需求。DynamoDB TTL 和 S3 生命周期策略可用于避免继续保留已不再需要的数据。对于无法删除的记录或需要长期保存的数据，应适用单独的保留要求。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 领域 1：数据存储和缓存",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "什么是 Amazon S3？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "api-sdk-and-ai-integration",
+      "title": "验证边界并与服务集成",
+      "paragraphs": [
+        "公开 API 的开发者会验证输入格式和必填字段，并保持返回给用户的错误格式一致。在 API Gateway 中，可以根据用途配置每个阶段的 URL、请求验证、转换和身份验证。开发者不会将客户端发送的输入原样传递给内部服务，而是在边界处确认输入是否符合预期格式。",
+        "在使用 AWS SDK 的代码中，开发者不会将凭证嵌入代码，而是使用 IAM 角色等方式进行经过身份验证的调用。他们会理解 SDK 的重试设置，避免它与应用程序侧的重试叠加而导致过多调用。",
+        "即使在集成 AI 辅助开发工具或托管式 AI 服务时，开发者也不会无条件地将生成结果应用到生产环境。他们会检查输入数据的处理方式、审查生成的代码、确认权限，并检查日志中包含的敏感信息，将这些检查纳入原有的测试和审批流程。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 领域 1：API、SDK 和 AI 服务",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-development-001",
+      "prompt": "一家电子商务公司的开发人员希望订单 API 立即返回响应，并希望订单后的图像转换在失败时可以重试。请选择一种最适合实现后续处理松耦合的方法。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "订单 API 将处理请求发送到 SQS 队列，另一个工作程序执行带退避的重试并隔离失败。",
+          "explanation": "这样可以将订单受理与后续处理分离。工作程序还会提供可安全重新执行相同请求的幂等处理，以及用于确认失败的路径。"
+        },
+        {
+          "id": "a",
+          "text": "订单 API 同步等待图像转换完成；如果转换失败，则每次都要求用户重新发送相同的请求。",
+          "explanation": "同步等待长时间运行的后续处理，会使图像转换的延迟或失败直接影响订单受理响应。"
+        },
+        {
+          "id": "c",
+          "text": "不记录图像转换失败，并立即删除队列中的消息。",
+          "explanation": "删除失败消息会导致无法重新处理或调查原因，也无法检测出遗漏的处理。"
+        },
+        {
+          "id": "d",
+          "text": "将订单 API 的凭证嵌入每个工作程序的源代码中。",
+          "explanation": "嵌入凭证并不能实现松耦合，反而会增加凭证泄露和更新的风险。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dva-development-002",
+      "prompt": "内部分析服务的开发人员希望从 Lambda 函数连接到 VPC 内的私有数据库。在为 Lambda 添加 VPC 配置后，还应检查以下哪一项？请选择一项。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "仅将 Lambda 的内存设置为最大值，并跳过连接设置检查。",
+          "explanation": "内存属于处理资源设置，不能替代网络可达性或身份验证设置。"
+        },
+        {
+          "id": "c",
+          "text": "将数据库公开到互联网，并移除 Lambda 的 VPC 配置。",
+          "explanation": "这不符合安全连接到私有数据库的要求，还会导致不必要的公开。"
+        },
+        {
+          "id": "a",
+          "text": "检查目标子网和安全组、执行角色，以及数据库凭证和访问权限。",
+          "explanation": "VPC 连接只是可达性的一部分。应分别检查网络控制、函数的执行角色，以及数据库的身份验证和授权。"
+        },
+        {
+          "id": "d",
+          "text": "更改函数的处理程序名称后，系统会自动授予访问数据库的权限。",
+          "explanation": "处理程序是函数的执行入口点，不会授予网络或身份验证权限。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-development-003",
+      "prompt": "票务销售服务的开发人员正在实现一个按购买者 ID 获取订单的 DynamoDB 表。每位购买者都有大量订单，并且经常只获取特定购买者的订单。请选择一个最合适的方案。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "每次都使用 Scan，读取全部订单后，再由应用程序按购买者 ID 进行筛选。",
+          "explanation": "由于 Scan 会针对全部项目，在可以通过键缩小范围的需求中，可能会增加不必要的读取量。"
+        },
+        {
+          "id": "c",
+          "text": "仅将 DynamoDB 用作缓存，不存储订单的持久化数据。",
+          "explanation": "缓存和持久化数据存储承担不同的职责。设计必须满足保留订单数据的要求。"
+        },
+        {
+          "id": "d",
+          "text": "不使用购买者 ID，仅通过 S3 文件名搜索订单数据。",
+          "explanation": "对于基于 DynamoDB 键获取订单这一要求，按 S3 文件名搜索并不是合适的数据访问设计。"
+        },
+        {
+          "id": "a",
+          "text": "将购买者 ID 设计为分区键，并使用指定目标购买者 ID 的 Query。",
+          "explanation": "使用符合访问模式的键和 Query，可以将读取范围缩小到目标项目。同时还要确认请求不会过度集中到某个特定键。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "API Gateway",
+    "Lambda",
+    "SQS",
+    "Event source mapping",
+    "Visibility timeout",
+    "DLQ",
+    "Idempotency",
+    "Backoff",
+    "EventBridge",
+    "SNS",
+    "DynamoDB",
+    "Query",
+    "Scan",
+    "Partition key",
+    "RDS",
+    "S3",
+    "ElastiCache",
+    "Cache invalidation",
+    "TTL",
+    "VPC",
+    "Security group",
+    "IAM role",
+    "API contract",
+    "SDK retry"
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "id": "troubleshooting-and-optimization",
+  "title": "疑難排解與最佳化",
+  "objective": "使用日誌、指標和追蹤記錄來釐清原因，並根據證據最佳化並行處理、快取和訊息傳遞。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "測試與品質閘門"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署與復原"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evidence-based-triage",
+      "title": "不要依賴假設，而要根據相關證據縮小原因範圍",
+      "paragraphs": [
+        "處理故障時，首先確認對使用者的影響、發生時間、相關的 API 或功能，以及緊接之前所做的變更。此圖展示使用關聯 ID 將從應用程式取得的指標、結構化日誌和追蹤資料相互關聯，將警示與原因確認分開，並進入調查、修正及重新驗證的流程。接著，使用指標確認何時發生了什麼變化，使用結構化日誌透過請求 ID 或關聯 ID 找出相關處理，並使用追蹤資料確認服務之間的等待時間和錯誤位置。",
+        "不要僅憑單一指標（例如 CPU 使用率上升或錯誤增加）就判定原因。指標呈現趨勢和數量，日誌呈現個別事件及其脈絡，追蹤資料呈現請求經過的路徑和所需時間。將這三者相互對照，就能根據證據而非推測縮小可能原因的範圍。",
+        "部署失敗時，請檢查管道輸出、應用程式日誌、設定差異以及目標環境的狀態。在大範圍回復變更之前，記錄失敗的階段及其原因，以便能在相同條件下重現並驗證問題。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 4：根本原因分析",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ],
+      "figureId": "dva-observability-feedback-loop"
+    },
+    {
+      "id": "logging-monitoring-and-alerts",
+      "title": "建立可供調查的日誌與能促成行動的警示",
+      "paragraphs": [
+        "以結構化方式記錄時間、請求 ID、處理階段、結果、錯誤類型等資訊。不要記錄使用者的密碼、身分驗證權杖、個人資訊或完整的付款資訊。將調查所需的識別碼與敏感值分開，即可兼顧日誌的可搜尋性與資料保護。",
+        "使用自訂指標來測量具有業務意義的處理數量、失敗數量、等待時間、佇列積壓等。將警示連結至負責人能夠確認並採取行動的閾值，以及相應的通知目標。如果通知過多而遭到忽略，或通知後沒有指定的處理人員，監控就不充分。",
+        "運作狀態檢查、存活檢查與就緒檢查具有不同的目的。不要混淆程序是否正在執行、是否能接受請求，以及包含相依項目在內是否可用。請選擇能夠判斷對使用者影響的訊號。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 4：日誌記錄、監控與可觀測性",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        },
+        {
+          "label": "什麼是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "concurrency-and-messaging",
+      "title": "讓並行處理與訊息傳遞配合負載特性",
+      "paragraphs": [
+        "增加並行處理數量並不一定能提升效能。Lambda 的並行處理數量、應用程式的執行緒集區和資料庫連線集區，分別都受到下游服務容量和配額的限制。開發人員會觀察入口負載、處理時間、下游連線數量和失敗率，以確認限制因素所在的位置。",
+        "SQS 可以緩衝處理並平滑負載，而 SNS 可用於將單一事件扇出至多個接收者。若只是為了降低佇列長度而快速增加消費者數量，可能會使資料庫等下游系統超載。",
+        "應先觀察瓶頸，再進行最佳化。記憶體不足、CPU 限制、連線等待、外部 API 延遲和節流需要採取不同的因應措施。變更後，應使用相同的指標和條件進行比較，並確認對使用者的影響已獲得改善。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 4：並行處理與訊息傳遞",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-performance-optimization",
+      "title": "測量快取與容量的效果並進行最佳化",
+      "paragraphs": [
+        "快取可降低頻繁存取且計算或擷取需要時間之資料的延遲。Amazon ElastiCache、DynamoDB Accelerator 和 Amazon CloudFront 的快取對象及部署位置各不相同。需要決定要快取哪些資料、何時使其失效，以及可容忍多少程度的過時資料。",
+        "在 Lambda 中，記憶體設定也可能影響 CPU 與處理效能。開發人員會先測量處理時間、錯誤、成本和並行數，再變更設定。如果未發現效能問題就只增加記憶體，可能只會增加費用。",
+        "最佳化後，在相同的觀測條件下比較快取命中率、延遲、錯誤率和下游服務負載。保留改善依據後，即使後續變更導致效能下降，也能追蹤原因。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 4：快取與效能最佳化",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-troubleshoot-001",
+      "prompt": "訂單 API 的回應時間突然惡化。營運人員想要找出哪個服務呼叫的延遲增加，並查看與相同請求相關的日誌。請選擇一個最適合作為起點的佐證組合。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只查看 CPU 使用率，並斷定使用率最高的服務就是原因。",
+          "explanation": "單一指標無法區分連線等待、外部 API 或部署變更等不同原因。"
+        },
+        {
+          "id": "a",
+          "text": "將延遲指標、包含請求 ID 的結構化日誌，以及顯示服務之間路徑的追蹤資訊相互關聯。",
+          "explanation": "指標可顯示趨勢，日誌可提供個別請求的脈絡，追蹤資訊可確認服務之間的耗時，因此能根據佐證縮小可能原因的範圍。"
+        },
+        {
+          "id": "c",
+          "text": "刪除日誌以降低儲存成本，只根據使用者報告推測原因。",
+          "explanation": "這會失去調查所需的佐證，因此無法重現及驗證原因。"
+        },
+        {
+          "id": "d",
+          "text": "將所有機密值加入日誌，以增加資訊量。",
+          "explanation": "將權杖或個人資訊寫入日誌會損害資料保護。調查所需的關聯 ID 必須與機密值分開保存。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-002",
+      "prompt": "一名負責處理夜間批次工作的 Lambda 函數開發人員，想要增加並行數量以減少佇列積壓。請選出在進行變更前最適合檢查的一項。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "檢查資料庫連線數、下游 API 配額、處理時間和錯誤率，並找出構成限制的部分。",
+          "explanation": "增加並行數量也會增加與下游服務的同時連線數。應先觀測實際的瓶頸，再進行調整。"
+        },
+        {
+          "id": "b",
+          "text": "只觀察佇列積壓，不考慮下游服務的容量，將並行數量調到最大。",
+          "explanation": "這可能使下游資料庫或 API 過載，並提高失敗率。"
+        },
+        {
+          "id": "c",
+          "text": "不調查失敗的訊息就將其刪除，只減少佇列長度。",
+          "explanation": "這會遺失尚未處理的業務工作，也無法調查積壓的原因。"
+        },
+        {
+          "id": "d",
+          "text": "不變更記憶體設定，卻停用警示和日誌。",
+          "explanation": "停止監測後，便無法確認變更的效果及其副作用。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-003",
+      "prompt": "商品詳細 API 的開發人員面臨大量針對相同商品資訊的讀取，並希望降低資料庫負載與延遲。請選出導入快取後最適合確認的一項。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "加入快取後，不監控資料庫負載或 API 延遲。",
+          "explanation": "如此無法確認快取的效果或故障時的影響，也就沒有最佳化的依據。"
+        },
+        {
+          "id": "c",
+          "text": "每次更新後都無限期保留快取，不考慮快取失效。",
+          "explanation": "更新後舊值可能持續存在，導致向使用者傳回錯誤的商品資訊。"
+        },
+        {
+          "id": "a",
+          "text": "在相同條件下比較快取命中率、延遲、錯誤率與資料庫負載，並確認快取失效時如何處理舊值。",
+          "explanation": "快取可能改善效能，但必須測量並確認其效果與可接受的新鮮度範圍。"
+        },
+        {
+          "id": "d",
+          "text": "因為加入了快取，所以省略授權與資料保護的確認。",
+          "explanation": "快取是效能機制，不能取代存取控制或資料保護。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Metric",
+    "Structured logging",
+    "Trace",
+    "Correlation ID",
+    "CloudWatch",
+    "CloudWatch alarm",
+    "Concurrency",
+    "Connection pool",
+    "Service Quotas",
+    "Throttling",
+    "SQS",
+    "SNS",
+    "Fan-out",
+    "ElastiCache",
+    "DAX",
+    "Cache hit ratio",
+    "Latency",
+    "Error rate"
+  ]
+}

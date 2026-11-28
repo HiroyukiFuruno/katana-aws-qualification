@@ -1,0 +1,189 @@
+{
+  "id": "testing-and-deployment",
+  "title": "Tests und Bereitstellung",
+  "objective": "Artefakte, Umgebungskonfiguration, Tests, CI/CD, schrittweise Bereitstellungen und Rollbacks entsprechend dem Risiko der Änderung implementieren.",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CD-Ablauf"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Tests und Qualitätsschranken"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Bereitstellung und Wiederherstellung"
+    }
+  ],
+  "sections": [
+    {
+      "id": "artifacts-and-environment-configuration",
+      "title": "Code, Abhängigkeiten und Umgebungskonfiguration getrennt verwalten",
+      "paragraphs": [
+        "Legen Sie eindeutig fest, wie Code, Abhängigkeiten und Konfiguration in bereitstellbaren Artefakten behandelt werden. Wählen Sie bei Lambda je nach Verarbeitungsinhalt und gemeinsam genutzten Abhängigkeiten .zip-Dateien, Container-Images oder Layer aus. Speichern Sie Container-Images in Amazon ECR und verwalten Sie Versionen und Aufbewahrung mithilfe von Image-Tags und Lebenszyklusrichtlinien.",
+        "Verwalten Sie Werte, die sich je nach Umgebung unterscheiden, mit Services wie AWS AppConfig, Systems Manager Parameter Store und Secrets Manager, anstatt sie direkt in den Code zu schreiben. Durch die Trennung von Konfiguration, vertraulichen Werten und Artefaktversionen lässt sich überprüfen, was sich geändert hat, wenn derselbe Code von der Entwicklung über die Testumgebung in die Produktion gelangt.",
+        "Stufenspezifische URLs von API Gateway und Lambda-Aliase helfen dabei, Umgebungen von Release-Zielen zu trennen. Unterscheiden Sie Produktion und Test nicht allein anhand von Namen, sondern geben Sie die referenzierte Konfiguration und das Bereitstellungsziel ausdrücklich an."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 3: Artefakte und Umgebungskonfiguration",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "automated-testing",
+      "title": "Eingaben, Abhängigkeiten und erwartete Ergebnisse für Tests festlegen",
+      "paragraphs": [
+        "Legen Sie beim Testen fest, was eingegeben wird, welche Abhängigkeiten verwendet werden und was als erwartetes Ergebnis gilt. Bereiten Sie für Testereignisse von Lambda und API Gateway JSON-Nutzdaten vor, die tatsächlichen Aufrufen möglichst nahekommen. Wenn externe Abhängigkeiten nicht direkt aufgerufen werden können, verwenden Sie Mock-APIs, um Bedingungen wie Erfolg, Fehler und Zeitüberschreitungen nachzubilden.",
+        "Auch bei der Verwendung von AWS SAM, AWS CDK, AWS CloudFormation oder ähnlichen Tools müssen Sie nicht nur die Syntax der Vorlage prüfen, sondern auch, ob die erstellten Ressourcen und ihre Berechtigungen den Erwartungen entsprechen. Selbst wenn KI-gestützte Tools Tests generieren, muss eine Person die erzeugten Annahmen, Randbedingungen und erwarteten Werte überprüfen.",
+        "Der Zweck von Tests besteht nicht lediglich darin, sie erfolgreich durchlaufen zu lassen, sondern sicherzustellen, dass Änderungen kein für Benutzer relevantes Verhalten beeinträchtigt haben. Kombinieren Sie Unit-Tests, Integrationstests und Prüfungen nach der Bereitstellung entsprechend dem Risiko der Änderung."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 3: Implementierung und Automatisierung von Tests",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "pipeline-and-deployment-strategies",
+      "title": "Schrittweise vorgehen und dabei einen rücksetzbaren Zustand bewahren",
+      "paragraphs": [
+        "In CI/CD werden Änderungen am Quellcode, Builds, Tests, Bereitstellungen und die Überprüfung nach der Bereitstellung über einen einheitlichen Ablauf verbunden. Die Abbildung zeigt, dass nur Revisionen, die das Quality Gate passieren, zu Staging und Canary weitergeleitet werden und dass ein fehlgeschlagenes Monitoring Gate die Entscheidung auslöst, auf eine zuvor festgelegte stabile Version zurückzugehen. AWS CodePipeline orchestriert die einzelnen Schritte, während AWS CodeDeploy die Bereitstellung von Anwendungsrevisionen in der Zielumgebung unterstützt. Entscheidend ist nicht allein, die Pipeline zu durchlaufen, sondern zu wissen, was in jeder Phase überprüft wird.",
+        "Wenn Sie die Auswirkungen von Änderungen begrenzen möchten, wählen Sie Bereitstellungsstrategien wie Canary, Blue/Green oder Rolling Updates. Bei Canary wird die neue Version zunächst für einen Teil des Traffics bereitgestellt. Nach der Prüfung von Metriken und Fehlern wird die Bereitstellung ausgeweitet. Bei einer Blue/Green-Bereitstellung werden die alte und die neue Umgebung so bereitgehalten, dass zwischen ihnen umgeschaltet werden kann.",
+        "Ein Rollback ist keine Operation, an die man erst nach dem Auftreten eines Fehlers denkt. Vor dem Release bestätigt das zuständige Team die wiederherzustellende Version, die Auslösebedingungen, die Kompatibilität der Datenänderungen und die Benachrichtigungsziele. Auch bei Verwendung des automatischen Rollbacks von CloudFormation oder CodeDeploy muss klar sein, was zurückgesetzt wird und was nicht."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 3: CI/CD und Bereitstellungsstrategien",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        },
+        {
+          "label": "Was ist AWS CodeDeploy?",
+          "url": "https://docs.aws.amazon.com/ja_jp/codedeploy/latest/userguide/welcome.html"
+        }
+      ],
+      "figureId": "dva-pipeline-release-gates"
+    },
+    {
+      "id": "infrastructure-and-release-versioning",
+      "title": "Konfiguration und Release-Versionen reproduzierbar machen",
+      "paragraphs": [
+        "Mit Infrastructure as Code deklarieren Sie Ressourcen und Konfigurationen in CloudFormation- oder AWS-SAM-Vorlagen. Eine Umgebung aus derselben Vorlage reproduzieren zu können, hilft, Auslassungen bei der manuellen Konfiguration zu reduzieren, und erleichtert die Überprüfung von Änderungen. Wie Anwendungscode unterliegen auch Vorlagen der Versionsverwaltung und dem Testen.",
+        "Container-Image-Tags, Lambda-Aliase, Quellcode-Branches und Release-Bezeichnungen werden verwendet, um nachzuverfolgen, was bereitgestellt wurde. Verlassen Sie sich nicht nur auf veränderliche Namen, sondern ermöglichen Sie die Referenzierung einer bestimmten Kombination aus Artefakten und Konfiguration.",
+        "Bei der Validierung nach der Bereitstellung prüfen Sie nicht nur die Erreichbarkeit, sondern auch die Antworten wichtiger APIs, die Fehlerquote, die Autorisierung und alle erforderlichen Hintergrundverarbeitungen. Wenn die Erfolgskriterien im Voraus festgelegt werden, lassen sich Entscheidungen über eine schrittweise Ausweitung oder ein Rollback reproduzieren."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 3: IaC und Release-Management",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-deploy-001",
+      "prompt": "Ein Entwickler einer Zahlungs-API möchte in den Entwicklungs-, Validierungs- und Produktionsumgebungen unterschiedliche externe Endpunkte und geheime Werte verwenden, während der Code der in der Produktion bereitgestellten Lambda-Funktion unverändert bleibt. Wählen Sie unter diesen Bedingungen eine geeignete Methode zur Verwaltung von Code, Konfiguration und geheimen Werten aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Den Produktionsverbindungsendpunkt und das Secret in den Quellcode schreiben und sie in jeder Umgebung manuell ändern.",
+          "explanation": "Manuelle Änderungen erschweren die Nachverfolgung von Unterschieden und beeinträchtigen die Reproduzierbarkeit. Außerdem können sie zur Offenlegung geheimer Werte führen."
+        },
+        {
+          "id": "c",
+          "text": "Die Produktionsdatenbank in allen Umgebungen gemeinsam nutzen, um Unterschiede zwischen den Umgebungen zu beseitigen.",
+          "explanation": "Vorgänge in der Validierungsumgebung könnten sich auf Produktionsdaten auswirken und widersprechen damit den Zielen der Umgebungstrennung und des sicheren Testens."
+        },
+        {
+          "id": "d",
+          "text": "Nur den Namen des Lambda-Handlers je Umgebung ändern und Konfiguration sowie Secrets überall gemeinsam verwenden.",
+          "explanation": "Der Handlername ist der Einstiegspunkt für die Ausführung. Durch seine Änderung lassen sich umgebungsspezifische Endpunkte und geheime Werte nicht angemessen verwalten."
+        },
+        {
+          "id": "a",
+          "text": "Umgebungsspezifische Konfigurationen mit AppConfig oder Parameter Store verwalten, geheime Werte mit Secrets Manager verwalten und sie vom Artefakt trennen.",
+          "explanation": "Durch die Trennung von Codeversion, Umgebungskonfiguration und geheimen Werten lässt sich dasselbe Artefakt sicherer in jeder Umgebung verwenden."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-002",
+      "prompt": "Das Entwicklungsteam eines Lieferdienstes möchte automatisch testen, wie sich eine externe API zur Adressvalidierung bei einem Timeout verhält, ohne die tatsächliche externe API aufzurufen. Wählen Sie eine einzige, am besten geeignete Methode zur automatisierten Prüfung dieser Fehlerbedingung.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Annehmen, dass die externe API immer erfolgreich ist, und die Timeout-Behandlung nicht testen.",
+          "explanation": "Damit lässt sich das Verhalten bei einem Fehler nicht überprüfen, und die Auswirkungen auf die Benutzer bleiben unklar."
+        },
+        {
+          "id": "a",
+          "text": "Einen Mock bereitstellen, der normale Antworten, Fehler und Timeouts der externen API zurückgibt, und die erwarteten Wiederholungsversuche sowie Fehlerantworten überprüfen.",
+          "explanation": "Mit einem Mock, der die Bedingungen der Abhängigkeit reproduziert, lässt sich das Verhalten der Anwendung überprüfen, ohne vom Zustand des externen Dienstes abhängig zu sein."
+        },
+        {
+          "id": "c",
+          "text": "Adressdaten aus der Produktionsumgebung in die Entwicklungsumgebung kopieren und manuell auf einen Timeout warten.",
+          "explanation": "Das Kopieren von Produktionsdaten verursacht Datenschutzprobleme, und ein festes Warten ist kein reproduzierbarer automatisierter Test."
+        },
+        {
+          "id": "d",
+          "text": "Anstatt zu testen, nach der Bereitstellung auf Fehlermeldungen der Benutzer warten.",
+          "explanation": "Damit wird das Ziel verfehlt, bekannte Fehlerbedingungen vor der Bereitstellung zu überprüfen."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-003",
+      "prompt": "Der Release-Verantwortliche eines Reservierungsdienstes möchte die neue Version zunächst für einen Teil der Benutzer bereitstellen, die Fehlerquote und Latenz prüfen und sie anschließend auf alle Benutzer ausweiten. Wählen Sie eine einzelne Bereitstellungsstrategie, die diese Anforderungen am besten erfüllt.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Gleichzeitig für alle Benutzer bereitstellen und erst nach dem Auftreten von Fehlern nach der alten Version suchen.",
+          "explanation": "Bei einem Problem wäre der betroffene Bereich sehr groß, und die Anforderung, das Rollback-Ziel im Voraus festzulegen, wird nicht erfüllt."
+        },
+        {
+          "id": "c",
+          "text": "Die Produktion direkt manuell ändern, ohne die Artefaktversion zu protokollieren.",
+          "explanation": "Dadurch lassen sich die Änderungen und das Rollback-Ziel nicht nachverfolgen, was Reproduzierbarkeit und Auditierbarkeit beeinträchtigt."
+        },
+        {
+          "id": "d",
+          "text": "Nur in der Testumgebung bereitstellen und die Produktionsmetriken nicht prüfen.",
+          "explanation": "Die Überprüfung der Testumgebung ist erforderlich, ersetzt aber weder eine schrittweise Bereitstellung in der Produktion noch die Überprüfung der Betriebsmetriken."
+        },
+        {
+          "id": "a",
+          "text": "Eine Canary-Bereitstellung verwenden, eine kleine Menge an Datenverkehr überwachen und die Bereitstellung anschließend schrittweise ausweiten.",
+          "explanation": "Canary ist eine Strategie, bei der die neue Version zunächst für einen Teil der Benutzer bereitgestellt und nach der Überprüfung der Metriken erweitert oder per Rollback zurückgenommen wird."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Artifact",
+    "ECR",
+    "AWS AppConfig",
+    "Parameter Store",
+    "Secrets Manager",
+    "Lambda alias",
+    "API Gateway stage",
+    "SAM",
+    "CDK",
+    "CloudFormation",
+    "Mock",
+    "CI/CD",
+    "CodePipeline",
+    "CodeDeploy",
+    "Canary deployment",
+    "Blue/green deployment",
+    "Rolling deployment",
+    "Rollback"
+  ]
+}

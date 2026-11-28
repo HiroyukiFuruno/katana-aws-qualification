@@ -1,0 +1,196 @@
+{
+  "id": "security",
+  "title": "Segurança de aplicações",
+  "objective": "Implementar a autenticação e a autorização de aplicações, proteger dados confidenciais e proteger os dados ao integrar IA, com base nas condições dos utilizadores e dos dados.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "Autenticação e autorização"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Proteção de dados"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Fundamentos da comunicação"
+    }
+  ],
+  "sections": [
+    {
+      "id": "temporary-credentials-and-access",
+      "title": "Usar credenciais temporárias com finalidade limitada",
+      "paragraphs": [
+        "Quando uma aplicação chama serviços da AWS, não incorpore chaves de acesso de longo prazo no código-fonte nem nos arquivos de configuração. O diagrama mostra os limites em que a aplicação acessa separadamente segredos e um armazenamento de dados usando credenciais temporárias de uma função do IAM, enquanto um usuário externo acessa um objeto do S3 por tempo limitado usando uma URL pré-assinada. Assuma uma função do IAM apropriada ao ambiente de execução e limite as permissões somente às ações e aos recursos necessários. A política de confiança, que define as entidades principais que podem assumir a função, e a política de permissões, que define as ações que podem ser executadas, têm funções diferentes.",
+        "Quando usuários externos ou usuários de outra conta precisam de acesso, use federação de identidades, tokens de segurança de curta duração ou funções entre contas, conforme as condições. Ao compartilhar temporariamente um objeto do S3, uma URL pré-assinada pode fornecer acesso limitado por tempo e por ações permitidas.",
+        "Conceda o privilégio mínimo somente depois de esclarecer primeiro as entidades principais, as ações, os recursos de destino e as condições necessários. Em vez de testar com permissões amplas e reduzi-las depois, defina as permissões necessárias de uma forma que possa ser testada."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domínio 2: Autenticação e autorização",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "Lógica de avaliação de políticas do IAM",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+        }
+      ],
+      "figureId": "dva-request-identity-and-secret-flow"
+    },
+    {
+      "id": "encryption-and-secrets",
+      "title": "Separar as finalidades da criptografia e do gerenciamento de segredos",
+      "paragraphs": [
+        "Os dados em repouso e os dados em trânsito são protegidos em locais diferentes. Para a criptografia em repouso, configure a criptografia no armazenamento de dados e o uso das chaves. Para a criptografia em trânsito, use TLS para proteger a comunicação entre clientes e serviços. Proteger apenas um desses aspectos não protege todos os caminhos.",
+        "Segredos como chaves de criptografia de dados, strings de conexão de banco de dados e tokens de APIs externas devem ser gerenciados com serviços como AWS Secrets Manager ou AWS Systems Manager Parameter Store, e os aplicativos devem receber apenas as permissões de leitura necessárias. As variáveis de ambiente podem ser usadas para passar configurações, mas devem ser tratadas de modo que valores confidenciais não sejam gravados nos logs.",
+        "Os certificados podem ser gerenciados com serviços como AWS Certificate Manager. Os desenvolvedores não devem tratar certificados, chaves de criptografia, segredos e configurações de aplicativos como se fossem a mesma coisa; devem usar métodos separados de atualização, acesso e auditoria para cada um."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domínio 2: Criptografia e dados confidenciais",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "sensitive-data-and-logging",
+      "title": "Separar dados confidenciais na entrada, no armazenamento e nos logs",
+      "paragraphs": [
+        "Os responsáveis por tratar informações de identificação pessoal ou informações de saúde protegidas classificam primeiro quais campos de entrada são confidenciais. O acesso é limitado apenas aos usuários que precisam dele, e cópias desnecessárias não são criadas na tela, no destino de armazenamento, nos logs ou no ambiente de análise. Quando um valor precisa ser exibido, parte dele é mascarada e ocultada. Os campos desnecessários para a finalidade são removidos antes de serem enviados aos logs ou à tela.",
+        "Os logs são necessários para a investigação de falhas, mas tokens de autenticação, senhas, endereços e informações de pagamento não devem ser registrados sem alteração. Os desenvolvedores registram de forma estruturada informações necessárias à investigação, como IDs de correlação, horários das solicitações e resultados do processamento, enquanto excluem ou mascaram os valores confidenciais.",
+        "A proteção dos dados da aplicação não é concluída apenas com a ativação da criptografia. Também é necessário verificar as permissões de acesso, os períodos de retenção, a exclusão, a saída de logs e as permissões de visualização dos operadores."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domínio 2: Dados confidenciais e logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "ai-integration-security",
+      "title": "Controle as entradas, saídas e permissões de execução nas integrações de IA",
+      "paragraphs": [
+        "Antes de enviar dados para um serviço de IA, verifique quais dados podem ser enviados, o caminho de transmissão e qual conteúdo pode permanecer nos logs. Quando necessário, use conectividade privada, como um endpoint da VPC, e verifique as condições de uso dos dados do serviço e os controles de privacidade.",
+        "As entradas e saídas de IA podem conter informações confidenciais, tópicos proibidos, injeção de prompt e solicitações de operações não intencionais. Os desenvolvedores inspecionam o texto enviado ao modelo e as respostas do modelo, mascarando as informações confidenciais detectadas quando necessário. O aplicativo verifica separadamente os argumentos das chamadas de ferramentas e as permissões de execução.",
+        "Quando um agente de IA executa operações externas, isole a sessão e exija aprovação humana para operações altamente confidenciais. Além disso, evite expor conteúdo confidencial em excesso nos logs que monitoram os resultados gerados e as execuções de ferramentas."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domínio 2: Segurança das integrações de IA",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "Filtros de informações confidenciais do Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-sensitive-filters.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-security-001",
+      "prompt": "O desenvolvedor de uma função Lambda que executa o processamento de cobranças quer ler apenas faturas de um bucket S3 específico. Selecione o método mais adequado para tratar as credenciais com segurança e implementar o princípio do menor privilégio.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Incorporar uma chave de acesso de administrador no código-fonte e permitir o acesso a todos os buckets.",
+          "explanation": "Incorporar uma chave de acesso de longa duração e conceder privilégios de administrador aumenta o impacto de um vazamento e viola o princípio do menor privilégio."
+        },
+        {
+          "id": "c",
+          "text": "Tornar público o bucket de faturas e obtê-las pela função sem autenticação.",
+          "explanation": "O acesso público não atende ao requisito de restringir o acesso à função específica."
+        },
+        {
+          "id": "a",
+          "text": "Conceder à função de execução do Lambda somente a permissão para ler o prefixo de faturas no bucket de destino.",
+          "explanation": "Essa abordagem usa credenciais de curta duração por meio da função de execução e uma política de permissões que limita a entidade principal, o recurso e a ação; portanto, está de acordo com o princípio do menor privilégio."
+        },
+        {
+          "id": "d",
+          "text": "Estender o tempo limite da função e omitir a configuração das permissões de acesso.",
+          "explanation": "O tempo limite define a duração do processamento; ele não fornece autenticação nem autorização para acessar o S3."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-002",
+      "prompt": "Os desenvolvedores de um aplicativo de agendamento médico usam strings de conexão de banco de dados e tokens de API em vários ambientes de execução. Escolha uma única maneira mais adequada de distribuir os segredos com segurança.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Exibir os valores nos logs do aplicativo para que a equipe de operações possa copiá-los.",
+          "explanation": "Os logs podem ser visualizados por mais pessoas e mantidos por mais tempo; portanto, strings de conexão e tokens não devem ser registrados."
+        },
+        {
+          "id": "a",
+          "text": "Armazenar os valores no Secrets Manager ou em um serviço semelhante e conceder a cada função de execução permissão para ler apenas os segredos necessários.",
+          "explanation": "Isso separa o local de armazenamento dos segredos das permissões de obtenção, permitindo que o aplicativo obtenha apenas os valores necessários para sua finalidade."
+        },
+        {
+          "id": "c",
+          "text": "Gravar os valores de forma fixa na imagem do contêiner e usar os mesmos valores em todos os ambientes.",
+          "explanation": "Incorporar os valores à imagem dificulta a atualização, a revogação e a separação entre ambientes, além de ampliar o alcance de qualquer vazamento."
+        },
+        {
+          "id": "d",
+          "text": "Não criptografar os valores e protegê-los apenas alterando os nomes das variáveis de ambiente.",
+          "explanation": "Alterar os nomes não protege os próprios valores confidenciais nem fornece controle de acesso e auditoria."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-003",
+      "prompt": "A equipe de desenvolvimento de um aplicativo de atendimento ao cliente envia as consultas dos clientes a um serviço de IA para gerar respostas. Selecione uma única medida mais adequada para reduzir os riscos do envio de informações pessoais e da execução de ações externas pela IA.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Detectar e mascarar informações confidenciais nas entradas e saídas da IA, limitar as permissões de execução das ferramentas por finalidade e exigir aprovação para operações importantes.",
+          "explanation": "Combinar minimização de dados, controles de entrada e saída, autorização para o uso de ferramentas e aprovação humana reduz os riscos da integração de IA."
+        },
+        {
+          "id": "b",
+          "text": "Executar automaticamente todas as ações externas com permissões de administrador, sem validar os resultados gerados pela IA.",
+          "explanation": "Executar resultados gerados e ações externas sem validação e com permissões de administrador amplia o impacto de erros e de prompt injection."
+        },
+        {
+          "id": "c",
+          "text": "Manter indefinidamente em logs as entradas e saídas que contenham informações pessoais para fins de investigação de falhas.",
+          "explanation": "Mesmo nos logs usados para investigação, é necessário controlar os itens registrados e aplicar mascaramento para não expor informações confidenciais em excesso."
+        },
+        {
+          "id": "d",
+          "text": "O uso de um endpoint da VPC significa que não é necessário controlar o conteúdo das entradas e saídas.",
+          "explanation": "Uma conexão privada protege o caminho de comunicação, mas não substitui a filtragem de entradas e saídas nem a autorização para o uso de ferramentas."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM role trust policy",
+    "IAM policy",
+    "Temporary security credentials",
+    "Least privilege",
+    "STS",
+    "Federation",
+    "Cross-account role",
+    "Presigned URL",
+    "Secrets Manager",
+    "Parameter Store",
+    "KMS",
+    "TLS",
+    "ACM",
+    "Structured logging",
+    "Correlation ID",
+    "Redaction",
+    "VPC endpoint",
+    "Prompt injection",
+    "Guardrail"
+  ]
+}

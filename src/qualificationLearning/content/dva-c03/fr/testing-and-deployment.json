@@ -1,0 +1,189 @@
+{
+  "id": "testing-and-deployment",
+  "title": "Tests et déploiement",
+  "objective": "Mettre en œuvre les artefacts, la configuration de l’environnement, les tests, l’intégration et le déploiement continus (CI/CD), ainsi que les déploiements progressifs et les restaurations en fonction du risque lié à la modification.",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "Processus CI/CD"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Tests et portes de qualité"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Déploiement et récupération"
+    }
+  ],
+  "sections": [
+    {
+      "id": "artifacts-and-environment-configuration",
+      "title": "Gérer séparément le code, les dépendances et la configuration de l’environnement",
+      "paragraphs": [
+        "Définissez clairement la gestion du code, des dépendances et de la configuration dans les artefacts déployables. Avec Lambda, choisissez des fichiers .zip, des images de conteneur ou des couches selon le traitement et les dépendances partagées entre les fonctions. Stockez les images de conteneur dans Amazon ECR et gérez les versions ainsi que la conservation à l’aide de balises d’image et de politiques de cycle de vie.",
+        "Gérez les valeurs qui diffèrent selon l’environnement à l’aide de services tels qu’AWS AppConfig, Systems Manager Parameter Store et Secrets Manager, au lieu de les inscrire directement dans le code. La séparation de la configuration, des valeurs sensibles et des versions des artefacts permet de vérifier ce qui a changé lorsque le même code passe du développement aux tests puis à la production.",
+        "Les URL propres à une étape d’API Gateway et les alias Lambda permettent de séparer les environnements des cibles de mise en production. Ne distinguez pas la production des tests uniquement à partir des noms ; indiquez explicitement la configuration référencée et la cible du déploiement."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 3 : Artefacts et configuration de l’environnement",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "automated-testing",
+      "title": "Fixer les entrées, les dépendances et les résultats attendus des tests",
+      "paragraphs": [
+        "Lors des tests, fixez les éléments à fournir en entrée, les dépendances à utiliser et ce qui doit constituer le résultat attendu. Pour les événements de test de Lambda et d’API Gateway, préparez des charges utiles JSON proches des appels réels. Lorsque les dépendances externes ne peuvent pas être appelées directement, utilisez des API simulées pour reproduire des conditions telles que la réussite, l’échec et les délais d’expiration.",
+        "Même lorsque vous utilisez AWS SAM, AWS CDK, AWS CloudFormation ou des outils similaires, vérifiez non seulement la syntaxe du modèle, mais aussi que les ressources créées et leurs autorisations correspondent aux attentes. Même si des outils assistés par IA génèrent les tests, une personne doit examiner les hypothèses, les conditions limites et les valeurs attendues générées.",
+        "L’objectif des tests n’est pas simplement de les faire réussir, mais de vérifier que les modifications n’ont pas cassé des comportements qui affectent les utilisateurs. Combinez les tests unitaires, les tests d’intégration et les vérifications post-déploiement en fonction du risque associé à la modification."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 3 : mise en œuvre et automatisation des tests",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "pipeline-and-deployment-strategies",
+      "title": "Procéder par étapes tout en conservant la possibilité de revenir en arrière",
+      "paragraphs": [
+        "En CI/CD, les modifications du code source, les builds, les tests, les déploiements et la vérification post-déploiement sont reliés par un processus cohérent. Le schéma montre que seules les révisions qui franchissent la quality gate progressent vers Staging et Canary, et que l’échec de la monitoring gate déclenche la décision de revenir à une version stable définie à l’avance. AWS CodePipeline orchestre les étapes, tandis qu’AWS CodeDeploy aide à déployer les révisions de l’application dans l’environnement cible. L’important n’est pas seulement de traverser le pipeline, mais de savoir quoi vérifier à chaque étape.",
+        "Pour limiter l’impact des changements, choisissez des stratégies de déploiement telles que Canary, blue/green ou la mise à jour progressive. Avec Canary, la nouvelle version est d’abord déployée sur une partie du trafic ; les métriques et les erreurs sont vérifiées avant d’étendre le déploiement. Avec le déploiement blue/green, l’ancien et le nouvel environnement restent prêts à être basculés l’un vers l’autre.",
+        "Le rollback n’est pas une opération à laquelle on ne pense qu’après l’apparition d’un échec. Avant la mise en production, l’équipe responsable confirme la version à restaurer, les conditions de déclenchement, la compatibilité des modifications de données et les destinataires des notifications. Même en utilisant le rollback automatique de CloudFormation ou d’AWS CodeDeploy, il faut comprendre ce qui sera restauré et ce qui ne le sera pas."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 3 : CI/CD et stratégies de déploiement",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        },
+        {
+          "label": "Qu’est-ce qu’AWS CodeDeploy ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/codedeploy/latest/userguide/welcome.html"
+        }
+      ],
+      "figureId": "dva-pipeline-release-gates"
+    },
+    {
+      "id": "infrastructure-and-release-versioning",
+      "title": "Rendre reproductibles la configuration et les versions de publication",
+      "paragraphs": [
+        "Avec l’Infrastructure as Code, vous déclarez les ressources et les configurations dans des modèles CloudFormation ou AWS SAM. Pouvoir reproduire un environnement à partir du même modèle contribue à réduire les oublis liés à la configuration manuelle et facilite la revue des modifications. Comme le code de l’application, les modèles sont eux aussi soumis au contrôle de version et aux tests.",
+        "Les balises d’images de conteneurs, les alias Lambda, les branches du code source et les libellés de publication servent à suivre ce qui a été déployé. Au lieu de dépendre uniquement de noms modifiables, il doit être possible de référencer une combinaison précise d’artefacts et de configuration.",
+        "Lors de la validation après le déploiement, vérifiez non seulement l’accessibilité, mais aussi les réponses des principales API, le taux d’erreur, l’autorisation et les traitements en arrière-plan nécessaires. Définir à l’avance les critères de réussite permet de reproduire les décisions d’élargir progressivement le déploiement ou d’effectuer un rollback."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 3 : IaC et gestion des publications",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-deploy-001",
+      "prompt": "Un développeur d’une API de paiement souhaite utiliser des points de terminaison externes et des valeurs secrètes différents en développement, en validation et en production, tout en conservant inchangé le code de la fonction Lambda déployée en production. Dans ces conditions, choisissez une méthode appropriée pour gérer le code, la configuration et les valeurs secrètes.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Écrire le point de connexion de production et le secret dans le code source, puis les modifier manuellement dans chaque environnement.",
+          "explanation": "Les modifications manuelles nuisent au suivi des différences et à la reproductibilité, et peuvent également entraîner une fuite de valeurs secrètes."
+        },
+        {
+          "id": "c",
+          "text": "Partager la base de données de production entre tous les environnements afin d’éliminer leurs différences.",
+          "explanation": "Les opérations effectuées dans l’environnement de validation pourraient avoir un impact sur les données de production, ce qui va à l’encontre des objectifs d’isolation des environnements et de test sécurisé."
+        },
+        {
+          "id": "d",
+          "text": "Modifier uniquement le nom du gestionnaire Lambda selon l’environnement, et utiliser la même configuration et les mêmes secrets partout.",
+          "explanation": "Le nom du gestionnaire est le point d’entrée de l’exécution ; le modifier ne constitue pas une méthode appropriée pour gérer les points de terminaison et les valeurs secrètes propres à chaque environnement."
+        },
+        {
+          "id": "a",
+          "text": "Gérer la configuration propre à chaque environnement avec AppConfig ou Parameter Store, gérer les valeurs secrètes avec Secrets Manager et les séparer de l’artefact.",
+          "explanation": "La séparation de la version du code, de la configuration de l’environnement et des valeurs secrètes facilite l’utilisation sécurisée du même artefact dans chaque environnement."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-002",
+      "prompt": "L’équipe de développement d’un service de livraison souhaite tester automatiquement le comportement d’une API externe de validation d’adresses lorsqu’elle dépasse le délai d’attente, sans appeler l’API externe réelle. Choisissez une seule méthode, la plus appropriée, pour automatiser le test de cette condition d’échec.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Supposer que l’API externe réussit toujours et ne pas tester la gestion des délais d’expiration.",
+          "explanation": "Cette approche ne permet pas de vérifier le comportement en cas de défaillance ni de mesurer l’impact sur les utilisateurs."
+        },
+        {
+          "id": "a",
+          "text": "Préparer un mock qui simule des réponses normales, des échecs et des délais d’expiration de l’API externe, puis vérifier les nouvelles tentatives et les réponses d’erreur attendues.",
+          "explanation": "Un mock capable de reproduire les conditions de la dépendance permet de vérifier le comportement de l’application sans dépendre de l’état du service externe."
+        },
+        {
+          "id": "c",
+          "text": "Copier les données d’adresses de production dans l’environnement de développement et attendre manuellement qu’un délai d’expiration se produise.",
+          "explanation": "La copie de données de production pose des problèmes de protection des données, et une attente fixe ne constitue pas un test automatisé reproductible."
+        },
+        {
+          "id": "d",
+          "text": "Au lieu de tester, attendre que les utilisateurs signalent des défaillances après le déploiement.",
+          "explanation": "Cette approche ne satisfait pas l’objectif de vérifier les conditions d’échec connues avant le déploiement."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-003",
+      "prompt": "Le responsable de la mise en production d’un service de réservation souhaite déployer la nouvelle version auprès d’une partie des utilisateurs, vérifier le taux d’erreur et la latence, puis l’étendre à l’ensemble des utilisateurs. Choisissez une seule stratégie de déploiement qui réponde le mieux à cette exigence.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Déployer simultanément auprès de tous les utilisateurs et rechercher l’ancienne version après l’apparition d’erreurs.",
+          "explanation": "En cas de problème, l’impact serait étendu et cette approche ne répond pas à l’exigence consistant à définir à l’avance la cible du rollback."
+        },
+        {
+          "id": "c",
+          "text": "Modifier directement la production manuellement sans enregistrer la version de l’artefact.",
+          "explanation": "Il devient alors impossible de suivre les modifications et la cible du rollback, ce qui nuit à la reproductibilité et à l’auditabilité."
+        },
+        {
+          "id": "d",
+          "text": "Déployer uniquement dans l’environnement de test et ne pas vérifier les métriques de production.",
+          "explanation": "La vérification de l’environnement de test est nécessaire, mais elle ne remplace ni un déploiement progressif en production ni la vérification des métriques opérationnelles."
+        },
+        {
+          "id": "a",
+          "text": "Utiliser un déploiement Canary, surveiller une faible quantité de trafic, puis étendre progressivement le déploiement.",
+          "explanation": "Canary est une stratégie qui déploie d’abord la nouvelle version auprès d’une partie des utilisateurs, puis l’étend ou effectue un rollback après vérification des métriques."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Artifact",
+    "ECR",
+    "AWS AppConfig",
+    "Parameter Store",
+    "Secrets Manager",
+    "Lambda alias",
+    "API Gateway stage",
+    "SAM",
+    "CDK",
+    "CloudFormation",
+    "Mock",
+    "CI/CD",
+    "CodePipeline",
+    "CodeDeploy",
+    "Canary deployment",
+    "Blue/green deployment",
+    "Rolling deployment",
+    "Rollback"
+  ]
+}

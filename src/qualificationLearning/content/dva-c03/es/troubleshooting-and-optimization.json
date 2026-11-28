@@ -1,0 +1,189 @@
+{
+  "id": "troubleshooting-and-optimization",
+  "title": "Solución de problemas y optimización",
+  "objective": "Utilizar registros, métricas y trazas para aislar las causas y optimizar la concurrencia, la caché y la mensajería basándose en evidencias.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Supervisión y mejora"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Pruebas y puertas de calidad"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Despliegue y recuperación"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evidence-based-triage",
+      "title": "Acote la causa a partir de evidencias correlacionadas, no de hipótesis",
+      "paragraphs": [
+        "Al responder a un incidente, identifique primero el impacto en los usuarios, la hora en que ocurrió, la API o funcionalidad afectada y el cambio realizado inmediatamente antes. El diagrama muestra el flujo para correlacionar, mediante un ID de correlación, las métricas, los registros estructurados y las trazas obtenidos de la aplicación, separar las alertas de la confirmación de la causa y avanzar hacia la investigación, la corrección y la nueva validación. Después, utilice las métricas para comprobar cuándo y qué cambió, los registros estructurados para encontrar el procesamiento correspondiente mediante el ID de solicitud o el ID de correlación, y las trazas para comprobar la latencia entre servicios y los puntos donde se producen errores.",
+        "No determine la causa basándose únicamente en un indicador, como el aumento de la utilización de la CPU o de los errores. Las métricas muestran tendencias y cantidades, los registros muestran eventos individuales y su contexto, y las trazas muestran la ruta que siguió la solicitud y el tiempo empleado. Al correlacionar los tres elementos, puede acotar las posibles causas basándose en evidencias y no en especulaciones.",
+        "Cuando falle un despliegue, compruebe la salida del pipeline, los registros de la aplicación, las diferencias de configuración y el estado del entorno de destino. Antes de revertir los cambios de forma generalizada, registre la fase que falló y su causa para poder reproducir y validar el fallo en las mismas condiciones."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Dominio 4: Análisis de la causa raíz",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ],
+      "figureId": "dva-observability-feedback-loop"
+    },
+    {
+      "id": "logging-monitoring-and-alerts",
+      "title": "Crear registros que se puedan investigar y alertas que impulsen la acción",
+      "paragraphs": [
+        "Registre de forma estructurada la hora, el ID de la solicitud, la etapa del procesamiento, el resultado, el tipo de error y otros datos relevantes. No registre las contraseñas de los usuarios, los tokens de autenticación, la información personal ni la información completa de pago. Separar los identificadores necesarios para la investigación de los valores confidenciales permite equilibrar la capacidad de búsqueda de los registros y la protección de los datos.",
+        "Use métricas personalizadas para medir cantidades relevantes para el negocio, como el número de procesamientos, el número de errores, el tiempo de espera y la acumulación en la cola. Asocie las alarmas con umbrales que los responsables puedan comprobar y atender, así como con destinos de notificación. La supervisión es insuficiente cuando hay tantas notificaciones que se ignoran o cuando no se ha designado a nadie para responder después de una notificación.",
+        "Las comprobaciones de estado, de actividad y de preparación tienen objetivos diferentes. No confunda que un proceso esté en ejecución, que pueda aceptar solicitudes y que esté disponible, incluidas sus dependencias. Elija señales que permitan evaluar el impacto para los usuarios."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Dominio 4: registro, supervisión y observabilidad",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        },
+        {
+          "label": "¿Qué es Amazon CloudWatch?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "concurrency-and-messaging",
+      "title": "Adaptar la concurrencia y la mensajería a las características de la carga de trabajo",
+      "paragraphs": [
+        "Aumentar el número de ejecuciones simultáneas no siempre mejora el rendimiento. La concurrencia de Lambda, el grupo de subprocesos de la aplicación y el grupo de conexiones de la base de datos tienen, cada uno, límites de capacidad y cuotas en los servicios posteriores. Los desarrolladores examinan la carga entrante, el tiempo de procesamiento, el número de conexiones posteriores y la tasa de errores para determinar dónde se encuentra la limitación.",
+        "SQS puede almacenar temporalmente los procesos y suavizar la carga, mientras que SNS puede utilizarse para distribuir un solo evento a varios destinatarios mediante fan-out. Aumentar rápidamente el número de consumidores solo para reducir la longitud de la cola puede sobrecargar sistemas posteriores, como las bases de datos.",
+        "Optimice después de observar el cuello de botella. La falta de memoria, las limitaciones de CPU, la espera de conexiones, la latencia de las API externas y la limitación de velocidad requieren medidas diferentes. Después de realizar un cambio, compare los resultados con las mismas métricas y condiciones, y confirme que el impacto en los usuarios ha mejorado."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Dominio 4: Concurrencia y mensajería",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-performance-optimization",
+      "title": "Medir el impacto del almacenamiento en caché y la capacidad, y optimizar",
+      "paragraphs": [
+        "El almacenamiento en caché es una opción para reducir la latencia de los datos a los que se accede con frecuencia y cuyo cálculo u obtención requiere tiempo. Amazon ElastiCache, DynamoDB Accelerator y Amazon CloudFront difieren en los datos que almacenan en caché y en el lugar donde se implementan. Determine qué datos almacenar en caché, cuándo deben caducar y qué grado de obsolescencia es aceptable.",
+        "En Lambda, la configuración de memoria también puede afectar a la CPU y al rendimiento del procesamiento. Los desarrolladores miden el tiempo de procesamiento, los errores, el coste y el número de ejecuciones simultáneas antes de cambiar la configuración. Aumentar únicamente la memoria sin identificar un problema de rendimiento puede aumentar solo los costes.",
+        "Después de la optimización, compare la tasa de aciertos de la caché, la latencia, la tasa de errores y la carga de los servicios posteriores en las mismas condiciones de observación. Conservar las pruebas de la mejora permite rastrear la causa si el rendimiento empeora después de un cambio posterior."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Dominio 4: almacenamiento en caché y optimización del rendimiento",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-troubleshoot-001",
+      "prompt": "El tiempo de respuesta de la API de pedidos se ha deteriorado repentinamente. El equipo de operaciones quiere identificar en qué llamada de servicio ha aumentado la latencia y también revisar los registros relacionados con la misma solicitud. Elija una combinación de evidencias especialmente adecuada para comenzar.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Observar únicamente el uso de la CPU y concluir que el servicio con el uso más alto es la causa.",
+          "explanation": "Una sola métrica no permite distinguir entre distintas causas, como la espera de conexión, las API externas o los cambios de implementación."
+        },
+        {
+          "id": "a",
+          "text": "Correlacionar las métricas de latencia, los registros estructurados que contienen el ID de la solicitud y las trazas que muestran la ruta entre los servicios.",
+          "explanation": "Las métricas muestran las tendencias, los registros proporcionan el contexto de las solicitudes individuales y las trazas muestran el tiempo entre los servicios, lo que permite acotar las posibles causas basándose en evidencias."
+        },
+        {
+          "id": "c",
+          "text": "Eliminar los registros para reducir los costes de almacenamiento e inferir la causa únicamente a partir de los informes de los usuarios.",
+          "explanation": "Esto haría perder las evidencias necesarias para la investigación, por lo que no sería posible reproducir ni verificar la causa."
+        },
+        {
+          "id": "d",
+          "text": "Añadir todos los valores confidenciales a los registros para aumentar la cantidad de información.",
+          "explanation": "Exponer tokens o información personal en los registros compromete la protección de datos. Los ID de correlación necesarios para la investigación deben mantenerse separados de los valores confidenciales."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-002",
+      "prompt": "El desarrollador de una función Lambda que procesa lotes nocturnos quiere aumentar la concurrencia para reducir la acumulación en la cola. Seleccione el único aspecto más apropiado que debe comprobar antes de realizar el cambio.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Comprobar el número de conexiones a la base de datos, las cuotas de las API posteriores, el tiempo de procesamiento y la tasa de errores, e identificar los puntos que actúan como limitaciones.",
+          "explanation": "Aumentar la concurrencia también incrementa el número de conexiones simultáneas con los servicios posteriores. Ajústela después de observar el cuello de botella real."
+        },
+        {
+          "id": "b",
+          "text": "Maximizar la concurrencia basándose únicamente en la acumulación de la cola, independientemente de la capacidad de los servicios posteriores.",
+          "explanation": "Esto podría sobrecargar las bases de datos o las API posteriores y aumentar la tasa de errores."
+        },
+        {
+          "id": "c",
+          "text": "Eliminar los mensajes que han fallado sin investigarlos, reduciendo únicamente la longitud de la cola.",
+          "explanation": "Esto provoca la pérdida del trabajo empresarial no procesado e impide investigar la causa de la acumulación."
+        },
+        {
+          "id": "d",
+          "text": "Desactivar las alarmas y los registros sin cambiar la configuración de memoria.",
+          "explanation": "Si se detiene la observabilidad, no se pueden verificar los efectos ni los efectos secundarios del cambio."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-003",
+      "prompt": "El desarrollador de una API de detalles de productos recibe muchas lecturas de la misma información del producto y quiere reducir la carga de la base de datos y la latencia. Elija el único aspecto más adecuado que debe verificarse después de introducir una caché.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Después de añadir una caché, no supervise la carga de la base de datos ni la latencia de la API.",
+          "explanation": "No podrá verificar la eficacia de la caché ni su impacto durante los fallos, y no quedará una base para la optimización."
+        },
+        {
+          "id": "c",
+          "text": "Mantenga la caché indefinidamente después de cada actualización y no tenga en cuenta la expiración.",
+          "explanation": "Los valores antiguos pueden permanecer después de las actualizaciones y hacer que se devuelva información incorrecta del producto a los usuarios."
+        },
+        {
+          "id": "a",
+          "text": "Compare la tasa de aciertos de la caché, la latencia, la tasa de errores y la carga de la base de datos en las mismas condiciones, y verifique cómo se gestionan los valores obsoletos cuando la caché caduca.",
+          "explanation": "Una caché puede mejorar el rendimiento, pero su eficacia y el nivel aceptable de obsolescencia de los datos deben medirse y verificarse."
+        },
+        {
+          "id": "d",
+          "text": "Como se ha añadido una caché, omita la verificación de la autorización y la protección de datos.",
+          "explanation": "Una caché es un mecanismo de rendimiento; no sustituye los controles de acceso ni la protección de datos."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Metric",
+    "Structured logging",
+    "Trace",
+    "Correlation ID",
+    "CloudWatch",
+    "CloudWatch alarm",
+    "Concurrency",
+    "Connection pool",
+    "Service Quotas",
+    "Throttling",
+    "SQS",
+    "SNS",
+    "Fan-out",
+    "ElastiCache",
+    "DAX",
+    "Cache hit ratio",
+    "Latency",
+    "Error rate"
+  ]
+}

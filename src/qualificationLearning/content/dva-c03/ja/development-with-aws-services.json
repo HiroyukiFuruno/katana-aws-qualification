@@ -1,0 +1,199 @@
+{
+  "id": "development-with-aws-services",
+  "title": "AWS のサービスによる開発",
+  "objective": "同期・非同期の連携、Lambda、データストア、API とイベントを、アプリケーションの処理条件から選択できる。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要AWSサービス"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "通信の基礎"
+    },
+    {
+      "slug": "data-protection",
+      "title": "データ保護"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coupling-and-message-handling",
+      "title": "待ち時間と失敗の影響から連携方法を選ぶ",
+      "paragraphs": [
+        "注文受付のように呼び出し元が直ちに結果を必要とする処理では、API Gateway を経由した同期呼び出しを選択できます。一方、画像変換や請求書作成のように利用者を待たせる必要がない処理では、Amazon SQS のキューを使い、受付処理と後続処理を非同期に分ける方法を検討します。図は、受付時の HTTP 応答と、SQS からワーカーが取り出す後続処理が別の失敗境界を持つことを示します。処理を分ける目的は、障害や一時的な負荷の影響を必要以上に呼び出し元へ広げないことです。",
+        "非同期処理では、メッセージが届かなかった場合、処理に失敗した場合、同じ処理が再実行された場合を考えます。担当者は、再試行時に待ち時間を徐々に延ばすバックオフ、失敗を隔離して確認するデッドレターキュー、同じ要求を繰り返しても結果を壊さない冪等な処理を組み合わせます。キューを置くだけで失敗が消えるわけではありません。",
+        "Amazon EventBridge、Amazon S3 イベント通知、Amazon SNS もイベント駆動の連携に使えます。どのサービスを使う場合も、イベントの発行者、受信者、失敗時の行き先、処理結果を記録する責任者を明確にします。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 分野1: 連携とイベント駆動",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ],
+      "figureId": "dva-event-processing-contract"
+    },
+    {
+      "id": "lambda-integration",
+      "title": "Lambda はイベント、設定、権限を分けて扱う",
+      "paragraphs": [
+        "Lambda 関数は、API Gateway、SQS、DynamoDB、S3 などのイベントと統合できます。関数を実装する担当者は、イベントの入力形式、ハンドラー、ランタイム、メモリ、タイムアウト、同時実行数を、処理の特性に合わせて設定します。メモリ不足、タイムアウト、同時実行の上限は別々の問題であり、数値を一律に大きくして解決するものではありません。",
+        "関数が VPC 内のプライベートリソースへ接続する必要がある場合は、対象のサブネットとセキュリティグループを指定します。VPC に接続しただけで、データベースへの認証やアクセス許可が自動で与えられるわけではありません。ネットワーク到達性、IAM 実行ロール、データストアの認証情報を分けて確認します。",
+        "非同期の呼び出しが失敗した場合は、送信先またはデッドレターキューへ失敗イベントを渡す構成を検討します。失敗の記録と再処理の手順を用意してから、業務に影響するイベントを受け付けます。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 分野1: Lambda の設定とエラー処理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "Lambda を使用した S3 イベント通知の処理",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "data-store-and-cache",
+      "title": "アクセスパターンからデータストアとキャッシュを選ぶ",
+      "paragraphs": [
+        "データストアは、保存する量だけでなく、読み書きの方法、検索条件、整合性、保持期間で選びます。Amazon DynamoDB では、アクセスが分散するパーティションキーを選び、必要な属性とインデックスを定義して、Query と Scan の違いを理解します。全件を調べる Scan を、キーで対象を絞れる Query と同じように常用すると、不要な読み取りが増える場合があります。",
+        "Amazon RDS はリレーショナルデータと SQL を扱う要件で、Amazon S3 はオブジェクトの保存で、Amazon ElastiCache は頻繁に参照する値をキャッシュする要件で比較します。キャッシュは主データの正しさを置き換えるものではありません。更新後に古い値をどの期間許容できるか、無効化を誰が行うかを決めます。",
+        "データの保持期間を要件として扱います。DynamoDB の TTL や S3 ライフサイクルポリシーは、不要になったデータを保持し続けないための選択肢です。削除できない記録や長期保管が必要なデータには、別の保持要件を適用します。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 分野1: データストアとキャッシュ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "Amazon S3 とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "api-sdk-and-ai-integration",
+      "title": "境界を検証してサービスと統合する",
+      "paragraphs": [
+        "API を公開する開発者は、入力の形式と必須項目を検証し、利用者へ返すエラー形式を一貫させます。API Gateway では、ステージごとの URL、リクエスト検証、変換、認証を用途に応じて設定できます。クライアントが送った入力をそのまま内部サービスへ渡すのではなく、境界で期待する形式を確認します。",
+        "AWS SDK を使うコードでは、認証情報をコードへ埋め込まず、IAM ロールなどで認証された呼び出しを行います。SDK の再試行設定を理解し、アプリケーション側の再試行と重なって過剰な呼び出しにならないようにします。",
+        "AI 支援開発ツールやマネージド AI サービスを統合する場合も、生成結果を無条件に本番へ反映しません。開発者は入力データの扱い、生成コードのレビュー、権限、ログに含まれる機密情報を確認し、従来のテストと承認の工程に組み込みます。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 分野1: API、SDK、AI サービス",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-development-001",
+      "prompt": "通販会社の開発者は、注文 API の応答をすぐに返し、注文後の画像変換は失敗時に再試行できるようにしたいと考えています。後続処理を疎結合にする方法として最も適切なものを1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "注文 API が処理要求を SQS キューへ送り、別のワーカーがバックオフを伴う再試行と失敗の隔離を行う。",
+          "explanation": "注文受付と後続処理を分けられます。ワーカーは同じ要求の再実行にも安全な冪等処理と、失敗を確認する経路を用意します。"
+        },
+        {
+          "id": "a",
+          "text": "注文 API が画像変換の完了まで同期的に待ち、失敗したら利用者へ毎回同じ要求を送り直させる。",
+          "explanation": "長時間の後続処理を同期で待つと、画像変換の遅延や失敗が注文受付の応答へ直接影響します。"
+        },
+        {
+          "id": "c",
+          "text": "画像変換の失敗を記録せず、キュー内のメッセージを直ちに削除する。",
+          "explanation": "失敗を削除すると再処理や原因確認ができず、処理漏れを検出できません。"
+        },
+        {
+          "id": "d",
+          "text": "注文 API の認証情報を各ワーカーのソースコードに埋め込む。",
+          "explanation": "認証情報を埋め込むことは疎結合化ではなく、漏えいと更新のリスクを増やします。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dva-development-002",
+      "prompt": "社内分析サービスの開発者は、Lambda 関数から VPC 内のプライベートデータベースへ接続したいと考えています。Lambda に VPC 設定を追加した後にも確認すべき事項として最も適切なものを1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Lambda のメモリだけを最大値にし、接続設定の確認を省略する。",
+          "explanation": "メモリは処理資源の設定であり、ネットワーク到達性や認証の設定を置き換えません。"
+        },
+        {
+          "id": "c",
+          "text": "データベースをインターネットへ公開し、Lambda の VPC 設定を外す。",
+          "explanation": "プライベートデータベースへの安全な接続という条件を満たさず、不要な公開につながります。"
+        },
+        {
+          "id": "a",
+          "text": "対象サブネットとセキュリティグループ、実行ロール、データベースの認証情報とアクセス許可を確認する。",
+          "explanation": "VPC 接続は到達性の一部です。ネットワーク制御、関数の実行ロール、データベースの認証・認可を分けて確認します。"
+        },
+        {
+          "id": "d",
+          "text": "関数のハンドラー名を変更すれば、データベースへのアクセス許可も自動で付与される。",
+          "explanation": "ハンドラーは関数の実行開始点であり、ネットワークや認証の許可を付与しません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-development-003",
+      "prompt": "チケット販売サービスの開発者は、購入者 ID で注文を取得する DynamoDB テーブルを実装しています。購入者ごとに多数の注文があり、特定の購入者の注文だけを取得する処理が多い場合に最も適切なものを1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "毎回 Scan を使い、全注文を読み取ってからアプリケーションで購入者 ID を絞り込む。",
+          "explanation": "Scan は全件を対象にするため、キーで絞れる要件では不要な読み取りを増やす場合があります。"
+        },
+        {
+          "id": "c",
+          "text": "DynamoDB をキャッシュ専用にし、注文の永続データを保存しない。",
+          "explanation": "キャッシュと永続データストアは役割が異なります。注文データの保持要件を満たす設計が必要です。"
+        },
+        {
+          "id": "d",
+          "text": "購入者 ID を使わず、注文データを S3 のファイル名だけで検索する。",
+          "explanation": "DynamoDB のキーに基づく注文取得という要件に対して、S3 のファイル名検索は適切なデータアクセス設計ではありません。"
+        },
+        {
+          "id": "a",
+          "text": "購入者 ID をパーティションキーとして設計し、対象の購入者 ID を指定する Query を使う。",
+          "explanation": "アクセスパターンに合わせたキーと Query を使うと、対象を絞って読み取れます。特定のキーへ過度に集中しないことも確認します。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "API Gateway",
+    "Lambda",
+    "SQS",
+    "Event source mapping",
+    "Visibility timeout",
+    "DLQ",
+    "Idempotency",
+    "Backoff",
+    "EventBridge",
+    "SNS",
+    "DynamoDB",
+    "Query",
+    "Scan",
+    "Partition key",
+    "RDS",
+    "S3",
+    "ElastiCache",
+    "Cache invalidation",
+    "TTL",
+    "VPC",
+    "Security group",
+    "IAM role",
+    "API contract",
+    "SDK retry"
+  ]
+}

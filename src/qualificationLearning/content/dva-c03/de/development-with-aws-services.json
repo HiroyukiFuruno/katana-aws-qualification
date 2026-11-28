@@ -1,0 +1,199 @@
+{
+  "id": "development-with-aws-services",
+  "title": "Entwicklung mit AWS-Services",
+  "objective": "Synchrone und asynchrone Integrationen, Lambda, Datenspeicher, APIs und Ereignisse entsprechend den Verarbeitungsanforderungen der Anwendung auswählen.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Zentrale AWS-Services"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Grundlagen der Kommunikation"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Datenschutz"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coupling-and-message-handling",
+      "title": "Eine Integrationsmethode anhand von Wartezeit und Fehlerauswirkungen auswählen",
+      "paragraphs": [
+        "Bei Prozessen wie der Auftragsannahme, bei denen der Aufrufer sofort ein Ergebnis benötigt, können Sie einen synchronen Aufruf über API Gateway wählen. Bei Prozessen wie der Bildkonvertierung oder Rechnungserstellung, bei denen der Benutzer nicht warten muss, sollten Sie dagegen eine Amazon-SQS-Warteschlange in Betracht ziehen, um die Annahmeverarbeitung und die nachfolgende Verarbeitung asynchron voneinander zu trennen. Das Diagramm zeigt, dass die HTTP-Antwort bei der Annahme und die nachfolgende Verarbeitung, die ein Worker aus SQS abruft, getrennte Fehlergrenzen haben. Durch die Trennung der Verarbeitung soll verhindert werden, dass sich die Auswirkungen von Fehlern oder einer vorübergehenden Auslastung stärker als nötig auf den Aufrufer ausbreiten.",
+        "Bei der asynchronen Verarbeitung müssen Fälle berücksichtigt werden, in denen eine Nachricht nicht eintrifft, die Verarbeitung fehlschlägt oder dieselbe Verarbeitung erneut ausgeführt wird. Das zuständige Team kombiniert Backoff, bei dem die Wartezeit zwischen Wiederholungen schrittweise verlängert wird, eine Dead-Letter-Warteschlange, die Fehler zur Untersuchung isoliert, und eine idempotente Verarbeitung, die das Ergebnis auch bei wiederholten identischen Anforderungen nicht beschädigt. Durch das bloße Einrichten einer Warteschlange verschwinden Fehler nicht.",
+        "Auch Amazon EventBridge, Amazon-S3-Ereignisbenachrichtigungen und Amazon SNS können für eine ereignisgesteuerte Integration verwendet werden. Unabhängig vom verwendeten Service müssen der Ereignisherausgeber, der Empfänger, das Ziel bei einem Fehler und die für die Aufzeichnung des Verarbeitungsergebnisses verantwortliche Person eindeutig festgelegt werden."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 1: Integration und ereignisgesteuerte Architektur",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ],
+      "figureId": "dva-event-processing-contract"
+    },
+    {
+      "id": "lambda-integration",
+      "title": "Lambda-Ereignisse, Konfiguration und Berechtigungen getrennt behandeln",
+      "paragraphs": [
+        "Lambda-Funktionen können in Ereignisse von Services wie API Gateway, SQS, DynamoDB und S3 integriert werden. Die für die Implementierung der Funktion zuständige Person konfiguriert das Eingabeformat des Ereignisses, den Handler, die Laufzeit, den Arbeitsspeicher, das Timeout und die Anzahl gleichzeitiger Ausführungen entsprechend den Eigenschaften der Verarbeitung. Unzureichender Arbeitsspeicher, Timeouts und Gleichzeitigkeitseinschränkungen sind unterschiedliche Probleme und lassen sich nicht dadurch lösen, dass alle Werte pauschal erhöht werden.",
+        "Wenn die Funktion eine Verbindung zu privaten Ressourcen innerhalb einer VPC herstellen muss, geben Sie die entsprechenden Subnetze und Sicherheitsgruppen an. Die Verbindung mit einer VPC gewährt nicht automatisch die Authentifizierung bei der Datenbank oder Zugriffsberechtigungen. Prüfen Sie die Netzwerkerreichbarkeit, die IAM-Ausführungsrolle und die Anmeldeinformationen des Datenspeichers getrennt voneinander.",
+        "Wenn ein asynchroner Aufruf fehlschlägt, sollten Sie erwägen, das fehlgeschlagene Ereignis an ein Ziel oder eine Dead-Letter-Warteschlange zu senden. Bereiten Sie Verfahren zur Aufzeichnung von Fehlern und zur erneuten Verarbeitung vor, bevor Sie Ereignisse annehmen, die sich auf den Geschäftsbetrieb auswirken."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Bereich 1: Lambda-Konfiguration und Fehlerbehandlung",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "Verarbeiten von S3-Ereignisbenachrichtigungen mit Lambda",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "data-store-and-cache",
+      "title": "Datenspeicher und Cache anhand von Zugriffsmustern auswählen",
+      "paragraphs": [
+        "Wählen Sie einen Datenspeicher nicht nur anhand der zu speichernden Datenmenge aus, sondern auch anhand der Lese- und Schreibweise, der Suchbedingungen, der Konsistenz und der Aufbewahrungsdauer. Wählen Sie bei Amazon DynamoDB einen Partitionsschlüssel, der die Zugriffe verteilt, definieren Sie die erforderlichen Attribute und Indizes und verstehen Sie den Unterschied zwischen Query und Scan. Scan untersucht alle Elemente, während Query das Ziel mithilfe des Schlüssels eingrenzt. Wenn Scan regelmäßig so verwendet wird wie Query, kann dies zu unnötig vielen Lesevorgängen führen.",
+        "Vergleichen Sie Amazon RDS für Anforderungen an relationale Daten und SQL, Amazon S3 für die Objektspeicherung und Amazon ElastiCache für das Zwischenspeichern häufig abgerufener Werte. Ein Cache ersetzt nicht die Korrektheit der Primärdaten. Legen Sie fest, wie lange veraltete Werte nach einer Aktualisierung toleriert werden können und wer für die Invalidierung zuständig ist.",
+        "Behandeln Sie Datenaufbewahrungsfristen als Anforderungen. DynamoDB TTL und S3-Lebenszyklusrichtlinien sind Optionen, um zu vermeiden, dass nicht mehr benötigte Daten weiterhin aufbewahrt werden. Wenden Sie auf nicht löschbare Datensätze oder Daten, die langfristig gespeichert werden müssen, separate Aufbewahrungsanforderungen an."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 1: Datenspeicher und Caches",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "Was ist Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "api-sdk-and-ai-integration",
+      "title": "Grenzen validieren und in Services integrieren",
+      "paragraphs": [
+        "Entwickler, die eine API bereitstellen, validieren das Eingabeformat und die erforderlichen Felder und sorgen für ein einheitliches Fehlerformat, das an Benutzer zurückgegeben wird. In API Gateway können sie je nach Anwendungsfall stufenspezifische URLs, Anforderungsvalidierung, Transformationen und Authentifizierung konfigurieren. Anstatt die vom Client gesendeten Eingaben unverändert an einen internen Service weiterzugeben, prüfen sie an der Grenze, ob das erwartete Format vorliegt.",
+        "In Code, der das AWS SDK verwendet, betten Entwickler keine Anmeldeinformationen in den Code ein. Sie führen authentifizierte Aufrufe mithilfe von IAM-Rollen oder anderen Mechanismen aus. Sie verstehen die Einstellungen für Wiederholungsversuche des SDK, damit diese sich nicht mit Wiederholungsversuchen auf Anwendungsebene überschneiden und zu übermäßig vielen Aufrufen führen.",
+        "Auch bei der Integration von KI-gestützten Entwicklungstools oder verwalteten KI-Services übernehmen Entwickler generierte Ergebnisse nicht bedingungslos in die Produktion. Sie prüfen den Umgang mit Eingabedaten, überprüfen den generierten Code, kontrollieren Berechtigungen und untersuchen vertrauliche Informationen in Protokollen. Diese Prüfungen integrieren sie in den bestehenden Test- und Genehmigungsprozess."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domäne 1: APIs, SDKs und KI-Services",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-development-001",
+      "prompt": "Ein Entwickler eines Onlinehändlers möchte, dass die Bestellungs-API sofort eine Antwort zurückgibt und dass die Bildkonvertierung nach einer Bestellung bei einem Fehler erneut versucht werden kann. Wählen Sie die am besten geeignete Methode, um die nachgelagerte Verarbeitung lose zu koppeln.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Die Bestellungs-API sendet die Verarbeitungsanforderung an eine SQS-Warteschlange, und ein separater Worker führt Wiederholungsversuche mit Backoff durch und isoliert Fehler.",
+          "explanation": "Dadurch werden die Bestellungsannahme und die nachgelagerte Verarbeitung getrennt. Der Worker stellt eine idempotente Verarbeitung bereit, die eine sichere erneute Ausführung derselben Anfrage ermöglicht, sowie einen Weg zur Überprüfung von Fehlern."
+        },
+        {
+          "id": "a",
+          "text": "Die Bestellungs-API wartet synchron, bis die Bildkonvertierung abgeschlossen ist, und fordert den Benutzer bei einem Fehler jedes Mal auf, dieselbe Anfrage erneut zu senden.",
+          "explanation": "Wenn synchron auf eine lang dauernde nachgelagerte Verarbeitung gewartet wird, wirken sich Verzögerungen oder Fehler bei der Bildkonvertierung direkt auf die Antwort der Bestellungsannahme aus."
+        },
+        {
+          "id": "c",
+          "text": "Fehler bei der Bildkonvertierung werden nicht protokolliert, und Nachrichten in der Warteschlange werden sofort gelöscht.",
+          "explanation": "Durch das Löschen von Fehlern werden eine erneute Verarbeitung und die Ursachenanalyse verhindert; außerdem können fehlende Verarbeitungsschritte nicht erkannt werden."
+        },
+        {
+          "id": "d",
+          "text": "Die Anmeldeinformationen der Bestellungs-API werden in den Quellcode jedes Workers eingebettet.",
+          "explanation": "Das Einbetten von Anmeldeinformationen sorgt nicht für eine lose Kopplung, sondern erhöht das Risiko von Datenlecks und aufwendigen Aktualisierungen."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dva-development-002",
+      "prompt": "Der Entwickler eines internen Analysedienstes möchte eine Lambda-Funktion mit einer privaten Datenbank innerhalb einer VPC verbinden. Welcher Punkt sollte nach dem Hinzufügen der VPC-Konfiguration zu Lambda noch überprüft werden? Wählen Sie eine Option aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Nur den Lambda-Speicher auf den Höchstwert setzen und die Verbindungseinstellungen nicht überprüfen.",
+          "explanation": "Der Speicher ist eine Einstellung für Verarbeitungsressourcen und ersetzt weder die Einstellungen für die Netzwerkerreichbarkeit noch für die Authentifizierung."
+        },
+        {
+          "id": "c",
+          "text": "Die Datenbank im Internet veröffentlichen und die VPC-Konfiguration von Lambda entfernen.",
+          "explanation": "Dies erfüllt nicht die Anforderung einer sicheren Verbindung zu einer privaten Datenbank und würde zu einer unnötigen Veröffentlichung führen."
+        },
+        {
+          "id": "a",
+          "text": "Die Zielsubnetze und Sicherheitsgruppen, die Ausführungsrolle sowie die Datenbankanmeldeinformationen und Zugriffsberechtigungen überprüfen.",
+          "explanation": "Die VPC-Konnektivität ist nur ein Teil der Erreichbarkeit. Überprüfen Sie die Netzwerksteuerung, die Ausführungsrolle der Funktion sowie die Authentifizierung und Autorisierung der Datenbank getrennt voneinander."
+        },
+        {
+          "id": "d",
+          "text": "Wenn der Name des Handlers der Funktion geändert wird, wird automatisch die Berechtigung für den Zugriff auf die Datenbank erteilt.",
+          "explanation": "Der Handler ist der Einstiegspunkt für die Ausführung der Funktion und erteilt keine Netzwerk- oder Authentifizierungsberechtigungen."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-development-003",
+      "prompt": "Ein Entwickler eines Ticketverkaufsdienstes implementiert eine DynamoDB-Tabelle, die Bestellungen anhand der Käufer-ID abruft. Jeder Käufer hat viele Bestellungen, und häufig werden nur die Bestellungen eines bestimmten Käufers abgerufen. Wählen Sie den am besten geeigneten Ansatz aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Bei jedem Zugriff Scan verwenden, alle Bestellungen lesen und anschließend in der Anwendung nach der Käufer-ID filtern.",
+          "explanation": "Da Scan alle Elemente berücksichtigt, kann dies unnötige Lesevorgänge erhöhen, wenn die Anforderung anhand eines Schlüssels eingegrenzt werden kann."
+        },
+        {
+          "id": "c",
+          "text": "DynamoDB ausschließlich als Cache verwenden und keine persistenten Bestelldaten speichern.",
+          "explanation": "Caches und persistente Datenspeicher erfüllen unterschiedliche Aufgaben. Das Design muss die Anforderung erfüllen, Bestelldaten aufzubewahren."
+        },
+        {
+          "id": "d",
+          "text": "Die Käufer-ID nicht verwenden und die Bestelldaten ausschließlich anhand von S3-Dateinamen suchen.",
+          "explanation": "Die Suche anhand eines S3-Dateinamens ist für die Anforderung, Bestellungen auf Grundlage von DynamoDB-Schlüsseln abzurufen, kein geeignetes Datenzugriffsdesign."
+        },
+        {
+          "id": "a",
+          "text": "Die Käufer-ID als Partitionsschlüssel entwerfen und Query mit der Ziel-Käufer-ID verwenden.",
+          "explanation": "Ein zum Zugriffsmuster passender Schlüssel zusammen mit Query ermöglicht es, die Lesevorgänge auf die Zielelemente einzugrenzen. Prüfen Sie außerdem, dass sich der Datenverkehr nicht übermäßig auf einen bestimmten Schlüssel konzentriert."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "API Gateway",
+    "Lambda",
+    "SQS",
+    "Event source mapping",
+    "Visibility timeout",
+    "DLQ",
+    "Idempotency",
+    "Backoff",
+    "EventBridge",
+    "SNS",
+    "DynamoDB",
+    "Query",
+    "Scan",
+    "Partition key",
+    "RDS",
+    "S3",
+    "ElastiCache",
+    "Cache invalidation",
+    "TTL",
+    "VPC",
+    "Security group",
+    "IAM role",
+    "API contract",
+    "SDK retry"
+  ]
+}

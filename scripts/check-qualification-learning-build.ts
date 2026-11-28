@@ -43,7 +43,15 @@ for (const figure of Object.values(figureBank)) {
       !/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(figure.alt),
     figure.src,
   );
-  assert((await readFile(join('dist', figure.src), 'utf8')).includes('<svg'), figure.src);
+  const svg = await readFile(join('dist', figure.src), 'utf8');
+  const root = svg.match(/<svg\b[^>]*>/u)?.[0];
+  const viewBox = root
+    ?.match(/\bviewBox="([^"]+)"/u)?.[1]
+    .trim()
+    .split(/[\s,]+/u)
+    .map(Number);
+  assert(viewBox?.length === 4 && viewBox.every(Number.isFinite), figure.src);
+  assert.deepEqual([figure.width, figure.height], viewBox.slice(2).map(Math.ceil), figure.src);
 }
 
 const courseQuestionIds = new Set<string>();
@@ -90,6 +98,13 @@ for (const locale of ['ja' as const, ...locales.filter((value) => value !== 'ja'
     const assetPath = `src/qualificationLearning/content/${route.courseId}/${locale}/${route.unitId}.json`;
     const unit = (await read(assetPath)) as StudyUnit;
     assert.equal(unit.id, route.unitId, assetPath);
+    const localizedText = JSON.stringify(unit);
+    if (locale !== 'ko') assert(!/\p{Script=Hangul}/u.test(localizedText), assetPath);
+    if (locale !== 'ja')
+      assert(!/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(localizedText), assetPath);
+    if (!['ja', 'ko', 'zh-CN', 'zh-TW'].includes(locale)) {
+      assert(!/\p{Script=Han}/u.test(localizedText), assetPath);
+    }
     assert.deepEqual(
       route.course.units[unit.id],
       { title: unit.title, objective: unit.objective },

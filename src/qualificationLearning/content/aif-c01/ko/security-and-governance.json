@@ -1,0 +1,212 @@
+{
+  "id": "security-and-governance",
+  "title": "AI 솔루션의 보안 및 거버넌스",
+  "objective": "데이터, 액세스, 출력 및 감사를 보호하고 최소 권한과 지속적인 통제를 설명할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "인증 및 권한 부여"
+    },
+    {
+      "slug": "data-protection",
+      "title": "데이터 보호"
+    },
+    {
+      "slug": "observability",
+      "title": "모니터링 및 개선"
+    }
+  ],
+  "sections": [
+    {
+      "id": "access",
+      "title": "인증, 권한 부여, 검색 및 모델 호출 구분하기",
+      "paragraphs": [
+        "인증은 사용자 또는 서비스의 신원을 확인하고, 권한 부여는 허용할 작업과 데이터의 범위를 결정합니다. 애플리케이션의 IAM 역할에는 Bedrock에서 사용하는 작업만 허용합니다. RAG 문서 검색에서는 애플리케이션이 로그인한 사용자의 권한을 확인하고, 액세스가 허용된 문서로 검색 대상을 제한합니다. Guardrails는 모델에 전달되는 입력과 모델에서 반환되는 출력의 내용을 검사합니다."
+      ],
+      "sources": [
+        {
+          "label": "Bedrock의 IAM",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/security-iam.html"
+        },
+        {
+          "label": "Guardrails 액세스 권한",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-permissions.html"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "title": "입력, 저장, 출력을 통해 데이터를 보호하기",
+      "paragraphs": [
+        "사용자 입력, 검색 문서, 로그, 생성된 응답을 서로 분리해 처리하고, 필요한 수준을 넘어서는 개인정보나 영업 비밀을 프롬프트에 포함하지 않습니다. 저장 중 및 전송 중 보호, 보존 기간, 삭제, 출력의 민감 정보 확인을 요구 사항에 포함합니다."
+      ],
+      "sources": [
+        {
+          "label": "책임 있는 AI",
+          "url": "https://aws.amazon.com/jp/ai/responsible-ai/"
+        }
+      ]
+    },
+    {
+      "id": "governance",
+      "title": "정책, 변경 사항 및 감사를 연결하기",
+      "paragraphs": [
+        "거버넌스는 사용 가능한 모델과 데이터, 승인된 사용 사례, 책임자, 평가 기준 및 예외 처리 방식을 정하고 확인하는 체계입니다. 구성 변경, 평가, 액세스 및 인시던트 대응을 기록하고, 정책과 실제 사용 현황을 지속적으로 검토합니다."
+      ],
+      "sources": [
+        {
+          "label": "Bedrock의 IAM",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/security-iam.html"
+        },
+        {
+          "label": "Amazon Bedrock 모델 호출 로그",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-invocation-logging.html"
+        }
+      ],
+      "figureId": "aif-security-governance"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sec-q1",
+      "prompt": "사내 정보 관리 담당자는 기밀 문서를 처리하는 검색 애플리케이션에서 누가 언제 문서에 액세스하려 했고 액세스가 허용되었는지 조사할 수 있어야 합니다. 감사 담당자가 기록을 검토하지만 문서 본문이나 사용자의 질문을 감사 로그에 남길 필요는 없습니다. 적절한 기록 방법을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "모델의 입력과 출력을 항상 기록하고, 검색 대상이 된 모든 문서의 본문도 저장합니다.",
+          "explanation": "문서 본문은 감사 요구 사항에 포함되지 않습니다. 원문을 기록하면 로그를 보는 사람에게 기밀 정보가 공개되는 범위가 넓어집니다."
+        },
+        {
+          "id": "b",
+          "text": "실행자 식별자, 문서 ID, 시간, 액세스가 허용되었는지 거부되었는지에 대한 결과를 기록하고, 로그 열람을 감사 담당자로 제한합니다.",
+          "explanation": "문서 내용이나 질문을 저장하지 않고도 누가 언제 어떤 문서에 액세스하려 했는지 추적할 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "모델의 평균 응답 시간과 월간 비용만 기록합니다.",
+          "explanation": "시간이나 비용을 집계한 데이터로는 개별 문서 액세스를 조사할 수 없습니다."
+        },
+        {
+          "id": "d",
+          "text": "답변이 정상적으로 표시된 경우에만 성공 횟수를 일별로 기록합니다.",
+          "explanation": "성공 횟수만으로는 실행자나 액세스를 시도한 문서를 알 수 없으며, 거부된 작업도 확인할 수 없습니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "sec-q2",
+      "prompt": "보험 회사의 개발자가 고객 상담 내용을 요약하는 AI를 설계하고 있습니다. 입력 단계에서 개인정보 처리를 최소화하는 조치는 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "불필요한 정보까지 모두 프롬프트에 입력합니다.",
+          "explanation": "이렇게 하면 위험이 증가합니다."
+        },
+        {
+          "id": "b",
+          "text": "필요한 정보를 선택하고 저장, 출력 및 액세스에 대한 보호 요구 사항도 정합니다.",
+          "explanation": "정보를 수명 주기 전체에 걸쳐 보호할 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "데이터 정책과 보존 기간을 확인하지 않습니다.",
+          "explanation": "데이터를 사용하더라도 책임은 남습니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "sec-q3",
+      "prompt": "거버넌스 담당자는 모델과 프롬프트를 변경한 후 품질 저하의 원인을 추적하려고 합니다. 적절한 운영 방식은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "변경 전후의 설정, 승인, 평가 및 액세스를 기록하고 정기적으로 검토합니다.",
+          "explanation": "이를 통해 문제를 추적하고 통제 상태를 확인할 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "최신 설정만 저장합니다.",
+          "explanation": "비교하고 원인을 조사할 수 없습니다."
+        },
+        {
+          "id": "c",
+          "text": "최초 릴리스 시에만 품질 평가를 수행합니다.",
+          "explanation": "사용 현황이나 변경 사항에 대응할 수 없습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "guardrails-q1",
+      "prompt": "의료 안내 앱 개발팀은 유해한 입력을 거부하고 민감한 정보가 포함된 응답을 표시하지 않으려고 합니다. 콘텐츠 검토와 AWS 리소스에 대한 액세스 제어를 어떻게 분담해야 합니까? 하나를 선택하세요.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Guardrails만 사용하여 사용자의 AWS 권한을 관리한다.",
+          "explanation": "Guardrails는 IAM 인증을 대체하지 않습니다."
+        },
+        {
+          "id": "b",
+          "text": "IAM으로 호출 권한을 제어하고, Guardrails로 입력 및 출력 정책을 평가하며, 구성을 검증한다.",
+          "explanation": "권한 부여와 콘텐츠 제어를 분리하여 운영합니다."
+        },
+        {
+          "id": "c",
+          "text": "IAM만 사용하여 문구가 유해한지 판단한다.",
+          "explanation": "IAM은 콘텐츠를 평가하지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "응답이 자연스럽다면 제어를 제거한다.",
+          "explanation": "표현이 자연스럽다고 해서 안전성이 보장되는 것은 아닙니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "authz-q1",
+      "prompt": "내부 RAG 설계자는 인증된 일반 직원이 회계 문서를 가져가지 못하도록 하려고 합니다. 가장 적절한 조치는 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "사용자가 인증되었으면 모든 문서를 반환합니다.",
+          "explanation": "인증은 사용자의 신원을 확인하는 것이며, 액세스 범위를 결정하는 것은 아닙니다."
+        },
+        {
+          "id": "b",
+          "text": "사용자 역할에 기반한 권한 부여를 사용하여 검색 대상과 Bedrock 호출에 최소 권한을 적용합니다.",
+          "explanation": "권한 부여는 허용되는 데이터와 작업을 제어합니다."
+        },
+        {
+          "id": "c",
+          "text": "문서 이름을 변경합니다.",
+          "explanation": "이는 액세스 제어가 아닙니다."
+        },
+        {
+          "id": "d",
+          "text": "Guardrails만으로 문서 열람 권한을 결정합니다.",
+          "explanation": "콘텐츠 제어는 권한 부여를 대신할 수 없습니다."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "AI governance",
+    "Authentication",
+    "Authorization",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "RAG",
+    "Bedrock Guardrails",
+    "Encryption at rest",
+    "Encryption in transit",
+    "CloudTrail",
+    "CloudWatch Logs",
+    "Data minimization",
+    "Audit log"
+  ]
+}

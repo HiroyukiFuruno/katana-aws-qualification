@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import lessonFigures from '../../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
+
 const figures = [
   {
     name: 'EC2 and S3 responsibility comparison',
@@ -43,10 +44,15 @@ const figures = [
 for (const figure of figures) {
   test(`${figure.name} keeps all labels within the mobile SVG`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
+    await page.emulateMedia({ colorScheme: 'dark' });
     const response = await page.goto(lessonFigures[figure.id].url);
     expect(response?.ok()).toBe(true);
 
     await expect(page.locator('svg foreignObject')).toHaveCount(0);
+    const background = page.locator('svg > rect').first();
+    await expect(background).toHaveAttribute('width', '100%');
+    await expect(background).toHaveAttribute('height', '100%');
+    await expect(background).toHaveCSS('fill', 'rgb(255, 255, 255)');
     const labels = page.locator('svg text');
     await expect.poll(() => labels.allTextContents()).toEqual(expect.arrayContaining(figure.labels));
     await page.evaluate(() => document.fonts.ready);

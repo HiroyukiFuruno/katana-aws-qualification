@@ -1,0 +1,189 @@
+{
+  "id": "data-ingestion-and-transformation",
+  "title": "Acquisizione e trasformazione dei dati",
+  "objective": "Spiegare il flusso di acquisizione e trasformazione dei dati e scegliere decisioni progettuali appropriate in base all’origine dei dati, alla frequenza di arrivo, alla necessità di rielaborazione e allo scopo d’uso dei dati trasformati.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Servizi AWS principali"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protezione dei dati"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoraggio e miglioramento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "batch-and-streaming-inputs",
+      "title": "Distinguere l’elaborazione in batch dallo streaming in base al modo in cui arrivano i dati",
+      "paragraphs": [
+        "Durante l’acquisizione dei dati, occorre innanzitutto chiarire chi invia cosa, quando i dati diventano disponibili e entro quale momento gli utenti hanno bisogno dei risultati. Ad esempio, i file delle vendite finalizzati ogni sera possono essere gestiti in batch. Quando invece i record devono essere elaborati nell’ordine in cui arrivano, come nel caso dei dati sulla posizione inviati continuamente dai veicoli per le consegne, devono essere gestiti tramite streaming.",
+        "Amazon Kinesis Data Streams è un servizio per raccogliere ed elaborare in tempo reale grandi volumi di record di streaming. Scegliere lo streaming non significa che tutta l’elaborazione debba terminare immediatamente. Per consentire la convalida e la rielaborazione successive dei record acquisiti, progettare il sistema separando l’input, la posizione elaborata e la gestione dei record non riusciti.",
+        "La scelta tra elaborazione in batch e streaming non parte dal nome di un servizio. Occorre prima riportare in una tabella la frequenza di arrivo, la latenza accettabile, il volume dei dati, l’ordine e i requisiti di rielaborazione. Quindi bisogna definire i confini di responsabilità dall’origine agli utenti prima di scegliere il metodo di acquisizione."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 1: acquisizione e trasformazione dei dati",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Che cos’è Amazon Kinesis Data Streams?",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-data-ingestion-flow"
+    },
+    {
+      "id": "repeatable-raw-data-and-schema",
+      "title": "Non confondere i dati grezzi, gli schemi e i risultati delle trasformazioni",
+      "paragraphs": [
+        "In una pipeline riproducibile, è necessario distinguere i dati grezzi ricevuti, le regole utilizzate per la trasformazione e i risultati trasformati. Quando viene rilevato un difetto nella logica di trasformazione, identificare i dati grezzi e l'ambito dell'elaborazione consente di rielaborare solo la parte necessaria usando la logica corretta. Se si sovrascrivono i dati grezzi con il contenuto trasformato, si perdono gli elementi necessari per le verifiche successive.",
+        "In AWS Glue, il catalogo dati, i crawler, i processi ETL e i trigger hanno ruoli diversi. Una tabella del Data Catalog non è costituita dai dati in sé, ma da metadati che descrivono, tra le altre cose, la posizione dei dati e lo schema. Non utilizzare incondizionatamente i risultati dedotti dal crawler: concorda con i fornitori dei dati le condizioni per modificare lo schema e verifica l'impatto sugli utenti downstream.",
+        "Trasformazioni come cambiare il formato da CSV a un formato colonnare, eseguire il partizionamento per data e ora o rimuovere colonne non necessarie devono essere determinate in base alle query che verranno utilizzate e alle condizioni operative. Registrare lo scopo della trasformazione, la versione dei dati di input, la destinazione dell'output e i risultati della convalida facilita la spiegazione di come è stato ottenuto lo stesso risultato."
+      ],
+      "sources": [
+        {
+          "label": "Concetti di AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        },
+        {
+          "label": "DEA-C01 Dominio 1: acquisizione e trasformazione dei dati",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "orchestration-and-failure-handling",
+      "title": "Definire l’ordine di elaborazione e la destinazione degli errori",
+      "paragraphs": [
+        "L’orchestrazione di una pipeline non consiste semplicemente nell’avviare i job in sequenza. È un meccanismo che passa all’elaborazione successiva solo dopo aver verificato che quella precedente sia riuscita, che tutti gli input siano disponibili e che siano soddisfatte le condizioni di qualità. La scelta tra una pianificazione, un evento o un’esecuzione manuale come punto di ingresso dipende dalle condizioni che rendono disponibili i dati.",
+        "In una progettazione per la gestione degli errori, è necessario distinguere gli errori temporanei per i quali è possibile effettuare nuovi tentativi dai dati non validi il cui contenuto deve essere verificato da una persona. Se si aumentano soltanto i tentativi automatici senza definire il numero di tentativi, il tempo di attesa, il luogo di isolamento, la destinazione delle notifiche e l’unità da cui riprendere l’elaborazione, si rischia di elaborare ripetutamente lo stesso input errato.",
+        "Quando è possibile ricevere più volte lo stesso input, è necessario progettare una chiave che identifichi gli input già elaborati oppure un metodo di aggiornamento che impedisca la duplicazione dell’output. Non è una funzionalità limitata a un servizio specifico, ma una caratteristica che richiede di considerare insieme input, stato e output."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 1: acquisizione e trasformazione dei dati",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Concetti di AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ]
+    },
+    {
+      "id": "transformation-quality-contract",
+      "title": "Definire chiaramente i criteri di qualità prima e dopo la trasformazione",
+      "paragraphs": [
+        "Il completamento di un processo di trasformazione non può essere valutato soltanto in base al fatto che il job termini senza errori. Per i dati degli ordini, definisci criteri di qualità coerenti con lo scopo di utilizzo, come numeri d’ordine duplicati, campi obbligatori mancanti, intervalli degli importi ed esistenza dei record referenziati. Decidi inoltre dove isolare le righe che non soddisfano i criteri, chi le verificherà e a quali condizioni verranno elaborate nuovamente.",
+        "I criteri di qualità devono essere condivisi dai responsabili dei dati di origine, dagli ingegneri dei dati e dal reparto utilizzatore. Se il fornitore aggiunge o rimuove colonne, oppure ne modifica il significato, registra da quando e per quali input si applica la modifica e verifica la compatibilità tra la trasformazione e il lato consumer. È importante distinguere le situazioni in cui una modifica dello schema deve essere rilevata e deve arrestare l’elaborazione da quelle in cui può essere accettata usando un valore predefinito.",
+        "Separando la qualità nelle fasi di input, trasformazione e prima della pubblicazione, è possibile tracciare il punto in cui si sono verificati gli errori e la responsabilità. Il monitoraggio deve misurare non solo il numero di record, ma anche il numero di record isolati, i ritardi e il periodo coperto dagli aggiornamenti."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 1: acquisizione e trasformazione dei dati",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Rilevamento e catalogazione dei dati con AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-ingestion-001",
+      "prompt": "L’ingegnere dei dati di una fabbrica deve mostrare sul pannello del team di manutenzione gli eventi emessi quando cambia lo stato delle apparecchiature, entro 30 secondi. Se viene individuato un errore nella trasformazione, il team deve poterlo correggere ed elaborare di nuovo una qualsiasi ora indicata degli ultimi 14 giorni. Quale progettazione soddisfa i requisiti?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Raccogliere gli eventi delle apparecchiature in file giornalieri, trasformarli il mattino successivo e poi aggiornare il pannello.",
+          "explanation": "L’elaborazione del mattino successivo non consente di aggiornare il pannello entro 30 secondi dall’arrivo degli eventi."
+        },
+        {
+          "id": "c",
+          "text": "Conservare soltanto i valori aggregati degli eventi ricevuti e tenere traccia delle modifiche al codice di trasformazione.",
+          "explanation": "Anche con lo storico del codice, il team non può elaborare di nuovo l’intervallo indicato senza gli eventi originali."
+        },
+        {
+          "id": "b",
+          "text": "Acquisire gli eventi come flusso e conservare gli eventi originali per 14 giorni. Registrare separatamente la posizione di elaborazione e consentire la rielaborazione dei dati grezzi per l’intervallo indicato.",
+          "explanation": "La pipeline può trasformare gli eventi man mano che arrivano e aggiornare il pannello. Tenere separati i dati di input e la posizione di elaborazione permette di rielaborare unicamente l’intervallo indicato dopo la correzione."
+        },
+        {
+          "id": "d",
+          "text": "Aggiornare il pannello all’arrivo di ogni evento e conservare soltanto i dati grezzi dell’ultima ora.",
+          "explanation": "L’intervallo da rielaborare dura un’ora, ma può trovarsi in qualsiasi momento degli ultimi 14 giorni. Conservare soltanto l’ultima ora non basta."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-002",
+      "prompt": "Il fornitore di dati di un’azienda di vendita al dettaglio inserisce ogni mattina i file CSV degli ordini in Amazon S3. Dopo aver corretto la logica di trasformazione, l’ingegnere dei dati vuole poter rieseguire l’elaborazione solo per date specifiche e verificare il contenuto ricevuto durante un audit. Quale approccio dovrebbe adottare per primo?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Sovrascrivere i file CSV ricevuti con le tabelle trasformate senza convalidarli e conservare solo i risultati più recenti.",
+          "explanation": "In questo modo non è possibile distinguere il contenuto ricevuto dai risultati della trasformazione, rendendo difficile verificare o rieseguire in seguito l’elaborazione di una data specifica."
+        },
+        {
+          "id": "c",
+          "text": "Presumere che i nomi delle colonne CSV abbiano sempre lo stesso significato anche quando cambiano ed eseguire la trasformazione senza verifica.",
+          "explanation": "Le modifiche ai nomi delle colonne, ai tipi di dati o al significato dei valori possono causare errori nelle aggregazioni successive; pertanto, è necessario verificare le condizioni delle modifiche allo schema."
+        },
+        {
+          "id": "d",
+          "text": "Ignorare tutti gli errori del processo di trasformazione per eliminare la necessità di rieseguirlo.",
+          "explanation": "Ignorare gli errori può portare alla pubblicazione di un output incompleto, compromettendo la qualità e la verificabilità ai fini dell’audit."
+        },
+        {
+          "id": "b",
+          "text": "Identificare l’ambito degli input in base alla data o ad altri criteri e registrare separatamente i dati originali, le regole di trasformazione e le destinazioni di output.",
+          "explanation": "Corretto. Conservare l’ambito e la relativa motivazione consente, dopo una correzione, di rielaborare solo le date necessarie e di spiegare i risultati."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-003",
+      "prompt": "Un data engineer di una compagnia assicurativa vuole rilevare numeri di polizza duplicati e date di inizio polizza obbligatorie mancanti dopo aver trasformato i dati delle polizze. Qual è il modo più appropriato per mantenere la qualità dei dati gestiti dagli analisti a valle, comprese le righe non valide rilevate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Quando il job termina con il codice di uscita 0, pubblicare tutte le righe così come sono.",
+          "explanation": "Il solo stato di completamento del job non può garantire la qualità del contenuto, ad esempio l’assenza di duplicati o di valori obbligatori mancanti."
+        },
+        {
+          "id": "c",
+          "text": "Correggere casualmente le righe non valide senza registrare le modifiche apportate.",
+          "explanation": "Senza conservare la motivazione delle correzioni e il relativo ambito di impatto, non è possibile verificarne la correttezza né indagare su eventuali recidive."
+        },
+        {
+          "id": "d",
+          "text": "Poiché le condizioni di qualità differiscono per ogni utente, non condividerle con il fornitore.",
+          "explanation": "Se il fornitore, il team di trasformazione e gli utenti non condividono le condizioni, non possono valutare in sicurezza l’impatto delle modifiche."
+        },
+        {
+          "id": "b",
+          "text": "Eseguire i controlli di qualità, isolare le righe non valide, registrarne il numero e l’ambito e separarle dalle righe da pubblicare.",
+          "explanation": "Corretto. La combinazione di controlli di qualità adeguati allo scopo d’uso, isolamento e registrazione preserva la qualità e la tracciabilità dei dati destinati all’analisi."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Kinesis Data Streams",
+    "Data Catalog",
+    "Glue crawler",
+    "ETL job",
+    "Schema evolution",
+    "Data quality"
+  ]
+}

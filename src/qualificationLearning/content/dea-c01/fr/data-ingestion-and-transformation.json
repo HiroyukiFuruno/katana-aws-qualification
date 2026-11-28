@@ -1,0 +1,189 @@
+{
+  "id": "data-ingestion-and-transformation",
+  "title": "Ingestion et transformation des données",
+  "objective": "Expliquer le flux d’ingestion et de transformation des données, puis choisir les décisions de conception appropriées en fonction de la source des données, de leur fréquence d’arrivée, de la nécessité d’un retraitement et de l’objectif d’utilisation des données transformées.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Services AWS essentiels"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protection des données"
+    },
+    {
+      "slug": "observability",
+      "title": "Surveillance et amélioration"
+    }
+  ],
+  "sections": [
+    {
+      "id": "batch-and-streaming-inputs",
+      "title": "Distinguer le traitement par lots du streaming selon le mode d’arrivée des données",
+      "paragraphs": [
+        "Lors de l’ingestion des données, commencez par déterminer qui envoie quoi, quand les données deviennent disponibles et à quelle échéance les utilisateurs ont besoin des résultats. Par exemple, les fichiers de ventes finalisés chaque nuit peuvent être traités par lots. En revanche, lorsque les enregistrements doivent être traités dans l’ordre de leur arrivée, comme les données de localisation envoyées en continu par des véhicules de livraison, ils doivent être traités en streaming.",
+        "Amazon Kinesis Data Streams est un service qui permet de collecter et de traiter en temps réel de grands volumes d’enregistrements de streaming. Choisir le streaming ne signifie pas que tous les traitements doivent être terminés immédiatement. Pour pouvoir valider et retraiter ultérieurement les enregistrements ingérés, concevez le système en séparant les entrées, la position traitée et la gestion des enregistrements en échec.",
+        "Le choix entre le traitement par lots et le streaming ne commence pas par un nom de service. Commencez par mettre en tableau la fréquence d’arrivée, la latence acceptable, le volume de données, l’ordre et les exigences de retraitement. Définissez ensuite les limites de responsabilité, de la source jusqu’aux utilisateurs, avant de choisir la méthode d’ingestion."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 1 : ingestion et transformation des données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Qu’est-ce qu’Amazon Kinesis Data Streams ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-data-ingestion-flow"
+    },
+    {
+      "id": "repeatable-raw-data-and-schema",
+      "title": "Ne pas confondre les données brutes, les schémas et les résultats des transformations",
+      "paragraphs": [
+        "Dans un pipeline reproductible, distinguez les données brutes reçues, les règles utilisées pour la transformation et les résultats transformés. Lorsqu’un défaut est découvert dans la logique de transformation, l’identification des données brutes et du périmètre traité permet de retraiter uniquement la partie nécessaire avec la logique corrigée. Si vous écrasez les données brutes avec le contenu transformé, vous perdez les éléments nécessaires aux vérifications ultérieures.",
+        "Dans AWS Glue, le catalogue de données, les crawlers, les tâches ETL et les déclencheurs ont des rôles différents. Une table du Data Catalog ne correspond pas aux données elles-mêmes : il s’agit de métadonnées qui décrivent notamment l’emplacement des données et le schéma. N’utilisez pas systématiquement les résultats déduits par le crawler. Mettez-vous d’accord avec les fournisseurs de données sur les conditions de modification du schéma et vérifiez l’impact sur les utilisateurs en aval.",
+        "Les transformations, telles que le passage du format CSV à un format en colonnes, le partitionnement par date et heure ou la suppression des colonnes inutiles, doivent être déterminées en fonction des requêtes utilisées et des conditions d’exploitation. Consigner l’objectif de la transformation, la version des données d’entrée, la destination de sortie et les résultats de validation facilite l’explication de la manière dont le même résultat a été obtenu."
+      ],
+      "sources": [
+        {
+          "label": "Concepts d’AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        },
+        {
+          "label": "DEA-C01 Domaine 1 : ingestion et transformation des données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "orchestration-and-failure-handling",
+      "title": "Définir l’ordre de traitement et la destination des échecs",
+      "paragraphs": [
+        "L’orchestration d’un pipeline ne consiste pas seulement à démarrer les tâches dans l’ordre. Il s’agit d’un mécanisme qui ne passe au traitement suivant qu’après avoir confirmé que le traitement précédent a réussi, que toutes les entrées sont disponibles et que les conditions de qualité sont respectées. Le choix entre une planification, un événement ou une exécution manuelle comme point d’entrée dépend des conditions dans lesquelles les données deviennent disponibles.",
+        "Dans une conception de gestion des échecs, il faut distinguer les défaillances temporaires qui peuvent être réessayées des données non valides dont le contenu doit être vérifié par une personne. Si vous augmentez uniquement les nouvelles tentatives automatiques sans définir leur nombre, le délai d’attente, l’emplacement de mise en quarantaine, le destinataire des notifications et l’unité de reprise, vous risquez de traiter plusieurs fois la même entrée incorrecte.",
+        "Lorsqu’une même entrée peut être reçue plusieurs fois, concevez une clé permettant d’identifier les entrées déjà traitées ou une méthode de mise à jour qui évite de dupliquer la sortie. Il ne s’agit pas d’une fonctionnalité propre à un service particulier, mais d’une caractéristique qui consiste à considérer ensemble les entrées, l’état et les sorties."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 1 : ingestion et transformation des données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Concepts d’AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ]
+    },
+    {
+      "id": "transformation-quality-contract",
+      "title": "Définir clairement les critères de qualité avant et après la transformation",
+      "paragraphs": [
+        "L’achèvement d’un processus de transformation ne peut pas être évalué uniquement selon que le job se termine sans erreur. Pour des données de commande, définissez des critères de qualité correspondant à leur finalité, par exemple les numéros de commande en double, les champs obligatoires manquants, la plage des montants et l’existence des enregistrements référencés. Décidez également où isoler les lignes qui ne respectent pas les critères, qui les vérifiera et dans quelles conditions elles seront réinjectées.",
+        "Les critères de qualité doivent être partagés par les responsables des données sources, les ingénieurs data et le service utilisateur. Si le fournisseur ajoute ou supprime des colonnes, ou en modifie la signification, consignez à partir de quand et pour quelles entrées le changement s’applique, puis vérifiez la compatibilité entre la transformation et le côté consommateur. Il est important de distinguer les situations où une modification du schéma doit être détectée et arrêter le traitement de celles où elle peut être acceptée avec une valeur par défaut.",
+        "En répartissant ainsi la qualité entre l’entrée, la transformation et la phase précédant la publication, il devient possible de retracer le lieu des échecs et les responsabilités. La supervision doit mesurer non seulement le nombre d’enregistrements, mais aussi le nombre d’enregistrements isolés, les retards et la période couverte par les mises à jour."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 1 : ingestion et transformation des données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Découverte et catalogage des données avec AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-ingestion-001",
+      "prompt": "L’ingénieure de données d’une usine doit afficher dans le tableau de bord de l’équipe de maintenance les événements émis lors des changements d’état des équipements, dans un délai de 30 secondes. Si l’équipe découvre un défaut de transformation, elle doit pouvoir le corriger et retraiter toute heure indiquée parmi les 14 derniers jours. Quelle architecture répond à ces exigences ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Regrouper les événements des équipements dans des fichiers journaliers, les transformer le lendemain matin, puis actualiser le tableau de bord.",
+          "explanation": "Un traitement effectué le lendemain matin ne permet pas d’actualiser le tableau de bord dans les 30 secondes suivant l’arrivée des événements."
+        },
+        {
+          "id": "c",
+          "text": "À la réception des événements, ne conserver que les valeurs agrégées et suivre les changements apportés au code de transformation.",
+          "explanation": "Même avec l’historique du code, l’équipe ne peut pas retraiter l’intervalle indiqué sans les événements d’origine."
+        },
+        {
+          "id": "b",
+          "text": "Ingérer les événements en flux et conserver les événements d’origine pendant 14 jours. Consigner séparément la position de traitement et permettre le retraitement des données brutes pour l’intervalle indiqué.",
+          "explanation": "Le pipeline peut transformer les événements à leur arrivée et actualiser le tableau de bord. En séparant les données d’entrée et la position de traitement, l’équipe peut, après correction, ne retraiter que l’intervalle indiqué."
+        },
+        {
+          "id": "d",
+          "text": "Actualiser le tableau de bord à chaque événement et ne conserver que les données brutes de la dernière heure.",
+          "explanation": "L’intervalle à retraiter dure une heure, mais il peut se situer à tout moment dans les 14 derniers jours. Conserver uniquement la dernière heure ne suffit pas."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-002",
+      "prompt": "Le fournisseur de données d’une entreprise de vente au détail dépose chaque matin des fichiers CSV de commandes dans Amazon S3. Après avoir corrigé la logique de transformation, l’ingénieur data veut pouvoir relancer le traitement pour certaines dates uniquement et vérifier le contenu reçu lors d’un audit. Quelle approche faut-il adopter en premier ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Écraser les fichiers CSV reçus avec les tables transformées sans les valider et ne conserver que les résultats les plus récents.",
+          "explanation": "Le contenu reçu ne peut alors pas être distingué des résultats de transformation, ce qui rend difficiles la vérification et la relance ultérieures du traitement pour une date donnée."
+        },
+        {
+          "id": "c",
+          "text": "Supposer que les noms des colonnes CSV ont toujours la même signification même s’ils changent, puis effectuer la transformation sans vérification.",
+          "explanation": "Les changements de noms de colonnes, de types de données ou de signification des valeurs peuvent fausser les agrégations en aval ; il faut donc vérifier les conditions de modification du schéma."
+        },
+        {
+          "id": "d",
+          "text": "Ignorer tous les échecs du traitement de transformation afin de supprimer le besoin de relancer le traitement.",
+          "explanation": "Ignorer les échecs peut entraîner la publication d’une sortie incomplète et compromettre la qualité ainsi que l’auditabilité."
+        },
+        {
+          "id": "b",
+          "text": "Identifier le périmètre des entrées par date ou selon un autre critère, puis consigner séparément les données sources, les règles de transformation et les destinations de sortie.",
+          "explanation": "Correct. La conservation du périmètre et de sa justification permet, après une correction, de retraiter uniquement les dates nécessaires et d’expliquer les résultats."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-003",
+      "prompt": "Un ingénieur de données d’une compagnie d’assurance souhaite détecter les numéros de contrat en double et les dates de début de contrat obligatoires manquantes après la transformation des données contractuelles. Quelle est la méthode la plus appropriée pour préserver la qualité des données traitées par les analystes en aval, y compris les lignes non valides détectées ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Une fois que la tâche est terminée avec le code de sortie 0, publier toutes les lignes telles quelles.",
+          "explanation": "Le seul état d’achèvement de la tâche ne permet pas de garantir la qualité du contenu, notamment l’absence de doublons ou de valeurs obligatoires manquantes."
+        },
+        {
+          "id": "c",
+          "text": "Corriger aléatoirement les lignes non valides sans consigner les modifications effectuées.",
+          "explanation": "Sans conserver la justification des corrections et leur portée, il est impossible d’en vérifier l’exactitude ou d’enquêter en cas de récurrence."
+        },
+        {
+          "id": "d",
+          "text": "Comme les conditions de qualité diffèrent selon les utilisateurs, ne pas les partager avec le fournisseur.",
+          "explanation": "Si le fournisseur, l’équipe de transformation et les utilisateurs ne partagent pas ces conditions, ils ne peuvent pas évaluer en toute sécurité l’impact des modifications."
+        },
+        {
+          "id": "b",
+          "text": "Exécuter les contrôles de qualité, isoler les lignes non valides, consigner leur nombre et leur portée, puis les séparer des lignes à publier.",
+          "explanation": "Correct. La combinaison de contrôles de qualité adaptés à l’objectif d’utilisation, de l’isolement et de la consignation préserve la qualité et la traçabilité des données destinées à l’analyse."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Kinesis Data Streams",
+    "Data Catalog",
+    "Glue crawler",
+    "ETL job",
+    "Schema evolution",
+    "Data quality"
+  ]
+}

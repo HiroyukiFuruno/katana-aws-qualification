@@ -1,0 +1,191 @@
+{
+  "id": "data-operations-and-support",
+  "title": "数据运营与支持",
+  "objective": "监测数据管道的状态、延迟、质量和变更历史，并在发生故障时确定受影响的范围，以便安全地重新处理数据并进行改进。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "测试与质量门禁"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署与恢复"
+    }
+  ],
+  "sections": [
+    {
+      "id": "operational-signals-and-alerts",
+      "title": "不仅要观察成功和失败，还要观察延迟与质量",
+      "paragraphs": [
+        "在数据管道运营中，仅统计执行成功的次数是不够的。应结合输入数量、输出数量、处理时间、未处理数据量、最新数据的时间戳以及质量违规次数，确认交付给用户的数据是否符合预期。",
+        "Amazon CloudWatch 可实时监控 AWS 资源和 AWS 上的应用程序，并处理指标、日志和警报。警报不只是发送通知的装置，而是明确界定何种情况属于异常的运营决策。通知目标中应附带相关数据集、受影响的用户、初步响应措施以及需要核查的证据。",
+        "阈值并不是确定一次后就不再调整的。应根据正常情况下的波动、结算处理等周期，以及用户可以接受的延迟进行审查和调整。如果忽略季节性因素而只设置固定值，可能会漏掉重要异常，也可能因不必要的通知而降低响应速度。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 3：数据运营与支持",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "什么是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "logs-traceability-and-change",
+      "title": "关联执行记录与变更记录以调查原因",
+      "paragraphs": [
+        "调查所需的不只是错误消息。请记录作业执行 ID、输入范围、转换版本、配置、输出目标和质量结果，以便日后追踪同一次执行。这样可以缩小结果从何时开始发生变化，以及哪些变更造成了影响。",
+        "CloudWatch Logs 可用于记录和分析应用程序数据。此外，正如考试指南所述，AWS CloudTrail 用于跟踪 API 调用。用于表示数据内容质量的记录、处理执行记录以及 AWS 操作记录的目的不同，因此不能将它们视为同一种记录。",
+        "发生故障时，不要在确认影响范围之前重新运行整个期间的数据。请核对输入时间、作业版本、失败的处理单元和已发布的输出，然后隔离必要的范围，再执行恢复过程。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 3：数据运营与支持",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "什么是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "replay-and-idempotent-recovery",
+      "title": "通过控制范围和重复来执行重新处理",
+      "paragraphs": [
+        "重新处理是指在发生故障后再次传入相同的输入。要确保重新处理安全，需要确定目标的开始和结束位置、输入版本、已经发布的输出，以及再次处理同一事件时的处理方式。仅仅能够重新运行，并不能防止聚合结果被重复计数。",
+        "即使记录了正常处理位置，在调查故障时，也可能需要从该位置之前重新读取数据。此时，运维人员会明确指定目标范围，并将其与正常处理区分开来进行重放。使输入能够被持久访问，也可以在修正转换逻辑后进行验证。",
+        "幂等性是指即使多次处理相同的输入，也不会使预期结果重复的性质。应使用事件标识符或业务键判断重复，并据此设计输出更新。应与业务数据所有者就哪些键具有唯一性，以及如何处理延迟到达的更正达成一致。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 3：数据运营与支持",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "什么是 Amazon Kinesis Data Streams？",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-stream-replay-and-recovery"
+    },
+    {
+      "id": "quality-incident-response",
+      "title": "按隔离、通知、原因确认的顺序处理质量异常",
+      "paragraphs": [
+        "发现质量异常时，应根据对用户的影响和误用风险，判断是停止正常数据，还是仅隔离无效范围。例如，如果只能隔离部分金额无效的行，与基准列的含义发生变化、导致全部数据都无法信任时，处理方式会有所不同。",
+        "对于已隔离的数据，应记录隔离原因、原始输入内容、用于检测的规则以及负责确认的人员。仅仅创建隔离位置并不意味着问题已经解决。确认原因后，修正输入、修改转换规则，或重新审查质量规则。",
+        "恢复后，使用相同的质量条件重新确认受影响的范围。除了确认记录数已恢复，还要确认质量违规已消除，并告知用户哪些期间的结果已更新。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 3：数据运营与支持",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "什么是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-operations-001",
+      "prompt": "一家支付公司的数据运营负责人希望仅在数据过时时，可靠地通知使用每小时交易汇总的欺诈检测团队。仅监控作业成功或失败，无法检测未收到输入的情况。哪种监控设计最合适？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "记录最新正常输出的时间戳、输入数量和质量违规数量，并在延迟超过用户可接受的阈值时通知负责人。",
+          "explanation": "正确。这样可以判断交付给用户的数据的新鲜度和质量，并在发生异常时发送指出对象和初始处理措施的通知。"
+        },
+        {
+          "id": "a",
+          "text": "只监控作业的退出代码，不测量输入时间戳或输出的新鲜度。",
+          "explanation": "如果没有输入到达而作业在形式上仍然成功，即使向用户提供了过时的汇总，也无法检测出来。"
+        },
+        {
+          "id": "c",
+          "text": "不考虑正常时期与繁忙时期的差异，始终使用相同的极短阈值发送通知。",
+          "explanation": "忽略周期和正常波动会增加不必要的通知，并可能使对重要异常的响应变慢。"
+        },
+        {
+          "id": "d",
+          "text": "在不正当交易检测团队注意到数据过时之前，不发送通知。",
+          "explanation": "如果数据运营团队不监测新鲜度条件并发送通知，用户更有可能据此做出错误判断。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-002",
+      "prompt": "一家出版公司的数据工程师确认，由于转换作业存在缺陷，只有上午 10 点到 11 点的浏览事件被错误汇总。原始事件和修正后的转换逻辑仍然保留。为了避免重复计数，以下哪种恢复方法最合适？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "确定上午 10 点到 11 点的输入范围和已处理的标识符，然后使用能够抑制重复的更新方法重新处理。",
+          "explanation": "正确。限定目标范围，并确保即使多次处理相同事件，结果也不会重复，从而完成恢复。"
+        },
+        {
+          "id": "a",
+          "text": "不确认影响范围，直接将整个期间的输入再次叠加到常规处理中运行。",
+          "explanation": "不加区分地运行整个期间，可能会导致连正确的输出也被重复或覆盖。"
+        },
+        {
+          "id": "c",
+          "text": "保留错误的汇总结果，从下一次转换开始只使用修正后的逻辑。",
+          "explanation": "用户仍会查看已经出错的期间，因此需要恢复受影响的范围并通知用户。"
+        },
+        {
+          "id": "d",
+          "text": "删除原始事件，让错误的汇总结果不再可见。",
+          "explanation": "这样会失去调查和重新处理的依据，无法说明问题，也无法进行适当的恢复。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-003",
+      "prompt": "某研究机构的数据质量负责人发现，温度传感器的值超出允许范围。该负责人希望将其他正常的测量值按计划交给分析人员。对于无效行，最合适的处理方式是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "无条件地将无效行改写为正常的测量值，并且不留下记录。",
+          "explanation": "毫无依据地改写数据会损害数据质量和可审计性。"
+        },
+        {
+          "id": "b",
+          "text": "将无效行连同检测规则和原始输入信息一起隔离，发布正常范围，并调查原因。",
+          "explanation": "正确。这样可以区分影响范围，追踪隔离原因和输入信息，同时避免不必要地停止正常使用。"
+        },
+        {
+          "id": "c",
+          "text": "只要有一行无效，就不调查原因而删除全部历史记录。",
+          "explanation": "在未确定影响范围的情况下删除全部历史记录，会连正常数据和调查依据一起丢失。"
+        },
+        {
+          "id": "d",
+          "text": "由于质量规则要到发布后才首次确定，因此这次什么也不做。",
+          "explanation": "质量条件和处理方法必须在交付使用前定义并执行。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudWatch alarm",
+    "CloudTrail",
+    "Data freshness",
+    "Data quality",
+    "Idempotency",
+    "Data lineage",
+    "Structured logging"
+  ]
+}

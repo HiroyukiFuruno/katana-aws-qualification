@@ -1,0 +1,195 @@
+{
+  "id": "data-security-and-governance",
+  "title": "数据安全与治理",
+  "objective": "能够根据数据分类、所有者、用户、操作和审计要求，解释如何结合访问控制、加密、数据脱敏、审计与治理。",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    },
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    }
+  ],
+  "sections": [
+    {
+      "id": "identity-and-authorization-boundaries",
+      "title": "区分谁因何目的访问什么",
+      "paragraphs": [
+        "设计数据访问时，不要只停留在“分析人员”这类宽泛的群体层面。应分别确定人员或工作负载的身份、所需的数据集、允许执行的操作、使用环境以及期限。身份验证用于确认人员或工作负载的身份，授权则用于判断该主体被允许执行哪些操作。",
+        "AWS Lake Formation 管理 Amazon S3 上数据湖中的数据以及 AWS Glue Data Catalog 中相关元数据的精细访问控制。不要仅依靠 IAM 权限，宽泛地授予“分析人员可以读取全部数据”的权限，而应根据数据分类和业务需要，设计表、列、行等访问范围。",
+        "应用程序的执行角色与人员为进行分析而担任的角色是不同的主体。不要通过共享的固定凭证提供访问权限。为每个主体配置其所需的最小权限和审计记录，可以减少不必要的权限，并支持事后追踪。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 4：数据安全与治理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain4.html"
+        },
+        {
+          "label": "什么是 AWS Lake Formation",
+          "url": "https://docs.aws.amazon.com/ja_jp/lake-formation/latest/dg/what-is-lake-formation.html"
+        }
+      ],
+      "figureId": "dea-data-access-permissions"
+    },
+    {
+      "id": "classification-masking-and-encryption",
+      "title": "根据机密性决定数据的呈现方式和保护方法",
+      "paragraphs": [
+        "要保护数据，首先要对哪些内容属于机密信息进行分类。姓名、联系方式、账户信息和标识符等数据，在不同数据集或列中的性质和使用目的可能不同。不要仅凭“已加密”这一个说法进行判断，而应区分谁需要明文、显示时哪些内容应被隐藏，以及应保护静态数据、传输中的数据还是备份中的数据。",
+        "加密是防止未经授权的主体读取静态数据或传输中数据的重要手段。另一方面，为了不向具有合法读取权限的分析人员展示不必要的个人信息，应结合对列或行的授权、数据掩码以及提供汇总数据等措施。",
+        "更改密钥、访问权限或掩码规则可能导致现有用户或管道失败。更改前应确认受影响的数据、用户和恢复步骤，并同时验证访问被拒绝和过度公开这两种情况。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 4：数据安全与治理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain4.html"
+        },
+        {
+          "label": "什么是 AWS Lake Formation？",
+          "url": "https://docs.aws.amazon.com/ja_jp/lake-formation/latest/dg/what-is-lake-formation.html"
+        }
+      ]
+    },
+    {
+      "id": "ownership-and-governance-contract",
+      "title": "明确所有者、管理者和使用者的责任",
+      "paragraphs": [
+        "数据治理不仅要确定数据存放在哪里，还要确定谁对数据的含义和质量负责。数据所有者负责数据集的业务目的、定义、使用许可，以及变更审批。数据工程师负责实现和运营已达成一致的数据摄取、转换、存储和访问机制。",
+        "AWS Glue Data Catalog 集中管理位置、架构和属性，为查找和理解数据集提供基础。将业务术语、质量条件、分类、所有者和更新频率与数据目录关联后，使用者不仅可以判断自己能否读取数据，还可以判断数据代表什么，以及在多大程度上值得信任。",
+        "如果数据没有明确的所有者，就没有负责判断质量异常、架构变更、删除请求和访问申请的对象。在发布新数据集之前，应记录所有者、管理者、使用者、审批路径和咨询联系人。"
+      ],
+      "sources": [
+        {
+          "label": "使用 AWS Glue 进行数据发现和目录化",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        },
+        {
+          "label": "DEA-C01 领域 4：数据安全与治理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "audit-evidence-and-review",
+      "title": "审计应保留访问事实和决策依据",
+      "paragraphs": [
+        "审计所需的不只是允许访问的配置。必须能够追溯访问发生的时间、哪个主体访问了哪些数据、执行了什么操作，以及该决策依据了哪些批准和规则。由于数据内容变更历史与 AWS API 操作历史的用途不同，因此应同时保留这两类证据，并将它们关联起来保存。",
+        "AWS CloudTrail 可用于跟踪 AWS API 调用。运维人员应确定调查异常访问所需的日志保留期限、日志完整性、可查看日志的人员以及存储位置。过度开放审计日志的访问权限，反而会不必要地暴露机密信息和运维信息。",
+        "定期审查权限时，不要仅根据当前职务名称作出判断。应确认实际需要的数据集、操作、期限和使用记录。删除已不再需要的权限，并记录例外权限的期限和批准者。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 领域 4：数据安全与治理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain4.html"
+        },
+        {
+          "label": "什么是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-security-001",
+      "prompt": "人力资源部门的分析人员希望只查看按所属部门汇总员工数据所需的列。他们不需要查看工资金额或个人联系方式。数据管理员采用哪种方法来实现最小权限最为合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "授予所有分析人员读取数据湖中所有文件的权限。",
+          "explanation": "这样他们就能查看工作所不需要的工资金额和联系方式，因此不符合最小权限原则。"
+        },
+        {
+          "id": "b",
+          "text": "仅允许分析人员的角色访问所需的数据集和列，并将其他列排除在访问范围之外。",
+          "explanation": "正确。通过区分主体、对象和操作，并且只授权必要的范围，可以实现符合使用目的的最小权限。"
+        },
+        {
+          "id": "c",
+          "text": "只要对工资金额进行加密，就可以同时授予所有分析人员解密权限。",
+          "explanation": "加密很重要，但如果允许不需要这些数据的用户解密和查看数据，就无法防止过度公开。"
+        },
+        {
+          "id": "d",
+          "text": "让人力资源部门和分析人员共用并重复使用一个访问密钥。",
+          "explanation": "使用共享凭证时无法区分主体，因此既无法追踪活动，也无法将权限限制在最小范围内。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-security-002",
+      "prompt": "支付服务的数据所有者要在交易数据集中添加一个新的个人身份信息列。数据工程师希望在不中断现有聚合处理的情况下，避免将其公开给不必要的用户。以下哪种变更步骤最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "添加列后立即自动授予所有现有角色查看该列的权限。",
+          "explanation": "这样一来，不需要个人身份信息的用户也能查看该列，这违背了数据分类和最小权限原则。"
+        },
+        {
+          "id": "c",
+          "text": "由于包含个人身份信息，删除整个数据集并停止聚合处理。",
+          "explanation": "在未设计必要保护措施的情况下删除并停止全部处理，会不必要地损害数据的使用目的和可用性。"
+        },
+        {
+          "id": "b",
+          "text": "先对该列进行分类，确认受影响的处理和用户，然后仅为确实需要的角色设置可见性和访问范围。",
+          "explanation": "正确。可以将架构变更与其分类、使用目的、权限以及对现有处理的影响一并管理。"
+        },
+        {
+          "id": "d",
+          "text": "不记录新列的含义和所有者，只更改数据格式。",
+          "explanation": "如果不清楚其含义、所有者和使用条件，就无法作出适当的访问授权或数据质量判断。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-security-003",
+      "prompt": "一家金融公司的审计人员希望事后确认某个分析作业为何访问了客户数据。数据管理员需要保留访问事实以及授权决策依据。以下哪种记录组合最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "仅保存当前权限设置的屏幕截图，不保留运行时执行的操作记录。",
+          "explanation": "仅凭当前设置无法追踪何时、由谁执行了哪些操作。"
+        },
+        {
+          "id": "c",
+          "text": "由于审计日志可能包含机密信息，因此不创建审计日志。",
+          "explanation": "应适当限制查看权限；这不是不创建必要审计跟踪的理由。"
+        },
+        {
+          "id": "d",
+          "text": "只记录数据所有者的姓名，不记录访问主体或执行的操作。",
+          "explanation": "所有者可以表明负责作出判断的人员或团队，但不能替代显示实际访问主体、目标和操作的记录。"
+        },
+        {
+          "id": "b",
+          "text": "将作业执行记录、目标数据集、所担任的角色、批准和分类的依据，以及 AWS API 操作记录关联起来。",
+          "explanation": "正确。这样既可以确认执行这一事实，也可以确认为何允许该主体访问这一范围，有助于审计和调查。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Lake Formation",
+    "Data Catalog",
+    "Data classification",
+    "Data owner",
+    "Data steward",
+    "Row-level security",
+    "Column-level security",
+    "IAM role",
+    "IAM policy",
+    "KMS",
+    "CloudTrail",
+    "Redaction"
+  ]
+}

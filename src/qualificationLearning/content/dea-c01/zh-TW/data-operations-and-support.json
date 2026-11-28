@@ -1,0 +1,191 @@
+{
+  "id": "data-operations-and-support",
+  "title": "資料營運與支援",
+  "objective": "監測資料管道的狀態、延遲、品質與變更歷程，並在發生故障時確認受影響的範圍，以便安全地重新處理資料並加以改善。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "測試與品質閘門"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署與復原"
+    }
+  ],
+  "sections": [
+    {
+      "id": "operational-signals-and-alerts",
+      "title": "不只觀察成功與失敗，也要觀察延遲與品質",
+      "paragraphs": [
+        "在資料管道的營運中，只計算執行成功的次數並不足夠。應結合輸入筆數、輸出筆數、處理時間、未處理的資料量、最新資料的時間戳記，以及品質違規的次數，確認傳送給使用者的資料是否符合預期。",
+        "Amazon CloudWatch 會即時監控 AWS 資源和 AWS 上的應用程式，並處理指標、日誌和警示。警示不只是傳送通知的裝置，而是明確定義何種情況視為異常的營運判斷。通知中應附上相關資料集、受影響的使用者、初步處理方式，以及需要核查的佐證。",
+        "閾值不是決定一次後就不再調整的設定。應根據正常時的波動、結算處理等週期，以及使用者可以容許的延遲來檢視和調整。如果忽略季節性因素而只設定固定值，可能會漏掉重要異常，也可能因不必要的通知而使應變速度變慢。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 3：資料營運與支援",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "什麼是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "logs-traceability-and-change",
+      "title": "關聯執行記錄與變更記錄以調查原因",
+      "paragraphs": [
+        "調查所需的不只是錯誤訊息。請記錄工作執行 ID、輸入範圍、轉換版本、組態、輸出目的地和品質結果，以便日後追蹤同一次執行。如此可以縮小結果從何時開始變更，以及哪些變更造成了影響。",
+        "CloudWatch Logs 可用來記錄和分析應用程式資料。此外，如考試指南所述，AWS CloudTrail 用於追蹤 API 呼叫。用來表示資料內容品質的記錄、處理執行記錄，以及 AWS 操作記錄的目的不同，因此不得將它們視為同一類記錄。",
+        "發生故障時，請勿在確認影響範圍前重新執行整個期間。請比對輸入時間、工作版本、失敗的處理單位和已發布的輸出，隔離必要的範圍後，再執行復原程序。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 3：資料營運與支援",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "什麼是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "replay-and-idempotent-recovery",
+      "title": "控制處理範圍與重複資料後再進行重新處理",
+      "paragraphs": [
+        "重新處理是指在發生故障後，再次傳送相同的輸入。若要安全地重新處理，必須決定目標的開始與結束位置、輸入版本、已經發布的輸出，以及再次處理相同事件時的處理方式。僅僅能夠重新執行，並不能防止彙總結果被重複計算。",
+        "即使已記錄正常的處理位置，調查故障時也可能需要從該位置之前重新讀取資料。此時，操作人員會明確指定目標範圍，並將其與正常處理區分開來進行重播。讓輸入能夠被持久存取，也能在修正轉換邏輯後進行驗證。",
+        "冪等性是指即使多次處理相同的輸入，也不會讓預期結果重複的特性。應使用事件識別碼或業務金鑰判斷重複，並據此設計輸出更新。哪些金鑰具有唯一性，以及如何處理延遲送達的更正，應與業務資料擁有者達成共識。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 3：資料營運與支援",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "什麼是 Amazon Kinesis Data Streams？",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-stream-replay-and-recovery"
+    },
+    {
+      "id": "quality-incident-response",
+      "title": "依序處理品質異常：隔離、通知、確認原因",
+      "paragraphs": [
+        "發現品質異常時，應根據對使用者的影響和誤用風險，判斷要停止正常資料，還是只隔離無效範圍。例如，只能隔離部分金額不正確的資料列時，與基準欄位的意義發生變化、導致全部資料都無法信任時，處理方式會有所不同。",
+        "對於已隔離的資料，應記錄隔離原因、原始輸入內容、用於偵測的規則，以及由誰負責確認。僅僅建立隔離位置並不表示問題已經解決。確認原因後，修正輸入、修改轉換規則，或重新檢視品質規則。",
+        "復原後，使用相同的品質條件重新確認受影響的範圍。除了確認資料筆數已恢復，也要確認品質違規已消除，並告知使用者哪些期間的結果已更新。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 領域 3：資料營運與支援",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "什麼是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-operations-001",
+      "prompt": "一家支付公司的資料營運負責人希望只有在資料過時時，才可靠地通知使用每小時交易彙總的詐欺偵測團隊。只監控工作成功或失敗，無法偵測未收到輸入的情況。哪種監控設計最合適？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "記錄最新正常輸出的時間戳記、輸入筆數和品質違規筆數，並在延遲超過使用者可接受的閾值時通知負責人員。",
+          "explanation": "正確。這樣可以判斷交付給使用者的資料新鮮度和品質，並在發生異常時傳送指出對象與初步處理方式的通知。"
+        },
+        {
+          "id": "a",
+          "text": "只監控工作結束碼，不測量輸入時間戳記或輸出的新鮮度。",
+          "explanation": "如果沒有輸入到達，但工作在形式上仍然成功，即使使用者收到過時的彙總，也無法偵測出來。"
+        },
+        {
+          "id": "c",
+          "text": "不考慮正常時期與繁忙時期的差異，始終使用相同的極短閾值傳送通知。",
+          "explanation": "忽略週期和正常波動會增加不必要的通知，並可能使對重要異常的處理變慢。"
+        },
+        {
+          "id": "d",
+          "text": "在不正交易偵測團隊發現資料過時之前，不傳送通知。",
+          "explanation": "如果資料營運團隊不監測新鮮度條件並傳送通知，使用者更可能因此做出錯誤判斷。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-002",
+      "prompt": "一家出版公司的資料工程師確認，由於轉換工作發生缺陷，只有上午 10 點到 11 點的瀏覽事件被錯誤彙總。原始事件和修正後的轉換邏輯仍然保留。為避免重複計數，哪一種復原方式最適當？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "確認上午 10 點到 11 點的輸入範圍和已處理的識別碼，然後使用能抑制重複的更新方式重新處理。",
+          "explanation": "正確。限定目標範圍，並確保即使多次處理相同事件，結果也不會重複，以完成復原。"
+        },
+        {
+          "id": "a",
+          "text": "不確認影響範圍，就將整個期間的輸入再次疊加到一般處理中執行。",
+          "explanation": "不加區分地處理整個期間，可能會使正確的輸出也遭到重複或覆寫。"
+        },
+        {
+          "id": "c",
+          "text": "保留錯誤的彙總結果，從下一次轉換開始只使用修正後的邏輯。",
+          "explanation": "使用者仍會查看已經錯誤的期間，因此必須復原受影響的範圍並通知使用者。"
+        },
+        {
+          "id": "d",
+          "text": "刪除原始事件，讓錯誤的彙總結果不再顯示。",
+          "explanation": "這會失去調查和重新處理的依據，無法說明問題，也無法適當復原。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-003",
+      "prompt": "某研究機構的資料品質負責人發現，溫度感測器的值超出允許範圍。該負責人希望將其他正常的測量值依計畫交給分析人員。對於無效資料列，最適當的處理方式是哪一項？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "無條件地將無效資料列改寫為正常的測量值，且不留下任何記錄。",
+          "explanation": "毫無依據地改寫資料會損害資料品質和可稽核性。"
+        },
+        {
+          "id": "b",
+          "text": "將無效資料列連同檢測規則和原始輸入資訊一起隔離，公開正常範圍，並調查原因。",
+          "explanation": "正確。這樣可以區分影響範圍，追蹤隔離原因和輸入資訊，同時避免不必要地停止正常使用。"
+        },
+        {
+          "id": "c",
+          "text": "只要有一列無效，就不調查原因而刪除全部歷程記錄。",
+          "explanation": "在未判定影響範圍的情況下刪除全部歷程記錄，會連正常資料和調查依據一起遺失。"
+        },
+        {
+          "id": "d",
+          "text": "由於品質規則要到公開後才首次決定，因此這次什麼也不做。",
+          "explanation": "品質條件和處理方法必須在交付使用前定義並執行。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudWatch alarm",
+    "CloudTrail",
+    "Data freshness",
+    "Data quality",
+    "Idempotency",
+    "Data lineage",
+    "Structured logging"
+  ]
+}

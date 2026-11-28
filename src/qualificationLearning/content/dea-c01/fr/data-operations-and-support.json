@@ -1,0 +1,191 @@
+{
+  "id": "data-operations-and-support",
+  "title": "Opérations et assistance des données",
+  "objective": "Surveiller l’état, la latence, la qualité et l’historique des modifications des pipelines de données et, en cas de défaillance, identifier l’étendue concernée afin de pouvoir retraiter les données en toute sécurité et améliorer les pipelines.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Surveillance et amélioration"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Tests et portes de qualité"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Déploiement et récupération"
+    }
+  ],
+  "sections": [
+    {
+      "id": "operational-signals-and-alerts",
+      "title": "Observer la latence et la qualité, pas seulement les réussites et les échecs",
+      "paragraphs": [
+        "Dans l’exploitation des pipelines de données, le simple comptage des exécutions réussies ne suffit pas. Combinez le nombre d’entrées, le nombre de sorties, le temps de traitement, le volume de données non traitées, l’horodatage des données les plus récentes et le nombre de violations de qualité afin de vérifier que les données fournies aux utilisateurs correspondent aux attentes.",
+        "Amazon CloudWatch surveille en temps réel les ressources AWS et les applications exécutées sur AWS, et gère les métriques, les journaux et les alarmes. Une alarme n’est pas simplement un dispositif qui envoie des notifications ; c’est une décision opérationnelle qui définit clairement ce qui est considéré comme anormal. Les notifications doivent inclure le jeu de données concerné, les utilisateurs touchés, les premières mesures à prendre et les éléments de preuve à vérifier.",
+        "Les seuils ne sont pas définis une fois pour toutes. Il faut les réexaminer en fonction des variations normales, des cycles tels que les traitements de clôture et de la latence que les utilisateurs peuvent tolérer. Si vous ignorez les facteurs saisonniers et utilisez uniquement des valeurs fixes, vous risquez de manquer des anomalies importantes ou de ralentir les interventions avec des notifications inutiles."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 3 : Opérations et support des données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "Qu’est-ce qu’Amazon CloudWatch ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "logs-traceability-and-change",
+      "title": "Relier les journaux d’exécution aux journaux de modifications pour rechercher les causes",
+      "paragraphs": [
+        "Une enquête nécessite plus que de simples messages d’erreur. Enregistrez l’identifiant d’exécution du travail, la plage d’entrée, la version de la transformation, la configuration, la destination de sortie et les résultats de qualité afin de pouvoir retracer ultérieurement la même exécution. Cela permet de déterminer plus précisément à partir de quand les résultats ont changé et quelle modification les a affectés.",
+        "CloudWatch Logs peut servir à enregistrer et à analyser les données d’application. Par ailleurs, comme l’indique le guide de l’examen, AWS CloudTrail sert à suivre les appels d’API. Les enregistrements indiquant la qualité du contenu des données, les journaux d’exécution du traitement et les enregistrements des opérations AWS ont des objectifs différents et ne doivent pas être traités comme s’ils étaient identiques.",
+        "En cas d’incident, ne relancez pas toute la période sans avoir vérifié l’étendue de l’impact. Comparez les heures d’entrée, la version du travail, l’unité de traitement ayant échoué et les sorties publiées, puis isolez l’étendue nécessaire avant d’exécuter la procédure de récupération."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 3 : Opérations et support des données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "Qu’est-ce qu’Amazon CloudWatch ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "replay-and-idempotent-recovery",
+      "title": "Contrôler le périmètre et les doublons lors d’un retraitement",
+      "paragraphs": [
+        "Le retraitement consiste à faire passer à nouveau les mêmes données d’entrée après une défaillance. Pour le rendre sûr, il faut définir le début et la fin du périmètre concerné, la version des données d’entrée, les sorties déjà publiées et le comportement à adopter si le même événement est traité de nouveau. Le simple fait de pouvoir relancer un traitement ne suffit pas à empêcher le double comptage dans les agrégations.",
+        "Même si la position normale de traitement a été enregistrée, l’analyse d’une défaillance peut nécessiter de relire les données à partir d’un point antérieur à cette position. Dans ce cas, l’opérateur spécifie explicitement le périmètre concerné et le rejoue séparément du traitement normal. Le fait de conserver les données d’entrée accessibles de manière persistante permet également de les valider après la correction de la logique de transformation.",
+        "L’idempotence est la propriété selon laquelle le traitement répété des mêmes données d’entrée ne duplique pas le résultat attendu. Concevez les mises à jour des sorties en détectant les doublons à l’aide d’identifiants d’événement ou de clés métier. Convenez avec le propriétaire des données métier des clés qui sont uniques et de la manière de traiter les corrections reçues tardivement."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 3 : Opérations et support des données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "Qu’est-ce qu’Amazon Kinesis Data Streams ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-stream-replay-and-recovery"
+    },
+    {
+      "id": "quality-incident-response",
+      "title": "Traiter les anomalies de qualité dans l’ordre : isolement, notification et vérification de la cause",
+      "paragraphs": [
+        "Lorsqu’une anomalie de qualité est détectée, déterminez s’il faut interrompre les données normales ou isoler uniquement la plage invalide, en fonction de l’impact sur les utilisateurs et du risque de mauvaise utilisation. Par exemple, la réponse diffère selon qu’il est possible d’isoler uniquement certaines lignes dont les montants sont incorrects, ou que le sens d’une colonne de référence a changé, rendant l’ensemble des données non fiable.",
+        "Pour les données isolées, indiquez pourquoi elles ont été isolées, quelle était l’entrée d’origine, quelle règle les a détectées et qui doit les vérifier. Créer simplement un emplacement d’isolement ne résout pas le problème. Vérifiez la cause, puis corrigez l’entrée, modifiez la règle de transformation ou réexaminez la règle de qualité.",
+        "Après la récupération, revérifiez la portée concernée en appliquant les mêmes conditions de qualité. Ne vous contentez pas de confirmer que le nombre d’enregistrements est revenu à son niveau attendu : vérifiez également que la violation de qualité a été éliminée et informez les utilisateurs de la période dont les résultats ont été mis à jour."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 3 : Opérations et support des données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "Qu’est-ce qu’Amazon CloudWatch ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-operations-001",
+      "prompt": "Le responsable des opérations de données d’une entreprise de paiement souhaite informer de manière fiable l’équipe de détection de la fraude, qui utilise des agrégations de transactions horaires, uniquement lorsque les données sont obsolètes. Surveiller uniquement la réussite ou l’échec du job ne permet pas de détecter l’absence d’arrivée des données d’entrée. Quelle conception de supervision est la plus appropriée ?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Enregistrer l’horodatage de la dernière sortie normale, le nombre d’entrées et le nombre de violations de qualité, puis avertir les responsables lorsque le délai dépasse le seuil acceptable pour les utilisateurs.",
+          "explanation": "Correct. Cette approche permet d’évaluer la fraîcheur et la qualité des données transmises aux utilisateurs et d’envoyer, en cas d’anomalie, une notification indiquant la cible et les premières mesures à prendre."
+        },
+        {
+          "id": "a",
+          "text": "Surveiller uniquement le code de sortie du job, sans mesurer l’horodatage de l’entrée ni la fraîcheur de la sortie.",
+          "explanation": "Si aucune donnée d’entrée n’arrive alors que le job réussit en apparence, des agrégations obsolètes peuvent être transmises aux utilisateurs sans être détectées."
+        },
+        {
+          "id": "c",
+          "text": "Envoyer des notifications avec le même seuil extrêmement court en permanence, sans tenir compte de la différence entre les périodes normales et les périodes de pointe.",
+          "explanation": "Ignorer le cycle et les variations normales peut augmenter le nombre de notifications inutiles et ralentir la réaction aux anomalies importantes."
+        },
+        {
+          "id": "d",
+          "text": "Ne pas envoyer de notification tant que l’équipe de détection de la fraude n’a pas remarqué que les données sont obsolètes.",
+          "explanation": "Si l’équipe des opérations de données ne surveille pas les conditions de fraîcheur et n’envoie pas de notification, le risque que les utilisateurs prennent de mauvaises décisions augmente."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-002",
+      "prompt": "Un ingénieur de données d’une maison d’édition a confirmé qu’en raison d’un défaut dans un processus de transformation, seuls les événements de consultation compris entre 10 h et 11 h ont été agrégés incorrectement. Les événements d’origine et la logique de transformation corrigée sont toujours disponibles. Quelle méthode est la plus appropriée pour rétablir la situation tout en évitant les doubles comptages ?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Déterminer la plage d’entrée comprise entre 10 h et 11 h ainsi que les identifiants déjà traités, puis effectuer un nouveau traitement avec une méthode de mise à jour qui limite les doublons.",
+          "explanation": "Correct. Limitez la plage cible et rétablissez-la de manière à ce que le traitement plusieurs fois des mêmes événements ne produise pas de résultats en double."
+        },
+        {
+          "id": "a",
+          "text": "Sans déterminer l’étendue de l’impact, exécuter de nouveau les entrées de toute la période en les superposant au traitement normal.",
+          "explanation": "Traiter indistinctement toute la période risque de dupliquer ou d’écraser même les sorties correctes."
+        },
+        {
+          "id": "c",
+          "text": "Laisser l’agrégation incorrecte en place et utiliser uniquement la logique corrigée à partir de la prochaine transformation.",
+          "explanation": "Les utilisateurs continueraient à consulter la période déjà incorrecte ; il faut donc rétablir la plage affectée et en informer les utilisateurs."
+        },
+        {
+          "id": "d",
+          "text": "Supprimer les événements d’origine pour rendre l’agrégation incorrecte invisible.",
+          "explanation": "Cela ferait perdre la base nécessaire à l’enquête et au retraitement, empêchant d’expliquer le problème ou de procéder à un rétablissement approprié."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-003",
+      "prompt": "Un responsable de la qualité des données d’un institut de recherche a détecté des lignes dont les valeurs des capteurs de température sont en dehors de la plage autorisée. Il souhaite transmettre les autres mesures normales aux analystes comme prévu. Quelle est la manière la plus appropriée de traiter les lignes invalides ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Remplacer inconditionnellement les lignes invalides par des valeurs de mesure normales et ne laisser aucune trace.",
+          "explanation": "Modifier les données sans justification compromet la qualité des données et la possibilité d’audit."
+        },
+        {
+          "id": "b",
+          "text": "Isoler les lignes invalides avec la règle de détection et les informations d’entrée d’origine, publier la plage normale et rechercher la cause.",
+          "explanation": "Correct. Cela permet de séparer l’impact, de retracer la raison de l’isolement et les données d’entrée, et d’éviter d’interrompre inutilement l’utilisation normale."
+        },
+        {
+          "id": "c",
+          "text": "Si une seule ligne est invalide, supprimer tout l’historique sans rechercher la cause.",
+          "explanation": "Supprimer tout l’historique sans déterminer l’étendue de l’impact fait également perdre les données normales et les éléments nécessaires à l’enquête."
+        },
+        {
+          "id": "d",
+          "text": "Puisque les règles de qualité ne seront définies pour la première fois qu’après la publication, ne rien faire cette fois-ci.",
+          "explanation": "Les conditions de qualité et la méthode de réponse doivent être définies et appliquées avant de mettre les données à disposition."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudWatch alarm",
+    "CloudTrail",
+    "Data freshness",
+    "Data quality",
+    "Idempotency",
+    "Data lineage",
+    "Structured logging"
+  ]
+}

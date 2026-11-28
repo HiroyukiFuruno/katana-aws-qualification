@@ -1,0 +1,190 @@
+{
+  "id": "data-store-management",
+  "title": "Data Store Management",
+  "objective": "Explain and select data store and metadata management strategies based on users’ access patterns, retention periods, schemas, performance requirements, and cost constraints.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    }
+  ],
+  "sections": [
+    {
+      "id": "storage-by-access-pattern",
+      "title": "Choose a storage destination based on how the data is used, not on its shape",
+      "paragraphs": [
+        "When choosing a data store, first consider not only how much data will be stored, but also who will read and write it and under what conditions. The required access patterns and optimization methods differ for low-latency retrieval of the current value by a specific key, aggregations spanning multiple periods, and analytical queries against files kept for long-term storage.",
+        "When storing data for analysis, combine partitioning, compression, file format, and the columns and periods to read to reduce unnecessary reads. Partitions should be designed to narrow the data range according to users’ search conditions, not simply to increase the number of folder names.",
+        "If you choose a storage destination based only on performance, requirements for retention, recovery, access control, and cost may be missing later. For each dataset, record and compare the update frequency, search conditions, retention period, scope required during recovery, and users."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 2: Data Store Management",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Data Discovery and Cataloging with AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "catalog-is-metadata-not-data",
+      "title": "A data catalog contains guidance for using data, not the actual data",
+      "paragraphs": [
+        "AWS Glue Data Catalog is a central metadata repository that stores information such as data source locations, schemas, and properties. Creating a table in the catalog does not move or replicate the source data. Distinguish the location where the actual data is stored from the table definition that helps users understand and use it.",
+        "A crawler can discover data sources and infer metadata. However, an inferred schema does not guarantee the business meaning of the data. Data providers and administrators must supplement it with column meanings, update ownership, quality requirements, and usage constraints.",
+        "If the catalog’s locations, schemas, or partitions differ from the data actually stored, users may query the wrong scope or overlook data they need. As part of the pipeline, decide which processes will update and validate the catalog when data is added or changed."
+      ],
+      "sources": [
+        {
+          "label": "Data discovery and cataloging with AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        },
+        {
+          "label": "AWS Glue concepts",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ],
+      "figureId": "dea-data-ownership-and-catalog"
+    },
+    {
+      "id": "schema-evolution-and-lineage",
+      "title": "Treat Schema Changes as Changes to the User Contract",
+      "paragraphs": [
+        "Schema changes include adding columns, changing column names or data types, and changing the meaning of values. Adding a new column is not necessarily safe. Confirm how downstream aggregations, joins, quality checks, and permission settings will handle the column, and determine a compatible migration procedure.",
+        "Keeping the schemas before and after the change, the application date and time, the affected data, and the transformation version makes it possible to trace why the results changed. AWS Glue Data Catalog can manage schemas and partitions and provides data lineage information through records of the transformations and operations performed on the data.",
+        "Data lineage is not about decorating a single arrow from input to output. It is a record that lets you trace which version of which dataset was used by which process, when it was used, and who is responsible for it."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 2: Data Store Management",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Data Discovery and Cataloging with AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-and-recovery-scope",
+      "title": "Determine Retention and Recovery for Each Dataset",
+      "paragraphs": [
+        "A data lifecycle defines each stage: creation, use, storage, and deletion. Rather than retaining everything for the same period, review each dataset against legal and contractual requirements, the history needed for analysis, the inputs needed for reprocessing, and how personal information is handled.",
+        "Recovery requirements are not satisfied merely by having backups. Define who will restore which data from which point in time and for what scope, and which users must not be affected. In some cases, it is more appropriate to rebuild derived data for analysis from trusted inputs and transformation procedures.",
+        "Before automating retention periods and deletion processes, confirm that references to users currently accessing the data, audit evidence, and the basis for reprocessing will remain available. Separating records of deletion targets, responsible owners, and exception approvals makes it possible to balance retention costs with accountability."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 2: Data Store Management",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Data Discovery and Cataloging with AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-store-001",
+      "prompt": "An analyst at a travel company repeatedly aggregates three years of booking history stored in Amazon S3, filtering it by date and region. Which approach would best support this use while minimizing the amount of data read?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Concatenate all years and regions into one unpartitioned file and read every record each time.",
+          "explanation": "Reading every record each time when the data is filtered by date or region increases unnecessary reads."
+        },
+        {
+          "id": "c",
+          "text": "Duplicate the entire same history for each analyst in separate locations.",
+          "explanation": "Duplication increases the amount of data to manage and the risk of inconsistencies; it is not a design that reduces the amount of data read."
+        },
+        {
+          "id": "b",
+          "text": "Design partitions and a data format that correspond to the date and region filtering conditions, and synchronize the catalog definitions as well.",
+          "explanation": "Correct. Partitions and metadata management aligned with the users’ filtering conditions allow the relevant data range to be read efficiently."
+        },
+        {
+          "id": "d",
+          "text": "Assume that creating a catalog table automatically optimizes the files that are already stored.",
+          "explanation": "A catalog contains metadata; creating one alone does not change the placement or format of the actual data."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-002",
+      "prompt": "A data provider at a medical device company adds a new column to the measurement data. Existing analyses aggregate the data based on the old schema. What should the data engineer do first to avoid incorrect aggregation caused by the change?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Confirm only that a column was added and apply the change to production without investigating its impact on users.",
+          "explanation": "Even when a column is added, its impact on downstream transformations, quality checks, permissions, and aggregations must be assessed."
+        },
+        {
+          "id": "b",
+          "text": "Confirm the change scope, effective time, schema version, and downstream compatibility, and document the update procedure.",
+          "explanation": "Correct. Treating the schema change as a contract change for data users makes it possible to validate the impact and track differences in the results."
+        },
+        {
+          "id": "c",
+          "text": "Delete the catalog table and then have the measurement data resent.",
+          "explanation": "Deleting the table only conceals the impact; it does not provide a way to verify compatibility with the change or the correctness of the actual data."
+        },
+        {
+          "id": "d",
+          "text": "Always convert the new column to an empty string and do not inform the data provider.",
+          "explanation": "Discarding meaningful new information without authorization damages data quality and the contract with the provider."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-003",
+      "prompt": "The operations manager at a video streaming company wants to be able to recover if the monthly viewing aggregate is accidentally deleted. The original viewing events and transformation procedure remain available. From the perspectives of recovery scope and accountability, which decision is most appropriate?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Establish the target month, the inputs to use, and the transformation version, then regenerate the monthly aggregate while validating the results.",
+          "explanation": "Correct. When reliable inputs and procedures are available, explicitly defining the target scope and regenerating the derived data allows the result to be validated and explained."
+        },
+        {
+          "id": "a",
+          "text": "Manually estimate and restore only the current monthly aggregate without reconciling it with the original data.",
+          "explanation": "A speculative restoration cannot demonstrate the accuracy of the aggregate or the scope of what was recovered."
+        },
+        {
+          "id": "c",
+          "text": "Keep all historical data indefinitely and do not define a recovery procedure.",
+          "explanation": "Retention alone does not establish who will restore what scope or how, so it does not meet the recovery requirements."
+        },
+        {
+          "id": "d",
+          "text": "Do not inform users that the aggregate was deleted, and wait until the next monthly processing cycle.",
+          "explanation": "Leaving a known missing output unaddressed could cause users to make decisions based on incorrect information."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "Data lake",
+    "Data Catalog",
+    "Partition key",
+    "Schema evolution",
+    "Data lineage",
+    "TTL"
+  ]
+}

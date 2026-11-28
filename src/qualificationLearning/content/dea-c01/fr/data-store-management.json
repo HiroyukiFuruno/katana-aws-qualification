@@ -1,0 +1,190 @@
+{
+  "id": "data-store-management",
+  "title": "Gestion des magasins de données",
+  "objective": "Expliquer et sélectionner des stratégies de gestion des magasins de données et des métadonnées en fonction des schémas d’accès des utilisateurs, des périodes de conservation, des schémas, ainsi que des exigences de performance et de coût.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Services AWS essentiels"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protection des données"
+    },
+    {
+      "slug": "observability",
+      "title": "Surveillance et amélioration"
+    }
+  ],
+  "sections": [
+    {
+      "id": "storage-by-access-pattern",
+      "title": "Choisir le stockage en fonction de l’utilisation des données, et non de leur forme",
+      "paragraphs": [
+        "Lors du choix d’un stockage de données, il faut d’abord tenir compte non seulement du volume à stocker, mais aussi des personnes qui liront et écriront les données et des conditions applicables. Les modèles d’accès et les méthodes d’optimisation nécessaires diffèrent pour récupérer à faible latence la valeur actuelle à l’aide d’une clé spécifique, effectuer des agrégations couvrant plusieurs périodes et exécuter des requêtes analytiques sur des fichiers conservés à long terme.",
+        "Pour stocker des données à des fins d’analyse, combinez le partitionnement, la compression, le format de fichier, ainsi que les colonnes et les périodes à lire afin de réduire les lectures inutiles. Les partitions doivent être conçues pour réduire la plage de données en fonction des critères de recherche des utilisateurs, et non simplement pour augmenter le nombre de noms de dossiers.",
+        "Si vous choisissez le stockage en vous fondant uniquement sur les performances, les exigences de conservation, de récupération, de contrôle d’accès et de coût risquent d’être insuffisantes par la suite. Pour chaque jeu de données, consignez et comparez la fréquence de mise à jour, les critères de recherche, la durée de conservation, l’étendue nécessaire lors de la récupération et les utilisateurs."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 2 : gestion des stockages de données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Découverte et catalogage des données avec AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "catalog-is-metadata-not-data",
+      "title": "Un catalogue de données contient des informations pour utiliser les données, et non les données réelles",
+      "paragraphs": [
+        "AWS Glue Data Catalog est un référentiel central de métadonnées qui stocke notamment les emplacements des sources de données, les schémas et les propriétés. La création d’une table dans le catalogue ne déplace ni ne réplique les données sources. Il faut distinguer l’emplacement où les données réelles sont stockées de la définition de table qui aide les utilisateurs à les comprendre et à les utiliser.",
+        "Un crawler peut détecter des sources de données et déduire des métadonnées. Toutefois, un schéma déduit ne garantit pas la signification métier des données. Les fournisseurs de données et les administrateurs doivent le compléter par la signification des colonnes, le responsable des mises à jour, les exigences de qualité et les contraintes d’utilisation.",
+        "Si les emplacements, les schémas ou les partitions du catalogue diffèrent du contenu réellement stocké, les utilisateurs peuvent interroger une étendue incorrecte ou ne pas trouver les données dont ils ont besoin. Dans le cadre du pipeline, déterminez quels processus mettront à jour et valideront le catalogue lorsque des données seront ajoutées ou modifiées."
+      ],
+      "sources": [
+        {
+          "label": "Découverte et catalogage des données avec AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        },
+        {
+          "label": "Concepts AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ],
+      "figureId": "dea-data-ownership-and-catalog"
+    },
+    {
+      "id": "schema-evolution-and-lineage",
+      "title": "Traiter les modifications de schéma comme des modifications du contrat avec les utilisateurs",
+      "paragraphs": [
+        "Les modifications de schéma comprennent l’ajout de colonnes, la modification des noms de colonnes ou des types de données, ainsi que la modification de la signification des valeurs. L’ajout d’une nouvelle colonne n’est pas forcément sans risque. Vérifiez comment les agrégations, les jointures, les contrôles de qualité et les paramètres d’autorisation en aval traiteront cette colonne, puis définissez une procédure de migration compatible.",
+        "Conserver les schémas avant et après la modification, la date et l’heure d’application, les données concernées et la version de la transformation permet de retracer la raison des changements de résultat. AWS Glue Data Catalog peut gérer les schémas et les partitions et fournit des informations de traçabilité des données grâce aux enregistrements des transformations et des opérations exécutées sur les données.",
+        "La traçabilité des données ne consiste pas à décorer le flux d’une seule flèche allant de l’entrée à la sortie. Il s’agit d’un enregistrement permettant de retracer la version de chaque jeu de données utilisée, le processus qui l’a utilisée, le moment de cette utilisation et la personne qui en est responsable."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 2 : Gestion des magasins de données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Découverte et catalogage des données avec AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-and-recovery-scope",
+      "title": "Déterminer la conservation et la récupération pour chaque jeu de données",
+      "paragraphs": [
+        "Le cycle de vie des données définit chaque étape : création, utilisation, stockage et suppression. Au lieu de conserver toutes les données pendant la même durée, examinez pour chaque jeu de données les exigences légales et contractuelles, l’historique nécessaire à l’analyse, les entrées nécessaires au retraitement et le traitement des informations personnelles.",
+        "Les exigences de récupération ne sont pas satisfaites par la seule présence de sauvegardes. Définissez qui restaurera quelles données, à partir de quel point dans le temps et pour quelle portée, ainsi que les utilisateurs qui ne doivent pas être affectés. Dans certains cas, il peut être plus approprié de reconstruire les données dérivées destinées à l’analyse à partir d’entrées fiables et de procédures de transformation.",
+        "Avant d’automatiser les durées de conservation et les processus de suppression, vérifiez que les références aux utilisateurs qui consultent actuellement les données, les éléments probants d’audit et le fondement du retraitement resteront disponibles. La séparation des enregistrements des cibles de suppression, des responsables et des approbations d’exception permet de concilier les coûts de conservation et la responsabilité."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domaine 2 : gestion des magasins de données",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain2.html"
+        },
+        {
+          "label": "Découverte et catalogage des données avec AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-store-001",
+      "prompt": "Un analyste d’une agence de voyages agrège régulièrement l’historique des réservations des trois dernières années stocké dans Amazon S3, en le filtrant par date et par région. Quelle approche convient le mieux pour prendre en charge cet usage tout en réduisant le volume de données lu ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Concaténer toutes les années et toutes les régions dans un seul fichier non partitionné et lire tous les enregistrements à chaque fois.",
+          "explanation": "Lire tous les enregistrements à chaque fois alors que les données sont filtrées par date ou par région augmente les lectures inutiles."
+        },
+        {
+          "id": "c",
+          "text": "Dupliquer l’intégralité du même historique pour chaque analyste dans des emplacements distincts.",
+          "explanation": "La duplication accroît le volume de données à gérer et les risques d’incohérence ; elle ne permet pas de réduire le volume de données lu."
+        },
+        {
+          "id": "b",
+          "text": "Concevoir des partitions et un format de données correspondant aux critères de filtrage par date et par région, et synchroniser également les définitions du catalogue.",
+          "explanation": "Correct. Des partitions et une gestion des métadonnées adaptées aux critères de filtrage des utilisateurs permettent de lire efficacement la plage de données pertinente."
+        },
+        {
+          "id": "d",
+          "text": "Penser que la création d’une table dans le catalogue optimise automatiquement les fichiers déjà stockés.",
+          "explanation": "Un catalogue contient des métadonnées ; sa seule création ne modifie ni l’emplacement ni le format des données réelles."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-002",
+      "prompt": "Un fournisseur de données d’une entreprise de dispositifs médicaux ajoute une nouvelle colonne aux données de mesure. Les analyses existantes agrègent les données en fonction de l’ancien schéma. Que doit faire l’ingénieur data en premier pour éviter une agrégation incorrecte due à cette modification ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Vérifier uniquement qu’une colonne a été ajoutée, puis appliquer la modification en production sans étudier son impact sur les utilisateurs.",
+          "explanation": "Même lorsqu’une colonne est ajoutée, il faut évaluer son impact sur les transformations en aval, les contrôles qualité, les autorisations et les agrégations."
+        },
+        {
+          "id": "b",
+          "text": "Vérifier le périmètre de la modification, sa date d’entrée en vigueur, la version du schéma et la compatibilité en aval, puis documenter la procédure de mise à jour.",
+          "explanation": "Correct. Traiter la modification du schéma comme une modification du contrat avec les utilisateurs des données permet d’en valider l’impact et de suivre les différences entre les résultats."
+        },
+        {
+          "id": "c",
+          "text": "Supprimer la table du catalogue, puis demander que les données de mesure soient envoyées à nouveau.",
+          "explanation": "La suppression de la table ne fait que masquer l’impact ; elle ne permet pas de vérifier la compatibilité de la modification ni l’exactitude des données réelles."
+        },
+        {
+          "id": "d",
+          "text": "Convertir systématiquement la nouvelle colonne en chaîne vide et ne pas en informer le fournisseur de données.",
+          "explanation": "Supprimer sans autorisation de nouvelles informations pertinentes nuit à la qualité des données et au contrat avec le fournisseur."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-store-003",
+      "prompt": "Le responsable des opérations d’une entreprise de streaming vidéo veut pouvoir récupérer les données si l’agrégation mensuelle des visionnages est supprimée par erreur. Les événements de visionnage d’origine et la procédure de transformation sont toujours disponibles. Du point de vue du périmètre de récupération et de la responsabilité, quelle décision est la plus appropriée ?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Définir le mois concerné, les entrées à utiliser et la version de la transformation, puis régénérer l’agrégation mensuelle en validant les résultats.",
+          "explanation": "Correct. Lorsque des entrées et des procédures fiables sont disponibles, définir explicitement le périmètre concerné et régénérer les données dérivées permet de valider et d’expliquer le résultat."
+        },
+        {
+          "id": "a",
+          "text": "Restaurer manuellement, en l’estimant, uniquement l’agrégation mensuelle actuelle, sans la rapprocher des données d’origine.",
+          "explanation": "Une restauration fondée sur des estimations ne permet pas de démontrer l’exactitude de l’agrégation ni le périmètre réellement récupéré."
+        },
+        {
+          "id": "c",
+          "text": "Conserver toutes les données historiques indéfiniment et ne définir aucune procédure de récupération.",
+          "explanation": "La conservation seule ne permet pas de déterminer qui doit restaurer quelles données ni comment ; elle ne répond donc pas aux exigences de récupération."
+        },
+        {
+          "id": "d",
+          "text": "Ne pas informer les utilisateurs que l’agrégation a été supprimée et attendre le prochain traitement mensuel.",
+          "explanation": "Laisser sans traitement une sortie dont l’absence est connue pourrait amener les utilisateurs à prendre des décisions fondées sur des informations incorrectes."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "Data lake",
+    "Data Catalog",
+    "Partition key",
+    "Schema evolution",
+    "Data lineage",
+    "TTL"
+  ]
+}

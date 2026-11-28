@@ -1,0 +1,189 @@
+{
+  "id": "data-ingestion-and-transformation",
+  "title": "Ingesta y transformación de datos",
+  "objective": "Explicar el flujo de ingesta y transformación de datos y elegir decisiones de diseño adecuadas en función del origen de los datos, la frecuencia de llegada, la necesidad de reprocesamiento y el propósito de uso de los datos transformados.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Servicios principales de AWS"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protección de datos"
+    },
+    {
+      "slug": "observability",
+      "title": "Supervisión y mejora"
+    }
+  ],
+  "sections": [
+    {
+      "id": "batch-and-streaming-inputs",
+      "title": "Distinguir el procesamiento por lotes del streaming según cómo llegan los datos",
+      "paragraphs": [
+        "Al ingerir datos, primero hay que aclarar quién envía qué, cuándo están disponibles los datos y para qué momento necesitan los usuarios los resultados. Por ejemplo, los archivos de ventas que se finalizan cada noche pueden procesarse por lotes. En cambio, cuando los registros deben procesarse en el orden en que llegan, como los datos de ubicación enviados continuamente por vehículos de reparto, deben procesarse mediante streaming.",
+        "Amazon Kinesis Data Streams es un servicio para recopilar y procesar en tiempo real grandes volúmenes de registros de streaming. Elegir el streaming no significa que todo el procesamiento deba finalizar de inmediato. Para poder validar y reprocesar posteriormente los registros ingeridos, diseñe el sistema separando la entrada, la posición procesada y el tratamiento de los registros fallidos.",
+        "La elección entre el procesamiento por lotes y el streaming no comienza por el nombre de un servicio. Primero, organice en una tabla la frecuencia de llegada, la latencia aceptable, el volumen de datos, el orden y los requisitos de reprocesamiento. Después, defina los límites de responsabilidad desde el origen hasta los usuarios antes de elegir el método de ingestión."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 1: Ingestión y transformación de datos",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "¿Qué es Amazon Kinesis Data Streams?",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-data-ingestion-flow"
+    },
+    {
+      "id": "repeatable-raw-data-and-schema",
+      "title": "No confundas los datos sin procesar, los esquemas y los resultados de las transformaciones",
+      "paragraphs": [
+        "En una canalización reproducible, distingue entre los datos sin procesar recibidos, las reglas utilizadas para la transformación y los resultados transformados. Cuando se detecta un defecto en la lógica de transformación, identificar los datos sin procesar y el alcance del procesamiento permite volver a procesar únicamente el intervalo necesario con la lógica corregida. Si sobrescribes los datos sin procesar con el contenido transformado, pierdes el material necesario para las verificaciones posteriores.",
+        "En AWS Glue, el catálogo de datos, los crawlers, los trabajos de ETL y los activadores tienen funciones diferentes. Una tabla de Data Catalog no son los datos en sí, sino metadatos que describen, entre otros aspectos, la ubicación de los datos y el esquema. No utilices incondicionalmente los resultados inferidos por el crawler; acuerda con los proveedores de datos las condiciones para modificar el esquema y comprueba el impacto en los usuarios posteriores.",
+        "Las transformaciones, como cambiar el formato de CSV a un formato columnar, particionar por fecha y hora o eliminar columnas innecesarias, deben determinarse en función de las consultas que se utilizarán y de las condiciones operativas. Registrar el objetivo de la transformación, la versión de los datos de entrada, el destino de salida y los resultados de validación facilita explicar cómo se obtuvo el mismo resultado."
+      ],
+      "sources": [
+        {
+          "label": "Conceptos de AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        },
+        {
+          "label": "DEA-C01 Dominio 1: ingesta y transformación de datos",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "orchestration-and-failure-handling",
+      "title": "Definir el orden del procesamiento y el destino de los errores",
+      "paragraphs": [
+        "La orquestación de una canalización es más que iniciar trabajos en secuencia. Es un mecanismo que avanza al siguiente procesamiento solo después de confirmar que el procesamiento anterior se completó correctamente, que todas las entradas están disponibles y que se cumplen las condiciones de calidad. La elección de una programación, un evento o una ejecución manual como punto de entrada depende de las condiciones que hacen que los datos estén disponibles.",
+        "En un diseño para gestionar errores, se distinguen los fallos temporales que se pueden reintentar de los datos no válidos cuyo contenido debe revisar una persona. Si solo se aumentan los reintentos automáticos sin definir el número de reintentos, el tiempo de espera, la ubicación de aislamiento, el destino de las notificaciones y la unidad que se reanudará, se corre el riesgo de procesar repetidamente la misma entrada incorrecta.",
+        "Cuando existe la posibilidad de recibir la misma entrada varias veces, se debe diseñar una clave que identifique las entradas ya procesadas o un método de actualización que evite duplicar la salida. No se trata de una función exclusiva de un servicio concreto, sino de una característica que exige considerar conjuntamente las entradas, el estado y las salidas."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 1: ingesta y transformación de datos",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Conceptos de AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/components-key-concepts.html"
+        }
+      ]
+    },
+    {
+      "id": "transformation-quality-contract",
+      "title": "Definir claramente los criterios de calidad antes y después de la transformación",
+      "paragraphs": [
+        "La finalización de un proceso de transformación no puede determinarse únicamente por el hecho de que el trabajo termine sin errores. Para los datos de pedidos, define criterios de calidad acordes con su finalidad, como números de pedido duplicados, campos obligatorios ausentes, rangos de importes y existencia de los registros referenciados. Decide también dónde aislar las filas que no cumplan los criterios, quién las revisará y en qué condiciones se volverán a procesar.",
+        "Los criterios de calidad deben compartirse entre los responsables de los datos de origen, los ingenieros de datos y el departamento usuario. Si el proveedor añade o elimina columnas, o cambia su significado, registra desde cuándo y para qué entradas se aplica el cambio y verifica la compatibilidad entre la transformación y el lado consumidor. Es importante distinguir las situaciones en las que un cambio de esquema debe detectarse y detener el procesamiento de aquellas en las que puede aceptarse mediante un valor predeterminado.",
+        "Al dividir la calidad entre las etapas de entrada, transformación y antes de la publicación, se puede rastrear dónde se produjeron los fallos y quién es responsable. La supervisión debe medir no solo el número de registros, sino también el número de registros aislados, los retrasos y el periodo cubierto por las actualizaciones."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Dominio 1: ingestión y transformación de datos",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain1.html"
+        },
+        {
+          "label": "Descubrimiento y catalogación de datos con AWS Glue",
+          "url": "https://docs.aws.amazon.com/ja_jp/glue/latest/dg/catalog-and-crawler.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-ingestion-001",
+      "prompt": "El ingeniero de datos de una fábrica debe mostrar en el panel del equipo de mantenimiento los eventos que se emiten cuando cambia el estado de un equipo, en un plazo de 30 segundos. Si se detecta un defecto en la transformación, el equipo debe poder corregirlo y volver a procesar cualquier hora especificada de los últimos 14 días. ¿Qué diseño cumple estos requisitos?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Agrupar los eventos de los equipos en archivos diarios, transformarlos a la mañana siguiente y actualizar entonces el panel.",
+          "explanation": "El procesamiento a la mañana siguiente no permite actualizar el panel en los 30 segundos posteriores a la recepción de los eventos."
+        },
+        {
+          "id": "c",
+          "text": "Guardar solo los valores agregados al recibir los eventos y mantener un historial de los cambios en el código de transformación.",
+          "explanation": "Incluso con el historial del código, el equipo no puede volver a procesar el intervalo indicado sin los eventos originales."
+        },
+        {
+          "id": "b",
+          "text": "Ingerir los eventos como un flujo y conservar los eventos originales durante 14 días. Registrar por separado la posición de procesamiento y permitir que se vuelvan a procesar los datos originales del intervalo indicado.",
+          "explanation": "La canalización puede transformar los eventos a medida que llegan y actualizar el panel. Conservar por separado los datos de entrada y la posición de procesamiento permite volver a procesar únicamente el intervalo indicado después de corregir la transformación."
+        },
+        {
+          "id": "d",
+          "text": "Actualizar el panel al recibir cada evento y conservar solo los datos originales de la última hora.",
+          "explanation": "El intervalo que hay que volver a procesar dura una hora, pero puede corresponder a cualquier momento de los últimos 14 días. Conservar solo la última hora no basta."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-002",
+      "prompt": "El proveedor de datos de una empresa minorista coloca archivos CSV de pedidos en Amazon S3 todas las mañanas. Después de corregir la lógica de transformación, el ingeniero de datos quiere poder volver a ejecutar el procesamiento solo para fechas específicas y verificar el contenido recibido durante una auditoría. ¿Qué enfoque debe adoptarse primero?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Sobrescribir los archivos CSV recibidos con las tablas transformadas sin validarlos y conservar únicamente los resultados más recientes.",
+          "explanation": "Esto impide distinguir el contenido recibido de los resultados de la transformación, lo que dificulta verificar o volver a ejecutar posteriormente el procesamiento de una fecha específica."
+        },
+        {
+          "id": "c",
+          "text": "Suponer que los nombres de las columnas CSV siempre tienen el mismo significado aunque cambien y transformar los datos sin verificarlos.",
+          "explanation": "Los cambios en los nombres de las columnas, los tipos de datos o el significado de los valores pueden provocar errores en las agregaciones posteriores, por lo que deben verificarse las condiciones de los cambios de esquema."
+        },
+        {
+          "id": "d",
+          "text": "Ignorar todos los errores del trabajo de transformación para eliminar la necesidad de volver a ejecutarlo.",
+          "explanation": "Ignorar los errores puede hacer que se publique una salida incompleta, lo que perjudica la calidad y la auditabilidad."
+        },
+        {
+          "id": "b",
+          "text": "Identificar el alcance de las entradas por fecha u otro criterio y registrar por separado los datos originales, las reglas de transformación y los destinos de salida.",
+          "explanation": "Correcto. Conservar el alcance y su justificación permite reprocesar solo las fechas necesarias después de una corrección y explicar los resultados."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-ingestion-003",
+      "prompt": "Un ingeniero de datos de una compañía de seguros quiere detectar números de póliza duplicados y fechas de inicio de póliza obligatorias ausentes después de transformar los datos de las pólizas. ¿Cuál es la forma más adecuada de mantener la calidad de los datos que utilizarán los analistas posteriores, incluidas las filas no válidas detectadas?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Cuando el trabajo termine con el código de salida 0, publicar todas las filas tal como están.",
+          "explanation": "El estado de finalización del trabajo por sí solo no puede garantizar la calidad del contenido, como la ausencia de duplicados o de valores obligatorios."
+        },
+        {
+          "id": "c",
+          "text": "Corregir aleatoriamente las filas no válidas sin registrar qué se modificó.",
+          "explanation": "Si no se conservan la justificación de las correcciones y su alcance de impacto, no es posible verificar su exactitud ni investigar una recurrencia."
+        },
+        {
+          "id": "d",
+          "text": "Como las condiciones de calidad varían según el usuario, no compartirlas con el proveedor.",
+          "explanation": "Si el proveedor, el equipo de transformación y los usuarios no comparten las condiciones, no pueden evaluar de forma segura el impacto de los cambios."
+        },
+        {
+          "id": "b",
+          "text": "Aplicar los controles de calidad, aislar las filas no válidas, registrar su cantidad y alcance, y separarlas de las filas que se publicarán.",
+          "explanation": "Correcto. Combinar condiciones de calidad alineadas con el objetivo de uso, aislamiento y registro permite conservar la calidad y la trazabilidad de los datos para análisis."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Kinesis Data Streams",
+    "Data Catalog",
+    "Glue crawler",
+    "ETL job",
+    "Schema evolution",
+    "Data quality"
+  ]
+}

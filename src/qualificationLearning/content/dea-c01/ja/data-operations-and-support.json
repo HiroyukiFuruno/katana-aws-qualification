@@ -1,0 +1,191 @@
+{
+  "id": "data-operations-and-support",
+  "title": "データ運用とサポート",
+  "objective": "データパイプラインの状態、遅延、品質、変更履歴を観測し、障害時に対象範囲を特定して安全に再処理・改善できる。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "監視と改善"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "テストと品質ゲート"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "デプロイと復旧"
+    }
+  ],
+  "sections": [
+    {
+      "id": "operational-signals-and-alerts",
+      "title": "成功・失敗だけでなく、遅延と品質を観測する",
+      "paragraphs": [
+        "データパイプラインの運用では、実行成功の件数だけでは不十分です。入力件数、出力件数、処理時間、未処理の量、最新データの時刻、品質違反の件数を組み合わせて、利用者に届くデータが期待どおりかを確認します。",
+        "Amazon CloudWatch は AWS リソースと AWS 上のアプリケーションをリアルタイムにモニタリングし、メトリクス、ログ、アラームを扱えます。アラームは単に通知を送る装置ではなく、何を異常とみなすかを明確にした運用上の判断です。通知先には、対象のデータセット、影響する利用者、初動、確認すべき証跡を添えます。",
+        "しきい値は一度決めて終わりではありません。通常時の変動、締め処理などの周期、利用者が許容できる遅延を基に見直します。季節要因を無視して固定値だけを置くと、重要な異常を見逃したり、不要な通知で対応を鈍らせたりします。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 分野3: データ運用とサポート",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "Amazon CloudWatch とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "logs-traceability-and-change",
+      "title": "実行記録と変更記録を結び付けて原因を調べる",
+      "paragraphs": [
+        "調査に必要なのは、エラーメッセージだけではありません。ジョブの実行識別子、入力範囲、変換の版、設定、出力先、品質結果を記録し、同じ実行を後からたどれるようにします。これにより、いつから結果が変わったか、どの変更が影響したかを絞れます。",
+        "CloudWatch Logs はアプリケーションデータの記録と分析に使えます。また、試験ガイドが挙げるように AWS CloudTrail は API コールの追跡に使います。データ内容の品質を示す記録、処理の実行記録、AWS 操作の記録は目的が違うため、同じものとして扱いません。",
+        "障害時には、影響範囲を確認せずに全期間を再実行しません。入力の時刻、ジョブの版、失敗した処理単位、公開済みの出力を照合し、必要な範囲を隔離してから復旧手順を実行します。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 分野3: データ運用とサポート",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "Amazon CloudWatch とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "replay-and-idempotent-recovery",
+      "title": "再処理は対象範囲と重複を制御して行う",
+      "paragraphs": [
+        "再処理は、障害後に同じ入力をもう一度流す行為です。再処理を安全にするには、対象の開始・終了、入力の版、既に公開した出力、同じイベントを再び処理した場合の扱いを決めます。『再実行できる』だけでは、集計の二重計上を防げません。",
+        "通常の処理位置を記録していても、障害調査ではその位置より前から読み直す必要があることがあります。このとき、運用者が明示的に対象範囲を指定し、通常処理と区別して再生します。入力を永続的に参照できるようにしておくと、変換ロジックの修正後にも検証できます。",
+        "冪等性とは、同じ入力を複数回処理しても、意図した結果が重複しない性質です。イベント識別子や業務キーで重複を判定し、出力更新を設計します。どのキーが一意か、遅れて届く訂正をどう扱うかは、業務のデータ所有者と合意します。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 分野3: データ運用とサポート",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "Amazon Kinesis Data Streams とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-stream-replay-and-recovery"
+    },
+    {
+      "id": "quality-incident-response",
+      "title": "品質異常は隔離、通知、原因確認の順に扱う",
+      "paragraphs": [
+        "品質異常が見つかったときは、正常なデータを止めるか、不正な範囲だけを隔離するかを、利用者への影響と誤利用の危険で判断します。たとえば、金額が不正な一部の行だけを隔離できる場合と、基準列の意味が変わって全件を信用できない場合では、対応が異なります。",
+        "隔離したデータには、なぜ隔離されたのか、元の入力は何か、どの規則で検出したか、誰が確認するかを付けます。隔離場所を作るだけでは、問題が解決したことにはなりません。原因を確認して、入力の修正、変換規則の修正、または品質規則の見直しを行います。",
+        "復旧後は、同じ品質条件を使って対象範囲を再確認します。件数が戻ったことだけでなく、品質違反が解消され、利用者にどの期間の結果が更新されたかを知らせます。"
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 分野3: データ運用とサポート",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "Amazon CloudWatch とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-operations-001",
+      "prompt": "決済会社のデータ運用担当者は、毎時の取引集計を利用する不正検知チームに、データが古い場合だけ確実に知らせたいと考えています。ジョブの成功・失敗だけでは、入力が来なかった場合を検知できません。最も適切な監視設計はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "最新の正常出力時刻、入力件数、品質違反件数を記録し、利用者の許容遅延を超えたときに担当者へ通知する。",
+          "explanation": "正解です。利用者に届くデータの新しさと品質を判断でき、異常時に対象と初動を示した通知につなげられます。"
+        },
+        {
+          "id": "a",
+          "text": "ジョブの終了コードだけを監視し、入力時刻や出力の新しさは測定しない。",
+          "explanation": "入力が届かずジョブが形式上成功する場合、利用者に古い集計が渡っても検知できません。"
+        },
+        {
+          "id": "c",
+          "text": "通常時と繁忙期の差を考えず、常に同じ極めて短いしきい値で通知する。",
+          "explanation": "周期や通常の変動を無視すると、不要な通知が増え、重要な異常への対応が鈍るおそれがあります。"
+        },
+        {
+          "id": "d",
+          "text": "不正検知チームが古いデータに気付くまで、通知を送らない。",
+          "explanation": "データ運用側が鮮度条件を観測・通知しなければ、利用者が誤った判断をするリスクが高まります。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-002",
+      "prompt": "出版会社のデータエンジニアは、変換ジョブの不具合により午前10時から11時の閲覧イベントだけが誤集計されたことを確認しました。元のイベントと修正済みの変換ロジックは残っています。二重計上を避けて復旧する方法として最も適切なものはどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "午前10時から11時の入力範囲と処理済み識別子を確定し、重複を抑える更新方法で再処理する。",
+          "explanation": "正解です。対象範囲を限定し、同じイベントを複数回処理しても結果が重複しないようにして復旧します。"
+        },
+        {
+          "id": "a",
+          "text": "影響範囲を確認せず、全期間の入力を通常処理に重ねて流す。",
+          "explanation": "全期間を無差別に流すと、正常な出力まで重複・上書きするリスクがあります。"
+        },
+        {
+          "id": "c",
+          "text": "誤集計を残したまま、次回の変換から修正済みロジックだけを使う。",
+          "explanation": "既に誤った期間を利用者が参照するため、影響範囲の復旧と通知が必要です。"
+        },
+        {
+          "id": "d",
+          "text": "元のイベントを削除し、誤集計を見えなくする。",
+          "explanation": "調査・再処理の根拠を失い、問題の説明や適切な復旧ができなくなります。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-003",
+      "prompt": "研究機関のデータ品質担当者は、温度センサーの値が許容範囲外の行を検出しました。ほかの正常な測定値は予定どおり分析担当者へ渡したいと考えています。不正な行への対応として最も適切なものはどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "不正な行を正常な測定値へ無条件に書き換え、記録を残さない。",
+          "explanation": "根拠のない書き換えでは、データ品質と監査可能性を損ないます。"
+        },
+        {
+          "id": "b",
+          "text": "不正な行を検出規則と元の入力情報付きで隔離し、正常な範囲を公開して原因を確認する。",
+          "explanation": "正解です。影響範囲を分け、隔離した理由と入力を追跡できるようにして、正常な利用を不必要に止めません。"
+        },
+        {
+          "id": "c",
+          "text": "一行でも不正なら、原因を調べずに全履歴を削除する。",
+          "explanation": "影響範囲を見極めずに全履歴を削除すると、正常なデータと調査の根拠まで失います。"
+        },
+        {
+          "id": "d",
+          "text": "品質規則は公開後に初めて決めるため、今回は何もしない。",
+          "explanation": "品質条件と対応方法は、利用に渡す前に定義・実行する必要があります。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudWatch alarm",
+    "CloudTrail",
+    "Data freshness",
+    "Data quality",
+    "Idempotency",
+    "Data lineage",
+    "Structured logging"
+  ]
+}

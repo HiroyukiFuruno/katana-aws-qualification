@@ -1,0 +1,191 @@
+{
+  "id": "data-operations-and-support",
+  "title": "Data Operations and Support",
+  "objective": "Monitor the state, latency, quality, and change history of data pipelines, and, when failures occur, identify the affected scope so you can safely reprocess and improve the pipelines.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Deployment and Recovery"
+    }
+  ],
+  "sections": [
+    {
+      "id": "operational-signals-and-alerts",
+      "title": "Observe latency and quality, not just success and failure",
+      "paragraphs": [
+        "In data pipeline operations, counting successful executions alone is not enough. Combine the input count, output count, processing time, amount of unprocessed data, timestamp of the latest data, and number of quality violations to verify that the data delivered to users meets expectations.",
+        "Amazon CloudWatch monitors AWS resources and applications on AWS in real time and handles metrics, logs, and alarms. An alarm is not merely a device that sends notifications; it is an operational decision that clearly defines what is considered abnormal. Notifications should include the affected dataset, impacted users, initial response, and evidence that must be checked.",
+        "Thresholds are not something you decide once and leave unchanged. Review them based on normal variation, cycles such as closing processes, and the latency users can tolerate. If you ignore seasonal factors and use only fixed values, you may miss important anomalies or slow responses with unnecessary notifications."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 3: Data Operations and Support",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "What is Amazon CloudWatch?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "logs-traceability-and-change",
+      "title": "Linking execution records with change records to investigate causes",
+      "paragraphs": [
+        "Investigating a problem requires more than just error messages. Record the job execution ID, input range, transformation version, configuration, output destination, and quality results so that the same execution can be traced later. This helps narrow down when the results started to change and which change affected them.",
+        "CloudWatch Logs can be used to record and analyze application data. As noted in the exam guide, AWS CloudTrail is used to track API calls. Records showing data-content quality, processing execution records, and records of AWS operations serve different purposes and must not be treated as the same thing.",
+        "During an incident, do not rerun the entire period without first confirming the impact scope. Compare the input times, job version, failed processing unit, and published outputs; then isolate the necessary scope before executing the recovery procedure."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 3: Data Operations and Support",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "What is Amazon CloudWatch?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "replay-and-idempotent-recovery",
+      "title": "Control scope and duplication when replaying data",
+      "paragraphs": [
+        "Reprocessing means running the same input again after a failure. To make reprocessing safe, decide the start and end of the target range, the input version, the outputs already published, and how to handle processing the same event again. Being able to rerun a process alone does not prevent double-counting in aggregations.",
+        "Even when the normal processing position has been recorded, failure investigation may require reading from a point before that position. In this case, the operator explicitly specifies the target range and replays it separately from normal processing. Keeping the input persistently accessible also allows validation after the transformation logic has been corrected.",
+        "Idempotency is the property that processing the same input multiple times does not duplicate the intended result. Design output updates by detecting duplicates using event identifiers or business keys. Agree with the business data owner on which keys are unique and how to handle corrections that arrive late."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 3: Data Operations and Support",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "What is Amazon Kinesis Data Streams?",
+          "url": "https://docs.aws.amazon.com/ja_jp/streams/latest/dev/introduction.html"
+        }
+      ],
+      "figureId": "dea-stream-replay-and-recovery"
+    },
+    {
+      "id": "quality-incident-response",
+      "title": "Handle quality anomalies in the order of isolation, notification, and root-cause verification",
+      "paragraphs": [
+        "When a quality anomaly is discovered, decide whether to stop normal data or isolate only the invalid range based on the impact on users and the risk of misuse. For example, the response differs depending on whether only some rows with invalid amounts can be isolated or the meaning of a reference column has changed, making the entire dataset untrustworthy.",
+        "For isolated data, record why it was isolated, what the original input was, which rule detected it, and who will verify it. Simply creating an isolation location does not resolve the problem. Verify the cause, then correct the input, revise the transformation rule, or review the quality rule.",
+        "After recovery, recheck the affected scope using the same quality conditions. Do not only confirm that the record count has returned; also confirm that the quality violation has been resolved and inform users which period's results have been updated."
+      ],
+      "sources": [
+        {
+          "label": "DEA-C01 Domain 3: Data Operations and Support",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01-domain3.html"
+        },
+        {
+          "label": "What is Amazon CloudWatch?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dea-operations-001",
+      "prompt": "A data operations manager at a payment company wants to reliably notify the fraud detection team that uses hourly transaction summaries only when the data is stale. Monitoring only whether a job succeeded or failed cannot detect when no input arrives. Which monitoring design is most appropriate?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Record the latest successful output timestamp, input count, and number of quality violations, and notify the responsible staff when the delay exceeds the users’ acceptable threshold.",
+          "explanation": "Correct. This makes it possible to assess the freshness and quality of the data delivered to users and to send notifications that identify the target and initial response when an anomaly occurs."
+        },
+        {
+          "id": "a",
+          "text": "Monitor only the job’s exit code, without measuring the input timestamp or the freshness of the output.",
+          "explanation": "If no input arrives but the job technically succeeds, stale summaries may be delivered to users without detection."
+        },
+        {
+          "id": "c",
+          "text": "Send notifications using the same extremely short threshold at all times, without considering the difference between normal periods and busy periods.",
+          "explanation": "Ignoring the cycle and normal variation can increase unnecessary notifications and may slow responses to important anomalies."
+        },
+        {
+          "id": "d",
+          "text": "Do not send a notification until the fraud detection team notices that the data is stale.",
+          "explanation": "If the data operations team does not monitor and notify about freshness conditions, users are more likely to make incorrect decisions."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-002",
+      "prompt": "A data engineer at a publishing company confirmed that, due to a defect in a transformation job, only the browsing events from 10:00 to 11:00 a.m. were aggregated incorrectly. The original events and the corrected transformation logic are still available. Which method is most appropriate for recovery while avoiding double-counting?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Confirm the input range from 10:00 to 11:00 a.m. and the processed identifiers, then reprocess it using an update method that limits duplicates.",
+          "explanation": "Correct. Limit the target range and recover it so that processing the same events multiple times does not produce duplicate results."
+        },
+        {
+          "id": "a",
+          "text": "Without determining the scope of the impact, run the inputs for the entire period through the normal process again.",
+          "explanation": "Running the entire period indiscriminately risks duplicating or overwriting even the correct output."
+        },
+        {
+          "id": "c",
+          "text": "Leave the incorrect aggregation in place and use only the corrected logic starting with the next transformation.",
+          "explanation": "Users would still be viewing the already incorrect period, so the affected range must be recovered and users must be notified."
+        },
+        {
+          "id": "d",
+          "text": "Delete the original events to make the incorrect aggregation invisible.",
+          "explanation": "This would eliminate the basis for investigation and reprocessing, making it impossible to explain the problem or recover appropriately."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dea-operations-003",
+      "prompt": "A data quality specialist at a research institution has detected rows in which the temperature sensor values fall outside the permitted range. They want to pass the other valid measurements to the analysts as scheduled. What is the most appropriate way to handle the invalid rows?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Unconditionally replace the invalid rows with valid measurement values and leave no record.",
+          "explanation": "Replacing data without a basis compromises data quality and auditability."
+        },
+        {
+          "id": "b",
+          "text": "Quarantine the invalid rows together with the detection rule and the original input information, publish the valid range, and investigate the cause.",
+          "explanation": "Correct. This separates the impact, makes it possible to trace why the rows were quarantined and what was input, and avoids unnecessarily stopping normal use."
+        },
+        {
+          "id": "c",
+          "text": "If even one row is invalid, delete the entire history without investigating the cause.",
+          "explanation": "Deleting the entire history without determining the scope of the impact also removes valid data and the basis for the investigation."
+        },
+        {
+          "id": "d",
+          "text": "Because the quality rules will be decided only after publication, do nothing this time.",
+          "explanation": "Quality conditions and the response method must be defined and applied before the data is made available for use."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudWatch alarm",
+    "CloudTrail",
+    "Data freshness",
+    "Data quality",
+    "Idempotency",
+    "Data lineage",
+    "Structured logging"
+  ]
+}

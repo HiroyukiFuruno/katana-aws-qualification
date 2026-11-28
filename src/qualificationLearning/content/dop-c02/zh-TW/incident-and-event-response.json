@@ -1,0 +1,135 @@
+{
+  "id": "incident-and-event-response",
+  "title": "因應事件與事故",
+  "objective": "能夠結合脈絡處理事件，執行限制影響範圍的變更，並進行疑難排解。",
+  "prerequisites": [
+    {
+      "slug": "monitoring-and-logging",
+      "title": "設計監控與日誌記錄",
+      "courseId": "dop-c02"
+    }
+  ],
+  "sections": [
+    {
+      "id": "event-routing",
+      "title": "將事件正確路由至通知與處理流程",
+      "paragraphs": [
+        "在事件驅動的回應中，應定義事件來源、事件格式、比對條件、重複事件、順序、重試方式，以及處理失敗時的去向。即使收到來自 AWS Health、EventBridge 和 CloudTrail 等服務的事件，也不要將所有事件都送入同一個自動化處理流程，而應根據嚴重性和影響範圍，分別路由至通知、工單、調查或自動化流程。",
+        "使用扇出、佇列或工作流程時，應以至少傳遞一次且可能出現重複事件為前提，設計具備冪等性的處理方式和死信處理機制。若將事件視為失敗而丟棄，可能導致回應遺漏及根因調查缺失。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考試指南：因應事件與事故",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "bounded-remediation",
+      "title": "為自動修復設定安全界線",
+      "paragraphs": [
+        "將針對設定偏離或故障的自動回應實作為執行手冊，其中定義目標範圍、先決條件、執行權限、並行數、成功條件、停止條件和回復程序。若不限制目標範圍而對所有環境進行變更，誤判或暫時性的相依性故障可能會演變為影響整個環境的故障。",
+        "修復後，確認變更歷程以及相同的使用者影響指標。如果沒有改善，不要無限重試；應停止執行、進行升級，並移交假設與證據。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ]
+    },
+    {
+      "id": "troubleshoot-with-evidence",
+      "title": "根據證據釐清故障",
+      "paragraphs": [
+        "故障處理人員會在同一條時間軸上比較故障發生時間、受影響的操作和使用者、緊接之前的部署與組態變更、相依項目、請求路徑、日誌以及指標。他們不會僅憑單次 CPU 升高或一筆日誌就斷定原因。",
+        "釐清故障時進行的變更應限制影響範圍，並記錄假設、預期的變化、觀測值以及回復方式。即使需要緊急復原，也不得刪除證據或移除所有保護措施。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考試指南：故障疑難排解",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dop-incident-1",
+      "prompt": "負責根據基礎設施變更事件執行自動化處理的人員，希望避免因重複事件而將相同的變更套用兩次。請選擇一種最適合的事件處理設計。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "使用事件 ID 或目標狀態以冪等方式處理事件，並設計對重試和死信佇列的檢查。",
+          "explanation": "即使發生重複事件或暫時性失敗，也能安全地處理。"
+        },
+        {
+          "id": "b",
+          "text": "假設每個事件只會傳遞一次，處理失敗時就捨棄該事件。",
+          "explanation": "這會同時導致未處理的事件和重複變更。"
+        },
+        {
+          "id": "c",
+          "text": "使用同一個管理員指令碼，無條件地執行所有事件。",
+          "explanation": "這種方式無法區分重要程度和影響範圍。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-incident-2",
+      "prompt": "您希望避免在誤判時自動修復設定偏差的執行手冊影響整個生產環境。請選擇一個最適合的執行手冊設計。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "定義目標、先決條件、最低權限、同時執行數，以及成功、停止和復原條件，然後限定範圍執行。",
+          "explanation": "這樣可以控制自動化的影響範圍。"
+        },
+        {
+          "id": "b",
+          "text": "偵測到問題時立即套用至所有環境，且不設定停止條件。",
+          "explanation": "這會使誤判擴大成影響整個環境的故障。"
+        },
+        {
+          "id": "c",
+          "text": "不檢查修復後的指標。",
+          "explanation": "無法確認修復效果或是否發生次生故障。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-incident-3",
+      "prompt": "新部署後訂單失敗次數增加了。請選擇一項由事故處理人員首先執行的最適當故障排查措施。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "由於 CPU 使用率很高，因此重新啟動所有服務。",
+          "explanation": "這會在尚未確認原因的情況下擴大影響範圍。"
+        },
+        {
+          "id": "a",
+          "text": "在同一條時間軸上比較受影響的操作、時間、使用者、變更歷程、請求路徑、相依項目、日誌與指標。",
+          "explanation": "如此即可將與變更的關係作為假設加以驗證。"
+        },
+        {
+          "id": "c",
+          "text": "為了便於調查而刪除日誌。",
+          "explanation": "這會遺失必要的證據。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EventBridge",
+    "Event-driven architecture",
+    "DLQ",
+    "Idempotency",
+    "Runbook",
+    "CloudTrail",
+    "Incident response",
+    "Correlation ID",
+    "Rollback"
+  ]
+}

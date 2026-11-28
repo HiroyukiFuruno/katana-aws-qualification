@@ -1,0 +1,135 @@
+{
+  "id": "incident-and-event-response",
+  "title": "应对事件和事故",
+  "objective": "能够结合上下文处理事件，实施限定影响范围的变更，并进行故障排查。",
+  "prerequisites": [
+    {
+      "slug": "monitoring-and-logging",
+      "title": "设计监控和日志记录",
+      "courseId": "dop-c02"
+    }
+  ],
+  "sections": [
+    {
+      "id": "event-routing",
+      "title": "将事件正确路由到通知和处理流程",
+      "paragraphs": [
+        "在事件驱动的响应中，应定义事件来源、事件格式、匹配条件、重复事件、顺序、重试方式以及处理失败时的去向。即使接收到来自 AWS Health、EventBridge 和 CloudTrail 等服务的事件，也不要将所有事件都发送到同一个自动化处理流程中，而应根据严重性和影响范围，将其分别路由到通知、工单、调查或自动化流程。",
+        "使用扇出、队列或工作流时，应以消息至少传递一次且可能出现重复为前提，设计幂等处理和死信处理机制。如果将事件作为失败事件丢弃，可能导致响应遗漏以及根因调查缺失。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考试指南：应对事件和事故",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "bounded-remediation",
+      "title": "为自动修复设置安全边界",
+      "paragraphs": [
+        "将针对配置偏差或故障的自动响应实施为运行手册，其中定义目标范围、前置条件、执行权限、并发数、成功条件、停止条件和回滚。若不限制目标范围而对所有环境进行更改，误报或暂时性的依赖项故障可能会演变为影响整个环境的故障。",
+        "修复后，检查变更历史以及相同的用户影响指标。如果没有改善，不要无限重试；应停止执行，进行升级，并移交假设和证据。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ]
+    },
+    {
+      "id": "troubleshoot-with-evidence",
+      "title": "根据证据排查故障",
+      "paragraphs": [
+        "故障响应人员会在同一条时间线上比较故障发生时间、受影响的操作和用户、紧接之前的部署和配置更改、依赖项、请求路径、日志以及指标。他们不会仅凭单次 CPU 升高或一条日志就断定原因。",
+        "排查过程中进行的更改应限制影响范围，并记录假设、预期变化、观测值以及回滚方法。即使需要紧急恢复，也不得删除证据或移除所有保护措施。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考试指南：故障排查",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dop-incident-1",
+      "prompt": "负责根据基础设施变更事件执行自动化处理的人员，希望避免因重复事件而将同一变更应用两次。请选择一种最合适的事件处理设计。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "使用事件 ID 或目标状态以幂等方式处理事件，并设计对重试和死信队列的检查。",
+          "explanation": "即使发生重复事件或暂时性故障，也能安全地进行处理。"
+        },
+        {
+          "id": "b",
+          "text": "假设每个事件只会送达一次，处理失败时将其丢弃。",
+          "explanation": "这会同时导致遗漏处理和重复变更。"
+        },
+        {
+          "id": "c",
+          "text": "通过同一个管理员脚本无条件地执行所有事件。",
+          "explanation": "这种方式无法区分重要程度和影响范围。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-incident-2",
+      "prompt": "您希望避免在误报时自动修复配置偏差的运行手册影响整个生产环境。请选择一个最合适的运行手册设计。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "定义目标、前置条件、最小权限、并发执行数以及成功、停止和回滚条件，然后进行限定范围的执行。",
+          "explanation": "这样可以控制自动化的影响范围。"
+        },
+        {
+          "id": "b",
+          "text": "检测到问题后立即应用于所有环境，并且不设置停止条件。",
+          "explanation": "这会使误报扩大为影响整个环境的故障。"
+        },
+        {
+          "id": "c",
+          "text": "不检查修复后的指标。",
+          "explanation": "无法确认修复效果或是否发生次生故障。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-incident-3",
+      "prompt": "新部署后订单失败次数增加了。请选择一项由故障处理人员首先执行的最合适的故障排查措施。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "由于 CPU 使用率很高，因此重启所有服务。",
+          "explanation": "这会在未确认原因的情况下扩大影响范围。"
+        },
+        {
+          "id": "a",
+          "text": "在同一时间线上比较受影响的操作、时间、用户、变更历史、请求路径、依赖项、日志和指标。",
+          "explanation": "这样可以将与变更的关系作为假设进行验证。"
+        },
+        {
+          "id": "c",
+          "text": "为了便于调查而删除日志。",
+          "explanation": "这会丢失必要的证据。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EventBridge",
+    "Event-driven architecture",
+    "DLQ",
+    "Idempotency",
+    "Runbook",
+    "CloudTrail",
+    "Incident response",
+    "Correlation ID",
+    "Rollback"
+  ]
+}

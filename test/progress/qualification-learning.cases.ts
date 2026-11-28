@@ -110,4 +110,12 @@ export const qualificationLearningCases: QualificationLearningCase[] = [
     answer: /承認状態と更新を管理した文書を検索し、取得片を応答へ渡して出典を示す。/,
     choiceCount: 4,
   },
+  {
+    courseId: 'dop-c02',
+    firstTitle: 'SDLC を自動化する',
+    nextUnit: 'configuration-and-iac',
+    prompt: /決済 API のリリース担当者は、本番で実行されたコードが承認済みテストを通/,
+    answer: /コミット、テスト結果、署名済みの不変アーティファクト、承認、環境昇格を一つの配信記録/,
+    choiceCount: 3,
+  },
 ];

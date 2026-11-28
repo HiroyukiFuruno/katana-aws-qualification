@@ -1,0 +1,135 @@
+{
+  "id": "resilient-cloud-solutions",
+  "title": "實作具韌性的雲端解決方案",
+  "objective": "根據故障範圍、RTO/RPO、負載和狀態，實作可用性、可擴展性與自動復原。",
+  "prerequisites": [
+    {
+      "slug": "configuration-and-iac",
+      "title": "執行組態管理與 IaC",
+      "courseId": "dop-c02"
+    }
+  ],
+  "sections": [
+    {
+      "id": "availability-boundaries",
+      "title": "將可用性需求對應至故障邊界",
+      "paragraphs": [
+        "單一執行個體故障、可用區域（AZ）故障、區域故障和誤刪除所需的措施各不相同。負責人員會確認運算、資料、名稱解析、身分驗證和監控之間的相依性，並結合 RTO/RPO，決定在每種故障下需要維持多大範圍的持續運作。",
+        "只有在同時設計資料層和入口的故障轉移時，多可用區域部署才有意義。如果未定義運作狀態檢查、切換條件、寫入一致性及復原後的驗證，只是增加備援資源，並不能保證自動復原。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考試指南：具韌性的雲端解決方案",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "scale-by-signal",
+      "title": "根據顯示負載的訊號進行擴縮",
+      "paragraphs": [
+        "擴縮不應只根據 CPU 使用率決定。請比較使用者要求、佇列長度、並行執行數、延遲、錯誤率與處理時間，並針對每個工作負載決定哪些訊號代表容量不足。",
+        "請設計最小容量、最大容量與所需容量、擴展所需時間、暖機時間、排除異常執行個體的機制，以及流量突然增加時的降級行為。無限制的最大值無法保證可用性，還會掩蓋相依項目與成本的限制。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考試指南：可擴展解決方案",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "recover-and-prove",
+      "title": "透過演練證明可復原性",
+      "paragraphs": [
+        "備份成功通知並不能證明已符合 RTO 和 RPO。應由復原負責人依復原順序復原至復原目標位置，執行資料完整性檢查、存取權限驗證、流量切換和切回，然後將實測值與目標進行比較。",
+        "自動復原不只是偵測故障並替換資源。還必須確認相依項目可用、設定和機密能夠正確傳遞、不會無限重複相同故障，以及使用者影響指標已經改善。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考試指南：RTO/RPO 與自動復原",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain3.html"
+        }
+      ],
+      "figureId": "recovery-runbook-proof"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dop-resilience-1",
+      "prompt": "訂單系統負責人希望系統在單一 AZ 故障期間仍能持續運作，同時將資料遺失降至最低。請選擇一個最適合的設計起點。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "擴大單一 AZ 中執行個體的規模。",
+          "explanation": "這無法為 AZ 故障做好準備。"
+        },
+        {
+          "id": "c",
+          "text": "只實作備援，並在故障發生後再決定切換條件。",
+          "explanation": "無法驗證自動復原的行為。"
+        },
+        {
+          "id": "a",
+          "text": "針對運算、資料、入口和相依服務，分別對應 AZ 故障時的 RTO/RPO、運作狀態檢查和容錯移轉。",
+          "explanation": "這樣可以針對每個故障邊界評估持續性和一致性。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-resilience-2",
+      "prompt": "佇列處理的等待時間正在增加。請選出營運人員在重新檢視擴縮策略時應確認的最適當事項（選擇 1 項）。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只查看 CPU 使用率，並將最大容量設定為不受限制。",
+          "explanation": "這會忽略相依項目與成本方面的限制。"
+        },
+        {
+          "id": "c",
+          "text": "不記錄佇列長度，而是每天將執行個體數量固定為相同數量。",
+          "explanation": "這無法因應負載波動。"
+        },
+        {
+          "id": "a",
+          "text": "在相同期間內，同時檢視佇列長度、處理時間、請求量、延遲和錯誤率，以及最小容量、最大容量和暖機時間。",
+          "explanation": "這樣可以將顯示容量不足的訊號與擴縮行為連結起來。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-resilience-3",
+      "prompt": "一個負責驗證復原計畫的團隊希望證明備份有效。請選擇一項最適當的驗證工作。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只儲存備份任務顯示的成功狀態。",
+          "explanation": "這無法證明可復原性和復原時間。"
+        },
+        {
+          "id": "a",
+          "text": "執行復原、完整性檢查、存取許可檢查、流量切換和切回，然後將實測的 RTO/RPO 與目標進行比較。",
+          "explanation": "這可以驗證業務是否確實能夠恢復運作。"
+        },
+        {
+          "id": "c",
+          "text": "不檢查復原時所需的設定和機密。",
+          "explanation": "替換後的服務可能無法運作。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Availability",
+    "Multi-AZ deployment",
+    "Backup",
+    "RPO",
+    "RTO",
+    "Auto Scaling",
+    "Health check",
+    "Runbook"
+  ]
+}

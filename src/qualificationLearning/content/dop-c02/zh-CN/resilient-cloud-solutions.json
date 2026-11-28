@@ -1,0 +1,135 @@
+{
+  "id": "resilient-cloud-solutions",
+  "title": "实施具有韧性的云解决方案",
+  "objective": "根据故障范围、RTO/RPO、负载和状态，实现可用性、可扩展性和自动恢复。",
+  "prerequisites": [
+    {
+      "slug": "configuration-and-iac",
+      "title": "执行配置管理和 IaC",
+      "courseId": "dop-c02"
+    }
+  ],
+  "sections": [
+    {
+      "id": "availability-boundaries",
+      "title": "将可用性要求映射到故障边界",
+      "paragraphs": [
+        "单个实例故障、可用区（AZ）故障、区域故障和误删除所需的措施各不相同。负责人员会确认计算、数据、名称解析、身份验证和监控之间的依赖关系，并结合 RTO/RPO 确定在每种故障下需要保持多大范围的持续运行。",
+        "只有在同时设计数据层和入口的故障转移时，多可用区部署才有意义。如果不规定运行状况检查、切换条件、写入一致性以及恢复后的验证，只是增加冗余资源，并不能保证自动恢复。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考试指南：弹性云解决方案",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "scale-by-signal",
+      "title": "根据表明负载的信号进行扩缩容",
+      "paragraphs": [
+        "扩缩容不应仅根据 CPU 利用率决定。应比较用户请求、队列长度、并发数、延迟、错误率和处理时间，并针对每种工作负载确定哪些信号表示容量不足。",
+        "应设计最小容量、最大容量和期望容量、扩展所需的时间、预热时间、排除异常实例的机制，以及流量突然增加时的降级行为。无限制的最大容量并不能保证可用性，反而会掩盖依赖项和成本的限制。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考试指南：可扩展解决方案",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "recover-and-prove",
+      "title": "通过演练证明可恢复性",
+      "paragraphs": [
+        "备份成功通知并不能证明已满足 RTO 和 RPO。应由恢复负责人按恢复顺序恢复到恢复目标位置，执行数据完整性检查、访问权限验证、流量切换和切回，然后将实测值与目标进行比较。",
+        "自动恢复不仅是检测故障并替换资源。还必须确认依赖项可用、配置和密钥能够正确传递、不会无限重复同一故障，以及用户影响指标已经改善。"
+      ],
+      "sources": [
+        {
+          "label": "DOP-C02 考试指南：RTO/RPO 与自动恢复",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/devops-engineer-professional-02/devops-engineer-professional-02-domain3.html"
+        }
+      ],
+      "figureId": "recovery-runbook-proof"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dop-resilience-1",
+      "prompt": "订单系统负责人希望系统在单个 AZ 故障期间仍能持续运行，并将数据丢失降至最低。请选择一个最合适的设计起点。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "增大单个 AZ 中实例的规格。",
+          "explanation": "这无法为 AZ 故障做好准备。"
+        },
+        {
+          "id": "c",
+          "text": "只实施冗余，并在故障发生后再决定切换条件。",
+          "explanation": "无法验证自动恢复的行为。"
+        },
+        {
+          "id": "a",
+          "text": "分别为计算、数据、入口和依赖服务，在 AZ 故障时对应确定 RTO/RPO、运行状况检查和故障转移。",
+          "explanation": "这样可以针对每个故障边界评估持续性和一致性。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-resilience-2",
+      "prompt": "队列处理的等待时间正在增加。请选出运维人员在重新评估扩缩容策略时应检查的最恰当事项（选择 1 项）。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只查看 CPU 使用率，并将最大容量设置为不受限制。",
+          "explanation": "这会忽略依赖项和成本方面的限制。"
+        },
+        {
+          "id": "c",
+          "text": "不记录队列长度，而是每天将实例数量固定为相同数量。",
+          "explanation": "这无法应对负载波动。"
+        },
+        {
+          "id": "a",
+          "text": "在相同时间段内，同时查看队列长度、处理时间、请求量、延迟和错误率，以及最小容量、最大容量和预热时间。",
+          "explanation": "这样可以将表明容量不足的信号与扩缩容行为关联起来。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dop-resilience-3",
+      "prompt": "一个负责验证恢复计划的团队希望证明备份有效。请选择一项最合适的验证工作。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只保存备份作业显示的成功状态。",
+          "explanation": "这无法证明可恢复性和恢复时间。"
+        },
+        {
+          "id": "a",
+          "text": "执行恢复、完整性检查、访问权限检查、流量切换和切回，然后将实测的 RTO/RPO 与目标进行比较。",
+          "explanation": "这可以验证业务是否确实能够恢复运行。"
+        },
+        {
+          "id": "c",
+          "text": "不检查恢复时所需的配置和密钥。",
+          "explanation": "替换后的服务可能无法运行。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Availability",
+    "Multi-AZ deployment",
+    "Backup",
+    "RPO",
+    "RTO",
+    "Auto Scaling",
+    "Health check",
+    "Runbook"
+  ]
+}

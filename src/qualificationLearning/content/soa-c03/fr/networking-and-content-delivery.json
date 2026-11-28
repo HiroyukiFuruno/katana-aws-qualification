@@ -1,0 +1,142 @@
+{
+  "id": "networking-and-content-delivery",
+  "title": "Vérifier les chemins de communication et la distribution de contenu dans les deux sens",
+  "objective": "Exploiter l’environnement en distinguant la résolution de noms, les routes, les autorisations, les chemins aller et retour ainsi que les caches de distribution.",
+  "prerequisites": [
+    {
+      "slug": "security-and-compliance",
+      "title": "Vérifier en continu la sécurité et la conformité",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-and-return-path",
+      "title": "Suivre séparément les chemins de destination et de retour",
+      "paragraphs": [
+        "Une table de routage VPC associe un CIDR de destination ou une liste de préfixes à une cible pour le trafic sortant d’un sous-réseau ou d’une passerelle. Lorsqu’il enquête sur la connectivité, l’opérateur ne s’arrête pas à la route du sous-réseau source : il vérifie également le chemin de retour du côté de la destination.",
+        "Même au sein d’un même VPC, plusieurs zones de disponibilité, sous-réseaux et tables de routage peuvent exister. Même lorsqu’une route existe, la connexion ne peut pas être établie si l’un des paramètres du groupe de sécurité, de l’ACL réseau, du pare-feu de l’hôte ou de l’équilibreur de charge refuse le trafic."
+      ],
+      "sources": [
+        {
+          "label": "Configurer des tables de routage",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        }
+      ]
+    },
+    {
+      "id": "dns-and-delivery",
+      "title": "Séparer la résolution de noms de la couche de diffusion",
+      "paragraphs": [
+        "Lorsque les utilisateurs se connectent à un service par son nom, le DNS résout ce nom vers une destination de réponse, tandis que CloudFront et les équilibreurs de charge assurent ensuite la diffusion du contenu et la répartition des requêtes. L’équipe d’exploitation vérifie séparément les enregistrements DNS, le TTL et les contrôles d’état, ainsi que l’origine, le cache et le certificat TLS de la couche de diffusion.",
+        "Lorsque vous utilisez un cache, définissez quand le contenu mis à jour sera diffusé aux utilisateurs, vers quelle origine la requête sera dirigée en cas de défaut de cache et quelle réponse sera renvoyée si l’origine tombe en panne. Modifier uniquement le DNS ne résout ni l’accessibilité de l’origine ni les autorisations d’accès."
+      ],
+      "sources": [
+        {
+          "label": "Qu’est-ce qu’Amazon Route 53 ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/Welcome.html"
+        },
+        {
+          "label": "Qu’est-ce qu’Amazon CloudFront ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+        }
+      ]
+    },
+    {
+      "id": "network-troubleshooting",
+      "title": "Dépanner les pannes réseau par couche",
+      "paragraphs": [
+        "Les personnes qui enquêtent sur une panne réseau consignent successivement la source, le résultat de la résolution de noms, l’adresse IP et le port de destination, le chemin sortant, les autorisations du côté récepteur et le chemin de retour. Les VPC Flow Logs, les journaux d’accès du load balancer et les journaux de l’application fournissent des indices pour déterminer à quelle frontière la requête s’est arrêtée.",
+        "Le diagramme sépare les requêtes DNS des connexions HTTPS. Le client se connecte à l’ALB public, qui ouvre une autre connexion vers une cible située dans un sous-réseau privé.",
+        "Commencez par vérifier que le DNS renvoie la bonne destination de l’ALB, puis suivez séparément les requêtes et les réponses sur les deux connexions. Dans les tables de routage, comparez la destination au prochain saut. Vérifiez que les groupes de sécurité autorisent le trafic requis pour chaque interface réseau et que les ACL réseau l’autorisent pour chaque sous-réseau."
+      ],
+      "sources": [
+        {
+          "label": "Utiliser Amazon VPC Flow Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "soa-network-request-return-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-network-1",
+      "prompt": "Un administrateur réseau d’entreprise connecte un VPC (10.20.0.0/16) au réseau interne de l’entreprise (192.168.10.0/24) au moyen d’un AWS Site-to-Site VPN utilisant une passerelle privée virtuelle. Le tunnel VPN est opérationnel, mais les connexions d’une application située dans un sous-réseau privé vers le port TCP 443 de l’API interne (192.168.10.25) expirent. Quelle procédure permet de vérifier les routes et les paramètres d’autorisation sans élargir l’étendue du trafic autorisé ?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Vérifier uniquement la route côté application vers le CIDR de l’entreprise et ne pas vérifier la route côté entreprise si le tunnel VPN est opérationnel.",
+          "explanation": "Même lorsque le tunnel est opérationnel, la connexion TCP ne peut pas être établie si la route permettant de renvoyer les réponses du réseau interne vers le VPC est incorrecte."
+        },
+        {
+          "id": "c",
+          "text": "À des fins de vérification, autoriser temporairement toutes les destinations et tous les ports dans le groupe de sécurité et l’ACL réseau de l’application.",
+          "explanation": "Élargir l’étendue autorisée peut affecter d’autres communications. Cela ne résout pas le problème de routage et ne permet pas d’identifier la limite qui bloque la connexion TCP 443."
+        },
+        {
+          "id": "a",
+          "text": "Vérifier que la route côté application envoie le CIDR de l’entreprise vers la passerelle privée virtuelle et que la route de retour côté entreprise envoie le CIDR du VPC vers le VPN. Vérifier ensuite que le trafic TCP 443 sortant et la réponse sont autorisés par les contrôles de trafic des deux côtés.",
+          "explanation": "En comparant les routes aller et retour avant de vérifier les contrôles de trafic, on peut confirmer les conditions nécessaires pour que les paquets atteignent l’API cible et que les réponses reviennent, indépendamment de l’état opérationnel du tunnel VPN."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-2",
+      "prompt": "Un opérateur de site web étudie un problème dans lequel seuls certains utilisateurs d’un domaine personnalisé voient un contenu obsolète. Choisissez une méthode appropriée pour isoler la cause.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Vérifier séparément les enregistrements et le TTL de Route 53, le comportement de mise en cache de CloudFront et la réponse de l’origine.",
+          "explanation": "Cette méthode permet d’examiner le problème sans confondre les responsabilités de la résolution de noms avec celles de la diffusion de contenu."
+        },
+        {
+          "id": "b",
+          "text": "Modifier uniquement les enregistrements DNS, sans vérifier le cache ni l’origine.",
+          "explanation": "Cela ne permet pas de déterminer si le contenu obsolète reste dans le cache."
+        },
+        {
+          "id": "c",
+          "text": "Faire en sorte que tous les utilisateurs se connectent directement à l’origine.",
+          "explanation": "Cela ne permet pas d’identifier la cause du problème et compromet la conception et la protection de la diffusion."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-3",
+      "prompt": "Étudiez le problème qui empêche les utilisateurs d’Internet d’atteindre une application située dans un sous-réseau privé via un ALB. Sélectionnez une seule procédure de diagnostic, la plus appropriée.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Vérifier successivement la résolution de noms, l’écouteur de l’ALB et l’état des cibles, les routes de chaque sous-réseau, les groupes de sécurité de l’ALB et des cibles, la NACL, puis le chemin de retour.",
+          "explanation": "La vérification couche par couche du chemin et des autorisations permet de localiser la limite où la connexion s’est interrompue."
+        },
+        {
+          "id": "b",
+          "text": "Vérifier uniquement le code de l’application.",
+          "explanation": "Cela peut faire manquer les problèmes liés au point d’entrée, au chemin, aux autorisations et aux vérifications d’état."
+        },
+        {
+          "id": "c",
+          "text": "Désactiver tous les journaux de communication et réessayer.",
+          "explanation": "Cela ferait perdre les éléments de preuve nécessaires au diagnostic."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "DNS",
+    "Route table",
+    "IGW",
+    "ALB",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Return path",
+    "AWS Site-to-Site VPN",
+    "Virtual private gateway"
+  ]
+}

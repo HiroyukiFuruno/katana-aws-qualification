@@ -1,0 +1,142 @@
+{
+  "id": "networking-and-content-delivery",
+  "title": "Kommunikationspfade und die Inhaltsbereitstellung in beide Richtungen überprüfen",
+  "objective": "Den Betrieb durchführen und dabei Namensauflösung, Routen, Berechtigungen, Hin- und Rückwege sowie Caches für die Bereitstellung unterscheiden.",
+  "prerequisites": [
+    {
+      "slug": "security-and-compliance",
+      "title": "Sicherheit und Compliance kontinuierlich überprüfen",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-and-return-path",
+      "title": "Ziel- und Rückweg getrennt verfolgen",
+      "paragraphs": [
+        "Eine VPC-Routing-Tabelle ordnet für den Datenverkehr, der ein Subnetz oder Gateway verlässt, einen Ziel-CIDR oder eine Präfixliste einem Weiterleitungsziel zu. Bei der Untersuchung der Erreichbarkeit prüft das Betriebsteam nicht nur die Route des Quellsubnetzes, sondern auch den Rückweg auf der Zielseite.",
+        "Auch innerhalb derselben VPC kann es mehrere Availability Zones, Subnetze und Routing-Tabellen geben. Selbst wenn eine Route vorhanden ist, kann keine Verbindung hergestellt werden, wenn eine der Einstellungen der Sicherheitsgruppe, der Netzwerk-ACL, der Host-Firewall oder des Load Balancers den Datenverkehr ablehnt."
+      ],
+      "sources": [
+        {
+          "label": "Routing-Tabellen konfigurieren",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        }
+      ]
+    },
+    {
+      "id": "dns-and-delivery",
+      "title": "Namensauflösung und Bereitstellungsebene trennen",
+      "paragraphs": [
+        "Wenn Benutzer über einen Namen eine Verbindung zu einem Service herstellen, löst DNS den Namen zu einem Antwortziel auf, während CloudFront und Load Balancer die anschließende Inhaltsbereitstellung und Anfragenverteilung übernehmen. Das Betriebsteam prüft DNS-Einträge, TTL und Zustandsprüfungen getrennt von Origin, Cache und TLS-Zertifikat der Bereitstellungsebene.",
+        "Bei Verwendung eines Caches muss festgelegt werden, wann aktualisierte Inhalte an Benutzer ausgeliefert werden, welcher Origin bei einem Cache-Miss erreicht wird und welche Antwort bei einem Ausfall des Origins zurückgegeben wird. Eine Änderung ausschließlich an DNS behebt weder die Erreichbarkeit des Origins noch die Zugriffsberechtigungen."
+      ],
+      "sources": [
+        {
+          "label": "Was ist Amazon Route 53?",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/Welcome.html"
+        },
+        {
+          "label": "Was ist Amazon CloudFront?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+        }
+      ]
+    },
+    {
+      "id": "network-troubleshooting",
+      "title": "Netzwerkstörungen nach Schichten beheben",
+      "paragraphs": [
+        "Bei der Untersuchung von Netzwerkstörungen werden nacheinander die Quelle, das Ergebnis der Namensauflösung, die Ziel-IP-Adresse und der Zielport, der ausgehende Pfad, die Berechtigungen auf der Empfängerseite und der Rückweg aufgezeichnet. VPC Flow Logs, Zugriffsprotokolle des Load Balancers und Anwendungsprotokolle liefern Hinweise darauf, an welcher Grenze die Anfrage angehalten wurde.",
+        "Das Diagramm stellt DNS-Abfragen und HTTPS-Verbindungen getrennt dar. Der Client verbindet sich mit dem öffentlichen ALB, und der ALB öffnet eine separate Verbindung zu einem Ziel in einem privaten Subnetz.",
+        "Prüfen Sie zunächst, ob DNS das richtige Ziel des ALB zurückgibt, und verfolgen Sie anschließend Anfragen und Antworten über die beiden Verbindungen jeweils getrennt. Gleichen Sie in den Routingtabellen das Ziel mit dem nächsten Hop ab. Prüfen Sie, ob Sicherheitsgruppen den erforderlichen Datenverkehr für jede Netzwerkschnittstelle zulassen und Netzwerk-ACLs ihn für jedes Subnetz zulassen."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC Flow Logs verwenden",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "soa-network-request-return-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-network-1",
+      "prompt": "Ein Netzwerkadministrator eines Unternehmens verbindet eine VPC (10.20.0.0/16) über ein AWS Site-to-Site VPN mit einem virtuellen privaten Gateway mit dem internen Unternehmensnetzwerk (192.168.10.0/24). Der VPN-Tunnel ist aktiv, aber Verbindungen einer Anwendung in einem privaten Subnetz zum TCP-Port 443 der internen API (192.168.10.25) laufen in ein Timeout. Mit welchem Verfahren lassen sich Routen und Berechtigungseinstellungen überprüfen, ohne den Bereich des erlaubten Datenverkehrs zu erweitern?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Nur die Route auf der Anwendungsseite zum Unternehmens-CIDR prüfen und die Route auf der Unternehmensseite nicht prüfen, solange der VPN-Tunnel aktiv ist.",
+          "explanation": "Auch wenn der Tunnel aktiv ist, kann die TCP-Verbindung nicht hergestellt werden, wenn die Route für die Rückgabe von Antworten aus dem Unternehmensnetzwerk an die VPC falsch ist."
+        },
+        {
+          "id": "c",
+          "text": "Zur Überprüfung vorübergehend alle Ziele und Ports in der Sicherheitsgruppe und der Netzwerk-ACL der Anwendung erlauben.",
+          "explanation": "Eine Erweiterung des erlaubten Bereichs kann anderen Datenverkehr beeinflussen. Sie behebt das Routingproblem nicht und identifiziert nicht die Grenze, die die TCP-443-Verbindung blockiert."
+        },
+        {
+          "id": "a",
+          "text": "Überprüfen, dass die Route auf der Anwendungsseite das Unternehmens-CIDR an das virtuelle private Gateway weiterleitet und dass die Rückroute auf der Unternehmensseite das VPC-CIDR an das VPN weiterleitet. Anschließend prüfen, ob ausgehender TCP-443-Datenverkehr und die Antwort durch die Datenverkehrskontrollen auf beiden Seiten erlaubt sind.",
+          "explanation": "Wenn zuerst die Hin- und Rückrouten abgeglichen und anschließend die Datenverkehrskontrollen geprüft werden, lassen sich die Bedingungen bestätigen, unter denen Pakete die Ziel-API erreichen und Antworten zurückkehren können, unabhängig davon, ob der VPN-Tunnel aktiv ist."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-2",
+      "prompt": "Ein Website-Betreiber untersucht ein Problem, bei dem nur einige Benutzer einer benutzerdefinierten Domain veraltete Inhalte sehen. Wählen Sie die am besten geeignete Methode zur Eingrenzung der Ursache.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Die Route-53-Einträge und den TTL, das Caching-Verhalten von CloudFront sowie die Antwort des Ursprungs getrennt prüfen.",
+          "explanation": "So werden die Verantwortungsbereiche der Namensauflösung und der Inhaltsbereitstellung bei der Untersuchung nicht miteinander vermischt."
+        },
+        {
+          "id": "b",
+          "text": "Nur die DNS-Einträge ändern, ohne den Cache oder den Ursprung zu prüfen.",
+          "explanation": "Damit lässt sich nicht feststellen, ob veraltete Inhalte noch im Cache vorhanden sind."
+        },
+        {
+          "id": "c",
+          "text": "Alle Benutzer direkt mit dem Ursprung verbinden lassen.",
+          "explanation": "Dadurch wird die Ursache nicht ermittelt, und das Design sowie der Schutz der Bereitstellung werden beeinträchtigt."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-3",
+      "prompt": "Untersuchen Sie das Problem, dass Internetnutzer eine Anwendung in einem privaten Subnetz über einen ALB nicht erreichen können. Wählen Sie das am besten geeignete Untersuchungsverfahren aus.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Prüfen Sie nacheinander die Namensauflösung, den ALB-Listener und den Zustand der Ziele, die Routen jedes Subnetzes, die Sicherheitsgruppen des ALB und der Ziele, die NACL sowie den Rückweg.",
+          "explanation": "Durch die schichtweise Prüfung von Pfad und Berechtigungen lässt sich die Grenze eingrenzen, an der die Verbindung unterbrochen wurde."
+        },
+        {
+          "id": "b",
+          "text": "Nur den Anwendungscode überprüfen.",
+          "explanation": "Dabei können Probleme mit dem Einstiegspunkt, dem Pfad, den Berechtigungen und den Zustandsprüfungen übersehen werden."
+        },
+        {
+          "id": "c",
+          "text": "Alle Kommunikationsprotokolle deaktivieren und den Vorgang erneut versuchen.",
+          "explanation": "Dadurch gehen die für die Untersuchung erforderlichen Belege verloren."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "DNS",
+    "Route table",
+    "IGW",
+    "ALB",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Return path",
+    "AWS Site-to-Site VPN",
+    "Virtual private gateway"
+  ]
+}

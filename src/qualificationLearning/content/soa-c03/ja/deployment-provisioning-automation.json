@@ -1,0 +1,143 @@
+{
+  "id": "deployment-provisioning-automation",
+  "title": "変更を再現可能かつ安全に届ける",
+  "objective": "構成をコードで管理し、変更の影響範囲、承認、段階的適用、検証、ロールバックを運用できる。",
+  "prerequisites": [
+    {
+      "slug": "observability-and-remediation",
+      "title": "観測から修復までを一続きに運用する",
+      "courseId": "soa-c03"
+    },
+    {
+      "slug": "reliability-and-continuity",
+      "title": "信頼性と事業継続性を運用で実証する",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "infrastructure-as-code",
+      "title": "構成を宣言して差分を確認する",
+      "paragraphs": [
+        "CloudFormation を使う運用担当者は、リソースとプロパティをテンプレートに記述し、スタックを単位として管理します。コンソールでの手作業変更は、テンプレートとの差異や復旧時の再現性を損なうため、必要な変更をコードとレビューへ戻します。",
+        "変更前には、対象アカウント、リージョン、スタック、依存リソース、更新の影響を確認します。変更セットなどで作成・更新・削除されるリソースを確認し、意図しない置換や削除を承認前に止めます。"
+      ],
+      "sources": [
+        {
+          "label": "CloudFormation とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/Welcome.html"
+        },
+        {
+          "label": "SOA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "progressive-change",
+      "title": "変更は小さく観測可能に適用する",
+      "paragraphs": [
+        "リリース担当者は、本番全体へ一度に設定変更を適用しません。対象を限定した段階で、事前に定めたレイテンシー、エラー率、ビジネス指標を観測し、続行条件と中止条件を満たすときだけ次の範囲へ進めます。",
+        "段階的な変更では、旧版と新版のどちらが要求を処理したかを識別できるようにします。異常があれば、設定またはデプロイを既知の正常状態へ戻し、原因を記録してから再試行します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ]
+    },
+    {
+      "id": "automation-boundaries",
+      "title": "自動化に権限と承認の境界を置く",
+      "paragraphs": [
+        "自動化の作成者は、ランブックが変更できるリソースと IAM ロールの権限を最小限にします。実行者、承認者、監査者の役割を分け、実行入力、実行結果、失敗理由を記録できるようにします。",
+        "反復的な修正を自動化するときも、対象選択、同時実行数、失敗時の停止、手動エスカレーションを定義します。自動化は変更責任をなくすものではなく、確認可能な手順を一貫して実行するための仕組みです。",
+        "図では、上段を要求が流れるデータプレーン、下段を変更を統制するコントロールプレーンとして読み分けます。テンプレート、変更セット、承認、限定デプロイ、メトリクスゲートの順に確認し、利用者への影響が基準を外れたら既知の正常状態へ戻します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-progressive-change-control"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-change-1",
+      "prompt": "本番 VPC のルート設定を CloudFormation で変更する担当者は、承認前に意図しない削除や置換を避けたいと考えています。適用前に行う最も適切な作業を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "コンソールで先に変更し、テンプレートは後で合わせる。",
+          "explanation": "構成の再現性と差分の追跡を損ないます。"
+        },
+        {
+          "id": "a",
+          "text": "対象アカウント、リージョン、スタック、依存リソースを確認し、変更セットで差分をレビューする。",
+          "explanation": "変更による作成、更新、削除を適用前に確認できます。"
+        },
+        {
+          "id": "c",
+          "text": "変更の対象を確認せず、全スタックを同時に更新する。",
+          "explanation": "影響範囲を制御できません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-change-2",
+      "prompt": "リリース担当者は、アプリケーション設定の変更を本番へ段階的に適用します。各段階で続行を判断する最も適切な基準を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "事前に定めたレイテンシー、エラー率、業務指標が続行条件を満たすことを確認する。",
+          "explanation": "変更の効果と利用者影響を根拠に拡大できます。"
+        },
+        {
+          "id": "b",
+          "text": "監視を停止して、すべての利用者へ直ちに適用する。",
+          "explanation": "異常を早期に検出できず、ロールバックが遅れます。"
+        },
+        {
+          "id": "c",
+          "text": "変更後のバージョンを識別せず、異常時も適用を継続する。",
+          "explanation": "原因の切り分けと安全な切り戻しができません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-change-3",
+      "prompt": "Systems Manager Automation のランブックを作成する運用チームが、誤った対象への変更を防ぎたいと考えています。最も適切なランブック設計を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "対象選択、最小権限の実行ロール、承認、同時実行数、停止条件、監査記録を定義する。",
+          "explanation": "自動化の作用範囲と責任を確認できます。"
+        },
+        {
+          "id": "b",
+          "text": "全リソースを対象にし、管理者権限で承認なしに実行する。",
+          "explanation": "誤操作時の影響範囲が大きくなります。"
+        },
+        {
+          "id": "c",
+          "text": "実行結果を記録せず、失敗しても自動で無限に再試行する。",
+          "explanation": "異常を把握できず、二次被害を広げるおそれがあります。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFormation",
+    "Change set",
+    "IAM role",
+    "Canary deployment",
+    "Rollback",
+    "Least privilege"
+  ]
+}

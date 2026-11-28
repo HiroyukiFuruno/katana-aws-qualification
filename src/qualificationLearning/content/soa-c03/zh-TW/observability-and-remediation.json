@@ -1,0 +1,151 @@
+{
+  "id": "observability-and-remediation",
+  "title": "將從觀測到修復作為一個連續流程進行營運",
+  "objective": "收集能夠反映使用者影響的訊號，驗證原因假設，並安全地執行已獲核准的修復。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "雲端基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身分驗證與授權"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "連線與路由"
+    }
+  ],
+  "sections": [
+    {
+      "id": "signals-and-context",
+      "title": "將症狀分解為可測量的訊號",
+      "paragraphs": [
+        "負責執行於 EC2 的訂單 API 的營運人員，不會只根據 CPU 使用率判斷故障。他們會在相同的時間軸上串聯目標操作、請求數、錯誤率、延遲、對相依項目的呼叫，以及日誌時間戳記，以確認哪些使用者受到影響，以及受到哪些操作的影響。",
+        "Amazon CloudWatch 警示可以在多個評估期間內，將指標或數學運算式的值與閾值進行比較，並執行通知或動作。閾值、評估期間、遺失資料的處理方式，以及通知目的地，應根據使用者影響與可採取的因應行動來決定。"
+      ],
+      "sources": [
+        {
+          "label": "SOA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "在 Amazon CloudWatch 中使用警示",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch_Alarms.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-before-action",
+      "title": "在修復前整理證據與假設",
+      "paragraphs": [
+        "故障回應人員不會將警報觸發本身視為原因。他們會比較指標、應用程式日誌、CloudTrail 操作歷程，以及設定變更的時間，以區分例如錯誤是否在部署後立即增加，或是相依項目發生延遲。",
+        "在釐清問題時，他們會明確記錄受影響的區域、帳戶、工作負載、開始時間與結束時間。他們不會只根據相關性就將變更擴展到所有環境，而是先記錄可重現的假設與回復條件，再在限定的影響範圍內進行驗證。"
+      ],
+      "sources": [
+        {
+          "label": "SOA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "什麼是 AWS CloudTrail？",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        }
+      ]
+    },
+    {
+      "id": "runbook-remediation",
+      "title": "修復需要操作程序與停止條件",
+      "paragraphs": [
+        "修復人員會在經過核准的執行手冊中記錄目標資源、執行前檢查、執行權限、成功條件、停止條件和復原方案。AWS Systems Manager Automation 可簡化一般的維護、部署和修復工作，但不能免除執行手冊前提條件或目標選擇的必要性。",
+        "自動修復應依照偵測、限制影響、執行、重新觀測的順序設計。執行後，使用相同的使用者影響指標和日誌確認是否改善；如果沒有改善，就不要繼續自動化，而應升級處理或執行復原。",
+        "在圖中，上方的資料平面用於讀取使用者要求和對相依項目的呼叫，下方的控制平面用於讀取 CloudWatch、應用程式日誌和 CloudTrail 中的佐證。在第 1–4 步中，將具有相同時間和範圍的佐證建立關聯；在第 5–8 步中，依序判斷核准、受限執行、使用相同訊號重新觀測，以及停止或復原。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-observability-remediation-loop"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-observe-1",
+      "prompt": "訂單 API 的值班負責人收到使用者回報，表示訂單確認速度很慢。調查原因時，請選擇一組最適合優先比較的觀測值。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "針對相同時段和相同操作，比較請求數、p95 延遲、錯誤率、相依項目呼叫以及相關日誌。",
+          "explanation": "如此即可在相同條件下，將使用者影響與請求路徑上的變化相互對應。"
+        },
+        {
+          "id": "b",
+          "text": "只檢查任意一個 EC2 執行個體的 CPU 使用率。",
+          "explanation": "僅憑單一資源指標，無法判斷目標操作或其相依項目的影響。"
+        },
+        {
+          "id": "c",
+          "text": "收到故障通報後立即重新啟動所有區域中的執行個體。",
+          "explanation": "缺乏依據的全域變更會擴大影響範圍。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-2",
+      "prompt": "負責設計 CloudWatch 警報的營運人員，希望將通知與通知後可以執行的因應措施連結起來。請選擇一項最適當的警報設定方針。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "為所有指標設定相同的閾值。",
+          "explanation": "這無法反映各工作負載的正常值或影響程度。"
+        },
+        {
+          "id": "c",
+          "text": "不設定通知目標，只記錄警報名稱。",
+          "explanation": "即使偵測到問題，也無法促成因應措施。"
+        },
+        {
+          "id": "a",
+          "text": "明確定義反映使用者影響的指標、閾值、評估期間、遺失資料的處理方式，以及通知目標。",
+          "explanation": "如此即可驗證警報狀態轉換和因應操作。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-3",
+      "prompt": "針對部署後錯誤率立即上升的服務，請選出負責修復的人員在安全地開始自動修復之前應確認的最適當事項。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "不確認錯誤原因，就立即將相同的變更套用到所有環境。",
+          "explanation": "這可能會把相關性誤認為因果關係，進而擴大故障。"
+        },
+        {
+          "id": "a",
+          "text": "在執行手冊中確認目標、變更時間、相關日誌、成功條件、停止條件和復原條件。",
+          "explanation": "這能釐清原因假設以及修復作業的安全邊界。"
+        },
+        {
+          "id": "c",
+          "text": "在修復後停用監控。",
+          "explanation": "這樣便無法確認修復是否成功。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudTrail",
+    "Systems Manager Automation",
+    "Runbook",
+    "Metric",
+    "Log",
+    "CloudWatch alarm",
+    "Rollback"
+  ]
+}

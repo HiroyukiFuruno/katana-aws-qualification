@@ -1,0 +1,143 @@
+{
+  "id": "deployment-provisioning-automation",
+  "title": "可复现且安全地交付变更",
+  "objective": "以代码管理配置，并运用变更影响范围评估、审批、分阶段实施、验证和回滚。",
+  "prerequisites": [
+    {
+      "slug": "observability-and-remediation",
+      "title": "将从观测到修复作为一个连续流程进行运维",
+      "courseId": "soa-c03"
+    },
+    {
+      "slug": "reliability-and-continuity",
+      "title": "通过运营实践验证可靠性与业务连续性",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "infrastructure-as-code",
+      "title": "声明配置并检查差异",
+      "paragraphs": [
+        "使用 CloudFormation 的运维人员会在模板中描述资源和属性，并以堆栈为单位进行管理。通过控制台手动进行的更改可能会破坏与模板的一致性以及恢复时的可重现性，因此需要将必要的更改重新纳入代码和评审流程。",
+        "更改前，请确认目标账户、区域、堆栈、依赖资源以及更新的影响。通过更改集等机制确认将要创建、更新或删除的资源，并在批准前阻止任何非预期的替换或删除。"
+      ],
+      "sources": [
+        {
+          "label": "什么是 CloudFormation？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/Welcome.html"
+        },
+        {
+          "label": "SOA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "progressive-change",
+      "title": "以小步、可观测的方式应用变更",
+      "paragraphs": [
+        "发布人员不会一次性将配置变更应用到整个生产环境。他们会在限定范围的阶段内观测预先设定的延迟、错误率和业务指标，只有在满足继续条件和停止条件时，才会推进到下一个范围。",
+        "对于渐进式变更，应确保能够识别每个请求是由旧版本还是新版本处理的。如果发生异常，应将配置或部署回退到已知的正常状态，记录原因，然后重试。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ]
+    },
+    {
+      "id": "automation-boundaries",
+      "title": "为自动化设置权限与审批边界",
+      "paragraphs": [
+        "自动化创建者会将运行手册可以修改的资源以及其 IAM 角色的权限降至最低。他们会分离执行者、审批者和审计者的职责，并确保能够记录执行输入、执行结果和失败原因。",
+        "即使要将重复性的修复工作自动化，也要定义目标选择、并发数量限制、发生故障时的停止方式以及手动升级流程。自动化并不会消除变更责任，而是用于一致地执行可验证流程的机制。",
+        "在图中，将上方理解为请求流经的数据平面，将下方理解为控制变更的控制平面。按照模板、变更集、审批、限定部署和指标门禁的顺序进行确认；如果对用户的影响偏离既定标准，则恢复到已知的正常状态。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-progressive-change-control"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-change-1",
+      "prompt": "负责使用 CloudFormation 更改生产环境 VPC 路由配置的人员希望在获得批准前避免意外删除或替换。请选择一项在应用更改前最合适的操作。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "先在控制台中进行更改，之后再调整模板。",
+          "explanation": "这会损害配置的可复现性，并使差异难以跟踪。"
+        },
+        {
+          "id": "a",
+          "text": "确认目标账户、区域、堆栈和依赖资源，然后在变更集（change set）中审查差异。",
+          "explanation": "可以在应用更改前确认该更改将导致的创建、更新和删除。"
+        },
+        {
+          "id": "c",
+          "text": "不确认更改对象，就同时更新所有堆栈。",
+          "explanation": "无法控制影响范围。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-change-2",
+      "prompt": "发布负责人将应用程序配置的更改逐步应用到生产环境。请选择一个在每个阶段判断是否继续的最适当标准。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "确认预先设定的延迟、错误率和业务指标满足继续执行的条件。",
+          "explanation": "这样可以根据更改的效果和对用户的影响，决定是否扩大应用范围。"
+        },
+        {
+          "id": "b",
+          "text": "停止监控，并立即将更改应用于所有用户。",
+          "explanation": "这样无法尽早检测异常，并会延迟回滚。"
+        },
+        {
+          "id": "c",
+          "text": "不识别更改后的版本，即使发生异常也继续应用更改。",
+          "explanation": "这样无法确定原因，也无法安全地回滚。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-change-3",
+      "prompt": "一个负责创建 Systems Manager Automation 运行手册的运营团队希望防止对错误目标进行更改。请选择一个最合适的运行手册设计。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "定义目标选择、最小权限执行角色、审批、并发执行数、停止条件和审计记录。",
+          "explanation": "这样可以确认自动化操作的作用范围和责任归属。"
+        },
+        {
+          "id": "b",
+          "text": "以所有资源为目标，使用管理员权限且无需审批即可执行。",
+          "explanation": "发生误操作时，影响范围会扩大。"
+        },
+        {
+          "id": "c",
+          "text": "不记录执行结果，即使失败也自动无限重试。",
+          "explanation": "这样无法掌握异常，并可能扩大二次损害。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFormation",
+    "Change set",
+    "IAM role",
+    "Canary deployment",
+    "Rollback",
+    "Least privilege"
+  ]
+}

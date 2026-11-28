@@ -1,0 +1,142 @@
+{
+  "id": "networking-and-content-delivery",
+  "title": "Verificar os caminhos de comunicação e a entrega de conteúdo nos dois sentidos",
+  "objective": "Operar distinguindo a resolução de nomes, as rotas, as permissões, os caminhos de envio e retorno e os caches de entrega.",
+  "prerequisites": [
+    {
+      "slug": "security-and-compliance",
+      "title": "Verificar continuamente a segurança e a conformidade",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-and-return-path",
+      "title": "Rastrear separadamente os caminhos de destino e de retorno",
+      "paragraphs": [
+        "Uma tabela de rotas da VPC associa um CIDR de destino ou uma lista de prefixos a um alvo de roteamento para o tráfego que sai de uma sub-rede ou gateway. Ao investigar a conectividade, a equipe de operações não verifica apenas a rota da sub-rede de origem; ela também confirma o caminho de retorno no lado do destino.",
+        "Mesmo dentro da mesma VPC, pode haver várias zonas de disponibilidade, sub-redes e tabelas de rotas. Mesmo que exista uma rota, a conexão não será estabelecida se qualquer uma das configurações do grupo de segurança, da ACL de rede, do firewall do host ou do balanceador de carga rejeitar o tráfego."
+      ],
+      "sources": [
+        {
+          "label": "Configurar tabelas de rotas",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        }
+      ]
+    },
+    {
+      "id": "dns-and-delivery",
+      "title": "Separar a resolução de nomes da camada de entrega",
+      "paragraphs": [
+        "Quando os usuários se conectam a um serviço pelo nome, o DNS resolve o nome para um destino de resposta, enquanto o CloudFront e os balanceadores de carga cuidam da entrega de conteúdo e da distribuição de solicitações subsequentes. A equipe de operações verifica separadamente os registros DNS, o TTL e as verificações de integridade, além da origem, do cache e do certificado TLS da camada de entrega.",
+        "Ao usar um cache, defina quando o conteúdo atualizado será entregue aos usuários, qual origem será acessada em caso de falha de cache e qual resposta será retornada se a origem falhar. Alterar apenas o DNS não resolve a acessibilidade da origem nem as permissões de acesso."
+      ],
+      "sources": [
+        {
+          "label": "O que é o Amazon Route 53",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/Welcome.html"
+        },
+        {
+          "label": "O que é o Amazon CloudFront",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+        }
+      ]
+    },
+    {
+      "id": "network-troubleshooting",
+      "title": "Solucionar problemas de rede por camada",
+      "paragraphs": [
+        "Os investigadores de falhas de rede registram, na ordem, a origem, o resultado da resolução de nomes, o IP e a porta de destino, o caminho de saída, as permissões no lado receptor e o caminho de retorno. VPC Flow Logs, logs de acesso do load balancer e logs da aplicação fornecem pistas para determinar em qual limite a solicitação parou.",
+        "O diagrama separa as consultas DNS das conexões HTTPS. O cliente se conecta ao ALB público, e o ALB abre uma conexão separada com um destino em uma sub-rede privada.",
+        "Primeiro, verifique se o DNS retorna o destino correto do ALB; em seguida, acompanhe separadamente as solicitações e as respostas nas duas conexões. Nas tabelas de rotas, compare o destino com o próximo salto. Verifique se os grupos de segurança permitem o tráfego necessário para cada interface de rede e se as ACLs de rede o permitem para cada sub-rede."
+      ],
+      "sources": [
+        {
+          "label": "Usar o Amazon VPC Flow Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "soa-network-request-return-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-network-1",
+      "prompt": "Um administrador de rede corporativa conecta uma VPC (10.20.0.0/16) à rede interna da empresa (192.168.10.0/24) usando uma AWS Site-to-Site VPN com um gateway privado virtual. O túnel da VPN está ativo, mas as conexões de um aplicativo em uma sub-rede privada para a porta TCP 443 da API interna (192.168.10.25) atingem o tempo limite. Qual procedimento verifica as rotas e as configurações de permissão sem ampliar o intervalo de tráfego permitido?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Verificar apenas a rota do lado do aplicativo para o CIDR corporativo e não verificar a rota do lado corporativo se o túnel da VPN estiver ativo.",
+          "explanation": "Mesmo quando o túnel está ativo, a conexão TCP não é estabelecida se a rota para devolver as respostas da rede corporativa à VPC estiver incorreta."
+        },
+        {
+          "id": "c",
+          "text": "Para fins de verificação, permitir temporariamente todos os destinos e portas no grupo de segurança e na ACL de rede do aplicativo.",
+          "explanation": "Ampliar o intervalo permitido pode afetar outros fluxos de tráfego. Isso não resolve o problema de roteamento nem identifica qual limite está bloqueando a conexão TCP 443."
+        },
+        {
+          "id": "a",
+          "text": "Verificar se a rota do lado do aplicativo envia o CIDR corporativo para o gateway privado virtual e se a rota de retorno do lado corporativo envia o CIDR da VPC para a VPN. Em seguida, verificar se o tráfego TCP 443 de saída e a resposta são permitidos pelos controles de tráfego dos dois lados.",
+          "explanation": "Ao comparar as rotas de ida e de retorno antes de verificar os controles de tráfego, é possível confirmar as condições necessárias para que os pacotes alcancem a API de destino e para que as respostas retornem, independentemente de o túnel da VPN estar ativo."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-2",
+      "prompt": "Um operador de site está investigando um problema em que apenas alguns usuários de um domínio personalizado veem conteúdo desatualizado. Escolha uma maneira mais apropriada de isolar a causa.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Verificar separadamente os registros e o TTL do Route 53, o comportamento de cache do CloudFront e a resposta da origem.",
+          "explanation": "Assim, a investigação não confunde as responsabilidades da resolução de nomes com as da entrega de conteúdo."
+        },
+        {
+          "id": "b",
+          "text": "Alterar somente os registros DNS, sem verificar o cache nem a origem.",
+          "explanation": "Isso não permite confirmar se o conteúdo desatualizado permanece no cache."
+        },
+        {
+          "id": "c",
+          "text": "Fazer com que todos os usuários se conectem diretamente à origem.",
+          "explanation": "Isso deixa de identificar a causa do problema e prejudica o design e a proteção da entrega de conteúdo."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-3",
+      "prompt": "Investigue o problema em que usuários da Internet não conseguem alcançar uma aplicação em uma sub-rede privada por meio de um ALB. Selecione um único procedimento de investigação, o mais apropriado.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Verificar, nesta ordem, a resolução de nomes; o listener e a integridade dos destinos do ALB; as rotas de cada sub-rede; os grupos de segurança do ALB e dos destinos; a NACL; e o caminho de retorno.",
+          "explanation": "Verificar o caminho e as permissões camada por camada ajuda a restringir o limite em que a conexão foi interrompida."
+        },
+        {
+          "id": "b",
+          "text": "Verificar somente o código da aplicação.",
+          "explanation": "Isso pode fazer com que problemas no ponto de entrada, no caminho, nas permissões e nas verificações de integridade não sejam identificados."
+        },
+        {
+          "id": "c",
+          "text": "Desabilitar todos os logs de comunicação e tentar novamente.",
+          "explanation": "Isso faria perder as evidências necessárias para a investigação."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "DNS",
+    "Route table",
+    "IGW",
+    "ALB",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Return path",
+    "AWS Site-to-Site VPN",
+    "Virtual private gateway"
+  ]
+}

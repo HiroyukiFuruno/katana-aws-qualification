@@ -1,0 +1,1685 @@
+{
+  "ja": {
+    "id": "private-app-s3",
+    "title": "EC2を公開せずにアプリを配信し、S3から添付ファイルを読む",
+    "intro": "ある配送会社は、利用者が配送状況や添付ファイルを確認できるサービスをAWSで運用します。ネットワーク担当者は、利用者がブラウザーからアクセスできる入口を用意しつつ、処理を担当するEC2インスタンスにはパブリックIPアドレスを付けない方針です。この事例の通信にはIPv4を使います。アプリは同じリージョンの非公開S3バケットから、認証済みの利用者に閲覧権限がある添付ファイルだけを読み取ります。",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "利用者からアプリまでの経路",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "公開するのはアプリの入口であるApplication Load Balancer（ALB）です。ブラウザーはALBに接続し、ALBがVPC内でEC2に別の接続を開くため、EC2にパブリックIPアドレスは要りません。",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "インターネット向けのALBを作り、2つのアベイラビリティーゾーン（AZ）でパブリックサブネットを1つずつ指定します。利用者のブラウザーはDNSでサービスの名前を解決し、ALBのHTTPSリスナーに接続します。ALBからEC2へのHTTPS接続はVPC内のローカルルートを使います。",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "図の①と②で、ブラウザーからの接続がALBで終わる位置と、EC2が置かれているサブネットを見比べてください。②では、ALBノードから同じAZのEC2に接続する例を示しています。クロスゾーン負荷分散が有効なターゲットグループでは、ALBノードは別のAZの正常なEC2にも転送できます。",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "ALBのセキュリティグループでは、受信ルールで利用者からのTCP 443を許可します。送信ルールでは宛先をEC2のセキュリティグループに指定し、ターゲットへの通信とヘルスチェックに使うTCP 443を許可します。EC2の受信ルールでは、送信元をALBのセキュリティグループに指定してTCP 443を許可します。",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "アプリからS3へ出る経路",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "図の③は、EC2が同じリージョンのS3に接続する経路です。二つのプライベートサブネットにはそれぞれルートテーブルがあり、この事例では両方を同じS3ゲートウェイエンドポイントに関連付けます。AWSが各テーブルに追加するルートでは、そのリージョンのS3プレフィックスリストが宛先、ゲートウェイエンドポイントがターゲットです。",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "アプリが同じリージョンのS3のDNS名を引くと、S3の公開IPアドレスが返ります。アプリはそのIPアドレスを宛先にし、VPCは宛先に一致するルートを検索します。この構成では、ゲートウェイエンドポイントへのルートが一致し、通信はAWSのネットワーク内を通ります。",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "EC2のセキュリティグループでは、S3のプレフィックスリスト宛てのTCP 443を許可します。この事例ではネットワークACLを既存の許可設定のまま使用します。絞り込む場合は、プレフィックスリストに含まれる各範囲と、応答側のポートを確認します。ネットワークACLにはプレフィックスリストを直接指定できません。",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "インターネットへの発信も必要になったら",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "現時点でEC2がVPCの外へ接続する相手は、同じリージョンのS3だけです。S3向けのゲートウェイエンドポイントは追加料金がかからず、この用途のためのNATゲートウェイも不要です。",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "運用チームが、EC2から公開パッケージリポジトリへ直接接続して更新ファイルを取得する方針に変えたとします。図の③で、その通信も扱えるでしょうか。",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③が扱うのはS3向けの通信です。公開リポジトリへの接続には、NATゲートウェイなど別の発信経路を設け、EC2のセキュリティグループなどで必要な発信が許可されているかも確かめます。NATを使う場合も、S3の宛先にはより具体的なプレフィックスリストのルートが適用されます。変更後は、両方のプライベートサブネットからS3への経路、公開リポジトリへの接続、EC2が外部から直接接続を受けないことをそれぞれ確認します。",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "通信できることと、読めることを確認する",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "アプリはログインした利用者が配送記録と添付ファイルを閲覧できるかを確かめます。権限があれば、アプリはEC2のIAMロールでS3へリクエストを送ります。S3への読み取りでAWSが評価するのは、アプリのロールから送られたリクエストです。そのロールには対象バケットの `attachments/` 配下で必要な `s3:GetObject` を許可し、エンドポイントポリシーも対象ロールによるその範囲の読み取りに絞ります。",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "専用バケットで社内の運用経路もこのエンドポイントを使うことを確認できれば、バケットポリシーで別経路からの読み取りも制限できます。例えば `aws:SourceVpce` で読み取りを許可する経路を指定します。運用チームは適用前に、正規のアプリ、運用担当者、AWSサービスによる必要なアクセスを洗い出し、変更を戻せる手順を用意します。",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["確認する通信", "運用前に見る結果"],
+            "rows": [
+              [
+                "外部ブラウザーからサービスのHTTPS URLへ接続する",
+                "ALBの証明書がホスト名に一致し、認証後に配送画面を表示できる。両方のAZでターゲットのヘルスチェックが成功する。"
+              ],
+              [
+                "両方のプライベートサブネットから、アプリのIAMロールで許可済みのファイルを読む",
+                "両方で `GetObject` が成功する。S3向けルートとエンドポイントの関連付けをサブネットごとに確認できる。"
+              ],
+              [
+                "同じロールで、存在するが許可範囲外のファイルを読む",
+                "S3への接続自体は成功し、リクエストはアクセス拒否になる。接続がタイムアウトした場合は、権限の判断より先にDNS、ルート、通信制御を調べる。"
+              ],
+              [
+                "別の利用者が同じアプリ経由で配送記録を開く",
+                "アプリで閲覧を拒否し、ログを確認すると、この操作でアプリがS3からファイルを読み出していない。"
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "片方のAZからS3へ接続できない場合",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "利用者はどちらのAZのアプリでも配送画面を開けます。ただし、AZ BのEC2が添付ファイルを読み取ろうとするとタイムアウトします。両方のEC2は、同じIAMロールとセキュリティグループを使っています。図のどの経路を確認すべきでしょうか。",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "図の③をたどり、AZ Bのプライベートサブネットに関連付けられているルートテーブルを確認します。S3のプレフィックスリストを宛先とし、ゲートウェイエンドポイントを指すルートがあるかをAZ Aと比べます。次に、AZ BのネットワークACLがS3のIPアドレス範囲へのTCP 443と、EC2が接続元に使う一時ポートへの応答を許可しているかを確認します。接続が成立してアクセス拒否が返る場合は、エンドポイントポリシー、バケットポリシー、IAMロールの権限を調べます。",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "参考資料",
+    "sources": [
+      {
+        "label": "Elastic Load Balancing の仕組み",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer のセキュリティグループ",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3 のゲートウェイエンドポイント",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "ゲートウェイエンドポイントのルーティング",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3 のエンドポイントタイプと、使用するIPアドレスの違い",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "バケットポリシーでVPCエンドポイントからのアクセスを制御する",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "en": {
+    "id": "private-app-s3",
+    "title": "Delivering an Application Without Exposing EC2 and Reading Attachments from S3",
+    "intro": "A delivery company operates an AWS service that allows users to check delivery status and attachments. The network administrator plans to provide an entry point that users can access from a browser while not assigning public IP addresses to the EC2 instances responsible for processing. This scenario uses IPv4 for communication. The application reads only attachments from a private S3 bucket in the same Region for which authenticated users have viewing permission.",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "The Path from Users to the Application",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "The public entry point is the application's Application Load Balancer (ALB). The browser connects to the ALB, and the ALB opens a separate connection to EC2 within the VPC, so EC2 does not need a public IP address.",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Create an internet-facing ALB and specify one public subnet in each of two Availability Zones (AZs). The user's browser resolves the service name through DNS and connects to the ALB's HTTPS listener. The HTTPS connection from the ALB to EC2 uses the local route within the VPC.",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "In ① and ② in the diagram, compare where the connection from the browser terminates at the ALB with the subnet where EC2 is placed. ② shows an example in which an ALB node connects to EC2 in the same AZ. In a target group with cross-zone load balancing enabled, an ALB node can also forward traffic to a healthy EC2 instance in another AZ.",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "In the ALB security group, allow TCP 443 from users in the inbound rules. In the outbound rules, specify the EC2 security group as the destination and allow TCP 443 for traffic to the targets and for health checks. In the EC2 inbound rules, specify the ALB security group as the source and allow TCP 443.",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "The path from the application to S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Item ③ in the diagram is the path used by EC2 to connect to S3 in the same Region. Each of the two private subnets has a route table, and in this scenario both are associated with the same S3 gateway endpoint. In the routes that AWS adds to each table, the S3 prefix list for that Region is the destination and the gateway endpoint is the target.",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "When the application resolves the DNS name for S3 in the same Region, an S3 public IP address is returned. The application uses that IP address as the destination, and the VPC searches for a route that matches the destination. In this configuration, the route to the gateway endpoint matches, so the traffic travels within the AWS network.",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "In the EC2 security group, allow TCP 443 destined for the S3 prefix list. In this scenario, use the network ACL with its existing allow rules. If you narrow the rules, check each range included in the prefix list and the ports on the response side. A network ACL cannot directly specify a prefix list.",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "If outbound Internet access also becomes necessary",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "At present, the only destination outside the VPC that EC2 connects to is S3 in the same Region. The gateway endpoint for S3 incurs no additional charges, and a NAT gateway is not needed for this use case.",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Suppose the operations team changes its policy so that EC2 connects directly to a public package repository to obtain update files. Can the communication shown as ③ in the diagram handle that traffic as well?",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③ handles traffic destined for S3. To connect to the public repository, establish a separate outbound path such as a NAT gateway, and also verify that the required outbound traffic is permitted by EC2 security groups and other relevant controls. Even when using NAT, the more specific prefix-list route is applied to S3 destinations. After the change, verify separately the paths from both private subnets to S3, the connection to the public repository, and that EC2 does not directly receive connections from outside.",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "Verifying Connectivity and Read Access",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "The application verifies whether a logged-in user can view delivery records and attachments. When authorized, the application sends requests to S3 using the EC2 IAM role. For reads from S3, AWS evaluates the request sent using the application's role. That role allows the required `s3:GetObject` access under `attachments/` in the target bucket, and the endpoint policy also restricts reads within that scope by the target role.",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "If you can confirm that the internal operations path also uses this endpoint with a dedicated bucket, you can further restrict reads from other paths with a bucket policy. For example, specify the path permitted to read by using `aws:SourceVpce`. Before applying the change, the operations team identifies the required access by the legitimate application, operations staff, and AWS services, and prepares a procedure that allows the change to be rolled back.",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["Connectivity to verify", "Results to check before operations"],
+            "rows": [
+              [
+                "Connect from an external browser to the service's HTTPS URL",
+                "The ALB certificate matches the host name, and the delivery page can be displayed after authentication. Target health checks succeed in both AZs."
+              ],
+              [
+                "From both private subnets, read a file permitted by the application's IAM role",
+                "`GetObject` succeeds from both. The association between the route to S3 and the endpoint can be confirmed for each subnet."
+              ],
+              [
+                "Using the same role, read a file that exists but is outside the permitted scope",
+                "The connection to S3 itself succeeds, and the request is denied. If the connection times out, investigate DNS, routes, and traffic controls before evaluating permissions."
+              ],
+              [
+                "Another user opens a delivery record through the same application",
+                "The application denies viewing, and log verification confirms that the application did not read the file from S3 for this operation."
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "When one AZ cannot connect to S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Users can open the delivery screen from the application in either AZ. However, when EC2 in AZ B tries to read an attachment, the request times out. Both EC2 instances use the same IAM role and security group. Which path in the diagram should you check?",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Follow path ③ in the diagram and check the route table associated with the private subnet in AZ B. Compare it with AZ A to determine whether there is a route whose destination is the S3 prefix list and whose target is a gateway endpoint. Next, check whether the network ACL in AZ B allows TCP 443 to S3 IP address ranges and allows responses to the ephemeral ports that EC2 uses as source ports. If the connection is established but AccessDenied is returned, examine the endpoint policy, bucket policy, and permissions of the IAM role.",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "References",
+    "sources": [
+      {
+        "label": "How Elastic Load Balancing Works",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Security Groups for Application Load Balancers",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Gateway Endpoints for Amazon S3",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "Routing for Gateway Endpoints",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3 Endpoint Types and Differences in the IP Addresses They Use",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "Controlling Access from a VPC Endpoint with a Bucket Policy",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "ko": {
+    "id": "private-app-s3",
+    "title": "EC2를 공개하지 않고 애플리케이션을 제공하며 S3에서 첨부 파일 읽기",
+    "intro": "한 배송 회사는 사용자가 배송 상태와 첨부 파일을 확인할 수 있는 서비스를 AWS에서 운영합니다. 네트워크 담당자는 사용자가 브라우저에서 액세스할 수 있는 진입점을 마련하면서도 처리를 담당하는 EC2 인스턴스에는 퍼블릭 IP 주소를 할당하지 않을 계획입니다. 이 사례의 통신에는 IPv4를 사용합니다. 애플리케이션은 동일한 Region의 비공개 S3 버킷에서 인증된 사용자에게 보기 권한이 있는 첨부 파일만 읽습니다.",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "사용자에서 애플리케이션까지의 경로",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "공개하는 것은 애플리케이션의 진입점인 Application Load Balancer(ALB)입니다. 브라우저는 ALB에 연결하고, ALB는 VPC 내부에서 EC2에 별도의 연결을 열므로 EC2에는 퍼블릭 IP 주소가 필요하지 않습니다.",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "인터넷 연결용 ALB를 생성하고, 두 개의 가용 영역(AZ)에 각각 퍼블릭 서브넷을 하나씩 지정합니다. 사용자의 브라우저는 DNS를 통해 서비스 이름을 확인한 다음 ALB의 HTTPS 리스너에 연결합니다. ALB에서 EC2로 연결하는 HTTPS 연결은 VPC 내부의 로컬 라우팅을 사용합니다.",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "다이어그램의 ①과 ②에서 브라우저의 연결이 ALB에서 종료되는 위치와 EC2가 배치된 서브넷을 비교해 보세요. ②는 ALB 노드가 동일한 AZ의 EC2에 연결하는 예를 보여 줍니다. 교차 영역 로드 밸런싱이 활성화된 대상 그룹에서는 ALB 노드가 다른 AZ의 정상 EC2로도 전달할 수 있습니다.",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "ALB 보안 그룹의 인바운드 규칙에서 사용자로부터의 TCP 443을 허용합니다. 아웃바운드 규칙에서는 EC2 보안 그룹을 대상으로 지정하고, 대상에 대한 통신과 상태 확인에 사용하는 TCP 443을 허용합니다. EC2 인바운드 규칙에서는 ALB 보안 그룹을 소스로 지정하고 TCP 443을 허용합니다.",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "애플리케이션에서 S3로 나가는 경로",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "그림의 ③은 EC2가 동일한 리전의 S3에 연결하는 경로입니다. 두 프라이빗 서브넷에는 각각 라우팅 테이블이 있으며, 이 사례에서는 두 라우팅 테이블을 동일한 S3 게이트웨이 엔드포인트에 연결합니다. AWS가 각 테이블에 추가하는 경로에서 해당 리전의 S3 접두사 목록은 대상이고 게이트웨이 엔드포인트는 타깃입니다.",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "애플리케이션이 동일한 리전의 S3 DNS 이름을 조회하면 S3 퍼블릭 IP 주소가 반환됩니다. 애플리케이션은 해당 IP 주소를 대상으로 지정하고, VPC는 대상과 일치하는 경로를 검색합니다. 이 구성에서는 게이트웨이 엔드포인트로 향하는 경로가 일치하므로 트래픽은 AWS 네트워크 내부를 통과합니다.",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "EC2 보안 그룹에서는 S3 접두사 목록을 대상으로 하는 TCP 443을 허용합니다. 이 사례에서는 네트워크 ACL을 기존 허용 설정 그대로 사용합니다. 범위를 좁히려면 접두사 목록에 포함된 각 범위와 응답 측 포트를 확인합니다. 네트워크 ACL에서는 접두사 목록을 직접 지정할 수 없습니다.",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "인터넷으로의 아웃바운드 연결도 필요해진다면",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "현재 EC2가 VPC 외부에서 연결하는 대상은 동일한 Region의 S3뿐입니다. S3용 gateway endpoint는 추가 요금이 발생하지 않으며, 이 용도에는 NAT gateway도 필요하지 않습니다.",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "운영 팀이 EC2에서 공개 패키지 리포지토리에 직접 연결하여 업데이트 파일을 가져오는 정책으로 변경했다고 가정해 보겠습니다. 다이어그램의 ③이 이러한 통신도 처리할 수 있을까요?",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③이 처리하는 것은 S3로 향하는 통신입니다. 공개 리포지토리에 연결하려면 NAT gateway와 같은 별도의 아웃바운드 경로를 구성하고, EC2의 security groups 등에서 필요한 아웃바운드 통신이 허용되는지도 확인해야 합니다. NAT를 사용하는 경우에도 S3 대상에는 더 구체적인 prefix list 경로가 적용됩니다. 변경 후에는 두 private subnets에서 S3로 연결되는 경로, 공개 리포지토리로의 연결, 그리고 EC2가 외부에서 직접 연결을 받지 않는지를 각각 확인합니다.",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "통신 가능 여부와 읽기 가능 여부 확인",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "애플리케이션은 로그인한 사용자가 배송 기록과 첨부 파일을 볼 수 있는지 확인합니다. 권한이 있으면 애플리케이션은 EC2 IAM 역할을 사용하여 S3로 요청을 보냅니다. S3 읽기 요청에서 AWS가 평가하는 것은 애플리케이션 역할을 사용해 전송된 요청입니다. 이 역할에는 대상 버킷의 `attachments/` 아래에서 필요한 `s3:GetObject`를 허용하고, 엔드포인트 정책도 대상 역할이 해당 범위에서 읽을 수 있도록 제한합니다.",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "전용 버킷의 내부 운영 경로도 이 엔드포인트를 사용하는지 확인할 수 있다면, 버킷 정책으로 다른 경로에서의 읽기도 제한할 수 있습니다. 예를 들어 `aws:SourceVpce`를 사용하여 읽기를 허용할 경로를 지정합니다. 운영 팀은 적용하기 전에 정식 애플리케이션, 운영 담당자 및 AWS 서비스에 필요한 액세스를 파악하고 변경 사항을 되돌릴 수 있는 절차를 준비합니다.",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["확인할 통신", "운영 전에 확인할 결과"],
+            "rows": [
+              [
+                "외부 브라우저에서 서비스의 HTTPS URL에 연결",
+                "ALB 인증서가 호스트 이름과 일치하고 인증 후 배송 페이지를 표시할 수 있습니다. 두 AZ에서 대상 상태 확인이 성공합니다."
+              ],
+              [
+                "두 프라이빗 서브넷에서 애플리케이션의 IAM 역할로 허용된 파일 읽기",
+                "두 곳 모두에서 `GetObject`가 성공합니다. 서브넷별로 S3로 향하는 라우트와 엔드포인트의 연결을 확인할 수 있습니다."
+              ],
+              [
+                "같은 역할로 존재하지만 허용 범위를 벗어난 파일 읽기",
+                "S3 자체에 대한 연결은 성공하지만 요청은 액세스 거부가 됩니다. 연결 시간이 초과되면 권한을 판단하기 전에 DNS, 라우트 및 통신 제어를 조사합니다."
+              ],
+              [
+                "다른 사용자가 같은 애플리케이션을 통해 배송 기록 열기",
+                "애플리케이션이 보기를 거부하며, 로그를 확인하면 이 작업에서 애플리케이션이 S3에서 파일을 읽지 않았음을 알 수 있습니다."
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "한 AZ에서 S3에 연결할 수 없는 경우",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "사용자는 어느 AZ의 애플리케이션에서든 배송 화면을 열 수 있습니다. 그러나 AZ B의 EC2가 첨부 파일을 읽으려고 하면 요청 시간이 초과됩니다. 두 EC2 인스턴스는 동일한 IAM 역할과 보안 그룹을 사용합니다. 다이어그램에서 어떤 경로를 확인해야 합니까?",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "다이어그램의 경로 ③을 따라 AZ B의 프라이빗 서브넷에 연결된 라우팅 테이블을 확인합니다. S3 접두사 목록을 대상으로 하고 게이트웨이 엔드포인트를 가리키는 경로가 있는지 AZ A와 비교합니다. 그런 다음 AZ B의 네트워크 ACL이 S3 IP 주소 범위로 향하는 TCP 443과 EC2가 소스 포트로 사용하는 임시 포트에 대한 응답을 허용하는지 확인합니다. 연결이 설정되었지만 AccessDenied가 반환되는 경우 엔드포인트 정책, 버킷 정책 및 IAM 역할의 권한을 조사합니다.",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "참고 자료",
+    "sources": [
+      {
+        "label": "Elastic Load Balancing 작동 방식",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer의 보안 그룹",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3의 게이트웨이 엔드포인트",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "게이트웨이 엔드포인트 라우팅",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3 엔드포인트 유형 및 사용되는 IP 주소의 차이",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "버킷 정책으로 VPC 엔드포인트에서의 액세스 제어",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "zh-CN": {
+    "id": "private-app-s3",
+    "title": "不公开 EC2 并从 S3 读取附件来提供应用程序",
+    "intro": "一家配送公司在 AWS 上运营一项服务，用户可以查看配送状态和附件。网络管理员计划提供一个用户可以通过浏览器访问的入口，同时不为负责处理的 EC2 实例分配公有 IP 地址。本案例中的通信使用 IPv4。应用程序仅从同一 Region 中的私有 S3 存储桶读取经身份验证的用户具有查看权限的附件。",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "从用户到应用的路径",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "公开的是应用的入口，即 Application Load Balancer（ALB）。浏览器连接到 ALB，ALB 在 VPC 内向 EC2 建立另一条连接，因此 EC2 不需要公有 IP 地址。",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "创建面向互联网的 ALB，并在两个可用区（AZ）中各指定一个公有子网。用户的浏览器通过 DNS 解析服务名称，然后连接到 ALB 的 HTTPS 侦听器。ALB 到 EC2 的 HTTPS 连接使用 VPC 内的本地路由。",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "请在图中的①和②中，对比浏览器发起的连接在哪个位置于 ALB 处终止，以及 EC2 所在的子网。②展示了 ALB 节点连接到同一 AZ 中 EC2 的示例。在启用了跨区域负载均衡的目标组中，ALB 节点也可以将流量转发到另一个 AZ 中运行正常的 EC2。",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "在 ALB 的安全组中，在入站规则中允许来自用户的 TCP 443。在出站规则中，将 EC2 的安全组指定为目标，并允许用于与目标通信及运行运行状况检查的 TCP 443。在 EC2 的入站规则中，将 ALB 的安全组指定为来源，并允许 TCP 443。",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "从应用到 S3 的路径",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "图中的③是 EC2 连接到同一区域 S3 的路径。两个私有子网分别都有一个路由表，在此案例中，将这两个路由表都关联到同一个 S3 网关端点。AWS 添加到每个路由表中的路由以该区域的 S3 前缀列表为目标，以网关端点为目标对象。",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "应用解析同一区域 S3 的 DNS 名称时，会返回 S3 的公有 IP 地址。应用将该 IP 地址作为目标，VPC 会搜索与目标匹配的路由。在此配置中，与网关端点的路由匹配，因此通信会在 AWS 网络内部传输。",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "在 EC2 的安全组中，允许发往 S3 前缀列表的 TCP 443。在此案例中，网络 ACL 沿用现有的允许规则。如果需要进一步收紧规则，请检查前缀列表中包含的每个范围以及响应端的端口。网络 ACL 不能直接指定前缀列表。",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "如果还需要向互联网发起出站连接",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "目前，EC2需要连接到VPC外部的对象只有同一区域的S3。S3的gateway endpoint不收取额外费用，此用途也不需要NAT gateway。",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "假设运维团队改变方针，要求EC2直接连接公共软件包存储库以获取更新文件。图中的③也能处理这种通信吗？",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③处理的是发往S3的通信。要连接公共软件包存储库，应设置NAT gateway等单独的出站路径，同时确认EC2的security groups等是否允许所需的出站通信。即使使用NAT，前往S3目标的路由也会应用更具体的prefix list路由。变更后，应分别确认两个private subnets到S3的路径、与公共软件包存储库的连接，以及EC2不会直接接收来自外部的连接。",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "确认可以通信并读取",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "应用会确认已登录用户能否查看配送记录和附件。在拥有权限时，应用使用 EC2 的 IAM 角色向 S3 发送请求。对于从 S3 读取的操作，AWS 评估的是由应用角色发送的请求。该角色允许在目标存储桶的 `attachments/` 路径下执行所需的 `s3:GetObject`，端点策略也将目标角色的读取范围限制在该路径内。",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "如果能够确认专用存储桶的内部运维路径也使用此端点，则还可以通过存储桶策略限制来自其他路径的读取。例如，使用 `aws:SourceVpce` 指定允许读取的路径。运维团队在应用变更前，会梳理正式应用、运维人员和 AWS 服务所需的访问权限，并准备可回滚变更的操作流程。",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["要确认的通信", "运维前检查的结果"],
+            "rows": [
+              [
+                "从外部浏览器连接到服务的 HTTPS URL",
+                "ALB 证书与主机名匹配，并且身份验证后可以显示配送页面。两个 AZ 中的目标运行状况检查均成功。"
+              ],
+              [
+                "从两个私有子网使用应用的 IAM 角色读取已获授权的文件",
+                "两处的 `GetObject` 均成功。可以按子网确认指向 S3 的路由与端点之间的关联。"
+              ],
+              [
+                "使用同一角色读取一个存在但超出授权范围的文件",
+                "与 S3 的连接本身成功，但请求会被拒绝。如果连接超时，应先检查 DNS、路由和通信控制，再判断权限。"
+              ],
+              [
+                "另一名用户通过同一应用打开配送记录",
+                "应用拒绝查看；检查日志后确认，应用在此次操作中没有从 S3 读取文件。"
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "当一个 AZ 无法连接到 S3 时",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "用户可以从任一 AZ 中的应用打开配送页面。但是，当 AZ B 中的 EC2 尝试读取附件时，请求会超时。两个 EC2 实例使用相同的 IAM 角色和安全组。应检查图中的哪条路径？",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "沿着图中的路径③，检查与 AZ B 私有子网关联的路由表。将其与 AZ A 进行比较，确认是否存在以 S3 前缀列表为目标、指向网关端点的路由。接下来，检查 AZ B 的网络 ACL 是否允许到 S3 IP 地址范围的 TCP 443，以及是否允许对 EC2 用作源端口的临时端口进行响应。如果连接已建立但返回 AccessDenied，请检查端点策略、存储桶策略以及 IAM 角色的权限。",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "参考资料",
+    "sources": [
+      {
+        "label": "Elastic Load Balancing 的工作原理",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer 的安全组",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3 的网关终端节点",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "网关终端节点的路由",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3 的终端节点类型及其使用的 IP 地址差异",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "使用存储桶策略控制来自 VPC 终端节点的访问",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "zh-TW": {
+    "id": "private-app-s3",
+    "title": "不公開 EC2 並從 S3 讀取附件以提供應用程式",
+    "intro": "一家配送公司在 AWS 上營運一項服務，讓使用者可以查看配送狀態和附件。網路管理員計畫提供一個使用者可透過瀏覽器存取的入口，同時不為負責處理的 EC2 執行個體指派公有 IP 位址。本案例中的通訊使用 IPv4。應用程式只會從相同 Region 中的私有 S3 儲存貯體讀取經過驗證且具有檢視權限之使用者可存取的附件。",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "從使用者到應用程式的路徑",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "要公開的是應用程式的入口，也就是 Application Load Balancer（ALB）。瀏覽器連線到 ALB，而 ALB 會在 VPC 內向 EC2 開啟另一個連線，因此 EC2 不需要公有 IP 位址。",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "建立面向網際網路的 ALB，並在兩個可用區域（AZ）中各指定一個公有子網路。使用者的瀏覽器透過 DNS 解析服務名稱，然後連線到 ALB 的 HTTPS 接聽程式。ALB 到 EC2 的 HTTPS 連線會使用 VPC 內的本機路由。",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "請在圖中的①和②中，比較瀏覽器的連線在哪個位置於 ALB 終止，以及 EC2 所在的子網路。②顯示 ALB 節點連線到相同 AZ 中 EC2 的範例。在已啟用跨區域負載平衡的目標群組中，ALB 節點也可以將流量轉送到另一個 AZ 中狀態正常的 EC2。",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "在 ALB 的安全性群組中，於傳入規則允許來自使用者的 TCP 443。在傳出規則中，將 EC2 的安全性群組指定為目的地，並允許用於連往目標以及執行運作狀態檢查的 TCP 443。在 EC2 的傳入規則中，將 ALB 的安全性群組指定為來源，並允許 TCP 443。",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "從應用程式到 S3 的路徑",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "圖中的③是 EC2 連線到相同區域 S3 的路徑。兩個私有子網路各自都有路由表，在此案例中，將兩者都關聯至同一個 S3 閘道端點。AWS 加入各路由表的路由中，該區域的 S3 字首清單是目的地，而閘道端點是目標。",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "應用程式解析相同區域 S3 的 DNS 名稱時，會傳回 S3 的公有 IP 位址。應用程式將該 IP 位址設為目的地，VPC 會搜尋符合目的地的路由。在此組態中，通往閘道端點的路由符合，因此流量會在 AWS 網路內傳輸。",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "在 EC2 的安全群組中，允許目的地為 S3 字首清單的 TCP 443。在此案例中，網路 ACL 沿用現有的允許設定。如果要縮小範圍，請確認字首清單中包含的每個範圍，以及回應端的連接埠。網路 ACL 無法直接指定字首清單。",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "如果還需要向網際網路發起輸出連線",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "目前，EC2需要連線到VPC外部的對象只有同一個區域的S3。S3的gateway endpoint不會產生額外費用，此用途也不需要NAT gateway。",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "假設營運團隊改變方針，要求EC2直接連線至公開套件儲存庫以取得更新檔案。圖中的③也能處理這類通訊嗎？",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③處理的是發往S3的通訊。若要連線至公開套件儲存庫，應設定NAT gateway等獨立的輸出路徑，同時確認EC2的security groups等是否允許所需的輸出通訊。即使使用NAT，前往S3目的地的路由仍會套用更具體的prefix list路由。變更後，應分別確認兩個private subnets到S3的路徑、與公開套件儲存庫的連線，以及EC2不會直接接收來自外部的連線。",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "確認可以通訊並讀取",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "應用程式會確認已登入的使用者是否能檢視配送記錄和附件。在具備權限時，應用程式會使用 EC2 的 IAM 角色向 S3 傳送請求。對於從 S3 進行的讀取，AWS 評估的是由應用程式角色傳送的請求。該角色允許在目標儲存貯體的 `attachments/` 路徑下執行所需的 `s3:GetObject`，端點政策也將目標角色在該範圍內的讀取限制住。",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "如果能確認專用儲存貯體的內部營運路徑也使用此端點，就可以透過儲存貯體政策進一步限制來自其他路徑的讀取。例如，使用 `aws:SourceVpce` 指定允許讀取的路徑。營運團隊在套用前，會盤點正式應用程式、營運人員和 AWS 服務所需的存取權，並準備可還原變更的程序。",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["要確認的通訊", "營運前檢查的結果"],
+            "rows": [
+              [
+                "從外部瀏覽器連線至服務的 HTTPS URL",
+                "ALB 憑證與主機名稱相符，且通過驗證後可以顯示配送頁面。兩個 AZ 中的目標運作狀態檢查皆成功。"
+              ],
+              [
+                "從兩個私有子網路使用應用程式的 IAM 角色讀取已獲允許的檔案",
+                "兩處的 `GetObject` 都成功。可以逐一確認子網路通往 S3 的路由與端點之間的關聯。"
+              ],
+              [
+                "使用相同角色讀取一個存在但超出允許範圍的檔案",
+                "與 S3 的連線本身成功，但請求會遭到拒絕。如果連線逾時，應先調查 DNS、路由和通訊控制，再判斷權限。"
+              ],
+              [
+                "另一名使用者透過相同的應用程式開啟配送記錄",
+                "應用程式拒絕檢視；確認記錄後可得知，應用程式在此次操作中沒有從 S3 讀取檔案。"
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "當其中一個 AZ 無法連線到 S3 時",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "使用者可以從任一 AZ 中的應用程式開啟配送畫面。但是，當 AZ B 中的 EC2 嘗試讀取附件時，要求會逾時。兩個 EC2 執行個體使用相同的 IAM 角色和安全群組。應檢查圖中的哪條路徑？",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "沿著圖中的路徑③，檢查與 AZ B 私有子網路相關聯的路由表。將它與 AZ A 比較，確認是否有以 S3 字首清單為目的地、並指向閘道端點的路由。接著，檢查 AZ B 的網路 ACL 是否允許通往 S3 IP 位址範圍的 TCP 443，以及是否允許對 EC2 用作來源連接埠的暫時連接埠進行回應。如果連線已建立但傳回 AccessDenied，請檢查端點政策、儲存貯體政策，以及 IAM 角色的權限。",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "參考資料",
+    "sources": [
+      {
+        "label": "Elastic Load Balancing 的運作方式",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Application Load Balancer 的安全群組",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3 的閘道端點",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "閘道端點的路由",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon S3 的端點類型與其使用的 IP 位址差異",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "使用儲存貯體政策控制來自 VPC 端點的存取",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "pt": {
+    "id": "private-app-s3",
+    "title": "Fornecer uma aplicação sem expor o EC2 e ler anexos do S3",
+    "intro": "Uma empresa de entregas opera na AWS um serviço que permite aos usuários consultar o status das entregas e os anexos. O administrador de rede planeja disponibilizar um ponto de entrada que os usuários possam acessar pelo navegador, sem atribuir endereços IP públicos às instâncias do EC2 responsáveis pelo processamento. Neste cenário, a comunicação usa IPv4. A aplicação lê somente os anexos de um bucket privado do S3 na mesma Region aos quais usuários autenticados têm permissão de visualização.",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "O caminho dos usuários até a aplicação",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "O ponto de entrada público é o Application Load Balancer (ALB) da aplicação. O navegador se conecta ao ALB, e o ALB abre uma conexão separada com o EC2 dentro da VPC; portanto, o EC2 não precisa de um endereço IP público.",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Crie um ALB voltado para a Internet e especifique uma sub-rede pública em cada uma de duas zonas de disponibilidade (AZs). O navegador do usuário resolve o nome do serviço por meio do DNS e se conecta ao listener HTTPS do ALB. A conexão HTTPS do ALB para o EC2 usa a rota local dentro da VPC.",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Na figura, compare em ① e ② o ponto em que a conexão do navegador termina no ALB com a sub-rede onde o EC2 está localizado. ② mostra um exemplo em que um nó do ALB se conecta ao EC2 na mesma AZ. Em um grupo de destino com balanceamento de carga entre zonas habilitado, um nó do ALB também pode encaminhar o tráfego para um EC2 íntegro em outra AZ.",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "No grupo de segurança do ALB, permita TCP 443 dos usuários nas regras de entrada. Nas regras de saída, especifique o grupo de segurança do EC2 como destino e permita TCP 443 para a comunicação com os destinos e para as verificações de integridade. Nas regras de entrada do EC2, especifique o grupo de segurança do ALB como origem e permita TCP 443.",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "O caminho da aplicação para o S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "O item ③ do diagrama é o caminho que o EC2 usa para se conectar ao S3 na mesma Região. Cada uma das duas sub-redes privadas tem uma tabela de rotas e, neste cenário, ambas são associadas ao mesmo gateway endpoint do S3. Nas rotas que a AWS adiciona a cada tabela, a lista de prefixos do S3 para essa Região é o destino, e o gateway endpoint é o alvo.",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Quando a aplicação resolve o nome DNS do S3 na mesma Região, um endereço IP público do S3 é retornado. A aplicação usa esse endereço IP como destino, e a VPC procura uma rota que corresponda ao destino. Nesta configuração, a rota para o gateway endpoint corresponde, portanto, o tráfego passa dentro da rede da AWS.",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "No security group do EC2, permita TCP 443 com destino à lista de prefixos do S3. Neste cenário, use a network ACL com suas regras de permissão existentes. Se você restringir as regras, verifique cada intervalo incluído na lista de prefixos e as portas do lado da resposta. Uma network ACL não pode especificar diretamente uma lista de prefixos.",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "Se o acesso de saída à Internet também se tornar necessário",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "No momento, o único destino fora da VPC ao qual o EC2 se conecta é o S3 na mesma Region. O gateway endpoint para o S3 não gera cobranças adicionais, e um NAT gateway não é necessário para esse uso.",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Suponha que a equipe de operações mude a política para que o EC2 se conecte diretamente a um repositório público de pacotes para obter arquivos de atualização. A comunicação indicada como ③ no diagrama também consegue lidar com esse tráfego?",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③ trata do tráfego destinado ao S3. Para conectar-se ao repositório público, configure um caminho de saída separado, como um NAT gateway, e confirme também se o tráfego de saída necessário é permitido pelos security groups do EC2 e por outros controles relevantes. Mesmo usando NAT, a rota de prefix list mais específica é aplicada aos destinos do S3. Após a alteração, confirme separadamente as rotas das duas private subnets para o S3, a conexão com o repositório público e que o EC2 não recebe conexões diretamente de fora.",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "Verificar a conectividade e o acesso de leitura",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "O aplicativo verifica se um usuário conectado pode visualizar registros de entrega e anexos. Quando há autorização, o aplicativo envia solicitações ao S3 usando a função do IAM do EC2. Para leituras do S3, a AWS avalia a solicitação enviada pela função do aplicativo. Essa função permite o `s3:GetObject` necessário no caminho `attachments/` do bucket de destino, e a política do endpoint também restringe as leituras dessa função de destino a esse escopo.",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Se for possível confirmar que o caminho operacional interno do bucket dedicado também usa esse endpoint, a política do bucket poderá restringir as leituras por outros caminhos. Por exemplo, use `aws:SourceVpce` para especificar o caminho autorizado a ler. Antes da aplicação, a equipe de operações identifica os acessos necessários do aplicativo oficial, da equipe de operações e dos serviços da AWS e prepara um procedimento que permita reverter a alteração.",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["Conectividade a verificar", "Resultados a verificar antes da operação"],
+            "rows": [
+              [
+                "Conectar-se de um navegador externo ao URL HTTPS do serviço",
+                "O certificado do ALB corresponde ao nome do host, e a tela de entregas pode ser exibida após a autenticação. As verificações de integridade dos destinos são bem-sucedidas nas duas AZs."
+              ],
+              [
+                "Ler, nas duas sub-redes privadas, um arquivo permitido pela função do IAM do aplicativo",
+                "`GetObject` é bem-sucedido nas duas. É possível confirmar, por sub-rede, a associação entre a rota para o S3 e o endpoint."
+              ],
+              [
+                "Usando a mesma função, ler um arquivo existente que esteja fora do escopo permitido",
+                "A conexão com o S3 é bem-sucedida, mas a solicitação é negada. Se a conexão atingir o tempo limite, investigue o DNS, as rotas e os controles de tráfego antes de avaliar as permissões."
+              ],
+              [
+                "Outro usuário abre um registro de entrega pelo mesmo aplicativo",
+                "O aplicativo recusa a visualização e, ao verificar os logs, confirma-se que o aplicativo não leu o arquivo do S3 nessa operação."
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "Quando uma AZ não consegue se conectar ao S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Os usuários podem abrir a tela de entrega no aplicativo em qualquer uma das AZs. No entanto, quando a EC2 na AZ B tenta ler um anexo, a solicitação atinge o tempo limite. As duas instâncias do EC2 usam a mesma função do IAM e o mesmo grupo de segurança. Qual caminho do diagrama deve ser verificado?",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Siga o caminho ③ no diagrama e verifique a tabela de rotas associada à sub-rede privada na AZ B. Compare-a com a AZ A para confirmar se existe uma rota cujo destino seja a lista de prefixos do S3 e cujo destino de encaminhamento seja um endpoint de gateway. Em seguida, verifique se a ACL de rede da AZ B permite TCP 443 para os intervalos de endereços IP do S3 e permite respostas às portas efêmeras que o EC2 usa como portas de origem. Se a conexão for estabelecida, mas AccessDenied for retornado, examine a política do endpoint, a política do bucket e as permissões da função do IAM.",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referências",
+    "sources": [
+      {
+        "label": "Como funciona o Elastic Load Balancing",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Grupos de segurança do Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Endpoints de gateway para o Amazon S3",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "Roteamento de endpoints de gateway",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Tipos de endpoint do Amazon S3 e diferenças entre os endereços IP usados",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "Controlar o acesso a partir de um endpoint da VPC com uma política de bucket",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "fr": {
+    "id": "private-app-s3",
+    "title": "Distribuer une application sans exposer EC2 et lire des pièces jointes depuis S3",
+    "intro": "Une entreprise de livraison exploite sur AWS un service permettant aux utilisateurs de consulter l’état des livraisons et les pièces jointes. L’administrateur réseau prévoit de fournir un point d’entrée accessible aux utilisateurs depuis un navigateur, tout en n’attribuant pas d’adresses IP publiques aux instances EC2 chargées du traitement. Dans ce scénario, les communications utilisent IPv4. L’application lit uniquement, dans un compartiment S3 privé de la même Region, les pièces jointes auxquelles les utilisateurs authentifiés disposent d’un droit de consultation.",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "Le chemin des utilisateurs jusqu’à l’application",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Le point d’entrée public est l’Application Load Balancer (ALB) de l’application. Le navigateur se connecte à l’ALB, qui ouvre une autre connexion vers EC2 dans le VPC ; EC2 n’a donc pas besoin d’une adresse IP publique.",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Créez un ALB orienté vers Internet et spécifiez un sous-réseau public dans chacune de deux zones de disponibilité (AZ). Le navigateur de l’utilisateur résout le nom du service via DNS, puis se connecte à l’écouteur HTTPS de l’ALB. La connexion HTTPS de l’ALB vers EC2 utilise la route locale au sein du VPC.",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Dans le schéma, comparez en ① et ② l’endroit où la connexion du navigateur se termine sur l’ALB avec le sous-réseau où EC2 est placé. ② montre un exemple dans lequel un nœud de l’ALB se connecte à EC2 dans la même AZ. Dans un groupe cible où l’équilibrage de charge entre zones est activé, un nœud de l’ALB peut également transférer le trafic vers une instance EC2 saine située dans une autre AZ.",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Dans le groupe de sécurité de l’ALB, autorisez le TCP 443 provenant des utilisateurs dans les règles entrantes. Dans les règles sortantes, spécifiez le groupe de sécurité d’EC2 comme destination et autorisez le TCP 443 utilisé pour la communication avec les cibles et pour les contrôles d’état. Dans les règles entrantes d’EC2, spécifiez le groupe de sécurité de l’ALB comme source et autorisez le TCP 443.",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "Le chemin de l’application vers S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "L’élément ③ du diagramme représente le chemin qu’EC2 utilise pour se connecter à S3 dans la même Région. Chacun des deux sous-réseaux privés possède une table de routage et, dans ce scénario, les deux tables sont associées au même point de terminaison de passerelle S3. Dans les routes qu’AWS ajoute à chaque table, la liste de préfixes S3 de cette Région est la destination et le point de terminaison de passerelle est la cible.",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Lorsque l’application résout le nom DNS de S3 dans la même Région, une adresse IP publique de S3 est renvoyée. L’application utilise cette adresse IP comme destination, et le VPC recherche une route correspondant à la destination. Dans cette configuration, la route vers le point de terminaison de passerelle correspond, et le trafic circule donc à l’intérieur du réseau AWS.",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Dans le groupe de sécurité EC2, autorisez TCP 443 à destination de la liste de préfixes S3. Dans ce scénario, utilisez la network ACL avec ses règles d’autorisation existantes. Si vous restreignez les règles, vérifiez chaque plage incluse dans la liste de préfixes ainsi que les ports du côté de la réponse. Une network ACL ne peut pas spécifier directement une liste de préfixes.",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "Si un accès sortant vers Internet devient également nécessaire",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Pour le moment, la seule destination située en dehors du VPC à laquelle EC2 se connecte est S3 dans la même Region. Le gateway endpoint pour S3 n’entraîne aucuns frais supplémentaires, et aucun NAT gateway n’est nécessaire pour cet usage.",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Supposons que l’équipe d’exploitation modifie sa politique afin qu’EC2 se connecte directement à un référentiel public de packages pour récupérer les fichiers de mise à jour. La communication indiquée par ③ dans le schéma peut-elle également gérer ce trafic ?",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③ gère le trafic destiné à S3. Pour se connecter au référentiel public, mettez en place un chemin sortant distinct, tel qu’un NAT gateway, et vérifiez également que le trafic sortant requis est autorisé par les security groups d’EC2 et les autres contrôles pertinents. Même avec NAT, la route de prefix list la plus spécifique s’applique aux destinations S3. Après la modification, vérifiez séparément les chemins des deux private subnets vers S3, la connexion au référentiel public et le fait qu’EC2 ne reçoit pas directement de connexions depuis l’extérieur.",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "Vérifier la connectivité et l’accès en lecture",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "L’application vérifie si un utilisateur connecté peut consulter les enregistrements de livraison et les pièces jointes. Lorsque l’accès est autorisé, l’application envoie des requêtes à S3 en utilisant le rôle IAM d’EC2. Pour les lectures dans S3, AWS évalue la requête envoyée par le rôle de l’application. Ce rôle autorise le `s3:GetObject` requis sous `attachments/` dans le compartiment cible, et la stratégie de l’endpoint limite également les lectures effectuées par le rôle cible à cette portée.",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Si vous pouvez confirmer que le chemin d’exploitation interne du compartiment dédié utilise également cet endpoint, vous pouvez aussi limiter les lectures provenant d’autres chemins au moyen d’une stratégie de compartiment. Par exemple, utilisez `aws:SourceVpce` pour spécifier le chemin autorisé à lire. Avant l’application, l’équipe d’exploitation recense les accès nécessaires de l’application officielle, des opérateurs et des services AWS, puis prépare une procédure permettant d’annuler la modification.",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["Connectivité à vérifier", "Résultats à vérifier avant l’exploitation"],
+            "rows": [
+              [
+                "Se connecter depuis un navigateur externe à l’URL HTTPS du service",
+                "Le certificat de l’ALB correspond au nom d’hôte et la page de livraison peut être affichée après l’authentification. Les vérifications d’état des cibles réussissent dans les deux AZ."
+              ],
+              [
+                "Depuis les deux sous-réseaux privés, lire un fichier autorisé par le rôle IAM de l’application",
+                "`GetObject` réussit dans les deux cas. L’association entre la route vers S3 et l’endpoint peut être vérifiée pour chaque sous-réseau."
+              ],
+              [
+                "Avec le même rôle, lire un fichier existant situé en dehors de la portée autorisée",
+                "La connexion à S3 elle-même réussit, mais la requête est refusée. Si la connexion expire, examinez le DNS, les routes et les contrôles du trafic avant d’évaluer les autorisations."
+              ],
+              [
+                "Un autre utilisateur ouvre un enregistrement de livraison via la même application",
+                "L’application refuse l’affichage et la vérification des journaux confirme que l’application n’a pas lu le fichier depuis S3 pour cette opération."
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "Lorsqu’une AZ ne peut pas se connecter à S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Les utilisateurs peuvent ouvrir l’écran de livraison depuis l’application dans l’une ou l’autre AZ. Toutefois, lorsque l’EC2 de l’AZ B tente de lire une pièce jointe, la requête expire. Les deux instances EC2 utilisent le même rôle IAM et le même groupe de sécurité. Quel chemin du diagramme devez-vous vérifier ?",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Suivez le chemin ③ du diagramme et vérifiez la table de routage associée au sous-réseau privé de l’AZ B. Comparez-la à celle de l’AZ A afin de vérifier s’il existe une route dont la destination est la liste de préfixes S3 et dont la cible est un point de terminaison de passerelle. Vérifiez ensuite que l’ACL réseau de l’AZ B autorise TCP 443 vers les plages d’adresses IP de S3 ainsi que les réponses vers les ports éphémères utilisés par EC2 comme ports source. Si la connexion est établie mais qu’AccessDenied est renvoyé, examinez la policy du point de terminaison, la policy du bucket et les autorisations du rôle IAM.",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Références",
+    "sources": [
+      {
+        "label": "Fonctionnement d’Elastic Load Balancing",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Groupes de sécurité d’Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Points de terminaison de passerelle pour Amazon S3",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "Routage des points de terminaison de passerelle",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Types de points de terminaison Amazon S3 et différences entre les adresses IP utilisées",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "Contrôler l’accès depuis un point de terminaison VPC avec une stratégie de compartiment",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "de": {
+    "id": "private-app-s3",
+    "title": "Eine Anwendung bereitstellen, ohne EC2 öffentlich zugänglich zu machen, und Anhänge aus S3 lesen",
+    "intro": "Ein Lieferunternehmen betreibt in AWS einen Dienst, mit dem Benutzer den Lieferstatus und Anhänge prüfen können. Der Netzwerkadministrator plant, einen Einstiegspunkt bereitzustellen, auf den Benutzer über einen Browser zugreifen können, ohne den für die Verarbeitung zuständigen EC2-Instances öffentliche IP-Adressen zuzuweisen. In diesem Szenario wird für die Kommunikation IPv4 verwendet. Die Anwendung liest aus einem privaten S3-Bucket in derselben Region ausschließlich Anhänge, für die authentifizierte Benutzer eine Berechtigung zum Anzeigen haben.",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "Der Pfad von den Benutzern zur Anwendung",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Der öffentliche Einstiegspunkt ist der Application Load Balancer (ALB) der Anwendung. Der Browser stellt eine Verbindung zum ALB her, und der ALB öffnet innerhalb der VPC eine separate Verbindung zu EC2. Daher benötigt EC2 keine öffentliche IP-Adresse.",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Erstellen Sie einen internetseitig ausgerichteten ALB und geben Sie in jeweils einer von zwei Availability Zones (AZs) ein öffentliches Subnetz an. Der Browser des Benutzers löst den Servicenamen über DNS auf und verbindet sich mit dem HTTPS-Listener des ALB. Die HTTPS-Verbindung vom ALB zu EC2 verwendet innerhalb der VPC die lokale Route.",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Vergleichen Sie in der Abbildung bei ① und ② die Stelle, an der die Verbindung vom Browser am ALB endet, mit dem Subnetz, in dem EC2 platziert ist. ② zeigt ein Beispiel, bei dem sich ein ALB-Knoten mit EC2 in derselben AZ verbindet. In einer Zielgruppe mit aktiviertem zonenübergreifendem Load Balancing kann ein ALB-Knoten den Datenverkehr auch an eine fehlerfreie EC2-Instanz in einer anderen AZ weiterleiten.",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Erlauben Sie in der Sicherheitsgruppe des ALB in den eingehenden Regeln TCP 443 von Benutzern. Geben Sie in den ausgehenden Regeln die Sicherheitsgruppe von EC2 als Ziel an und erlauben Sie TCP 443 für die Kommunikation mit den Zielen und für Zustandsprüfungen. Geben Sie in den eingehenden Regeln von EC2 die Sicherheitsgruppe des ALB als Quelle an und erlauben Sie TCP 443.",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "Der Pfad von der Anwendung zu S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Element ③ im Diagramm ist der Pfad, über den EC2 eine Verbindung zu S3 in derselben Region herstellt. Jedes der beiden privaten Subnetze verfügt über eine eigene Routing-Tabelle. In diesem Szenario werden beide Routing-Tabellen mit demselben S3-Gateway-Endpunkt verknüpft. In den Routen, die AWS jeder Tabelle hinzufügt, ist die S3-Präfixliste für diese Region das Ziel und der Gateway-Endpunkt das Target.",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Wenn die Anwendung den DNS-Namen von S3 in derselben Region auflöst, wird eine öffentliche IP-Adresse von S3 zurückgegeben. Die Anwendung verwendet diese IP-Adresse als Ziel, und die VPC sucht nach einer Route, die zum Ziel passt. In dieser Konfiguration passt die Route zum Gateway-Endpunkt, sodass der Datenverkehr innerhalb des AWS-Netzwerks übertragen wird.",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Erlauben Sie in der EC2-Sicherheitsgruppe TCP 443 mit Ziel der S3-Präfixliste. Verwenden Sie in diesem Szenario die Netzwerk-ACL mit ihren vorhandenen Zulassungsregeln. Wenn Sie die Regeln einschränken, prüfen Sie jeden in der Präfixliste enthaltenen Bereich sowie die Ports auf der Antwortseite. Eine Netzwerk-ACL kann eine Präfixliste nicht direkt angeben.",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "Wenn zusätzlich ausgehende Verbindungen ins Internet erforderlich werden",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Derzeit ist S3 in derselben Region das einzige Ziel außerhalb der VPC, mit dem sich EC2 verbindet. Für den S3 gateway endpoint fallen keine zusätzlichen Kosten an, und für diesen Anwendungsfall ist kein NAT gateway erforderlich.",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Nehmen wir an, das Betriebsteam ändert seine Richtlinie und EC2 soll sich direkt mit einem öffentlichen Paket-Repository verbinden, um Aktualisierungsdateien abzurufen. Kann die in der Abbildung mit ③ gekennzeichnete Kommunikation diesen Datenverkehr ebenfalls verarbeiten?",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③ verarbeitet den für S3 bestimmten Datenverkehr. Für die Verbindung mit dem öffentlichen Repository muss ein separater ausgehender Pfad, etwa über ein NAT gateway, eingerichtet werden. Außerdem ist zu prüfen, ob der erforderliche ausgehende Datenverkehr durch die security groups von EC2 und andere relevante Kontrollen erlaubt ist. Auch bei Verwendung von NAT wird auf Ziele in S3 die spezifischere prefix-list-Route angewendet. Nach der Änderung sind die Pfade von beiden private subnets zu S3, die Verbindung zum öffentlichen Repository und die Tatsache, dass EC2 keine direkten Verbindungen von außen empfängt, jeweils zu überprüfen.",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "Konnektivität und Lesezugriff überprüfen",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Die Anwendung überprüft, ob ein angemeldeter Benutzer Lieferdatensätze und Anhänge anzeigen kann. Wenn die Berechtigung vorhanden ist, sendet die Anwendung mithilfe der IAM-Rolle von EC2 Anfragen an S3. Bei Lesezugriffen auf S3 bewertet AWS die Anfrage, die von der Anwendungsrolle gesendet wurde. Diese Rolle erlaubt das erforderliche `s3:GetObject` unter `attachments/` im Ziel-Bucket; auch die Endpoint-Richtlinie beschränkt die Lesezugriffe der Zielrolle auf diesen Bereich.",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Wenn bestätigt werden kann, dass der interne Betriebspfad des dedizierten Buckets ebenfalls diesen Endpoint verwendet, lassen sich Lesezugriffe über andere Pfade zusätzlich mit einer Bucket-Richtlinie einschränken. Beispielsweise wird mit `aws:SourceVpce` der zum Lesen zugelassene Pfad angegeben. Vor der Anwendung ermittelt das Betriebsteam die erforderlichen Zugriffe der regulären Anwendung, der Betriebsteammitglieder und der AWS-Services und bereitet ein Verfahren vor, mit dem sich die Änderung zurücksetzen lässt.",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["Zu überprüfende Konnektivität", "Vor dem Betrieb zu prüfende Ergebnisse"],
+            "rows": [
+              [
+                "Von einem externen Browser eine Verbindung zur HTTPS-URL des Service herstellen",
+                "Das ALB-Zertifikat stimmt mit dem Hostnamen überein, und nach der Authentifizierung kann die Lieferseite angezeigt werden. Die Zustandsprüfungen der Ziele sind in beiden AZs erfolgreich."
+              ],
+              [
+                "Aus beiden privaten Subnetzen mit der IAM-Rolle der Anwendung eine zulässige Datei lesen",
+                "`GetObject` ist in beiden Fällen erfolgreich. Die Zuordnung zwischen der Route zu S3 und dem Endpoint kann für jedes Subnetz überprüft werden."
+              ],
+              [
+                "Mit derselben Rolle eine vorhandene Datei außerhalb des zulässigen Bereichs lesen",
+                "Die Verbindung zu S3 selbst ist erfolgreich, aber die Anfrage wird abgelehnt. Wenn die Verbindung wegen einer Zeitüberschreitung fehlschlägt, müssen DNS, Routen und die Datenverkehrskontrolle vor der Berechtigungsprüfung untersucht werden."
+              ],
+              [
+                "Ein anderer Benutzer öffnet über dieselbe Anwendung einen Lieferdatensatz",
+                "Die Anwendung verweigert die Anzeige, und die Protokollprüfung bestätigt, dass die Anwendung bei diesem Vorgang keine Datei aus S3 gelesen hat."
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "Wenn eine AZ keine Verbindung zu S3 herstellen kann",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Benutzer können die Zustellungsseite über die Anwendung in jeder der beiden AZs öffnen. Wenn die EC2-Instanz in AZ B jedoch versucht, einen Anhang zu lesen, läuft die Anfrage in einen Timeout. Beide EC2-Instanzen verwenden dieselbe IAM-Rolle und dieselbe Sicherheitsgruppe. Welchen Pfad im Diagramm sollten Sie überprüfen?",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Verfolgen Sie im Diagramm den Pfad ③ und überprüfen Sie die Routing-Tabelle, die dem privaten Subnetz in AZ B zugeordnet ist. Vergleichen Sie sie mit AZ A, um festzustellen, ob eine Route vorhanden ist, deren Ziel die S3-Präfixliste und deren Zielressource ein Gateway-Endpunkt ist. Überprüfen Sie anschließend, ob die Netzwerk-ACL in AZ B TCP 443 zu den IP-Adressbereichen von S3 sowie Antworten an die kurzlebigen Ports zulässt, die EC2 als Quellports verwendet. Wenn die Verbindung hergestellt wird, aber AccessDenied zurückgegeben wird, prüfen Sie die Endpunkt-Richtlinie, die Bucket-Richtlinie und die Berechtigungen der IAM-Rolle.",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referenzen",
+    "sources": [
+      {
+        "label": "Funktionsweise von Elastic Load Balancing",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Sicherheitsgruppen für Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Gateway-Endpunkte für Amazon S3",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "Routing für Gateway-Endpunkte",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon-S3-Endpunkttypen und Unterschiede bei den verwendeten IP-Adressen",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "Zugriff von einem VPC-Endpunkt mit einer Bucket-Richtlinie steuern",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "es": {
+    "id": "private-app-s3",
+    "title": "Entregar una aplicación sin exponer EC2 y leer archivos adjuntos desde S3",
+    "intro": "Una empresa de reparto opera en AWS un servicio que permite a los usuarios consultar el estado de las entregas y los archivos adjuntos. El administrador de red planea proporcionar un punto de entrada al que los usuarios puedan acceder desde un navegador, sin asignar direcciones IP públicas a las instancias EC2 responsables del procesamiento. En este escenario, la comunicación utiliza IPv4. La aplicación solo lee, desde un bucket privado de S3 en la misma Region, los archivos adjuntos que los usuarios autenticados tienen permiso para visualizar.",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "La ruta desde los usuarios hasta la aplicación",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "El punto de entrada público es el Application Load Balancer (ALB) de la aplicación. El navegador se conecta al ALB y el ALB abre una conexión independiente con EC2 dentro de la VPC, por lo que EC2 no necesita una dirección IP pública.",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Cree un ALB orientado a Internet y especifique una subred pública en cada una de dos zonas de disponibilidad (AZ). El navegador del usuario resuelve el nombre del servicio mediante DNS y se conecta al listener HTTPS del ALB. La conexión HTTPS del ALB a EC2 utiliza la ruta local dentro de la VPC.",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "En el diagrama, compare en ① y ② el punto en el que la conexión del navegador termina en el ALB con la subred donde se encuentra EC2. ② muestra un ejemplo en el que un nodo del ALB se conecta a EC2 en la misma AZ. En un grupo de destino con el balanceo de carga entre zonas habilitado, un nodo del ALB también puede reenviar el tráfico a una instancia EC2 en buen estado de otra AZ.",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "En el grupo de seguridad del ALB, permita TCP 443 de los usuarios en las reglas de entrada. En las reglas de salida, especifique el grupo de seguridad de EC2 como destino y permita TCP 443 para el tráfico hacia los destinos y para las comprobaciones de estado. En las reglas de entrada de EC2, especifique el grupo de seguridad del ALB como origen y permita TCP 443.",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "La ruta de la aplicación a S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "El elemento ③ del diagrama representa la ruta que EC2 utiliza para conectarse a S3 en la misma Región. Cada una de las dos subredes privadas tiene una tabla de rutas y, en este escenario, ambas están asociadas al mismo punto de enlace de gateway de S3. En las rutas que AWS agrega a cada tabla, la lista de prefijos de S3 de esa Región es el destino y el punto de enlace de gateway es el objetivo.",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Cuando la aplicación resuelve el nombre DNS de S3 en la misma Región, se devuelve una dirección IP pública de S3. La aplicación utiliza esa dirección IP como destino y la VPC busca una ruta que coincida con el destino. En esta configuración, coincide la ruta al punto de enlace de gateway, por lo que el tráfico circula dentro de la red de AWS.",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "En el grupo de seguridad de EC2, permita TCP 443 con destino a la lista de prefijos de S3. En este escenario, utilice la ACL de red con sus reglas de permiso existentes. Si restringe las reglas, compruebe cada rango incluido en la lista de prefijos y los puertos del lado de respuesta. Una ACL de red no puede especificar directamente una lista de prefijos.",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "Si también se necesita acceso saliente a Internet",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Actualmente, el único destino fuera de la VPC al que se conecta EC2 es S3 en la misma Region. El gateway endpoint para S3 no genera cargos adicionales y, para este uso, no se necesita un NAT gateway.",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Supongamos que el equipo de operaciones cambia su política para que EC2 se conecte directamente a un repositorio público de paquetes con el fin de obtener archivos de actualización. ¿La comunicación indicada como ③ en el diagrama también puede gestionar ese tráfico?",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③ gestiona el tráfico destinado a S3. Para conectarse al repositorio público, configure una ruta saliente independiente, como un NAT gateway, y compruebe también que los security groups de EC2 y otros controles pertinentes permiten el tráfico saliente necesario. Incluso cuando se utiliza NAT, a los destinos de S3 se les aplica la ruta de prefix list más específica. Después del cambio, compruebe por separado las rutas desde ambas private subnets hasta S3, la conexión con el repositorio público y que EC2 no reciba conexiones directamente desde el exterior.",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "Verificar la conectividad y el acceso de lectura",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "La aplicación verifica si un usuario que ha iniciado sesión puede ver los registros de entrega y los archivos adjuntos. Cuando tiene autorización, la aplicación envía solicitudes a S3 mediante el rol de IAM de EC2. Para las lecturas desde S3, AWS evalúa la solicitud enviada por el rol de la aplicación. Ese rol permite el `s3:GetObject` necesario bajo `attachments/` en el bucket de destino, y la política del endpoint también restringe las lecturas realizadas por el rol de destino a ese ámbito.",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Si se puede confirmar que la ruta operativa interna del bucket dedicado también utiliza este endpoint, las lecturas desde otras rutas se pueden restringir aún más mediante una política de bucket. Por ejemplo, se puede usar `aws:SourceVpce` para especificar la ruta autorizada para leer. Antes de aplicar el cambio, el equipo de operaciones identifica los accesos necesarios de la aplicación legítima, del personal de operaciones y de los servicios de AWS, y prepara un procedimiento que permita revertirlo.",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": [
+              "Conectividad que se debe verificar",
+              "Resultados que se deben comprobar antes de operar"
+            ],
+            "rows": [
+              [
+                "Conectarse desde un navegador externo a la URL HTTPS del servicio",
+                "El certificado del ALB coincide con el nombre de host y, después de la autenticación, se puede mostrar la página de entregas. Las comprobaciones de estado de los destinos tienen éxito en las dos AZ."
+              ],
+              [
+                "Leer desde las dos subredes privadas un archivo permitido por el rol de IAM de la aplicación",
+                "`GetObject` tiene éxito en ambas. Se puede confirmar por subred la asociación entre la ruta hacia S3 y el endpoint."
+              ],
+              [
+                "Usar el mismo rol para leer un archivo que existe pero está fuera del ámbito permitido",
+                "La conexión con S3 tiene éxito, pero la solicitud se deniega. Si la conexión agota el tiempo de espera, se deben investigar el DNS, las rutas y los controles del tráfico antes de evaluar los permisos."
+              ],
+              [
+                "Otro usuario abre un registro de entrega a través de la misma aplicación",
+                "La aplicación rechaza la visualización y, al revisar los registros, se confirma que la aplicación no leyó el archivo desde S3 durante esta operación."
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "Cuando una AZ no puede conectarse a S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Los usuarios pueden abrir la pantalla de entrega desde la aplicación en cualquiera de las dos AZ. Sin embargo, cuando la EC2 de la AZ B intenta leer un archivo adjunto, la solicitud agota el tiempo de espera. Ambas instancias de EC2 utilizan el mismo rol de IAM y el mismo grupo de seguridad. ¿Qué ruta del diagrama debe comprobar?",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Siga la ruta ③ del diagrama y compruebe la tabla de enrutamiento asociada a la subred privada de la AZ B. Compárela con la de la AZ A para determinar si existe una ruta cuyo destino sea la lista de prefijos de S3 y cuyo destino sea un endpoint de gateway. A continuación, compruebe si la ACL de red de la AZ B permite TCP 443 hacia los rangos de direcciones IP de S3 y permite respuestas a los puertos efímeros que EC2 utiliza como puertos de origen. Si la conexión se establece, pero se devuelve AccessDenied, examine la política del endpoint, la política del bucket y los permisos del rol de IAM.",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referencias",
+    "sources": [
+      {
+        "label": "Cómo funciona Elastic Load Balancing",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Grupos de seguridad de Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Endpoints de gateway para Amazon S3",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "Enrutamiento de endpoints de gateway",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Tipos de endpoints de Amazon S3 y diferencias entre las direcciones IP que utilizan",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "Controlar el acceso desde un endpoint de VPC mediante una política de bucket",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  },
+  "it": {
+    "id": "private-app-s3",
+    "title": "Distribuire un’applicazione senza esporre EC2 e leggere gli allegati da S3",
+    "intro": "Un’azienda di consegne gestisce su AWS un servizio che consente agli utenti di controllare lo stato delle consegne e gli allegati. L’amministratore di rete intende fornire un punto di ingresso accessibile dagli utenti tramite browser, senza assegnare indirizzi IP pubblici alle istanze EC2 responsabili dell’elaborazione. In questo scenario, per le comunicazioni viene utilizzato IPv4. L’applicazione legge esclusivamente, da un bucket S3 privato nella stessa Region, gli allegati che gli utenti autenticati sono autorizzati a visualizzare.",
+    "sections": [
+      {
+        "id": "ingress",
+        "title": "Il percorso dagli utenti all’applicazione",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Il punto di ingresso pubblico è l’Application Load Balancer (ALB) dell’applicazione. Il browser si connette all’ALB, che apre una connessione separata verso EC2 all’interno del VPC; pertanto, EC2 non necessita di un indirizzo IP pubblico.",
+            "key": "ingress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Crea un ALB rivolto a Internet e specifica una sottorete pubblica in ciascuna di due zone di disponibilità (AZ). Il browser dell’utente risolve il nome del servizio tramite DNS e si connette al listener HTTPS dell’ALB. La connessione HTTPS dall’ALB a EC2 utilizza la route locale all’interno del VPC.",
+            "key": "ingress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Nel diagramma, confronta in ① e ② il punto in cui la connessione del browser termina sull’ALB con la sottorete in cui è collocato EC2. ② mostra un esempio in cui un nodo dell’ALB si connette a EC2 nella stessa AZ. In un gruppo di destinazione con il bilanciamento del carico tra zone abilitato, un nodo dell’ALB può anche inoltrare il traffico a un’istanza EC2 integra in un’altra AZ.",
+            "key": "ingress-3"
+          },
+          {
+            "kind": "figure",
+            "id": "private-app-s3/request-path",
+            "key": "ingress-4"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Nel gruppo di sicurezza dell’ALB, nelle regole in entrata consenti TCP 443 dagli utenti. Nelle regole in uscita, specifica il gruppo di sicurezza di EC2 come destinazione e consenti TCP 443 per la comunicazione verso le destinazioni e per i controlli dello stato. Nelle regole in entrata di EC2, specifica il gruppo di sicurezza dell’ALB come origine e consenti TCP 443.",
+            "key": "ingress-5"
+          }
+        ]
+      },
+      {
+        "id": "s3-route",
+        "title": "Il percorso dall’applicazione a S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "L’elemento ③ del diagramma rappresenta il percorso utilizzato da EC2 per connettersi a S3 nella stessa Regione. Ciascuna delle due sottoreti private dispone di una tabella di routing e, in questo scenario, entrambe sono associate allo stesso gateway endpoint S3. Nelle route che AWS aggiunge a ciascuna tabella, l’elenco dei prefissi S3 per quella Regione è la destinazione e il gateway endpoint è il target.",
+            "key": "s3-route-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Quando l’applicazione risolve il nome DNS di S3 nella stessa Regione, viene restituito un indirizzo IP pubblico di S3. L’applicazione utilizza tale indirizzo IP come destinazione e la VPC cerca una route corrispondente alla destinazione. In questa configurazione, la route verso il gateway endpoint corrisponde, quindi il traffico passa all’interno della rete AWS.",
+            "key": "s3-route-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Nel security group EC2, consenti TCP 443 con destinazione all’elenco dei prefissi S3. In questo scenario, utilizza la network ACL con le regole di autorizzazione esistenti. Se restringi le regole, verifica ogni intervallo incluso nell’elenco dei prefissi e le porte sul lato della risposta. Una network ACL non può specificare direttamente un elenco di prefissi.",
+            "key": "s3-route-3"
+          }
+        ]
+      },
+      {
+        "id": "additional-egress",
+        "title": "Se diventa necessario anche l’accesso in uscita a Internet",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Al momento, l’unica destinazione esterna alla VPC a cui EC2 si connette è S3 nella stessa Region. Il gateway endpoint per S3 non comporta costi aggiuntivi e, per questo utilizzo, non è necessario un NAT gateway.",
+            "key": "additional-egress-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Supponiamo che il team operativo modifichi la propria politica in modo che EC2 si connetta direttamente a un repository pubblico di pacchetti per ottenere i file di aggiornamento. La comunicazione indicata con ③ nel diagramma può gestire anche questo traffico?",
+            "key": "additional-egress-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "③ gestisce il traffico destinato a S3. Per connettersi al repository pubblico, configurare un percorso in uscita separato, ad esempio tramite un NAT gateway, e verificare anche che il traffico in uscita necessario sia consentito dai security groups di EC2 e dagli altri controlli pertinenti. Anche quando si utilizza NAT, alle destinazioni S3 viene applicata la route di prefix list più specifica. Dopo la modifica, verificare separatamente i percorsi dalle due private subnets a S3, la connessione al repository pubblico e che EC2 non riceva connessioni direttamente dall’esterno.",
+            "key": "additional-egress-3"
+          }
+        ]
+      },
+      {
+        "id": "permissions",
+        "title": "Verificare la connettività e l’accesso in lettura",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "L’applicazione verifica se un utente che ha effettuato l’accesso può visualizzare i record di consegna e gli allegati. Quando dispone dell’autorizzazione, l’applicazione invia richieste a S3 utilizzando il ruolo IAM di EC2. Per le letture da S3, AWS valuta la richiesta inviata dal ruolo dell’applicazione. Questo ruolo consente il `s3:GetObject` necessario nel percorso `attachments/` del bucket di destinazione e la policy dell’endpoint limita a tale ambito anche le letture effettuate dal ruolo di destinazione.",
+            "key": "permissions-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Se è possibile confermare che anche il percorso operativo interno del bucket dedicato utilizza questo endpoint, le letture provenienti da altri percorsi possono essere limitate ulteriormente mediante una policy del bucket. Ad esempio, si può usare `aws:SourceVpce` per specificare il percorso autorizzato alla lettura. Prima dell’applicazione, il team operativo individua gli accessi necessari dell’applicazione autorizzata, degli operatori e dei servizi AWS e prepara una procedura che consenta di annullare la modifica.",
+            "key": "permissions-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["Connettività da verificare", "Risultati da verificare prima dell’operatività"],
+            "rows": [
+              [
+                "Connettersi da un browser esterno all’URL HTTPS del servizio",
+                "Il certificato dell’ALB corrisponde al nome host e, dopo l’autenticazione, è possibile visualizzare la pagina delle consegne. I controlli dello stato dei target hanno esito positivo in entrambe le AZ."
+              ],
+              [
+                "Leggere da entrambe le sottoreti private un file consentito dal ruolo IAM dell’applicazione",
+                "`GetObject` ha esito positivo in entrambe. È possibile verificare per ciascuna sottorete l’associazione tra la route verso S3 e l’endpoint."
+              ],
+              [
+                "Utilizzando lo stesso ruolo, leggere un file esistente ma al di fuori dell’ambito consentito",
+                "La connessione a S3 ha esito positivo, ma la richiesta viene rifiutata. Se la connessione va in timeout, esaminare DNS, route e controlli del traffico prima di valutare le autorizzazioni."
+              ],
+              [
+                "Un altro utente apre un record di consegna tramite la stessa applicazione",
+                "L’applicazione rifiuta la visualizzazione e la verifica dei log conferma che, per questa operazione, l’applicazione non ha letto il file da S3."
+              ]
+            ],
+            "key": "permissions-3"
+          }
+        ]
+      },
+      {
+        "id": "verify",
+        "title": "Quando una AZ non riesce a connettersi a S3",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Gli utenti possono aprire la schermata della consegna dall’applicazione in entrambe le AZ. Tuttavia, quando l’EC2 nell’AZ B tenta di leggere un allegato, la richiesta va in timeout. Entrambe le istanze EC2 utilizzano lo stesso ruolo IAM e lo stesso gruppo di sicurezza. Quale percorso nel diagramma è necessario controllare?",
+            "key": "verify-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Segui il percorso ③ nel diagramma e controlla la tabella di routing associata alla subnet privata nell’AZ B. Confrontala con quella dell’AZ A per verificare se esiste una route con la lista di prefissi S3 come destinazione e un gateway endpoint come target. Controlla quindi se la network ACL nell’AZ B consente TCP 443 verso gli intervalli di indirizzi IP di S3 e consente le risposte alle porte effimere utilizzate da EC2 come porte di origine. Se la connessione viene stabilita ma viene restituito AccessDenied, esamina la policy dell’endpoint, la policy del bucket e le autorizzazioni del ruolo IAM.",
+            "key": "verify-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Riferimenti",
+    "sources": [
+      {
+        "label": "Funzionamento di Elastic Load Balancing",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/userguide/how-elastic-load-balancing-works.html",
+        "language": "ja"
+      },
+      {
+        "label": "Gruppi di sicurezza per Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html",
+        "language": "ja"
+      },
+      {
+        "label": "Endpoint gateway per Amazon S3",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html",
+        "language": "ja"
+      },
+      {
+        "label": "Routing degli endpoint gateway",
+        "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/gateway-endpoints.html#gateway-endpoint-routing",
+        "language": "ja"
+      },
+      {
+        "label": "Tipi di endpoint Amazon S3 e differenze tra gli indirizzi IP utilizzati",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/privatelink-interface-endpoints.html#types-of-vpc-endpoints-for-s3",
+        "language": "ja"
+      },
+      {
+        "label": "Controllare l’accesso da un endpoint VPC tramite una policy del bucket",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/example-bucket-policies-vpc-endpoint.html",
+        "language": "ja"
+      }
+    ]
+  }
+}

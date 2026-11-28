@@ -1,19 +1,6 @@
+import type { AppliedBlock, AppliedCaseContent, AppliedFigure } from './types.ts';
+
 type Link = { href: string; label: string };
-type Source = { label: string; url: string; language: string };
-type Block =
-  | { kind: 'paragraph'; text: string }
-  | { kind: 'steps'; items: string[] }
-  | { kind: 'table'; columns: string[]; rows: string[][] }
-  | { kind: 'figure'; id: string };
-type Figure = { path: string; alt: string; width: number; height: number };
-export type AppliedCaseContent = {
-  id: string;
-  title: string;
-  intro: string;
-  sections: { id: string; title: string; blocks: (Block & { key: string })[] }[];
-  referencesTitle: string;
-  sources: Source[];
-};
 
 function inline(text: string) {
   let offset = 0;
@@ -24,7 +11,7 @@ function inline(text: string) {
   });
 }
 
-function CaseBlock({ block, figures }: { block: Block; figures: Record<string, Figure> }) {
+function CaseBlock({ block, figures }: { block: AppliedBlock; figures: Record<string, AppliedFigure> }) {
   switch (block.kind) {
     case 'paragraph':
       return <p>{inline(block.text)}</p>;
@@ -41,7 +28,9 @@ function CaseBlock({ block, figures }: { block: Block; figures: Record<string, F
       if (!figure) throw new Error(`Unknown applied figure: ${block.id}`);
       return (
         <figure className="applied-case-figure" lang="en">
-          <img src={figure.path} alt={figure.alt} width={figure.width} height={figure.height} />
+          <a href={figure.path} target="_blank" rel="noreferrer">
+            <img src={figure.path} alt={figure.alt} width={figure.width} height={figure.height} />
+          </a>
         </figure>
       );
     }
@@ -60,9 +49,9 @@ function CaseBlock({ block, figures }: { block: Block; figures: Record<string, F
           <tbody>
             {block.rows.map(([name, ...values]) => (
               <tr key={name}>
-                <th scope="row">{name}</th>
+                <th scope="row">{inline(name)}</th>
                 {values.map((value, column) => (
-                  <td key={block.columns[column + 1]}>{value}</td>
+                  <td key={block.columns[column + 1]}>{inline(value)}</td>
                 ))}
               </tr>
             ))}
@@ -80,7 +69,7 @@ export function AppliedCaseArticle({
   glossary,
 }: {
   lesson: AppliedCaseContent;
-  figures: Record<string, Figure>;
+  figures: Record<string, AppliedFigure>;
   back: Link;
   foundations: Link[];
   glossary: Link[];

@@ -1,0 +1,212 @@
+{
+  "id": "security-and-governance",
+  "title": "Segurança e governança de soluções de IA",
+  "objective": "Explicar como proteger dados, acesso, saídas e auditorias, além de aplicar o princípio do menor privilégio e controles contínuos.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "Autenticação e autorização"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Proteção de dados"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    }
+  ],
+  "sections": [
+    {
+      "id": "access",
+      "title": "Separar autenticação, autorização, recuperação e invocação de modelos",
+      "paragraphs": [
+        "A autenticação verifica a identidade de um usuário ou serviço, enquanto a autorização determina quais operações são permitidas e quais dados o usuário ou serviço pode acessar. Conceda à função do IAM da aplicação somente as operações que ela usa no Bedrock. Na recuperação de documentos para RAG, a aplicação verifica as permissões do usuário conectado e limita a pesquisa aos documentos aos quais ele tem acesso autorizado. O Guardrails inspeciona o conteúdo das entradas enviadas ao modelo e das saídas retornadas pelo modelo."
+      ],
+      "sources": [
+        {
+          "label": "IAM do Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/security-iam.html"
+        },
+        {
+          "label": "Permissões do Guardrails",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-permissions.html"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "title": "Proteger os dados durante a entrada, o armazenamento e a saída",
+      "paragraphs": [
+        "Trate separadamente as entradas dos usuários, os documentos recuperados, os logs e as respostas geradas, e não inclua nos prompts mais informações pessoais ou segredos comerciais do que o necessário. Inclua como requisitos a proteção durante o armazenamento e a transmissão, os períodos de retenção, a exclusão e a verificação de informações confidenciais nas saídas."
+      ],
+      "sources": [
+        {
+          "label": "IA responsável",
+          "url": "https://aws.amazon.com/jp/ai/responsible-ai/"
+        }
+      ]
+    },
+    {
+      "id": "governance",
+      "title": "Conectar políticas, mudanças e auditorias",
+      "paragraphs": [
+        "A governança é a estrutura usada para definir e verificar os modelos e dados que podem ser utilizados, os casos de uso aprovados, os responsáveis, os critérios de avaliação e o tratamento de exceções. Ela registra alterações de configuração, avaliações, acessos e respostas a incidentes, além de revisar continuamente as políticas em relação ao uso real."
+      ],
+      "sources": [
+        {
+          "label": "IAM do Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/security-iam.html"
+        },
+        {
+          "label": "Logs de invocação de modelos do Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-invocation-logging.html"
+        }
+      ],
+      "figureId": "aif-security-governance"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sec-q1",
+      "prompt": "Um responsável interno pela gestão da informação precisa permitir que um aplicativo de pesquisa que lida com documentos confidenciais investigue quem tentou acessar um documento, quando isso ocorreu e se o acesso foi permitido. Os auditores consultarão os registros, mas não é necessário manter o conteúdo dos documentos nem as perguntas dos usuários nos logs de auditoria. Escolha um método de registro apropriado.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Registrar continuamente as entradas e saídas do modelo e salvar o conteúdo de todos os documentos incluídos na pesquisa.",
+          "explanation": "O conteúdo dos documentos não faz parte dos requisitos de auditoria. Registrar o conteúdo original amplia o escopo das informações confidenciais divulgadas aos visualizadores dos logs."
+        },
+        {
+          "id": "b",
+          "text": "Registrar o identificador do executor, o ID do documento, o horário e o resultado indicando se o acesso foi permitido ou negado, além de restringir a visualização dos logs aos auditores.",
+          "explanation": "Isso permite rastrear quem tentou acessar qual documento e quando, sem armazenar o conteúdo dos documentos nem as perguntas."
+        },
+        {
+          "id": "c",
+          "text": "Registrar apenas o tempo médio de resposta do modelo e o custo mensal.",
+          "explanation": "Dados agregados de tempo e custo não permitem investigar acessos individuais a documentos."
+        },
+        {
+          "id": "d",
+          "text": "Registrar diariamente apenas a quantidade de operações bem-sucedidas quando a resposta for exibida corretamente.",
+          "explanation": "Apenas a quantidade de sucessos não revela o executor nem o documento cujo acesso foi tentado e também não permite identificar operações negadas."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "sec-q2",
+      "prompt": "Um desenvolvedor de uma seguradora está projetando uma IA que resume consultas de clientes. Qual ação na etapa de entrada minimiza o tratamento de informações pessoais?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Inserir todas as informações no prompt, incluindo as desnecessárias.",
+          "explanation": "Isso aumenta o risco."
+        },
+        {
+          "id": "b",
+          "text": "Selecionar as informações necessárias e definir requisitos de proteção para armazenamento, saída e acesso.",
+          "explanation": "Isso protege as informações durante todo o ciclo de vida."
+        },
+        {
+          "id": "c",
+          "text": "Não verificar a política de dados nem o período de retenção.",
+          "explanation": "Mesmo usando os dados, a responsabilidade permanece."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "sec-q3",
+      "prompt": "A pessoa responsável pela governança quer rastrear a causa da queda de qualidade após alterações no modelo e nos prompts. Qual prática operacional é apropriada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Registrar as configurações, aprovações, avaliações e acessos antes e depois das alterações, e revisá-los regularmente.",
+          "explanation": "Isso permite rastrear problemas e verificar os controles."
+        },
+        {
+          "id": "b",
+          "text": "Salvar somente as configurações mais recentes.",
+          "explanation": "Não é possível fazer comparações nem investigar a causa."
+        },
+        {
+          "id": "c",
+          "text": "Realizar avaliações de qualidade somente no lançamento inicial.",
+          "explanation": "Isso não permite responder ao uso nem às alterações."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "guardrails-q1",
+      "prompt": "A equipe de desenvolvimento de um aplicativo de orientação médica deseja rejeitar entradas prejudiciais e evitar a exibição de respostas que contenham informações confidenciais. Como a análise de conteúdo e o controle de acesso aos recursos da AWS devem ser divididos? Selecione uma opção.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Gerenciar as permissões da AWS dos usuários usando apenas o Guardrails.",
+          "explanation": "O Guardrails não substitui a autorização do IAM."
+        },
+        {
+          "id": "b",
+          "text": "Controlar as permissões de invocação com o IAM, avaliar as políticas de entrada e saída com o Guardrails e validar a configuração.",
+          "explanation": "Operar a autorização e os controles de conteúdo separadamente."
+        },
+        {
+          "id": "c",
+          "text": "Usar apenas o IAM para determinar se o texto é prejudicial.",
+          "explanation": "O IAM não avalia o conteúdo."
+        },
+        {
+          "id": "d",
+          "text": "Remover os controles se a resposta parecer natural.",
+          "explanation": "Uma formulação natural não garante a segurança."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "authz-q1",
+      "prompt": "O designer de um RAG interno quer impedir que funcionários comuns autenticados obtenham documentos contábeis. Qual é a medida mais apropriada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Retornar todos os documentos se o usuário estiver autenticado.",
+          "explanation": "A autenticação verifica a identidade do usuário. A autorização define quais dados ele pode acessar."
+        },
+        {
+          "id": "b",
+          "text": "Usar autorização baseada na função do usuário para aplicar o princípio do menor privilégio ao escopo da pesquisa e às chamadas do Bedrock.",
+          "explanation": "A autorização controla quais dados e operações são permitidos."
+        },
+        {
+          "id": "c",
+          "text": "Alterar os nomes dos documentos.",
+          "explanation": "Isso não constitui controle de acesso."
+        },
+        {
+          "id": "d",
+          "text": "Determinar as permissões de visualização dos documentos somente com o Guardrails.",
+          "explanation": "O controle de conteúdo não substitui a autorização."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "AI governance",
+    "Authentication",
+    "Authorization",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "RAG",
+    "Bedrock Guardrails",
+    "Encryption at rest",
+    "Encryption in transit",
+    "CloudTrail",
+    "CloudWatch Logs",
+    "Data minimization",
+    "Audit log"
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "id": "generative-ai-fundamentals",
+  "title": "Fundamentos da IA generativa",
+  "objective": "Explicar prompts, tokens, alucinações e RAG, e escolher contramedidas adequadas para cada caso de uso.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Serviços essenciais da AWS"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Proteção de dados"
+    }
+  ],
+  "sections": [
+    {
+      "id": "generation",
+      "title": "A plausibilidade não garante a precisão",
+      "paragraphs": [
+        "A IA generativa gera textos, imagens, código e outros conteúdos com base em prompts. Ela pode produzir alucinações — conteúdos plausíveis, mas incorretos em relação aos fatos — portanto, para decisões importantes, é necessário projetar processos que verifiquem os resultados com base em fontes aprovadas e incluam revisão humana."
+      ],
+      "sources": [
+        {
+          "label": "IA responsável",
+          "url": "https://aws.amazon.com/jp/ai/responsible-ai/"
+        }
+      ]
+    },
+    {
+      "id": "prompt",
+      "title": "Comunicar objetivos e restrições nos prompts",
+      "paragraphs": [
+        "Um prompt deve especificar claramente o assunto, o público-alvo, o formato da saída, as restrições e as informações que podem ser consultadas. Os tokens são as unidades processadas pelo modelo, e o volume de entrada e saída afeta a janela de contexto, a latência e o custo."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame AIF-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-practitioner-01/ai-practitioner-01.html"
+        }
+      ],
+      "figureId": "aif-prompt-response"
+    },
+    {
+      "id": "rag",
+      "title": "Distinguir geração única, RAG e agentes de IA por função",
+      "paragraphs": [
+        "A geração única obtém uma resposta a partir de um único prompt. O RAG recupera documentos relevantes para a pergunta, adiciona o conteúdo deles ao contexto e gera a resposta. Um agente de IA planeja em direção a um objetivo, usa ferramentas autorizadas, verifica resultados intermediários e escolhe a próxima ação. Ao delegar operações externas a um agente, é necessário definir o escopo das operações, as aprovações necessárias e os registros de execução. Antes de implantar o RAG, verifique se os documentos incluídos no índice de busca estão atualizados e corretos. Durante a busca, recupere apenas os documentos que o usuário pode acessar e avalie se a resposta gerada está de acordo com as fontes citadas. No diagrama, identifique a etapa acrescentada para responder com base em documentos e a etapa de aprovação humana antes de uma ação de alto impacto, como um pagamento."
+      ],
+      "sources": [
+        {
+          "label": "Bases de conhecimento do Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base.html"
+        },
+        {
+          "label": "Orientações sobre IA agêntica",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/agentic-ai-serverless/agentic-ai-serverless.pdf"
+        }
+      ],
+      "figureId": "aif-rag-flow"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "gen-q1",
+      "prompt": "Uma pessoa do departamento de assuntos gerais quer criar um rascunho da ata a partir da transcrição de uma reunião. Escolha um método para transformar em texto os pontos principais de cada item da pauta, as decisões e as pessoas responsáveis, usando a transcrição e o formato especificado.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Classificar as atas por tipo de reunião passada.",
+          "explanation": "A classificação é um processo que seleciona uma categoria. Para criar o texto de uma nova ata a partir da entrada, apenas o resultado da classificação não é suficiente."
+        },
+        {
+          "id": "b",
+          "text": "Fornecer a transcrição e o formato à IA generativa e instruí-la a marcar como não confirmado qualquer responsável que não esteja mencionado.",
+          "explanation": "A IA generativa pode criar um rascunho com base no texto original e no formato. Instrua-a a não presumir responsáveis que não estejam mencionados e compare o rascunho com o original antes de publicá-lo."
+        },
+        {
+          "id": "c",
+          "text": "Usar um modelo de regressão que preveja o horário de término a partir do horário de início da reunião.",
+          "explanation": "Esse processo prevê um valor numérico. Ele não é adequado para resumir em texto os pontos principais de cada item da pauta ou as pessoas responsáveis."
+        },
+        {
+          "id": "d",
+          "text": "Pesquisar atas anteriores e salvar exatamente a mais semelhante.",
+          "explanation": "Mesmo que seja encontrado um material anterior semelhante, ele pode não refletir as decisões ou as pessoas responsáveis desta reunião."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "gen-q2",
+      "prompt": "O responsável pelo suporte de uma empresa de comércio eletrônico usa IA generativa para criar um rascunho das orientações de reembolso a serem enviadas aos clientes. Para reduzir erros no direito ao reembolso e nos valores, escolha uma medida a ser tomada antes de enviar a orientação ao cliente.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Enviá-la automaticamente sem verificação.",
+          "explanation": "Mesmo uma saída aparentemente plausível pode conter erros."
+        },
+        {
+          "id": "b",
+          "text": "Limitar apenas o comprimento.",
+          "explanation": "Isso não permite verificar a exatidão do conteúdo."
+        },
+        {
+          "id": "c",
+          "text": "Comparar o rascunho com as condições de reembolso aprovadas e fazer com que o funcionário responsável revise, antes do envio, qualquer orientação que envolva uma exceção ou exija julgamento.",
+          "explanation": "É possível verificar o valor e o direito ao reembolso comparando-os com as condições aprovadas. Uma pessoa com autoridade para tomar decisões sobre reembolsos verifica como as exceções devem ser tratadas."
+        },
+        {
+          "id": "d",
+          "text": "Resumir o rascunho com outra IA generativa e enviá-lo como está se o resumo tiver o mesmo conteúdo.",
+          "explanation": "Mesmo que o resumo seja fiel ao rascunho original, ele não verifica se o direito ao reembolso e o valor originais estão corretos. É necessário comparar o rascunho com as condições de reembolso aprovadas."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "gen-q3",
+      "prompt": "Um gerente de produto quer uma resposta para os clientes em três tópicos, sem especulações. Qual é a maneira mais direta de especificar isso?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Escrever no prompt as restrições relacionadas ao público, ao formato e às evidências.",
+          "explanation": "Isso facilita a avaliação da saída esperada."
+        },
+        {
+          "id": "b",
+          "text": "Especificar apenas o nome do modelo.",
+          "explanation": "Os requisitos não serão transmitidos."
+        },
+        {
+          "id": "c",
+          "text": "Aumentar apenas o número de tokens.",
+          "explanation": "Isso não substitui a comunicação das restrições."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "agent-q1",
+      "prompt": "O responsável pelas operações do departamento de contabilidade vai introduzir um agente de IA que verifica faturas e cria solicitações de pagamento. Qual é o design adequado antes da execução dos pagamentos?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Executar todos os pagamentos sem aprovação.",
+          "explanation": "Não há controle humano sobre uma operação de alto impacto."
+        },
+        {
+          "id": "b",
+          "text": "Limitar as ferramentas que podem ser usadas e exigir a aprovação prévia de um funcionário com autorização para pagamentos antes de executar um pagamento. Manter registros da aprovação e da execução.",
+          "explanation": "Conceder apenas as permissões necessárias para verificar faturas e criar solicitações, enquanto um funcionário autorizado aprova a execução da transferência. Os registros podem ser usados posteriormente para verificar decisões e ações."
+        },
+        {
+          "id": "c",
+          "text": "Conceder permissões ilimitadas às ferramentas desde que o plano seja exibido.",
+          "explanation": "Exibir apenas o plano não impede uma execução inadequada."
+        },
+        {
+          "id": "d",
+          "text": "Ignorar a aprovação porque RAG está sendo usado.",
+          "explanation": "Os controles de recuperação e os controles de operações externas são separados."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Generative AI",
+    "Foundation model",
+    "Prompt",
+    "Context window",
+    "Token",
+    "Hallucination",
+    "RAG",
+    "Embedding",
+    "AI agent",
+    "Human oversight",
+    "Bedrock"
+  ]
+}

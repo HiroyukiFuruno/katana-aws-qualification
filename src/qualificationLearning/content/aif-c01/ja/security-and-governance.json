@@ -1,0 +1,212 @@
+{
+  "id": "security-and-governance",
+  "title": "AI ソリューションのセキュリティとガバナンス",
+  "objective": "データ、アクセス、出力、監査を保護し、最小権限と継続的な統制を説明できる。",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    },
+    {
+      "slug": "data-protection",
+      "title": "データ保護"
+    },
+    {
+      "slug": "observability",
+      "title": "監視と改善"
+    }
+  ],
+  "sections": [
+    {
+      "id": "access",
+      "title": "認証、認可、取得、モデル呼び出しを分ける",
+      "paragraphs": [
+        "認証では利用者やサービスの身元を確かめ、認可では許可する操作とデータの範囲を決めます。アプリケーションのIAMロールには、Bedrockで使う操作だけを許可します。RAGの文書検索では、アプリケーションがログインした利用者の権限を確認し、アクセスの許可された文書に検索対象を絞ります。Guardrails はモデルに渡す入力と出力の内容を検査します。"
+      ],
+      "sources": [
+        {
+          "label": "Bedrock の IAM",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/security-iam.html"
+        },
+        {
+          "label": "Guardrails のアクセス許可",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-permissions.html"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "title": "入力、保存、出力を通じて保護する",
+      "paragraphs": [
+        "利用者の入力、検索文書、ログ、生成応答を分けて扱い、必要以上の個人情報や営業秘密をプロンプトに入れません。保存時と転送時の保護、保持期間、削除、出力の機密情報確認を要件に含めます。"
+      ],
+      "sources": [
+        {
+          "label": "責任ある AI",
+          "url": "https://aws.amazon.com/jp/ai/responsible-ai/"
+        }
+      ]
+    },
+    {
+      "id": "governance",
+      "title": "方針、変更、監査を結び付ける",
+      "paragraphs": [
+        "ガバナンスは、利用可能なモデルとデータ、承認用途、責任者、評価基準、例外対応を定めて確認する仕組みです。設定変更、評価、アクセス、インシデント対応を記録し、方針と実際の利用を継続的に見直します。"
+      ],
+      "sources": [
+        {
+          "label": "Bedrock の IAM",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/security-iam.html"
+        },
+        {
+          "label": "Amazon Bedrockのモデル呼び出しログ",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-invocation-logging.html"
+        }
+      ],
+      "figureId": "aif-security-governance"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sec-q1",
+      "prompt": "社内の情報管理担当者は、機密文書を扱う検索アプリで、誰がいつ文書へのアクセスを試み、許可されたかを調査できるようにします。監査担当者が記録を閲覧しますが、文書の本文やユーザーの質問を監査ログに残す必要はありません。適切な記録方法を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "モデルの入出力を常時記録し、検索対象になった文書の本文も全件保存する。",
+          "explanation": "本文は監査要件に含まれません。原文を記録すると、ログの閲覧者に機密情報が開示される範囲が広がります。"
+        },
+        {
+          "id": "b",
+          "text": "実行者の識別子、文書ID、時刻、許可または拒否の結果を記録し、ログの閲覧を監査担当者に絞る。",
+          "explanation": "文書の中身や質問を保存せず、誰がいつどの文書へのアクセスを試みたかを追跡できます。"
+        },
+        {
+          "id": "c",
+          "text": "モデルの平均応答時間と月間コストだけを記録する。",
+          "explanation": "時間やコストの集計では、個別の文書アクセスを調査できません。"
+        },
+        {
+          "id": "d",
+          "text": "回答が正常に表示された場合だけ、成功の件数を日別に記録する。",
+          "explanation": "成功件数だけでは実行者やアクセスを試みた文書が分からず、拒否された操作も確認できません。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "sec-q2",
+      "prompt": "保険会社の開発者は、顧客相談を要約する AI を設計します。個人情報の取り扱いを最小化する入力時の行動はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "不要な情報も全てプロンプトへ入れる。",
+          "explanation": "リスクを増やします。"
+        },
+        {
+          "id": "b",
+          "text": "必要な情報を選び、保存、出力、アクセスの保護要件も定める。",
+          "explanation": "ライフサイクル全体で保護します。"
+        },
+        {
+          "id": "c",
+          "text": "データ方針と保存期間を確認しない。",
+          "explanation": "利用しても責任は残ります。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "sec-q3",
+      "prompt": "ガバナンス担当者は、モデルとプロンプトの変更後に品質低下の原因を追跡したいと考えています。適切な運用はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "変更前後の設定、承認、評価、アクセスを記録し、定期的に見直す。",
+          "explanation": "問題を追跡し統制を確認できます。"
+        },
+        {
+          "id": "b",
+          "text": "最新設定だけを保存する。",
+          "explanation": "比較と原因調査ができません。"
+        },
+        {
+          "id": "c",
+          "text": "品質評価を初回公開時だけにする。",
+          "explanation": "利用状況や変更に対応できません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "guardrails-q1",
+      "prompt": "医療案内アプリの開発チームは、有害な入力を受け付けず、機微情報を含む回答を表示しないようにします。コンテンツの確認とAWSリソースへのアクセス制御を、どう分担すべきですか。1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Guardrailsだけで利用者のAWS権限を管理する。",
+          "explanation": "GuardrailsはIAMの認可を代替しません。"
+        },
+        {
+          "id": "b",
+          "text": "IAMで呼び出し権限を制御し、Guardrailsで入出力ポリシーを評価し、設定を検証する。",
+          "explanation": "認可とコンテンツ制御を分けて運用します。"
+        },
+        {
+          "id": "c",
+          "text": "IAMだけで有害な文面を判定する。",
+          "explanation": "IAMはコンテンツ評価をしません。"
+        },
+        {
+          "id": "d",
+          "text": "自然な回答なら制御を外す。",
+          "explanation": "表現の自然さは安全性を保証しません。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "authz-q1",
+      "prompt": "社内RAGの設計者は、認証済みの一般社員が経理文書を取得できないようにしたいと考えています。最も適切な対策はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "認証済みなら全ての文書を返す。",
+          "explanation": "認証は本人確認であり閲覧範囲の決定ではありません。"
+        },
+        {
+          "id": "b",
+          "text": "利用者のロールに基づく認可で検索対象とBedrock呼び出しを最小権限にする。",
+          "explanation": "認可は許可されたデータと操作を制御します。"
+        },
+        {
+          "id": "c",
+          "text": "文書名を変更する。",
+          "explanation": "アクセス制御にはなりません。"
+        },
+        {
+          "id": "d",
+          "text": "Guardrailsだけで文書閲覧権を決める。",
+          "explanation": "コンテンツ制御は認可の代替ではありません。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "AI governance",
+    "Authentication",
+    "Authorization",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "RAG",
+    "Bedrock Guardrails",
+    "Encryption at rest",
+    "Encryption in transit",
+    "CloudTrail",
+    "CloudWatch Logs",
+    "Data minimization",
+    "Audit log"
+  ]
+}

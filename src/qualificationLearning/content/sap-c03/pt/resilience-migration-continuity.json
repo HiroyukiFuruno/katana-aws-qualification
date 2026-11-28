@@ -1,0 +1,152 @@
+{
+  "id": "resilience-migration-continuity",
+  "title": "Projetando resiliência, migração e continuidade de negócios",
+  "objective": "Consegue reunir dependências, ondas de migração, RTO/RPO, integridade dos dados e validação da transição em um único plano.",
+  "prerequisites": [
+    {
+      "slug": "cloud-architecture",
+      "title": "Projetar e implementar uma arquitetura para a nuvem",
+      "courseId": "sap-c03"
+    },
+    {
+      "slug": "security-governance",
+      "title": "Projetar segurança, conformidade e governança",
+      "courseId": "sap-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "portfolio-and-waves",
+      "title": "Criar ondas de migração com base nas dependências",
+      "paragraphs": [
+        "As equipes de migração não determinam a ordem da migração apenas com base em uma lista de servidores. Elas visualizam as dependências entre aplicações, bancos de dados, autenticação compartilhada, redes, cargas em lote e integrações externas e, em seguida, planejam as ondas de migração com base no tempo de inatividade aceitável e nas prioridades de negócio.",
+        "O AWS Migration Hub fornece informações para descobrir servidores existentes, planejar migrações e acompanhar o progresso por aplicação em um único local. Os resultados da descoberta são um ponto de partida; eles não substituem a validação das comunicações reais, da sincronização de dados, dos procedimentos operacionais ou do rollback.",
+        "Na parte superior do diagrama, verifique a sincronização do banco de dados e a integridade do ambiente de destino antes do cutover. Se não houver gravações no destino após o cutover e o ambiente antigo ainda puder operar, será possível reverter a rota. Depois que um novo pedido for confirmado no ambiente de destino, reverter apenas a rota fará com que esse pedido não exista no ambiente antigo. Interrompa o cutover seguinte e determine se as novas gravações podem ser reconciliadas e aplicadas ao ambiente antigo ou se o ambiente de destino deve ser corrigido para que as operações de negócio continuem."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAP-C03: estratégias de migração",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        },
+        {
+          "label": "O que é o AWS Migration Hub?",
+          "url": "https://docs.aws.amazon.com/ja_jp/migrationhub/latest/ug/whatishub.html"
+        },
+        {
+          "label": "Cutover e rollback de migração",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/best-practices-migration-cutover/cutover-stage.html"
+        }
+      ],
+      "figureId": "sap-migration-wave-and-cutover"
+    },
+    {
+      "id": "recovery-objectives",
+      "title": "Escolher uma estratégia de DR com base no RTO e no RPO",
+      "paragraphs": [
+        "No design de recuperação de desastres, o RTO representa o tempo até que as operações comerciais possam ser retomadas, enquanto o RPO representa a quantidade de dados que pode ser perdida. Os arquitetos definem objetivos para cenários como uma única AZ, uma Região, corrupção de dados e uma falha na infraestrutura de autenticação, e comparam o custo e a carga operacional de backups, replicação contínua, warm standby e arquiteturas multi-Region.",
+        "Uma estratégia de recuperação não é estabelecida apenas porque sua configuração existe. Os exercícios devem validar quem decide realizar o failover, a alternância de DNS ou de tráfego, as verificações de integridade dos dados, a ordem de recuperação dos serviços dependentes e o failback após a recuperação. Se os objetivos não forem atingidos, os procedimentos ou a configuração deverão ser revisados."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAP-C03: Recuperação de desastres",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "modernize-in-stages",
+      "title": "Modernização em etapas",
+      "paragraphs": [
+        "Ao migrar aplicações legadas, não escolha rehosting, replatforming ou refatoração de maneira uniforme. Avalie a possibilidade de mudanças, as dependências, os prazos de suporte, o desempenho, a migração de dados, a carga operacional e os prazos de negócio, comparando os riscos de migração de curto prazo com o valor operacional de longo prazo.",
+        "Na modernização incremental, como a que utiliza o padrão strangler fig, projete os limites de responsabilidade entre as funcionalidades legadas e as novas, o roteamento de solicitações, a consistência dos dados, a observabilidade e as condições de reversão. Não desative o sistema legado antes de confirmar que o novo caminho funciona corretamente."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAP-C03: resiliência, migração e continuidade dos negócios",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-resilience-1",
+      "prompt": "O responsável pela migração verificou as dependências, a latência de replicação do banco de dados e a integridade do destino, e então transferiu para a AWS apenas uma wave do aplicativo de pedidos. Após a transferência, o gate de validação do negócio falhou depois que novas gravações de pedidos começaram no banco de dados de destino. Qual é a resposta mais apropriada para recuperar o sistema sem perder pedidos confirmados?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Interromper as waves subsequentes, identificar o escopo dos novos pedidos e executar uma política de recuperação por reconciliação ou fail-forward, verificar a integridade dos dados e só então decidir a estratégia de transferência.",
+          "explanation": "Depois que novas gravações começam, voltar incondicionalmente para a rota antiga pode causar a perda de pedidos confirmados ou processamento duplicado. É preciso reconciliar as gravações, escolher uma recuperação ou abordagem fail-forward que preserve a integridade e só então tomar a próxima decisão."
+        },
+        {
+          "id": "b",
+          "text": "Redirecionar para o ambiente antigo sem verificar os novos pedidos e descartar as gravações no destino.",
+          "explanation": "Depois que novas gravações ocorreram, simplesmente voltar ao ambiente antigo não impede a perda de dados nem o processamento duplicado."
+        },
+        {
+          "id": "c",
+          "text": "Não registrar a falha da validação do negócio e transferir todas as waves restantes usando o mesmo procedimento.",
+          "explanation": "Ampliar o escopo enquanto a causa do gate com falha e a consistência das gravações permanecem sem solução aumentaria o escopo da recuperação e o impacto sobre os usuários."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-2",
+      "prompt": "Os dados de pedidos podem tolerar uma perda de no máximo 5 minutos e precisam ser recuperados em até 1 hora após uma falha regional. Qual é a ação mais apropriada para o arquiteto?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Projetar os procedimentos de recuperação depois que ocorrer uma falha.",
+          "explanation": "Isso não garante a decisão de failover nem o tempo de recuperação."
+        },
+        {
+          "id": "a",
+          "text": "Selecionar uma replicação, um ambiente de recuperação e procedimentos de failover que atendam ao RPO e ao RTO, e validar a integridade dos dados e o tempo de recuperação por meio de exercícios.",
+          "explanation": "Isso confirma tanto os objetivos de recuperação quanto a viabilidade operacional."
+        },
+        {
+          "id": "b",
+          "text": "Se existir um único backup, não verificar o tempo de recuperação nem a perda de dados.",
+          "explanation": "Não é possível saber se os objetivos serão atingidos."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-resilience-3",
+      "prompt": "Em um sistema de pedidos que está sendo modernizado gradualmente, os serviços novo e antigo serão executados em paralelo. Qual é o projeto mais adequado?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Definir os limites de responsabilidade de cada função, o roteamento das solicitações, o método de consistência dos dados, as métricas de observabilidade e as condições de reversão.",
+          "explanation": "Isso permite ampliar o escopo da migração enquanto o novo caminho é validado."
+        },
+        {
+          "id": "b",
+          "text": "Excluir o serviço antigo e seus dados imediatamente após lançar o novo serviço.",
+          "explanation": "Isso elimina tanto o meio de reverter a situação em caso de anomalia quanto a base de comparação."
+        },
+        {
+          "id": "c",
+          "text": "Não registrar para qual serviço cada solicitação é encaminhada.",
+          "explanation": "Isso impede a investigação isolada de falhas e a comparação da qualidade."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Dependency mapping",
+    "Migration wave",
+    "AWS Migration Hub",
+    "RTO",
+    "RPO",
+    "Backup",
+    "Restore",
+    "Failover",
+    "DNS",
+    "Strangler Fig",
+    "Drift detection"
+  ]
+}

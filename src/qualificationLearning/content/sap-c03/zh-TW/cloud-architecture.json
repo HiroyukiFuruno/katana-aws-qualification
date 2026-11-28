@@ -1,0 +1,175 @@
+{
+  "id": "cloud-architecture",
+  "title": "設計與實作雲端架構",
+  "objective": "能夠根據需求、故障範圍、通訊、資料與 AI 整合方面的限制，說明雲端架構及其取捨。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "雲端基本概念"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "連線與路由"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身分驗證與授權"
+    },
+    {
+      "slug": "",
+      "title": "Solutions Architect – Associate",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements-to-boundaries",
+      "title": "將需求轉換為故障邊界與責任邊界",
+      "paragraphs": [
+        "架構師不會將「高可用性」這項需求直接變成部署多個資源的指示。架構師會明確定義使用者操作、可接受的停機時間、可容許遺失的資料量、相依服務，以及區域故障的處理方式，並將單一故障點與復原程序相互對應。",
+        "AWS Well-Architected Framework 是用來評估設計決策優缺點的架構。提升可用性的選擇也會影響費用、營運負擔、資料一致性，以及故障時的切換程序，因此應在設計記錄中保留優先考量的需求。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03.html"
+        },
+        {
+          "label": "AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "hybrid-network-path",
+      "title": "透過往返路徑設計混合式通訊",
+      "paragraphs": [
+        "混合式環境的設計人員不會僅因為具備從內部部署環境到 VPC 的單向可達性，就認定設計已完成。他們會驗證來源 CIDR、名稱解析、連線方式、每個子網路中的路由、安全性群組、網路 ACL，以及目的地端的返回路徑，並明確定義允許通訊的邊界。",
+        "路由表中的每條路由都具有目的地和目標。存在路由與允許連接埠是兩回事。對於多 VPC 或內部部署連線，應先驗證重疊的 CIDR、路由傳播範圍、故障時的替代路徑，以及集中式檢查；不要選擇無條件的完整連線。",
+        "圖中的實線表示 Direct Connect 主要路徑，虛線表示獨立的 VPN 備援路徑。即使 VPN 已建立，如果切換後的路由器和 Transit Gateway 尚未學習必要的路由，通訊仍無法成立。應分別確認從據點到 VPC 的路徑，以及從目的地子網路返回據點的路徑，並核對安全性群組和網路 ACL 的允許規則。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考試指南：雲端架構",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain1.html"
+        },
+        {
+          "label": "設定路由表",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "建立 Direct Connect 閘道與 Transit Gateway 的關聯",
+          "url": "https://docs.aws.amazon.com/ja_jp/directconnect/latest/UserGuide/direct-connect-transit-gateways.html"
+        }
+      ],
+      "figureId": "sap-hybrid-network-boundaries"
+    },
+    {
+      "id": "data-and-ai-integration",
+      "title": "劃分資料與 AI 整合的責任範圍",
+      "paragraphs": [
+        "設計 AI 整合時，不僅要設計呼叫模型的路徑，也要設計輸入資料的分類、檢索資料的來源、提示與輸出的保留、存取權限、評估及稽核。應比較準確性、延遲、成本、資料邊界與更新頻率，在基礎模型、檢索增強生成與自訂模型之間做出選擇。",
+        "應根據存取模式、一致性、擴展性、保留需求與共享範圍選擇資料存放區。用於提升讀取效能的快取如果未設計更新後的新鮮度與快取失效機制，可能會讓過時資料看起來像是被正確傳回。"
+      ],
+      "sources": [
+        {
+          "label": "SAP-C03 考試指南：資料、儲存與資料庫",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-professional-03/solutions-architect-professional-03-domain1.html"
+        },
+        {
+          "label": "Amazon Bedrock 概觀",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/what-is-bedrock.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "sap-cloud-1",
+      "prompt": "支付服務架構師需要設計一種方案，使服務在單一 AZ 發生故障時仍能持續運作，並在區域發生故障時於規定的復原時間內恢復運作。首先應該做什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "確認每項操作的 RTO、RPO、相依關係與故障範圍，然後為 AZ 與區域故障分別對應組態與容錯移轉程序。",
+          "explanation": "這樣可以將可用性需求具體落實為故障邊界與復原方式。"
+        },
+        {
+          "id": "b",
+          "text": "不記錄需求，而是將所有資源放在一個 AZ 中並調整為最大規模。",
+          "explanation": "這無法因應 AZ 故障，也無法評估復原目標。"
+        },
+        {
+          "id": "c",
+          "text": "不決定備份與容錯移轉程序，而是在發生故障時由負責人臨時判斷。",
+          "explanation": "復原時間與結果將取決於負責人。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-cloud-2",
+      "prompt": "內部部署網路 172.20.0.0/16 與私有子網中的 API（10.20.1.0/24）連線至 Transit Gateway，其中以使用 BGP 的 Direct Connect 作為主要路徑，並以獨立的 Site-to-Site VPN 作為備份路徑。Direct Connect 發生故障後，VPN 通道已建立，但對 API 的要求沒有收到回應。在判定容錯移轉成功之前，最適合執行哪項檢查？",
+      "choices": [
+        {
+          "id": "c",
+          "text": "開放所有 VPC 的所有連接埠，讓它們彼此互通。",
+          "explanation": "即使 VPN 已建立，開放所有連接埠也會失去對目的地、必要連接埠和通訊方向的界線，無法找出沒有回應的原因。"
+        },
+        {
+          "id": "b",
+          "text": "由於 VPN 通道已建立，因此不檢查 BGP 路由公告、返回路由或允許設定，就判定容錯移轉成功。",
+          "explanation": "僅憑通道狀態，無法證明 172.20.0.0/16 和 10.20.1.0/24 的路由已在兩個方向公告並被選取，也無法證明能夠返回回應或已允許必要的連接埠。"
+        },
+        {
+          "id": "a",
+          "text": "確認透過 VPN，兩個 CIDR 的路由都已透過 BGP 公告並接收；確認 Transit Gateway 和 API 子網的路由表中有返回 172.20.0.0/16 的路由；並確認安全群組和網路 ACL 允許必要的 API 連接埠。",
+          "explanation": "對於獨立的備份路徑，只有分別滿足通道建立、路由公告與選取、目的地端的返回路徑，以及兩端的網路政策，才能確認雙向通訊正常。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "sap-cloud-3",
+      "prompt": "您正在設計一項可參考內部規章制度的生成式 AI 功能。規章制度經常修訂，回答還必須提供佐證。以下哪種方針最合適？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "讓文件在保留其更新單位與存取權限的前提下可供搜尋，並設計能夠回傳來源的 RAG 方案和評估機制。",
+          "explanation": "這能滿足更新頻率、提供佐證以及資料邊界方面的要求。"
+        },
+        {
+          "id": "b",
+          "text": "不參考規章制度，只讓模型根據其一般知識回答。",
+          "explanation": "這無法保證使用最新規章制度，也無法保證提供回答的佐證。"
+        },
+        {
+          "id": "c",
+          "text": "移除存取控制，讓任何人都能搜尋所有規章制度。",
+          "explanation": "這不符合資料邊界方面的要求。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Well-Architected Framework",
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "CIDR",
+    "Route table",
+    "Security group",
+    "NACL",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Network Firewall",
+    "Route 53 VPC Resolver",
+    "VPC peering",
+    "PrivateLink",
+    "RAG",
+    "Bedrock",
+    "Cache invalidation",
+    "Data classification"
+  ]
+}

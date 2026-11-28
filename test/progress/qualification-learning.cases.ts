@@ -73,4 +73,12 @@ export const qualificationLearningCases: QualificationLearningCase[] = [
     answer: /イベントをストリームで取り込み、元のイベントを14日間保持する/,
     choiceCount: 4,
   },
+  {
+    courseId: 'sap-c03',
+    firstTitle: 'クラウド向けアーキテクチャを設計・実装する',
+    nextUnit: 'security-governance',
+    prompt: /決済サービスのアーキテクトは、単一 AZ 障害では継続し、リージョン障害では/,
+    answer: /操作ごとの RTO、RPO、依存関係、障害範囲を確認し、AZ とリージョンの障害に対/,
+    choiceCount: 3,
+  },
 ];

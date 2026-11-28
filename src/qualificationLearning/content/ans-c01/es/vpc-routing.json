@@ -1,0 +1,230 @@
+{
+  "id": "vpc-routing",
+  "title": "Implementar el enrutamiento dentro y fuera de una VPC",
+  "objective": "Distinguir las tablas de enrutamiento asociadas a las subredes, los CIDR de destino, los destinos y los controles de seguridad, y verificar la accesibilidad de las solicitudes y las respuestas.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Fundamentos de la comunicación"
+    },
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR y subredes"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Conectividad y enrutamiento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-table",
+      "title": "Conectar destinos y objetivos",
+      "paragraphs": [
+        "Una tabla de enrutamiento de VPC determina la ruta del tráfico que sale de una subred o una puerta de enlace. Cada ruta tiene un CIDR de destino o una lista de prefijos y un objetivo, como una puerta de enlace de Internet, una puerta de enlace NAT, una conexión de emparejamiento de VPC, un Transit Gateway o una conexión VPN.",
+        "Cuando el destino de un paquete coincide con varias rutas, se selecciona la ruta con el prefijo CIDR más largo. Por ejemplo, al enviar tráfico desde una VPC con 10.20.0.0/16 hasta 10.40.20.25 en una VPC emparejada, el destino coincide tanto con 10.40.20.0/24, que dirige el tráfico al emparejamiento, como con 0.0.0.0/0, que lo dirige a la puerta de enlace NAT. En este caso, se selecciona la ruta /24, que especifica el destino en un intervalo más reducido. Si hay varias rutas con el mismo destino o la misma longitud de prefijo, consulte las reglas de prioridad de AWS.",
+        "El tipo de una subred está determinado por su enrutamiento. Una subred privada no tiene una ruta directa a una puerta de enlace de Internet; cuando se necesita comunicación saliente con Internet, utiliza otra ruta, como un dispositivo NAT."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: configurar tablas de enrutamiento",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: cómo funciona la prioridad del enrutamiento",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "Amazon VPC: subredes en su VPC",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/configure-subnets.html"
+        },
+        {
+          "label": "Cómo funcionan las conexiones de emparejamiento de VPC",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/peering/vpc-peering-basics.html"
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "title": "Evaluar por separado la selección de rutas y los permisos de comunicación",
+      "paragraphs": [
+        "Una tabla de enrutamiento de VPC selecciona el siguiente salto para los paquetes que salen de una subred o una puerta de enlace. Una tabla de enrutamiento de TGW selecciona el destino de reenvío de los paquetes que entran a través de un TGW attachment y se evalúa por separado de la tabla de enrutamiento de VPC.",
+        "Un grupo de seguridad se evalúa con estado en el límite de la ENI o del recurso asociado, por lo que las respuestas al tráfico permitido se autorizan automáticamente. Una ACL de red se evalúa sin estado en el límite de la subred, por lo que se deben permitir explícitamente tanto la dirección de la solicitud como la de la respuesta. Network Firewall inspecciona únicamente los paquetes cuyas rutas están configuradas para pasar por un Firewall endpoint.",
+        "Al realizar cambios, compruebe las rutas de VPC, las rutas de TGW, el SG, la NACL, las rutas al Firewall endpoint cuando sea necesario, la resolución de nombres y el tráfico de retorno tanto en el origen como en el destino."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: Configurar tablas de enrutamiento",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: Seguridad de la infraestructura",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/infrastructure-security.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Seguridad de redes",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "packet-walk",
+      "title": "Seguir el tráfico de los usuarios hacia las API externas",
+      "paragraphs": [
+        "En una configuración en la que los usuarios envían solicitudes HTTPS a través de un balanceador de carga público a aplicaciones ubicadas en subredes privadas de AZ-a y AZ-b, compruebe por separado la ruta desde los usuarios hasta el ALB y la ruta desde el ALB hasta los destinos.",
+        "Cuando el tráfico sale de los destinos hacia una API externa, compruebe la evaluación del destino en las subredes de la aplicación, la puerta de enlace NAT pública ubicada en las subredes públicas, la puerta de enlace de Internet y el tráfico de retorno. No confunda las funciones del IGW, NAT y los puntos de enlace de VPC.",
+        "Incluso desde la misma instancia de EC2, el siguiente salto es diferente para una API externa y para una API dentro de una VPC emparejada. Examine las rutas privadas del diagrama y confirme qué ruta se selecciona para el tráfico destinado a 10.40.20.25 y a qué intervalo de direcciones regresa la respuesta."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: puertas de enlace NAT",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-nat-gateway.html"
+        },
+        {
+          "label": "Amazon VPC: cómo funciona la prioridad de las tablas de rutas",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: implementación de redes",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ],
+      "figureId": "ans-vpc-routing-packet-walk"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "vpc-routing-check-1",
+      "prompt": "Un responsable de operaciones de red verificó una ruta de 0.0.0.0/0 a una puerta de enlace NAT para permitir que una instancia EC2 de una subred privada se conecte mediante HTTPS a una API externa. Seleccione un elemento adicional que se deba verificar.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "La puerta de enlace NAT pública está en una subred pública, el lado del NAT tiene una ruta al IGW y el grupo de seguridad (SG) y la ACL de red (NACL) de EC2 permiten el tráfico bidireccional necesario.",
+          "explanation": "La ruta del lado privado, por sí sola, no permite verificar la ubicación del NAT, la ruta de salida ni los permisos de comunicación necesarios."
+        },
+        {
+          "id": "b",
+          "text": "El nombre de la subred no contiene public.",
+          "explanation": "El nombre no garantiza la accesibilidad."
+        },
+        {
+          "id": "c",
+          "text": "Registrar un registro DNS en el IGW.",
+          "explanation": "El IGW no es un destino para registrar DNS."
+        },
+        {
+          "id": "d",
+          "text": "Detener la comprobación de estado del destino.",
+          "explanation": "Esto no está relacionado con la ruta de salida."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-2",
+      "prompt": "Un responsable de operaciones de red de una empresa de logística está investigando si se puede establecer una conexión TCP 443 desde una instancia EC2 de origen hasta una instancia EC2 en otra VPC conectada mediante un Transit Gateway. Existen rutas en la VPC de salida y en el Transit Gateway, pero la conexión agota el tiempo de espera. Seleccione un elemento que deba comprobarse a continuación.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Si existe una ruta, todos los puertos se permiten automáticamente.",
+          "explanation": "Las tablas de rutas no conceden permisos para los puertos."
+        },
+        {
+          "id": "c",
+          "text": "Los grupos de seguridad no se evalúan cuando se utiliza un Transit Gateway.",
+          "explanation": "Un TGW no desactiva la evaluación del grupo de seguridad en el lado de la ENI de destino."
+        },
+        {
+          "id": "d",
+          "text": "Un rechazo de TCP siempre se debe al DNS TTL.",
+          "explanation": "El TTL por sí solo no puede explicar el problema."
+        },
+        {
+          "id": "a",
+          "text": "Compruebe los grupos de seguridad y las ACL de red del origen y del destino, y examine también la ruta de retorno desde el destino hasta el origen.",
+          "explanation": "La posibilidad de iniciar una conexión TCP 443 depende no solo de la ruta de salida, sino también de los grupos de seguridad de cada recurso. Las ACL de red deben permitir el tráfico en ambas direcciones, y también hay que comprobar que exista una ruta para que la respuesta pueda regresar."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-3",
+      "prompt": "Un arquitecto de la nube explica en qué se basa llamar subred privada a una subred. Elija la opción más adecuada.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Que su nombre empiece por private-.",
+          "explanation": "Un nombre no constituye una garantía técnica."
+        },
+        {
+          "id": "c",
+          "text": "Solo que la VPC no tenga un IGW.",
+          "explanation": "Esto no permite determinar la ruta de cada subred."
+        },
+        {
+          "id": "a",
+          "text": "Que la tabla de enrutamiento asociada no tenga una ruta directa a una puerta de enlace de Internet. Si se necesita comunicación saliente, configure otra ruta, como un dispositivo NAT.",
+          "explanation": "Una subred privada es una subred que no tiene una ruta directa a un IGW."
+        },
+        {
+          "id": "d",
+          "text": "Que la aplicación utilice TLS.",
+          "explanation": "TLS no define si la subred es pública."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-4",
+      "prompt": "Un ingeniero de redes de una empresa de logística se conecta desde una subred privada de la VPC 10.20.0.0/16 a la API 10.40.20.25 de la VPC homóloga 10.40.0.0/16. La tabla de enrutamiento de origen contiene una ruta local para 10.20.0.0/16, una ruta al emparejamiento de VPC para 10.40.20.0/24 y una ruta a una puerta de enlace NAT para 0.0.0.0/0. Al reenviar tráfico a la dirección IP de destino 10.40.20.25, seleccione una ruta que tenga prioridad en el origen.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "La ruta al emparejamiento de VPC para 10.40.20.0/24.",
+          "explanation": "10.40.20.25 está incluido tanto en /24 como en /0, pero se prefiere /24 porque tiene el prefijo más largo. Para establecer la conexión también se necesitan una ruta de retorno y permiso para el tráfico."
+        },
+        {
+          "id": "a",
+          "text": "La ruta local para 10.20.0.0/16.",
+          "explanation": "10.40.20.25 no está incluido en 10.20.0.0/16. Aunque la dirección IP de origen esté dentro de este intervalo, esta ruta no se utiliza para seleccionar la ruta de destino."
+        },
+        {
+          "id": "c",
+          "text": "La ruta a la puerta de enlace NAT para 0.0.0.0/0.",
+          "explanation": "0.0.0.0/0 coincide con el destino, pero no se selecciona porque existe una ruta /24 más específica."
+        },
+        {
+          "id": "d",
+          "text": "No se selecciona ninguna ruta porque una subred privada no puede tener una ruta al emparejamiento de VPC.",
+          "explanation": "También se puede configurar una ruta al emparejamiento de VPC en una subred privada. Que una subred sea pública depende de si tiene una ruta directa a una puerta de enlace de Internet."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC",
+    "AZ",
+    "Subnet",
+    "Public subnet",
+    "Private subnet",
+    "IGW",
+    "NAT gateway",
+    "ENI",
+    "ALB",
+    "Security group",
+    "NACL",
+    "CIDR",
+    "Route table",
+    "Local route",
+    "Default route",
+    "Longest prefix match",
+    "Prefix list",
+    "VPC peering",
+    "Transit Gateway route table",
+    "VPC endpoint",
+    "Stateful filtering",
+    "Stateless filtering",
+    "Return path"
+  ]
+}

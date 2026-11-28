@@ -1,0 +1,230 @@
+{
+  "id": "vpc-routing",
+  "title": "Implementar o roteamento dentro e fora de uma VPC",
+  "objective": "Distinguir as tabelas de rotas associadas às sub-redes, os CIDRs de destino, os destinos e os controles de segurança, além de verificar a acessibilidade de solicitações e respostas.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Fundamentos da comunicação"
+    },
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR e sub-redes"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Conectividade e roteamento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-table",
+      "title": "Conectando destinos e destinos-alvo",
+      "paragraphs": [
+        "Uma tabela de rotas da VPC determina o caminho do tráfego que sai de uma sub-rede ou de um gateway. Cada rota tem um CIDR de destino ou uma lista de prefixos e um destino-alvo, como um gateway da Internet, um gateway NAT, uma conexão de emparelhamento da VPC, um Transit Gateway ou uma conexão VPN.",
+        "Quando o destino de um pacote corresponde a várias rotas, a rota com o prefixo CIDR mais longo é selecionada. Por exemplo, ao enviar tráfego de uma VPC com 10.20.0.0/16 para 10.40.20.25 em uma VPC emparelhada, o destino corresponde tanto a 10.40.20.0/24, que encaminha para o emparelhamento, quanto a 0.0.0.0/0, que encaminha para o gateway NAT. Nesse caso, a rota /24, que especifica o destino em um intervalo mais restrito, é selecionada. Se houver várias rotas com o mesmo destino ou comprimento de prefixo, consulte as regras de prioridade da AWS.",
+        "O tipo de uma sub-rede é determinado pelo roteamento. Uma sub-rede privada não tem uma rota direta para um gateway da Internet; quando é necessária comunicação de saída com a Internet, ela usa outro caminho, como um dispositivo NAT."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: configurar tabelas de rotas",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: como funciona a prioridade de roteamento",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "Amazon VPC: sub-redes na VPC",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/configure-subnets.html"
+        },
+        {
+          "label": "Como funcionam as conexões de emparelhamento da VPC",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/peering/vpc-peering-basics.html"
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "title": "Avaliar separadamente a seleção de rotas e as permissões de comunicação",
+      "paragraphs": [
+        "Uma tabela de rotas da VPC seleciona o próximo salto para os pacotes que saem de uma sub-rede ou de um gateway. Uma tabela de rotas do TGW seleciona o destino de encaminhamento para os pacotes que entram por um TGW attachment e é avaliada separadamente da tabela de rotas da VPC.",
+        "Um grupo de segurança é avaliado com estado no limite da ENI ou do recurso associado, portanto as respostas ao tráfego permitido são autorizadas automaticamente. Uma ACL de rede é avaliada sem estado no limite da sub-rede, portanto as direções da solicitação e da resposta devem ser explicitamente permitidas. O Network Firewall inspeciona somente os pacotes cujas rotas estão configuradas para passar por um Firewall endpoint.",
+        "Ao fazer alterações, verifique as rotas da VPC, as rotas do TGW, o SG, a NACL, as rotas para o Firewall endpoint quando necessário, a resolução de nomes e o tráfego de retorno tanto na origem quanto no destino."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: Configurar tabelas de rotas",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: Segurança da infraestrutura",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/infrastructure-security.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Segurança de rede",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "packet-walk",
+      "title": "Rastrear o tráfego dos usuários até APIs externas",
+      "paragraphs": [
+        "Em uma configuração na qual os usuários enviam solicitações HTTPS por meio de um balanceador de carga público para aplicações em sub-redes privadas nas AZ-a e AZ-b, verifique separadamente o caminho dos usuários até o ALB e o caminho do ALB até os destinos.",
+        "Quando o tráfego sai dos destinos para uma API externa, verifique a avaliação do destino nas sub-redes da aplicação, o gateway NAT público colocado nas sub-redes públicas, o gateway da Internet e o tráfego de retorno. Não confunda as funções do IGW, do NAT e dos endpoints da VPC.",
+        "Mesmo a partir da mesma instância do EC2, o próximo salto é diferente para uma API externa e para uma API dentro de uma VPC emparelhada. Consulte as rotas privadas no diagrama e confirme qual rota é selecionada para o tráfego destinado a 10.40.20.25 e para qual intervalo de endereços a resposta retorna."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: gateways NAT",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-nat-gateway.html"
+        },
+        {
+          "label": "Amazon VPC: Como funciona a prioridade das tabelas de rotas",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Implementação de redes",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ],
+      "figureId": "ans-vpc-routing-packet-walk"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "vpc-routing-check-1",
+      "prompt": "Um profissional de operações de rede verificou uma rota de 0.0.0.0/0 para um gateway NAT a fim de permitir conexões HTTPS de uma instância EC2 em uma sub-rede privada com uma API externa. Selecione um item adicional que deve ser verificado.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "O gateway NAT público está em uma sub-rede pública, o lado do NAT tem uma rota para o IGW, e o grupo de segurança (SG) e a ACL de rede (NACL) da EC2 permitem o tráfego bidirecional necessário.",
+          "explanation": "A rota no lado privado, por si só, não confirma a localização do NAT, o caminho de saída nem as permissões necessárias para a comunicação."
+        },
+        {
+          "id": "b",
+          "text": "O nome da sub-rede não contém public.",
+          "explanation": "O nome não garante a acessibilidade."
+        },
+        {
+          "id": "c",
+          "text": "Registrar um registro DNS no IGW.",
+          "explanation": "O IGW não é um destino para o registro de DNS."
+        },
+        {
+          "id": "d",
+          "text": "Interromper a verificação de integridade do destino.",
+          "explanation": "Isso não tem relação com o caminho de saída."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-2",
+      "prompt": "Um profissional de operações de rede de uma empresa de logística está investigando se é possível estabelecer uma conexão TCP 443 de uma instância EC2 de origem para uma instância EC2 em outra VPC conectada por um Transit Gateway. Existem rotas na VPC de saída e no Transit Gateway, mas a conexão sofre timeout. Selecione um item para verificar em seguida.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Se existir uma rota, todas as portas serão permitidas automaticamente.",
+          "explanation": "As tabelas de rotas não concedem permissão para portas."
+        },
+        {
+          "id": "c",
+          "text": "Os grupos de segurança não são avaliados quando se usa um Transit Gateway.",
+          "explanation": "Um TGW não desativa a avaliação dos grupos de segurança no lado da ENI de destino."
+        },
+        {
+          "id": "d",
+          "text": "Uma rejeição de TCP é sempre causada pelo DNS TTL.",
+          "explanation": "O TTL, por si só, não explica o problema."
+        },
+        {
+          "id": "a",
+          "text": "Verifique os grupos de segurança e as ACLs de rede da origem e do destino e examine também o caminho de retorno do destino para a origem.",
+          "explanation": "A possibilidade de iniciar uma conexão TCP 443 depende não apenas da rota de saída, mas também dos grupos de segurança de cada recurso. As ACLs de rede precisam permitir o tráfego nos dois sentidos, e também é necessário verificar se existe uma rota para que a resposta retorne."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-3",
+      "prompt": "Um arquiteto de nuvem explica a base para chamar uma sub-rede de sub-rede privada. Escolha a opção mais apropriada.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "O nome começar com private-.",
+          "explanation": "Um nome não é uma garantia técnica."
+        },
+        {
+          "id": "c",
+          "text": "Apenas o fato de a VPC não ter um IGW.",
+          "explanation": "Isso não permite determinar a rota de cada sub-rede."
+        },
+        {
+          "id": "a",
+          "text": "A tabela de rotas associada não ter uma rota direta para um gateway da Internet. Se for necessária comunicação de saída, configure outro caminho, como um dispositivo NAT.",
+          "explanation": "Uma sub-rede privada é uma sub-rede que não tem uma rota direta para um IGW."
+        },
+        {
+          "id": "d",
+          "text": "O aplicativo usar TLS.",
+          "explanation": "O TLS não define se a sub-rede é pública."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-4",
+      "prompt": "Um engenheiro de rede de uma empresa de logística conecta-se, a partir de uma sub-rede privada na VPC 10.20.0.0/16, à API 10.40.20.25 na VPC emparelhada 10.40.0.0/16. A tabela de rotas de origem contém uma rota local para 10.20.0.0/16, uma rota para o emparelhamento de VPC para 10.40.20.0/24 e uma rota para um gateway NAT para 0.0.0.0/0. Ao encaminhar o tráfego para o endereço IP de destino 10.40.20.25, selecione uma rota que tenha prioridade na origem.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "A rota para o emparelhamento de VPC para 10.40.20.0/24.",
+          "explanation": "10.40.20.25 está incluído em /24 e em /0, mas /24 é priorizado porque tem o prefixo mais longo. Para estabelecer a conexão, também são necessários uma rota de retorno e permissão para o tráfego."
+        },
+        {
+          "id": "a",
+          "text": "A rota local para 10.20.0.0/16.",
+          "explanation": "10.40.20.25 não está incluído em 10.20.0.0/16. Mesmo que o endereço IP de origem esteja nesse intervalo, essa rota não é usada para selecionar a rota de destino."
+        },
+        {
+          "id": "c",
+          "text": "A rota para o gateway NAT para 0.0.0.0/0.",
+          "explanation": "0.0.0.0/0 corresponde ao destino, mas não é selecionado porque existe uma rota /24 mais específica."
+        },
+        {
+          "id": "d",
+          "text": "Nenhuma rota é selecionada, pois uma sub-rede privada não pode ter uma rota para o emparelhamento de VPC.",
+          "explanation": "Também é possível configurar uma rota para o emparelhamento de VPC em uma sub-rede privada. O fato de uma sub-rede ser pública depende de ela ter uma rota direta para um gateway da Internet."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC",
+    "AZ",
+    "Subnet",
+    "Public subnet",
+    "Private subnet",
+    "IGW",
+    "NAT gateway",
+    "ENI",
+    "ALB",
+    "Security group",
+    "NACL",
+    "CIDR",
+    "Route table",
+    "Local route",
+    "Default route",
+    "Longest prefix match",
+    "Prefix list",
+    "VPC peering",
+    "Transit Gateway route table",
+    "VPC endpoint",
+    "Stateful filtering",
+    "Stateless filtering",
+    "Return path"
+  ]
+}

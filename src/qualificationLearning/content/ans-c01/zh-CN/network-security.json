@@ -1,0 +1,182 @@
+{
+  "id": "network-security",
+  "title": "保护网络并使其具备可审计性",
+  "objective": "将入站流量、出站流量、VPC 之间的通信、传输中加密以及日志记录与审计设计为彼此独立的控制点，并将其与相关要求对应起来。",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "通信基础"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    }
+  ],
+  "sections": [
+    {
+      "id": "threat-model",
+      "title": "根据保护对象和边界构建威胁模型",
+      "paragraphs": [
+        "在网络安全中，需要针对互联网、本地部署环境、其他账户、VPC 内部层以及数据存储的每个边界，定义谁通过哪种协议连接到什么对象。",
+        "对于入站流量，应根据威胁和控制点区分 WAF、Shield、Network Firewall、负载均衡器和安全组的作用。对于出站流量，应根据需求组合使用 NAT、代理和 Network Firewall 等组件。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：网络安全",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "confidentiality",
+      "title": "区分路径与加密的责任",
+      "paragraphs": [
+        "要保护传输中的数据，请明确哪些区段使用 TLS 或 IPsec。即使保护了用户与负载均衡器之间的 HTTPS，也不一定意味着负载均衡器到目标以及 VPC 到本地网络之间满足相同的条件。",
+        "即使选择 Direct Connect，也应在评估加密要求时，将通过 Direct Connect 建立 VPN 等方案纳入考虑。不要将 DNS 保护与应用程序数据流量的加密视为同一项配置。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：通信机密性",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "将权限、通信和变更的证据连接到审计",
+      "paragraphs": [
+        "在可审计的网络中，不仅需要确认权限设置，还必须能够确认实际通信、检测与拒绝，以及配置变更。VPC 流日志、负载均衡器访问日志、CloudTrail、CloudWatch 和 Network Firewall 日志的对象和用途各不相同。",
+        "在多账户环境中，需要设计日志保留期、防篡改措施、汇总目标、查看权限以及告警负责人。不仅要确认允许的路径能够通信，还要确认禁止的路径会被拒绝。",
+        "请在图中分别跟踪从公开入口到 EC2 的连接，以及 EC2 向 S3 发起的连接。ALB 访问日志和 VPC 流日志能够确认的通信类型不同。对于路由或通信权限的配置变更，应通过 CloudTrail 管理事件进行调查。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：网络审计与日志",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ],
+      "figureId": "ans-network-security-layered-controls"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-security-check-1",
+      "prompt": "应用平台团队需要仅允许从 EC2 访问外部计费 SaaS 的 HTTPS 流量，并能够审计连接过哪些目标。SaaS 提供商公开了目标域名，但其 IP 地址可能会变化。请选择一种适当的设计方案。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "为 NAT 网关设置默认路由，并使用 NAT 网关的流量量指标控制允许的域名。",
+          "explanation": "NAT 指标用于测量流量量等信息；它不提供指定域名并允许流量通过的功能。"
+        },
+        {
+          "id": "c",
+          "text": "在 EC2 安全组中允许目标端口 443 访问整个互联网，并另外收集审计日志。",
+          "explanation": "这样会允许连接到所有外部 HTTPS 网站，因此不满足仅允许指定 SaaS 的条件。"
+        },
+        {
+          "id": "a",
+          "text": "将 EC2 的出站流量集中到受管理的代理或类似组件，设置允许的域名并保存连接日志。",
+          "explanation": "这种方式可以按域名控制目标，并审计允许或拒绝的结果。同时也能限制 EC2 直接连接外部的路径。"
+        },
+        {
+          "id": "d",
+          "text": "在面向用户的 ALB 上配置 AWS WAF，并管理允许列表。",
+          "explanation": "在此配置中，WAF 控制进入 ALB 的 Web 请求，不适用于从 EC2 发往 SaaS 的出站流量。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-2",
+      "prompt": "某金融机构的网络管理员使用 Direct Connect 将其自有站点与 AWS 应用程序连接起来。由于需要交换敏感数据，因此必须对从源应用程序到目标应用程序的传输中数据进行加密。请选择下一步应采取的一种方案。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "确认 Direct Connect 的物理连接已建立，但不配置应用程序之间的 TLS。",
+          "explanation": "仅有专用连接并不能加密从源应用程序到目标应用程序的应用程序通信。"
+        },
+        {
+          "id": "a",
+          "text": "在两个应用程序之间配置并验证 TLS，同时为合同要求的网络区段选择加密方式。",
+          "explanation": "应用程序之间的 TLS 可以保护目标数据的传输。确定网络连接类型后，还可以单独确认哪些区段需要加密。"
+        },
+        {
+          "id": "c",
+          "text": "仅加密存储应用程序数据的磁盘，传输中则使用现有连接。",
+          "explanation": "磁盘加密可以保护静态数据。要保护在网络中传输的数据，必须对连接进行加密。"
+        },
+        {
+          "id": "d",
+          "text": "仅在 AWS 侧启动 TLS 连接，而让本地侧处理到达的明文数据。",
+          "explanation": "由于路径中存在明文区段，因此不满足源应用程序与目标应用程序之间的加密要求。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-3",
+      "prompt": "负责管理多个 AWS 账户的审计人员要验证：开发账户无法连接生产环境的管理端口。同时，必须继续保持与生产服务的正常连接。请选择一组审计证据进行收集。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只保留显示正常 Web 请求成功的 ALB 访问日志，以及应用程序的运行状况指标。",
+          "explanation": "这些可以作为正常连接的证据，但不能证明开发侧无法连接管理端口。"
+        },
+        {
+          "id": "c",
+          "text": "通过 CloudTrail 确认安全组的修改者，并据此判断当前路径上的管理端口会被拒绝。",
+          "explanation": "虽然可以确定修改者和修改时间，但还必须结合当前路径和通信控制，验证实际结果。"
+        },
+        {
+          "id": "d",
+          "text": "按月汇总整个网络流日志中的 REJECT 次数，如果次数增加，就判定管理端口已被阻断。",
+          "explanation": "仅凭总次数无法确定指定源与管理端口的通信是否发生了拒绝。"
+        },
+        {
+          "id": "a",
+          "text": "从指定的开发侧源向目标管理端口尝试连接，并与已获允许的通信进行比较。将流日志与通信控制变更记录进行对照。",
+          "explanation": "这样可以分别验证应被拒绝的通信和必须继续允许的通信，并将实际结果与配置及变更历史关联起来。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Threat model",
+    "Traffic",
+    "WAF",
+    "Shield",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "ALB",
+    "ALB access log",
+    "Security group",
+    "NACL",
+    "NAT gateway",
+    "Forward proxy",
+    "TLS",
+    "IPsec",
+    "AWS Direct Connect",
+    "DNSSEC",
+    "VPC Flow Logs",
+    "CloudTrail",
+    "CloudWatch",
+    "VPC endpoint policy",
+    "Audit log",
+    "Return path",
+    "CloudFront",
+    "S3",
+    "Bucket policy",
+    "Gateway endpoint",
+    "Prefix list",
+    "Public subnet",
+    "Private subnet",
+    "ENI",
+    "AWS Region",
+    "EC2"
+  ]
+}

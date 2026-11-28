@@ -1,0 +1,182 @@
+{
+  "id": "network-security",
+  "title": "Secure the network and make it auditable",
+  "objective": "Design inbound traffic, outbound traffic, VPC-to-VPC communication, encryption in transit, and logging and auditing as separate control points, and map them to the requirements.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Communication Fundamentals"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentication and Authorization"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    }
+  ],
+  "sections": [
+    {
+      "id": "threat-model",
+      "title": "Build a Threat Model from Protected Assets and Boundaries",
+      "paragraphs": [
+        "In network security, define who connects to what and over which protocols for each boundary: the internet, on-premises environments, separate accounts, internal VPC layers, and data stores.",
+        "For inbound traffic, distinguish the roles of WAF, Shield, Network Firewall, load balancers, and security groups by threat and control point. For outbound traffic, combine NAT, proxies, Network Firewall, and other components according to the requirements."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Network Security",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "confidentiality",
+      "title": "Separate Responsibilities for Network Paths and Encryption",
+      "paragraphs": [
+        "To protect data in transit, explicitly specify which segments use TLS or IPsec. Protecting HTTPS between users and the load balancer does not necessarily ensure the same conditions from the load balancer to the target or from the VPC to on-premises.",
+        "Even when choosing Direct Connect, evaluate encryption requirements by including options such as a VPN over Direct Connect. Do not treat DNS protection and encryption of application data traffic as the same configuration."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Communications Confidentiality",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "Connecting Evidence of Permissions, Communications, and Changes to Auditing",
+      "paragraphs": [
+        "In an auditable network, it must be possible to verify not only permission settings but also actual communications, detections and rejections, and configuration changes. VPC Flow Logs, load balancer access logs, CloudTrail, CloudWatch, and Network Firewall logs differ in their scope and purpose.",
+        "Across multiple accounts, design the retention period, tamper protection, aggregation destination, viewing permissions, and alert owner. Verify not only that permitted paths work, but also that prohibited paths are rejected.",
+        "In the diagram, trace separately the connection from the public entry point to EC2 and the connection that EC2 opens to S3. ALB access logs and VPC Flow Logs provide visibility into different types of communications. Investigate changes to routes or communication permissions through CloudTrail management events."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Network Auditing and Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ],
+      "figureId": "ans-network-security-layered-controls"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-security-check-1",
+      "prompt": "The application platform team must allow only HTTPS traffic from EC2 to an external billing SaaS and be able to audit which destinations were contacted. The SaaS provider publishes its destination domain, but its IP address may change. Choose one appropriate design approach.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Set a default route to a NAT gateway and control permitted domains using the NAT gateway’s traffic-volume metrics.",
+          "explanation": "NAT metrics measure items such as traffic volume; they do not provide a function for specifying domains and allowing traffic through."
+        },
+        {
+          "id": "c",
+          "text": "Allow destination port 443 to the entire internet in the EC2 security group and collect the audit logs separately.",
+          "explanation": "This allows connections to every external HTTPS site, so it does not meet the requirement to allow only the specified SaaS."
+        },
+        {
+          "id": "a",
+          "text": "Consolidate EC2’s outbound traffic through a managed proxy or similar service, configure the permitted domains, and save the connection logs.",
+          "explanation": "This controls the intended destinations by domain and lets you audit the allow or deny results. It also restricts paths that would let EC2 connect directly to the outside."
+        },
+        {
+          "id": "d",
+          "text": "Configure AWS WAF on the user-facing ALB and manage an allow list.",
+          "explanation": "In this configuration, WAF controls web requests entering the ALB. It does not apply to outbound traffic from EC2 to the SaaS."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-2",
+      "prompt": "A financial institution’s network administrator connects the institution’s site to an AWS application using Direct Connect. Because sensitive data will be exchanged, encryption in transit is required from the source application to the destination application. Choose one approach to take next.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Confirm that the physical Direct Connect connection is established, but do not configure TLS between the applications.",
+          "explanation": "A dedicated connection alone does not encrypt application traffic from the source to the destination."
+        },
+        {
+          "id": "a",
+          "text": "Configure and validate TLS between both applications, and also select an encryption method for any network segments required by the contract.",
+          "explanation": "TLS between the applications protects the data in transit. After determining the type of network connection, you can separately verify which segments require encryption."
+        },
+        {
+          "id": "c",
+          "text": "Encrypt only the disks that store the application data and use the existing connection for data in transit.",
+          "explanation": "Disk encryption protects data at rest. Encrypting the connection is necessary to protect data traveling across the network."
+        },
+        {
+          "id": "d",
+          "text": "Initiate the TLS connection only on the AWS side, while the on-premises side processes the plaintext data it receives.",
+          "explanation": "Because part of the path uses plaintext, this does not meet the encryption requirement between the source and destination applications."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-3",
+      "prompt": "An auditor managing multiple AWS accounts verifies that the development account cannot connect to the production management port. Normal connections to the production service must continue. Select one combination to collect as audit evidence.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Store only ALB access logs showing successful normal web requests and the application's health metrics.",
+          "explanation": "These provide evidence of normal connectivity, but they do not prove that the development side cannot connect to the management port."
+        },
+        {
+          "id": "c",
+          "text": "Use CloudTrail to identify who changed the security group, and conclude that the management port is denied on the current route.",
+          "explanation": "You can identify the person who made the change and when, but you must also verify the actual result by combining the current route with the communication controls."
+        },
+        {
+          "id": "d",
+          "text": "Aggregate REJECT counts from flow logs for the entire network by month, and determine that the management port is blocked if the count increases.",
+          "explanation": "The total count does not show whether a rejection occurred for the specified source and management port."
+        },
+        {
+          "id": "a",
+          "text": "Attempt a connection from the specified development-side source to the target management port, and also compare it with authorized traffic. Correlate the flow logs with records of changes to the communication controls.",
+          "explanation": "This separates traffic that should be rejected from traffic that must remain allowed. It correlates the actual results with the configuration and change history."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Threat model",
+    "Traffic",
+    "WAF",
+    "Shield",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "ALB",
+    "ALB access log",
+    "Security group",
+    "NACL",
+    "NAT gateway",
+    "Forward proxy",
+    "TLS",
+    "IPsec",
+    "AWS Direct Connect",
+    "DNSSEC",
+    "VPC Flow Logs",
+    "CloudTrail",
+    "CloudWatch",
+    "VPC endpoint policy",
+    "Audit log",
+    "Return path",
+    "CloudFront",
+    "S3",
+    "Bucket policy",
+    "Gateway endpoint",
+    "Prefix list",
+    "Public subnet",
+    "Private subnet",
+    "ENI",
+    "AWS Region",
+    "EC2"
+  ]
+}

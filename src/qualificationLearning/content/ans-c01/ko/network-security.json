@@ -1,0 +1,182 @@
+{
+  "id": "network-security",
+  "title": "네트워크를 보호하고 감사할 수 있는 상태로 만들기",
+  "objective": "인바운드 트래픽, 아웃바운드 트래픽, VPC 간 통신, 전송 중 암호화, 로깅 및 감사를 서로 별도의 제어 지점으로 설계하고 요구 사항에 매핑할 수 있습니다.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "통신 기초"
+    },
+    {
+      "slug": "identity-access",
+      "title": "인증 및 권한 부여"
+    },
+    {
+      "slug": "data-protection",
+      "title": "데이터 보호"
+    }
+  ],
+  "sections": [
+    {
+      "id": "threat-model",
+      "title": "보호 대상과 경계에서 위협 모델 만들기",
+      "paragraphs": [
+        "네트워크 보안에서는 인터넷, 온프레미스 환경, 다른 계정, VPC 내부 계층, 데이터 스토어의 각 경계에 대해 누가 어떤 프로토콜로 무엇에 연결하는지 정의합니다.",
+        "인바운드에서는 위협과 제어 지점을 기준으로 WAF, Shield, Network Firewall, 로드 밸런서, 보안 그룹의 역할을 구분합니다. 아웃바운드에서는 요구 사항에 따라 NAT, 프록시, Network Firewall 등을 조합합니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 네트워크 보안",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "confidentiality",
+      "title": "경로와 암호화의 책임 분리",
+      "paragraphs": [
+        "전송 중인 데이터를 보호하려면 어느 구간에서 TLS 또는 IPsec을 사용하는지 명확히 지정해야 합니다. 사용자와 로드 밸런서 간 HTTPS를 보호하더라도 로드 밸런서에서 대상까지, 그리고 VPC에서 온프레미스까지 동일한 조건이 보장되는 것은 아닙니다.",
+        "Direct Connect를 선택하는 경우에도 암호화 요구 사항을 평가할 때 Direct Connect를 통한 VPN과 같은 옵션을 포함해야 합니다. DNS 보호와 애플리케이션 데이터 트래픽 암호화를 동일한 설정으로 취급하지 마십시오."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 통신 기밀성",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "권한, 통신 및 변경의 증적을 감사로 연결하기",
+      "paragraphs": [
+        "감사 가능한 네트워크에서는 권한 설정뿐 아니라 실제 통신, 탐지 및 거부, 구성 변경도 확인할 수 있어야 합니다. VPC 흐름 로그, 로드 밸런서 액세스 로그, CloudTrail, CloudWatch 및 Network Firewall 로그는 대상과 용도가 서로 다릅니다.",
+        "여러 계정으로 운영하는 환경에서는 보존 기간, 변조 방지, 집계 대상, 조회 권한 및 알림 담당자를 설계합니다. 허용된 경로뿐 아니라 금지된 경로가 거부되는지도 확인합니다.",
+        "그림에서 공개 진입점부터 EC2까지의 연결과 EC2가 S3로 여는 연결을 나누어 추적합니다. ALB 액세스 로그와 VPC 흐름 로그는 확인할 수 있는 통신 유형이 서로 다릅니다. 라우트 또는 통신 권한의 구성 변경은 CloudTrail 관리 이벤트를 통해 조사합니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 네트워크 감사 및 로그",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ],
+      "figureId": "ans-network-security-layered-controls"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-security-check-1",
+      "prompt": "애플리케이션 플랫폼 팀은 EC2에서 외부 청구 SaaS로 전송되는 HTTPS 트래픽만 허용하고, 어떤 대상으로 연결했는지 감사할 수 있어야 합니다. SaaS 제공업체는 대상 도메인을 공개하지만 IP 주소는 변경될 수 있습니다. 적절한 설계 방침을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "NAT 게이트웨이에 기본 경로를 설정하고 NAT 게이트웨이의 트래픽 볼륨 지표로 허용 도메인을 제어합니다.",
+          "explanation": "NAT 지표는 트래픽 볼륨과 같은 정보를 측정할 뿐이며, 도메인을 지정해 통과를 허용하는 기능은 제공하지 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "EC2 보안 그룹에서 대상 포트 443을 인터넷 전체에 허용하고 감사 로그를 별도로 수집합니다.",
+          "explanation": "이렇게 하면 모든 외부 HTTPS 사이트로 연결할 수 있으므로 지정된 SaaS만 허용해야 한다는 조건을 충족하지 못합니다."
+        },
+        {
+          "id": "a",
+          "text": "EC2의 아웃바운드 트래픽을 관리형 프록시 또는 이와 유사한 구성 요소로 모으고, 허용 도메인을 설정한 후 연결 로그를 저장합니다.",
+          "explanation": "이 방법은 도메인으로 원하는 대상을 제어하고 허용 또는 거부 결과를 감사할 수 있습니다. 또한 EC2가 외부로 직접 나가는 경로도 제한합니다."
+        },
+        {
+          "id": "d",
+          "text": "사용자용 ALB에 AWS WAF를 구성하고 허용 목록을 관리합니다.",
+          "explanation": "이 구성의 WAF는 ALB로 들어오는 Web 요청을 제어합니다. EC2에서 SaaS로 향하는 아웃바운드 트래픽에는 적용되지 않습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-2",
+      "prompt": "금융 기관의 네트워크 담당자가 Direct Connect를 사용하여 자체 사업장과 AWS 애플리케이션을 연결합니다. 민감한 데이터를 주고받으므로 소스 애플리케이션에서 대상 애플리케이션까지 전송 중 암호화가 필요합니다. 다음에 취할 방침을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "물리적 Direct Connect 연결이 설정되었는지 확인하지만 애플리케이션 간 TLS는 구성하지 않습니다.",
+          "explanation": "전용 연결만으로는 소스에서 대상으로 전달되는 애플리케이션 통신이 암호화되지 않습니다."
+        },
+        {
+          "id": "a",
+          "text": "두 애플리케이션 간에 TLS를 구성하고 검증하며, 계약상 필요한 네트워크 구간에도 암호화 방식을 선택합니다.",
+          "explanation": "애플리케이션 간 TLS는 대상 데이터의 전송을 보호합니다. 네트워크 연결 유형을 결정한 후 필요한 암호화 구간을 별도로 확인할 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "애플리케이션 데이터를 저장하는 디스크만 암호화하고 전송 중에는 기존 연결을 사용합니다.",
+          "explanation": "디스크 암호화는 저장 중인 데이터를 보호합니다. 네트워크를 통해 이동하는 데이터를 보호하려면 연결을 암호화해야 합니다."
+        },
+        {
+          "id": "d",
+          "text": "AWS 측에서만 TLS 연결을 시작하고 온프레미스 측에서는 도착한 평문 데이터를 처리합니다.",
+          "explanation": "평문으로 전달되는 구간이 있으므로 소스 애플리케이션과 대상 애플리케이션 간 암호화 요구 사항을 충족하지 못합니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-3",
+      "prompt": "여러 AWS 계정을 관리하는 감사 담당자는 개발 계정에서 프로덕션 관리 포트로 연결할 수 없는지 검증합니다. 프로덕션 서비스에 대한 정상적인 연결은 계속 유지해야 합니다. 감사 증거로 수집할 조합을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "정상적인 웹 요청이 성공했음을 보여 주는 ALB 액세스 로그와 애플리케이션 상태 지표만 보관합니다.",
+          "explanation": "정상 연결의 증거가 되지만, 개발 측에서 관리 포트로 연결할 수 없다는 사실을 입증하지는 못합니다."
+        },
+        {
+          "id": "c",
+          "text": "CloudTrail에서 보안 그룹을 변경한 사람을 확인하고, 현재 경로에서 관리 포트가 거부된다고 판단합니다.",
+          "explanation": "변경한 사람과 변경 시점은 파악할 수 있지만, 현재 경로와 통신 제어를 함께 사용해 실제 결과도 확인해야 합니다."
+        },
+        {
+          "id": "d",
+          "text": "전체 네트워크의 흐름 로그에서 REJECT 횟수를 월별로 집계하고, 횟수가 증가하면 관리 포트가 차단되었다고 판단합니다.",
+          "explanation": "전체 횟수만으로는 지정된 소스와 관리 포트에서 거부가 발생했는지 알 수 없습니다."
+        },
+        {
+          "id": "a",
+          "text": "지정한 개발 측 소스에서 대상 관리 포트로 연결을 시도하고, 허용된 통신과도 비교합니다. 흐름 로그를 통신 제어 변경 기록과 대조합니다.",
+          "explanation": "거부되어야 하는 통신과 계속 허용되어야 하는 통신을 구분하여 검증할 수 있습니다. 실제 결과를 구성 및 변경 이력과 연결할 수 있습니다."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Threat model",
+    "Traffic",
+    "WAF",
+    "Shield",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "ALB",
+    "ALB access log",
+    "Security group",
+    "NACL",
+    "NAT gateway",
+    "Forward proxy",
+    "TLS",
+    "IPsec",
+    "AWS Direct Connect",
+    "DNSSEC",
+    "VPC Flow Logs",
+    "CloudTrail",
+    "CloudWatch",
+    "VPC endpoint policy",
+    "Audit log",
+    "Return path",
+    "CloudFront",
+    "S3",
+    "Bucket policy",
+    "Gateway endpoint",
+    "Prefix list",
+    "Public subnet",
+    "Private subnet",
+    "ENI",
+    "AWS Region",
+    "EC2"
+  ]
+}

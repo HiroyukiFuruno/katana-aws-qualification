@@ -1,0 +1,175 @@
+{
+  "id": "network-operations",
+  "title": "Observe networks and troubleshoot failures",
+  "objective": "Form hypotheses from symptoms, choose appropriately among path analysis, permissions, logs, metrics, and reachability analysis, and verify changes by comparing the states before and after.",
+  "prerequisites": [
+    {
+      "slug": "domain-dns",
+      "title": "Domains and DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connectivity and Routing"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    }
+  ],
+  "sections": [
+    {
+      "id": "question",
+      "title": "Turning Symptoms into Reproducible Observations",
+      "paragraphs": [
+        "“It’s slow” or “it won’t connect” alone is not enough to determine what to investigate. Record the source, destination, protocol, port, time, and a successful comparison case. Name resolution, routes, communication permissions, target status, and packet size can all produce similar symptoms.",
+        "Metrics show trends and quantities, logs show events that occurred, and traces show the request processing path. VPC Flow Logs help verify communication flows, but they cannot by themselves explain application processing time."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Network Management and Operations",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Verify Both Intended Paths and Observed Behavior",
+      "paragraphs": [
+        "Reachability Analyzer analyzes reachability between the specified source and destination based on the configuration. Unlike VPC Flow Logs, which investigate actual traffic volumes and rejections, and CloudWatch metrics, which investigate performance trends, it answers different questions.",
+        "Do not determine reachability solely from the topology view. Cross-check the Transit Gateway attachment, associations, propagation, and VPC-side routes. Compare the periods before and after the change using the same source CIDR, destination, port, and time window."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Reachability, Logs, and Metrics",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Investigate Configuration-Based Reachability with Reachability Analyzer",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/reachability-analyzer.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "Connect hypotheses, changes, and verification results",
+      "paragraphs": [
+        "If only some VPCs cannot be reached, list the source and destination CIDRs, attachments, TGW routes, VPC subnet routes, and traffic controls in path order. Narrow down the hypothesis using Reachability Analyzer and VPC Flow Logs, then change only the one relevant route.",
+        "After the change, verify again using the same source, destination, and port, and also check that reachability to any unintended CIDRs has not increased. Do not treat improvements in CPU or request count alone as evidence of improved reachability for users.",
+        "In the left column of the diagram, review how to investigate the configured path and points where traffic may be blocked. In the right column, investigate the traffic recorded in VPC Flow Logs. Compare the two kinds of evidence to narrow the change to one location, then test the actual traffic again under the same conditions after the change."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Connectivity and Troubleshooting",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Verify Actual Traffic with VPC Flow Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "ans-network-operations-evidence"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-operations-check-1",
+      "prompt": "Shortly after 9:00 a.m., the team operating the Order API received reports that some users could not connect. The issue is intermittent, and other users can still connect. What should the team record to reproduce the issue before investigating its cause? Select one answer.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Record the daily average CPU utilization and memory utilization aggregated across all backends.",
+          "explanation": "This provides an overview of the load, but it cannot identify the communication conditions associated with connection failures affecting only some users."
+        },
+        {
+          "id": "c",
+          "text": "Record only the most recent deployment number and the time when the incident report was first received.",
+          "explanation": "These details can help investigate correlation with a change, but the source and destination needed to reproduce the connection are missing."
+        },
+        {
+          "id": "d",
+          "text": "Compare the total number of API requests for the day with the number during normal operation.",
+          "explanation": "Traffic that could not connect may not have reached the application. The failed path cannot be reconstructed from the total request count."
+        },
+        {
+          "id": "a",
+          "text": "Record the source, destination, protocol, port, and occurrence time for both failed and successful connection attempts.",
+          "explanation": "Because these details allow you to compare the conditions under which the same destination can be reached, they narrow down which routes and communication permissions to investigate."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-2",
+      "prompt": "A cloud operations engineer has peered two VPCs in the same Region. They want to determine whether the current AWS configuration allows traffic from the source EC2 instance to TCP port 443 on the destination EC2 instance. They cannot send test traffic to the application during this check. Choose one appropriate method.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Enable VPC Flow Logs for the source and wait to see whether a new ACCEPT log appears while no test traffic is being sent.",
+          "explanation": "VPC Flow Logs record traffic that has occurred. If no traffic is sent, they cannot provide a record showing that this connection was allowed."
+        },
+        {
+          "id": "a",
+          "text": "Specify the source, destination, and TCP 443 in Reachability Analyzer, then investigate the configured path and the point where traffic is blocked.",
+          "explanation": "Reachability Analyzer analyzes the configuration, so it can evaluate reachability without sending an actual test packet."
+        },
+        {
+          "id": "c",
+          "text": "Check the destination EC2 instance’s network received-byte count in CloudWatch and determine that the connection is possible if the count has increased.",
+          "explanation": "The aggregated metric cannot distinguish the source that sent the traffic or the port, so it does not indicate whether this connection is reachable."
+        },
+        {
+          "id": "d",
+          "text": "Check the peering-connection creation operation in CloudTrail and determine that TCP 443 is reachable.",
+          "explanation": "The operation record does not show whether the combination of the route, security group, and network ACL allows TCP 443 through."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-3",
+      "prompt": "An operations engineer at a sales company changed one dedicated route to address a timeout affecting TCP 443 from Branch A to the order API. After deployment, communication restrictions to the other branches and the management subnet must remain in place. Choose one acceptance criterion for the fix.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Confirm that the connection is restored from the same source, Branch A, to the API destination over TCP 443, and that connections to destinations that must remain unreachable are still blocked.",
+          "explanation": "This verifies both the corrected route and the routes that must not be affected by the change under the same conditions."
+        },
+        {
+          "id": "b",
+          "text": "Measure the average CPU utilization of the EC2 instance hosting the API before and after the change, and consider the issue resolved if it decreases.",
+          "explanation": "A decrease in CPU utilization alone does not show whether Branch A can connect over TCP 443."
+        },
+        {
+          "id": "c",
+          "text": "Check the API from the VPC used for internal monitoring, and consider Branch A restored if the API responds.",
+          "explanation": "The monitoring VPC and Branch A have different configurations and routes, so this cannot prove that the affected route has recovered."
+        },
+        {
+          "id": "d",
+          "text": "If the Transit Gateway attachment is available, consider Branch A's communication restored and the restrictions on the other routes verified.",
+          "explanation": "The attachment status provides information about the connectivity foundation. The destination routes and permission for each communication path must be verified separately."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Observability",
+    "Metric",
+    "Log",
+    "Trace",
+    "CIDR",
+    "IP address",
+    "Port",
+    "DNS",
+    "MTU",
+    "Path MTU",
+    "Reachability Analyzer",
+    "VPC Flow Logs",
+    "CloudWatch",
+    "CloudTrail",
+    "Transit Gateway route propagation",
+    "Transit Gateway route table association",
+    "Return path"
+  ]
+}

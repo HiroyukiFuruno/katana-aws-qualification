@@ -1,0 +1,180 @@
+{
+  "id": "global-ingress",
+  "title": "グローバルな入口、DNS、負荷分散を設計する",
+  "objective": "利用者、名前解決、エッジ、ロードバランサー、VPC内ターゲットの責任を分け、可用性・遅延・セキュリティ要件から入口を説明できる。",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "通信の基礎"
+    },
+    {
+      "slug": "domain-dns",
+      "title": "ドメインとDNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "接続とルーティング"
+    }
+  ],
+  "sections": [
+    {
+      "id": "goal",
+      "title": "入口の要件を通信の役割へ分解する",
+      "paragraphs": [
+        "入口の設計では、誰がどの名前で接続し、どのリージョンのどのワークロードへ届くべきかを先に定義します。図を読むときは、DNSが問い合わせにどの宛先を返すか、エッジがどのオリジンへ接続するか、ロードバランサーがどのターゲットへ転送するかを分けて考えます。",
+        "静的コンテンツを近い場所から配信する要件、固定IPでTCP接続を受ける要件、TLSをどこで終端する要件は同じではありません。サービス名から選ばず、プロトコル、利用者の地域、障害時の切替条件、応答の戻り先を比較します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ネットワーク設計",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "dns",
+      "title": "DNSの制御とパケット転送を混同しない",
+      "paragraphs": [
+        "Route 53のパブリックホストゾーンはインターネット上の名前を、プライベートホストゾーンは関連付けたVPC内の名前空間を扱います。ハイブリッドDNSでは、どの問い合わせをどのゾーン、Resolverエンドポイント、条件付き転送へ渡すかを明記します。",
+        "DNSの加重、レイテンシー、フェイルオーバーは名前解決時に返すレコードを選びます。返された宛先へ接続した後のHTTPS通信は、ロードバランサー、VPCルート、通信制御に従います。DNSの切替だけで既存接続は移動しません。",
+        "社内DNSがVPC内のプライベートホストゾーンを引くには、対象ドメインの問い合わせをRoute 53 VPC Resolverのインバウンドエンドポイントに転送します。VPCから社内DNSの名前を引くときは、アウトバウンドエンドポイントと転送ルールを使います。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: DNSとグローバルトラフィック管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "Route 53 VPC Resolver で社内とVPCの名前解決をつなぐ",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "入口から応答までの往復経路を確認する",
+      "paragraphs": [
+        "インターネット利用者はDNSの回答を使ってエッジまたはロードバランサーへ接続します。CloudFrontはHTTP/HTTPSのコンテンツ配信、AWS Global AcceleratorはTCPまたはUDPのL4入口として要件に応じて比較します。ロードバランサーはリスナー、ターゲットグループ、各AZの健全なターゲットを基に要求を転送します。",
+        "図の点線は名前解決、実線はHTTPS接続を表します。リゾルバーを介してRoute 53から回答を得た後、ブラウザーは得られた宛先へ接続します。名前を解決できても、アプリまでHTTPSが届くことは別途確認します。",
+        "図で、DNSの点線がどこで終わるかを見つけてください。次に、実線をブラウザーからCloudFront、ALB、アプリまでたどります。ALBはプライベートサブネットのターゲットへ別の接続を開き、応答はそれぞれの接続を通って戻ります。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: エッジ、DNS、ロードバランシング",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ],
+      "figureId": "ans-global-ingress-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "global-ingress-check-1",
+      "prompt": "ある企業は、障害リージョンから別リージョンへ既存のHTTPS接続を維持したまま即時に移せると考えています。DNSフェイルオーバーについて正しい説明を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "全ての既存TCP接続を別リージョンのロードバランサーへ転送する。",
+          "explanation": "既存TCP接続の移動はDNSの機能ではありません。"
+        },
+        {
+          "id": "a",
+          "text": "DNSフェイルオーバーは新しい名前解決で返す宛先を変える。既存接続を自動移動する仕組みではない。",
+          "explanation": "DNSは名前解決の制御プレーンです。"
+        },
+        {
+          "id": "c",
+          "text": "VPC内のルートテーブルを自動的に書き換える。",
+          "explanation": "DNSレコード選択とVPCルートは別の制御面です。"
+        },
+        {
+          "id": "d",
+          "text": "セキュリティグループのインバウンドルールを不要にする。",
+          "explanation": "名前解決は通信許可を与えません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "global-ingress-check-2",
+      "prompt": "予約サービスのネットワーク担当者は、インターネット向けのApplication Load Balancer（ALB）の背後に、2つのAZのプライベートサブネットで動くWebアプリを配置しました。公開名はRoute 53でALBに向け、一方の登録ターゲットは正常です。利用者のHTTPSリクエストがアプリに届く仕組みを1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Route 53が要求のURLを読み、プライベートIPのターゲットへHTTPSリクエストを転送する。",
+          "explanation": "Route 53はDNSの問い合わせに答えます。HTTPリクエストの内容を読み、ターゲットを選ぶのはALBです。"
+        },
+        {
+          "id": "c",
+          "text": "ターゲットの優先順位はRoute 53のTTLで決まる。",
+          "explanation": "TTLはDNSの回答をキャッシュする時間です。ALBに登録したターゲットの状態や選択は制御しません。"
+        },
+        {
+          "id": "d",
+          "text": "ブラウザーがVPCのローカルルートを使い、ターゲットと直接TLS接続する。",
+          "explanation": "ローカルルートはVPC内で使われます。外部のブラウザーは公開されたALBを経由します。"
+        },
+        {
+          "id": "b",
+          "text": "ブラウザーはDNSで得たALBに接続し、ALBがリスナールールに従い正常なターゲットへリクエストを転送する。",
+          "explanation": "DNSはALBの宛先を通知します。ALBが受けたリクエストを、対象ターゲットグループの正常なターゲットへ渡します。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "global-ingress-check-3",
+      "prompt": "製造会社のネットワーク担当者は、VPCのプライベートホストゾーンにある inventory.example.internal を、社内ネットワークのDNSサーバーからも解決できるようにします。社内ネットワークと対象VPCの間には通信経路があります。社内DNS側の設定として適切なものを1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "対象ドメインの問い合わせを、対象ゾーンが関連付けられたVPCにあるRoute 53 Resolverのインバウンドエンドポイントへ転送する。",
+          "explanation": "インバウンドエンドポイントは社内などVPCの外からのDNS問い合わせを受け、関連付くゾーンの内部名を解決できます。"
+        },
+        {
+          "id": "b",
+          "text": "社内DNSの問い合わせを、VPCから社内へ問い合わせるためのアウトバウンドエンドポイントへ送る。",
+          "explanation": "アウトバウンドエンドポイントはVPCから外部DNSへ転送するときに使います。今回とは問い合わせが逆方向です。"
+        },
+        {
+          "id": "c",
+          "text": "プライベートホストゾーンを作成した後、社内DNSでは対象ドメインを公開DNSの経路で解決する。",
+          "explanation": "プライベートホストゾーンの内容は公開DNSへ公開されません。社内DNSから解決できる経路が必要です。"
+        },
+        {
+          "id": "d",
+          "text": "対象ドメインのゾーンをVPCに関連付け、社内DNSは従来の転送設定のままにする。",
+          "explanation": "VPC内のゾーン関連付けは必要ですが、社内DNSからそのゾーンへ問い合わせる経路も設定します。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Region",
+    "AZ",
+    "CloudFront",
+    "AWS Global Accelerator",
+    "ALB",
+    "NLB",
+    "HTTPS",
+    "TCP",
+    "UDP",
+    "DNS",
+    "Route 53",
+    "DNS failover",
+    "TTL",
+    "Health check",
+    "Route 53 VPC Resolver",
+    "Resolver inbound endpoint",
+    "Resolver outbound endpoint",
+    "Private hosted zone",
+    "DNS conditional forwarding",
+    "Origin",
+    "Target group",
+    "Cross-zone load balancing",
+    "IGW",
+    "Public subnet",
+    "Private subnet"
+  ]
+}

@@ -1,0 +1,230 @@
+{
+  "id": "vpc-routing",
+  "title": "VPC内外のルーティングを実装する",
+  "objective": "サブネットに関連付くルートテーブル、宛先CIDR、ターゲット、セキュリティ制御を区別し、要求と応答の到達性を検証できる。",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "通信の基礎"
+    },
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDRとサブネット"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "接続とルーティング"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-table",
+      "title": "宛先とターゲットを結び付ける",
+      "paragraphs": [
+        "VPCのルートテーブルはサブネットまたはゲートウェイから出るトラフィックの経路を決めます。各ルートは送信先CIDRまたはプレフィックスリストと、インターネットゲートウェイ、NATゲートウェイ、VPCピアリング、Transit Gateway、VPN接続などのターゲットを持ちます。",
+        "パケットの宛先が複数のルートに一致する場合、CIDRのプレフィックスが最も長いルートを選びます。たとえば、10.20.0.0/16のVPCからピアVPCの10.40.20.25へ送るとき、宛先はピアリングへの10.40.20.0/24とNATゲートウェイへの0.0.0.0/0の両方に一致します。この場合は、宛先をより狭い範囲で示す/24のルートが選ばれます。同じ宛先や長さで複数のルートがある場合は、AWSの優先規則を確認します。",
+        "サブネットの種類はルーティングで決まります。プライベートサブネットはインターネットゲートウェイへの直接ルートを持たず、外向きインターネット通信が必要ならNATデバイスなど別の経路を使います。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: ルートテーブルを設定する",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: ルーティングの優先度の仕組み",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "Amazon VPC: VPCのサブネット",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/configure-subnets.html"
+        },
+        {
+          "label": "VPC ピアリング接続の仕組み",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/peering/vpc-peering-basics.html"
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "title": "経路選択と通信許可を別々に判定する",
+      "paragraphs": [
+        "VPCルートテーブルはサブネットまたはゲートウェイから出るパケットの次ホップを選びます。TGWルートテーブルはTGWアタッチメントから入ったパケットの転送先を選び、VPC側のルートテーブルとは別に評価されます。",
+        "セキュリティグループはENIまたは関連付けたリソース境界でステートフルに評価され、許可済み通信の応答は自動許可されます。ネットワークACLはサブネット境界でステートレスに評価されるため、要求方向と応答方向の両方を明示的に許可します。Network FirewallはFirewall endpointを経由するルートを設定したパケットだけを検査します。",
+        "変更時には送信元・宛先双方のVPCルート、TGWルート、SG、NACL、必要ならFirewall endpointへの経路、名前解決、戻り通信を確認します。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: ルートテーブルを設定する",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: インフラストラクチャセキュリティ",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/infrastructure-security.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ネットワークセキュリティ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "packet-walk",
+      "title": "利用者からの通信と外部APIへの通信を追う",
+      "paragraphs": [
+        "利用者が公開ロードバランサーを経由して、AZ-aとAZ-bのプライベートサブネットにあるアプリケーションへHTTPS要求を送る構成では、利用者からALBへの経路とALBからターゲットへの経路を分けて確認します。",
+        "ターゲットから外部APIへ出る場合は、アプリケーションサブネットの宛先評価、パブリックサブネットに置くパブリックNATゲートウェイ、インターネットゲートウェイ、戻り通信を確認します。IGW、NAT、VPCエンドポイントの役割を混同しません。",
+        "同じEC2からでも、外部APIとピアVPC内のAPIでは次に送る相手が変わります。図のプライベートルートを見て、10.40.20.25宛ての通信にどのルートが選ばれ、応答はどのアドレス範囲へ戻るか確認しましょう。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: NATゲートウェイ",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-nat-gateway.html"
+        },
+        {
+          "label": "Amazon VPC: ルーティングの優先度の仕組み",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ネットワーク実装",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ],
+      "figureId": "ans-vpc-routing-packet-walk"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "vpc-routing-check-1",
+      "prompt": "ネットワーク運用担当者は、プライベートサブネットのEC2から外部APIへHTTPS接続するため、0.0.0.0/0からNATゲートウェイへのルートを確認しました。追加で確認すべき事項を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "パブリックNATゲートウェイがパブリックサブネットにあり、NAT側にIGWへの経路があり、EC2のSGとNACLが必要な往復通信を許可すること。",
+          "explanation": "プライベート側のルートだけでは、NAT配置、外向き経路、通信許可を確認できません。"
+        },
+        {
+          "id": "b",
+          "text": "サブネット名にpublicが含まれないこと。",
+          "explanation": "名称は到達性を保証しません。"
+        },
+        {
+          "id": "c",
+          "text": "DNSレコードをIGWへ登録すること。",
+          "explanation": "IGWはDNS登録先ではありません。"
+        },
+        {
+          "id": "d",
+          "text": "ターゲットのヘルスチェックを停止すること。",
+          "explanation": "外向き経路と無関係です。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-2",
+      "prompt": "物流会社のネットワーク運用担当者は、送信元のEC2から、Transit Gatewayで接続した別のVPCのEC2へTCP 443で接続できるか調べています。行きのVPCとTransit Gatewayのルートは存在しますが、接続はタイムアウトします。次に確認する項目を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "ルートが存在すれば全ポートが自動許可される。",
+          "explanation": "ルートテーブルはポート許可を与えません。"
+        },
+        {
+          "id": "c",
+          "text": "Transit Gatewayを使うとSGは評価されない。",
+          "explanation": "TGWは宛先ENI側のSG評価を無効化しません。"
+        },
+        {
+          "id": "d",
+          "text": "TCP拒否は必ずDNS TTLが原因である。",
+          "explanation": "TTLだけでは説明できません。"
+        },
+        {
+          "id": "a",
+          "text": "送信元と宛先のセキュリティグループとネットワークACLを確認し、宛先から送信元へ戻る経路も調べる。",
+          "explanation": "TCP 443の接続を開始できるかは、行きの経路に加えて各リソースのセキュリティグループにも依存します。ネットワークACLには往復の許可が必要で、応答が戻れるルートも確認します。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-3",
+      "prompt": "クラウド設計者が、あるサブネットをプライベートサブネットと呼べる根拠を説明します。最も適切なものを1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "名前の先頭にprivate-があること。",
+          "explanation": "名称は技術的保証ではありません。"
+        },
+        {
+          "id": "c",
+          "text": "VPCにIGWがないことだけ。",
+          "explanation": "個々のサブネット経路は判断できません。"
+        },
+        {
+          "id": "a",
+          "text": "関連付くルートテーブルにインターネットゲートウェイへの直接ルートがないこと。外向き通信が必要ならNATデバイスなど別経路を構成する。",
+          "explanation": "プライベートサブネットはIGWへの直接ルートを持たないサブネットです。"
+        },
+        {
+          "id": "d",
+          "text": "アプリケーションがTLSを使うこと。",
+          "explanation": "TLSは公開性を定義しません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-4",
+      "prompt": "物流会社のネットワーク担当者が、VPC 10.20.0.0/16のプライベートサブネットから、ピアVPC 10.40.0.0/16のAPI 10.40.20.25へ接続します。送信元のルートテーブルには、10.20.0.0/16のローカルルート、10.40.20.0/24のVPCピアリングへのルート、0.0.0.0/0のNATゲートウェイへのルートがあります。宛先IPアドレス10.40.20.25の通信を転送するとき、送信元で優先されるルートを1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "10.40.20.0/24のVPCピアリングへのルート。",
+          "explanation": "10.40.20.25は/24と/0の両方に含まれ、/24の方がプレフィックスが長いため優先されます。接続の成立には戻りのルートや通信の許可も必要です。"
+        },
+        {
+          "id": "a",
+          "text": "10.20.0.0/16のローカルルート。",
+          "explanation": "10.40.20.25は10.20.0.0/16に含まれません。送信元のIPアドレスがこの範囲でも、宛先のルート選択には使いません。"
+        },
+        {
+          "id": "c",
+          "text": "0.0.0.0/0のNATゲートウェイへのルート。",
+          "explanation": "0.0.0.0/0は宛先に一致しますが、より具体的な/24のルートがあるため選ばれません。"
+        },
+        {
+          "id": "d",
+          "text": "どのルートも選ばれない。プライベートサブネットにはVPCピアリングへのルートが置けないため。",
+          "explanation": "プライベートサブネットにもVPCピアリングへのルートを設定できます。サブネットの公開性はインターネットゲートウェイへの直接ルートの有無で決まります。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC",
+    "AZ",
+    "Subnet",
+    "Public subnet",
+    "Private subnet",
+    "IGW",
+    "NAT gateway",
+    "ENI",
+    "ALB",
+    "Security group",
+    "NACL",
+    "CIDR",
+    "Route table",
+    "Local route",
+    "Default route",
+    "Longest prefix match",
+    "Prefix list",
+    "VPC peering",
+    "Transit Gateway route table",
+    "VPC endpoint",
+    "Stateful filtering",
+    "Stateless filtering",
+    "Return path"
+  ]
+}

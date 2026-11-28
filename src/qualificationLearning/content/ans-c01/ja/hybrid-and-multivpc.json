@@ -1,0 +1,186 @@
+{
+  "id": "hybrid-and-multivpc",
+  "title": "ハイブリッド接続とマルチVPCの到達性を設計する",
+  "objective": "オンプレミス、Direct ConnectまたはSite-to-Site VPN、Transit Gateway、複数VPCの往復経路を、CIDR・BGP広告・ルートテーブル・アタッチメントの責任に分けて説明できる。",
+  "prerequisites": [
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDRとサブネット"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "接続とルーティング"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements",
+      "title": "接続方式より先に通信境界を決める",
+      "paragraphs": [
+        "最初に、どのCIDR間を到達可能にし、どの通信を隔離し、障害時にどの経路を使うかを定義します。Direct Connect、Site-to-Site VPN、Transit Gatewayは、帯域、暗号化、冗長性、接続VPC数、運用責任から比較します。",
+        "CIDRが重複するネットワークは通常の宛先CIDRルーティングだけでは区別できません。通信対象を限定する接続方式を検討し、相互到達可能と誤って前提にしません。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ネットワーク設計",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ネットワーク実装",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "tgw",
+      "title": "Transit Gatewayの関連付けと伝播を分けて考える",
+      "paragraphs": [
+        "Transit Gatewayでは、パケットがTGWへ入る送信元アタッチメントの関連付けが、そのパケットが参照するTGWルートテーブルを決めます。ルート伝播は、アタッチメントから学習したプレフィックスを指定したTGWルートテーブルへ登録する仕組みです。関連付けとルート伝播は同じ設定ではありません。",
+        "検査VPCを経由する設計では、送信元アタッチメントのTGW表だけでなく、検査VPCのアタッチメント用サブネットのルート、Firewall endpointまたはステートフルアプライアンスを通る経路、共有サービスVPC側と送信元側の戻り経路を確認します。ステートフルアプライアンスを使う検査VPCのアタッチメントでは、同じAZの往復フローを維持するアプライアンスモードも要件に応じて評価します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Transit Gatewayの仕組み",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "Transit Gatewayルートテーブル",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/tgw-route-tables.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: マルチVPC接続",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "往復経路をパケットとして追跡する",
+      "paragraphs": [
+        "オンプレミスの10.10.0.0/16から共用サービスのある10.20.10.0/24へ接続する例です。社内から来たパケットをTransit Gatewayが検査VPCに送り、検査後は同じTransit Gatewayへ戻してから、共用サービスVPCへ転送します。各方向でアタッチメントと宛先プレフィックス、次ホップを確認します。",
+        "検査VPCにステートフルアプライアンスを置く場合は、要求と応答が同じ検査フローを通る必要があります。アプライアンスモードは検査VPCアタッチメントでのAZ選択をフロー存続中に維持するための機能であり、他のVPCルートやTGW表を自動設定するものではありません。",
+        "図で、同じTransit Gatewayを検査の前後で通る箇所を見つけてください。応答は共用サービス側から出発し、同じ検査用AZを通って社内へ戻ります。片方向だけを検査する経路にならないよう、設定は往復で確認します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Transit Gatewayの仕組み",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ハイブリッド接続とルーティング",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        },
+        {
+          "label": "Transit Gateway と検査 VPC の往復経路",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/integrate-third-party-services/architecture-3.html"
+        }
+      ],
+      "figureId": "ans-hybrid-multivpc-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "hybrid-check-1",
+      "prompt": "ネットワーク設計担当者は、開発VPCから検査VPCのステートフルアプライアンスを経由して共有サービスVPCへ通信させます。往復経路を成立させるために最初に確認すべき設計を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "開発VPCのDNSレコードだけを検査VPCへ向ける。",
+          "explanation": "DNSだけではパケットを検査VPCへ転送できません。"
+        },
+        {
+          "id": "c",
+          "text": "共有サービスVPCのセキュリティグループを削除する。",
+          "explanation": "経路制御を実現せず、通信保護も失います。"
+        },
+        {
+          "id": "a",
+          "text": "開発VPCの送信元アタッチメントが関連付くTGW表から検査VPCアタッチメントへ送るルート、検査VPCのアプライアンスと共有サービスCIDRへの経路、各VPCとTGWの戻り経路がある。",
+          "explanation": "入口TGW表だけでは不十分です。検査VPC内の経路、アプライアンス、往復経路を分けて確認します。"
+        },
+        {
+          "id": "d",
+          "text": "オンプレミス側のBGP広告を停止する。",
+          "explanation": "VPC間TGW経路の必要条件ではありません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-2",
+      "prompt": "ネットワーク設計担当者は、オンプレミスとVPCの双方で10.0.0.0/16を使用し、特定アプリケーションへ通信する必要があります。最も適切な説明を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Transit Gatewayが重複CIDRを自動変換する。",
+          "explanation": "自動変換しません。"
+        },
+        {
+          "id": "a",
+          "text": "CIDRが重複するため、通常の宛先CIDRルーティングだけでは両ネットワークを一意に区別できない。",
+          "explanation": "同じプレフィックスでは宛先を一意に選べません。"
+        },
+        {
+          "id": "c",
+          "text": "BGPだけで同一CIDRの二宛先へ同時に送れる。",
+          "explanation": "重複識別を解決しません。"
+        },
+        {
+          "id": "d",
+          "text": "異なるセキュリティグループが経路を自動選択する。",
+          "explanation": "SGは許可判定です。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-3",
+      "prompt": "ネットワーク運用担当者は、オンプレミスからAWSアプリケーションへの接続は開始できるのに応答が戻らない事象を調査しています。優先して調べる項目を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "利用者のDNSキャッシュだけ。",
+          "explanation": "開始できる接続の応答不全を説明できません。"
+        },
+        {
+          "id": "c",
+          "text": "ロードバランサーのTLS証明書だけ。",
+          "explanation": "戻り経路と許可を先に確認します。"
+        },
+        {
+          "id": "a",
+          "text": "アプリケーションENIのSG、送受信サブネットのNACL、利用者CIDRへのVPC・TGW・オンプレミス側の戻り経路。",
+          "explanation": "応答には許可評価と全区間の戻り経路が必要です。"
+        },
+        {
+          "id": "d",
+          "text": "送信元CIDRを0.0.0.0/0へ変更すること。",
+          "explanation": "原因確認なしの拡大は不適切です。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "On-premises network",
+    "CIDR",
+    "BGP",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Site-to-Site VPN",
+    "VPC peering",
+    "Transit Gateway attachment",
+    "Transit Gateway route table",
+    "Transit Gateway route table association",
+    "Transit Gateway route propagation",
+    "Inspection VPC",
+    "Appliance mode",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "Stateful filtering",
+    "Return path",
+    "AZ",
+    "Subnet",
+    "Route table"
+  ]
+}

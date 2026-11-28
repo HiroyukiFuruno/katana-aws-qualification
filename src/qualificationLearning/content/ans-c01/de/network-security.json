@@ -1,0 +1,182 @@
+{
+  "id": "network-security",
+  "title": "Das Netzwerk schützen und auditierbar machen",
+  "objective": "Eingehenden und ausgehenden Datenverkehr, die Kommunikation zwischen VPCs, die Verschlüsselung während der Übertragung sowie Protokollierung und Auditing als separate Kontrollpunkte konzipieren und den Anforderungen zuordnen.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Grundlagen der Kommunikation"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentifizierung und Autorisierung"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Datenschutz"
+    }
+  ],
+  "sections": [
+    {
+      "id": "threat-model",
+      "title": "Ein Bedrohungsmodell aus Schutzobjekten und Grenzen erstellen",
+      "paragraphs": [
+        "In der Netzwerksicherheit wird für jede Grenze zwischen dem Internet, lokalen Umgebungen, anderen Konten, internen VPC-Ebenen und Datenspeichern definiert, wer über welches Protokoll eine Verbindung zu welchem Ziel herstellt.",
+        "Beim eingehenden Datenverkehr werden die Rollen von WAF, Shield, Network Firewall, Load Balancern und Sicherheitsgruppen anhand der Bedrohung und des Kontrollpunkts unterschieden. Beim ausgehenden Datenverkehr werden NAT, Proxys, Network Firewall und andere Komponenten entsprechend den Anforderungen kombiniert."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Netzwerksicherheit",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "confidentiality",
+      "title": "Verantwortlichkeiten für Netzwerkpfade und Verschlüsselung trennen",
+      "paragraphs": [
+        "Um Daten während der Übertragung zu schützen, muss ausdrücklich festgelegt werden, in welchen Abschnitten TLS oder IPsec verwendet wird. Die Absicherung von HTTPS zwischen Benutzern und dem Load Balancer gewährleistet nicht unbedingt dieselben Bedingungen zwischen dem Load Balancer und dem Ziel oder zwischen der VPC und der On-Premises-Umgebung.",
+        "Auch bei der Wahl von Direct Connect müssen bei der Bewertung der Verschlüsselungsanforderungen Optionen wie ein VPN über Direct Connect berücksichtigt werden. Der DNS-Schutz und die Verschlüsselung des Anwendungsdatenverkehrs dürfen nicht als dieselbe Konfiguration behandelt werden."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Vertraulichkeit der Kommunikation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "audit",
+      "title": "Berechtigungs-, Kommunikations- und Änderungsnachweise mit der Prüfung verknüpfen",
+      "paragraphs": [
+        "In einem prüfbaren Netzwerk müssen nicht nur Berechtigungseinstellungen, sondern auch die tatsächliche Kommunikation, Erkennungen und Ablehnungen sowie Konfigurationsänderungen überprüft werden können. VPC Flow Logs, Zugriffsprotokolle des Load Balancers, CloudTrail, CloudWatch und Network-Firewall-Protokolle haben unterschiedliche Anwendungsbereiche und Zwecke.",
+        "In einer Umgebung mit mehreren Konten werden Aufbewahrungsdauer, Manipulationsschutz, Aggregationsziel, Anzeigeberechtigungen und der Verantwortliche für Warnmeldungen festgelegt. Überprüfen Sie nicht nur, dass zulässige Pfade funktionieren, sondern auch, dass unzulässige Pfade abgelehnt werden.",
+        "Verfolgen Sie im Diagramm getrennt die Verbindung vom öffentlichen Einstiegspunkt zu EC2 und die Verbindung, die EC2 zu S3 öffnet. ALB-Zugriffsprotokolle und VPC Flow Logs bieten Einblick in unterschiedliche Kommunikationstypen. Untersuchen Sie Änderungen an Routen oder Kommunikationsberechtigungen mithilfe von CloudTrail-Managementereignissen."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Netzwerkprüfung und Protokollierung",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ],
+      "figureId": "ans-network-security-layered-controls"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-security-check-1",
+      "prompt": "Das Team für die Anwendungsplattform muss ausschließlich HTTPS-Datenverkehr von EC2 zu einem externen Abrechnungs-SaaS zulassen und prüfen können, zu welchen Zielen Verbindungen hergestellt wurden. Der SaaS-Anbieter veröffentlicht die Zieldomain, aber die IP-Adresse kann sich ändern. Wählen Sie einen geeigneten Designansatz aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Legen Sie eine Standardroute zu einem NAT-Gateway fest und steuern Sie die zulässigen Domains mithilfe der Datenverkehrsvolumenmetriken des NAT-Gateways.",
+          "explanation": "NAT-Metriken messen beispielsweise das Datenverkehrsvolumen. Sie bieten keine Funktion, mit der Domains angegeben und Datenverkehr anhand dieser Domains zugelassen werden kann."
+        },
+        {
+          "id": "c",
+          "text": "Erlauben Sie in der EC2-Sicherheitsgruppe die Zielportnummer 443 für das gesamte Internet und sammeln Sie die Audit-Protokolle separat.",
+          "explanation": "Dadurch werden Verbindungen zu allen externen HTTPS-Websites zugelassen. Die Bedingung, nur das angegebene SaaS zuzulassen, wird daher nicht erfüllt."
+        },
+        {
+          "id": "a",
+          "text": "Bündeln Sie den ausgehenden Datenverkehr von EC2 über einen verwalteten Proxy oder eine ähnliche Komponente, konfigurieren Sie die zulässigen Domains und speichern Sie die Verbindungsprotokolle.",
+          "explanation": "Damit lassen sich die gewünschten Ziele anhand ihrer Domains steuern und die Ergebnisse von Zulassungen oder Ablehnungen prüfen. Außerdem werden Pfade eingeschränkt, über die EC2 direkt nach außen verbinden könnte."
+        },
+        {
+          "id": "d",
+          "text": "Konfigurieren Sie AWS WAF auf dem für Benutzer bestimmten ALB und verwalten Sie eine Allowlist.",
+          "explanation": "In dieser Konfiguration steuert WAF Webanforderungen, die in den ALB eingehen. Auf ausgehenden Datenverkehr von EC2 zum SaaS wird es nicht angewendet."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-2",
+      "prompt": "Der Netzwerkverantwortliche eines Finanzinstituts verbindet den eigenen Standort mithilfe von Direct Connect mit einer AWS-Anwendung. Da vertrauliche Daten ausgetauscht werden, ist eine Verschlüsselung während der Übertragung von der Quellanwendung bis zur Zielanwendung erforderlich. Wählen Sie eine Vorgehensweise für den nächsten Schritt aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Bestätigen Sie, dass die physische Direct-Connect-Verbindung hergestellt wurde, konfigurieren Sie jedoch kein TLS zwischen den Anwendungen.",
+          "explanation": "Eine dedizierte Verbindung allein verschlüsselt die Anwendungskommunikation von der Quelle bis zum Ziel nicht."
+        },
+        {
+          "id": "a",
+          "text": "Konfigurieren und validieren Sie TLS zwischen beiden Anwendungen und wählen Sie außerdem eine Verschlüsselungsmethode für alle Netzwerksegmente aus, die vertraglich erforderlich sind.",
+          "explanation": "TLS zwischen den Anwendungen schützt die Übertragung der betreffenden Daten. Nachdem der Typ der Netzwerkverbindung festgelegt wurde, können Sie separat prüfen, welche Segmente verschlüsselt werden müssen."
+        },
+        {
+          "id": "c",
+          "text": "Verschlüsseln Sie nur die Datenträger, auf denen die Anwendungsdaten gespeichert werden, und verwenden Sie für die Übertragung die bestehende Verbindung.",
+          "explanation": "Die Datenträgerverschlüsselung schützt ruhende Daten. Um Daten zu schützen, die das Netzwerk durchlaufen, muss die Verbindung verschlüsselt werden."
+        },
+        {
+          "id": "d",
+          "text": "Starten Sie die TLS-Verbindung nur auf der AWS-Seite, während die On-Premises-Seite die empfangenen Klartextdaten verarbeitet.",
+          "explanation": "Da ein Teil der Strecke Klartext verwendet, erfüllt diese Vorgehensweise die Verschlüsselungsanforderung zwischen Quell- und Zielanwendung nicht."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-security-check-3",
+      "prompt": "Ein Prüfer, der mehrere AWS-Konten verwaltet, verifiziert, dass das Entwicklungskonto keine Verbindung zum Verwaltungsport der Produktionsumgebung herstellen kann. Normale Verbindungen zum Produktionsservice müssen weiterhin möglich sein. Wählen Sie eine Kombination aus, die als Prüfungsnachweis gesammelt werden soll.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Nur ALB-Zugriffsprotokolle mit erfolgreichen normalen Webanforderungen und die Zustandsmetriken der Anwendung aufbewahren.",
+          "explanation": "Diese liefern einen Nachweis für die normale Konnektivität, beweisen aber nicht, dass die Entwicklungsseite keine Verbindung zum Verwaltungsport herstellen kann."
+        },
+        {
+          "id": "c",
+          "text": "Mit CloudTrail feststellen, wer die Sicherheitsgruppe geändert hat, und daraus schließen, dass der Verwaltungsport über den aktuellen Pfad abgewiesen wird.",
+          "explanation": "Der Ändernde und der Zeitpunkt der Änderung lassen sich ermitteln. Zusätzlich muss jedoch das tatsächliche Ergebnis durch die Kombination aus aktuellem Pfad und Kommunikationskontrollen überprüft werden."
+        },
+        {
+          "id": "d",
+          "text": "Die REJECT-Anzahlen aus den Flow-Logs des gesamten Netzwerks monatlich aggregieren und den Verwaltungsport als blockiert bewerten, wenn die Anzahl zunimmt.",
+          "explanation": "Aus der Gesamtzahl geht nicht hervor, ob für die angegebene Quelle und den Verwaltungsport eine Zurückweisung aufgetreten ist."
+        },
+        {
+          "id": "a",
+          "text": "Eine Verbindung von der angegebenen Quelle auf der Entwicklungsseite zum Ziel-Verwaltungsport versuchen und sie mit erlaubtem Datenverkehr vergleichen. Die Flow-Logs mit den Änderungsaufzeichnungen der Kommunikationskontrollen abgleichen.",
+          "explanation": "So lassen sich der Datenverkehr, der zurückgewiesen werden sollte, und der Datenverkehr, der weiterhin erlaubt bleiben muss, getrennt überprüfen. Die tatsächlichen Ergebnisse können der Konfiguration und der Änderungshistorie zugeordnet werden."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Threat model",
+    "Traffic",
+    "WAF",
+    "Shield",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "ALB",
+    "ALB access log",
+    "Security group",
+    "NACL",
+    "NAT gateway",
+    "Forward proxy",
+    "TLS",
+    "IPsec",
+    "AWS Direct Connect",
+    "DNSSEC",
+    "VPC Flow Logs",
+    "CloudTrail",
+    "CloudWatch",
+    "VPC endpoint policy",
+    "Audit log",
+    "Return path",
+    "CloudFront",
+    "S3",
+    "Bucket policy",
+    "Gateway endpoint",
+    "Prefix list",
+    "Public subnet",
+    "Private subnet",
+    "ENI",
+    "AWS Region",
+    "EC2"
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "id": "global-ingress",
+  "title": "Designing Global Entry Points, DNS, and Load Balancing",
+  "objective": "Distinguish the responsibilities of users, name resolution, the edge, load balancers, and targets within a VPC, and explain entry points based on availability, latency, and security requirements.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Communication Fundamentals"
+    },
+    {
+      "slug": "domain-dns",
+      "title": "Domains and DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connectivity and Routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "goal",
+      "title": "Break down entry requirements into communication roles",
+      "paragraphs": [
+        "In entry-point design, first define who connects using which name and which workload in which Region they should reach. When reading a diagram, distinguish among the destination DNS returns for a query, the origin to which the edge connects, and the target to which the load balancer forwards traffic.",
+        "The requirement to deliver static content from a nearby location, the requirement to accept TCP connections using a fixed IP address, and the requirement to determine where TLS terminates are not the same. Instead of choosing based on the service name, compare the protocol, users’ locations, failover conditions, and where responses should return."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Network Design",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "dns",
+      "title": "Do Not Confuse DNS Control with Packet Forwarding",
+      "paragraphs": [
+        "A Route 53 public hosted zone handles names on the internet, while a private hosted zone handles a namespace within an associated VPC. In hybrid DNS, specify which queries are forwarded to which zone, Resolver endpoint, or conditional forwarding configuration.",
+        "DNS weighting, latency-based routing, and failover select the records returned during name resolution. After connecting to the returned destination, HTTPS traffic follows the load balancer, VPC routes, and traffic controls. Switching DNS alone does not move existing connections.",
+        "For an on-premises DNS server to resolve a private hosted zone in a VPC, forward queries for the target domain to the inbound endpoint of the Route 53 VPC Resolver. When resolving on-premises DNS names from a VPC, use an outbound endpoint and forwarding rules."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: DNS and Global Traffic Management",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "Connecting On-Premises and VPC Name Resolution with Route 53 VPC Resolver",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "Trace the Round Trip from Entry Point to Response",
+      "paragraphs": [
+        "Internet users connect to an edge service or load balancer using the DNS response. Compare CloudFront for HTTP/HTTPS content delivery with AWS Global Accelerator as a TCP or UDP L4 entry point, according to the requirements. The load balancer forwards requests based on its listener, target group, and healthy targets in each AZ.",
+        "The dashed line in the diagram represents name resolution, while the solid line represents the HTTPS connection. After receiving a response from Route 53 through the resolver, the browser connects to the resulting destination. Even if the name resolves successfully, you must separately verify that HTTPS reaches the application.",
+        "In the diagram, identify where the DNS dashed line ends. Then trace the solid line from the browser through CloudFront and the ALB to the application. The ALB opens a separate connection to the targets in the private subnet, and the response returns through each respective connection."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Edge, DNS, and Load Balancing",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ],
+      "figureId": "ans-global-ingress-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "global-ingress-check-1",
+      "prompt": "A company believes it can immediately move existing HTTPS connections from a failed Region to another Region while keeping them active. Choose one correct statement about DNS failover.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Forward all existing TCP connections to a load balancer in another Region.",
+          "explanation": "Moving existing TCP connections is not a DNS function."
+        },
+        {
+          "id": "a",
+          "text": "DNS failover changes the destination returned by new name resolutions. It is not a mechanism that automatically moves existing connections.",
+          "explanation": "DNS is the control plane for name resolution."
+        },
+        {
+          "id": "c",
+          "text": "Automatically rewrite the route tables within the VPC.",
+          "explanation": "DNS record selection and VPC routing are separate control planes."
+        },
+        {
+          "id": "d",
+          "text": "Eliminate the need for inbound rules in the security group.",
+          "explanation": "Name resolution does not grant communication permission."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "global-ingress-check-2",
+      "prompt": "A reservation service network administrator deployed a web application in private subnets across two AZs behind an internet-facing Application Load Balancer (ALB). The public name points to the ALB through Route 53, and one registered target is healthy. Choose one mechanism by which a user's HTTPS request reaches the application.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Route 53 reads the request URL and forwards the HTTPS request to the target's private IP address.",
+          "explanation": "Route 53 answers DNS queries. The ALB reads the HTTP request contents and selects the target."
+        },
+        {
+          "id": "c",
+          "text": "The target priority is determined by the Route 53 TTL.",
+          "explanation": "TTL is the amount of time a DNS response is cached. It does not control the status or selection of targets registered with the ALB."
+        },
+        {
+          "id": "d",
+          "text": "The browser uses the VPC local route and establishes a direct TLS connection with the target.",
+          "explanation": "The local route is used within the VPC. An external browser goes through the publicly accessible ALB."
+        },
+        {
+          "id": "b",
+          "text": "The browser connects to the ALB obtained through DNS, and the ALB forwards the request to a healthy target according to the listener rules.",
+          "explanation": "DNS provides the destination of the ALB. The ALB passes the received request to a healthy target in the applicable target group."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "global-ingress-check-3",
+      "prompt": "A manufacturing company's network administrator needs inventory.example.internal in a VPC private hosted zone to be resolvable from the DNS servers on the corporate network as well. There is network connectivity between the corporate network and the target VPC. Select one appropriate configuration for the corporate DNS side.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Forward queries for the target domain to an inbound endpoint of Route 53 Resolver in the VPC associated with the target zone.",
+          "explanation": "An inbound endpoint accepts DNS queries from outside the VPC, such as the corporate network, and can resolve internal names in associated zones."
+        },
+        {
+          "id": "b",
+          "text": "Send queries from the corporate DNS servers to an outbound endpoint used to send queries from the VPC to the corporate network.",
+          "explanation": "An outbound endpoint is used to forward queries from the VPC to external DNS servers. In this case, the query direction is reversed."
+        },
+        {
+          "id": "c",
+          "text": "After creating a private hosted zone, resolve the target domain through the public DNS path from the corporate DNS servers.",
+          "explanation": "The contents of a private hosted zone are not published to public DNS. A path for resolving the domain from the corporate DNS servers is required."
+        },
+        {
+          "id": "d",
+          "text": "Associate the target domain's zone with the VPC and leave the corporate DNS servers' existing forwarding configuration unchanged.",
+          "explanation": "Associating the zone with the VPC is necessary, but a path for the corporate DNS servers to query that zone must also be configured."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Region",
+    "AZ",
+    "CloudFront",
+    "AWS Global Accelerator",
+    "ALB",
+    "NLB",
+    "HTTPS",
+    "TCP",
+    "UDP",
+    "DNS",
+    "Route 53",
+    "DNS failover",
+    "TTL",
+    "Health check",
+    "Route 53 VPC Resolver",
+    "Resolver inbound endpoint",
+    "Resolver outbound endpoint",
+    "Private hosted zone",
+    "DNS conditional forwarding",
+    "Origin",
+    "Target group",
+    "Cross-zone load balancing",
+    "IGW",
+    "Public subnet",
+    "Private subnet"
+  ]
+}

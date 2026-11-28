@@ -1,0 +1,175 @@
+{
+  "id": "network-operations",
+  "title": "观测网络并排查故障",
+  "objective": "根据症状提出假设，合理选择路径、权限、日志、指标和可达性分析，并通过比较变更前后的状态进行确认。",
+  "prerequisites": [
+    {
+      "slug": "domain-dns",
+      "title": "域名与 DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "连接与路由"
+    },
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    }
+  ],
+  "sections": [
+    {
+      "id": "question",
+      "title": "将症状转化为可复现的观测对象",
+      "paragraphs": [
+        "仅凭“很慢”或“无法连接”无法确定调查对象。请记录源、目的地、协议、端口、时间以及能够成功的对照情况。名称解析、路由、通信权限、目标状态和数据包大小都可能导致类似症状。",
+        "指标显示趋势和数量，日志显示已发生的事件，跟踪记录显示请求处理路径。VPC 流日志可用于确认通信流，但不能单独解释应用程序的处理时间。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：网络管理与运营",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "同时确认路径意图与实际测量结果",
+      "paragraphs": [
+        "Reachability Analyzer 会根据配置分析指定源与目标之间的可达性。它与用于调查实际流量量和拒绝情况的 VPC Flow Logs，以及用于调查性能趋势的 CloudWatch 指标，能够回答的问题不同。",
+        "不要仅凭拓扑视图就断定可达性，而应核对 Transit Gateway attachment、关联、传播以及 VPC 侧路由。比较变更前后情况时，使用相同的源 CIDR、目标、端口和时间段。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：可达性、日志和指标",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "使用 Reachability Analyzer 调查基于配置的可达性",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/reachability-analyzer.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "关联假设、变更和验证结果",
+      "paragraphs": [
+        "如果只有部分 VPC 无法访问，请按路径顺序记录源 CIDR、目标 CIDR、Transit Gateway 附件、TGW 路由、VPC 子网路由和流量控制。使用可达性分析器和 VPC 流日志缩小待验证假设的范围，然后仅调整一条要验证的路由。",
+        "变更后，使用相同的源、目标和端口再次验证，并检查是否增加了对非预期 CIDR 的可达性。不要仅凭 CPU 或请求数有所改善，就将其视为用户可达性改善的证据。",
+        "在图的左列中，查看如何调查配置的通行路径以及可能发生阻断的位置。在右列中，调查 VPC 流日志记录的流量。对照这两类证据，将变更位置缩小到一个位置；变更后，在相同条件下再次测试实际通信。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：连接性与故障排除",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "通过 VPC 流日志确认实际通信",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "ans-network-operations-evidence"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-operations-check-1",
+      "prompt": "订单 API 的运维人员收到报告称，上午 9 点过后不久，只有部分用户无法连接。故障是间歇性的，其他用户仍可正常使用。在调查原因之前，应该记录哪些信息作为复现条件？请选择一个。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "记录汇总所有后端的一天平均 CPU 使用率和内存使用率。",
+          "explanation": "这可以了解整体负载情况，但无法确定仅影响部分用户的连接失败所对应的通信条件。"
+        },
+        {
+          "id": "c",
+          "text": "只记录最近的部署编号，以及首次接收故障报告的时间。",
+          "explanation": "这些信息可以作为调查故障与变更之间相关性的线索，但缺少用于复现连接的源和目标。"
+        },
+        {
+          "id": "d",
+          "text": "比较当天 API 请求总数与正常情况下的请求数。",
+          "explanation": "无法连接的通信可能根本没有到达应用程序。仅凭请求总数无法还原失败的路径。"
+        },
+        {
+          "id": "a",
+          "text": "记录失败和成功的连接尝试的源、目标、协议、端口以及发生时间。",
+          "explanation": "这样可以比较在什么条件下能够连接到同一个目标，从而缩小需要调查的路径和通信权限范围。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-2",
+      "prompt": "一名云运维人员已将同一 Region 中的两个 VPC 进行对等连接。他希望确认，在当前 AWS 配置下，流量是否可以从源 EC2 实例到达目标 EC2 实例的 TCP 443 端口。在检查期间，他无法向应用程序发送测试流量。请选择一种适当的方法。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "启用源 VPC 的 VPC Flow Logs，并在没有测试流量的情况下等待是否出现新的 ACCEPT 日志。",
+          "explanation": "VPC Flow Logs 记录的是已经发生的流量。如果没有流量，就无法获得表明此连接被允许的记录。"
+        },
+        {
+          "id": "a",
+          "text": "在 Reachability Analyzer 中指定源、目标和 TCP 443，然后检查配置的路径以及流量被阻断的位置。",
+          "explanation": "Reachability Analyzer 会分析配置，因此无需发送实际的测试数据包即可检查可达性。"
+        },
+        {
+          "id": "c",
+          "text": "在 CloudWatch 中检查目标 EC2 实例的网络接收字节数；如果该数值增加，就判定连接可用。",
+          "explanation": "聚合指标无法区分发出流量的源和端口，因此不能表明此连接是否可达。"
+        },
+        {
+          "id": "d",
+          "text": "在 CloudTrail 中确认创建对等连接的操作，并判定 TCP 443 可达。",
+          "explanation": "从创建操作的记录中，无法确定路由、安全组和网络 ACL 的组合是否允许 TCP 443 通过。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-3",
+      "prompt": "某销售公司的运维人员为解决分支机构 A 到订单 API 的 TCP 443 连接超时问题，修改了一条专用路由。发布后，仍必须保持对其他分支机构和管理子网的通信限制。请选择一项修复的验收条件。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "确认从同一来源（分支机构 A）到 API 目标的 TCP 443 连接已恢复，并确认仍然无法连接到按要求必须禁止到达的目标。",
+          "explanation": "这会在相同条件下同时验证已修复的路由，以及不应受到此次变更影响的路由。"
+        },
+        {
+          "id": "b",
+          "text": "测量承载 API 的 EC2 实例在变更前后的平均 CPU 利用率；如果利用率下降，就判定问题已解决。",
+          "explanation": "仅 CPU 利用率下降，无法说明分支机构 A 是否能够通过 TCP 443 连接。"
+        },
+        {
+          "id": "c",
+          "text": "从用于内部监控的 VPC 检查 API；如果 API 有响应，就判定分支机构 A 已恢复。",
+          "explanation": "监控 VPC 与分支机构 A 的配置和路由不同，因此无法证明实际受影响的路由已恢复。"
+        },
+        {
+          "id": "d",
+          "text": "如果 Transit Gateway 连接附件处于可用状态，就认为分支机构 A 的通信已恢复，并且其他路由的限制已得到确认。",
+          "explanation": "连接附件的状态反映的是连接基础设施的信息。目标路由以及每条通信路径的允许情况必须分别确认。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Observability",
+    "Metric",
+    "Log",
+    "Trace",
+    "CIDR",
+    "IP address",
+    "Port",
+    "DNS",
+    "MTU",
+    "Path MTU",
+    "Reachability Analyzer",
+    "VPC Flow Logs",
+    "CloudWatch",
+    "CloudTrail",
+    "Transit Gateway route propagation",
+    "Transit Gateway route table association",
+    "Return path"
+  ]
+}

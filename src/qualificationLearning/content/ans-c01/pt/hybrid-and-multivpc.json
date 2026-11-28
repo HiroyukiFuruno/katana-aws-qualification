@@ -1,0 +1,186 @@
+{
+  "id": "hybrid-and-multivpc",
+  "title": "Projetar a conectividade de ambientes híbridos e de várias VPCs",
+  "objective": "Explicar a função dos blocos CIDR, dos anúncios BGP, das tabelas de rotas e dos attachments do Transit Gateway nos caminhos de ida e volta entre a rede local, o Direct Connect ou o Site-to-Site VPN, o Transit Gateway e várias VPCs.",
+  "prerequisites": [
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR e sub-redes"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Conectividade e roteamento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements",
+      "title": "Defina os limites de comunicação antes de escolher o método de conectividade",
+      "paragraphs": [
+        "Primeiro, defina entre quais intervalos CIDR a comunicação deve ser possível, quais comunicações devem ser isoladas e quais caminhos devem ser usados em caso de falha. Compare Direct Connect, Site-to-Site VPN e Transit Gateway com base na largura de banda, criptografia, redundância, número de VPCs conectadas e responsabilidade operacional.",
+        "Não é possível distinguir redes com CIDRs sobrepostos usando apenas o roteamento comum por CIDR de destino. Considere métodos de conectividade que limitem os alvos da comunicação e não presuma incorretamente que as redes podem alcançar umas às outras."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Design de redes",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Implementação de redes",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "tgw",
+      "title": "Diferenciando associações e propagação no Transit Gateway",
+      "paragraphs": [
+        "No Transit Gateway, a associação do anexo de origem pelo qual um pacote entra no TGW determina a tabela de rotas do TGW que o pacote consulta. A propagação de rotas registra os prefixos aprendidos de um anexo na tabela de rotas do TGW especificada. Associação e propagação de rotas não são a mesma configuração.",
+        "Em um projeto que encaminha o tráfego por uma VPC de inspeção, verifique não apenas a tabela do TGW do anexo de origem, mas também as rotas nas sub-redes usadas pelo anexo da VPC de inspeção, os caminhos que passam pelo Firewall endpoint ou por um dispositivo com estado e os caminhos de retorno nos lados da VPC de serviços compartilhados e da origem. Para anexos da VPC de inspeção que usam um dispositivo com estado, avalie também o appliance mode conforme os requisitos, para manter os fluxos de ida e volta na mesma AZ."
+      ],
+      "sources": [
+        {
+          "label": "Como funciona o AWS Transit Gateway",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "Tabelas de rotas do Transit Gateway",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/tgw-route-tables.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Conectividade entre várias VPCs",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "Rastrear o caminho de ida e volta como pacotes",
+      "paragraphs": [
+        "Este exemplo mostra uma conexão da rede local 10.10.0.0/16 para 10.20.10.0/24, onde estão os serviços compartilhados. O Transit Gateway envia os pacotes que chegam da rede interna para a VPC de inspeção. Após a inspeção, ele os envia de volta ao mesmo Transit Gateway, que então os encaminha para a VPC de serviços compartilhados. Em cada direção, verifique o anexo, o prefixo de destino e o próximo salto.",
+        "Quando um appliance com estado é colocado na VPC de inspeção, as solicitações e as respostas precisam passar pelo mesmo fluxo de inspeção. O Appliance mode mantém a seleção da AZ no anexo da VPC de inspeção durante toda a duração do fluxo; ele não configura automaticamente outras rotas da VPC nem tabelas de rotas do TGW.",
+        "No diagrama, identifique onde o tráfego passa pelo mesmo Transit Gateway antes e depois da inspeção. A resposta parte do lado dos serviços compartilhados e retorna à rede interna pela mesma AZ de inspeção. Verifique a configuração nos dois sentidos para evitar um caminho que inspecione o tráfego em apenas uma direção."
+      ],
+      "sources": [
+        {
+          "label": "Como funciona o AWS Transit Gateway",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Conectividade híbrida e roteamento",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        },
+        {
+          "label": "Caminho de ida e volta entre o Transit Gateway e a VPC de inspeção",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/integrate-third-party-services/architecture-3.html"
+        }
+      ],
+      "figureId": "ans-hybrid-multivpc-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "hybrid-check-1",
+      "prompt": "Um responsável pelo projeto de rede fará o tráfego da VPC de desenvolvimento chegar à VPC de serviços compartilhados por meio de um dispositivo com estado na VPC de inspeção. Selecione um único projeto que deve ser verificado primeiro para estabelecer um caminho bidirecional.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Direcionar somente os registros DNS da VPC de desenvolvimento para a VPC de inspeção.",
+          "explanation": "O DNS, por si só, não pode encaminhar pacotes para a VPC de inspeção."
+        },
+        {
+          "id": "c",
+          "text": "Excluir o security group da VPC de serviços compartilhados.",
+          "explanation": "Isso não implementa o controle de rotas e também elimina a proteção da comunicação."
+        },
+        {
+          "id": "a",
+          "text": "Deve existir uma rota da tabela de rotas do TGW associada ao anexo de origem da VPC de desenvolvimento para o anexo da VPC de inspeção, rotas na VPC de inspeção para o dispositivo e o CIDR dos serviços compartilhados, além de rotas de retorno de cada VPC e do TGW.",
+          "explanation": "A tabela de rotas de entrada do TGW, sozinha, não é suficiente. Verifique separadamente as rotas dentro da VPC de inspeção, o dispositivo e os caminhos bidirecionais."
+        },
+        {
+          "id": "d",
+          "text": "Interromper os anúncios BGP do lado local.",
+          "explanation": "Essa não é uma condição necessária para uma rota TGW entre VPCs."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-2",
+      "prompt": "Um responsável pelo design de rede precisa se comunicar com uma aplicação específica, enquanto a rede on-premises e a VPC usam 10.0.0.0/16. Escolha a única afirmação mais apropriada.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "O Transit Gateway converte automaticamente CIDRs sobrepostos.",
+          "explanation": "Ele não realiza conversão automática."
+        },
+        {
+          "id": "a",
+          "text": "Como os CIDRs se sobrepõem, o roteamento convencional baseado apenas no CIDR de destino não consegue distinguir de forma inequívoca as duas redes.",
+          "explanation": "Com o mesmo prefixo, não é possível selecionar o destino de forma exclusiva."
+        },
+        {
+          "id": "c",
+          "text": "Somente o BGP pode enviar tráfego simultaneamente para dois destinos com o mesmo CIDR.",
+          "explanation": "Ele não resolve a identificação de redes sobrepostas."
+        },
+        {
+          "id": "d",
+          "text": "Grupos de segurança diferentes selecionam automaticamente a rota.",
+          "explanation": "Os SGs fazem a decisão de permissão."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-3",
+      "prompt": "Um profissional de operações de rede está investigando um problema em que uma conexão do ambiente on-premises para uma aplicação da AWS pode ser iniciada, mas nenhuma resposta retorna. Selecione um item para investigar primeiro.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Somente o cache DNS do usuário.",
+          "explanation": "Isso não explica a falha em receber uma resposta de uma conexão que pode ser iniciada."
+        },
+        {
+          "id": "c",
+          "text": "Somente o certificado TLS do balanceador de carga.",
+          "explanation": "Verifique primeiro o caminho de retorno e as permissões."
+        },
+        {
+          "id": "a",
+          "text": "O SG da ENI da aplicação, as NACLs das sub-redes de envio e recebimento e os caminhos de retorno nos lados da VPC, do TGW e do ambiente on-premises até o CIDR do usuário.",
+          "explanation": "Uma resposta exige a avaliação das permissões e um caminho de retorno em todo o trajeto."
+        },
+        {
+          "id": "d",
+          "text": "Alterar o CIDR de origem para 0.0.0.0/0.",
+          "explanation": "Ampliar o acesso sem confirmar a causa é inadequado."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "On-premises network",
+    "CIDR",
+    "BGP",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Site-to-Site VPN",
+    "VPC peering",
+    "Transit Gateway attachment",
+    "Transit Gateway route table",
+    "Transit Gateway route table association",
+    "Transit Gateway route propagation",
+    "Inspection VPC",
+    "Appliance mode",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "Stateful filtering",
+    "Return path",
+    "AZ",
+    "Subnet",
+    "Route table"
+  ]
+}

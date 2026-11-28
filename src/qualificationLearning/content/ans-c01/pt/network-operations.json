@@ -1,0 +1,175 @@
+{
+  "id": "network-operations",
+  "title": "Observar a rede e solucionar falhas",
+  "objective": "Formular hipóteses a partir dos sintomas, escolher adequadamente entre análise de caminhos, permissões, logs, métricas e alcance, e verificar as alterações comparando os estados antes e depois.",
+  "prerequisites": [
+    {
+      "slug": "domain-dns",
+      "title": "Domínios e DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Conectividade e roteamento"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    }
+  ],
+  "sections": [
+    {
+      "id": "question",
+      "title": "Transformando sintomas em observações reproduzíveis",
+      "paragraphs": [
+        "Apenas dizer que “está lento” ou que “não conecta” não é suficiente para determinar o que investigar. Registre a origem, o destino, o protocolo, a porta, o horário e um caso de comparação que funcione. A resolução de nomes, as rotas, as permissões de comunicação, o estado do destino e o tamanho dos pacotes podem causar sintomas semelhantes.",
+        "As métricas mostram tendências e quantidades, os logs mostram eventos ocorridos e os rastreamentos mostram o caminho de processamento da solicitação. Os VPC Flow Logs ajudam a verificar os fluxos de comunicação, mas não explicam sozinhos o tempo de processamento da aplicação."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Gerenciamento e operações de rede",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Verificar tanto a intenção do caminho quanto o comportamento observado",
+      "paragraphs": [
+        "O Reachability Analyzer analisa a capacidade de alcançar o destino especificado a partir da origem especificada com base na configuração. Ele responde a perguntas diferentes das respondidas pelos VPC Flow Logs, que investigam volumes reais de tráfego e rejeições, e pelas métricas do CloudWatch, que investigam tendências de desempenho.",
+        "Não determine a capacidade de alcance apenas pela visualização da topologia. Confira o attachment do Transit Gateway, as associações, a propagação e as rotas do lado da VPC. Compare os períodos antes e depois da alteração usando o mesmo CIDR de origem, destino, porta e intervalo de tempo."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Capacidade de alcance, logs e métricas",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Investigar a capacidade de alcance baseada na configuração com o Reachability Analyzer",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/reachability-analyzer.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "Relacionar hipóteses, alterações e resultados da verificação",
+      "paragraphs": [
+        "Se apenas algumas VPCs não puderem ser acessadas, liste, na ordem do caminho, os CIDRs de origem e destino, os anexos, as rotas do TGW, as rotas de sub-rede da VPC e os controles de tráfego. Restrinja a hipótese usando o Reachability Analyzer e o VPC Flow Logs e, em seguida, altere somente uma rota relevante.",
+        "Após a alteração, verifique novamente usando a mesma origem, o mesmo destino e a mesma porta, e confirme também se a acessibilidade a algum CIDR não intencional não aumentou. Não considere, por si só, melhorias na CPU ou no número de solicitações como evidência de melhoria da acessibilidade para os usuários.",
+        "Na coluna esquerda do diagrama, verifique como investigar o caminho de passagem configurado e os pontos onde o tráfego pode ser bloqueado. Na coluna direita, investigue o tráfego registrado no VPC Flow Logs. Compare os dois tipos de evidência para restringir a alteração a um único local e, após a alteração, teste novamente o tráfego real nas mesmas condições."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Conectividade e solução de problemas",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Verificar o tráfego real com o VPC Flow Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "ans-network-operations-evidence"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-operations-check-1",
+      "prompt": "A equipe responsável pela operação da Order API recebeu um aviso de que, pouco depois das 9h, apenas alguns usuários não conseguiam se conectar. A falha é intermitente, e outros usuários conseguem usar o serviço normalmente. Antes de investigar a causa, o que deve ser registrado como condição de reprodução? Selecione uma opção.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Registrar a utilização média diária de CPU e memória agregada de todos os backends.",
+          "explanation": "Isso mostra uma visão geral da carga, mas não permite identificar as condições de comunicação associadas às falhas de conexão que ocorreram apenas para alguns usuários."
+        },
+        {
+          "id": "c",
+          "text": "Registrar apenas o número da implantação mais recente e o horário em que o relatório da falha foi recebido pela primeira vez.",
+          "explanation": "Essas informações podem servir de pista para investigar a correlação com uma alteração, mas faltam a origem e o destino necessários para reproduzir a conexão."
+        },
+        {
+          "id": "d",
+          "text": "Comparar o número total de solicitações da API no dia com o número observado em condições normais.",
+          "explanation": "A comunicação que não conseguiu se conectar pode não ter chegado à aplicação. Não é possível reconstruir o caminho que falhou apenas pelo total de solicitações."
+        },
+        {
+          "id": "a",
+          "text": "Registrar a origem, o destino, o protocolo, a porta e o horário de ocorrência tanto para tentativas de conexão que falharam quanto para tentativas bem-sucedidas.",
+          "explanation": "Como isso permite comparar em quais condições é possível se conectar ao mesmo destino, ajuda a restringir as rotas e as permissões de comunicação que devem ser investigadas."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-2",
+      "prompt": "Um profissional de operações de nuvem fez o emparelhamento de duas VPCs na mesma Region. Ele quer determinar se, com a configuração atual da AWS, o tráfego pode chegar da instância EC2 de origem à porta TCP 443 da instância EC2 de destino. Durante essa verificação, não é possível enviar tráfego de teste para a aplicação. Escolha um método apropriado.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Habilitar os VPC Flow Logs da VPC de origem e aguardar, sem enviar tráfego de teste, para ver se aparece um novo log ACCEPT.",
+          "explanation": "Os VPC Flow Logs registram o tráfego que ocorreu. Se nenhum tráfego for enviado, eles não fornecerão um registro indicando que essa conexão foi permitida."
+        },
+        {
+          "id": "a",
+          "text": "Especificar a origem, o destino e TCP 443 no Reachability Analyzer e investigar o caminho configurado e o ponto em que o tráfego é bloqueado.",
+          "explanation": "O Reachability Analyzer analisa a configuração, portanto pode verificar a alcançabilidade sem enviar um pacote de teste real."
+        },
+        {
+          "id": "c",
+          "text": "Verificar no CloudWatch a quantidade de bytes recebidos pela rede da instância EC2 de destino e concluir que a conexão é possível se o valor tiver aumentado.",
+          "explanation": "A métrica agregada não consegue distinguir a origem que enviou o tráfego nem a porta; portanto, não indica se essa conexão é alcançável."
+        },
+        {
+          "id": "d",
+          "text": "Verificar no CloudTrail a operação de criação da conexão de emparelhamento e concluir que TCP 443 é alcançável.",
+          "explanation": "O registro da operação de criação não mostra se a combinação da rota, do grupo de segurança e da ACL de rede permite a passagem de TCP 443."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-3",
+      "prompt": "Um profissional de operações de uma empresa de vendas alterou uma rota dedicada para resolver um problema de timeout no TCP 443 da filial A para a API de pedidos. Após a implantação, as restrições de comunicação com as outras filiais e com a sub-rede de gerenciamento ainda deverão ser mantidas. Escolha um critério de aceitação para a correção.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Confirme que a conexão foi restaurada da mesma origem, a filial A, para o destino da API usando TCP 443 e que as conexões com os destinos que devem continuar inacessíveis permanecem bloqueadas.",
+          "explanation": "Isso verifica, nas mesmas condições, tanto a rota corrigida quanto as rotas que não devem ser afetadas pela alteração."
+        },
+        {
+          "id": "b",
+          "text": "Meça a utilização média de CPU da instância do EC2 que hospeda a API antes e depois da alteração e considere o problema resolvido se ela diminuir.",
+          "explanation": "Uma redução na utilização de CPU, por si só, não mostra se a filial A consegue se conectar usando TCP 443."
+        },
+        {
+          "id": "c",
+          "text": "Verifique a API a partir da VPC usada para monitoramento interno e considere a filial A restaurada se a API responder.",
+          "explanation": "A VPC de monitoramento e a filial A têm configurações e rotas diferentes; portanto, isso não prova que a rota afetada foi restaurada."
+        },
+        {
+          "id": "d",
+          "text": "Se o anexo do Transit Gateway estiver disponível, considere restaurada a comunicação da filial A e confirmadas as restrições das outras rotas.",
+          "explanation": "O estado do anexo fornece informações sobre a infraestrutura de conectividade. As rotas de destino e a permissão de cada caminho de comunicação devem ser verificadas separadamente."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Observability",
+    "Metric",
+    "Log",
+    "Trace",
+    "CIDR",
+    "IP address",
+    "Port",
+    "DNS",
+    "MTU",
+    "Path MTU",
+    "Reachability Analyzer",
+    "VPC Flow Logs",
+    "CloudWatch",
+    "CloudTrail",
+    "Transit Gateway route propagation",
+    "Transit Gateway route table association",
+    "Return path"
+  ]
+}

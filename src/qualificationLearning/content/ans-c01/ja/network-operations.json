@@ -1,0 +1,175 @@
+{
+  "id": "network-operations",
+  "title": "ネットワークを観測し、障害を切り分ける",
+  "objective": "症状から仮説を立て、経路・許可・ログ・メトリクス・到達性分析を使い分け、変更前後を比較して確認できる。",
+  "prerequisites": [
+    {
+      "slug": "domain-dns",
+      "title": "ドメインとDNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "接続とルーティング"
+    },
+    {
+      "slug": "observability",
+      "title": "監視と改善"
+    }
+  ],
+  "sections": [
+    {
+      "id": "question",
+      "title": "症状を再現可能な観測対象へ変える",
+      "paragraphs": [
+        "「遅い」「つながらない」だけでは調査対象を決められません。送信元、宛先、プロトコル、ポート、時刻、成功する比較対象を記録します。名前解決、ルート、通信許可、ターゲット状態、パケットサイズはいずれも似た症状を起こします。",
+        "メトリクスは傾向と量、ログは発生イベント、トレースは要求処理経路を示します。VPCフローログは通信フローの確認材料ですが、アプリケーション処理時間を単独で説明するものではありません。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: ネットワークの管理と運用",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "経路の意図と実測を両方確認する",
+      "paragraphs": [
+        "Reachability Analyzerは構成に基づいて指定した送信元と宛先の到達性を分析します。実際に発生した通信量や拒否を調べるVPCフローログ、性能傾向を調べるCloudWatchメトリクスとは、答えられる問いが異なります。",
+        "トポロジ表示を見ただけで到達性を断定せず、Transit Gatewayアタッチメント、関連付け、伝播、VPC側ルートを照合します。変更前後は同じ送信元CIDR、宛先、ポート、時刻帯で比較します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 到達性、ログ、メトリクス",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "Reachability Analyzer で構成上の到達性を調べる",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/reachability-analyzer.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "仮説、変更、検証結果を結び付ける",
+      "paragraphs": [
+        "一部VPCだけに到達できない場合、送信元・宛先CIDR、アタッチメント、TGWルート、VPCサブネットルート、通信制御を経路順に列挙します。到達性分析とフローログで仮説を絞り、対象のルート一つだけを変更します。",
+        "変更後は同じ送信元・宛先・ポートで再確認し、意図しないCIDRへの到達性が増えていないかも確認します。CPUやリクエスト数だけの改善を、利用者の到達性改善の証拠にはしません。",
+        "図の左列で、構成上の通過経路や遮断箇所を調べる方法を確認します。右列では、VPCフローログに記録された通信を調べます。二つの証拠を照らし合わせて変更箇所を一つに絞り、変更後は同じ条件で実際の通信を試します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: 接続性とトラブルシューティング",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain3.html"
+        },
+        {
+          "label": "VPCフローログで実際の通信を確認する",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "ans-network-operations-evidence"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "network-operations-check-1",
+      "prompt": "注文APIの運用担当者に、午前9時すぎから一部の利用者だけ接続できないと連絡がありました。障害は断続的で、正常に使える利用者もいます。原因を調べる前に、再現条件として何を記録すべきですか。1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "すべてのバックエンドを合算した1日の平均CPU使用率とメモリ使用率を記録する。",
+          "explanation": "負荷の概要は分かりますが、一部の利用者にだけ起きた接続失敗の通信条件を特定できません。"
+        },
+        {
+          "id": "c",
+          "text": "直近のデプロイ番号と、障害報告を最初に受け付けた時刻だけを記録する。",
+          "explanation": "変更との相関を調べる手掛かりになりますが、接続を再現するための送信元や宛先が欠けています。"
+        },
+        {
+          "id": "d",
+          "text": "当日のAPI合計リクエスト数と通常時の件数を比較する。",
+          "explanation": "接続できなかった通信はアプリに届かない場合があります。件数の合計から失敗した経路を復元できません。"
+        },
+        {
+          "id": "a",
+          "text": "接続に失敗した試行と成功した試行のそれぞれについて、送信元、宛先、プロトコル、ポート、試行時刻を記録する。",
+          "explanation": "同じ宛先にどの条件で接続できるかを比較できるため、経路や通信の許可を調査する対象を絞れます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-2",
+      "prompt": "クラウド運用担当者は、同じリージョンにある2つのVPCをピアリングしました。送信元EC2から宛先EC2のTCP 443へ、現在のAWS設定で到達可能かを確認したいと考えています。この検査中はアプリへのテスト通信を送信できません。適切な方法を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "送信元のVPCフローログを有効にし、テスト通信がない状態で新しいACCEPTログが出るか待つ。",
+          "explanation": "VPCフローログは発生した通信の記録です。通信が無ければ、この接続の許可を示す記録は得られません。"
+        },
+        {
+          "id": "a",
+          "text": "Reachability Analyzerに送信元、宛先とTCP 443を指定し、構成上の経路と遮断箇所を調べる。",
+          "explanation": "Reachability Analyzerは構成を分析するため、実際のテストパケットを送信せずに到達性を調べられます。"
+        },
+        {
+          "id": "c",
+          "text": "CloudWatchで宛先EC2のネットワーク受信バイト量を調べ、増えていれば接続可能と判定する。",
+          "explanation": "集計値は通信を出した送信元とポートを区別できず、この接続の到達性を示しません。"
+        },
+        {
+          "id": "d",
+          "text": "CloudTrailでピアリング接続の作成操作を確認し、TCP 443へ到達可能と判定する。",
+          "explanation": "作成操作の記録からは、経路、セキュリティグループ、ネットワークACLのセットでTCP 443が通るか分かりません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "network-operations-check-3",
+      "prompt": "販売会社の運用担当者は、支店Aから注文APIへのTCP 443がタイムアウトする問題に対し、専用のルートを1件変更しました。公開後も他の支店と管理サブネットへの通信制限が保たれる必要があります。修正の受入条件を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "同じ支店Aの送信元とAPIの宛先・TCP 443で接続が回復し、引き続き到達を禁止した相手へ接続できないことを確認する。",
+          "explanation": "修正した経路と、変更の影響を受けてはいけない経路の両方を同じ条件で検証します。"
+        },
+        {
+          "id": "b",
+          "text": "APIを置くEC2の平均CPU使用率を変更の前後で測り、下がった場合は復旧と判定する。",
+          "explanation": "CPUの減少だけでは、支店AからTCP 443に接続できたか分かりません。"
+        },
+        {
+          "id": "c",
+          "text": "社内監視用のVPCからAPIを確認し、応答があれば支店Aの復旧を判定する。",
+          "explanation": "監視VPCと支店Aでは構成や経路が異なるため、実際に影響した経路の回復を証明できません。"
+        },
+        {
+          "id": "d",
+          "text": "Transit Gatewayのアタッチメントが利用可能なら、支店Aの通信回復と他の経路の制限を確認済みとする。",
+          "explanation": "アタッチメントの状態は接続基盤の情報です。宛先ルートと各通信の許可は別に確認します。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Observability",
+    "Metric",
+    "Log",
+    "Trace",
+    "CIDR",
+    "IP address",
+    "Port",
+    "DNS",
+    "MTU",
+    "Path MTU",
+    "Reachability Analyzer",
+    "VPC Flow Logs",
+    "CloudWatch",
+    "CloudTrail",
+    "Transit Gateway route propagation",
+    "Transit Gateway route table association",
+    "Return path"
+  ]
+}

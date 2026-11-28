@@ -1,0 +1,230 @@
+{
+  "id": "vpc-routing",
+  "title": "Implementare il routing all’interno e all’esterno di una VPC",
+  "objective": "Distinguere le tabelle di routing associate alle sottoreti, i CIDR di destinazione, le destinazioni e i controlli di sicurezza, quindi verificare la raggiungibilità delle richieste e delle risposte.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Fondamenti della comunicazione"
+    },
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR e sottoreti"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connettività e routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-table",
+      "title": "Collegare destinazioni e target",
+      "paragraphs": [
+        "Una tabella di routing VPC determina il percorso del traffico in uscita da una sottorete o da un gateway. Ogni route contiene un CIDR di destinazione o un elenco di prefissi e un target, ad esempio un gateway Internet, un gateway NAT, una connessione peering VPC, un Transit Gateway o una connessione VPN.",
+        "Quando la destinazione di un pacchetto corrisponde a più route, viene selezionata la route con il prefisso CIDR più lungo. Ad esempio, quando si invia traffico da una VPC con 10.20.0.0/16 a 10.40.20.25 in una VPC in peering, la destinazione corrisponde sia a 10.40.20.0/24, che instrada il traffico verso il peering, sia a 0.0.0.0/0, che lo instrada verso il gateway NAT. In questo caso viene selezionata la route /24, che specifica la destinazione in un intervallo più ristretto. Se sono presenti più route con la stessa destinazione o la stessa lunghezza del prefisso, consultare le regole di priorità di AWS.",
+        "Il tipo di una sottorete è determinato dal relativo routing. Una sottorete privata non dispone di una route diretta verso un gateway Internet; quando è necessaria la comunicazione Internet in uscita, utilizza un percorso diverso, ad esempio un dispositivo NAT."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: configurazione delle tabelle di routing",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: funzionamento della priorità del routing",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "Amazon VPC: sottoreti nella VPC",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/configure-subnets.html"
+        },
+        {
+          "label": "Funzionamento delle connessioni peering VPC",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/peering/vpc-peering-basics.html"
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "title": "Valutare separatamente la selezione delle route e le autorizzazioni di comunicazione",
+      "paragraphs": [
+        "Una tabella di routing VPC seleziona il prossimo hop per i pacchetti in uscita da una sottorete o da un gateway. Una tabella di routing TGW seleziona la destinazione di inoltro per i pacchetti che entrano tramite un TGW attachment e viene valutata separatamente dalla tabella di routing VPC.",
+        "Un gruppo di sicurezza viene valutato con stato al confine dell’ENI o della risorsa associata, quindi le risposte al traffico autorizzato vengono consentite automaticamente. Una ACL di rete viene valutata senza stato al confine della sottorete, quindi è necessario consentire esplicitamente sia la direzione della richiesta sia quella della risposta. Network Firewall ispeziona solo i pacchetti le cui route sono configurate per passare attraverso un Firewall endpoint.",
+        "Quando si apportano modifiche, verificare le route VPC, le route TGW, l’SG, la NACL, le route verso il Firewall endpoint quando necessario, la risoluzione dei nomi e il traffico di ritorno sia all’origine sia alla destinazione."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: configurare le tabelle di routing",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Amazon VPC: sicurezza dell’infrastruttura",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/infrastructure-security.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: sicurezza di rete",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "packet-walk",
+      "title": "Seguire il traffico degli utenti verso le API esterne",
+      "paragraphs": [
+        "In una configurazione in cui gli utenti inviano richieste HTTPS tramite un sistema di bilanciamento del carico pubblico alle applicazioni presenti nelle sottoreti private di AZ-a e AZ-b, verificare separatamente il percorso dagli utenti all’ALB e quello dall’ALB alle destinazioni.",
+        "Quando il traffico esce dalle destinazioni verso un’API esterna, verificare la valutazione della destinazione nelle sottoreti dell’applicazione, il gateway NAT pubblico collocato nelle sottoreti pubbliche, il gateway Internet e il traffico di ritorno. Non confondere i ruoli di IGW, NAT ed endpoint VPC.",
+        "Anche dalla stessa istanza EC2, il prossimo hop è diverso per un’API esterna e per un’API all’interno di un VPC con peering. Esaminare le route private nel diagramma e verificare quale route viene selezionata per il traffico destinato a 10.40.20.25 e verso quale intervallo di indirizzi ritorna la risposta."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: gateway NAT",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-nat-gateway.html"
+        },
+        {
+          "label": "Amazon VPC: funzionamento della priorità delle tabelle di routing",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-tables-priority.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: implementazione di rete",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ],
+      "figureId": "ans-vpc-routing-packet-walk"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "vpc-routing-check-1",
+      "prompt": "Un responsabile delle operazioni di rete ha verificato una route da 0.0.0.0/0 a un gateway NAT per consentire a un’istanza EC2 in una sottorete privata di connettersi tramite HTTPS a un’API esterna. Seleziona un ulteriore elemento da verificare.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Il gateway NAT pubblico si trova in una sottorete pubblica, sul lato NAT è presente una route verso l’IGW e il gruppo di sicurezza (SG) e la network ACL (NACL) dell’EC2 consentono il traffico bidirezionale necessario.",
+          "explanation": "La route sul lato privato, da sola, non conferma la posizione del NAT, il percorso in uscita né le autorizzazioni necessarie per la comunicazione."
+        },
+        {
+          "id": "b",
+          "text": "Il nome della sottorete non contiene public.",
+          "explanation": "Un nome non garantisce la raggiungibilità."
+        },
+        {
+          "id": "c",
+          "text": "Registrare un record DNS nell’IGW.",
+          "explanation": "L’IGW non è una destinazione per la registrazione DNS."
+        },
+        {
+          "id": "d",
+          "text": "Arrestare il controllo dello stato della destinazione.",
+          "explanation": "Questo non è correlato al percorso in uscita."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-2",
+      "prompt": "Un responsabile delle operazioni di rete di un’azienda di logistica sta verificando se sia possibile stabilire una connessione TCP 443 da un’istanza EC2 di origine a un’istanza EC2 in un altro VPC connesso tramite un Transit Gateway. Esistono route nel VPC di uscita e nel Transit Gateway, ma la connessione va in timeout. Seleziona un elemento da verificare successivamente.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Se esiste una route, tutte le porte vengono autorizzate automaticamente.",
+          "explanation": "Le tabelle di routing non concedono autorizzazioni per le porte."
+        },
+        {
+          "id": "c",
+          "text": "Quando si utilizza un Transit Gateway, i gruppi di sicurezza non vengono valutati.",
+          "explanation": "Un TGW non disabilita la valutazione del gruppo di sicurezza sul lato dell’ENI di destinazione."
+        },
+        {
+          "id": "d",
+          "text": "Un rifiuto TCP è sempre causato dal DNS TTL.",
+          "explanation": "Il TTL da solo non può spiegare il problema."
+        },
+        {
+          "id": "a",
+          "text": "Verifica i gruppi di sicurezza e le ACL di rete dell’origine e della destinazione ed esamina anche il percorso di ritorno dalla destinazione all’origine.",
+          "explanation": "La possibilità di avviare una connessione TCP 443 dipende non solo dalla route di andata, ma anche dai gruppi di sicurezza di ciascuna risorsa. Le ACL di rete devono consentire il traffico in entrambe le direzioni, e occorre verificare anche che esista una route per il ritorno della risposta."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-3",
+      "prompt": "Un architetto cloud spiega su quale base si può definire una sottorete come sottorete privata. Scegli la risposta più appropriata.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Che il suo nome inizi con private-.",
+          "explanation": "Un nome non costituisce una garanzia tecnica."
+        },
+        {
+          "id": "c",
+          "text": "Solo il fatto che la VPC non disponga di un IGW.",
+          "explanation": "Questo non consente di determinare il percorso di ogni sottorete."
+        },
+        {
+          "id": "a",
+          "text": "Che la tabella di routing associata non abbia un percorso diretto verso un gateway Internet. Se è necessaria la comunicazione in uscita, configura un altro percorso, ad esempio tramite un dispositivo NAT.",
+          "explanation": "Una sottorete privata è una sottorete che non dispone di un percorso diretto verso un IGW."
+        },
+        {
+          "id": "d",
+          "text": "Che l’applicazione utilizzi TLS.",
+          "explanation": "TLS non definisce se la sottorete è pubblica."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "vpc-routing-check-4",
+      "prompt": "Un ingegnere di rete di un’azienda di logistica si connette da una sottorete privata nella VPC 10.20.0.0/16 all’API 10.40.20.25 nella VPC in peering 10.40.0.0/16. La tabella di routing di origine contiene una route locale per 10.20.0.0/16, una route verso il peering VPC per 10.40.20.0/24 e una route verso un gateway NAT per 0.0.0.0/0. Quando inoltra il traffico verso l’indirizzo IP di destinazione 10.40.20.25, selezionare una route con priorità all’origine.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "La route al VPC peering per 10.40.20.0/24.",
+          "explanation": "10.40.20.25 è incluso sia in /24 sia in /0, ma viene preferito /24 perché ha il prefisso più lungo. Per stabilire la connessione sono inoltre necessari una route di ritorno e l’autorizzazione del traffico."
+        },
+        {
+          "id": "a",
+          "text": "La route locale per 10.20.0.0/16.",
+          "explanation": "10.40.20.25 non è incluso in 10.20.0.0/16. Anche se l’indirizzo IP di origine rientra in questo intervallo, questa route non viene usata per selezionare la route di destinazione."
+        },
+        {
+          "id": "c",
+          "text": "La route al gateway NAT per 0.0.0.0/0.",
+          "explanation": "0.0.0.0/0 corrisponde alla destinazione, ma non viene selezionata perché esiste una route /24 più specifica."
+        },
+        {
+          "id": "d",
+          "text": "Non viene selezionata alcuna route, perché una sottorete privata non può avere una route al VPC peering.",
+          "explanation": "È possibile configurare una route al VPC peering anche in una sottorete privata. Il fatto che una sottorete sia pubblica dipende dalla presenza di una route diretta a un gateway Internet."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC",
+    "AZ",
+    "Subnet",
+    "Public subnet",
+    "Private subnet",
+    "IGW",
+    "NAT gateway",
+    "ENI",
+    "ALB",
+    "Security group",
+    "NACL",
+    "CIDR",
+    "Route table",
+    "Local route",
+    "Default route",
+    "Longest prefix match",
+    "Prefix list",
+    "VPC peering",
+    "Transit Gateway route table",
+    "VPC endpoint",
+    "Stateful filtering",
+    "Stateless filtering",
+    "Return path"
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "id": "global-ingress",
+  "title": "Globale Einstiegspunkte, DNS und Load-Balancing entwerfen",
+  "objective": "Die Verantwortlichkeiten von Benutzern, Namensauflösung, Edge, Load Balancern und Zielen innerhalb einer VPC unterscheiden und Einstiegspunkte anhand der Anforderungen an Verfügbarkeit, Latenz und Sicherheit erläutern.",
+  "prerequisites": [
+    {
+      "slug": "networking-basics",
+      "title": "Grundlagen der Kommunikation"
+    },
+    {
+      "slug": "domain-dns",
+      "title": "Domänen und DNS"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Konnektivität und Routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "goal",
+      "title": "Anforderungen an den Einstieg in Kommunikationsrollen aufteilen",
+      "paragraphs": [
+        "Beim Design des Einstiegspunkts wird zunächst festgelegt, wer sich unter welchem Namen verbindet und welchen Workload in welcher Region diese Person oder dieses System erreichen soll. Beim Lesen eines Diagramms muss unterschieden werden, welches Ziel DNS auf eine Abfrage zurückgibt, mit welchem Origin sich der Edge verbindet und an welches Ziel der Load Balancer den Datenverkehr weiterleitet.",
+        "Die Anforderung, statische Inhalte von einem nahe gelegenen Standort bereitzustellen, die Anforderung, TCP-Verbindungen über eine feste IP-Adresse anzunehmen, und die Anforderung, festzulegen, wo TLS beendet wird, sind nicht identisch. Wählen Sie nicht anhand des Servicenamens aus, sondern vergleichen Sie das Protokoll, die Standorte der Benutzer, die Umschaltbedingungen bei einem Ausfall und das Ziel, an das Antworten zurückgesendet werden sollen."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Netzwerkdesign",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ]
+    },
+    {
+      "id": "dns",
+      "title": "DNS-Steuerung und Paketweiterleitung nicht verwechseln",
+      "paragraphs": [
+        "Eine öffentliche gehostete Zone in Route 53 verarbeitet Namen im Internet, während eine private gehostete Zone einen Namespace innerhalb einer zugeordneten VPC verarbeitet. Bei Hybrid-DNS muss angegeben werden, welche Abfragen an welche Zone, welchen Resolver-Endpunkt oder welche bedingte Weiterleitungskonfiguration weitergeleitet werden.",
+        "DNS-Gewichtung, latenzbasiertes Routing und Failover wählen die Datensätze aus, die bei der Namensauflösung zurückgegeben werden. Nach der Verbindung mit dem zurückgegebenen Ziel folgt der HTTPS-Datenverkehr dem Load Balancer, den VPC-Routen und den Datenverkehrskontrollen. Durch eine reine DNS-Umschaltung werden bestehende Verbindungen nicht verschoben.",
+        "Damit ein internes DNS eine private gehostete Zone in einer VPC auflösen kann, leiten Sie Abfragen für die Zieldomain an den eingehenden Endpunkt des Route 53 VPC Resolver weiter. Wenn Namen des internen DNS aus einer VPC aufgelöst werden, verwenden Sie einen ausgehenden Endpunkt und Weiterleitungsregeln."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: DNS und globales Verkehrsmanagement",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "Namensauflösung zwischen internem Netzwerk und VPC mit Route 53 VPC Resolver verbinden",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/resolver-overview-DSN-queries-to-vpc.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "Den Round Trip vom Einstiegspunkt bis zur Antwort nachvollziehen",
+      "paragraphs": [
+        "Internetnutzer verbinden sich mithilfe der DNS-Antwort mit einem Edge-Service oder einem Load Balancer. Vergleichen Sie CloudFront für die Bereitstellung von HTTP/HTTPS-Inhalten mit AWS Global Accelerator als L4-Einstiegspunkt für TCP oder UDP, abhängig von den Anforderungen. Der Load Balancer leitet Anforderungen auf Grundlage seines Listeners, seiner Zielgruppe und der gesunden Ziele in jeder AZ weiter.",
+        "Die gestrichelte Linie im Diagramm stellt die Namensauflösung dar, die durchgezogene Linie die HTTPS-Verbindung. Nachdem der Browser über den Resolver eine Antwort von Route 53 erhalten hat, verbindet er sich mit dem ermittelten Ziel. Auch wenn der Name erfolgreich aufgelöst wird, muss separat überprüft werden, ob HTTPS die Anwendung erreicht.",
+        "Ermitteln Sie im Diagramm, wo die gestrichelte DNS-Linie endet. Verfolgen Sie anschließend die durchgezogene Linie vom Browser über CloudFront und den ALB bis zur Anwendung. Der ALB öffnet eine separate Verbindung zu den Zielen im privaten Subnetz, und die Antwort wird über die jeweiligen Verbindungen zurückgesendet."
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty: Edge, DNS und Load Balancing",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        }
+      ],
+      "figureId": "ans-global-ingress-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "global-ingress-check-1",
+      "prompt": "Ein Unternehmen geht davon aus, dass es bestehende HTTPS-Verbindungen sofort von einer ausgefallenen Region in eine andere Region verschieben und dabei aufrechterhalten kann. Wählen Sie eine richtige Aussage zum DNS-Failover aus.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Alle bestehenden TCP-Verbindungen an einen Load Balancer in einer anderen Region weiterleiten.",
+          "explanation": "Das Verschieben bestehender TCP-Verbindungen ist keine DNS-Funktion."
+        },
+        {
+          "id": "a",
+          "text": "DNS-Failover ändert das Ziel, das bei neuen Namensauflösungen zurückgegeben wird. Es ist kein Mechanismus, der bestehende Verbindungen automatisch verschiebt.",
+          "explanation": "DNS ist die Kontrollebene für die Namensauflösung."
+        },
+        {
+          "id": "c",
+          "text": "Die Routentabellen innerhalb der VPC automatisch neu schreiben.",
+          "explanation": "Die Auswahl von DNS-Einträgen und das VPC-Routing sind getrennte Kontrollebenen."
+        },
+        {
+          "id": "d",
+          "text": "Die Notwendigkeit eingehender Regeln in der Sicherheitsgruppe beseitigen.",
+          "explanation": "Die Namensauflösung erteilt keine Kommunikationsberechtigung."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "global-ingress-check-2",
+      "prompt": "Ein Netzwerkadministrator eines Reservierungsdienstes hat eine Webanwendung in privaten Subnetzen in zwei AZs hinter einem internetseitig erreichbaren Application Load Balancer (ALB) bereitgestellt. Der öffentliche Name verweist über Route 53 auf den ALB, und eines der registrierten Ziele ist fehlerfrei. Wählen Sie einen Mechanismus aus, über den die HTTPS-Anfrage eines Benutzers die Anwendung erreicht.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Route 53 liest die URL der Anfrage und leitet die HTTPS-Anfrage an die private IP-Adresse des Ziels weiter.",
+          "explanation": "Route 53 beantwortet DNS-Abfragen. Der ALB liest den Inhalt der HTTP-Anfrage und wählt das Ziel aus."
+        },
+        {
+          "id": "c",
+          "text": "Die Priorität des Ziels wird durch die TTL von Route 53 bestimmt.",
+          "explanation": "Die TTL ist die Zeit, während der eine DNS-Antwort im Cache gespeichert wird. Sie steuert weder den Status noch die Auswahl der beim ALB registrierten Ziele."
+        },
+        {
+          "id": "d",
+          "text": "Der Browser verwendet die lokale VPC-Route und stellt direkt eine TLS-Verbindung mit dem Ziel her.",
+          "explanation": "Die lokale Route wird innerhalb der VPC verwendet. Ein externer Browser läuft über den öffentlich erreichbaren ALB."
+        },
+        {
+          "id": "b",
+          "text": "Der Browser verbindet sich mit dem über DNS ermittelten ALB, und der ALB leitet die Anfrage gemäß den Listener-Regeln an ein fehlerfreies Ziel weiter.",
+          "explanation": "DNS stellt das Ziel des ALB bereit. Der ALB übergibt die empfangene Anfrage an ein fehlerfreies Ziel in der entsprechenden Zielgruppe."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "global-ingress-check-3",
+      "prompt": "Der Netzwerkadministrator eines Fertigungsunternehmens muss ermöglichen, dass inventory.example.internal in einer privaten gehosteten Zone einer VPC auch von den DNS-Servern des internen Unternehmensnetzwerks aufgelöst werden kann. Zwischen dem internen Netzwerk und der Ziel-VPC besteht eine Netzwerkverbindung. Wählen Sie eine geeignete Konfiguration auf der Seite des internen DNS aus.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Anfragen für die Zieldomäne an einen eingehenden Endpunkt von Route 53 Resolver in der VPC weiterleiten, die der Zielzone zugeordnet ist.",
+          "explanation": "Ein eingehender Endpunkt nimmt DNS-Anfragen von außerhalb der VPC, etwa aus dem internen Netzwerk, entgegen und kann interne Namen in zugeordneten Zonen auflösen."
+        },
+        {
+          "id": "b",
+          "text": "Anfragen des internen DNS an einen ausgehenden Endpunkt senden, der Anfragen von der VPC an das interne Netzwerk weiterleitet.",
+          "explanation": "Ein ausgehender Endpunkt wird verwendet, um Anfragen von der VPC an externe DNS-Server weiterzuleiten. In diesem Fall ist die Richtung der Anfrage umgekehrt."
+        },
+        {
+          "id": "c",
+          "text": "Nach dem Erstellen einer privaten gehosteten Zone die Zieldomäne über den öffentlichen DNS-Pfad vom internen DNS auflösen.",
+          "explanation": "Der Inhalt einer privaten gehosteten Zone wird nicht im öffentlichen DNS veröffentlicht. Es muss ein Pfad konfiguriert werden, über den das interne DNS die Domäne auflösen kann."
+        },
+        {
+          "id": "d",
+          "text": "Die Zone der Zieldomäne der VPC zuordnen und die bisherige Weiterleitungskonfiguration des internen DNS unverändert lassen.",
+          "explanation": "Die Zuordnung der Zone zur VPC ist erforderlich, aber zusätzlich muss ein Pfad konfiguriert werden, über den das interne DNS diese Zone abfragen kann."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "AWS Region",
+    "AZ",
+    "CloudFront",
+    "AWS Global Accelerator",
+    "ALB",
+    "NLB",
+    "HTTPS",
+    "TCP",
+    "UDP",
+    "DNS",
+    "Route 53",
+    "DNS failover",
+    "TTL",
+    "Health check",
+    "Route 53 VPC Resolver",
+    "Resolver inbound endpoint",
+    "Resolver outbound endpoint",
+    "Private hosted zone",
+    "DNS conditional forwarding",
+    "Origin",
+    "Target group",
+    "Cross-zone load balancing",
+    "IGW",
+    "Public subnet",
+    "Private subnet"
+  ]
+}

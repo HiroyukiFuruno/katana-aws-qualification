@@ -1,0 +1,186 @@
+{
+  "id": "hybrid-and-multivpc",
+  "title": "设计混合连接与多 VPC 的可达性",
+  "objective": "能够区分 CIDR、BGP 通告、路由表和 Transit Gateway 附件（attachment）的作用，并说明本地网络、Direct Connect 或 Site-to-Site VPN、Transit Gateway 和多个 VPC 之间的双向路径。",
+  "prerequisites": [
+    {
+      "slug": "cidr-subnets",
+      "title": "CIDR 与子网"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "连接与路由"
+    }
+  ],
+  "sections": [
+    {
+      "id": "requirements",
+      "title": "先确定通信边界，再选择连接方式",
+      "paragraphs": [
+        "首先，定义哪些 CIDR 范围之间应可相互到达、哪些通信应隔离，以及发生故障时应使用哪些路径。根据带宽、加密、冗余性、连接的 VPC 数量和运营责任，比较 Direct Connect、Site-to-Site VPN 和 Transit Gateway。",
+        "CIDR 重叠的网络无法仅通过常规的目标 CIDR 路由加以区分。应考虑限制通信目标的连接方式，不要错误地假设这些网络可以相互到达。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：网络设计",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain1.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：网络实施",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "tgw",
+      "title": "区分 Transit Gateway 的关联与传播",
+      "paragraphs": [
+        "在 Transit Gateway 中，数据包通过哪个源附件进入 TGW，该源附件的关联就决定了数据包所引用的 TGW 路由表。路由传播机制会将从附件学习到的前缀注册到指定的 TGW 路由表中。关联和路由传播不是同一项设置。",
+        "在设计为经由检查 VPC 转发流量时，除了确认源附件的 TGW 表，还要检查检查 VPC 附件所用子网中的路由、经过 Firewall endpoint 或有状态设备的路径，以及共享服务 VPC 侧和源侧的返回路径。对于使用有状态设备的检查 VPC 附件，还应根据要求评估 appliance mode，以维持同一 AZ 内的往返流量。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Transit Gateway 的工作原理",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "Transit Gateway 路由表",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/tgw-route-tables.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：多 VPC 连接",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "round-trip",
+      "title": "将往返路径作为数据包进行跟踪",
+      "paragraphs": [
+        "这是一个从本地网络 10.10.0.0/16 连接到承载共享服务的 10.20.10.0/24 的示例。Transit Gateway 将从内部网络到达的数据包发送到检查 VPC。检查完成后，数据包返回同一个 Transit Gateway，再由其转发到共享服务 VPC。分别确认两个方向上的 Transit Gateway 附件、目标前缀和下一跳。",
+        "在检查 VPC 中部署有状态设备时，请求和响应要经过同一个检查流。Appliance mode 会在流的整个生命周期内保持检查 VPC 附件选择的可用区。其他 VPC 路由和 TGW 路由表仍需配置。",
+        "请在图中找出流量在检查前后经过同一个 Transit Gateway 的位置。响应从共享服务一侧出发，经过同一个检查 AZ 返回内部网络。请对往返两个方向都确认配置，避免形成只检查单向流量的路径。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Transit Gateway 的工作原理",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/tgw/how-transit-gateways-work.html"
+        },
+        {
+          "label": "AWS Certified Advanced Networking - Specialty：混合连接与路由",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/advanced-networking-specialty-01/advanced-networking-specialty-01-domain2.html"
+        },
+        {
+          "label": "Transit Gateway 与检查 VPC 的往返路径",
+          "url": "https://docs.aws.amazon.com/ja_jp/prescriptive-guidance/latest/integrate-third-party-services/architecture-3.html"
+        }
+      ],
+      "figureId": "ans-hybrid-multivpc-round-trip"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "hybrid-check-1",
+      "prompt": "网络设计人员需要让流量从开发 VPC 经过检查 VPC 中的有状态设备，传输到共享服务 VPC。请选择一项为建立双向路径而应首先检查的设计。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "仅将开发 VPC 的 DNS 记录指向检查 VPC。",
+          "explanation": "仅靠 DNS 无法将数据包转发到检查 VPC。"
+        },
+        {
+          "id": "c",
+          "text": "删除共享服务 VPC 的安全组。",
+          "explanation": "这无法实现路由控制，还会失去通信保护。"
+        },
+        {
+          "id": "a",
+          "text": "存在以下路由：从与开发 VPC 源附件关联的 TGW 路由表发往检查 VPC 附件的路由；检查 VPC 中发往设备和共享服务 CIDR 的路由；以及各 VPC 和 TGW 的返回路由。",
+          "explanation": "仅有入口 TGW 路由表是不够的。请分别检查检查 VPC 内的路由、设备以及双向路径。"
+        },
+        {
+          "id": "d",
+          "text": "停止来自本地部署侧的 BGP 广播。",
+          "explanation": "这不是 VPC 之间建立 TGW 路由的必要条件。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-2",
+      "prompt": "网络设计人员需要与特定应用程序通信，而本地网络和 VPC 都使用 10.0.0.0/16。请选择一项最合适的说明。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Transit Gateway 会自动转换重叠的 CIDR。",
+          "explanation": "它不会自动执行转换。"
+        },
+        {
+          "id": "a",
+          "text": "由于 CIDR 重叠，仅靠常规的目标 CIDR 路由无法唯一地区分这两个网络。",
+          "explanation": "使用相同的前缀时，无法唯一选择目标。"
+        },
+        {
+          "id": "c",
+          "text": "仅凭 BGP 就可以同时向两个具有相同 CIDR 的目标发送流量。",
+          "explanation": "它无法解决重叠网络的识别问题。"
+        },
+        {
+          "id": "d",
+          "text": "不同的安全组会自动选择路由。",
+          "explanation": "SG 负责进行允许判定。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "hybrid-check-3",
+      "prompt": "网络运维人员正在调查这样一个问题：可以从本地网络发起到 AWS 应用程序的连接，但响应无法返回。请选择一个应优先调查的项目。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "仅调查用户的 DNS 缓存。",
+          "explanation": "这无法解释能够发起的连接为什么无法收到响应。"
+        },
+        {
+          "id": "c",
+          "text": "仅调查负载均衡器的 TLS 证书。",
+          "explanation": "应先检查返回路径和权限。"
+        },
+        {
+          "id": "a",
+          "text": "应用程序 ENI 的 SG、发送和接收子网的 NACL，以及 VPC、TGW 和本地网络侧通往用户 CIDR 的返回路径。",
+          "explanation": "要获得响应，必须进行权限评估，并确保整个路径都有返回路径。"
+        },
+        {
+          "id": "d",
+          "text": "将源 CIDR 更改为 0.0.0.0/0。",
+          "explanation": "在未确认原因的情况下扩大访问范围是不恰当的。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "On-premises network",
+    "CIDR",
+    "BGP",
+    "TGW",
+    "AWS Direct Connect",
+    "AWS Site-to-Site VPN",
+    "VPC peering",
+    "Transit Gateway attachment",
+    "Transit Gateway route table",
+    "Transit Gateway route table association",
+    "Transit Gateway route propagation",
+    "Inspection VPC",
+    "Appliance mode",
+    "AWS Network Firewall",
+    "Firewall endpoint",
+    "Stateful filtering",
+    "Return path",
+    "AZ",
+    "Subnet",
+    "Route table"
+  ]
+}

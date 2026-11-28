@@ -34,9 +34,15 @@ const figures = [
     name: 'ALB to EC2 request and return traffic',
     id: 'fundamentals.routing-connectivity:section:traffic-controls:concept:1',
     labels: [
+      'ALB SG (ENI)',
+      'EC2 SG (ENI)',
       'NACL OUT: destination TCP 49152',
       'Request: ALB 49152 → EC2 443',
       'Response: EC2 443 → ALB 49152',
+    ],
+    groups: [
+      { label: 'ALB SG (ENI)', resource: 'alb' },
+      { label: 'EC2 SG (ENI)', resource: 'ec2' },
     ],
   },
 ] as const;
@@ -56,6 +62,15 @@ for (const figure of figures) {
     const labels = page.locator('svg text');
     await expect.poll(() => labels.allTextContents()).toEqual(expect.arrayContaining(figure.labels));
     await page.evaluate(() => document.fonts.ready);
+    if ('groups' in figure) {
+      for (const group of figure.groups) {
+        const label = labels.filter({ hasText: group.label });
+        const resource = page.locator(`[data-cell-id="${group.resource}"] rect`).first();
+        const labelBox = await label.boundingBox();
+        const resourceBox = await resource.boundingBox();
+        expect(labelBox && resourceBox && labelBox.y + labelBox.height <= resourceBox.y).toBe(true);
+      }
+    }
     expect(
       await labels.evaluateAll((elements) =>
         elements.every((element) => {

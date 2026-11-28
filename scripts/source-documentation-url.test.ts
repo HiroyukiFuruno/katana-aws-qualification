@@ -42,6 +42,21 @@ test('verified Japanese AWS references use the actual Japanese destination and a
   });
 });
 
+test('a verified Japanese lesson link has a counterpart for learners in other languages', () => {
+  const source = {
+    url: 'https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/route-table-options.html',
+    label: 'VPC routing options',
+  };
+  expect(localizedDocumentationSource(source, 'ja')).toEqual({ ...source, locale: 'ja' });
+  for (const locale of ['en', 'de'] as const) {
+    expect(localizedDocumentationSource(source, locale)).toEqual({
+      label: source.label,
+      url: 'https://docs.aws.amazon.com/vpc/latest/userguide/route-table-options.html',
+      locale: undefined,
+    });
+  }
+});
+
 test('AWS references in the current fundamentals material have verified Japanese sources', async () => {
   const content: FundamentalsContent = await Bun.file('public/fundamentals/content.json').json();
   const checkpointData: CheckpointDocument = await Bun.file(

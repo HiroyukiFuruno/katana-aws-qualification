@@ -1,0 +1,162 @@
+{
+  "id": "infrastructure-security",
+  "title": "Infrastruktur schützen",
+  "objective": "Die mindestens erforderlichen Verteidigungsgrenzen auf jeder Ebene platzieren können: am Internet-Perimeter, für Workloads und in VPCs.",
+  "prerequisites": [
+    {
+      "slug": "detection",
+      "title": "Erkennung konzipieren",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "incident-response",
+      "title": "Auf Vorfälle reagieren",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Konnektivität und Routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "edge-controls",
+      "title": "Öffentliche Einstiegspunkte auf die erforderlichen Pfade beschränken",
+      "paragraphs": [
+        "Bei öffentlichen Anwendungen müssen die Zuständigkeiten von DNS, CDN, AWS WAF, Load Balancer und Anwendung getrennt werden. Akzeptieren Sie nur die erforderlichen Protokolle und Hosts und prüfen Sie gemeinsam, wo TLS beendet wird, welche Zertifikate verwendet werden, wie die Ratenbegrenzung erfolgt, welche Regeln auf Anwendungsebene gelten und ob der Origin erreichbar ist.",
+        "Wenn CloudFront als einziger öffentlicher Einstiegspunkt für Viewer verwendet wird und ein interner ALB in privaten Subnetzen als VPC-Origin dient, können Inhalte bereitgestellt werden, ohne einen Pfad zu schaffen, über den der ALB direkt über eine öffentliche IP-Adresse erreichbar ist. Das bloße Hinzufügen von WAF-Regeln verhindert keine Umgehung, wenn ein weiterer öffentlicher Pfad vorhanden ist. Eine Web ACL ist kein unabhängiger Hop, der mitten im Kommunikationspfad platziert wird, sondern eine mit CloudFront oder dem ALB verknüpfte Grenze, an der Anforderungen ausgewertet werden. Beobachten Sie den Pfad vom Einstiegspunkt zur Origin, die Logs und die Auswirkungen der Regeln und bewerten Sie die Auswirkungen auf legitime Benutzer."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03-Prüfungsleitfaden: Netzwerk-Edge",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        },
+        {
+          "label": "Was ist AWS WAF?",
+          "url": "https://docs.aws.amazon.com/ja_jp/waf/latest/developerguide/what-is-aws-waf.html"
+        },
+        {
+          "label": "Zugriff auf einen Application Load Balancer beschränken",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html"
+        },
+        {
+          "label": "Zugriff mit einer CloudFront-VPC-Origin beschränken",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html"
+        }
+      ],
+      "figureId": "scs-edge-origin-boundary"
+    },
+    {
+      "id": "workload-hardening",
+      "title": "Ausführungsberechtigungen und Aktualisierungen für jede Workload verwalten",
+      "paragraphs": [
+        "Verwalten Sie bei Computer-Workloads die Ausführungsrollen, die Herkunft von Images oder Paketen, das Schwachstellenmanagement, Secrets, Aktualisierungen des Betriebssystems oder der Laufzeitumgebung sowie die Protokollübermittlung. Hinterlegen Sie keine gemeinsam genutzten Administratoranmeldeinformationen in der Workload und stellen Sie sicher, dass sie nur auf die benötigten AWS-APIs und Daten zugreifen kann.",
+        "Führen Sie Aktualisierungen als Betriebsprozess mit Validierung, schrittweiser Einführung, Zustandsprüfungen und Rollback durch. Wenn Sie die Überwachung oder Backups beenden, um die Patch-Installation zu beschleunigen, werden die Ursachenanalyse und die Wiederherstellung bei einem Vorfall erschwert."
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03-Prüfungsleitfaden: Computer-Workloads",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "vpc-boundaries",
+      "title": "Kommunikationspfade und Berechtigungsgrenzen getrennt überprüfen",
+      "paragraphs": [
+        "Die Erreichbarkeit einer VPC wird durch das Zusammenspiel von Routingtabellen, Sicherheitsgruppen, Netzwerk-ACLs sowie den Einstellungen des Hosts oder Dienstes bestimmt. Eine vorhandene Route bedeutet nicht, dass ein Port freigegeben ist. Überprüfen Sie daher sowohl den ausgehenden als auch den Rückweg.",
+        "Trennen Sie in einem Verteidigungsdesign öffentliche, private und isolierte Subnetze nach ihrem Zweck und erlauben Sie nur die erforderlichen Pfade und Protokolle. Anstatt Verbindungsprobleme durch eine vollständige Öffnung zu lösen, verwenden Sie Flow Logs und Verbindungsprotokolle, um die Grenze zu ermitteln, an der der Datenverkehr abgewiesen wurde."
+      ],
+      "sources": [
+        {
+          "label": "Routingtabellen konfigurieren",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "SCS-C03-Prüfungsleitfaden: Netzwerksicherheit",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-infra-1",
+      "prompt": "Das für eine öffentliche Webanwendung verantwortliche Team möchte, dass Benutzer nur über CloudFront darauf zugreifen können. Welches Design eignet sich am besten, um Pfade zu schließen, über die eine Verbindung zur Origin ohne AWS-WAF-Prüfung hergestellt werden könnte?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Verwenden Sie einen internen ALB in einem privaten Subnetz als VPC-Ursprung von CloudFront und verknüpfen Sie eine Web ACL mit CloudFront oder dem ALB. Erstellen Sie keinen öffentlichen Pfad, über den der ALB von außerhalb von CloudFront direkt erreicht werden kann.",
+          "explanation": "Wenn der öffentliche Einstiegspunkt der Benutzer auf CloudFront beschränkt und ein interner ALB verwendet wird, gibt es keinen Pfad zu einem öffentlichen ALB, ohne dass die WAF die Anfrage bewertet."
+        },
+        {
+          "id": "b",
+          "text": "Den Ursprung öffentlich zugänglich machen, sodass jeder direkt eine Verbindung herstellen kann.",
+          "explanation": "Dadurch kann die Sicherheitsgrenze am Einstiegspunkt umgangen werden."
+        },
+        {
+          "id": "c",
+          "text": "Nur WAF-Regeln konfigurieren und die Erreichbarkeit des Ursprungs nicht überprüfen.",
+          "explanation": "Dadurch lässt sich der direkte Zugriff über andere Pfade nicht verhindern."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-2",
+      "prompt": "Die für eine containerisierte Geschäftsanwendung verantwortliche Person möchte die AWS-API-Berechtigungen des Workloads auf ein Minimum beschränken. Welche Richtlinie ist am besten geeignet?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Die Herkunft und Schwachstellen des Images nicht überprüfen, um Aktualisierungen zu erleichtern.",
+          "explanation": "Risiken für die Lieferkette und den Betrieb bleiben bestehen."
+        },
+        {
+          "id": "a",
+          "text": "Einer dedizierten Ausführungsrolle für den Workload nur die Berechtigungen für die erforderlichen APIs und Ressourcen erteilen und keine gemeinsamen Administratoranmeldeinformationen im Workload hinterlegen.",
+          "explanation": "Dadurch werden die ausführende Entität und der Umfang ihrer Berechtigungen begrenzt."
+        },
+        {
+          "id": "b",
+          "text": "In jeden Container denselben Administratorzugriffsschlüssel einbetten.",
+          "explanation": "Bei einem Datenabfluss wären die Auswirkungen groß, und die handelnde Entität könnte nicht identifiziert werden."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-3",
+      "prompt": "Sie untersuchen ein Problem, durch das ein Service in einem privaten Subnetz nicht erreichbar ist. Welche Überprüfung ist am besten geeignet?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Prüfen Sie nacheinander die Hin- und Rückrouten, die Sicherheitsgruppe des Ziels, die NACL des Subnetzes und die Servicekonfiguration.",
+          "explanation": "Dadurch lassen sich Routing und Berechtigungen als voneinander getrennte Grenzen isoliert untersuchen."
+        },
+        {
+          "id": "b",
+          "text": "Uneingeschränkten Zugriff auf allen Ports zulassen.",
+          "explanation": "Dadurch geht die Sicherheitsgrenze verloren, ohne die Ursache zu ermitteln."
+        },
+        {
+          "id": "c",
+          "text": "Nur die Route auf der Quellseite prüfen.",
+          "explanation": "Dadurch werden der Rückweg und Ablehnungen auf der Zielseite übersehen."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "WAF",
+    "Web ACL",
+    "Origin",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Public subnet",
+    "Private subnet",
+    "TLS",
+    "CloudFront VPC origin"
+  ]
+}

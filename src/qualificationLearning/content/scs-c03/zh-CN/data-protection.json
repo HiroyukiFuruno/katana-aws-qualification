@@ -1,0 +1,146 @@
+{
+  "id": "data-protection",
+  "title": "保护数据",
+  "objective": "能够将传输中和静态数据的加密、密钥、机密信息以及恢复与数据分类和使用路径相匹配。",
+  "prerequisites": [
+    {
+      "slug": "identity-and-access",
+      "title": "设计身份和访问管理",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "protect-data-in-transit",
+      "title": "按区段保护传输中的数据",
+      "paragraphs": [
+        "在保护传输中的数据时，请确认以下各区段中 TLS 或其他保护措施在哪里终止，以及哪些主体可以建立连接：用户到入口点、入口点到工作负载、工作负载到数据存储，以及 AWS 与本地环境之间。",
+        "仅仅删除公有终端节点并不能完成私有访问。必须结合名称解析、VPC 终端节点、路由、安全组和服务端策略，确保只能通过预期路径进行访问。如果要让 VPC 中的应用程序在不使用 NAT 网关或 Internet 网关的情况下访问 S3，请创建 S3 网关终端节点，并确认目标子网的路由表中存在指向 S3 前缀列表的终端节点路由。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考试指南：传输中的数据",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        },
+        {
+          "label": "Amazon S3 网关终端节点",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "keys-and-encryption",
+      "title": "区分加密与密钥使用权限",
+      "paragraphs": [
+        "AWS Key Management Service（AWS KMS）是一项托管服务，可帮助您更轻松地创建和控制用于数据加密和签名的密钥。在设计加密方案时，除了确定使用哪个密钥保护哪些数据，还要确定谁可以管理和使用这些密钥，以及服务集成、轮换、删除保护、审计和灾难恢复期间的使用方式。",
+        "即使启用了加密，如果解密或使用密钥的权限过于宽泛，也不符合数据分类要求。应同时评估密钥策略、IAM 权限、加密上下文，以及在备份和复制目标位置的访问权限。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Key Management Service",
+          "url": "https://docs.aws.amazon.com/ja_jp/kms/latest/developerguide/overview.html"
+        },
+        {
+          "label": "SCS-C03 考试指南：静态数据",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "secrets-and-recovery",
+      "title": "保护机密信息和恢复路径",
+      "paragraphs": [
+        "不要将凭证、API 密钥或令牌嵌入源代码、映像、模板或日志中。应设计相应的存储机制，确保只有运行时需要这些信息的工作负载才能获取它们，并设计轮换、审计以及更新后的连接检查。",
+        "备份是数据保护的一部分。除了创建加密备份之外，还要确认哪些主体可以执行恢复、恢复目标、数据完整性、RTO/RPO、防止误删除的保护措施，以及恢复演练。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Secrets Manager 用户指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/secretsmanager/latest/userguide/intro.html"
+        },
+        {
+          "label": "SCS-C03 考试指南：机密信息和密钥材料",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-data-1",
+      "prompt": "公司内部应用的网络管理员将机密文件从 VPC 内的应用发送到 S3，且不经过 NAT 网关或互联网网关。关于路径和访问控制，最适合检查哪些设置？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只启用 S3 加密，不检查通信路径。",
+          "explanation": "无法验证传输中的保护措施。"
+        },
+        {
+          "id": "a",
+          "text": "确认 TLS 终止；确认目标子网的路由表中，S3 网关终端节点是指向 S3 前缀列表的目标；并确认终端节点、存储桶和 IAM 策略限制了允许的权限。",
+          "explanation": "检查 S3 网关终端节点的路由及各项策略，即可验证从 VPC 到 S3 的路径不依赖 NAT 网关或互联网网关。"
+        },
+        {
+          "id": "c",
+          "text": "允许任何人连接到公共端点。",
+          "explanation": "这不符合数据边界要求。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-2",
+      "prompt": "您正在审查一项跨多个账户处理加密客户数据的设计。最适合进行哪项检查？",
+      "choices": [
+        {
+          "id": "c",
+          "text": "向所有用户授予相同的密钥管理权限。",
+          "explanation": "这违反职责分离和最小权限原则。"
+        },
+        {
+          "id": "b",
+          "text": "只要数据已加密，就不检查密钥使用权限。",
+          "explanation": "这会忽略过于宽泛的解密权限。"
+        },
+        {
+          "id": "a",
+          "text": "检查数据分类、KMS 密钥的使用者和管理者、密钥策略与 IAM 策略，以及对复制目标和恢复目标的访问权限。",
+          "explanation": "这样可以同时评估加密和实际的解密权限。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-3",
+      "prompt": "我们希望定期更新数据库凭证，并避免因更新失败而导致停机。哪项策略最合适？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "将凭证嵌入容器镜像中。",
+          "explanation": "这会带来凭证泄露和无法更新的风险。"
+        },
+        {
+          "id": "a",
+          "text": "设计由执行角色限制获取权限的机密存储，并实施轮换、审计以及更新后的连接验证。",
+          "explanation": "这样可以保护凭证，并验证更新过程的可用性。"
+        },
+        {
+          "id": "c",
+          "text": "不验证恢复备份所需的权限。",
+          "explanation": "恢复期间可能无法访问数据。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC endpoint",
+    "VPC endpoint policy",
+    "Key policy",
+    "Encryption context",
+    "Secret rotation",
+    "RPO",
+    "RTO",
+    "Gateway endpoint"
+  ]
+}

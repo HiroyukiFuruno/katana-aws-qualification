@@ -1,0 +1,152 @@
+{
+  "id": "identity-and-access",
+  "title": "Projetar o gerenciamento de identidade e acesso",
+  "objective": "Distinguir autenticação de autorização e gerenciar entidades principais, condições e recursos de acordo com o princípio do menor privilégio.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "Fundamentos da nuvem"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Autenticação e autorização"
+    },
+    {
+      "slug": "infrastructure-security",
+      "title": "Defesa da infraestrutura",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "authentication-by-actor",
+      "title": "Autenticar pessoas, aplicações e sistemas externos de forma distinta",
+      "paragraphs": [
+        "Para o acesso de pessoas, escolha federação e MFA; para workloads, escolha funções e credenciais temporárias; e, para sistemas externos, escolha integrações com condições de confiança. Um design que compartilha chaves de acesso de longo prazo e impede a distinção entre entidades principais torna mais difícil revogar o acesso, realizar auditorias e limitar o alcance de uma violação.",
+        "Ao investigar um problema de autenticação, verifique o IdP, o MFA, os tokens, as políticas de confiança das funções, o horário e os eventos relacionados do CloudTrail. O fato de um usuário ter sido autenticado e o fato de ele estar autorizado a acessar o recurso de destino são decisões distintas."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SCS-C03: Estratégias de autenticação",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "authorization-boundaries",
+      "title": "Avaliação das permissões efetivas em vários limites",
+      "paragraphs": [
+        "Na autorização, as permissões efetivas são avaliadas combinando políticas baseadas em identidade, políticas baseadas em recursos, políticas de sessão, limites de permissões, políticas da organização e negações explícitas. Identifique explicitamente a entidade principal, a ação, o recurso e as condições que exigem permissão, e não use permissões de administrador como padrão.",
+        "Para assumir uma função do IAM gerenciada por outra conta da AWS, o chamador deve ter permissão para `sts:AssumeRole` e também deve atender às condições da política de confiança da função de destino. Ao criar a função de destino na conta do cliente, a política de permissões dessa função deve permitir somente o prefixo e as operações necessários para o bucket de destino. Ao delegar acesso a um terceiro, também é possível configurar um ID externo como condição de confiança. Uma política de bucket é um limite adicional a ser aplicado quando é necessária uma negação explícita ou quando são necessárias condições adicionais; ela não é sempre obrigatória quando a função e o bucket estão na mesma conta do cliente. As linhas contínuas da figura representam a solicitação para assumir a função, a resposta com credenciais temporárias e a solicitação enviada ao S3 usando essas credenciais. As linhas tracejadas representam as condições de confiança verificadas pelo AWS STS."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SCS-C03: estratégias de autorização",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        },
+        {
+          "label": "Guia do usuário do IAM",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/introduction.html"
+        },
+        {
+          "label": "Acesso a contas da AWS pertencentes a terceiros",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html"
+        }
+      ],
+      "figureId": "scs-cross-account-assume-role-boundary"
+    },
+    {
+      "id": "access-review",
+      "title": "Revisão contínua das permissões",
+      "paragraphs": [
+        "O projeto de acesso não termina com a concessão inicial. Revise regularmente as permissões não utilizadas, desligamentos ou transferências de funcionários, mudanças de função, acessos de emergência e exceções, e mantenha registros do responsável, da finalidade, da data de expiração e da aprovação.",
+        "O acesso break-glass não é um meio de uso rotineiro para substituir o princípio do menor privilégio. Defina as condições de ativação, o MFA, um período de validade curto, o monitoramento e a revisão pós-uso, e confirme sempre o motivo de seu uso e seu impacto."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SCS-C03: Gerenciamento de identidade e acesso",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-iam-1",
+      "prompt": "Você está projetando o acesso administrativo integrado a um sistema de RH. Se quiser revogar rapidamente o acesso de funcionários desligados e exigir MFA, qual política é a mais adequada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Usar um IdP e federação, aplicando MFA e sessões temporárias baseadas em funções.",
+          "explanation": "Isso integra as informações de RH à autenticação e à revogação, evitando credenciais de longo prazo."
+        },
+        {
+          "id": "b",
+          "text": "Distribuir uma chave de acesso administrativo compartilhada por todos no departamento.",
+          "explanation": "Não é possível identificar a entidade nem revogar o acesso."
+        },
+        {
+          "id": "c",
+          "text": "Desativar o MFA e tornar a senha permanente.",
+          "explanation": "Isso reduz a força da autenticação."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-2",
+      "prompt": "Uma ferramenta de auditoria em outra conta precisa ler somente os prefixos aprovados de um bucket de logs específico na conta do cliente. Qual é o design de autorização mais adequado?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Crie uma função entre contas na conta do cliente e defina a conta da ferramenta de auditoria e um ID externo nas condições de confiança. Limite a política de permissões da função ao acesso de leitura dos prefixos aprovados do bucket de destino e aplique as condições adicionais necessárias por meio da política do bucket.",
+          "explanation": "Isso permite limitar separadamente quais entidades podem assumir a função e quais recursos e operações podem acessar depois de assumi-la. Use a política do bucket quando forem necessários limites adicionais."
+        },
+        {
+          "id": "c",
+          "text": "Conceder permanentemente permissões de administrador à ferramenta de auditoria.",
+          "explanation": "Isso permite mais operações do que o necessário."
+        },
+        {
+          "id": "b",
+          "text": "Tornar o bucket publicamente legível.",
+          "explanation": "Isso elimina o limite de acesso aos logs de auditoria."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-3",
+      "prompt": "Você está projetando um procedimento de break-glass que permita operações administrativas de produção somente em situações de emergência. Qual controle é o mais apropriado?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Fazer com que todos usem regularmente as credenciais de administrador de emergência.",
+          "explanation": "Isso elimina o princípio do menor privilégio e a capacidade de auditoria."
+        },
+        {
+          "id": "c",
+          "text": "Não manter registros das operações de emergência.",
+          "explanation": "Isso impede a avaliação do impacto posteriormente."
+        },
+        {
+          "id": "a",
+          "text": "Definir as condições de ativação, MFA, um período de validade curto, o monitoramento das operações e uma revisão posterior ao uso.",
+          "explanation": "Isso permite rastrear e controlar o acesso de emergência como uma exceção."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Principal",
+    "IAM role",
+    "IAM role trust policy",
+    "Resource-based policy",
+    "External ID",
+    "STS",
+    "Permissions boundary",
+    "SCP",
+    "MFA"
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "id": "data-protection",
+  "title": "Protéger les données",
+  "objective": "Sait mettre en correspondance le chiffrement en transit et au repos, les clés, les secrets et la récupération avec la classification des données et les chemins d’utilisation.",
+  "prerequisites": [
+    {
+      "slug": "identity-and-access",
+      "title": "Concevoir la gestion des identités et des accès",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "protect-data-in-transit",
+      "title": "Protéger les données en transit par segment",
+      "paragraphs": [
+        "Pour protéger les données en transit, vérifiez où TLS ou une autre protection se termine et quelles entités peuvent se connecter sur chaque segment : de l’utilisateur au point d’entrée, du point d’entrée à la charge de travail, de la charge de travail au magasin de données, ainsi qu’entre AWS et l’environnement sur site.",
+        "L’accès privé ne se limite pas à supprimer les points de terminaison publics. Combinez la résolution de noms, les points de terminaison VPC, les routes, les groupes de sécurité et les politiques côté service afin que l’accès soit possible uniquement par le chemin prévu. Pour permettre à une application d’un VPC d’accéder à S3 sans utiliser de passerelle NAT ni de passerelle Internet, créez un point de terminaison de passerelle S3 et vérifiez que la table de routage du sous-réseau cible contient une route de point de terminaison vers la liste de préfixes S3."
+      ],
+      "sources": [
+        {
+          "label": "Guide d’examen SCS-C03 : données en transit",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        },
+        {
+          "label": "Points de terminaison de passerelle Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "keys-and-encryption",
+      "title": "Distinguer le chiffrement des autorisations d’utilisation des clés",
+      "paragraphs": [
+        "AWS Key Management Service (AWS KMS) est un service géré qui facilite la création et le contrôle des clés utilisées pour le chiffrement et la signature des données. Dans une conception de chiffrement, déterminez non seulement quelles clés protègent quelles données, mais aussi qui peut gérer et utiliser les clés, ainsi que les intégrations de services, la rotation, la protection contre la suppression, l’audit et l’utilisation lors d’une reprise après sinistre.",
+        "Même si le chiffrement est activé, des autorisations trop larges pour déchiffrer les données ou utiliser les clés ne sont pas compatibles avec la classification des données. Évaluez ensemble les politiques de clés, les autorisations IAM, le contexte de chiffrement et les accès aux destinations de sauvegarde et de réplication."
+      ],
+      "sources": [
+        {
+          "label": "AWS Key Management Service",
+          "url": "https://docs.aws.amazon.com/ja_jp/kms/latest/developerguide/overview.html"
+        },
+        {
+          "label": "Guide de l’examen SCS-C03 : données au repos",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "secrets-and-recovery",
+      "title": "Protéger les secrets et les chemins de récupération",
+      "paragraphs": [
+        "N’intégrez pas d’informations d’identification, de clés API ou de jetons dans le code source, les images, les modèles ou les journaux. Concevez un stockage auquel seules les charges de travail qui en ont besoin à l’exécution peuvent accéder, et prévoyez également la rotation, l’audit et la vérification des connexions après les mises à jour.",
+        "Les sauvegardes font partie de la protection des données. Ne vous contentez pas de créer des sauvegardes chiffrées : vérifiez également quelles entités peuvent les restaurer, leur destination de restauration, leur intégrité, le RTO/RPO, la protection contre les suppressions accidentelles et les exercices de restauration."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’utilisateur AWS Secrets Manager",
+          "url": "https://docs.aws.amazon.com/ja_jp/secretsmanager/latest/userguide/intro.html"
+        },
+        {
+          "label": "Guide de l’examen SCS-C03 : secrets et matériel de clé",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-data-1",
+      "prompt": "Le responsable réseau d’une application interne envoie des fichiers confidentiels depuis une application située dans un VPC vers S3, sans passer par une passerelle NAT ni une passerelle Internet. Quels paramètres est-il le plus pertinent de vérifier concernant le chemin réseau et le contrôle d’accès ?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Activer uniquement le chiffrement de S3 et ne pas vérifier le chemin de communication.",
+          "explanation": "Cela ne permet pas de vérifier la protection des données en transit."
+        },
+        {
+          "id": "a",
+          "text": "Vérifier la terminaison TLS ; confirmer que l’endpoint de passerelle S3 est la cible de la liste de préfixes S3 dans la table de routage du sous-réseau concerné ; et confirmer que les politiques de l’endpoint, du bucket et d’IAM limitent les autorisations.",
+          "explanation": "La vérification de la route de l’endpoint de passerelle S3 et de chaque politique permet de valider le chemin entre le VPC et S3 sans dépendre d’une passerelle NAT ni d’une passerelle Internet."
+        },
+        {
+          "id": "c",
+          "text": "Permettre à n’importe qui de se connecter au point de terminaison public.",
+          "explanation": "Cela ne respecte pas les exigences relatives à la frontière des données."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-2",
+      "prompt": "Vous examinez une conception visant à traiter des données client chiffrées dans plusieurs comptes. Quelle vérification est la plus appropriée ?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Accorder les mêmes autorisations de gestion des clés à tous les utilisateurs.",
+          "explanation": "Cela enfreint la séparation des tâches et le principe du moindre privilège."
+        },
+        {
+          "id": "b",
+          "text": "Si les données sont chiffrées, ne pas vérifier les autorisations d’utilisation de la clé.",
+          "explanation": "Cela fait passer inaperçues des autorisations de déchiffrement trop larges."
+        },
+        {
+          "id": "a",
+          "text": "Vérifier la classification des données, les entités qui utilisent et gèrent la clé KMS, les politiques de la clé et d’IAM, ainsi que l’accès aux destinations de réplication et de restauration.",
+          "explanation": "Cela permet d’évaluer conjointement le chiffrement et les autorisations de déchiffrement effectives."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-3",
+      "prompt": "Nous voulons mettre régulièrement à jour les informations d’authentification de la base de données et éviter les interruptions dues à des échecs de mise à jour. Quelle politique est la plus appropriée ?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Intégrer les informations d’authentification dans l’image du conteneur.",
+          "explanation": "Cela entraîne des risques de fuite et d’impossibilité de mettre à jour les informations d’authentification."
+        },
+        {
+          "id": "a",
+          "text": "Concevoir un stockage des secrets dont l’accès est limité par un rôle d’exécution, avec rotation, audit et vérification de la connexion après les mises à jour.",
+          "explanation": "Cette approche protège les informations d’authentification et vérifie la disponibilité de la mise à jour."
+        },
+        {
+          "id": "c",
+          "text": "Ne pas vérifier les autorisations nécessaires pour restaurer les sauvegardes.",
+          "explanation": "Les données risquent d’être inaccessibles pendant la récupération."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC endpoint",
+    "VPC endpoint policy",
+    "Key policy",
+    "Encryption context",
+    "Secret rotation",
+    "RPO",
+    "RTO",
+    "Gateway endpoint"
+  ]
+}

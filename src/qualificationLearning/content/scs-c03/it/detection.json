@@ -1,0 +1,154 @@
+{
+  "id": "detection",
+  "title": "Progettare il rilevamento",
+  "objective": "Progettare percorsi sicuri per la registrazione dei log, il rilevamento e le notifiche, e analizzare in modo difensivo la mancanza di prove o i falsi positivi.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "Fondamenti del cloud"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Autenticazione e autorizzazione"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connettività e routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coverage-before-alerts",
+      "title": "Definire l’ambito di osservazione in base alle risorse e ai rischi",
+      "paragraphs": [
+        "Prima di aggiungere altri allarmi, il personale addetto alla sicurezza organizza gli account, i dati, i percorsi di accesso pubblico, le entità principali con privilegi elevati e le operazioni critiche da proteggere. I requisiti di rilevamento includono non solo cosa rilevare, ma anche chi condurrà l’indagine e quali informazioni sono necessarie per determinare l’entità dell’impatto.",
+        "GuardDuty è un servizio di rilevamento delle minacce che monitora, analizza ed elabora continuamente le origini dati e i log AWS. Poiché un finding di GuardDuty non determina in modo definitivo la causa, la risorsa di destinazione e l’ora vengono correlate con le prove primarie provenienti dalla cronologia delle attività, dalla rete e dall’applicazione, in base al tipo di finding."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame SCS-C03: rilevamento",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        },
+        {
+          "label": "Che cos’è Amazon GuardDuty?",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/what-is-guardduty.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-trail",
+      "title": "Collegare la traccia delle evidenze dalla modifica al rilevamento",
+      "paragraphs": [
+        "CloudTrail registra come eventi le azioni eseguite da utenti, ruoli e servizi AWS, supportando audit, governance e conformità. Definisci l’ambito dell’organizzazione, dell’account e della Regione, la conservazione, la crittografia e le autorizzazioni di accesso, in modo da preservare le operazioni, le risorse di destinazione, gli orari e le entità principali necessari per le indagini. Quando si analizzano operazioni GetObject o PutObject relative a un bucket S3 importante, seleziona e registra gli eventi dati di lettura e scrittura del bucket di destinazione nel trail di CloudTrail. Gli eventi di gestione e la cronologia degli eventi, da soli, non forniscono eventi dati a livello di oggetto S3.",
+        "Come leggere la figura: il blu mostra la distribuzione delle operazioni di gestione e degli eventi dati selezionati tramite un trail di CloudTrail configurato; il rosso mostra i risultati di GuardDuty generati dall’analisi di origini dati configurate; il viola mostra un responsabile che torna da un risultato all’evento originale per svolgere l’indagine. Nessuno di questi è un percorso di richiesta dell’applicazione. Poiché un risultato non stabilisce la causa, verifica l’autore dell’operazione, la destinazione e l’orario usando evidenze primarie, come l’evento originale. Non rendere ampiamente pubblico l’archivio centralizzato protetto e non eliminare l’evento originale basandosi solo su un risultato.",
+        "La protezione S3 di GuardDuty analizza in modo indipendente gli eventi dati S3 e genera risultati. Affinché il personale operativo possa esaminare l’operazione originale, seleziona separatamente gli eventi dati del bucket di destinazione in una traccia CloudTrail e conservali come log di indagine."
+      ],
+      "sources": [
+        {
+          "label": "Che cos'è AWS CloudTrail",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        },
+        {
+          "label": "Abilitazione della registrazione degli eventi CloudTrail per bucket e oggetti S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/enable-cloudtrail-logging-for-s3.html"
+        },
+        {
+          "label": "Protezione S3 di GuardDuty",
+          "url": "https://docs.aws.amazon.com/ja_jp/guardduty/latest/ug/s3-protection.html"
+        }
+      ],
+      "figureId": "scs-evidence-trail-boundaries"
+    },
+    {
+      "id": "alert-quality",
+      "title": "Trasformare le notifiche in risultati di rilevamento utilizzabili",
+      "paragraphs": [
+        "Gli avvisi devono includere la gravità, la destinazione, l’ora, la base del rilevamento, gli eventi correlati, il team responsabile e i criteri per decidere la risposta iniziale. Se lo stesso risultato di rilevamento genera senza condizioni un numero elevato di notifiche, i segnali critici possono passare inosservati. È quindi necessario definire le condizioni per aggregare i duplicati, stabilire le priorità, eseguire l’escalation e sopprimere le notifiche.",
+        "La qualità del rilevamento non può essere misurata semplicemente in base al basso numero di notifiche. Esaminare i rilevamenti mancati, i falsi positivi, il tempo necessario per l’analisi e l’assenza di elementi probatori, quindi migliorare le regole di rilevamento, le origini dei dati e il flusso di assegnazione al team responsabile."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame SCS-C03: rilevamento e logging",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-detect-1",
+      "prompt": "Un responsabile della sicurezza che gestisce più account AWS ha abilitato la protezione S3 di GuardDuty. Quando viene generato un risultato di rilevamento relativo a un accesso sospetto, deve poter risalire a chi ha eseguito GetObject o PutObject su quali oggetti di bucket S3 importanti. Qual è il design più appropriato?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Conservare solo i risultati del rilevamento ed eliminare la cronologia delle operazioni originali.",
+          "explanation": "Non sarebbe possibile verificare la base dei risultati del rilevamento né l’entità dell’impatto."
+        },
+        {
+          "id": "c",
+          "text": "Rendere pubblici tutti i bucket ed eliminare la necessità dei log di accesso.",
+          "explanation": "In questo modo si perdono il perimetro di protezione e la verificabilità tramite audit."
+        },
+        {
+          "id": "a",
+          "text": "Nella traccia CloudTrail dell’organizzazione, selezionare e registrare gli eventi dati GetObject e PutObject per i bucket S3 importanti e conservarli in un archivio aggregato protetto. Per i risultati di GuardDuty, risalire all’entità principale, alla risorsa, all’ora e all’evento originale per verificare l’ipotesi.",
+          "explanation": "In questo modo le prove primarie delle operazioni sugli oggetti S3 vengono collegate ai risultati del rilevamento, consentendo di svolgere un’indagine senza concludere che il risultato del rilevamento sia di per sé la causa."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-2",
+      "prompt": "Un responsabile delle operazioni di sicurezza deve determinare la priorità della risposta iniziale a risultati di GuardDuty verificatisi negli ultimi 30 minuti, senza ampliare inutilmente l’impatto sull’attività aziendale. Che cosa dovrebbe fare per prima cosa?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "In base al tipo di risultato, correlare la risorsa interessata e l’orario con le prove primarie pertinenti, ad esempio gli eventi di gestione correlati di CloudTrail, i log di flusso VPC, i log DNS e gli eventi dati S3, per determinare l’ambito dell’impatto e la priorità della risposta iniziale.",
+          "explanation": "Poiché la base di un risultato di GuardDuty varia in funzione delle origini dati utilizzate, il risultato deve essere convalidato in modo difensivo correlandolo con le prove primarie pertinenti."
+        },
+        {
+          "id": "c",
+          "text": "Sospendere permanentemente l’accesso a tutti gli account senza verificare l’impatto.",
+          "explanation": "Questo amplierebbe inutilmente l’impatto sull’attività."
+        },
+        {
+          "id": "b",
+          "text": "Concludere che il risultato è la causa ed eliminare la posizione di archiviazione delle prove.",
+          "explanation": "Questo farebbe perdere le prove necessarie per l’indagine."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-detect-3",
+      "prompt": "Il team operativo della sicurezza riceve troppe notifiche e non rileva risultati critici. Qual è il miglioramento più appropriato?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Disabilitare tutte le notifiche.",
+          "explanation": "Non sarà più possibile rilevare neanche i segnali critici."
+        },
+        {
+          "id": "c",
+          "text": "Aumentare indiscriminatamente i destinatari aggiungendo persone non pertinenti.",
+          "explanation": "Le responsabilità e le priorità diventeranno poco chiare."
+        },
+        {
+          "id": "a",
+          "text": "Definire la gravità dei risultati, l’aggregazione dei duplicati, l’ambito, i responsabili, l’escalation e le condizioni di soppressione, quindi riesaminare i casi non rilevati e i falsi positivi.",
+          "explanation": "In questo modo è possibile migliorare le notifiche affinché consentano di intraprendere un’azione."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "GuardDuty",
+    "Security finding",
+    "CloudTrail trail",
+    "Management event",
+    "Evidence retention",
+    "CloudTrail data event",
+    "GuardDuty S3 Protection"
+  ]
+}

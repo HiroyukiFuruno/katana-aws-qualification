@@ -1,0 +1,162 @@
+{
+  "id": "infrastructure-security",
+  "title": "防御基础设施",
+  "objective": "能够在互联网边界、工作负载和 VPC 各层部署最低限度的防御边界。",
+  "prerequisites": [
+    {
+      "slug": "detection",
+      "title": "设计检测方案",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "incident-response",
+      "title": "应对事件",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "连接与路由"
+    }
+  ],
+  "sections": [
+    {
+      "id": "edge-controls",
+      "title": "将公开入口限制为所需路径",
+      "paragraphs": [
+        "对于公开应用程序，应分别明确 DNS、CDN、AWS WAF、负载均衡器和应用程序各自的职责。仅接受所需的协议和主机，并一并确认 TLS 终止位置、证书、速率限制、应用层规则以及到达源站的可达性。",
+        "将 CloudFront 设为查看器唯一的公开入口，并将私有子网中的内部 ALB 用作 VPC 源站，可以在不创建通过公有 IP 直接到达 ALB 的路径的情况下分发内容。仅添加 WAF 规则并不能防止绕过；如果存在其他公开路径，请求仍可能从该路径绕过。Web ACL 不是放置在通信路径中间的独立跃点，而是关联到 CloudFront 或 ALB、用于评估请求的边界。应观测从入口到源站的路径、日志和规则效果，并评估对合法用户的影响。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考试指南：网络边缘",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        },
+        {
+          "label": "什么是 AWS WAF？",
+          "url": "https://docs.aws.amazon.com/ja_jp/waf/latest/developerguide/what-is-aws-waf.html"
+        },
+        {
+          "label": "限制对 Application Load Balancer 的访问",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html"
+        },
+        {
+          "label": "使用 CloudFront VPC 源站限制访问",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html"
+        }
+      ],
+      "figureId": "scs-edge-origin-boundary"
+    },
+    {
+      "id": "workload-hardening",
+      "title": "管理每个工作负载的执行权限和更新",
+      "paragraphs": [
+        "对于计算工作负载，请管理执行角色、镜像或软件包的来源、漏洞管理、密钥、操作系统或运行时更新以及日志发送。不要在工作负载中放置共享的管理员凭证，并确保工作负载只能访问其所需的 AWS API 和数据。",
+        "应将更新作为包含验证、分阶段应用、运行状况检查和回滚的运营流程来执行。如果为了加快修补而停止监控或备份，则在发生故障时调查原因和恢复系统会更加困难。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 考试指南：计算工作负载",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "vpc-boundaries",
+      "title": "分别确认通信路径和允许边界",
+      "paragraphs": [
+        "VPC 的可达性由路由表、安全组、网络 ACL 以及主机或服务设置共同决定。存在路由并不意味着端口已获允许，因此不仅要确认发送路径，还要确认返回路径。",
+        "在防御设计中，应根据用途分别划分公有、私有和隔离子网，并且只允许必需的路径和协议。不要通过完全开放来解决连接问题，而应使用流日志和连接日志，确定流量在哪个边界被拒绝。"
+      ],
+      "sources": [
+        {
+          "label": "配置路由表",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "SCS-C03 考试指南：网络安全",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-infra-1",
+      "prompt": "负责公共 Web 应用的团队希望用户只能通过 CloudFront 访问该应用。要关闭那些无需经过 AWS WAF 检查即可连接到源站的路径，哪种设计最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "将私有子网中的内部 ALB 用作 CloudFront 的 VPC 源站，并将 Web ACL 关联到 CloudFront 或 ALB。不要创建允许从 CloudFront 以外的位置直接访问 ALB 的公共路径。",
+          "explanation": "将查看器的公共入口限制为 CloudFront，并使用内部 ALB，这样就不会存在无需经过 WAF 评估即可访问公共 ALB 的路径。"
+        },
+        {
+          "id": "b",
+          "text": "公开源站，使任何人都可以直接连接。",
+          "explanation": "这会使入口的安全边界被绕过。"
+        },
+        {
+          "id": "c",
+          "text": "仅配置 WAF 规则，不验证到源站的可达性。",
+          "explanation": "这无法防止通过其他路径进行直接访问。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-2",
+      "prompt": "负责容器化业务应用程序的人员希望将工作负载的 AWS API 权限降至最低。以下哪项策略最合适？",
+      "choices": [
+        {
+          "id": "c",
+          "text": "为了便于更新，不验证镜像的来源和漏洞。",
+          "explanation": "供应链和运营风险仍然存在。"
+        },
+        {
+          "id": "a",
+          "text": "为专用于该工作负载的执行角色仅授予所需 API 和资源的权限，并且不放置共享的管理员凭证。",
+          "explanation": "这样可以限定执行主体及其权限范围。"
+        },
+        {
+          "id": "b",
+          "text": "将相同的管理员访问密钥嵌入每个容器中。",
+          "explanation": "一旦泄露，影响会很大，而且无法识别主体。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-3",
+      "prompt": "正在调查无法访问私有子网中服务的问题。以下哪项检查最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "依次检查出站和返回路由、目标安全组、子网 NACL 以及服务配置。",
+          "explanation": "这样可以将路由和权限作为不同的边界分别隔离排查。"
+        },
+        {
+          "id": "b",
+          "text": "在所有端口上开放完全不受限制的访问。",
+          "explanation": "这会在未确定原因的情况下失去防御边界。"
+        },
+        {
+          "id": "c",
+          "text": "只检查源端的路由。",
+          "explanation": "这会遗漏返回路径以及目标端的拒绝情况。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "WAF",
+    "Web ACL",
+    "Origin",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Public subnet",
+    "Private subnet",
+    "TLS",
+    "CloudFront VPC origin"
+  ]
+}

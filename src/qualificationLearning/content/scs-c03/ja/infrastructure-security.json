@@ -1,0 +1,162 @@
+{
+  "id": "infrastructure-security",
+  "title": "インフラストラクチャを防御する",
+  "objective": "インターネット境界、ワークロード、VPC の各層に最小限の防御境界を配置できる。",
+  "prerequisites": [
+    {
+      "slug": "detection",
+      "title": "検出を設計する",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "incident-response",
+      "title": "インシデントへ対応する",
+      "courseId": "scs-c03"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "接続とルーティング"
+    }
+  ],
+  "sections": [
+    {
+      "id": "edge-controls",
+      "title": "公開入口を必要な経路に限定する",
+      "paragraphs": [
+        "公開アプリケーションでは、DNS、CDN、WAF、ロードバランサー、アプリケーションの責任を分けます。必要なプロトコルとホストだけを受け入れ、TLS の終端、証明書、レート制限、アプリケーション層のルール、オリジンへの到達性を一緒に確認します。",
+        "CloudFront をビューアーの唯一の公開入口にし、VPC オリジンとしてプライベートサブネットの内部向け ALB を使えば、ALB へパブリック IP で直接到達する経路を作らずにコンテンツを配信できます。WAF ルールを追加するだけでは、別の公開経路があれば迂回されます。Web ACL は通信の途中に置く独立したホップではなく、CloudFront または ALB に関連付けてリクエストを評価する境界です。入口からオリジンまでの経路、ログ、ルールの効果を観測し、正規利用者への影響も評価します。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 試験ガイド: ネットワークエッジ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        },
+        {
+          "label": "AWS WAF とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/waf/latest/developerguide/what-is-aws-waf.html"
+        },
+        {
+          "label": "Application Load Balancer へのアクセスを制限する",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/restrict-access-to-load-balancer.html"
+        },
+        {
+          "label": "CloudFrontのVPCオリジンによるアクセス制限",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/private-content-vpc-origins.html"
+        }
+      ],
+      "figureId": "scs-edge-origin-boundary"
+    },
+    {
+      "id": "workload-hardening",
+      "title": "ワークロードごとに実行権限と更新を管理する",
+      "paragraphs": [
+        "コンピューティングワークロードでは、実行ロール、イメージまたはパッケージの出所、脆弱性管理、シークレット、OS またはランタイムの更新、ログ送信を管理します。共有管理者認証情報を置かず、ワークロードが必要な AWS API とデータだけへアクセスできるようにします。",
+        "更新は、検証、段階的適用、正常性確認、ロールバックを持つ運用として行います。パッチ適用を急ぐために監視やバックアップを止めると、障害時の原因調査と復旧が難しくなります。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 試験ガイド: コンピューティングワークロード",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "vpc-boundaries",
+      "title": "通信経路と許可境界を分けて確認する",
+      "paragraphs": [
+        "VPC の到達性は、ルートテーブル、セキュリティグループ、ネットワーク ACL、ホストまたはサービスの設定が組み合わさって決まります。ルートがあることはポートが許可されることを意味せず、送信経路だけでなく戻り経路も確認します。",
+        "防御設計では、公開、プライベート、隔離のサブネットを目的で分け、必要な経路とプロトコルだけを許可します。全開放で接続問題を解決するのではなく、フローログや接続ログを使って、どの境界で拒否されたかを特定します。"
+      ],
+      "sources": [
+        {
+          "label": "ルートテーブルを設定する",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "SCS-C03 試験ガイド: ネットワークセキュリティ",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-infra-1",
+      "prompt": "公開Webアプリの担当者は、利用者がCloudFrontからだけアクセスできるようにします。AWS WAFの検査を通らずにオリジンへ接続できる経路を閉じるには、どの設計が最も適切ですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "CloudFront の VPC オリジンとしてプライベートサブネットの内部向け ALB を使い、Web ACL を CloudFront または ALB に関連付ける。CloudFront 以外から ALB へ直接到達するパブリック経路を作らない。",
+          "explanation": "ビューアーの公開入口を CloudFront に限定し、ALB を内部向けにすることで、WAF を評価せずにパブリック ALB へ到達する経路を作りません。"
+        },
+        {
+          "id": "b",
+          "text": "オリジンを誰でも直接接続できるように公開する。",
+          "explanation": "入口の防御境界を迂回されます。"
+        },
+        {
+          "id": "c",
+          "text": "WAF ルールだけを設定し、オリジンへの到達性を確認しない。",
+          "explanation": "別経路からの直接アクセスを防げません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-2",
+      "prompt": "コンテナ化した業務アプリケーションの担当者は、ワークロードの AWS API 権限を最小化したいと考えています。最も適切な方針はどれですか。",
+      "choices": [
+        {
+          "id": "c",
+          "text": "更新を容易にするため、イメージの出所と脆弱性を確認しない。",
+          "explanation": "サプライチェーンと運用のリスクが残ります。"
+        },
+        {
+          "id": "a",
+          "text": "ワークロード専用の実行ロールに、必要な API とリソースだけの権限を付与し、共有管理者認証情報を置かない。",
+          "explanation": "実行主体と権限範囲を限定できます。"
+        },
+        {
+          "id": "b",
+          "text": "全コンテナへ同じ管理者アクセスキーを埋め込む。",
+          "explanation": "漏えい時の影響が大きく、主体を識別できません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-infra-3",
+      "prompt": "プライベートサブネットのサービスへ到達できない問題を調査します。最も適切な確認はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "送信・戻りのルート、宛先のセキュリティグループ、サブネットの NACL、サービス設定を順に確認する。",
+          "explanation": "経路と許可を別の境界として切り分けられます。"
+        },
+        {
+          "id": "b",
+          "text": "すべてのポートを全公開する。",
+          "explanation": "原因を特定せず防御境界を失います。"
+        },
+        {
+          "id": "c",
+          "text": "送信側のルートだけを確認する。",
+          "explanation": "応答経路や宛先側の拒否を見落とします。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "WAF",
+    "Web ACL",
+    "Origin",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Public subnet",
+    "Private subnet",
+    "TLS",
+    "CloudFront VPC origin"
+  ]
+}

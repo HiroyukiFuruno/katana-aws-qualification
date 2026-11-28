@@ -1,0 +1,146 @@
+{
+  "id": "data-protection",
+  "title": "Proteger los datos",
+  "objective": "Puede relacionar el cifrado en tránsito y en reposo, las claves, los secretos y la recuperación con la clasificación de los datos y las rutas de uso.",
+  "prerequisites": [
+    {
+      "slug": "identity-and-access",
+      "title": "Diseñar la gestión de identidades y accesos",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "protect-data-in-transit",
+      "title": "Proteger los datos en tránsito por segmento",
+      "paragraphs": [
+        "Para proteger los datos en tránsito, compruebe dónde terminan TLS u otras medidas de protección y qué entidades pueden conectarse en cada segmento: del usuario al punto de entrada, del punto de entrada a la carga de trabajo, de la carga de trabajo al almacén de datos y entre AWS y el entorno local.",
+        "El acceso privado no se completa simplemente eliminando los puntos de conexión públicos. Combine la resolución de nombres, los puntos de conexión de VPC, las rutas, los grupos de seguridad y las políticas del lado del servicio para que el acceso solo sea posible a través de la ruta prevista. Para que una aplicación dentro de una VPC acceda a S3 sin utilizar una puerta de enlace NAT ni una puerta de enlace de Internet, cree un punto de conexión de puerta de enlace de S3 y compruebe que la tabla de rutas de la subred de destino contiene una ruta del punto de conexión hacia la lista de prefijos de S3."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen SCS-C03: datos en tránsito",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        },
+        {
+          "label": "Puntos de conexión de puerta de enlace de Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/privatelink/vpc-endpoints-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "keys-and-encryption",
+      "title": "Separar el cifrado de los permisos de uso de las claves",
+      "paragraphs": [
+        "AWS Key Management Service (AWS KMS) es un servicio administrado que facilita la creación y el control de claves utilizadas para cifrar y firmar datos. En un diseño de cifrado, determine no solo qué claves protegen qué datos, sino también quién puede administrar y usar las claves, además de las integraciones con servicios, la rotación, la protección contra la eliminación, la auditoría y el uso durante la recuperación ante desastres.",
+        "Aunque el cifrado esté habilitado, unos permisos demasiado amplios para descifrar o usar las claves no se ajustan a la clasificación de los datos. Evalúe conjuntamente las políticas de claves, los permisos de IAM, el contexto de cifrado y el acceso en los destinos de copia de seguridad y replicación."
+      ],
+      "sources": [
+        {
+          "label": "AWS Key Management Service",
+          "url": "https://docs.aws.amazon.com/ja_jp/kms/latest/developerguide/overview.html"
+        },
+        {
+          "label": "Guía del examen SCS-C03: datos en reposo",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    },
+    {
+      "id": "secrets-and-recovery",
+      "title": "Proteger los secretos y las rutas de recuperación",
+      "paragraphs": [
+        "No integre credenciales, claves de API ni tokens en el código fuente, las imágenes, las plantillas ni los registros. Diseñe un almacenamiento al que solo puedan acceder las cargas de trabajo que necesiten esos datos durante el tiempo de ejecución, junto con la rotación, la auditoría y las comprobaciones de conexión posteriores a las actualizaciones.",
+        "Las copias de seguridad forman parte de la protección de datos. No se limite a crear copias de seguridad cifradas; compruebe también qué entidades pueden restaurarlas, el destino de restauración, su integridad, el RTO/RPO, la protección contra eliminaciones accidentales y los ejercicios de restauración."
+      ],
+      "sources": [
+        {
+          "label": "Guía del usuario de AWS Secrets Manager",
+          "url": "https://docs.aws.amazon.com/ja_jp/secretsmanager/latest/userguide/intro.html"
+        },
+        {
+          "label": "Guía del examen SCS-C03: secretos y material de claves",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain5.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-data-1",
+      "prompt": "El responsable de redes de una aplicación interna envía archivos confidenciales desde una aplicación de una VPC a S3 sin pasar por una puerta de enlace NAT ni una puerta de enlace de Internet. ¿Qué configuración es más adecuada comprobar en relación con la ruta y el control de acceso?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Activar únicamente el cifrado de S3 y no comprobar la ruta de comunicación.",
+          "explanation": "Esto no permite verificar la protección durante el tránsito."
+        },
+        {
+          "id": "a",
+          "text": "Verificar la terminación de TLS; confirmar que el endpoint de gateway de S3 sea el destino de la lista de prefijos de S3 en la tabla de rutas de la subred de destino; y confirmar que las políticas del endpoint, del bucket y de IAM restrinjan los permisos permitidos.",
+          "explanation": "Verificar la ruta del endpoint de gateway de S3 y cada política permite validar la ruta desde la VPC hasta S3 sin depender de una puerta de enlace NAT ni de una puerta de enlace de Internet."
+        },
+        {
+          "id": "c",
+          "text": "Permitir que cualquiera se conecte al punto de enlace público.",
+          "explanation": "Esto no cumple los requisitos del límite de datos."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-2",
+      "prompt": "Está revisando un diseño para gestionar datos de clientes cifrados en varias cuentas. ¿Cuál es la comprobación más adecuada?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Conceder los mismos permisos de administración de claves a todos los usuarios.",
+          "explanation": "Esto infringe la separación de funciones y el principio de mínimo privilegio."
+        },
+        {
+          "id": "b",
+          "text": "Si los datos están cifrados, no comprobar los permisos para usar la clave.",
+          "explanation": "Esto pasa por alto unos permisos de descifrado demasiado amplios."
+        },
+        {
+          "id": "a",
+          "text": "Comprobar la clasificación de los datos; quién usa y administra la clave de KMS; las políticas de la clave y de IAM; y el acceso a los destinos de replicación y restauración.",
+          "explanation": "Esto permite evaluar conjuntamente el cifrado y los permisos de descifrado reales."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-data-3",
+      "prompt": "Queremos actualizar periódicamente las credenciales de la base de datos y evitar interrupciones causadas por fallos en las actualizaciones. ¿Qué política es la más adecuada?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Incrustar las credenciales en la imagen del contenedor.",
+          "explanation": "Esto conlleva riesgos de filtración y de no poder actualizar las credenciales."
+        },
+        {
+          "id": "a",
+          "text": "Diseñar un almacén de secretos cuyo acceso esté restringido mediante un rol de ejecución, junto con la rotación, la auditoría y la verificación de la conexión después de las actualizaciones.",
+          "explanation": "Esto protege las credenciales y verifica la disponibilidad del proceso de actualización."
+        },
+        {
+          "id": "c",
+          "text": "No verificar los permisos para restaurar las copias de seguridad.",
+          "explanation": "Es posible que no se pueda acceder a los datos durante la recuperación."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "VPC endpoint",
+    "VPC endpoint policy",
+    "Key policy",
+    "Encryption context",
+    "Secret rotation",
+    "RPO",
+    "RTO",
+    "Gateway endpoint"
+  ]
+}

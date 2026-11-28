@@ -1,0 +1,152 @@
+{
+  "id": "identity-and-access",
+  "title": "Identity and Access Management を設計する",
+  "objective": "認証と認可を分け、主体・条件・対象を最小権限で管理できる。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "クラウドの基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    },
+    {
+      "slug": "infrastructure-security",
+      "title": "インフラストラクチャを防御する",
+      "courseId": "scs-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "authentication-by-actor",
+      "title": "人・アプリケーション・外部システムを区別して認証する",
+      "paragraphs": [
+        "人のアクセスにはフェデレーションと MFA、ワークロードにはロールと一時認証情報、外部システムには信頼条件を持つ連携を選びます。長期アクセスキーを共有して主体を区別できなくする設計は、失効、監査、漏えい時の範囲限定を困難にします。",
+        "認証問題を調査するときは、IdP、MFA、トークン、ロール信頼ポリシー、時刻、関連する CloudTrail イベントを確認します。利用者が認証できたことと、対象リソースへ認可されることは別の判断です。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 試験ガイド: 認証戦略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "authorization-boundaries",
+      "title": "実効権限を複数の境界で評価する",
+      "paragraphs": [
+        "認可では、ID ベースポリシー、リソースベースポリシー、セッションポリシー、アクセス許可境界、組織ポリシー、明示的な拒否を合わせて実効権限を評価します。権限が必要な主体、操作、対象、条件を明示し、管理者権限を初期値にしません。",
+        "別の AWS アカウントが管理する IAM ロールを引き受けるには、呼び出し元に `sts:AssumeRole` の許可があり、引き受け先のロールでも信頼ポリシーの条件を満たす必要があります。顧客アカウントに対象ロールを作る場合は、そのロールの権限ポリシーで対象バケットの必要なプレフィックスと操作だけを許可します。第三者に委託する場合は、外部 ID も信頼条件に設定できます。バケットポリシーは、明示的な拒否や追加条件を課す必要があるときに加える境界であり、ロールとバケットが同じ顧客アカウントにある構成で常に必須ではありません。図の実線はロールを引き受ける要求、一時認証情報の応答、その認証情報を使った S3 への要求を示します。破線は AWS STS が照合する信頼条件です。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 試験ガイド: 認可戦略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        },
+        {
+          "label": "IAM ユーザーガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/introduction.html"
+        },
+        {
+          "label": "第三者が所有する AWS アカウント へのアクセス",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html"
+        }
+      ],
+      "figureId": "scs-cross-account-assume-role-boundary"
+    },
+    {
+      "id": "access-review",
+      "title": "権限を継続的に見直す",
+      "paragraphs": [
+        "アクセス設計は初回の付与で終わりません。利用していない権限、退職・異動、役割変更、緊急アクセス、例外を定期的に見直し、所有者、目的、有効期限、承認記録を保持します。",
+        "ブレークグラスアクセスは、通常の最小権限を置き換える常用手段ではありません。発動条件、MFA、短い有効期間、監視、事後レビューを定義し、使った理由と影響を必ず確認します。"
+      ],
+      "sources": [
+        {
+          "label": "SCS-C03 試験ガイド: Identity and Access Management",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/security-specialty-03/security-specialty-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "scs-iam-1",
+      "prompt": "人事システムと連携する管理者アクセスを設計します。退職者のアクセスを速やかに失効させ、MFA を必須にしたい場合、最も適切な方針はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "IdP とフェデレーションを使い、MFA と役割ベースの一時セッションを適用する。",
+          "explanation": "人事情報と認証・失効を連携し、長期認証情報を避けられます。"
+        },
+        {
+          "id": "b",
+          "text": "部署全員で共有する管理者アクセスキーを配る。",
+          "explanation": "主体の識別と失効ができません。"
+        },
+        {
+          "id": "c",
+          "text": "MFA を無効にして、パスワードを永続化する。",
+          "explanation": "認証強度を下げます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-2",
+      "prompt": "別アカウントの監査ツールが、顧客アカウントにある特定のログバケットの承認済みプレフィックスだけを読み取る必要があります。最も適切な認可設計はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "顧客アカウントにクロスアカウントロールを作り、監査ツールのアカウントと外部 ID を信頼条件にする。ロールの権限ポリシーは対象バケットの承認済みプレフィックスの読取りだけに限定し、必要な追加条件はバケットポリシーで課す。",
+          "explanation": "ロールを引き受けられる主体と、引き受け後に読める対象・操作を別々に限定できます。バケットポリシーは追加の境界が必要な場合に使います。"
+        },
+        {
+          "id": "c",
+          "text": "監査ツールへ管理者権限を恒久的に付与する。",
+          "explanation": "必要以上の操作を許します。"
+        },
+        {
+          "id": "b",
+          "text": "バケットを公開読取り可能にする。",
+          "explanation": "監査ログの境界を失います。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "scs-iam-3",
+      "prompt": "緊急時だけ本番管理操作を許可するブレークグラス手順を設計します。最も適切な制御はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "緊急用管理者認証情報を全員で常用する。",
+          "explanation": "最小権限と監査可能性を失います。"
+        },
+        {
+          "id": "c",
+          "text": "緊急操作の記録を残さない。",
+          "explanation": "事後の影響確認ができません。"
+        },
+        {
+          "id": "a",
+          "text": "発動条件、MFA、短い有効期間、操作の監視、事後レビューを定義する。",
+          "explanation": "緊急アクセスを例外として追跡・統制できます。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Principal",
+    "IAM role",
+    "IAM role trust policy",
+    "Resource-based policy",
+    "External ID",
+    "STS",
+    "Permissions boundary",
+    "SCP",
+    "MFA"
+  ]
+}

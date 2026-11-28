@@ -1,0 +1,189 @@
+{
+  "id": "testing-and-deployment",
+  "title": "測試與部署",
+  "objective": "根據變更風險實作構件、環境設定、測試、CI/CD、分階段部署與復原。",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CD 流程"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "測試與品質閘門"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署與復原"
+    }
+  ],
+  "sections": [
+    {
+      "id": "artifacts-and-environment-configuration",
+      "title": "分別管理程式碼、相依項目與環境設定",
+      "paragraphs": [
+        "明確定義部署成品中程式碼、相依項目與設定的處理方式。對於 Lambda，應根據處理內容以及函式之間共用的相依項目，選擇 .zip 檔案、容器映像或 Layer。將容器映像儲存在 Amazon ECR，並使用映像標籤與生命週期政策管理版本和保留期限。",
+        "對於各環境中不同的值，不要直接寫入程式碼，而應使用 AWS AppConfig、Systems Manager Parameter Store、Secrets Manager 等服務進行管理。將設定、機密值與成品版本分開，可以在相同程式碼從開發環境進入測試和生產環境時，確認發生了哪些變更。",
+        "API Gateway 的階段專用 URL 和 Lambda 別名，是區分環境與發行目標的要素。不要只根據名稱區分生產環境和測試環境，而應明確指出所參照的設定與部署目標。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 3：成品與環境設定",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "automated-testing",
+      "title": "固定測試輸入、相依項目與預期結果",
+      "paragraphs": [
+        "在測試中，應固定要輸入的內容、要使用的相依項目，以及要視為預期結果的內容。在 Lambda 與 API Gateway 的測試事件中，準備接近實際呼叫的 JSON 承載。如果無法直接呼叫外部相依項目，請使用模擬 API，重現成功、失敗與逾時等條件。",
+        "即使使用 AWS SAM、AWS CDK、AWS CloudFormation 等工具，也不僅要確認範本語法，還要確認建立的資源及其權限是否符合預期。即使使用 AI 輔助工具產生測試，也必須由人工檢閱產生的前提、邊界條件與預期值。",
+        "測試的目的不是讓測試通過，而是確認變更沒有破壞會影響使用者的行為。應依據變更的風險，組合使用單元測試、整合測試與部署後檢查。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 3：測試的實作與自動化",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "pipeline-and-deployment-strategies",
+      "title": "分階段推進，同時保持可回復的狀態",
+      "paragraphs": [
+        "在 CI/CD 中，將來源變更、建置、測試、部署，以及部署後的驗證連接成一致的流程。圖中顯示，只有通過品質閘門的修訂版本才能進入 Staging 和 Canary；監控閘門失敗時，則會決定回復到事先定義的穩定版本。AWS CodePipeline 負責協調各個階段，AWS CodeDeploy 則協助將應用程式修訂版本部署到目標環境。重要的不只是通過管道本身，而是確認每個階段需要驗證的內容。",
+        "如果想降低變更的影響，可以選擇 Canary、藍綠部署或滾動更新等部署策略。在 Canary 部署中，先將新版本發布給部分流量，確認指標和錯誤後再擴大範圍。在藍綠部署中，讓舊環境與新環境保持在可相互切換的狀態。",
+        "回復不是等到發生失敗後才第一次考慮的操作。負責人員應在發布前確認要回復的版本、啟動條件、資料變更的相容性，以及通知對象。即使使用 CloudFormation 或 CodeDeploy 的自動回復功能，也必須了解哪些內容會被回復，以及哪些內容不會被回復。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 3：CI/CD 與部署策略",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        },
+        {
+          "label": "什麼是 AWS CodeDeploy？",
+          "url": "https://docs.aws.amazon.com/ja_jp/codedeploy/latest/userguide/welcome.html"
+        }
+      ],
+      "figureId": "dva-pipeline-release-gates"
+    },
+    {
+      "id": "infrastructure-and-release-versioning",
+      "title": "讓組態與發布版本可重現",
+      "paragraphs": [
+        "透過 Infrastructure as Code，您可以在 CloudFormation 或 AWS SAM 範本中宣告資源與組態。能從相同範本重現環境，有助於減少手動組態設定的遺漏，也能協助檢閱變更內容。範本與應用程式程式碼一樣，都應納入版本控制與測試。",
+        "容器映像檔標籤、Lambda 別名、原始碼分支與發布標籤可用來追蹤部署了哪些內容。不要只依賴可變的名稱，而應能夠參照特定的成品與組態組合。",
+        "部署後的驗證不只要檢查可達性，還要確認主要 API 的回應、錯誤率、授權，以及必要的背景處理作業。預先定義成功條件後，就能以可重現的方式判斷是否逐步擴大部署範圍或執行復原。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 3：IaC 與發布管理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-deploy-001",
+      "prompt": "某支付 API 開發人員希望在開發、驗證和生產環境中使用不同的外部端點與機密值，同時維持部署到生產環境的 Lambda 函式程式碼不變。在此條件下，請選擇一種最適合管理程式碼、設定和機密值的方法。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "將生產環境的連線目標和密碼寫入原始碼，然後在各環境中手動修改。",
+          "explanation": "手動修改會損害差異追蹤和可重現性，也可能導致機密值外洩。"
+        },
+        {
+          "id": "c",
+          "text": "為了消除環境差異，在所有環境中共用生產資料庫。",
+          "explanation": "驗證環境中的操作可能會影響生產資料，這與環境隔離和安全測試的目標相違背。"
+        },
+        {
+          "id": "d",
+          "text": "只在不同環境中變更 Lambda 的處理常式名稱，並在所有環境中共用設定和密碼。",
+          "explanation": "處理常式名稱是執行的進入點，無法用來適當管理環境特定的端點和機密值。"
+        },
+        {
+          "id": "a",
+          "text": "使用 AppConfig 或 Parameter Store 管理環境特定的設定，使用 Secrets Manager 管理機密值，並將它們與成品分開。",
+          "explanation": "將程式碼版本、環境設定和機密值分開，可以更安全地在各環境中使用相同的成品。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-002",
+      "prompt": "配送服務開發團隊希望在不呼叫實際外部 API 的情況下，自動測試外部地址驗證 API 發生逾時時的行為。請選擇一種最適合自動測試此失敗條件的方法。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "假設外部 API 一律成功，不測試逾時處理。",
+          "explanation": "這樣無法確認發生故障時的行為，也無法了解對使用者的影響。"
+        },
+        {
+          "id": "a",
+          "text": "準備一個能回傳外部 API 正常回應、失敗和逾時的模擬物件，並驗證預期的重試與錯誤回應。",
+          "explanation": "藉由能重現相依服務條件的模擬物件，可以不受外部服務狀態影響地驗證應用程式的行為。"
+        },
+        {
+          "id": "c",
+          "text": "將生產環境的地址資料複製到開發環境，然後手動等待逾時。",
+          "explanation": "複製生產資料會產生資料保護問題，而固定等待並不是可重現的自動化測試。"
+        },
+        {
+          "id": "d",
+          "text": "不進行測試，而是等到部署後由使用者回報故障。",
+          "explanation": "這無法達成部署前驗證已知失敗條件的目的。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-003",
+      "prompt": "預約服務的發布負責人希望先將新版本發布給部分使用者，確認錯誤率和延遲後，再擴展到所有使用者。請選擇最符合這些條件的一種部署策略。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "同時發布給所有使用者，等發生錯誤後再尋找舊版本。",
+          "explanation": "如果發生問題，影響範圍會很大，而且不符合事先明確指定回復對象的要求。"
+        },
+        {
+          "id": "c",
+          "text": "直接在生產環境中手動變更，且不記錄構件版本。",
+          "explanation": "如此一來無法追蹤變更內容和回復對象，會損害可重現性與可稽核性。"
+        },
+        {
+          "id": "d",
+          "text": "只部署到測試環境，不檢查生產環境的指標。",
+          "explanation": "檢查測試環境是必要的，但不能取代分階段部署到生產環境以及檢查營運指標。"
+        },
+        {
+          "id": "a",
+          "text": "使用 Canary 部署，先監控少量流量，再分階段擴大部署範圍。",
+          "explanation": "Canary 是一種先將新版本發布給部分使用者，確認指標後再擴大範圍或回復的策略。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Artifact",
+    "ECR",
+    "AWS AppConfig",
+    "Parameter Store",
+    "Secrets Manager",
+    "Lambda alias",
+    "API Gateway stage",
+    "SAM",
+    "CDK",
+    "CloudFormation",
+    "Mock",
+    "CI/CD",
+    "CodePipeline",
+    "CodeDeploy",
+    "Canary deployment",
+    "Blue/green deployment",
+    "Rolling deployment",
+    "Rollback"
+  ]
+}

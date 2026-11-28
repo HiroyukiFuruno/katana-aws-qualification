@@ -1,0 +1,199 @@
+{
+  "id": "development-with-aws-services",
+  "title": "使用 AWS 服務進行開發",
+  "objective": "能夠根據應用程式的處理條件，選擇同步與非同步整合、Lambda、資料儲存、API 以及事件。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服務"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "通訊基礎"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coupling-and-message-handling",
+      "title": "根據等待時間與故障影響選擇整合方式",
+      "paragraphs": [
+        "對於訂單接收等呼叫方需要立即取得結果的處理，可以選擇透過 API Gateway 進行同步呼叫。另一方面，對於影像轉換或發票產生等不需要讓使用者等待的處理，可以考慮使用 Amazon SQS 佇列，將接收處理與後續處理以非同步方式分離。圖中顯示，接收時的 HTTP 回應與工作程式從 SQS 取出並執行的後續處理具有彼此獨立的故障邊界。分離處理的目的是避免故障或暫時性負載的影響過度擴散到呼叫方。",
+        "對於非同步處理，需要考慮訊息未送達、處理失敗，以及相同處理再次執行的情況。負責人會結合使用退避機制（重試時逐步延長等待時間）、死信佇列（隔離故障以便確認），以及冪等處理（即使重複相同要求，也不會破壞結果）。僅僅設定佇列並不會讓故障消失。",
+        "Amazon EventBridge、Amazon S3 事件通知和 Amazon SNS 也可用於事件驅動的整合。無論使用哪項服務，都必須明確事件發行者、接收者、發生故障時的去向，以及負責記錄處理結果的人員。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 1：整合與事件驅動",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ],
+      "figureId": "dva-event-processing-contract"
+    },
+    {
+      "id": "lambda-integration",
+      "title": "分別處理 Lambda 事件、設定與權限",
+      "paragraphs": [
+        "Lambda 函式可以與 API Gateway、SQS、DynamoDB、S3 等服務的事件整合。實作函式的人員會依據處理特性，設定事件輸入格式、處理常式、執行階段、記憶體、逾時和並行數。記憶體不足、逾時和並行上限是不同的問題，不能透過一律增大這些數值來解決。",
+        "如果函式需要連線到 VPC 內的私有資源，請指定相關的子網路和安全群組。僅連線到 VPC 並不會自動取得資料庫驗證或存取許可。請分別檢查網路可達性、IAM 執行角色和資料存放區的憑證。",
+        "如果非同步叫用失敗，請考慮設定，將失敗事件傳送至目的地或死信佇列。在接受會影響業務營運的事件之前，先準備好失敗記錄和重新處理程序。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 1：Lambda 設定與錯誤處理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "使用 Lambda 處理 S3 事件通知",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "data-store-and-cache",
+      "title": "根據存取模式選擇資料存放區與快取",
+      "paragraphs": [
+        "選擇資料存放區時，不僅要考量要儲存的資料量，也要考量讀寫方式、搜尋條件、一致性與保留期間。在 Amazon DynamoDB 中，請選擇能分散存取的分割區索引鍵，定義必要的屬性與索引，並了解 Query 與 Scan 的差異。Scan 會檢查所有項目，而 Query 可透過索引鍵縮小目標範圍。若像經常使用 Query 一樣經常使用會檢查全部項目的 Scan，可能會增加不必要的讀取。",
+        "針對處理關聯式資料與 SQL 的需求，應比較 Amazon RDS；針對物件儲存，應比較 Amazon S3；針對快取經常存取的值，應比較 Amazon ElastiCache。快取不能取代主要資料的正確性。請決定更新後可以容忍舊值存在多久，以及由誰執行失效處理。",
+        "將資料保留期間視為需求。DynamoDB TTL 與 S3 生命週期政策可用來避免持續保留已不再需要的資料。對於無法刪除的記錄或需要長期保存的資料，應套用不同的保留需求。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 1：資料存放區與快取",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "什麼是 Amazon S3？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "api-sdk-and-ai-integration",
+      "title": "驗證邊界並與服務整合",
+      "paragraphs": [
+        "公開 API 的開發人員會驗證輸入格式和必要欄位，並保持回傳給使用者的錯誤格式一致。在 API Gateway 中，可以根據用途設定各階段的 URL、請求驗證、轉換和驗證身分。開發人員不會將用戶端傳送的輸入原樣傳遞給內部服務，而是在邊界確認輸入是否符合預期格式。",
+        "在使用 AWS SDK 的程式碼中，開發人員不會將登入資料嵌入程式碼，而是使用 IAM 角色等方式進行經過驗證的呼叫。他們會了解 SDK 的重試設定，避免與應用程式端的重試重疊而造成過多呼叫。",
+        "即使在整合 AI 輔助開發工具或受管 AI 服務時，開發人員也不會無條件地將產生的結果套用到生產環境。他們會確認輸入資料的處理方式、審查產生的程式碼、檢查許可，並確認日誌中是否包含機密資訊，將這些檢查納入既有的測試與核准流程。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 1：API、SDK 與 AI 服務",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-development-001",
+      "prompt": "一家電子商務公司的開發人員希望訂單 API 立即回應，並希望訂單後的影像轉換在失敗時可以重試。請選擇最適合讓後續處理鬆耦合的方法。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "訂單 API 將處理請求傳送至 SQS 佇列，另一個工作程式執行具備退避機制的重試並隔離失敗。",
+          "explanation": "這會將訂單受理與後續處理分離。工作程式也會提供可安全重新執行相同請求的冪等處理，以及用來確認失敗的途徑。"
+        },
+        {
+          "id": "a",
+          "text": "訂單 API 同步等待影像轉換完成；如果轉換失敗，則每次都要求使用者重新傳送相同的請求。",
+          "explanation": "同步等待長時間執行的後續處理，會使影像轉換的延遲或失敗直接影響訂單受理回應。"
+        },
+        {
+          "id": "c",
+          "text": "不記錄影像轉換失敗，並立即刪除佇列中的訊息。",
+          "explanation": "刪除失敗訊息會導致無法重新處理或調查原因，也無法偵測遺漏的處理。"
+        },
+        {
+          "id": "d",
+          "text": "將訂單 API 的憑證嵌入每個工作程式的原始碼中。",
+          "explanation": "嵌入憑證並不能實現鬆耦合，反而會增加憑證洩漏和更新的風險。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dva-development-002",
+      "prompt": "內部分析服務的開發人員想要從 Lambda 函式連線至 VPC 內的私有資料庫。在為 Lambda 新增 VPC 設定後，還應檢查下列哪一項？請選擇一項。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只將 Lambda 的記憶體設為最大值，並略過連線設定的檢查。",
+          "explanation": "記憶體是處理資源設定，無法取代網路可達性或身分驗證設定。"
+        },
+        {
+          "id": "c",
+          "text": "將資料庫公開至網際網路，並移除 Lambda 的 VPC 設定。",
+          "explanation": "這不符合安全連線至私有資料庫的要求，還會造成不必要的公開。"
+        },
+        {
+          "id": "a",
+          "text": "檢查目標子網路和安全性群組、執行角色，以及資料庫的登入資料和存取許可。",
+          "explanation": "VPC 連線只是可達性的一部分。應分別檢查網路控制、函式的執行角色，以及資料庫的身分驗證與授權。"
+        },
+        {
+          "id": "d",
+          "text": "變更函式的處理常式名稱後，系統就會自動授予存取資料庫的許可。",
+          "explanation": "處理常式是函式的執行起點，不會授予網路或身分驗證許可。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-development-003",
+      "prompt": "票務銷售服務的開發人員正在實作一個依購買者 ID 取得訂單的 DynamoDB 資料表。每位購買者都有大量訂單，而且經常只取得特定購買者的訂單。請選出一個最適當的方案。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "每次都使用 Scan，讀取所有訂單後，再由應用程式依購買者 ID 篩選。",
+          "explanation": "由於 Scan 會針對所有項目，在可以透過索引鍵縮小範圍的需求中，可能會增加不必要的讀取量。"
+        },
+        {
+          "id": "c",
+          "text": "只將 DynamoDB 用作快取，不儲存訂單的持久性資料。",
+          "explanation": "快取與持久性資料存放區扮演不同的角色。設計必須符合保留訂單資料的需求。"
+        },
+        {
+          "id": "d",
+          "text": "不使用購買者 ID，只透過 S3 檔案名稱搜尋訂單資料。",
+          "explanation": "對於依據 DynamoDB 索引鍵取得訂單的需求，依 S3 檔案名稱搜尋並不是適當的資料存取設計。"
+        },
+        {
+          "id": "a",
+          "text": "將購買者 ID 設計為分割區索引鍵，並使用指定目標購買者 ID 的 Query。",
+          "explanation": "使用符合存取模式的索引鍵和 Query，可以將讀取範圍縮小至目標項目。同時也要確認請求不會過度集中在某個特定索引鍵上。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "API Gateway",
+    "Lambda",
+    "SQS",
+    "Event source mapping",
+    "Visibility timeout",
+    "DLQ",
+    "Idempotency",
+    "Backoff",
+    "EventBridge",
+    "SNS",
+    "DynamoDB",
+    "Query",
+    "Scan",
+    "Partition key",
+    "RDS",
+    "S3",
+    "ElastiCache",
+    "Cache invalidation",
+    "TTL",
+    "VPC",
+    "Security group",
+    "IAM role",
+    "API contract",
+    "SDK retry"
+  ]
+}

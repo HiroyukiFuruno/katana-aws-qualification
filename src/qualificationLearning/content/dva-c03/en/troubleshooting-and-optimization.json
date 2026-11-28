@@ -1,0 +1,189 @@
+{
+  "id": "troubleshooting-and-optimization",
+  "title": "Troubleshooting and Optimization",
+  "objective": "Use logs, metrics, and traces to isolate causes and optimize concurrency, caching, and messaging based on evidence.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Deployment and Recovery"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evidence-based-triage",
+      "title": "Narrow down the cause from correlated evidence, not hypotheses",
+      "paragraphs": [
+        "When responding to an incident, first identify the impact on users, the time it occurred, the affected API or feature, and the change made immediately beforehand. The diagram shows the workflow for correlating metrics, structured logs, and traces obtained from the application using a correlation ID, keeping alerts separate from cause verification, and proceeding to investigation, remediation, and revalidation. Next, use metrics to determine when and what changed, use structured logs to find the relevant processing through the request ID or correlation ID, and use traces to verify inter-service latency and the locations of errors.",
+        "Do not determine the cause based solely on one indicator, such as increased CPU utilization or a rise in errors. Metrics show trends and quantities, logs show individual events and their context, and traces show the path and timing of a request. Correlating all three helps narrow down possible causes based on evidence rather than speculation.",
+        "For a failed deployment, check the pipeline output, application logs, configuration differences, and the state of the target environment. Before broadly rolling back changes, record the failed stage and its cause so that the failure can be reproduced and verified under the same conditions."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 4: Root Cause Analysis",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ],
+      "figureId": "dva-observability-feedback-loop"
+    },
+    {
+      "id": "logging-monitoring-and-alerts",
+      "title": "Create Logs You Can Investigate and Alerts That Lead to Action",
+      "paragraphs": [
+        "Record structured logs containing the time, request ID, processing stage, result, error type, and other relevant details. Do not record users’ passwords, authentication tokens, personal information, or complete payment information. Separating the identifiers needed for investigation from sensitive values balances log searchability with data protection.",
+        "Use custom metrics to measure business-relevant quantities such as the number of processed requests, number of failures, latency, and queue backlog. Connect alarms to thresholds that responsible staff can verify and act on, as well as to notification destinations. Monitoring is inadequate when notifications are so frequent that they are ignored or when no responder is assigned after a notification.",
+        "Health checks, liveness checks, and readiness checks serve different purposes. Do not confuse whether a process is running, whether it can accept requests, and whether it is available including its dependencies. Choose signals that help determine the impact on users."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 4: Logging, Monitoring, and Observability",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        },
+        {
+          "label": "What Is Amazon CloudWatch?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "concurrency-and-messaging",
+      "title": "Align Concurrency and Messaging with Workload Characteristics",
+      "paragraphs": [
+        "Increasing concurrency does not always improve performance. Lambda concurrency, the application thread pool, and the database connection pool each have capacity limits and quotas in downstream services. Developers examine incoming load, processing time, the number of downstream connections, and the failure rate to determine where the constraint lies.",
+        "SQS can buffer processing and smooth out the load, while SNS can be used to fan out a single event to multiple recipients. Rapidly increasing the number of consumers just to reduce the queue length can overload downstream systems such as databases.",
+        "Optimize only after observing the bottleneck. Different countermeasures are needed for insufficient memory, CPU constraints, connection wait time, external API latency, and throttling. After making a change, compare the results using the same metrics and conditions, and confirm that the impact on users has improved."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 4: Concurrency and Messaging",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-performance-optimization",
+      "title": "Measure the impact of caching and capacity, then optimize",
+      "paragraphs": [
+        "Caching is an option for reducing latency when data is frequently accessed and takes time to compute or retrieve. Amazon ElastiCache, DynamoDB Accelerator, and Amazon CloudFront differ in what they cache and where they are deployed. Decide which data to cache, when it should expire, and how much staleness is acceptable.",
+        "With Lambda, the memory setting can also affect CPU and processing performance. Developers measure processing time, errors, cost, and concurrency before changing the setting. Increasing only the memory without identifying a performance problem can increase costs without providing a benefit.",
+        "After optimization, compare the cache hit rate, latency, error rate, and downstream service load under the same observation conditions. Keeping evidence for the improvement makes it possible to trace the cause if performance deteriorates after a later change."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 4: Caching and performance optimization",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-troubleshoot-001",
+      "prompt": "The response time of the order API has suddenly deteriorated. The operations team wants to identify which service call has experienced increased latency and also review the logs related to the same request. Choose one most appropriate combination of evidence to start with.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Look only at CPU utilization and conclude that the service with the highest utilization is the cause.",
+          "explanation": "A single metric cannot distinguish among different causes such as connection wait time, external APIs, or deployment changes."
+        },
+        {
+          "id": "a",
+          "text": "Correlate latency metrics, structured logs containing the request ID, and traces showing the path between services.",
+          "explanation": "Metrics show trends, logs provide the context of individual requests, and traces show timing between services, allowing the potential causes to be narrowed down based on evidence."
+        },
+        {
+          "id": "c",
+          "text": "Delete the logs to reduce storage costs and infer the cause solely from user reports.",
+          "explanation": "This would lose the evidence needed for investigation, making it impossible to reproduce and verify the cause."
+        },
+        {
+          "id": "d",
+          "text": "Add all sensitive values to the logs to increase the amount of information.",
+          "explanation": "Exposing tokens or personal information in logs compromises data protection. Correlation IDs needed for investigation must be kept separate from sensitive values."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-002",
+      "prompt": "A developer of a Lambda function that processes overnight batch jobs wants to increase concurrency to reduce queue backlog. Select the one most appropriate thing to check before making the change.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Check the number of database connections, downstream API quotas, processing time, and error rate, and identify which constraints are limiting the system.",
+          "explanation": "Increasing concurrency also increases the number of simultaneous connections to downstream services. Adjust it only after observing the actual bottleneck."
+        },
+        {
+          "id": "b",
+          "text": "Maximize concurrency based only on the queue backlog, regardless of downstream service capacity.",
+          "explanation": "This could overload downstream databases or APIs and increase the failure rate."
+        },
+        {
+          "id": "c",
+          "text": "Delete failed messages without investigating them, reducing only the queue length.",
+          "explanation": "This loses unprocessed business work and prevents investigation of the cause of the backlog."
+        },
+        {
+          "id": "d",
+          "text": "Disable alarms and logs without changing the memory setting.",
+          "explanation": "Stopping observability makes it impossible to verify the change’s effects and side effects."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-003",
+      "prompt": "The developer of a product-details API is dealing with many reads of the same product information and wants to reduce database load and latency. Choose the one most appropriate thing to verify after introducing a cache.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "After adding a cache, do not monitor database load or API latency.",
+          "explanation": "You cannot verify the cache's effectiveness or its impact during failures, leaving no basis for optimization."
+        },
+        {
+          "id": "c",
+          "text": "Keep the cache indefinitely after every update and do not consider expiration.",
+          "explanation": "Old values may remain after updates and could cause incorrect product information to be returned to users."
+        },
+        {
+          "id": "a",
+          "text": "Compare the cache hit rate, latency, error rate, and database load under the same conditions, and verify how stale values are handled when the cache expires.",
+          "explanation": "A cache can improve performance, but its effectiveness and the acceptable freshness range must be measured and verified."
+        },
+        {
+          "id": "d",
+          "text": "Because a cache has been added, skip verifying authorization and data protection.",
+          "explanation": "A cache is a performance mechanism; it does not replace access controls or data protection."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Metric",
+    "Structured logging",
+    "Trace",
+    "Correlation ID",
+    "CloudWatch",
+    "CloudWatch alarm",
+    "Concurrency",
+    "Connection pool",
+    "Service Quotas",
+    "Throttling",
+    "SQS",
+    "SNS",
+    "Fan-out",
+    "ElastiCache",
+    "DAX",
+    "Cache hit ratio",
+    "Latency",
+    "Error rate"
+  ]
+}

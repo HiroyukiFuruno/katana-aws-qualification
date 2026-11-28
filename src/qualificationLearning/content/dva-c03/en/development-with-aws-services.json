@@ -1,0 +1,199 @@
+{
+  "id": "development-with-aws-services",
+  "title": "Developing with AWS Services",
+  "objective": "Select synchronous and asynchronous integrations, Lambda, data stores, APIs, and events based on the application's processing requirements.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Communication Fundamentals"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coupling-and-message-handling",
+      "title": "Choosing an integration method based on latency and failure impact",
+      "paragraphs": [
+        "For processes such as accepting orders, where the caller needs an immediate result, you can choose a synchronous invocation through API Gateway. In contrast, for processes such as image conversion or invoice generation, where users do not need to wait, consider using an Amazon SQS queue to separate request acceptance from subsequent processing asynchronously. The diagram shows that the HTTP response during acceptance and the subsequent processing that a worker retrieves from SQS have separate failure boundaries. The purpose of separating the processes is to prevent the effects of failures or temporary load from spreading to the caller more than necessary.",
+        "For asynchronous processing, consider cases where a message does not arrive, processing fails, or the same processing is executed again. The responsible team combines backoff, which gradually increases the wait time between retries; a dead-letter queue, which isolates failures for investigation; and idempotent processing, which does not corrupt the result even when the same request is repeated. Simply adding a queue does not make failures disappear.",
+        "Amazon EventBridge, Amazon S3 event notifications, and Amazon SNS can also be used for event-driven integration. Regardless of which service is used, clearly define the event publisher, recipient, destination when processing fails, and person responsible for recording the processing result."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 1: Integration and event-driven architecture",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ],
+      "figureId": "dva-event-processing-contract"
+    },
+    {
+      "id": "lambda-integration",
+      "title": "Handle Lambda events, configuration, and permissions separately",
+      "paragraphs": [
+        "Lambda functions can integrate with events from services such as API Gateway, SQS, DynamoDB, and S3. The person implementing the function configures the event input format, handler, runtime, memory, timeout, and concurrency according to the characteristics of the processing. Insufficient memory, timeouts, and concurrency limits are separate problems and cannot be solved by uniformly increasing the values.",
+        "If the function needs to connect to private resources inside a VPC, specify the relevant subnets and security groups. Connecting to a VPC alone does not automatically provide database authentication or access permissions. Check network reachability, the IAM execution role, and the data store's credentials separately.",
+        "If an asynchronous invocation fails, consider configuring the failed event to be sent to a destination or a dead-letter queue. Prepare procedures for recording failures and reprocessing them before accepting events that affect business operations."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 1: Lambda configuration and error handling",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "Processing S3 event notifications with Lambda",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "data-store-and-cache",
+      "title": "Choosing a Data Store and Cache Based on Access Patterns",
+      "paragraphs": [
+        "Choose a data store based not only on the amount of data to store, but also on how it is read and written, the search conditions, consistency, and retention period. With Amazon DynamoDB, choose a partition key that distributes access, define the necessary attributes and indexes, and understand the difference between Query and Scan. Scan examines all items, whereas Query narrows the target by key. Using Scan routinely as if it were Query can increase unnecessary reads.",
+        "Compare Amazon RDS for requirements involving relational data and SQL, Amazon S3 for object storage, and Amazon ElastiCache for caching frequently accessed values. A cache does not replace the correctness of the primary data. Decide how long stale values can be tolerated after an update and who is responsible for invalidation.",
+        "Treat data retention periods as requirements. DynamoDB TTL and S3 lifecycle policies are options for avoiding continued retention of data that is no longer needed. Apply separate retention requirements to records that cannot be deleted or data that must be stored for a long period."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 1: Data Stores and Caches",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "What is Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "api-sdk-and-ai-integration",
+      "title": "Validate Boundaries and Integrate with Services",
+      "paragraphs": [
+        "Developers who expose an API validate the input format and required fields, and keep the error format returned to users consistent. In API Gateway, they can configure stage-specific URLs, request validation, transformations, and authentication according to the use case. Instead of passing client input directly to an internal service, they verify at the boundary that it has the expected format.",
+        "In code that uses the AWS SDK, developers do not embed credentials in the code; they make authenticated calls using IAM roles or other mechanisms. They understand the SDK retry settings so that they do not overlap with application-level retries and cause excessive calls.",
+        "When integrating AI-assisted development tools or managed AI services, developers do not unconditionally put generated results into production. They verify how input data is handled, review generated code, check permissions, and examine sensitive information in logs, incorporating these checks into the established testing and approval process."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 1: APIs, SDKs, and AI Services",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-development-001",
+      "prompt": "A developer at an online retailer wants the Order API to return a response immediately and wants image conversion after an order to be retryable when it fails. Choose the single most appropriate way to loosely couple the downstream processing.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "The Order API sends the processing request to an SQS queue, and a separate worker performs retries with backoff and isolates failures.",
+          "explanation": "This separates order acceptance from downstream processing. The worker provides idempotent processing that is safe for rerunning the same request, along with a path for verifying failures."
+        },
+        {
+          "id": "a",
+          "text": "The Order API waits synchronously until image conversion is complete and, if it fails, requires the customer to resend the same request every time.",
+          "explanation": "Waiting synchronously for a long-running downstream process means that image-conversion delays or failures directly affect the order-acceptance response."
+        },
+        {
+          "id": "c",
+          "text": "The system does not record image-conversion failures and immediately deletes the messages in the queue.",
+          "explanation": "Deleting failures prevents reprocessing and root-cause investigation, and makes it impossible to detect missed processing."
+        },
+        {
+          "id": "d",
+          "text": "The Order API's credentials are embedded in each worker's source code.",
+          "explanation": "Embedding credentials does not create loose coupling; it increases the risks of leakage and difficult updates."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dva-development-002",
+      "prompt": "The developer of an internal analytics service wants to connect from a Lambda function to a private database in a VPC. After adding the VPC configuration to Lambda, which item should be verified next? Choose one.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Set only the Lambda memory to its maximum and skip checking the connection settings.",
+          "explanation": "Memory is a processing-resource setting and does not replace network reachability or authentication settings."
+        },
+        {
+          "id": "c",
+          "text": "Expose the database to the internet and remove Lambda's VPC configuration.",
+          "explanation": "This does not meet the requirement for a secure connection to a private database and would unnecessarily expose the database."
+        },
+        {
+          "id": "a",
+          "text": "Verify the target subnets and security groups, the execution role, and the database credentials and access permissions.",
+          "explanation": "VPC connectivity is only one part of reachability. Check network controls, the function's execution role, and database authentication and authorization separately."
+        },
+        {
+          "id": "d",
+          "text": "Changing the function's handler name automatically grants permission to access the database.",
+          "explanation": "The handler is the function's entry point and does not grant network or authentication permissions."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-development-003",
+      "prompt": "A ticket-sales service developer is implementing a DynamoDB table that retrieves orders by purchaser ID. Each purchaser has many orders, and the service frequently retrieves only the orders for a specific purchaser. Select the single most appropriate approach.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Use Scan every time, read all orders, and then filter by purchaser ID in the application.",
+          "explanation": "Because Scan targets all items, it may increase unnecessary reads when the requirement can be narrowed by key."
+        },
+        {
+          "id": "c",
+          "text": "Use DynamoDB only as a cache and do not store persistent order data.",
+          "explanation": "Caches and persistent data stores serve different roles. The design must meet the requirement to retain order data."
+        },
+        {
+          "id": "d",
+          "text": "Do not use the purchaser ID; search for order data using only S3 file names.",
+          "explanation": "Searching by S3 file name is not an appropriate data-access design for the requirement to retrieve orders based on DynamoDB keys."
+        },
+        {
+          "id": "a",
+          "text": "Design the purchaser ID as the partition key and use Query with the target purchaser ID.",
+          "explanation": "Using a key that matches the access pattern together with Query allows the read to be narrowed to the target items. Also verify that traffic does not become overly concentrated on a particular key."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "API Gateway",
+    "Lambda",
+    "SQS",
+    "Event source mapping",
+    "Visibility timeout",
+    "DLQ",
+    "Idempotency",
+    "Backoff",
+    "EventBridge",
+    "SNS",
+    "DynamoDB",
+    "Query",
+    "Scan",
+    "Partition key",
+    "RDS",
+    "S3",
+    "ElastiCache",
+    "Cache invalidation",
+    "TTL",
+    "VPC",
+    "Security group",
+    "IAM role",
+    "API contract",
+    "SDK retry"
+  ]
+}

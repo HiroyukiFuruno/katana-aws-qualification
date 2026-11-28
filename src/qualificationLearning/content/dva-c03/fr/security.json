@@ -1,0 +1,196 @@
+{
+  "id": "security",
+  "title": "Sécurité des applications",
+  "objective": "Mettre en œuvre l’authentification et l’autorisation des applications, protéger les données sensibles et protéger les données lors de l’intégration de l’IA, en fonction des conditions relatives aux utilisateurs et aux données.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "Authentification et autorisation"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protection des données"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Fondamentaux des communications"
+    }
+  ],
+  "sections": [
+    {
+      "id": "temporary-credentials-and-access",
+      "title": "Utiliser des informations d’identification temporaires à usage limité",
+      "paragraphs": [
+        "Lorsqu’une application appelle des services AWS, n’intégrez pas de clés d’accès à long terme dans le code source ni dans les fichiers de configuration. Le schéma montre les limites dans lesquelles l’application accède séparément aux secrets et à un magasin de données à l’aide d’informations d’identification temporaires provenant d’un rôle IAM, tandis qu’un utilisateur externe accède temporairement à un objet S3 au moyen d’une URL présignée. Assumez un rôle IAM adapté à l’environnement d’exécution et limitez les autorisations aux seules actions et ressources nécessaires. La stratégie de confiance, qui définit les entités principales autorisées à assumer le rôle, et la stratégie d’autorisations, qui définit les actions pouvant être exécutées, ont des fonctions différentes.",
+        "Lorsque des utilisateurs externes ou des utilisateurs d’un autre compte doivent accéder aux ressources, utilisez, selon les conditions, la fédération d’identités, des jetons de sécurité à courte durée ou des rôles intercomptes. Pour partager temporairement un objet S3, une URL présignée peut fournir un accès limité dans le temps et aux actions autorisées.",
+        "N’accordez le moindre privilège qu’après avoir d’abord défini clairement les principaux, les actions, les ressources cibles et les conditions nécessaires. Au lieu de tester avec des autorisations trop larges avant de les réduire, définissez les autorisations nécessaires sous une forme testable."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 2 : Authentification et autorisation",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "Logique d’évaluation des policies IAM",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+        }
+      ],
+      "figureId": "dva-request-identity-and-secret-flow"
+    },
+    {
+      "id": "encryption-and-secrets",
+      "title": "Distinguer les objectifs du chiffrement et de la gestion des secrets",
+      "paragraphs": [
+        "Les données au repos et les données en transit sont protégées à des endroits différents. Pour le chiffrement au repos, configurez le chiffrement dans le magasin de données ainsi que l’utilisation des clés. Pour le chiffrement en transit, utilisez TLS afin de protéger les communications entre les clients et les services. La protection d’un seul de ces aspects ne suffit pas à sécuriser tous les chemins.",
+        "Les secrets tels que les clés de chiffrement des données, les chaînes de connexion aux bases de données et les jetons d’API externes doivent être gérés à l’aide de services tels qu’AWS Secrets Manager ou AWS Systems Manager Parameter Store. Les applications ne doivent recevoir que les autorisations de lecture dont elles ont besoin. Les variables d’environnement peuvent servir à transmettre la configuration, mais manipulez-les de manière à ne pas écrire de valeurs sensibles dans les journaux.",
+        "Les certificats peuvent être gérés à l’aide de services tels qu’AWS Certificate Manager. Les développeurs ne doivent pas traiter les certificats, les clés de chiffrement, les secrets et la configuration des applications comme une seule et même chose ; ils doivent appliquer des méthodes distinctes de mise à jour, d’accès et d’audit à chacun."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 2 : chiffrement et données sensibles",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "sensitive-data-and-logging",
+      "title": "Séparer les données sensibles entre les entrées, le stockage et les journaux",
+      "paragraphs": [
+        "Les personnes qui traitent des informations permettant d’identifier une personne ou des informations de santé protégées commencent par classer les champs de saisie sensibles. L’accès est limité aux seuls utilisateurs qui en ont besoin, et aucune copie inutile n’est créée dans l’interface, la destination de stockage, les journaux ou l’environnement d’analyse. Lorsqu’une valeur doit être affichée, une partie est masquée. Les champs inutiles pour l’objectif visé sont supprimés avant toute sortie vers les journaux ou l’interface.",
+        "Les journaux sont nécessaires pour enquêter sur les défaillances, mais les jetons d’authentification, les mots de passe, les adresses et les informations de paiement ne doivent pas être enregistrés tels quels. Les développeurs consignent de manière structurée les informations nécessaires à l’enquête, telles que les ID de corrélation, l’heure des requêtes et les résultats du traitement, tout en excluant ou en masquant les valeurs sensibles.",
+        "La protection des données d’une application ne se limite pas à l’activation du chiffrement. Il faut également vérifier les autorisations d’accès, les périodes de conservation, la suppression, la sortie des journaux et les autorisations de consultation des opérateurs."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 2 : Données sensibles et journaux",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "ai-integration-security",
+      "title": "Contrôler les entrées, les sorties et les autorisations d’exécution dans les intégrations d’IA",
+      "paragraphs": [
+        "Avant d’envoyer des données à un service d’IA, vérifiez quelles données peuvent être envoyées, par quel chemin elles seront transmises et quel contenu peut rester dans les journaux. Si nécessaire, utilisez une connectivité privée, telle qu’un point de terminaison VPC, et vérifiez les conditions d’utilisation des données du service ainsi que ses contrôles de confidentialité.",
+        "Les entrées et les sorties d’IA peuvent contenir des informations sensibles, des sujets interdits, des injections de prompt et des demandes d’opérations involontaires. Les développeurs inspectent le texte transmis au modèle et les réponses du modèle, et masquent si nécessaire les informations sensibles détectées. L’application vérifie séparément les arguments des appels d’outils et les autorisations d’exécution.",
+        "Lorsqu’un agent d’IA effectue des opérations externes, isolez la session et exigez une approbation humaine pour les opérations hautement sensibles. Veillez également à ce que les journaux qui surveillent les résultats générés et les exécutions d’outils n’exposent pas une quantité excessive de contenu sensible."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 2 : sécurité des intégrations d’IA",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "Filtres d’informations sensibles d’Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-sensitive-filters.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-security-001",
+      "prompt": "Le développeur d’une fonction Lambda qui exécute le traitement des factures souhaite lire uniquement les factures d’un compartiment S3 spécifique. Sélectionnez la méthode la plus appropriée pour gérer les informations d’identification de manière sécurisée et mettre en œuvre le moindre privilège.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Intégrer une clé d’accès d’administrateur dans le code source et autoriser l’accès à tous les compartiments.",
+          "explanation": "L’intégration d’une clé d’accès à long terme et l’octroi de privilèges d’administrateur aggravent l’impact d’une fuite et enfreignent le principe du moindre privilège."
+        },
+        {
+          "id": "c",
+          "text": "Rendre public le compartiment de factures et les récupérer depuis la fonction sans authentification.",
+          "explanation": "L’accès public ne satisfait pas à l’exigence de limiter l’accès à la fonction spécifique."
+        },
+        {
+          "id": "a",
+          "text": "Accorder au rôle d’exécution Lambda uniquement l’autorisation de lire le préfixe des factures dans le compartiment cible.",
+          "explanation": "Cette méthode utilise des informations d’identification à court terme via le rôle d’exécution, ainsi qu’une politique d’autorisations qui limite le principal, la ressource et l’action ; elle respecte donc le principe du moindre privilège."
+        },
+        {
+          "id": "d",
+          "text": "Prolonger le délai d’expiration de la fonction et omettre de configurer les autorisations d’accès.",
+          "explanation": "Le délai d’expiration définit la durée du traitement ; il n’accorde ni authentification ni autorisation pour accéder à S3."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-002",
+      "prompt": "Les développeurs d’une application de prise de rendez-vous médicaux utilisent des chaînes de connexion à une base de données et des jetons d’API dans plusieurs environnements d’exécution. Choisissez une seule méthode, la plus appropriée, pour distribuer les secrets en toute sécurité.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Afficher les valeurs dans les journaux de l’application afin que le personnel d’exploitation puisse les copier.",
+          "explanation": "Les journaux peuvent être consultés par davantage de personnes et conservés plus longtemps ; les chaînes de connexion et les jetons ne doivent donc pas y être enregistrés."
+        },
+        {
+          "id": "a",
+          "text": "Stocker les valeurs dans Secrets Manager ou un service similaire, puis accorder à chaque rôle d’exécution l’autorisation de lire uniquement les secrets dont il a besoin.",
+          "explanation": "Cette méthode sépare l’emplacement de stockage des secrets des autorisations nécessaires pour les récupérer, afin que l’application n’obtienne que les valeurs requises pour son usage."
+        },
+        {
+          "id": "c",
+          "text": "Inscrire les valeurs en dur dans l’image de conteneur et utiliser les mêmes valeurs dans tous les environnements.",
+          "explanation": "L’intégration des valeurs dans l’image complique leur mise à jour et leur révocation ainsi que la séparation des environnements, et élargit la portée d’une éventuelle fuite."
+        },
+        {
+          "id": "d",
+          "text": "Ne pas chiffrer les valeurs et les protéger uniquement en modifiant les noms des variables d’environnement.",
+          "explanation": "Modifier les noms ne protège pas les valeurs confidentielles elles-mêmes et ne fournit ni contrôle d’accès ni audit."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-003",
+      "prompt": "L’équipe de développement d’une application de service client transmet les demandes des clients à un service d’IA afin de générer des réponses. Sélectionnez la seule mesure la plus appropriée pour réduire les risques liés à la transmission de données personnelles et à l’exécution d’actions externes par l’IA.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Détecter et masquer les informations sensibles présentes dans les entrées et les sorties de l’IA, limiter les autorisations d’exécution des outils selon leur usage et exiger une approbation pour les opérations importantes.",
+          "explanation": "La combinaison de la minimisation des données, du contrôle des entrées et sorties, de l’autorisation d’utiliser les outils et de l’approbation humaine réduit les risques liés à l’intégration de l’IA."
+        },
+        {
+          "id": "b",
+          "text": "Exécuter automatiquement toutes les actions externes avec des privilèges d’administrateur sans valider les résultats générés par l’IA.",
+          "explanation": "Exécuter les résultats générés et les actions externes sans validation et avec des privilèges d’administrateur amplifie l’impact des erreurs et des attaques par injection de prompt."
+        },
+        {
+          "id": "c",
+          "text": "Conserver sans aucune limite dans les journaux les entrées et sorties contenant des informations personnelles afin d’enquêter sur les incidents.",
+          "explanation": "Même dans les journaux d’investigation, il faut contrôler les éléments enregistrés et les masquer afin de ne pas exposer excessivement d’informations confidentielles."
+        },
+        {
+          "id": "d",
+          "text": "L’utilisation d’un point de terminaison VPC signifie qu’il n’est pas nécessaire de contrôler le contenu des entrées et des sorties.",
+          "explanation": "Une connexion privée protège le chemin de communication, mais elle ne remplace ni le filtrage des entrées et sorties ni l’autorisation d’utiliser les outils."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM role trust policy",
+    "IAM policy",
+    "Temporary security credentials",
+    "Least privilege",
+    "STS",
+    "Federation",
+    "Cross-account role",
+    "Presigned URL",
+    "Secrets Manager",
+    "Parameter Store",
+    "KMS",
+    "TLS",
+    "ACM",
+    "Structured logging",
+    "Correlation ID",
+    "Redaction",
+    "VPC endpoint",
+    "Prompt injection",
+    "Guardrail"
+  ]
+}

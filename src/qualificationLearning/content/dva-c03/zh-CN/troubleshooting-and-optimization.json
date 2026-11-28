@@ -1,0 +1,189 @@
+{
+  "id": "troubleshooting-and-optimization",
+  "title": "故障排查与优化",
+  "objective": "使用日志、指标和跟踪信息来定位原因，并基于证据优化并发、缓存和消息传递。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "测试与质量门禁"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署与恢复"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evidence-based-triage",
+      "title": "不要依赖假设，而要根据相关证据缩小原因范围",
+      "paragraphs": [
+        "处理故障时，首先确定对用户的影响、发生时间、相关的 API 或功能，以及紧接之前所做的更改。该图展示了使用关联 ID 将从应用程序获得的指标、结构化日志和跟踪信息关联起来，将告警与原因确认分开，并进入调查、修复和重新验证流程。随后，使用指标确认何时发生了什么变化，使用结构化日志通过请求 ID 或关联 ID 查找相关处理，并使用跟踪信息确认服务之间的等待时间和错误位置。",
+        "不要仅凭某一个指标（例如 CPU 使用率上升或错误增加）就断定原因。指标显示趋势和数量，日志显示单个事件及其上下文，跟踪信息显示请求经过的路径和耗时。将这三者对应起来，可以基于证据而不是推测缩小可能原因的范围。",
+        "部署失败时，应检查管道输出、应用程序日志、配置差异以及目标环境的状态。在大范围回滚更改之前，记录失败的阶段及其原因，以便能够在相同条件下重现并验证该问题。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 领域 4：根本原因分析",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ],
+      "figureId": "dva-observability-feedback-loop"
+    },
+    {
+      "id": "logging-monitoring-and-alerts",
+      "title": "创建可供调查的日志和能够促成行动的告警",
+      "paragraphs": [
+        "以结构化方式记录时间、请求 ID、处理阶段、结果、错误类型等信息。不要记录用户的密码、身份验证令牌、个人信息或完整的支付信息。将调查所需的标识符与敏感值分开，可以兼顾日志的可搜索性和数据保护。",
+        "使用自定义指标衡量具有业务意义的处理数量、失败数量、等待时间、队列积压等。将告警关联到负责人能够确认并采取措施的阈值，以及相应的通知目标。如果通知过多而被忽略，或者通知后没有确定的处理人员，则监控并不充分。",
+        "运行状况检查、存活检查和就绪检查具有不同的目的。不要混淆进程是否正在运行、是否能够接受请求，以及包括依赖项在内是否可用。应选择能够判断对用户影响的信号。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 领域 4：日志记录、监控和可观测性",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        },
+        {
+          "label": "什么是 Amazon CloudWatch？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "concurrency-and-messaging",
+      "title": "使并发和消息传递适应负载特征",
+      "paragraphs": [
+        "增加并发数并不总能提升性能。Lambda 的并发数、应用程序线程池和数据库连接池分别受到下游服务容量和配额的限制。开发人员会观察入口负载、处理时间、下游连接数和失败率，以确认限制因素所在的位置。",
+        "SQS 可以缓冲处理并平滑负载，SNS 则可用于将一个事件扇出到多个接收方。仅为了缩短队列长度而快速增加消费者数量，可能会使数据库等下游系统过载。",
+        "应先观察瓶颈，再进行优化。内存不足、CPU 限制、连接等待、外部 API 延迟和限流需要采取不同的措施。完成更改后，应在相同的指标和条件下进行比较，并确认对用户的影响已经改善。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 领域 4：并发和消息传递",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-performance-optimization",
+      "title": "测量缓存和容量的效果并进行优化",
+      "paragraphs": [
+        "缓存可以降低频繁访问且计算或获取耗时的数据的延迟。Amazon ElastiCache、DynamoDB Accelerator 和 Amazon CloudFront 的缓存对象及部署位置各不相同。需要决定缓存哪些数据、何时使其失效，以及可以容忍多大程度的过时数据。",
+        "在 Lambda 中，内存设置也可能影响 CPU 和处理性能。开发者会先测量处理时间、错误、成本和并发数，再更改设置。如果未发现性能问题就只增加内存，可能只会增加费用。",
+        "优化后，在相同的观测条件下比较缓存命中率、延迟、错误率和下游服务负载。保留改进依据后，即使后续更改导致性能下降，也能追踪原因。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 领域 4：缓存与性能优化",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-troubleshoot-001",
+      "prompt": "订单 API 的响应时间突然恶化。运维人员希望确定哪个服务调用的延迟增加了，并查看与同一请求相关的日志。请选择一个最适合作为起点的证据组合。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只查看 CPU 使用率，并断定使用率最高的服务就是原因。",
+          "explanation": "单一指标无法区分连接等待、外部 API、部署变更等不同原因。"
+        },
+        {
+          "id": "a",
+          "text": "将延迟指标、包含请求 ID 的结构化日志，以及显示服务之间调用路径的跟踪信息进行关联。",
+          "explanation": "指标可以显示趋势，日志可以提供单个请求的上下文，跟踪信息可以确认服务之间的耗时，因此能够基于证据缩小原因范围。"
+        },
+        {
+          "id": "c",
+          "text": "删除日志以降低存储成本，仅根据用户报告推测原因。",
+          "explanation": "这样会丢失调查所需的证据，因此无法重现和验证原因。"
+        },
+        {
+          "id": "d",
+          "text": "将所有敏感值添加到日志中，以增加信息量。",
+          "explanation": "将令牌或个人信息写入日志会损害数据保护。调查所需的关联 ID 必须与敏感值分开保存。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-002",
+      "prompt": "一名负责处理夜间批处理作业的 Lambda 函数开发人员希望增加并发数，以减少队列积压。请选择在进行更改之前最适合检查的一项。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "检查数据库连接数、下游 API 配额、处理时间和错误率，并确定哪些位置构成了限制因素。",
+          "explanation": "增加并发数也会增加与下游服务的同时连接数。应先观测实际瓶颈，再进行调整。"
+        },
+        {
+          "id": "b",
+          "text": "只关注队列积压，而不考虑下游服务的容量，将并发数最大化。",
+          "explanation": "这可能会使下游数据库或 API 过载，并提高失败率。"
+        },
+        {
+          "id": "c",
+          "text": "不调查失败的消息就将其删除，只减少队列长度。",
+          "explanation": "这会丢失尚未处理的业务工作，也无法调查积压的原因。"
+        },
+        {
+          "id": "d",
+          "text": "不更改内存设置，却禁用告警和日志。",
+          "explanation": "停止观测后，便无法确认更改的效果及其副作用。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-003",
+      "prompt": "商品详情 API 的开发人员发现对相同商品信息的读取很多，希望降低数据库负载和延迟。请选择引入缓存后最应验证的一项。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "添加缓存后，不监控数据库负载和 API 延迟。",
+          "explanation": "这样无法确认缓存的效果或发生故障时的影响，也就没有优化依据。"
+        },
+        {
+          "id": "c",
+          "text": "每次更新后都无限期保留缓存，不考虑缓存失效。",
+          "explanation": "更新后旧值可能一直保留，从而向用户返回错误的商品信息。"
+        },
+        {
+          "id": "a",
+          "text": "在相同条件下比较缓存命中率、延迟、错误率和数据库负载，并确认缓存失效时如何处理旧值。",
+          "explanation": "缓存可能改善性能，但必须测量并确认其效果以及可接受的数据新鲜度范围。"
+        },
+        {
+          "id": "d",
+          "text": "由于添加了缓存，因此省略对授权和数据保护的验证。",
+          "explanation": "缓存是一种性能机制，不能替代访问控制或数据保护。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Metric",
+    "Structured logging",
+    "Trace",
+    "Correlation ID",
+    "CloudWatch",
+    "CloudWatch alarm",
+    "Concurrency",
+    "Connection pool",
+    "Service Quotas",
+    "Throttling",
+    "SQS",
+    "SNS",
+    "Fan-out",
+    "ElastiCache",
+    "DAX",
+    "Cache hit ratio",
+    "Latency",
+    "Error rate"
+  ]
+}

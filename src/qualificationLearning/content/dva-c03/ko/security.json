@@ -1,0 +1,196 @@
+{
+  "id": "security",
+  "title": "애플리케이션 보안",
+  "objective": "사용자와 데이터의 조건에 따라 애플리케이션 인증 및 권한 부여를 구현하고, 민감한 데이터를 보호하며, AI 통합 시 데이터를 보호할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "인증 및 권한 부여"
+    },
+    {
+      "slug": "data-protection",
+      "title": "데이터 보호"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "통신 기초"
+    }
+  ],
+  "sections": [
+    {
+      "id": "temporary-credentials-and-access",
+      "title": "용도가 제한된 임시 자격 증명 사용",
+      "paragraphs": [
+        "애플리케이션이 AWS 서비스를 호출할 때 장기 액세스 키를 소스 코드나 구성 파일에 포함하지 않습니다. 이 그림은 애플리케이션이 IAM 역할의 임시 자격 증명을 사용하여 보안 정보와 데이터 스토어에 각각 액세스하고, 외부 사용자는 사전 서명된 URL을 통해 제한된 시간 동안 S3 객체에 액세스하는 경계를 보여 줍니다. 실행 환경에 맞는 IAM 역할을 수임하고, 필요한 작업과 리소스에만 권한을 제한합니다. 역할을 수임할 수 있는 주체를 정의하는 신뢰 정책과 수행할 수 있는 작업을 정의하는 권한 정책은 서로 다른 역할을 합니다.",
+        "외부 사용자나 다른 계정의 사용자가 액세스해야 하는 경우 조건에 따라 자격 증명 페더레이션, 단기 보안 토큰 또는 계정 간 역할을 사용합니다. S3 객체를 일시적으로 공유할 때는 사전 서명된 URL을 사용하여 시간과 작업이 제한된 액세스를 제공할 수 있습니다.",
+        "최소 권한은 먼저 필요한 주체, 작업, 대상 리소스 및 조건을 명확히 한 후 부여합니다. 광범위한 권한으로 작동을 확인한 다음 권한을 줄이는 방식이 아니라, 필요한 권한을 테스트할 수 있는 형태로 정의합니다."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 도메인 2: 인증 및 권한 부여",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "IAM 정책 평가 논리",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+        }
+      ],
+      "figureId": "dva-request-identity-and-secret-flow"
+    },
+    {
+      "id": "encryption-and-secrets",
+      "title": "암호화와 시크릿 관리의 목적 구분하기",
+      "paragraphs": [
+        "저장 중인 데이터와 전송 중인 데이터는 서로 다른 위치에서 보호됩니다. 저장 중 데이터 암호화에서는 데이터 스토어의 암호화와 키 사용을 설정합니다. 전송 중 데이터 암호화에서는 TLS를 사용하여 클라이언트와 서비스 간의 통신을 보호합니다. 둘 중 하나만 적용해서는 모든 경로를 보호할 수 없습니다.",
+        "데이터 암호화 키, 데이터베이스 연결 문자열, 외부 API 토큰과 같은 시크릿은 AWS Secrets Manager 또는 AWS Systems Manager Parameter Store와 같은 서비스를 사용하여 관리하고, 애플리케이션에는 필요한 읽기 권한만 부여해야 합니다. 환경 변수는 구성을 전달하는 방법이 될 수 있지만, 민감한 값이 로그에 기록되지 않도록 처리해야 합니다.",
+        "인증서는 AWS Certificate Manager와 같은 서비스를 사용하여 관리할 수 있습니다. 개발자는 인증서, 암호화 키, 시크릿, 애플리케이션 구성을 동일한 것으로 취급하지 말고, 각각에 대해 업데이트, 액세스 및 감사 방법을 분리해야 합니다."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 도메인 2: 암호화 및 민감한 데이터",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "sensitive-data-and-logging",
+      "title": "입력, 저장 및 로그에서 민감한 데이터 분리하기",
+      "paragraphs": [
+        "개인 식별 정보 또는 보호 대상 건강 정보를 처리하는 담당자는 먼저 어떤 입력 항목이 민감한지 분류합니다. 액세스 권한은 필요한 사용자에게만 제한하고, 화면, 저장 위치, 로그 및 분석 환경에 불필요한 복사본을 만들지 않습니다. 값을 표시해야 하는 경우에는 일부를 마스킹하여 숨깁니다. 용도에 필요하지 않은 항목은 로그나 화면에 출력하기 전에 제거합니다.",
+        "로그는 장애 조사에 필요하지만 인증 토큰, 암호, 주소 및 결제 정보를 그대로 기록해서는 안 됩니다. 개발자는 상관관계 ID, 요청 시간, 처리 결과 등 조사에 필요한 정보를 구조화하여 기록하고 민감한 값은 제외하거나 마스킹합니다.",
+        "애플리케이션 데이터 보호는 암호화를 활성화하는 것만으로 완료되지 않습니다. 액세스 권한, 보존 기간, 삭제, 로그 출력 및 운영자의 열람 권한까지 확인해야 합니다."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 영역 2: 민감한 데이터 및 로그",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "ai-integration-security",
+      "title": "AI 통합에서 입력, 출력 및 실행 권한 제어",
+      "paragraphs": [
+        "AI 서비스로 데이터를 전송하기 전에 전송해도 되는 데이터, 전송 경로, 로그에 남겨도 되는 내용을 확인합니다. 필요한 경우 VPC 엔드포인트와 같은 프라이빗 연결을 사용하고, 서비스의 데이터 사용 조건과 개인정보 보호 제어를 확인합니다.",
+        "AI 입력과 출력에는 민감한 정보, 금지된 주제, 프롬프트 인젝션, 의도하지 않은 작업 요청이 포함될 수 있습니다. 개발자는 모델에 전달하는 텍스트와 모델의 응답을 검사하고, 필요한 경우 감지된 민감한 정보를 마스킹합니다. 도구 호출 인수와 실행 권한은 애플리케이션 측에서 별도로 확인합니다.",
+        "AI 에이전트가 외부 작업을 수행하는 경우 세션을 격리하고, 민감도가 높은 작업에는 사람의 승인을 요구합니다. 또한 생성 결과와 도구 실행을 모니터링하는 로그에도 민감한 콘텐츠가 과도하게 노출되지 않도록 합니다."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 도메인 2: AI 통합 보안",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "Amazon Bedrock 민감한 정보 필터",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-sensitive-filters.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-security-001",
+      "prompt": "청구 처리를 수행하는 Lambda 함수의 개발자는 특정 S3 버킷에서 청구서만 읽고자 합니다. 자격 증명을 안전하게 처리하고 최소 권한을 구현하는 가장 적절한 방법을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "관리자 액세스 키를 소스 코드에 삽입하고 모든 버킷에 대한 액세스를 허용합니다.",
+          "explanation": "장기 액세스 키를 삽입하고 관리자 권한을 부여하면 유출 시 영향이 커지며 최소 권한 원칙에도 위배됩니다."
+        },
+        {
+          "id": "c",
+          "text": "청구서 버킷을 공개하고 인증 없이 함수에서 청구서를 가져옵니다.",
+          "explanation": "공개 액세스는 특정 함수로만 액세스를 제한해야 한다는 요구 사항을 충족하지 못합니다."
+        },
+        {
+          "id": "a",
+          "text": "Lambda 실행 역할에 대상 버킷의 청구서 접두사를 읽는 권한만 부여합니다.",
+          "explanation": "실행 역할을 통해 단기 자격 증명을 사용하고 주체, 리소스, 작업을 제한하는 권한 정책을 적용하므로 최소 권한 원칙에 부합합니다."
+        },
+        {
+          "id": "d",
+          "text": "함수의 제한 시간을 연장하고 액세스 권한 설정을 생략합니다.",
+          "explanation": "제한 시간은 처리 시간을 설정하는 기능일 뿐 S3 액세스를 위한 인증이나 권한 부여를 제공하지 않습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-002",
+      "prompt": "의료 예약 애플리케이션의 개발자는 여러 실행 환경에서 데이터베이스 연결 문자열과 API 토큰을 사용합니다. 시크릿을 안전하게 배포하는 가장 적절한 방법을 하나 선택하세요.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "애플리케이션 로그에 값을 출력하여 운영 담당자가 복사할 수 있게 합니다.",
+          "explanation": "로그는 더 많은 사람이 열람할 수 있고 더 오래 보존될 수 있으므로 연결 문자열과 토큰을 기록해서는 안 됩니다."
+        },
+        {
+          "id": "a",
+          "text": "Secrets Manager와 같은 서비스에 값을 저장하고 각 실행 역할에 필요한 시크릿만 읽을 수 있는 권한을 부여합니다.",
+          "explanation": "이렇게 하면 시크릿의 저장 위치와 가져오기 권한을 분리할 수 있으며, 애플리케이션이 용도에 필요한 값만 가져오게 할 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "값을 컨테이너 이미지에 고정으로 기록하고 모든 환경에서 동일한 값을 사용합니다.",
+          "explanation": "이미지에 값을 포함하면 업데이트, 취소, 환경 분리가 어려워지고 정보가 유출될 범위도 넓어집니다."
+        },
+        {
+          "id": "d",
+          "text": "값을 암호화하지 않고 환경 변수 이름만 변경하여 보호합니다.",
+          "explanation": "이름을 변경해도 기밀 값 자체가 보호되지 않으며 액세스 제어와 감사 기능도 제공되지 않습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-003",
+      "prompt": "고객 대응 애플리케이션 개발팀은 고객 문의를 AI 서비스에 전달하여 답변을 생성합니다. 개인 정보 전송과 AI에 의한 외부 작업의 위험을 줄이기 위한 가장 적절한 조치를 하나 선택하십시오.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "AI 입력과 출력에 포함된 민감한 정보를 감지하여 마스킹하고, 용도별로 도구 실행 권한을 제한하며, 중요한 작업에는 승인을 요구합니다.",
+          "explanation": "데이터 최소화, 입출력 제어, 도구 사용 권한 부여, 사람의 승인을 결합하면 AI 통합의 위험을 줄일 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "AI가 생성한 결과를 검증하지 않고 모든 외부 작업을 관리자 권한으로 자동 실행한다.",
+          "explanation": "생성 결과와 외부 작업을 검증하지 않고 관리자 권한으로 실행하면 오작동과 프롬프트 인젝션의 영향이 커집니다."
+        },
+        {
+          "id": "c",
+          "text": "장애 조사를 위해 개인 정보가 포함된 입력과 출력을 로그에 제한 없이 남긴다.",
+          "explanation": "조사용 로그에도 기밀 정보가 과도하게 노출되지 않도록 기록 항목을 제어하고 마스킹해야 합니다."
+        },
+        {
+          "id": "d",
+          "text": "VPC 엔드포인트를 사용하면 입력과 출력의 내용을 제어하지 않아도 된다.",
+          "explanation": "프라이빗 연결은 경로를 보호하지만 입력 및 출력 필터링이나 도구 사용 권한 부여를 대신할 수는 없습니다."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM role trust policy",
+    "IAM policy",
+    "Temporary security credentials",
+    "Least privilege",
+    "STS",
+    "Federation",
+    "Cross-account role",
+    "Presigned URL",
+    "Secrets Manager",
+    "Parameter Store",
+    "KMS",
+    "TLS",
+    "ACM",
+    "Structured logging",
+    "Correlation ID",
+    "Redaction",
+    "VPC endpoint",
+    "Prompt injection",
+    "Guardrail"
+  ]
+}

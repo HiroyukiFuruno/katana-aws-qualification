@@ -1,0 +1,196 @@
+{
+  "id": "security",
+  "title": "Application Security",
+  "objective": "Implement application authentication and authorization, protect sensitive data, and protect data when integrating AI, based on user and data requirements.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "Authentication and Authorization"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Communication Fundamentals"
+    }
+  ],
+  "sections": [
+    {
+      "id": "temporary-credentials-and-access",
+      "title": "Use Temporary Credentials with Limited Purposes",
+      "paragraphs": [
+        "When an application calls AWS services, do not embed long-term access keys in source code or configuration files. The diagram shows the boundaries in which the application separately accesses secrets and a data store using temporary credentials from an IAM role, while an external user accesses an S3 object for a limited time through a presigned URL. Assume an IAM role appropriate for the runtime environment and limit permissions to only the required actions and resources. The trust policy, which defines the principals that can assume the role, and the permissions policy, which defines the actions that can be performed, serve different purposes.",
+        "When external users or users from another account need access, use identity federation, short-term security tokens, or cross-account roles as appropriate. When sharing an S3 object temporarily, a presigned URL can provide access limited by time and by the permitted actions.",
+        "Grant least privilege only after first clarifying the required principals, actions, target resources, and conditions. Instead of testing with broad permissions and then scaling them back, define the necessary permissions in a form that can be tested."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 2: Authentication and Authorization",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "IAM Policy Evaluation Logic",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+        }
+      ],
+      "figureId": "dva-request-identity-and-secret-flow"
+    },
+    {
+      "id": "encryption-and-secrets",
+      "title": "Separate the Purposes of Encryption and Secret Management",
+      "paragraphs": [
+        "Data at rest and data in transit are protected in different places. For encryption at rest, configure encryption in the data store and the use of encryption keys. For encryption in transit, use TLS to protect communication between clients and services. Protecting only one of these cannot secure every path.",
+        "Secrets such as data encryption keys, database connection strings, and external API tokens should be managed with services such as AWS Secrets Manager or AWS Systems Manager Parameter Store, and applications should be granted only the read permissions they need. Environment variables can be used to pass configuration, but handle them so that sensitive values are not written to logs.",
+        "Certificates can be managed with services such as AWS Certificate Manager. Developers should not treat certificates, encryption keys, secrets, and application configuration as the same thing; they should use separate methods for updating, accessing, and auditing each one."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 2: Encryption and Sensitive Data",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "sensitive-data-and-logging",
+      "title": "Separating Sensitive Data Across Input, Storage, and Logs",
+      "paragraphs": [
+        "Personnel who handle personally identifiable information or protected health information first classify which input fields are sensitive. Access is limited to only the users who need it, and unnecessary copies are not created in the display, storage destination, logs, or analytics environment. When a value must be displayed, part of it is masked and concealed. Fields unnecessary for the intended purpose are removed before being output to logs or screens.",
+        "Logs are necessary for troubleshooting, but authentication tokens, passwords, addresses, and payment information must not be recorded as-is. Developers record investigation-related information such as correlation IDs, request times, and processing results in a structured format, while excluding or masking sensitive values.",
+        "Protecting application data is not complete simply because encryption is enabled. Access permissions, retention periods, deletion, log output, and operators’ viewing permissions must also be reviewed."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 2: Sensitive Data and Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "ai-integration-security",
+      "title": "Control Inputs, Outputs, and Execution Permissions in AI Integrations",
+      "paragraphs": [
+        "Before sending data to an AI service, verify which data may be sent, the transmission path, and what content may remain in logs. When necessary, use private connectivity such as a VPC endpoint, and verify the service’s data-use conditions and privacy controls.",
+        "AI inputs and outputs may contain sensitive information, prohibited topics, prompt injection, and unintended operation requests. Developers inspect the text sent to the model and the model’s responses, masking detected sensitive information when necessary. The application separately verifies tool-call arguments and execution permissions.",
+        "When an AI agent performs external actions, isolate the session and require human approval for highly sensitive operations. Also ensure that logs monitoring generated results and tool executions do not expose excessive amounts of sensitive content."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 2: Security of AI integrations",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "Amazon Bedrock sensitive information filters",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-sensitive-filters.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-security-001",
+      "prompt": "The developer of a Lambda function that performs billing processing wants to read only invoices from a specific S3 bucket. Select one best method for handling credentials securely and implementing least privilege.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Embed an administrator access key in the source code and allow access to all buckets.",
+          "explanation": "Embedding a long-term access key and granting administrator privileges increases the impact of a leak and violates least privilege."
+        },
+        {
+          "id": "c",
+          "text": "Make the invoice bucket public and retrieve the invoices from the function without authentication.",
+          "explanation": "Public access does not meet the requirement to restrict access to the specific function."
+        },
+        {
+          "id": "a",
+          "text": "Grant the Lambda execution role only the permission to read the invoice prefix in the target bucket.",
+          "explanation": "This uses short-term credentials through the execution role and a permissions policy that limits the principal, resource, and action, so it follows the principle of least privilege."
+        },
+        {
+          "id": "d",
+          "text": "Extend the function timeout and omit configuring access permissions.",
+          "explanation": "A timeout controls processing time; it does not grant authentication or authorization for access to S3."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-002",
+      "prompt": "Developers of a medical appointment application use database connection strings and API tokens across multiple execution environments. Choose the single most appropriate way to distribute the secrets securely.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Output the values to the application logs so that operations staff can copy them.",
+          "explanation": "Logs may be accessible to more people and retained for longer periods, so connection strings and tokens must not be recorded."
+        },
+        {
+          "id": "a",
+          "text": "Store the values in Secrets Manager or a similar service, and grant each execution role permission to read only the secrets it needs.",
+          "explanation": "This separates where secrets are stored from the permissions used to retrieve them, allowing the application to obtain only the values required for its purpose."
+        },
+        {
+          "id": "c",
+          "text": "Hard-code the values into the container image and use the same values in every environment.",
+          "explanation": "Embedding values in the image makes updating, revoking, and separating environments more difficult, and broadens the scope of any exposure."
+        },
+        {
+          "id": "d",
+          "text": "Leave the values unencrypted and protect them only by changing the environment variable names.",
+          "explanation": "Changing the names does not protect the confidential values themselves or provide access control and auditing."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-003",
+      "prompt": "The development team for a customer service application passes customer inquiries to an AI service to generate responses. Select the single most appropriate measure for reducing the risks of transmitting personal information and allowing the AI to perform external actions.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Detect and mask sensitive information in the AI's inputs and outputs, limit tool-execution permissions by purpose, and require approval for important operations.",
+          "explanation": "Combining data minimization, input and output controls, authorization for tool use, and human approval reduces the risks of AI integration."
+        },
+        {
+          "id": "b",
+          "text": "Automatically execute all external actions with administrator privileges without validating the AI-generated results.",
+          "explanation": "Executing generated results and external actions without validation and with administrator privileges increases the impact of mistakes and prompt injection."
+        },
+        {
+          "id": "c",
+          "text": "Store input and output containing personal information in unlimited logs for troubleshooting.",
+          "explanation": "Even in troubleshooting logs, the recorded items must be controlled and masked so that excessive confidential information is not exposed."
+        },
+        {
+          "id": "d",
+          "text": "Using a VPC endpoint means that the contents of inputs and outputs do not need to be controlled.",
+          "explanation": "A private connection protects the communication path, but it does not replace input and output filtering or authorization for tool use."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM role trust policy",
+    "IAM policy",
+    "Temporary security credentials",
+    "Least privilege",
+    "STS",
+    "Federation",
+    "Cross-account role",
+    "Presigned URL",
+    "Secrets Manager",
+    "Parameter Store",
+    "KMS",
+    "TLS",
+    "ACM",
+    "Structured logging",
+    "Correlation ID",
+    "Redaction",
+    "VPC endpoint",
+    "Prompt injection",
+    "Guardrail"
+  ]
+}

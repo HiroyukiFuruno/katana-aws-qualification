@@ -1,0 +1,196 @@
+{
+  "id": "security",
+  "title": "應用程式安全性",
+  "objective": "根據使用者與資料的條件，實作應用程式的身分驗證與授權、保護敏感資料，以及在整合 AI 時保護資料。",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "身分驗證與授權"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "通訊基礎"
+    }
+  ],
+  "sections": [
+    {
+      "id": "temporary-credentials-and-access",
+      "title": "使用用途受限的暫時性憑證",
+      "paragraphs": [
+        "應用程式呼叫 AWS 服務時，不要將長期存取金鑰嵌入原始碼或組態檔。此圖顯示以下界線：應用程式使用 IAM 角色的暫時性憑證，分別存取機密和資料存放區；外部使用者則透過預簽章 URL，在限定時間內存取 S3 物件。根據執行環境擔任適用的 IAM 角色，並將權限限制為僅必要的操作和資源。定義可擔任該角色之主體的信任政策，與定義可執行操作的權限政策，所扮演的角色不同。",
+        "外部使用者或其他帳戶的使用者需要存取時，請依條件使用身分聯合、短期安全權杖或跨帳戶角色。暫時分享 S3 物件時，可透過預簽章 URL 提供受時間和操作限制的存取權。",
+        "授予最低權限前，先釐清必要的主體、操作、目標資源和條件。不要先以過度寬鬆的權限完成運作確認，再事後收回權限；應以可測試的形式定義必要權限。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 2：身分驗證與授權",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "IAM 政策評估邏輯",
+          "url": "https://docs.aws.amazon.com/ja_jp/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+        }
+      ],
+      "figureId": "dva-request-identity-and-secret-flow"
+    },
+    {
+      "id": "encryption-and-secrets",
+      "title": "區分加密與機密管理的目的",
+      "paragraphs": [
+        "靜態資料與傳輸中的資料需要在不同的位置受到保護。對於靜態資料加密，請設定資料存放區中的加密以及金鑰的使用。對於傳輸中的資料加密，請使用 TLS 保護用戶端與服務之間的通訊。只採用其中一種方式，無法保護所有路徑。",
+        "資料加密金鑰、資料庫連線字串和外部 API 權杖等機密資訊，應使用 AWS Secrets Manager 或 AWS Systems Manager Parameter Store 等服務管理，並且只授予應用程式所需的讀取權限。環境變數可以用來傳遞設定，但應妥善處理，避免將敏感值寫入日誌。",
+        "可以使用 AWS Certificate Manager 等服務管理憑證。開發人員不應將憑證、加密金鑰、機密資訊和應用程式設定視為同一類項目，而應分別採用不同的更新、存取和稽核方式。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 2：加密與敏感資料",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "sensitive-data-and-logging",
+      "title": "在輸入、儲存與日誌中分離敏感資料",
+      "paragraphs": [
+        "處理個人可識別資訊或受保護健康資訊的人員，會先分類哪些輸入欄位屬於敏感資訊。僅將存取權限限制給有需要的使用者，並避免在畫面、儲存位置、日誌和分析環境中建立不必要的副本。需要顯示值時，應將其中一部分遮罩隱藏。在輸出至日誌或畫面之前，移除用途不需要的欄位。",
+        "日誌對故障調查是必要的，但不得原樣記錄身分驗證權杖、密碼、地址或付款資訊。開發人員應以結構化方式記錄關聯 ID、請求時間和處理結果等調查所需資訊，並排除或遮罩敏感值。",
+        "應用程式資料保護並不會只因啟用加密就完成。還必須檢查存取權限、保留期間、刪除、日誌輸出，以及操作人員的檢視權限。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 2：敏感資料與日誌",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        }
+      ]
+    },
+    {
+      "id": "ai-integration-security",
+      "title": "在 AI 整合中控制輸入、輸出和執行權限",
+      "paragraphs": [
+        "在將資料傳送至 AI 服務之前，請確認哪些資料可以傳送、傳送路徑，以及哪些內容可以留存在日誌中。必要時，使用 VPC 端點等私有連線，並確認服務的資料使用條件和隱私控制措施。",
+        "AI 的輸入與輸出可能包含敏感資訊、禁止的主題、提示注入，以及非預期的操作要求。開發人員會檢查傳遞給模型的文字與模型的回應，並在必要時遮罩偵測到的敏感資訊。應用程式會另外檢查工具呼叫的引數與執行許可。",
+        "當 AI 代理程式執行外部操作時，應隔離工作階段，並要求對高度敏感的操作進行人工核准。同時，對於監控產生結果和工具執行的日誌，也應避免暴露過多機密內容。"
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 領域 2：AI 整合的安全性",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain2.html"
+        },
+        {
+          "label": "Amazon Bedrock 敏感資訊篩選器",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-sensitive-filters.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-security-001",
+      "prompt": "負責執行帳單處理的 Lambda 函式開發人員只想從特定的 S3 儲存貯體讀取發票。請選出一種最適合安全處理憑證並實作最小權限的方法。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "將管理員存取金鑰嵌入原始碼，並允許存取所有儲存貯體。",
+          "explanation": "嵌入長期存取金鑰並授予管理員權限，會擴大憑證洩漏時的影響，也違反最小權限原則。"
+        },
+        {
+          "id": "c",
+          "text": "將發票儲存貯體設為公開，讓函式在未經身分驗證的情況下取得發票。",
+          "explanation": "公開存取不符合只允許特定函式存取的要求。"
+        },
+        {
+          "id": "a",
+          "text": "只授予 Lambda 執行角色讀取目標儲存貯體中發票前綴的權限。",
+          "explanation": "這種方法透過執行角色使用短期憑證，並採用將主體、資源和操作限制在必要範圍內的權限政策，因此符合最小權限原則。"
+        },
+        {
+          "id": "d",
+          "text": "延長函式的逾時時間，並省略存取權限設定。",
+          "explanation": "逾時設定用於控制處理時間，不會為存取 S3 提供身分驗證或授權。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-002",
+      "prompt": "醫療預約應用程式的開發人員會在多個執行環境中使用資料庫連線字串和 API 權杖。請選擇一種最適合安全分發這些機密的方法。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "將這些值輸出到應用程式日誌中，讓營運人員可以複製。",
+          "explanation": "日誌的檢視者可能更多，保留時間也可能更長，因此不得記錄連線字串和權杖。"
+        },
+        {
+          "id": "a",
+          "text": "將這些值儲存在 Secrets Manager 等服務中，並僅授予每個執行角色讀取其所需機密的權限。",
+          "explanation": "如此可將機密的儲存位置與取得權限分開，讓應用程式只能取得其用途所需的值。"
+        },
+        {
+          "id": "c",
+          "text": "將這些值固定寫入容器映像，並在所有環境中使用相同的值。",
+          "explanation": "將值嵌入映像會使更新、撤銷和環境隔離變得困難，也會擴大洩漏範圍。"
+        },
+        {
+          "id": "d",
+          "text": "不加密這些值，只透過變更環境變數名稱來保護它們。",
+          "explanation": "變更名稱並不能保護機密值本身，也無法提供存取控制和稽核能力。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-security-003",
+      "prompt": "客戶服務應用程式的開發團隊會將客戶詢問傳遞給 AI 服務以產生回覆。請選擇一項最適合降低傳送個人資訊以及 AI 執行外部操作之風險的措施。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "偵測並遮罩 AI 輸入和輸出中的敏感資訊，依用途限制工具執行權限，並要求對重要操作進行核准。",
+          "explanation": "結合資料最小化、輸入輸出控制、工具使用授權和人工核准，可以降低 AI 整合的風險。"
+        },
+        {
+          "id": "b",
+          "text": "不驗證 AI 產生的結果，直接使用管理員權限自動執行所有外部操作。",
+          "explanation": "未經驗證就以管理員權限執行產生的結果和外部操作，會擴大誤操作與提示注入的影響。"
+        },
+        {
+          "id": "c",
+          "text": "為了故障調查，將包含個人資訊的輸入和輸出無限制地保留在日誌中。",
+          "explanation": "即使是調查用日誌，也必須控制記錄項目並進行遮罩，避免記錄過多機密資訊。"
+        },
+        {
+          "id": "d",
+          "text": "只要使用 VPC 端點，就不需要控制輸入和輸出的內容。",
+          "explanation": "私有連線可以保護傳輸路徑，但無法取代輸入與輸出篩選，也無法取代對工具使用的授權。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM role trust policy",
+    "IAM policy",
+    "Temporary security credentials",
+    "Least privilege",
+    "STS",
+    "Federation",
+    "Cross-account role",
+    "Presigned URL",
+    "Secrets Manager",
+    "Parameter Store",
+    "KMS",
+    "TLS",
+    "ACM",
+    "Structured logging",
+    "Correlation ID",
+    "Redaction",
+    "VPC endpoint",
+    "Prompt injection",
+    "Guardrail"
+  ]
+}

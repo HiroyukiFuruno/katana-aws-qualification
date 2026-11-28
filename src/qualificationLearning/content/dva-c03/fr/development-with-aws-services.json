@@ -1,0 +1,199 @@
+{
+  "id": "development-with-aws-services",
+  "title": "Développement avec les services AWS",
+  "objective": "Sélectionner des intégrations synchrones et asynchrones, Lambda, des magasins de données, des API et des événements en fonction des exigences de traitement de l’application.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Services AWS essentiels"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Fondamentaux des communications"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protection des données"
+    }
+  ],
+  "sections": [
+    {
+      "id": "coupling-and-message-handling",
+      "title": "Choisir un mode d’intégration en fonction de la latence et de l’impact des défaillances",
+      "paragraphs": [
+        "Pour les processus tels que la réception de commandes, lorsque l’appelant a besoin d’un résultat immédiat, vous pouvez choisir un appel synchrone via API Gateway. En revanche, pour les processus tels que la conversion d’images ou la génération de factures, qui n’obligent pas l’utilisateur à attendre, envisagez d’utiliser une file d’attente Amazon SQS afin de séparer de manière asynchrone le traitement de la réception et le traitement ultérieur. Le schéma montre que la réponse HTTP renvoyée lors de la réception et le traitement ultérieur récupéré dans SQS par un worker ont des limites de défaillance distinctes. Le but de cette séparation est d’éviter que les effets des défaillances ou d’une charge temporaire ne se propagent plus que nécessaire jusqu’à l’appelant.",
+        "Pour un traitement asynchrone, il faut envisager les cas où un message n’arrive pas, où le traitement échoue ou où le même traitement est exécuté à nouveau. L’équipe responsable combine un backoff, qui augmente progressivement le temps d’attente entre les nouvelles tentatives, une file d’attente de lettres mortes, qui isole les échecs pour permettre leur analyse, et un traitement idempotent, qui ne détériore pas le résultat même si la même demande est répétée. Le simple fait de placer une file d’attente ne fait pas disparaître les défaillances.",
+        "Amazon EventBridge, les notifications d’événements Amazon S3 et Amazon SNS peuvent également servir à l’intégration orientée événements. Quel que soit le service utilisé, définissez clairement l’émetteur de l’événement, son destinataire, la destination en cas d’échec et la personne responsable de consigner le résultat du traitement."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 1 : intégration et architecture orientée événements",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ],
+      "figureId": "dva-event-processing-contract"
+    },
+    {
+      "id": "lambda-integration",
+      "title": "Traiter séparément les événements, la configuration et les autorisations de Lambda",
+      "paragraphs": [
+        "Les fonctions Lambda peuvent s’intégrer à des événements provenant de services tels qu’API Gateway, SQS, DynamoDB et S3. La personne qui implémente la fonction configure le format d’entrée de l’événement, le gestionnaire, le runtime, la mémoire, le délai d’expiration et le nombre d’exécutions simultanées en fonction des caractéristiques du traitement. Le manque de mémoire, les délais d’expiration et les limites de simultanéité sont des problèmes distincts qui ne peuvent pas être résolus en augmentant uniformément toutes les valeurs.",
+        "Si la fonction doit se connecter à des ressources privées dans un VPC, indiquez les sous-réseaux et les groupes de sécurité concernés. Le simple fait de connecter la fonction à un VPC ne lui accorde pas automatiquement l’authentification auprès de la base de données ni les autorisations d’accès. Vérifiez séparément l’accessibilité du réseau, le rôle d’exécution IAM et les informations d’identification du magasin de données.",
+        "En cas d’échec d’un appel asynchrone, envisagez de configurer l’envoi de l’événement en échec vers une destination ou une file d’attente de lettres mortes. Préparez des procédures pour enregistrer les échecs et les retraiter avant d’accepter des événements ayant une incidence sur les opérations métier."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 1 : configuration et gestion des erreurs de Lambda",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "Traitement des notifications d’événements S3 avec Lambda",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        }
+      ]
+    },
+    {
+      "id": "data-store-and-cache",
+      "title": "Choisir un magasin de données et un cache en fonction des modes d’accès",
+      "paragraphs": [
+        "Choisissez un magasin de données en fonction non seulement de la quantité de données à stocker, mais aussi de la manière dont elles sont lues et écrites, des conditions de recherche, de la cohérence et de la durée de conservation. Avec Amazon DynamoDB, choisissez une clé de partition qui répartit les accès, définissez les attributs et les index nécessaires, puis comprenez la différence entre Query et Scan. Scan examine tous les éléments, tandis que Query restreint la cible à l’aide de la clé. Utiliser régulièrement Scan comme s’il s’agissait de Query peut augmenter le nombre de lectures inutiles.",
+        "Comparez Amazon RDS pour les besoins liés aux données relationnelles et à SQL, Amazon S3 pour le stockage d’objets et Amazon ElastiCache pour mettre en cache les valeurs fréquemment consultées. Un cache ne remplace pas l’exactitude des données principales. Déterminez pendant combien de temps les valeurs obsolètes peuvent être tolérées après une mise à jour et qui est chargé de l’invalidation.",
+        "Traitez les durées de conservation des données comme des exigences. DynamoDB TTL et les règles de cycle de vie S3 sont des options permettant d’éviter de conserver indéfiniment les données qui ne sont plus nécessaires. Appliquez des exigences de conservation différentes aux enregistrements qui ne peuvent pas être supprimés ou aux données qui doivent être conservées à long terme."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 1 : Magasins de données et caches",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        },
+        {
+          "label": "Qu’est-ce qu’Amazon S3 ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "api-sdk-and-ai-integration",
+      "title": "Valider les frontières et intégrer les services",
+      "paragraphs": [
+        "Les développeurs qui exposent une API valident le format des entrées et les champs obligatoires, et assurent la cohérence du format des erreurs renvoyées aux utilisateurs. Dans API Gateway, ils peuvent configurer, selon le cas d’utilisation, les URL propres à chaque étape, la validation des requêtes, les transformations et l’authentification. Au lieu de transmettre directement à un service interne les entrées envoyées par le client, ils vérifient à la frontière qu’elles respectent le format attendu.",
+        "Dans le code qui utilise l’AWS SDK, les développeurs n’intègrent pas les informations d’identification dans le code ; ils effectuent des appels authentifiés à l’aide de rôles IAM ou d’autres mécanismes. Ils comprennent les paramètres de nouvelle tentative du SDK afin qu’ils ne se chevauchent pas avec les nouvelles tentatives côté application et n’entraînent pas un nombre excessif d’appels.",
+        "Lorsqu’ils intègrent des outils de développement assisté par IA ou des services d’IA gérés, les développeurs ne mettent pas systématiquement les résultats générés en production. Ils vérifient le traitement des données d’entrée, révisent le code généré, contrôlent les autorisations et examinent les informations sensibles présentes dans les journaux, puis intègrent ces vérifications au processus existant de test et d’approbation."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 1 : API, SDK et services d’IA",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-development-001",
+      "prompt": "Un développeur d’une entreprise de commerce en ligne souhaite que l’API de commandes renvoie immédiatement une réponse et que la conversion des images effectuée après la commande puisse être réessayée en cas d’échec. Choisissez la méthode la plus appropriée pour découpler le traitement en aval.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "L’API de commandes envoie la demande de traitement vers une file d’attente SQS, et un processus de travail distinct effectue des réessais avec temporisation progressive et isole les échecs.",
+          "explanation": "Cela sépare l’acceptation de la commande du traitement en aval. Le processus de travail fournit un traitement idempotent, sûr lors de la réexécution de la même demande, ainsi qu’un moyen de vérifier les échecs."
+        },
+        {
+          "id": "a",
+          "text": "L’API de commandes attend de manière synchrone la fin de la conversion de l’image et, en cas d’échec, demande à l’utilisateur de renvoyer la même requête à chaque fois.",
+          "explanation": "Attendre de manière synchrone un traitement en aval de longue durée signifie que les retards ou les échecs de conversion des images affectent directement la réponse d’acceptation de la commande."
+        },
+        {
+          "id": "c",
+          "text": "Les échecs de conversion des images ne sont pas consignés et les messages de la file d’attente sont immédiatement supprimés.",
+          "explanation": "La suppression des échecs empêche le retraitement et l’analyse de leur cause, et rend impossible la détection des traitements manquants."
+        },
+        {
+          "id": "d",
+          "text": "Les informations d’identification de l’API de commandes sont intégrées au code source de chaque processus de travail.",
+          "explanation": "L’intégration des informations d’identification ne crée pas de découplage ; elle augmente les risques de fuite et de mise à jour difficile."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "dva-development-002",
+      "prompt": "Le développeur d’un service d’analyse interne souhaite se connecter, depuis une fonction Lambda, à une base de données privée située dans un VPC. Après avoir ajouté la configuration VPC à Lambda, quel élément faut-il vérifier ? Choisissez-en un.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Définir uniquement la mémoire de Lambda à sa valeur maximale et ne pas vérifier les paramètres de connexion.",
+          "explanation": "La mémoire est un paramètre de ressources de traitement ; elle ne remplace ni la connectivité réseau ni les paramètres d’authentification."
+        },
+        {
+          "id": "c",
+          "text": "Rendre la base de données accessible depuis Internet et supprimer la configuration VPC de Lambda.",
+          "explanation": "Cela ne respecte pas l’exigence d’une connexion sécurisée à une base de données privée et entraînerait une exposition inutile."
+        },
+        {
+          "id": "a",
+          "text": "Vérifier les sous-réseaux et les groupes de sécurité cibles, le rôle d’exécution, ainsi que les informations d’authentification et les autorisations d’accès à la base de données.",
+          "explanation": "La connectivité VPC n’est qu’un aspect de l’accessibilité. Vérifiez séparément les contrôles réseau, le rôle d’exécution de la fonction, ainsi que l’authentification et l’autorisation de la base de données."
+        },
+        {
+          "id": "d",
+          "text": "Modifier le nom du gestionnaire de la fonction accorde automatiquement l’autorisation d’accéder à la base de données.",
+          "explanation": "Le gestionnaire est le point d’entrée de l’exécution de la fonction ; il n’accorde aucune autorisation réseau ni d’authentification."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-development-003",
+      "prompt": "Un développeur d’un service de vente de billets met en œuvre une table DynamoDB qui récupère les commandes à partir de l’ID de l’acheteur. Chaque acheteur possède de nombreuses commandes et le service récupère souvent uniquement les commandes d’un acheteur donné. Sélectionnez l’approche la plus appropriée.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Utiliser Scan à chaque fois, lire toutes les commandes, puis filtrer par ID de l’acheteur dans l’application.",
+          "explanation": "Comme Scan cible tous les éléments, cette approche peut augmenter les lectures inutiles lorsque le besoin peut être restreint à l’aide d’une clé."
+        },
+        {
+          "id": "c",
+          "text": "Utiliser DynamoDB uniquement comme cache et ne pas stocker les données persistantes des commandes.",
+          "explanation": "Les caches et les magasins de données persistants ont des rôles différents. La conception doit répondre à l’exigence de conservation des données de commande."
+        },
+        {
+          "id": "d",
+          "text": "Ne pas utiliser l’ID de l’acheteur et rechercher les données de commande uniquement à l’aide des noms de fichiers S3.",
+          "explanation": "La recherche par nom de fichier S3 n’est pas une conception d’accès aux données appropriée pour récupérer des commandes à partir des clés DynamoDB."
+        },
+        {
+          "id": "a",
+          "text": "Définir l’ID de l’acheteur comme clé de partition et utiliser Query en spécifiant l’ID de l’acheteur cible.",
+          "explanation": "L’utilisation d’une clé adaptée au modèle d’accès avec Query permet de limiter la lecture aux éléments ciblés. Vérifiez également que le trafic ne se concentre pas excessivement sur une clé particulière."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "API Gateway",
+    "Lambda",
+    "SQS",
+    "Event source mapping",
+    "Visibility timeout",
+    "DLQ",
+    "Idempotency",
+    "Backoff",
+    "EventBridge",
+    "SNS",
+    "DynamoDB",
+    "Query",
+    "Scan",
+    "Partition key",
+    "RDS",
+    "S3",
+    "ElastiCache",
+    "Cache invalidation",
+    "TTL",
+    "VPC",
+    "Security group",
+    "IAM role",
+    "API contract",
+    "SDK retry"
+  ]
+}

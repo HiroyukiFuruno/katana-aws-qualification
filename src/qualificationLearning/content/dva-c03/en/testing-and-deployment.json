@@ -1,0 +1,189 @@
+{
+  "id": "testing-and-deployment",
+  "title": "Testing and Deployment",
+  "objective": "Implement artifacts, environment configuration, testing, CI/CD, gradual deployments, and rollbacks according to the risk of the change.",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CD Flow"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Deployment and Recovery"
+    }
+  ],
+  "sections": [
+    {
+      "id": "artifacts-and-environment-configuration",
+      "title": "Manage Code, Dependencies, and Environment Configuration Separately",
+      "paragraphs": [
+        "Clearly define how code, dependencies, and configuration are handled in deployable artifacts. For Lambda, choose .zip files, container images, or layers according to the processing requirements and the dependencies shared across functions. Store container images in Amazon ECR, and manage versions and retention with image tags and lifecycle policies.",
+        "Manage values that differ by environment with services such as AWS AppConfig, Systems Manager Parameter Store, and Secrets Manager instead of writing them directly into the code. Separating configuration, sensitive values, and artifact versions makes it possible to verify what changed as the same code progresses through development, testing, and production.",
+        "Stage-specific API Gateway URLs and Lambda aliases help separate environments from release targets. Do not distinguish production and testing based only on names; explicitly identify the configuration being referenced and the deployment target."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 3: Artifacts and Environment Configuration",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "automated-testing",
+      "title": "Fix the inputs, dependencies, and expected results for testing",
+      "paragraphs": [
+        "In testing, fix what to input, which dependencies to use, and what to treat as the expected result. For Lambda and API Gateway test events, prepare JSON payloads that closely resemble actual invocations. When external dependencies cannot be called directly, use mock APIs to reproduce conditions such as success, failure, and timeouts.",
+        "When using AWS SAM, AWS CDK, AWS CloudFormation, or similar tools, verify not only the template syntax but also that the resources created and their permissions match expectations. Even when AI-assisted tools generate tests, a person must review the generated assumptions, boundary conditions, and expected values.",
+        "The purpose of testing is not merely to make tests pass, but to verify that changes have not broken behavior that affects users. Combine unit tests, integration tests, and post-deployment checks according to the risk of the change."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 3: Implementing and automating tests",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    },
+    {
+      "id": "pipeline-and-deployment-strategies",
+      "title": "Progress in stages while preserving the ability to roll back",
+      "paragraphs": [
+        "In CI/CD, source changes, builds, tests, deployments, and post-deployment verification are connected through a consistent path. The diagram shows that only revisions that pass the quality gate proceed to Staging and Canary, and that a failed monitoring gate triggers a decision to return to a stable version defined in advance. AWS CodePipeline orchestrates the stages, while AWS CodeDeploy helps deploy application revisions to the target environment. What matters is not merely passing through the pipeline, but what is verified at each stage.",
+        "When you want to limit the impact of changes, choose deployment strategies such as Canary, blue/green, or rolling updates. With Canary, you first release the new version to a portion of the traffic, verify metrics and errors, and then expand the rollout. With blue/green deployments, the old and new environments are kept ready so that traffic can be switched between them.",
+        "Rollback is not an operation to consider for the first time only after a failure occurs. Before a release, the responsible team confirms the version to restore, the activation conditions, data-change compatibility, and notification targets. Even when using the automatic rollback features of CloudFormation or CodeDeploy, the team must understand what will be rolled back and what will not."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 3: CI/CD and deployment strategies",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        },
+        {
+          "label": "What is AWS CodeDeploy?",
+          "url": "https://docs.aws.amazon.com/ja_jp/codedeploy/latest/userguide/welcome.html"
+        }
+      ],
+      "figureId": "dva-pipeline-release-gates"
+    },
+    {
+      "id": "infrastructure-and-release-versioning",
+      "title": "Making Configuration and Release Versions Reproducible",
+      "paragraphs": [
+        "With Infrastructure as Code, you declare resources and configurations in CloudFormation or AWS SAM templates. Being able to reproduce an environment from the same template helps reduce omissions in manual configuration and makes it easier to review changes. Like application code, templates are also subject to version control and testing.",
+        "Container image tags, Lambda aliases, source branches, and release labels are used to track what was deployed. Rather than relying only on mutable names, you should be able to reference a specific combination of artifacts and configuration.",
+        "Post-deployment validation checks not only reachability but also responses from key APIs, the error rate, authorization, and any required background processing. Defining success criteria in advance makes decisions about gradual expansion or rollback reproducible."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domain 3: IaC and Release Management",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-deploy-001",
+      "prompt": "A payments API developer wants to use different external endpoints and secret values in development, testing, and production while keeping the code of the Lambda function deployed to production unchanged. Under these conditions, choose one most appropriate way to manage the code, configuration, and secret values.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Write the production endpoint and secret in the source code, then manually change them in each environment.",
+          "explanation": "Manual changes make differences harder to track and reduce reproducibility, and they can also lead to secret-value leaks."
+        },
+        {
+          "id": "c",
+          "text": "Share the production database across all environments to eliminate differences between environments.",
+          "explanation": "Operations in the testing environment could affect production data, which conflicts with the goals of environment isolation and safe testing."
+        },
+        {
+          "id": "d",
+          "text": "Change only the Lambda handler name for each environment, and use the same configuration and secrets everywhere.",
+          "explanation": "The handler name is the execution entry point; changing it does not provide an appropriate way to manage environment-specific endpoints and secret values."
+        },
+        {
+          "id": "a",
+          "text": "Manage environment-specific configuration with AppConfig or Parameter Store, manage secret values with Secrets Manager, and keep them separate from the artifact.",
+          "explanation": "Separating the code version, environment configuration, and secret values makes it easier to use the same artifact securely in each environment."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-002",
+      "prompt": "A delivery service development team wants to automatically test what happens when an external address-validation API times out, without calling the actual external API. Choose the single most appropriate way to automate testing of this failure condition.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Assume that the external API always succeeds and do not test timeout handling.",
+          "explanation": "This does not verify behavior during failures or reveal the impact on users."
+        },
+        {
+          "id": "a",
+          "text": "Prepare a mock that returns normal responses, failures, and timeouts from the external API, then verify the expected retries and error responses.",
+          "explanation": "A mock that reproduces the dependency's conditions allows the application's behavior to be verified without being affected by the external service's state."
+        },
+        {
+          "id": "c",
+          "text": "Copy production address data into the development environment and manually wait for a timeout.",
+          "explanation": "Copying production data creates data-protection concerns, and fixed waiting is not a reproducible automated test."
+        },
+        {
+          "id": "d",
+          "text": "Instead of testing, wait for users to report failures after deployment.",
+          "explanation": "This does not fulfill the purpose of verifying known failure conditions before deployment."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-deploy-003",
+      "prompt": "The release manager for a reservation service wants to release the new version to some users first, verify the error rate and latency, and then roll it out to everyone. Choose the single most appropriate deployment strategy for these requirements.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Release to all users simultaneously and look for the old version after errors occur.",
+          "explanation": "If there is a problem, the impact is widespread, and this does not meet the requirement to identify in advance what should be rolled back."
+        },
+        {
+          "id": "c",
+          "text": "Make changes directly in production by hand without recording the artifact version.",
+          "explanation": "This makes it impossible to track the changes and the rollback target, undermining reproducibility and auditability."
+        },
+        {
+          "id": "d",
+          "text": "Deploy only to the test environment and do not check production metrics.",
+          "explanation": "Checking the test environment is necessary, but it does not replace a phased production rollout and verification of operational metrics."
+        },
+        {
+          "id": "a",
+          "text": "Use a Canary deployment, monitor a small amount of traffic, and then expand the deployment in stages.",
+          "explanation": "Canary is a strategy that releases the new version to a subset of users first, then expands or rolls back after verifying the metrics."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Artifact",
+    "ECR",
+    "AWS AppConfig",
+    "Parameter Store",
+    "Secrets Manager",
+    "Lambda alias",
+    "API Gateway stage",
+    "SAM",
+    "CDK",
+    "CloudFormation",
+    "Mock",
+    "CI/CD",
+    "CodePipeline",
+    "CodeDeploy",
+    "Canary deployment",
+    "Blue/green deployment",
+    "Rolling deployment",
+    "Rollback"
+  ]
+}

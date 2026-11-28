@@ -1,0 +1,189 @@
+{
+  "id": "troubleshooting-and-optimization",
+  "title": "Dépannage et optimisation",
+  "objective": "Utiliser les journaux, les métriques et les traces pour isoler les causes, puis optimiser la concurrence, la mise en cache et la messagerie sur la base d’éléments probants.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Surveillance et amélioration"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Tests et portes de qualité"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Déploiement et récupération"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evidence-based-triage",
+      "title": "Délimiter la cause à partir d’éléments probants corrélés, et non d’hypothèses",
+      "paragraphs": [
+        "Lors de la réponse à un incident, identifiez d’abord l’impact sur les utilisateurs, l’heure de survenue, l’API ou la fonctionnalité concernée, ainsi que la modification effectuée juste avant. Le schéma présente le flux qui consiste à corréler, au moyen d’un ID de corrélation, les métriques, les journaux structurés et les traces obtenus depuis l’application, à séparer les alertes de la confirmation de la cause, puis à passer à l’investigation, à la correction et à la nouvelle validation. Ensuite, utilisez les métriques pour déterminer quand et ce qui a changé, les journaux structurés pour rechercher le traitement concerné à l’aide de l’ID de requête ou de l’ID de corrélation, et les traces pour vérifier la latence entre les services ainsi que l’emplacement des erreurs.",
+        "Ne déterminez pas la cause à partir d’un seul indicateur, comme l’augmentation de l’utilisation du CPU ou du nombre d’erreurs. Les métriques indiquent les tendances et les volumes, les journaux indiquent les événements individuels et leur contexte, et les traces indiquent le chemin suivi par la requête ainsi que sa durée. En corrélant ces trois éléments, vous pouvez réduire les causes possibles en vous fondant sur des éléments probants plutôt que sur des suppositions.",
+        "En cas d’échec d’un déploiement, vérifiez la sortie du pipeline, les journaux de l’application, les différences de configuration et l’état de l’environnement cible. Avant d’effectuer un retour en arrière généralisé, consignez l’étape qui a échoué et sa cause afin de pouvoir reproduire et valider l’échec dans les mêmes conditions."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 4 : Analyse de la cause racine",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ],
+      "figureId": "dva-observability-feedback-loop"
+    },
+    {
+      "id": "logging-monitoring-and-alerts",
+      "title": "Créer des journaux exploitables pour les investigations et des alertes qui déclenchent une action",
+      "paragraphs": [
+        "Consignez de manière structurée l’heure, l’ID de la demande, l’étape du traitement, le résultat, le type d’erreur et d’autres informations pertinentes. Ne consignez pas les mots de passe des utilisateurs, les jetons d’authentification, les informations personnelles ni les informations de paiement complètes. En séparant les identifiants nécessaires à l’investigation des valeurs sensibles, vous conciliez la possibilité d’effectuer des recherches dans les journaux et la protection des données.",
+        "Utilisez des métriques personnalisées pour mesurer des quantités importantes pour l’activité, telles que le nombre de traitements, le nombre d’échecs, le temps d’attente et l’accumulation dans une file d’attente. Associez les alarmes à des seuils que les responsables peuvent vérifier et auxquels ils peuvent répondre, ainsi qu’à des destinataires de notification. La surveillance est insuffisante lorsque les notifications sont si nombreuses qu’elles sont ignorées ou lorsqu’aucun responsable n’est désigné pour intervenir après une notification.",
+        "Les vérifications de l’état de santé, de la vivacité et de l’aptitude à recevoir du trafic (readiness) ont des objectifs différents. Ne confondez pas le fait qu’un processus soit en cours d’exécution, qu’il puisse accepter des requêtes et qu’il soit disponible, dépendances comprises. Choisissez les signaux qui permettent d’évaluer l’impact sur les utilisateurs."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 4 : journalisation, surveillance et observabilité",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        },
+        {
+          "label": "Qu’est-ce qu’Amazon CloudWatch ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"
+        }
+      ]
+    },
+    {
+      "id": "concurrency-and-messaging",
+      "title": "Adapter la concurrence et la messagerie aux caractéristiques de la charge",
+      "paragraphs": [
+        "Augmenter le nombre d’exécutions simultanées n’améliore pas toujours les performances. La concurrence de Lambda, le pool de threads de l’application et le pool de connexions à la base de données sont chacun soumis à la capacité et aux quotas des services en aval. Les développeurs examinent la charge entrante, le temps de traitement, le nombre de connexions en aval et le taux d’échec afin de déterminer où se situe la contrainte.",
+        "SQS peut mettre les traitements en mémoire tampon et lisser la charge, tandis que SNS peut être utilisé pour distribuer un même événement à plusieurs destinataires par fan-out. Augmenter rapidement le nombre de consommateurs uniquement pour réduire la longueur de la file peut surcharger des systèmes en aval tels que les bases de données.",
+        "Optimisez après avoir observé le goulot d’étranglement. L’insuffisance de mémoire, les contraintes de processeur, l’attente de connexions, la latence des API externes et la limitation de débit nécessitent des mesures différentes. Après une modification, comparez les résultats avec les mêmes métriques et dans les mêmes conditions, puis confirmez que l’impact sur les utilisateurs s’est amélioré."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 4 : Concurrence et messagerie",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-performance-optimization",
+      "title": "Mesurer l’impact de la mise en cache et de la capacité, puis optimiser",
+      "paragraphs": [
+        "La mise en cache est une option permettant de réduire la latence des données fréquemment consultées et longues à calculer ou à récupérer. Amazon ElastiCache, DynamoDB Accelerator et Amazon CloudFront diffèrent par les données qu’ils mettent en cache et par leur emplacement de déploiement. Déterminez quelles données mettre en cache, quand les faire expirer et quel niveau d’obsolescence est acceptable.",
+        "Avec Lambda, le réglage de la mémoire peut également avoir une incidence sur le processeur et les performances de traitement. Les développeurs mesurent le temps de traitement, les erreurs, les coûts et le nombre d’exécutions simultanées avant de modifier le réglage. Augmenter uniquement la mémoire sans identifier de problème de performances peut simplement accroître les coûts.",
+        "Après l’optimisation, comparez le taux de succès du cache, la latence, le taux d’erreur et la charge des services en aval dans les mêmes conditions d’observation. Conserver les éléments probants de l’amélioration permet d’en rechercher la cause si les performances se dégradent après une modification ultérieure."
+      ],
+      "sources": [
+        {
+          "label": "DVA-C03 Domaine 4 : mise en cache et optimisation des performances",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/developer-associate-03/developer-associate-03-domain4.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "dva-troubleshoot-001",
+      "prompt": "Le temps de réponse de l’API de commandes s’est soudainement dégradé. L’équipe d’exploitation souhaite déterminer sur quel appel de service la latence a augmenté et consulter également les journaux associés à la même requête. Choisissez une combinaison de preuves particulièrement appropriée pour commencer.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Examiner uniquement l’utilisation du processeur et conclure que le service dont l’utilisation est la plus élevée est la cause du problème.",
+          "explanation": "Une seule métrique ne permet pas de distinguer différentes causes, telles qu’une attente de connexion, des API externes ou des modifications de déploiement."
+        },
+        {
+          "id": "a",
+          "text": "Mettre en corrélation les métriques de latence, les journaux structurés contenant l’ID de requête et les traces indiquant le chemin entre les services.",
+          "explanation": "Les métriques montrent les tendances, les journaux fournissent le contexte des requêtes individuelles et les traces indiquent la durée entre les services, ce qui permet de réduire les causes possibles à partir des preuves."
+        },
+        {
+          "id": "c",
+          "text": "Supprimer les journaux pour réduire les coûts de stockage et déduire la cause uniquement à partir des signalements des utilisateurs.",
+          "explanation": "Cela ferait perdre les preuves nécessaires à l’investigation, ce qui empêcherait de reproduire et de vérifier la cause."
+        },
+        {
+          "id": "d",
+          "text": "Ajouter toutes les valeurs sensibles aux journaux afin d’augmenter la quantité d’informations.",
+          "explanation": "L’exposition de jetons ou d’informations personnelles dans les journaux compromet la protection des données. Les ID de corrélation nécessaires à l’investigation doivent être séparés des valeurs sensibles."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-002",
+      "prompt": "Le développeur d’une fonction Lambda qui traite des lots nocturnes souhaite augmenter la simultanéité afin de réduire l’accumulation dans la file d’attente. Sélectionnez l’unique élément le plus approprié à vérifier avant d’effectuer la modification.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Vérifier le nombre de connexions à la base de données, les quotas des API en aval, le temps de traitement et le taux d’erreur, puis identifier les éléments qui imposent des contraintes.",
+          "explanation": "Augmenter la simultanéité augmente également le nombre de connexions simultanées aux services en aval. Ajustez-la après avoir observé le véritable goulot d’étranglement."
+        },
+        {
+          "id": "b",
+          "text": "Maximiser la simultanéité en observant uniquement l’accumulation dans la file d’attente, quelle que soit la capacité des services en aval.",
+          "explanation": "Cela pourrait surcharger les bases de données ou les API en aval et augmenter le taux d’échec."
+        },
+        {
+          "id": "c",
+          "text": "Supprimer les messages ayant échoué sans les examiner, afin de réduire uniquement la longueur de la file d’attente.",
+          "explanation": "Cela entraîne la perte du travail métier non traité et empêche d’examiner la cause de l’accumulation."
+        },
+        {
+          "id": "d",
+          "text": "Désactiver les alarmes et les journaux sans modifier le paramètre de mémoire.",
+          "explanation": "Arrêter l’observabilité empêche de vérifier les effets et les effets secondaires de la modification."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "dva-troubleshoot-003",
+      "prompt": "Le développeur d’une API de détails de produits constate de nombreuses lectures des mêmes informations produit et souhaite réduire la charge de la base de données ainsi que la latence. Choisissez l’élément le plus approprié à vérifier après l’introduction d’un cache.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Après avoir ajouté un cache, ne surveillez ni la charge de la base de données ni la latence de l’API.",
+          "explanation": "Il est alors impossible de vérifier l’efficacité du cache ou son impact en cas de panne, et aucune base d’optimisation ne subsiste."
+        },
+        {
+          "id": "c",
+          "text": "Conservez le cache indéfiniment après chaque mise à jour et ne tenez pas compte de son expiration.",
+          "explanation": "Des valeurs anciennes peuvent rester après les mises à jour et entraîner le renvoi d’informations produit incorrectes aux utilisateurs."
+        },
+        {
+          "id": "a",
+          "text": "Comparez le taux de réussite du cache, la latence, le taux d’erreur et la charge de la base de données dans les mêmes conditions, puis vérifiez le traitement des valeurs obsolètes lorsque le cache expire.",
+          "explanation": "Un cache peut améliorer les performances, mais son efficacité et la plage de fraîcheur acceptable doivent être mesurées et vérifiées."
+        },
+        {
+          "id": "d",
+          "text": "Comme un cache a été ajouté, ignorez la vérification de l’autorisation et de la protection des données.",
+          "explanation": "Un cache est un mécanisme de performance ; il ne remplace ni les contrôles d’accès ni la protection des données."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Metric",
+    "Structured logging",
+    "Trace",
+    "Correlation ID",
+    "CloudWatch",
+    "CloudWatch alarm",
+    "Concurrency",
+    "Connection pool",
+    "Service Quotas",
+    "Throttling",
+    "SQS",
+    "SNS",
+    "Fan-out",
+    "ElastiCache",
+    "DAX",
+    "Cache hit ratio",
+    "Latency",
+    "Error rate"
+  ]
+}

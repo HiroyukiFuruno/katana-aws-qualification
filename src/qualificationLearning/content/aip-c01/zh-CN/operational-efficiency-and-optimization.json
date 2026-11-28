@@ -1,0 +1,176 @@
+{
+  "id": "operational-efficiency-and-optimization",
+  "title": "GenAI 应用程序的运营效率与优化",
+  "objective": "同时观测质量、安全性、响应时间、吞吐量和成本，并根据假设与测量结果判断是否进行改进。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "测试与质量门禁"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署与恢复"
+    },
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服务"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure-end-to-end-not-only-model",
+      "title": "测量用户路径，而不仅是模型响应",
+      "paragraphs": [
+        "GenAI 应用程序的延迟并不只由模型推理决定。身份验证、输入验证、检索、重新排序、工具调用、输出验证和网络等各个阶段都会影响总耗时和失败率。在进行改进之前，应观测从用户请求到响应这一过程各阶段的耗时和结果。",
+        "监控 Amazon Bedrock 模型调用可以跟踪调用次数、令牌使用量、错误等指标。将这些指标与检索延迟、工具失败率、护栏干预以及用户完成率相关联，可以把单纯的“速度慢”这一现象分解为潜在原因。",
+        "应在相同条件下比较测量结果。如果同时更改模型、提示词、检索设置、输入长度和并发用户数，就无法确定是哪项更改带来了改进或性能下降。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon Bedrock 模型调用",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        },
+        {
+          "label": "AIP-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        }
+      ]
+    },
+    {
+      "id": "optimize-context-with-quality-guardrails",
+      "title": "在不牺牲依据和质量的范围内减少令牌",
+      "paragraphs": [
+        "减少不必要的冗长对话历史、重复的文档片段和未使用的指令，有助于降低成本和延迟。但是，单纯缩短输入可能会丢失必要的条件和依据，从而降低准确性和安全性。应在评估集上确认质量后，再决定要减少哪些内容。",
+        "对于可在类似请求中重复使用的结果或稳定的通用指令，可以考虑使用缓存。但是，不要在缓存内容中不慎包含个人信息或用户特有的状态；应评估缓存范围、失效条件和访问控制。",
+        "搜索配置也并非结果数量增加就一定能提高质量。如果无关的文档片段增加，模型会更难以进行判断，同时还会增加时间和令牌用量。应综合评估检索质量、引用准确性、响应质量和延迟。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Amazon Bedrock 知识库检索数据并生成 AI 响应",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base.html"
+        },
+        {
+          "label": "Amazon Bedrock 模型调用",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    },
+    {
+      "id": "capacity-cost-and-graceful-degradation",
+      "title": "提前确定高负载时的优先级和优雅降级策略",
+      "paragraphs": [
+        "当使用量突然激增时，可能无法以相同的质量和延迟处理所有请求。应确定哪些业务功能至关重要，哪些功能可以延后，以及哪些降级功能可以明确地提供给用户。例如，可以考虑先返回搜索结果和来源，随后再生成额外摘要的设计。",
+        "优雅降级并不意味着返回没有依据的答案。如果模型或搜索不可用，应向用户说明当前状态，并提供安全的替代路径，例如重试、转交给负责人，或引导用户查看已批准的信息。",
+        "评估成本时，不仅要考虑令牌数量，还要包括失败的重试、搜索、日志、工具，以及对等待中的用户提供支持所产生的成本。应观测特定用户、输入或功能导致成本激增的因素，并根据质量和业务影响采取措施，而不是等超出预算后才统一停止服务。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Amazon Bedrock 模型调用",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-operations-001",
+      "prompt": "一家零售公司的 GenAI 开发人员正在调查商品信息聊天响应速度变慢的原因。最近同时更改了模型、检索和工具调用的配置。首先进行以下哪项分析最为合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "立即只更改模型类型，而不检查各阶段耗时或失败率。",
+          "explanation": "即使原因在检索或工具等其他阶段，更改模型也无法解决问题，还可能使根因更加难以确定。"
+        },
+        {
+          "id": "b",
+          "text": "按阶段测量从请求到响应的全过程，并在相同条件下比较模型、检索、工具和护栏的耗时与结果。",
+          "explanation": "正确。通过观测整个路径并分别验证同时进行的更改，可以逐步排查延迟的潜在原因。"
+        },
+        {
+          "id": "c",
+          "text": "忽略用户完成率和错误，只比较平均响应时间。",
+          "explanation": "仅看平均值无法掌握失败、长时间等待或对特定用户造成的不利影响。"
+        },
+        {
+          "id": "d",
+          "text": "在延迟消除之前，禁用所有日志和指标。",
+          "explanation": "这样会丢失调查原因所需的证据，也无法验证改进结果。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-operations-002",
+      "prompt": "一家律师事务所的 GenAI 开发者希望降低 RAG 聊天的成本。目前，许多与用户问题无关的文档片段也会被添加到提示中，这可能削弱回答的依据。最合适的改进方法是什么？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "评估检索相关性、引用正确性、回答质量和延迟，并进行调整，使系统只提供必要的文档片段。",
+          "explanation": "正确。这样不仅能优化成本，还能同时维护 RAG 检索、生成和依据呈现的质量。"
+        },
+        {
+          "id": "a",
+          "text": "始终将文档片段增加到最大数量，并且不进行评估。",
+          "explanation": "增加无关的文档片段可能会提高成本和延迟，并降低支持性证据的质量。"
+        },
+        {
+          "id": "c",
+          "text": "完全不提供依据文档，仅使用模型的一般知识生成法律回答。",
+          "explanation": "对于需要案件特定依据和来源核验的用途，这会降低准确性和问责性。"
+        },
+        {
+          "id": "d",
+          "text": "永久缓存每位用户的全部对话历史，并且不设置访问条件。",
+          "explanation": "这会增加不必要的个人信息和案件信息的保留与暴露，并不是安全使用缓存的方式。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-operations-003",
+      "prompt": "支持灾害应对的 GenAI 开发者即使在大量咨询集中涌入时，也将不返回无依据的疏散信息作为最高优先级。当模型推理暂时不可用时，哪种设计最为恰当？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "模型不可用时，无依据地返回过去的任意响应。",
+          "explanation": "紧急情况下错误信息的风险更高，因此不能无依据地返回旧响应。"
+        },
+        {
+          "id": "b",
+          "text": "显示故障状态，并提供安全的降级路径，例如引导用户查看已批准的信息，或将请求移交给负责人。",
+          "explanation": "正确。即使可用性下降，也可以向用户传达当前状态，并提供能够保持依据和安全性的替代方式。"
+        },
+        {
+          "id": "c",
+          "text": "向用户隐瞒失败，并在内部无限期地重试相同请求。",
+          "explanation": "用户无法判断当前情况，负载会进一步增加，响应延迟也会持续加长。"
+        },
+        {
+          "id": "d",
+          "text": "禁用所有安全过滤器，只改善响应速度。",
+          "explanation": "这违背了将安全性置于最高优先级的要求，并可能在高负载时增加危险输出。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Latency",
+    "Throughput",
+    "Token",
+    "Caching",
+    "Monitoring",
+    "CloudWatch alarm",
+    "Cost allocation tags",
+    "Error rate",
+    "SLO"
+  ]
+}

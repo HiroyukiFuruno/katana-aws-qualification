@@ -1,0 +1,176 @@
+{
+  "id": "testing-validation-and-troubleshooting",
+  "title": "测试、验证与故障排除",
+  "objective": "区分评估对象、评分标准以及搜索、生成和安全性的证据，以便能够以可复现的方式调查和改进质量变化的原因。",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "测试与质量门禁"
+    },
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署与恢复"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evaluation-is-a-contract",
+      "title": "先固定评估目的和评分标准",
+      "paragraphs": [
+        "在评估生成式 AI 时，仅凭单一的正确答案字符串有时无法衡量质量。应根据使用场景分别制定评分标准，涵盖与问题的相关性、事实准确性、与依据的一致性、一致性、格式、安全性，以及用户是否能够实现目标。即使同时采用人工评估和自动评估，也要预先定义什么样的回答才算优质回答。",
+        "评估集不仅应包含具有代表性的正常示例，还应包含信息不足、歧义、长上下文、过时文档、对抗性输入以及预期的拒答。评估数据不得在未经许可的情况下复制生产用户的个人信息。应管理数据使用许可、匿名化、存储和更新。",
+        "Amazon Bedrock 的评估作业可以使用内置或自定义的提示数据集来评估模型。评估 RAG 时，应分别为检索和生成准备数据与指标，以判断改进发生在哪个阶段。"
+      ],
+      "sources": [
+        {
+          "label": "在 Amazon Bedrock 中创建用于 RAG 评估的提示数据集",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        },
+        {
+          "label": "在 Amazon Bedrock 中启动自动模型评估作业",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-evaluation-jobs-management-create.html"
+        }
+      ]
+    },
+    {
+      "id": "rag-and-agent-evaluation",
+      "title": "按阶段评估 RAG 和智能体",
+      "paragraphs": [
+        "RAG 回答不准确可能有不同原因：检索不合适；检索到的片段合适，但生成过程误读了依据；或者来源正确，但回答不符合问题中的条件。准备好问题、预期依据和预期回答特征，然后分别对检索和生成进行评分。",
+        "对于智能体，不仅要评估最终响应，还要评估其是否确认了必要信息、是否只使用获准的工具、是否正确验证了参数，以及是否在应当停止时停止。即使工具看起来执行成功，也要确认操作没有针对错误的客户或对象执行。",
+        "评估结果不仅要看平均值，还要按失败类型进行查看。应由人员检查失败案例并重新审视评估标准，避免将应安全拒绝的请求计为成功，也避免不必要地阻止准确的回答。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "在 Amazon Bedrock 中创建用于 RAG 评估的提示数据集",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        }
+      ]
+    },
+    {
+      "id": "trace-before-changing-configurations",
+      "title": "在更改配置前通过追踪信息区分原因",
+      "paragraphs": [
+        "回答质量下降时，不要立即更改模型或提示。使用请求标识符，将用户输入、所应用的模型、提示和护栏版本、搜索结果、工具结果、最终输出以及错误进行关联。这样可以复现相同现象，并确定问题发生在哪个阶段。",
+        "例如，如果搜索结果为空，应调查文档摄取、权限、查询和索引问题，而不是归因于模型幻觉。如果工具参数无效，应检查输入验证、工具定义和提示中的指令，而不是检查检索配置。一次性更改与原因无关的配置，会使问题再次发生时无法获得有用的信息。",
+        "修正后，在相同条件下运行原始失败案例、相关回归案例和安全性案例。确认有所改善后再分阶段推出；如果出现意外恶化，则回滚到已记录的稳定版本。"
+      ],
+      "sources": [
+        {
+          "label": "使用 CloudWatch Logs 和 Amazon S3 监控模型调用",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-invocation-logging.html"
+        },
+        {
+          "label": "Amazon Bedrock 模型调用",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-evaluation-001",
+      "prompt": "一家教育公司的 GenAI 开发者在公开一项基于内部教材回答问题的 RAG 功能之前，对其进行评估。用户不仅要求回答准确，还要求能够核实作为回答依据的教材。哪种评估设计最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只自动评分最终回答是否符合自然的日语表达。",
+          "explanation": "仅凭自然度无法确认是否检索到了相关教材，也无法确认回答是否与依据一致。"
+        },
+        {
+          "id": "c",
+          "text": "对没有教材可依据的问题给予更高分，以衡量模型的创造力。",
+          "explanation": "对于以教材为依据的用途，应评估信息不足时是否能够适当回答或拒答，而不是对无依据的编造给予高评价。"
+        },
+        {
+          "id": "d",
+          "text": "只将发布后收到用户投诉的问题加入评估集。",
+          "explanation": "在发布前，评估集必须包含代表性示例、信息不足的问题、含糊的问题以及安全性相关案例。"
+        },
+        {
+          "id": "b",
+          "text": "为每个问题确定预期依据，并分别评估检索相关性、回答与依据的一致性、出处显示，以及用户目标是否达成。",
+          "explanation": "正确。这样可以分别确认 RAG 的检索和生成，同时验证用户提出的“能够核实依据”这一要求。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-002",
+      "prompt": "一家建筑公司的 GenAI 开发者正在评估一个处理工程报价咨询的代理。最终回答看起来是正确的，但在部分执行中，它调用了其他项目的报价 API。评估时最重要的补充考察点是什么？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "在执行跟踪中评估工具选择、目标项目、参数验证、权限以及停止和确认条件。",
+          "explanation": "正确。对于代理，不仅要评估最终回答，还必须评估工具操作的目标以及执行步骤是否安全。"
+        },
+        {
+          "id": "a",
+          "text": "只对回答文本的语法进行更加细致的评分。",
+          "explanation": "语法无法说明代理是否针对正确的目标调用了正确的工具，而这正是操作正确性的关键方面。"
+        },
+        {
+          "id": "c",
+          "text": "增加代理调用 API 的次数，并期待它偶然命中正确的项目。",
+          "explanation": "增加调用次数无法解决项目识别和授权错误，反而可能扩大影响。"
+        },
+        {
+          "id": "d",
+          "text": "由于报价 API 始终返回正确结果，因此省略代理侧的目标验证。",
+          "explanation": "即使 API 本身是正确的，如果指定了错误的目标，也可能提供不适当的信息或执行不适当的操作。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-003",
+      "prompt": "一家出版公司的 GenAI 开发者确认，模型更新后，只有针对某些较长问题的回答会在中途截断。在调查原因之前，最适合采取的行动是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "同时更改模型、提示词、检索结果数量和输出格式，然后在生产环境中观察结果。",
+          "explanation": "同时更改多个设置后，就无法确定问题的原因和修复措施的效果。"
+        },
+        {
+          "id": "c",
+          "text": "让人工手动补全中途截断的回答，并且不记录配置。",
+          "explanation": "临时手动补全无法解决根本原因，也无法防止同样的失败再次发生。"
+        },
+        {
+          "id": "d",
+          "text": "永久禁止发送长问题的用户访问。",
+          "explanation": "如果问题发生在正当的使用条件下，就应调查上下文处理和输出设计；排除用户并不能解决问题。"
+        },
+        {
+          "id": "b",
+          "text": "重现失败的请求，并关联输入长度、所应用配置的版本、检索到的文档、令牌使用量、响应和错误进行调查。",
+          "explanation": "正确。通过跟踪确定问题发生在哪个阶段后，即可实施针对原因的最小修复并进行回归测试。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model evaluation",
+    "Regression test",
+    "Acceptance criteria",
+    "Prompt injection",
+    "Request ID",
+    "Trace",
+    "Model artifact",
+    "Rollback",
+    "Quality gate"
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "id": "testing-validation-and-troubleshooting",
+  "title": "Testing, Validation, and Troubleshooting",
+  "objective": "Separate the evaluation target, scoring criteria, and evidence for search, generation, and safety so that you can reproducibly investigate and improve the causes of changes in quality.",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Deployment and Recovery"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evaluation-is-a-contract",
+      "title": "Fix the purpose and scoring criteria for evaluation first",
+      "paragraphs": [
+        "When evaluating generative AI, a single exact answer string may not be enough to measure quality. Separate the scoring criteria according to the use case, covering relevance to the question, factual accuracy, alignment with the evidence, consistency, format, safety, and whether the user was able to achieve their goal. Even when using human and automated evaluation, define in advance what constitutes a good response.",
+        "An evaluation set should include not only representative normal examples, but also insufficient information, ambiguity, long contexts, outdated documents, adversarial inputs, and expected refusals. Evaluation data must not be copied from personal information of production users without authorization. Manage permission to use the data, anonymization, storage, and updates.",
+        "Amazon Bedrock evaluation jobs can evaluate models using built-in or custom prompt datasets. When evaluating RAG, prepare separate data and metrics for retrieval and generation so that you can determine which stage has improved."
+      ],
+      "sources": [
+        {
+          "label": "Create a prompt dataset for RAG evaluation in Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        },
+        {
+          "label": "Start an automatic model evaluation job in Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-evaluation-jobs-management-create.html"
+        }
+      ]
+    },
+    {
+      "id": "rag-and-agent-evaluation",
+      "title": "Evaluate RAG and agents at each stage",
+      "paragraphs": [
+        "Inaccurate RAG answers can have different causes: retrieval was inappropriate; the retrieved passages were appropriate, but generation misinterpreted the evidence; or the sources were correct, but the answer did not meet the conditions in the question. Prepare the question, the expected evidence, and the expected characteristics of the answer, then score retrieval and generation separately.",
+        "For agents, evaluate not only the final response but also whether the agent checked the necessary information, used only the permitted tools, correctly validated the arguments, and stopped when it should have stopped. Even when a tool appears to have succeeded, verify that the operation was not performed on the wrong customer or target.",
+        "Review evaluation results by type of failure, not only by average score. Have people review failure cases and revisit the evaluation criteria so that requests that should be safely refused are not counted as successful and accurate answers are not unnecessarily blocked."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Creating a Prompt Dataset for RAG Evaluation in Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        }
+      ]
+    },
+    {
+      "id": "trace-before-changing-configurations",
+      "title": "Trace to isolate the cause before changing configurations",
+      "paragraphs": [
+        "When answer quality deteriorates, do not immediately change the model or prompt. Use a request identifier to correlate the user input, the versions of the applied model, prompt, and guardrails, search results, tool results, final output, and errors. This lets you reproduce the same behavior and identify the stage at which the problem occurred.",
+        "For example, if the search results are empty, investigate document ingestion, permissions, the query, and the index—not model hallucination. If the tool arguments are invalid, check input validation, the tool definition, and the prompt instructions—not the retrieval configuration. Changing unrelated configurations all at once prevents you from learning when the problem recurs.",
+        "After making a correction, run the original failure case, related regression cases, and safety cases under the same conditions. Confirm the improvement before rolling it out gradually, and if performance unexpectedly worsens, roll back to the recorded stable version."
+      ],
+      "sources": [
+        {
+          "label": "Monitor model invocations using CloudWatch Logs and Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-invocation-logging.html"
+        },
+        {
+          "label": "Amazon Bedrock model invocations",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-evaluation-001",
+      "prompt": "An education company’s GenAI developers evaluate a RAG feature that answers questions using internal learning materials before making it public. Users want not only accurate answers but also to be able to verify the materials supporting those answers. Which evaluation design is most appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Automatically score only whether the final answer is natural Japanese.",
+          "explanation": "Naturalness alone cannot verify whether relevant learning materials were retrieved or whether the answer matches the supporting evidence."
+        },
+        {
+          "id": "c",
+          "text": "Give higher scores to questions for which no learning materials exist and measure the model’s creativity.",
+          "explanation": "For a use case grounded in learning materials, the evaluation should assess appropriate responses or refusals when information is insufficient, rather than rewarding unsupported invention."
+        },
+        {
+          "id": "d",
+          "text": "Add only questions that receive complaints from users after publication to the evaluation set.",
+          "explanation": "Before publication, the evaluation must include representative examples, information-deficient questions, ambiguous questions, and safety-related cases."
+        },
+        {
+          "id": "b",
+          "text": "For each question, define the expected supporting evidence and separately evaluate retrieval relevance, whether the answer matches the evidence, citation display, and whether the user’s objective was achieved.",
+          "explanation": "Correct. This verifies retrieval and generation separately and also validates the user requirement that the supporting evidence be verifiable."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-002",
+      "prompt": "A GenAI developer at a construction company evaluates an agent that handles inquiries about construction estimates. The final response appears correct, but in some executions the agent called the estimate API for a different project. What is the most important additional aspect to evaluate?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Evaluate tool selection, the target project, argument validation, permissions, and stop-and-confirm conditions in the execution trace.",
+          "explanation": "Correct. For agents, you must evaluate not only the final response but also the targets of tool operations and whether the steps are safe."
+        },
+        {
+          "id": "a",
+          "text": "Score the grammar of the response text in even greater detail.",
+          "explanation": "Grammar does not indicate whether the agent called the correct tool for the correct target, which is a critical aspect of operational correctness."
+        },
+        {
+          "id": "c",
+          "text": "Increase the number of times the agent calls the API and hope it happens to reach the correct project.",
+          "explanation": "Increasing the number of calls does not resolve project identification or authorization errors and may amplify their impact."
+        },
+        {
+          "id": "d",
+          "text": "Skip target validation on the agent side because the estimate API always returns correct results.",
+          "explanation": "Even if the API itself is correct, specifying the wrong target can expose inappropriate information or cause inappropriate operations."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-003",
+      "prompt": "A GenAI developer at a publishing company confirmed that, after a model update, responses are cut off partway through only for certain long questions. What is the most appropriate action to take before investigating the cause?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Change the model, prompt, number of retrieved results, and output format simultaneously, then observe the results in production.",
+          "explanation": "Changing multiple settings at the same time makes it impossible to identify the cause of the problem and the effect of the fix."
+        },
+        {
+          "id": "c",
+          "text": "Have a person manually complete the truncated responses without recording the configuration.",
+          "explanation": "Temporary manual completion does not resolve the cause or prevent the same failure from recurring."
+        },
+        {
+          "id": "d",
+          "text": "Permanently prohibit access for users who submit long questions.",
+          "explanation": "If the problem occurs under legitimate usage conditions, the context-processing and output design should be investigated; excluding users will not solve it."
+        },
+        {
+          "id": "b",
+          "text": "Reproduce the failed request and investigate it by correlating the input length, the version of the applied configuration, the retrieved documents, token usage, the response, and errors.",
+          "explanation": "Correct. After tracing the stage at which the problem occurs, you can apply the minimum fix that addresses the cause and perform regression testing."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model evaluation",
+    "Regression test",
+    "Acceptance criteria",
+    "Prompt injection",
+    "Request ID",
+    "Trace",
+    "Model artifact",
+    "Rollback",
+    "Quality gate"
+  ]
+}

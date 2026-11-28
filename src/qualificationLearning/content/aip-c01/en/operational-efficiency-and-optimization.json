@@ -1,0 +1,176 @@
+{
+  "id": "operational-efficiency-and-optimization",
+  "title": "Operational Efficiency and Optimization of GenAI Applications",
+  "objective": "Observe quality, safety, response time, throughput, and cost simultaneously, and make improvement decisions based on hypotheses and measurement results.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testing and Quality Gates"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Deployment and Recovery"
+    },
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure-end-to-end-not-only-model",
+      "title": "Measure the User Journey, Not Just Model Responses",
+      "paragraphs": [
+        "Latency in GenAI applications is not determined by model inference alone. Authentication, input validation, retrieval, reranking, tool calls, output validation, and network stages all affect total time and failure rate. Before making improvements, observe the time and outcome of each stage from the user's request through the response.",
+        "Monitoring Amazon Bedrock model invocations lets you track invocation counts, token usage, errors, and more. Correlating these metrics with retrieval latency, tool failure rates, guardrail interventions, and user completion rates helps break down the seemingly simple symptom of being “slow” into potential causes.",
+        "Compare measurements under the same conditions. If you change the model, prompt, retrieval settings, input length, and concurrent usage at the same time, you cannot determine which change caused an improvement or degradation."
+      ],
+      "sources": [
+        {
+          "label": "Amazon Bedrock Model Invocations",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        },
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        }
+      ]
+    },
+    {
+      "id": "optimize-context-with-quality-guardrails",
+      "title": "Reduce tokens without sacrificing evidence or quality",
+      "paragraphs": [
+        "Reducing unnecessarily long conversation histories, duplicate document excerpts, and unused instructions can help lower costs and latency. However, simply shortening the input can remove necessary conditions and supporting evidence, reducing accuracy and safety. Decide what to remove while verifying quality with an evaluation set.",
+        "Consider caching results that can be reused for similar requests and stable common instructions. However, do not inadvertently include personal information or user-specific state in the cached content; evaluate its scope, invalidation conditions, and access controls.",
+        "Search configuration also does not necessarily improve quality just because the number of results increases. More irrelevant document excerpts can make it harder for the model to make decisions while increasing time and token usage. Evaluate retrieval quality, citation accuracy, response quality, and latency together."
+      ],
+      "sources": [
+        {
+          "label": "Retrieve data and generate AI responses with Amazon Bedrock knowledge bases",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base.html"
+        },
+        {
+          "label": "Amazon Bedrock model invocations",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    },
+    {
+      "id": "capacity-cost-and-graceful-degradation",
+      "title": "Decide Priorities and Graceful Degradation in Advance",
+      "paragraphs": [
+        "When usage increases sharply, it may not be possible to process every request with the same quality and latency. Decide which business functions are critical, which can be deferred, and which degraded functions can be explicitly offered to users. For example, consider a design that returns search results and sources first, then generates an additional summary afterward.",
+        "Graceful degradation does not mean returning answers without supporting evidence. If the model or search is unavailable, show users the current status and provide safe alternative paths, such as retrying, handing the matter off to a responsible person, or directing users to approved information.",
+        "Assess costs not only by token count, but also by including failed retries, searches, logs, tools, and support for users waiting for a response. Observe what causes sharp increases for particular users, inputs, or features, and respond based on quality and business impact instead of stopping everything uniformly only after exceeding the budget."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Amazon Bedrock Model Invocations",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-operations-001",
+      "prompt": "A retail company's GenAI developer is investigating why responses from a product-information chat have become slower. The configurations for the model, retrieval, and tool calls were recently changed at the same time. Which is the most appropriate analysis to perform first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Immediately change only the model type without checking the time spent at each stage or the failure rate.",
+          "explanation": "Even if another stage, such as retrieval or tools, is the cause, changing the model will not solve the problem and may make the root cause even harder to identify."
+        },
+        {
+          "id": "b",
+          "text": "Measure each stage from request to response, and compare the time and results for the model, retrieval, tools, and guardrails under the same conditions.",
+          "explanation": "Correct. Observing the entire path and testing the simultaneous changes separately makes it possible to isolate potential causes of the latency."
+        },
+        {
+          "id": "c",
+          "text": "Ignore user completion rates and errors, and compare only the average response time.",
+          "explanation": "The average alone cannot reveal failures, long wait times, or adverse effects on particular users."
+        },
+        {
+          "id": "d",
+          "text": "Disable all logs and metrics until the latency is resolved.",
+          "explanation": "This would eliminate the evidence needed to investigate the cause and make it impossible to verify the improvement."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-operations-002",
+      "prompt": "A GenAI developer at a law firm wants to reduce the cost of a RAG chat application. Currently, many document chunks unrelated to the user's question are also added to the prompt, which can weaken the evidentiary basis of the answer. Which improvement is most appropriate?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Evaluate retrieval relevance, citation correctness, response quality, and latency, and tune the system to provide only the necessary document chunks.",
+          "explanation": "Correct. This optimizes the system while protecting not only cost, but also the quality of RAG retrieval, generation, and evidence presentation at the same time."
+        },
+        {
+          "id": "a",
+          "text": "Always increase the number of document chunks to the maximum and do not evaluate them.",
+          "explanation": "Adding more unrelated document chunks can increase costs and latency and may reduce the quality of the supporting evidence."
+        },
+        {
+          "id": "c",
+          "text": "Provide no supporting documents at all and generate legal answers using only the model's general knowledge.",
+          "explanation": "This reduces accuracy and accountability in use cases that require matter-specific evidence and source verification."
+        },
+        {
+          "id": "d",
+          "text": "Permanently cache every user's entire conversation history without imposing access conditions.",
+          "explanation": "This increases the retention and exposure of unnecessary personal and matter-related information and is not a safe way to use caching."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-operations-003",
+      "prompt": "A GenAI developer supporting disaster response prioritizes not returning unfounded evacuation information, even during a large surge in inquiries. Which design is most appropriate when model inference is temporarily unavailable?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "When the model is unavailable, return any past response without justification.",
+          "explanation": "The risk of misinformation is even higher during emergencies, so old responses must not be returned without a valid basis."
+        },
+        {
+          "id": "b",
+          "text": "Indicate the outage state and provide a safe degraded path, such as directing users to approved information or handing the matter off to a responsible person.",
+          "explanation": "Correct. Even when availability is reduced, this communicates the status to users and provides alternatives that preserve evidentiary support and safety."
+        },
+        {
+          "id": "c",
+          "text": "Hide the failure from users and retry the same request internally indefinitely.",
+          "explanation": "Users cannot assess the situation, the load increases further, and response delays become even longer."
+        },
+        {
+          "id": "d",
+          "text": "Disable all safety filters and improve response speed alone.",
+          "explanation": "This violates the requirement to prioritize safety and may increase dangerous outputs under heavy load."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Latency",
+    "Throughput",
+    "Token",
+    "Caching",
+    "Monitoring",
+    "CloudWatch alarm",
+    "Cost allocation tags",
+    "Error rate",
+    "SLO"
+  ]
+}

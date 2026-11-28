@@ -1,0 +1,178 @@
+{
+  "id": "implementation-and-integration",
+  "title": "Implementierung und Integration",
+  "objective": "Verantwortungsgrenzen zwischen Modellen, Agenten, Tools und menschlicher Überprüfung entwerfen und externe Vorgänge sicher integrieren.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Zentrale AWS-Services"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentifizierung und Autorisierung"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CD-Ablauf"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Bereitstellung und Wiederherstellung"
+    }
+  ],
+  "sections": [
+    {
+      "id": "agent-is-not-an-unbounded-operator",
+      "title": "Geben Sie dem Agenten ein Ziel, Tools und Abbruchbedingungen",
+      "paragraphs": [
+        "Ein Agent ist ein System, in dem das Modell anhand des Gesprächsinhalts den nächsten Vorgang oder Tool-Aufruf auswählt. Den Agenten lediglich anzuweisen, „sein Bestes für den Kunden zu tun“, reicht jedoch nicht für sichere Geschäftsprozesse aus. Legen Sie das ausführbare Ziel, die verwendbaren Tools, die erforderlichen Eingaben und Ausgaben, den Umgang mit Fehlern und die Abbruchbedingungen eindeutig fest.",
+        "Definieren Sie für jedes Tool nicht nur den Namen und die Beschreibung, sondern auch die Eingabetypen, Pflichtfelder, zulässigen Werte, den aufrufenden Principal, das Timeout und die Fehlerantwort. Legen Sie auch für Amazon Bedrock-Aktionsgruppen die für die Ausführung erforderlichen Parameter fest und bestimmen Sie, wohin diese Informationen übergeben werden. Vom Modell vorgeschlagene Argumente müssen auf der Tool-Seite erneut validiert werden.",
+        "Bei Vorgängen mit großen Auswirkungen, etwa Zahlungen, Vertragsänderungen oder dem Senden von Informationen an externe Stellen, muss eine menschliche Prüfung in den Workflow aufgenommen werden. Eine menschliche Prüfung besteht nicht lediglich aus einer Schaltfläche „Genehmigen“. Sie muss so gestaltet sein, dass Ziel, Änderungen, Begründung sowie die Zustände vor und nach der Ausführung überprüft werden können."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01-Prüfungsleitfaden",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Anwendungsfälle von Amazon Bedrock Guardrails",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-use.html"
+        }
+      ],
+      "figureId": "agent-is-not-an-unbounded-operator"
+    },
+    {
+      "id": "state-errors-and-retries",
+      "title": "Grenzen für Status, Wiederholungen und Fehler implementieren",
+      "paragraphs": [
+        "Legen Sie bei Konversationen und mehrstufigen Prozessen fest, was als Status gespeichert werden soll. Der Zweck der Konversation, die vom Benutzer bestätigten Werte, die Ergebnisse der Toolausführung und ausstehende Genehmigungen dürfen nicht genauso gespeichert werden wie bloße Kandidatentexte oder unnötige personenbezogene Daten. Legen Sie für den Status eine Ablaufzeit und Löschbedingungen fest.",
+        "Bei vorübergehenden Fehlern externer APIs können Wiederholungen wirksam sein. Eine Wiederholung bei unzureichenden Eingaben, unzureichenden Berechtigungen oder Verstößen gegen Geschäftsregeln auf dieselbe Weise führt jedoch nicht zum Erfolg. Unterscheiden Sie zwischen Fehlern, bei denen eine Wiederholung erfolgen soll, Fehlern, bei denen eine Bestätigung des Benutzers erforderlich ist, und Fehlern, bei denen sofort angehalten werden muss. Stellen Sie außerdem sicher, dass die Wiederholung desselben Vorgangs nicht zu einer doppelten Ausführung führt.",
+        "Fehlerantworten sollten dem Benutzer die nächste Aktion angeben, ohne vertrauliche interne Informationen offenzulegen. Zeichnen Sie die Anforderungskennung, die Ausführungsphase, das Tool und die Kategorie des Fehlergrunds auf, damit Betreiber den Fehler untersuchen können."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01-Prüfungsleitfaden",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Wiederverwendbare Prompts mit der Prompt-Verwaltung in Amazon Bedrock erstellen und speichern",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    },
+    {
+      "id": "integration-versioning-and-release",
+      "title": "Integrierte Komponenten mit Versionen und Konfigurationen verwalten",
+      "paragraphs": [
+        "Das Verhalten einer GenAI-Anwendung wird nicht allein durch den Anwendungscode bestimmt. Es ergibt sich aus der Kombination der Versionen und Konfigurationen von Modellen, Prompts, Sucheinstellungen, Tooldefinitionen, Leitplanken und Datenquellen. Wenn Änderungen ohne Aufzeichnung der Änderungseinheit in die Produktion übernommen werden, lässt sich die Ursache von Qualitätsveränderungen nicht isolieren.",
+        "Führen Sie vor der Veröffentlichung Regressionstests durch, die nicht nur repräsentative Erfolgsbeispiele, sondern auch unzureichende Informationen, abzulehnende Anfragen, Toolfehler und veraltete Gesprächszustände umfassen. Führen Sie Konfigurationen schrittweise ein, damit Sie bei einer Verschlechterung der Bewertungsmetriken zur vorherigen Kombination zurückkehren können.",
+        "Das Wechseln von Modellen oder Anbietern ist nicht einfach eine Änderung des API-Endpunkts. Überprüfen Sie unter denselben Abnahmekriterien die Auswirkungen auf Eingabeformate, Ausgabeformate, Tokenlimits, Toolnutzung, Leitplanken und den Bewertungssatz."
+      ],
+      "sources": [
+        {
+          "label": "Prüfungsleitfaden AIP-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Wiederverwendbare Prompts mit der Prompt-Verwaltung in Amazon Bedrock erstellen und speichern",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-integration-001",
+      "prompt": "Ein GenAI-Entwickler eines Reiseunternehmens erstellt einen Agenten, der Reservierungen auf Anfrage der Nutzer ändert. Für die Änderung werden die Reservierungsnummer, die Änderungsdetails und die Tarifdifferenz benötigt; nach der Bestätigung fällt eine Stornierungsgebühr an. Welche Gestaltung eignet sich am besten, um falsche Änderungen zu verhindern?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Die Reservierungsänderung sofort ausführen, sobald das Modell sie vorschlägt, ohne die Reservierungsnummer oder die Tarifdifferenz zu prüfen.",
+          "explanation": "Da die erforderlichen Eingaben und die geschäftlichen Auswirkungen nicht geprüft werden, könnte die falsche Reservierung geändert werden oder es könnten unbeabsichtigte Kosten entstehen."
+        },
+        {
+          "id": "c",
+          "text": "Allen Agenten Administratorberechtigungen für die API zur Änderung von Reservierungen gewähren.",
+          "explanation": "Dadurch wären Änderungen über den vorgesehenen Verwendungszweck hinaus möglich, und sowohl die Nachverfolgung des ausführenden Agenten als auch das Prinzip der geringsten Rechte würden beeinträchtigt."
+        },
+        {
+          "id": "b",
+          "text": "Die Eingaben des Tools validieren, dem Nutzer die Änderungsdetails und die Tarifdifferenz zur Bestätigung anzeigen und die Änderung anschließend mit eingeschränkten Berechtigungen ausführen.",
+          "explanation": "Richtig. Die Trennung von Modellvorschlag und Ausführung sowie die Kombination aus Eingabevalidierung, menschlicher Bestätigung und geringsten Rechten schützt Vorgänge mit erheblichen Auswirkungen."
+        },
+        {
+          "id": "d",
+          "text": "Bei einem Fehler der Reservierungsänderung dieselbe Anfrage ohne Benachrichtigung des Nutzers unbegrenzt erneut versuchen.",
+          "explanation": "Fehlende Eingaben oder Verstöße gegen Geschäftsregeln lassen sich durch Wiederholungen nicht beheben; außerdem besteht die Gefahr doppelter Ausführungen."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-002",
+      "prompt": "Ein GenAI-Entwickler eines Telekommunikationsunternehmens implementiert eine Unterstützungsfunktion, die bei Anfragen zu Leitungsstörungen die Vertragsinformationen von Kunden sucht und den Vorgang bei Bedarf an einen zuständigen Agenten weiterleitet. Welche Methode eignet sich am besten, um sicher zwischen einer vorübergehend nicht antwortenden externen Vertrags-API und einem Fall zu unterscheiden, in dem der Benutzer keine Vertragsnummer eingegeben hat?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "In beiden Fällen die Vertrags-API in gleichen Abständen unbegrenzt erneut aufrufen.",
+          "explanation": "Fehlende Eingaben lassen sich durch erneute Versuche nicht beheben, und unbegrenzte Versuche erhöhen das Risiko zusätzlicher Last und doppelter Verarbeitung."
+        },
+        {
+          "id": "b",
+          "text": "Bei einem vorübergehenden API-Ausfall mit einer begrenzten Anzahl von Versuchen und begrenzter Wartezeit erneut versuchen; bei fehlenden Eingaben den Benutzer auffordern, die fehlenden Angaben zu bestätigen und bereitzustellen.",
+          "explanation": "Richtig. Wenn Wiederholungen, die Bestätigung durch den Benutzer und der Abbruch je nach Fehlertyp getrennt behandelt werden, ist eine sichere Wiederherstellung möglich."
+        },
+        {
+          "id": "c",
+          "text": "Auch ohne Vertragsnummer anhand beliebiger Zahlen aus der Unterhaltung nach Kundeninformationen suchen.",
+          "explanation": "Dadurch könnten die Informationen eines anderen Kunden offengelegt werden, und es verstößt gegen die Anforderungen an Eingabevalidierung und Datenschutz."
+        },
+        {
+          "id": "d",
+          "text": "Die internen Fehlerdetails der API unverändert für den Benutzer anzeigen.",
+          "explanation": "Dem Benutzer sollte die nächste erforderliche Handlung mitgeteilt werden. Interne Details, die Implementierungsinformationen oder vertrauliche Daten enthalten können, dürfen nicht offengelegt werden."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-003",
+      "prompt": "Ein GenAI-Entwickler einer Kommunalverwaltung überarbeitet einen Prompt in einer Funktion zur Generierung von Informationsschreiben. Wenn nach der Überarbeitung nur für einige Benutzer falsche Kontaktdaten generiert werden: Welche Vorgehensweise ist am besten geeignet, um die Ursache zu ermitteln und sicher zurückrollen zu können?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Nur den Prompttext überschreiben, ohne Version, Bewertungsergebnisse oder Zeitpunkt der Umsetzung zu dokumentieren.",
+          "explanation": "Dann lässt sich nicht feststellen, wann was geändert wurde. Dadurch können weder der Zusammenhang mit der fehlerhaften Ausgabe noch ein Ziel für das Zurückrollen bestimmt werden."
+        },
+        {
+          "id": "c",
+          "text": "Die Überarbeitung fortsetzen, solange der Text natürlich klingt, auch wenn falsche Kontaktdaten ausgegeben werden.",
+          "explanation": "Natürlich klingender Text garantiert keine fachliche Genauigkeit, und falsche Kontaktdaten wirken sich direkt auf die Benutzer aus."
+        },
+        {
+          "id": "b",
+          "text": "Prompt, Modell und Einstellungen als Version dokumentieren, sie mit Regressionsfällen überprüfen, schrittweise ausrollen und bei einer Verschlechterung auf die vorherige Version zurückrollen.",
+          "explanation": "Richtig. Durch die Nachverfolgung der Komponenten, die das Verhalten bestimmen, kann sicher auf eine geprüfte vorherige Version zurückgerollt werden."
+        },
+        {
+          "id": "d",
+          "text": "Gleichzeitig für alle Benutzer in der Produktionsumgebung ausrollen und erst danach über eine Bewertungsmethode nachdenken.",
+          "explanation": "Nachdem der Wirkungsbereich vergrößert wurde, sind das Erkennen einer Qualitätsverschlechterung und ein sicheres Zurückrollen schwieriger."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "AI agent",
+    "Action group",
+    "Tool calling",
+    "Human oversight",
+    "Idempotency",
+    "Request ID",
+    "Audit log",
+    "Model artifact",
+    "Deployment pipeline",
+    "Rollback"
+  ]
+}

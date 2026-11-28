@@ -1,0 +1,176 @@
+{
+  "id": "testing-validation-and-troubleshooting",
+  "title": "測試、驗證與疑難排解",
+  "objective": "區分評估對象、評分標準，以及搜尋、生成和安全性的佐證，以便能以可重現的方式調查並改善品質變化的原因。",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "測試與品質閘門"
+    },
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署與復原"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    }
+  ],
+  "sections": [
+    {
+      "id": "evaluation-is-a-contract",
+      "title": "先固定評估目的與評分標準",
+      "paragraphs": [
+        "評估生成式 AI 時，僅靠單一的正確答案字串有時無法衡量品質。請依使用情境分別設定評分標準，涵蓋與問題的相關性、事實準確性、與佐證的一致性、一致性、格式、安全性，以及使用者是否能達成目標。即使同時採用人工評估與自動評估，也要事先定義何謂良好回答。",
+        "評估集不僅應包含具代表性的正常範例，也應包含資訊不足、歧義、長上下文、過時文件、對抗性輸入，以及預期的拒絕。評估資料不得未經授權就複製正式環境使用者的個人資訊。請管理資料使用許可、匿名化、儲存與更新。",
+        "Amazon Bedrock 的評估工作可以使用內建或自訂的提示資料集來評估模型。評估 RAG 時，請分別準備檢索與生成所需的資料和指標，以判斷改善發生在哪個階段。"
+      ],
+      "sources": [
+        {
+          "label": "在 Amazon Bedrock 中建立用於 RAG 評估的提示資料集",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        },
+        {
+          "label": "在 Amazon Bedrock 中啟動自動模型評估工作",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-evaluation-jobs-management-create.html"
+        }
+      ]
+    },
+    {
+      "id": "rag-and-agent-evaluation",
+      "title": "按階段評估 RAG 與代理程式",
+      "paragraphs": [
+        "RAG 回答不正確可能有不同原因：擷取不適當；擷取的片段適當，但生成過程誤讀了佐證；或來源正確，但回答不符合問題中的條件。準備問題、預期的佐證和預期回答的特性，然後分別為擷取和生成評分。",
+        "對於代理程式，不僅要評估最終回應，還要評估其是否確認了必要資訊、是否只使用獲准的工具、是否正確驗證了引數，以及是否在應該停止時停止。即使工具看起來執行成功，也要確認操作沒有針對錯誤的客戶或對象執行。",
+        "評估結果不僅要看平均值，還要依失敗類型檢視。應由人員檢查失敗案例並重新檢視評估標準，避免將應安全拒絕的要求計為成功，也避免不必要地封鎖正確的回答。"
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "在 Amazon Bedrock 中建立用於 RAG 評估的提示資料集",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base-evaluation-prompt.html"
+        }
+      ]
+    },
+    {
+      "id": "trace-before-changing-configurations",
+      "title": "在變更組態前透過追蹤資訊區分原因",
+      "paragraphs": [
+        "回答品質惡化時，不要立即變更模型或提示。使用要求識別碼，將使用者輸入、所套用的模型、提示與護欄版本、搜尋結果、工具結果、最終輸出及錯誤相互關聯。如此即可重現相同現象，並找出問題發生的階段。",
+        "例如，如果搜尋結果為空，應調查文件擷取、權限、查詢和索引問題，而不是歸因於模型幻覺。如果工具引數無效，應檢查輸入驗證、工具定義和提示中的指示，而不是檢查擷取設定。一次變更所有與原因無關的設定，會讓你在問題再次發生時無從學習。",
+        "修正後，在相同條件下執行原始失敗案例、相關回歸案例和安全性案例。確認有所改善後再分階段推出；如果出現意外惡化，則回復到已記錄的穩定版本。"
+      ],
+      "sources": [
+        {
+          "label": "使用 CloudWatch Logs 和 Amazon S3 監控模型呼叫",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-invocation-logging.html"
+        },
+        {
+          "label": "Amazon Bedrock 模型呼叫",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-evaluation-001",
+      "prompt": "一家教育公司的 GenAI 開發人員在公開一項根據內部教材回答問題的 RAG 功能之前，先進行評估。使用者不僅要求回答正確，也要求能夠核實作為回答依據的教材。哪一種評估設計最合適？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只自動評分最終回答是否使用自然的日語。",
+          "explanation": "僅憑自然度無法確認是否擷取到相關教材，也無法確認回答是否與佐證一致。"
+        },
+        {
+          "id": "c",
+          "text": "對沒有教材可供依據的問題給予較高分，以衡量模型的創造力。",
+          "explanation": "對於以教材為依據的用途，應評估資訊不足時是否能適當回答或拒答，而不是高度評價無佐證的創作。"
+        },
+        {
+          "id": "d",
+          "text": "只將公開後收到使用者抱怨的問題加入評估集。",
+          "explanation": "在公開前，評估必須包含代表性範例、資訊不足的問題、模糊的問題，以及安全性相關案例。"
+        },
+        {
+          "id": "b",
+          "text": "針對每個問題定義預期的佐證，並分別評估擷取相關性、回答與佐證的一致性、來源顯示，以及使用者目標是否達成。",
+          "explanation": "正確。這樣可以分別確認 RAG 的擷取與生成，也能驗證使用者要求能夠核實佐證的需求。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-002",
+      "prompt": "一家建築公司的 GenAI 開發人員正在評估一個處理工程估價詢問的代理程式。最終回答看似正確，但在部分執行中，它呼叫了其他案件的估價 API。評估時最重要的額外考量是什麼？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "在執行追蹤中評估工具選擇、目標案件、引數驗證、權限，以及停止與確認條件。",
+          "explanation": "正確。對於代理程式，不僅要評估最終回答，還必須評估工具操作的目標以及執行步驟是否安全。"
+        },
+        {
+          "id": "a",
+          "text": "只對回答文字的文法進行更加細緻的評分。",
+          "explanation": "文法無法顯示代理程式是否針對正確的目標呼叫正確的工具，而這是操作正確性的重要面向。"
+        },
+        {
+          "id": "c",
+          "text": "增加代理程式呼叫 API 的次數，並期待它偶然命中正確的案件。",
+          "explanation": "增加呼叫次數無法解決案件識別與授權錯誤，反而可能擴大影響。"
+        },
+        {
+          "id": "d",
+          "text": "由於估價 API 的結果一律正確，因此省略代理程式端的目標驗證。",
+          "explanation": "即使 API 本身正確，如果指定了錯誤的目標，也可能提供不適當的資訊或執行不適當的操作。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-evaluation-003",
+      "prompt": "一家出版公司的 GenAI 開發人員確認，模型更新後，只有針對某些較長問題的回答會在中途截斷。在調查原因之前，最適合採取的行動是什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "同時變更模型、提示、擷取結果數量和輸出格式，然後在正式環境中觀察結果。",
+          "explanation": "同時變更多個設定，就無法判定問題的原因和修正措施的效果。"
+        },
+        {
+          "id": "c",
+          "text": "讓人員手動補完中途截斷的回答，而且不記錄組態。",
+          "explanation": "暫時手動補完無法解決根本原因，也無法防止相同的失敗再次發生。"
+        },
+        {
+          "id": "d",
+          "text": "永久禁止傳送長問題的使用者存取。",
+          "explanation": "如果問題發生在正當的使用條件下，就應調查上下文處理和輸出設計；排除使用者並不能解決問題。"
+        },
+        {
+          "id": "b",
+          "text": "重現失敗的請求，並將輸入長度、套用組態的版本、擷取到的文件、權杖使用量、回應和錯誤相互關聯後進行調查。",
+          "explanation": "正確。透過追蹤找出問題發生的階段後，即可套用針對原因的最小修正並進行回歸測試。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model evaluation",
+    "Regression test",
+    "Acceptance criteria",
+    "Prompt injection",
+    "Request ID",
+    "Trace",
+    "Model artifact",
+    "Rollback",
+    "Quality gate"
+  ]
+}

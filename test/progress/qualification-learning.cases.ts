@@ -102,4 +102,12 @@ export const qualificationLearningCases: QualificationLearningCase[] = [
     answer: /取り込み元、データ版、変換コード、学習・評価データ、モデルアーティファクトを関連付け/,
     choiceCount: 3,
   },
+  {
+    courseId: 'aip-c01',
+    firstTitle: '基盤モデルの統合、データ管理、コンプライアンス',
+    nextUnit: 'implementation-and-integration',
+    prompt: /製薬会社のGenAI開発者は、社内の承認済み手順書だけを根拠に、現場担当者の/,
+    answer: /承認状態と更新を管理した文書を検索し、取得片を応答へ渡して出典を示す。/,
+    choiceCount: 4,
+  },
 ];

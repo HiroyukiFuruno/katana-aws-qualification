@@ -1,0 +1,176 @@
+{
+  "id": "operational-efficiency-and-optimization",
+  "title": "Eficiência operacional e otimização de aplicações GenAI",
+  "objective": "Observar simultaneamente a qualidade, a segurança, o tempo de resposta, o throughput e os custos, e tomar decisões de melhoria com base em hipóteses e resultados de medição.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testes e gates de qualidade"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Implantação e recuperação"
+    },
+    {
+      "slug": "core-services",
+      "title": "Serviços essenciais da AWS"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure-end-to-end-not-only-model",
+      "title": "Meça a jornada do usuário, não apenas as respostas do modelo",
+      "paragraphs": [
+        "A latência de aplicações GenAI não é determinada apenas pela inferência do modelo. Cada etapa — autenticação, validação de entrada, recuperação, reordenação, chamadas de ferramentas, validação da saída e rede — afeta o tempo total e a taxa de falhas. Antes de fazer melhorias, observe o tempo e o resultado de cada etapa, desde a solicitação do usuário até a resposta.",
+        "O monitoramento das invocações de modelos do Amazon Bedrock permite acompanhar a quantidade de invocações, o uso de tokens, os erros e outros dados. Ao relacioná-los à latência da recuperação, às taxas de falha das ferramentas, às intervenções das barreiras de proteção e às taxas de conclusão dos usuários, é possível decompor o simples sintoma de estar “lento” em possíveis causas.",
+        "Compare as medições sob as mesmas condições. Se você alterar simultaneamente o modelo, o prompt, as configurações de recuperação, o comprimento da entrada e o número de usuários simultâneos, não será possível determinar qual alteração causou uma melhoria ou uma degradação."
+      ],
+      "sources": [
+        {
+          "label": "Invocações de modelos do Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        },
+        {
+          "label": "Guia do exame AIP-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        }
+      ]
+    },
+    {
+      "id": "optimize-context-with-quality-guardrails",
+      "title": "Reduza tokens sem perder evidências nem qualidade",
+      "paragraphs": [
+        "Reduzir históricos de conversa desnecessariamente longos, trechos de documentos duplicados e instruções não utilizadas pode ajudar a diminuir custos e latência. No entanto, simplesmente encurtar a entrada pode eliminar condições e evidências necessárias, reduzindo a precisão e a segurança. Decida o que reduzir enquanto verifica a qualidade com um conjunto de avaliação.",
+        "Considere usar cache para resultados que possam ser reutilizados em solicitações semelhantes e para instruções comuns estáveis. No entanto, não inclua inadvertidamente informações pessoais ou estados específicos do usuário no conteúdo armazenado em cache; avalie o escopo, as condições de invalidação e os controles de acesso.",
+        "A configuração da pesquisa também não melhora necessariamente a qualidade apenas porque o número de resultados aumenta. O aumento de trechos de documentos irrelevantes pode dificultar a tomada de decisões pelo modelo, além de aumentar o tempo e o uso de tokens. Avalie em conjunto a qualidade da recuperação, a precisão das citações, a qualidade da resposta e a latência."
+      ],
+      "sources": [
+        {
+          "label": "Recupere dados e gere respostas de IA com bases de conhecimento do Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/knowledge-base.html"
+        },
+        {
+          "label": "Invocações de modelos do Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    },
+    {
+      "id": "capacity-cost-and-graceful-degradation",
+      "title": "Defina antecipadamente as prioridades e a degradação controlada durante picos de carga",
+      "paragraphs": [
+        "Quando o uso aumenta rapidamente, pode não ser possível processar todas as solicitações com a mesma qualidade e latência. Defina quais funções de negócio são críticas, quais podem ser adiadas e quais funções degradadas podem ser oferecidas explicitamente aos usuários. Por exemplo, considere um design que retorna primeiro os resultados da pesquisa e as fontes e gera um resumo adicional posteriormente.",
+        "A degradação controlada não significa retornar respostas sem evidências. Se o modelo ou a pesquisa estiver indisponível, informe o estado atual aos usuários e ofereça caminhos alternativos seguros, como tentar novamente, encaminhar o caso a um responsável ou orientar o usuário para informações aprovadas.",
+        "Avalie os custos considerando não apenas a quantidade de tokens, mas também novas tentativas malsucedidas, pesquisas, logs, ferramentas e o suporte aos usuários que estão aguardando. Observe os fatores que causam aumentos acentuados para determinados usuários, entradas ou funções e responda com base na qualidade e no impacto nos negócios, em vez de interromper tudo uniformemente somente depois de exceder o orçamento."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame AIP-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Invocações de modelos do Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/model-invocations.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-operations-001",
+      "prompt": "Um desenvolvedor de GenAI de uma empresa varejista está investigando por que as respostas do chat de informações sobre produtos ficaram mais lentas. As configurações do modelo, da recuperação e das chamadas de ferramentas foram alteradas recentemente ao mesmo tempo. Qual é a análise mais adequada para realizar primeiro?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Alterar imediatamente apenas o tipo de modelo, sem verificar o tempo de cada etapa nem a taxa de falhas.",
+          "explanation": "Mesmo que a causa esteja em outra etapa, como a recuperação ou as ferramentas, alterar o modelo não resolverá o problema e poderá tornar a causa ainda mais difícil de identificar."
+        },
+        {
+          "id": "b",
+          "text": "Medir cada etapa, da solicitação à resposta, e comparar o tempo e os resultados do modelo, da recuperação, das ferramentas e das guardrails nas mesmas condições.",
+          "explanation": "Correto. Ao observar todo o percurso e validar separadamente as alterações simultâneas, é possível isolar as possíveis causas da latência."
+        },
+        {
+          "id": "c",
+          "text": "Ignorar as taxas de conclusão e os erros dos usuários e comparar apenas o tempo médio de resposta.",
+          "explanation": "A média, por si só, não revela falhas, longos tempos de espera nem impactos adversos sobre usuários específicos."
+        },
+        {
+          "id": "d",
+          "text": "Desativar todos os logs e métricas até que a latência seja resolvida.",
+          "explanation": "Isso eliminaria as evidências necessárias para investigar a causa e impediria a verificação dos resultados da melhoria."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-operations-002",
+      "prompt": "Um desenvolvedor de GenAI de um escritório de advocacia quer reduzir o custo de um chat com RAG. Atualmente, muitos fragmentos de documentos que não são relevantes para a pergunta do usuário também são adicionados ao prompt, o que pode enfraquecer a base da resposta. Qual é a melhoria mais apropriada?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Avaliar a relevância da recuperação, a correção das citações, a qualidade das respostas e a latência, ajustando o sistema para fornecer apenas os fragmentos de documentos necessários.",
+          "explanation": "Correto. Isso permite otimizar o sistema e, ao mesmo tempo, preservar não apenas os custos, mas também a qualidade da recuperação, da geração e da apresentação das evidências no RAG."
+        },
+        {
+          "id": "a",
+          "text": "Sempre aumentar a quantidade de fragmentos de documentos até o máximo e não avaliá-los.",
+          "explanation": "Adicionar mais fragmentos de documentos irrelevantes pode aumentar os custos e a latência, além de reduzir a qualidade das evidências de apoio."
+        },
+        {
+          "id": "c",
+          "text": "Não fornecer nenhum documento de apoio e gerar respostas jurídicas usando apenas o conhecimento geral do modelo.",
+          "explanation": "Isso reduz a precisão e a responsabilidade em casos de uso que exigem evidências específicas do caso e verificação das fontes."
+        },
+        {
+          "id": "d",
+          "text": "Armazenar permanentemente em cache todo o histórico de conversas de cada usuário, sem estabelecer condições de acesso.",
+          "explanation": "Isso aumenta a retenção e a exposição de informações pessoais e relacionadas ao caso que são desnecessárias, não sendo uma forma segura de usar o cache."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-operations-003",
+      "prompt": "Um desenvolvedor de GenAI que apoia a resposta a desastres prioriza não retornar informações de evacuação sem fundamento, mesmo durante um grande aumento no volume de consultas. Qual é o design mais adequado quando a inferência do modelo fica temporariamente indisponível?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Quando o modelo estiver indisponível, retornar sem justificativa qualquer resposta anterior.",
+          "explanation": "O risco de desinformação é ainda maior em situações de emergência; portanto, respostas antigas não devem ser retornadas sem uma base válida."
+        },
+        {
+          "id": "b",
+          "text": "Indicar o estado da interrupção e oferecer um caminho seguro de degradação, como orientar os usuários para informações aprovadas ou encaminhar o caso a uma pessoa responsável.",
+          "explanation": "Correto. Mesmo quando a disponibilidade diminui, é possível comunicar o estado aos usuários e oferecer alternativas que preservem a fundamentação e a segurança."
+        },
+        {
+          "id": "c",
+          "text": "Ocultar a falha dos usuários e tentar novamente a mesma solicitação internamente por tempo indeterminado.",
+          "explanation": "Os usuários não conseguem avaliar a situação, a carga aumenta ainda mais e os atrasos nas respostas se prolongam."
+        },
+        {
+          "id": "d",
+          "text": "Desativar todos os filtros de segurança e melhorar apenas a velocidade das respostas.",
+          "explanation": "Isso viola o requisito de priorizar a segurança e pode aumentar as saídas perigosas sob alta carga."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Latency",
+    "Throughput",
+    "Token",
+    "Caching",
+    "Monitoring",
+    "CloudWatch alarm",
+    "Cost allocation tags",
+    "Error rate",
+    "SLO"
+  ]
+}

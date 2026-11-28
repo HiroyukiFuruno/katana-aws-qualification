@@ -1,0 +1,178 @@
+{
+  "id": "implementation-and-integration",
+  "title": "Implementation and Integration",
+  "objective": "Design responsibility boundaries among models, agents, tools, and human verification, and safely integrate external operations.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentication and Authorization"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CD Flow"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Deployment and Recovery"
+    }
+  ],
+  "sections": [
+    {
+      "id": "agent-is-not-an-unbounded-operator",
+      "title": "Give the agent a purpose, tools, and stop conditions",
+      "paragraphs": [
+        "An agent is a system in which the model selects the next operation or tool call based on the conversation. However, simply instructing an agent to “do its best for the customer” is not sufficient for safe business operations. Clearly define the executable purpose, available tools, required inputs, outputs, error handling, and stop conditions.",
+        "Define not only each tool’s name and description, but also its input types, required fields, allowed values, calling principal, timeout, and error response. For Amazon Bedrock action groups as well, specify the parameters required for execution and where that information should be passed. Revalidate arguments proposed by the model on the tool side.",
+        "For high-impact operations such as payments, contract changes, and sending information externally, include human review in the workflow. Human review is not merely adding an “Approve” button; it is a design that allows reviewers to confirm the target, the changes, the rationale, and the states before and after execution."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Amazon Bedrock Guardrails use cases",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/guardrails-use.html"
+        }
+      ],
+      "figureId": "agent-is-not-an-unbounded-operator"
+    },
+    {
+      "id": "state-errors-and-retries",
+      "title": "Implementing Boundaries for State, Retries, and Failures",
+      "paragraphs": [
+        "For conversations and multistep processes, decide what to save as state. Do not retain the conversation’s purpose, values confirmed by the user, tool execution results, and pending approvals in the same way as mere candidate text or unnecessary personal information. Define expiration and deletion conditions for state.",
+        "Retries can be effective for temporary failures of external APIs. However, retrying insufficient input, insufficient permissions, or business-rule violations in the same way will not succeed. Distinguish failures to retry, failures that require confirmation from the user, and failures that require immediate termination, and ensure that repeating the same operation does not cause duplicate execution.",
+        "Error responses should indicate the user’s next action without exposing internal confidential information. Record the request identifier, execution stage, tool, and failure-reason category so that operators can investigate."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Build and Store Reusable Prompts Using Prompt Management in Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    },
+    {
+      "id": "integration-versioning-and-release",
+      "title": "Managing Integrated Components Through Versions and Configuration",
+      "paragraphs": [
+        "The behavior of a GenAI application is not determined by the application code alone. It is determined by the combination of the versions and configurations of the models, prompts, retrieval settings, tool definitions, guardrails, and data sources. If changes are deployed to production without recording the unit of change, it becomes impossible to isolate the cause of quality changes.",
+        "Before release, run regression cases that include not only representative successful examples, but also insufficient information, requests that should be refused, tool failures, and stale conversation states. Roll out configurations gradually so that you can revert to the previous combination if evaluation metrics deteriorate.",
+        "Switching models or providers is not simply a matter of changing the API endpoint. Verify the impact on input formats, output formats, token limits, tool use, guardrails, and the evaluation set under the same acceptance criteria."
+      ],
+      "sources": [
+        {
+          "label": "AIP-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/ai-professional-01/ai-professional-01.html"
+        },
+        {
+          "label": "Build and Store Reusable Prompts Using Prompt Management in Amazon Bedrock",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/prompt-management.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "aip-integration-001",
+      "prompt": "A travel company’s GenAI developer is building an agent that changes reservations in response to user requests. The change requires a reservation number, the requested changes, and the fare difference; once confirmed, a cancellation fee is incurred. Which design is most appropriate for preventing incorrect changes?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Execute the reservation change immediately when the model proposes it, without verifying the reservation number or fare difference.",
+          "explanation": "Because the required inputs and business impact are not checked, this could change the wrong reservation or incur unintended charges."
+        },
+        {
+          "id": "c",
+          "text": "Share administrator permissions for the reservation-change API with all agents.",
+          "explanation": "This allows changes beyond the intended use and undermines execution tracing and least privilege."
+        },
+        {
+          "id": "b",
+          "text": "Validate the tool inputs, show the requested changes and fare difference to the user for confirmation, and then execute the change with limited permissions.",
+          "explanation": "Correct. Separating the model’s proposal from execution and combining input validation, human confirmation, and least privilege protects high-impact operations."
+        },
+        {
+          "id": "d",
+          "text": "If a reservation change fails, retry the same request indefinitely without notifying the user.",
+          "explanation": "Missing inputs or business-rule violations cannot be resolved by retrying, and indefinite retries could cause duplicate executions."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-002",
+      "prompt": "A telecommunications company’s GenAI developer is implementing an assistance feature that searches customers’ contract information in response to network outage inquiries and, when necessary, hands the matter off to a representative. What is the most appropriate way to safely distinguish between a temporary lack of response from the external contract API and a user who has not entered a contract number?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "In both cases, retry the contract API indefinitely at the same interval.",
+          "explanation": "Missing information cannot be resolved by retrying, and unlimited retries increase the risks of added load and duplicate processing."
+        },
+        {
+          "id": "b",
+          "text": "For a temporary API outage, retry with limits on the number of attempts and waiting time; when information is missing, ask the user to provide the missing item.",
+          "explanation": "Correct. Separating retries, user confirmation, and stopping according to the type of failure enables safe recovery."
+        },
+        {
+          "id": "c",
+          "text": "Even without a contract number, search for customer information using any numbers included in the conversation.",
+          "explanation": "This could expose another customer’s information and violates input validation and privacy protection requirements."
+        },
+        {
+          "id": "d",
+          "text": "Display the API’s internal error details directly to the user.",
+          "explanation": "The user should be told what to do next; internal details that may contain implementation information or confidential data must not be disclosed."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "aip-integration-003",
+      "prompt": "A municipal GenAI developer revises a prompt in a feature that generates guidance messages. If an incorrect contact detail is generated for only some users after the revision, which operational practice is most appropriate for identifying the cause and safely reverting?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Overwrite only the prompt text without recording the version, evaluation results, or deployment time.",
+          "explanation": "It becomes impossible to determine when and what was changed, making it difficult to assess the causal relationship with the incorrect output or identify a rollback target."
+        },
+        {
+          "id": "c",
+          "text": "Continue the revision as long as the text sounds natural, even if an incorrect contact detail is produced.",
+          "explanation": "Natural-sounding text does not guarantee operational accuracy, and an incorrect contact detail directly affects users."
+        },
+        {
+          "id": "b",
+          "text": "Record the prompt, model, and settings as a version, validate them with regression cases, roll them out gradually, and revert to the previous version if results worsen.",
+          "explanation": "Correct. Tracking the components that determine behavior makes it possible to safely revert to a verified previous version."
+        },
+        {
+          "id": "d",
+          "text": "Deploy to all production users simultaneously and decide how to evaluate it afterward.",
+          "explanation": "Once the impact has been expanded, detecting quality degradation and reverting safely becomes more difficult."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "AI agent",
+    "Action group",
+    "Tool calling",
+    "Human oversight",
+    "Idempotency",
+    "Request ID",
+    "Audit log",
+    "Model artifact",
+    "Deployment pipeline",
+    "Rollback"
+  ]
+}

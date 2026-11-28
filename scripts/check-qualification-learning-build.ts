@@ -12,9 +12,10 @@ import {
 import type { StudyFigure, StudyUnit } from '../src/qualificationLearning/types.ts';
 import { isAnswerComplete, isCorrectAnswer, parseQuestions } from '../src/questions.ts';
 
+import { assetPrefix, checkQualificationFigure } from './check-qualification-figure.ts';
+
 const origin = 'https://kaq.katana-projects.org';
 const figureBank: Record<string, StudyFigure> = figures;
-const assetPrefix = '/qualification-learning/figures/';
 const sitemap = await readFile('dist/sitemap.xml', 'utf8');
 assert(qualificationLearningPages.length, 'No published qualification learning content');
 const allExistingIds = new Set<string>();
@@ -36,23 +37,7 @@ for (const { course } of studyCourses) {
   }
 }
 
-for (const figure of Object.values(figureBank)) {
-  assert(figure.src.startsWith(assetPrefix) && figure.src.endsWith('.svg'), figure.src);
-  assert(
-    /[A-Za-z]/u.test(figure.alt) &&
-      !/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(figure.alt),
-    figure.src,
-  );
-  const svg = await readFile(join('dist', figure.src), 'utf8');
-  const root = svg.match(/<svg\b[^>]*>/u)?.[0];
-  const viewBox = root
-    ?.match(/\bviewBox="([^"]+)"/u)?.[1]
-    .trim()
-    .split(/[\s,]+/u)
-    .map(Number);
-  assert(viewBox?.length === 4 && viewBox.every(Number.isFinite), figure.src);
-  assert.deepEqual([figure.width, figure.height], viewBox.slice(2).map(Math.ceil), figure.src);
-}
+for (const figure of Object.values(figureBank)) await checkQualificationFigure(figure);
 const courseQuestionIds = new Set<string>();
 const keyFor = (unit: StudyUnit) => ({
   id: unit.id,

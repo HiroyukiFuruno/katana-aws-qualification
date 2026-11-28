@@ -79,8 +79,8 @@ for (const {
     await expect(page.getByRole('heading', { name: '模擬試験の結果' })).toBeVisible();
     await expect(page.locator('.exam-score')).toHaveText(/^15問中 \d+問正解$/);
     await page.getByRole('checkbox', { name: '正解した問題も表示' }).check();
-    const solution = page.locator('.exam-solutions details').first();
-    await solution.locator('summary').click();
+    const solution = page.locator('.exam-solutions > details').first();
+    await solution.locator(':scope > summary').click();
     await expect(solution).toHaveAttribute('open', '');
     await expect(page.locator(figure)).toHaveCount(0);
     await expect(page.locator(`img[src*="${figureAsset}"]`)).toHaveCount(0);

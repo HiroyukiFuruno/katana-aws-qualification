@@ -47,11 +47,12 @@ const figures = [
   },
 ] as const;
 
-for (const figure of figures) {
-  test(`${figure.name} keeps all labels within the mobile SVG`, async ({ page }) => {
+for (const [id, asset] of Object.entries(lessonFigures)) {
+  const reference = figures.find((figure) => figure.id === id);
+  test(`${reference?.name ?? asset.url} fits the mobile SVG`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
     await page.emulateMedia({ colorScheme: 'dark' });
-    const response = await page.goto(lessonFigures[figure.id].url);
+    const response = await page.goto(asset.url);
     expect(response?.ok()).toBe(true);
 
     await expect(page.locator('svg foreignObject')).toHaveCount(0);
@@ -60,10 +61,15 @@ for (const figure of figures) {
     await expect(background).toHaveAttribute('height', '100%');
     await expect(background).toHaveCSS('fill', 'rgb(255, 255, 255)');
     const labels = page.locator('svg text');
-    await expect.poll(() => labels.allTextContents()).toEqual(expect.arrayContaining(figure.labels));
+    expect(await labels.count()).toBeGreaterThan(0);
+    if (reference) {
+      await expect
+        .poll(() => labels.allTextContents())
+        .toEqual(expect.arrayContaining(reference.labels));
+    }
     await page.evaluate(() => document.fonts.ready);
-    if ('groups' in figure) {
-      for (const group of figure.groups) {
+    if (reference && 'groups' in reference) {
+      for (const group of reference.groups) {
         const label = labels.filter({ hasText: group.label });
         const resource = page.locator(`[data-cell-id="${group.resource}"] rect`).first();
         const labelBox = await label.boundingBox();
@@ -71,22 +77,24 @@ for (const figure of figures) {
         expect(labelBox && resourceBox && labelBox.y + labelBox.height <= resourceBox.y).toBe(true);
       }
     }
-    expect(
-      await labels.evaluateAll((elements) =>
-        elements.every((element) => {
-          if (!(element instanceof SVGTextElement) || !element.ownerSVGElement) return false;
-          const bounds = element.getBBox();
-          const view = element.ownerSVGElement.viewBox.baseVal;
+
+    const clippedLabels = await labels.evaluateAll((elements) => {
+      const svg = document.documentElement;
+      const frame = svg.getBoundingClientRect();
+      return elements
+        .filter((element) => {
+          const bounds = element.getBoundingClientRect();
           return (
-            bounds.width > 0 &&
-            bounds.height > 0 &&
-            bounds.x >= view.x &&
-            bounds.y >= view.y &&
-            bounds.x + bounds.width <= view.x + view.width &&
-            bounds.y + bounds.height <= view.y + view.height
+            bounds.width <= 0 ||
+            bounds.height <= 0 ||
+            bounds.left < frame.left - 0.5 ||
+            bounds.top < frame.top - 0.5 ||
+            bounds.right > frame.right + 0.5 ||
+            bounds.bottom > frame.bottom + 0.5
           );
-        }),
-      ),
-    ).toBe(true);
+        })
+        .map((element) => element.textContent);
+    });
+    expect(clippedLabels).toEqual([]);
   });
 }

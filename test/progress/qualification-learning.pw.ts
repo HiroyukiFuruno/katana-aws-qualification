@@ -1,54 +1,29 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Locator, test } from '@playwright/test';
 import { answerExamQuestion, expectGuestKeys } from './guest-exam.helpers';
+import { qualificationLearningCases } from './qualification-learning.cases';
 
 const figureAsset = '/qualification-learning/figures/';
-const courses = [
-  {
-    courseId: 'clf-c02',
-    firstTitle: 'クラウドの価値、責任共有、可用性',
-    nextUnit: 'security-and-compliance',
-    prompt: /小売会社の運用担当者は/,
-    answer: /ゲストオペレーティングシステムに必要な更新/,
-    choiceCount: 4,
-  },
-  {
-    courseId: 'aif-c01',
-    firstTitle: 'AI と機械学習の基礎',
-    nextUnit: 'generative-ai-fundamentals',
-    prompt: /小売会社の分析担当者は/,
-    answer: /教師あり学習/,
-    choiceCount: 3,
-  },
-  {
-    courseId: 'ans-c01',
-    firstTitle: 'グローバルな入口、DNS、負荷分散を設計する',
-    nextUnit: 'hybrid-and-multivpc',
-    prompt: /障害リージョンから別リージョンへ/,
-    answer: /DNSフェイルオーバーは新しい名前解決で返す宛先を変える/,
-    choiceCount: 4,
-  },
-  {
-    courseId: 'saa-c03',
-    firstTitle: 'セキュアなアーキテクチャを設計する',
-    nextUnit: 'resilient-architecture',
-    prompt: /請求書APIは/,
-    answer: /配下のオブジェクトだけを対象に/,
-    choiceCount: 3,
-  },
-  {
-    courseId: 'dva-c03',
-    firstTitle: 'AWS のサービスによる開発',
-    nextUnit: 'security',
-    prompt: /通販会社の開発者は/,
-    answer: /SQS キューへ送り/,
-    choiceCount: 4,
-  },
-];
 const figure = '.qualification-figure';
+
+async function expectTeachingFigure(lessonFigure: Locator) {
+  await expect(lessonFigure).toHaveAttribute('lang', 'en');
+  await expect(lessonFigure.getByRole('img')).toHaveAttribute('src', new RegExp(figureAsset));
+  await expect
+    .poll(() => lessonFigure.getByRole('img').evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
+}
 
 test.use({ viewport: { width: 390, height: 844 } });
 
-for (const { courseId, firstTitle, nextUnit, prompt, answer, choiceCount } of courses) {
+for (const {
+  courseId,
+  firstTitle,
+  nextUnit,
+  prompt,
+  answer,
+  choiceCount,
+  figureInNextUnit,
+} of qualificationLearningCases) {
   test(`${courseId} teaches and checks understanding before the separate mock exam`, async ({
     page,
   }) => {
@@ -58,16 +33,8 @@ for (const { courseId, firstTitle, nextUnit, prompt, answer, choiceCount } of co
     await necessaryCookies.click();
     await page.getByRole('link', { name: new RegExp(firstTitle) }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(firstTitle);
-    await expect(page.locator(figure)).toHaveAttribute('lang', 'en');
-    await expect(page.locator(figure).getByRole('img')).toHaveAttribute('src', new RegExp(figureAsset));
-    await expect
-      .poll(() =>
-        page
-          .locator(figure)
-          .getByRole('img')
-          .evaluate((image: HTMLImageElement) => image.naturalWidth),
-      )
-      .toBeGreaterThan(0);
+    const lessonFigure = page.locator(figure).first();
+    if (!figureInNextUnit) await expectTeachingFigure(lessonFigure);
     const question = page.getByRole('group', { name: prompt });
     const form = page.locator('form').filter({ has: question });
     const grade = form.getByRole('button', { name: '回答を確認' });
@@ -81,6 +48,7 @@ for (const { courseId, firstTitle, nextUnit, prompt, answer, choiceCount } of co
     const next = page.locator(`.qualification-related a[href$="/${nextUnit}/"]`);
     await next.click();
     await expect(page).toHaveURL(`${learningIndex}${nextUnit}/`);
+    if (figureInNextUnit) await expectTeachingFigure(lessonFigure);
     if (courseId === 'saa-c03') {
       await expect(
         page.locator('.qualification-related a[href$="/learn/secure-architecture/"]'),

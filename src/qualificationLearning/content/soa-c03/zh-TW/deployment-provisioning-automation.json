@@ -1,0 +1,143 @@
+{
+  "id": "deployment-provisioning-automation",
+  "title": "可重現且安全地交付變更",
+  "objective": "以程式碼管理組態，並執行變更影響範圍評估、核准、分階段套用、驗證與復原。",
+  "prerequisites": [
+    {
+      "slug": "observability-and-remediation",
+      "title": "將從觀測到修復作為一個連續流程進行營運",
+      "courseId": "soa-c03"
+    },
+    {
+      "slug": "reliability-and-continuity",
+      "title": "透過營運實務驗證可靠性與業務持續性",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "infrastructure-as-code",
+      "title": "宣告組態並檢查差異",
+      "paragraphs": [
+        "使用 CloudFormation 的維運人員會在範本中描述資源和屬性，並以堆疊為單位進行管理。透過主控台手動進行的變更可能會破壞與範本的一致性以及復原時的可重現性，因此需要將必要的變更重新納入程式碼和審查流程。",
+        "變更前，請確認目標帳戶、區域、堆疊、相依資源以及更新的影響。透過變更集等機制確認將建立、更新或刪除的資源，並在核准前阻止任何非預期的替換或刪除。"
+      ],
+      "sources": [
+        {
+          "label": "什麼是 CloudFormation？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/Welcome.html"
+        },
+        {
+          "label": "SOA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "progressive-change",
+      "title": "以小步、可觀測的方式套用變更",
+      "paragraphs": [
+        "發布團隊先在正式環境的部分範圍套用組態變更，再檢查事先訂定的延遲、錯誤率和業務指標。只有符合繼續部署的標準且未觸發任何停止條件時，才擴大部署範圍。",
+        "對於漸進式變更，應確保能夠識別每個請求是由舊版本還是新版本處理的。如果發生異常，應將設定或部署回復到已知的正常狀態，記錄原因，然後重試。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ]
+    },
+    {
+      "id": "automation-boundaries",
+      "title": "為自動化設定權限與核准界線",
+      "paragraphs": [
+        "自動化建立者會將執行手冊可以修改的資源，以及其 IAM 角色所擁有的權限降至最低。他們會區分執行者、核准者與稽核者的職責，並確保能夠記錄執行輸入、執行結果與失敗原因。",
+        "即使要將重複性的修正工作自動化，也要定義目標選取、並行數量上限、發生失敗時的停止方式，以及手動升級流程。自動化並不會消除變更責任，而是用來一致執行可驗證程序的機制。",
+        "圖的上半部顯示負載平衡器如何將使用者請求分配給穩定版本與 Canary 版本的目標。下半部顯示發布團隊檢查基礎設施變更集，並只在核准範圍內部署新版本。團隊衡量對使用者的影響，符合繼續部署的標準且未觸發停止條件時，才擴大部署範圍。觸發停止條件後，恢復至已確認正常的狀態。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-progressive-change-control"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-change-1",
+      "prompt": "負責使用 CloudFormation 變更生產環境 VPC 路由設定的人員，希望在核准前避免非預期的刪除或取代。請選出一項在套用變更前最適當的作業。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "先在主控台中進行變更，之後再調整範本。",
+          "explanation": "這會損害組態的可重現性，也會使差異難以追蹤。"
+        },
+        {
+          "id": "a",
+          "text": "確認目標帳戶、區域、堆疊和相依資源，然後在變更集（change set）中檢閱差異。",
+          "explanation": "您可以在套用變更前確認該變更所造成的建立、更新和刪除。"
+        },
+        {
+          "id": "c",
+          "text": "不確認變更對象，就同時更新所有堆疊。",
+          "explanation": "無法控制影響範圍。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-change-2",
+      "prompt": "發布負責人將應用程式設定的變更逐步套用至生產環境。請選擇一項在每個階段判斷是否繼續的最適當標準。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "確認預先設定的延遲、錯誤率和業務指標符合繼續執行的條件。",
+          "explanation": "如此即可根據變更的效果和對使用者的影響，決定是否擴大套用範圍。"
+        },
+        {
+          "id": "b",
+          "text": "停止監控，立即將變更套用至所有使用者。",
+          "explanation": "如此將無法及早偵測異常，並會延遲復原。"
+        },
+        {
+          "id": "c",
+          "text": "不識別變更後的版本，即使發生異常也繼續套用變更。",
+          "explanation": "如此無法釐清原因，也無法安全地復原。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-change-3",
+      "prompt": "負責建立 Systems Manager Automation Runbook 的營運團隊希望防止對錯誤目標進行變更。請選出一個最適合的 Runbook 設計。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "定義目標選擇、最小權限的執行角色、核准、同時執行數、停止條件和稽核記錄。",
+          "explanation": "這樣可以確認自動化操作的作用範圍和責任歸屬。"
+        },
+        {
+          "id": "b",
+          "text": "以所有資源為目標，使用管理員權限且不經核准便執行。",
+          "explanation": "發生誤操作時，影響範圍會擴大。"
+        },
+        {
+          "id": "c",
+          "text": "不記錄執行結果，即使失敗也自動無限重試。",
+          "explanation": "這樣無法掌握異常，並可能擴大二次損害。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFormation",
+    "Change set",
+    "IAM role",
+    "Canary deployment",
+    "Rollback",
+    "Least privilege"
+  ]
+}

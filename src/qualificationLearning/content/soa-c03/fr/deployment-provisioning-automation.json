@@ -1,0 +1,143 @@
+{
+  "id": "deployment-provisioning-automation",
+  "title": "Livrer les changements de manière reproductible et sécurisée",
+  "objective": "Gérer la configuration en tant que code et mettre en œuvre l’évaluation de l’impact des changements, les approbations, le déploiement progressif, la validation et la restauration.",
+  "prerequisites": [
+    {
+      "slug": "observability-and-remediation",
+      "title": "Gérer l’observation jusqu’à la remédiation comme un processus continu",
+      "courseId": "soa-c03"
+    },
+    {
+      "slug": "reliability-and-continuity",
+      "title": "Démontrer la fiabilité et la continuité des activités par les opérations",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "infrastructure-as-code",
+      "title": "Déclarer la configuration et vérifier les différences",
+      "paragraphs": [
+        "Les personnes chargées des opérations qui utilisent CloudFormation décrivent les ressources et les propriétés dans des modèles et les gèrent sous forme de piles. Les modifications manuelles effectuées dans la console peuvent nuire à la cohérence avec les modèles et à la reproductibilité lors d’une restauration. Les modifications nécessaires sont donc réintégrées au code et au processus de revue.",
+        "Avant d’effectuer une modification, vérifiez le compte cible, la Région, la pile, les ressources dépendantes et l’impact de la mise à jour. Vérifiez, au moyen d’ensembles de modifications ou de mécanismes similaires, les ressources qui seront créées, mises à jour ou supprimées, et bloquez toute substitution ou suppression involontaire avant l’approbation."
+      ],
+      "sources": [
+        {
+          "label": "Qu’est-ce que CloudFormation ?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/Welcome.html"
+        },
+        {
+          "label": "Guide de l’examen SOA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "progressive-change",
+      "title": "Appliquer les changements par petites étapes observables",
+      "paragraphs": [
+        "L’équipe chargée des mises en production applique le changement de configuration à une partie limitée de la production et vérifie la latence, le taux d’erreur et les indicateurs métier définis à l’avance. Elle élargit le déploiement uniquement si les critères de poursuite sont remplis et qu’aucune condition d’arrêt ne s’applique.",
+        "Lors de changements progressifs, il faut pouvoir identifier si chaque demande a été traitée par l’ancienne ou la nouvelle version. En cas d’anomalie, rétablissez la configuration ou le déploiement dans un état connu comme sain, consignez la cause, puis réessayez."
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ]
+    },
+    {
+      "id": "automation-boundaries",
+      "title": "Définir les limites d’autorisation et d’approbation de l’automatisation",
+      "paragraphs": [
+        "Les créateurs de l’automatisation réduisent au minimum les ressources qu’un runbook peut modifier ainsi que les autorisations du rôle IAM qui lui est associé. Ils séparent les rôles de l’exécutant, de l’approbateur et de l’auditeur, et veillent à pouvoir enregistrer les entrées d’exécution, les résultats d’exécution et les raisons des échecs.",
+        "Même lorsque vous automatisez des corrections répétitives, définissez la sélection des cibles, le nombre d’exécutions simultanées, l’arrêt en cas d’échec et l’escalade manuelle. L’automatisation ne supprime pas la responsabilité des changements ; c’est un mécanisme qui permet d’exécuter de manière cohérente des procédures vérifiables.",
+        "En haut du schéma, un équilibreur de charge répartit les requêtes des utilisateurs entre les cibles de la version stable et les cibles canary. En bas, l’équipe chargée des mises en production examine l’ensemble de modifications de l’infrastructure et déploie la nouvelle version dans le seul périmètre approuvé. Elle mesure l’impact sur les utilisateurs et élargit le déploiement si les critères de poursuite sont remplis et qu’aucune condition d’arrêt ne s’applique. Si une condition d’arrêt est atteinte, elle revient à un état dont le bon fonctionnement est établi."
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-progressive-change-control"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-change-1",
+      "prompt": "La personne chargée de modifier la configuration des routes d’un VPC de production avec CloudFormation souhaite éviter les suppressions ou les remplacements involontaires avant l’approbation. Sélectionnez une seule action, la plus appropriée à effectuer avant d’appliquer la modification.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Effectuer d’abord la modification dans la console, puis ajuster le modèle ensuite.",
+          "explanation": "Cela nuit à la reproductibilité de la configuration et au suivi des différences."
+        },
+        {
+          "id": "a",
+          "text": "Vérifier le compte, la Région, la pile et les ressources dépendantes ciblés, puis examiner les différences dans un ensemble de modifications (change set).",
+          "explanation": "Vous pouvez vérifier les créations, les mises à jour et les suppressions entraînées par la modification avant de l’appliquer."
+        },
+        {
+          "id": "c",
+          "text": "Mettre à jour toutes les piles simultanément sans vérifier les ressources ciblées par la modification.",
+          "explanation": "Il est impossible de contrôler l’étendue de l’impact."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-change-2",
+      "prompt": "Le responsable de la mise en production applique progressivement les modifications de configuration de l’application en production. Sélectionnez l’unique critère le plus approprié pour décider de poursuivre à chaque étape.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Vérifier que la latence, le taux d’erreurs et les indicateurs métier définis à l’avance respectent les critères de poursuite.",
+          "explanation": "Cela permet d’étendre le déploiement en s’appuyant sur les effets de la modification et son impact sur les utilisateurs."
+        },
+        {
+          "id": "b",
+          "text": "Arrêter la surveillance et appliquer immédiatement la modification à tous les utilisateurs.",
+          "explanation": "Cela empêche de détecter rapidement les anomalies et retarde le retour en arrière."
+        },
+        {
+          "id": "c",
+          "text": "Continuer à appliquer la modification même en cas d’anomalie, sans identifier la version postérieure à la modification.",
+          "explanation": "Cela empêche d’isoler la cause et d’effectuer un retour en arrière en toute sécurité."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-change-3",
+      "prompt": "Une équipe d’exploitation qui crée un runbook Systems Manager Automation souhaite empêcher les modifications de cibles incorrectes. Choisissez un seul modèle de runbook approprié.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Définir la sélection des cibles, un rôle d’exécution doté du moindre privilège, les approbations, le nombre d’exécutions simultanées, les conditions d’arrêt et les journaux d’audit.",
+          "explanation": "Cela permet de vérifier le périmètre d’action et la responsabilité liés à l’automatisation."
+        },
+        {
+          "id": "b",
+          "text": "Cibler toutes les ressources et exécuter sans approbation avec des privilèges d’administrateur.",
+          "explanation": "En cas d’opération incorrecte, l’étendue de l’impact sera plus importante."
+        },
+        {
+          "id": "c",
+          "text": "Ne pas enregistrer les résultats d’exécution et réessayer automatiquement indéfiniment, même après un échec.",
+          "explanation": "Cela empêche de détecter les anomalies et risque d’étendre les dommages secondaires."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFormation",
+    "Change set",
+    "IAM role",
+    "Canary deployment",
+    "Rollback",
+    "Least privilege"
+  ]
+}

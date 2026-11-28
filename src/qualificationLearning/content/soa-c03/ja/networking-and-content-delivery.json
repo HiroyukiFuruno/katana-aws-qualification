@@ -1,0 +1,142 @@
+{
+  "id": "networking-and-content-delivery",
+  "title": "通信経路と配信を往復で検証する",
+  "objective": "名前解決、経路、許可、送信元・戻り経路、配信キャッシュを区別して運用できる。",
+  "prerequisites": [
+    {
+      "slug": "security-and-compliance",
+      "title": "セキュリティとコンプライアンスを継続的に確認する",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-and-return-path",
+      "title": "宛先と戻りの経路を別々に追う",
+      "paragraphs": [
+        "VPC のルートテーブルは、サブネットまたはゲートウェイから出るトラフィックについて、送信先 CIDR またはプレフィックスリストとターゲットを対応付けます。到達性を調査する運用担当者は、送信元サブネットのルートだけで終わらせず、宛先側の戻り経路も確認します。",
+        "同じ VPC 内でも、複数のアベイラビリティーゾーン、サブネット、ルートテーブルがあり得ます。経路が存在しても、セキュリティグループ、ネットワーク ACL、ホストファイアウォール、ロードバランサー設定のいずれかが通信を拒否すれば接続は成立しません。"
+      ],
+      "sources": [
+        {
+          "label": "ルートテーブルを設定する",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        }
+      ]
+    },
+    {
+      "id": "dns-and-delivery",
+      "title": "名前解決と配信層を分離する",
+      "paragraphs": [
+        "利用者が名前でサービスへ接続するとき、DNS は名前を応答先へ解決し、CloudFront やロードバランサーはその後のコンテンツ配信や要求分散を担います。運用担当者は、DNS のレコード、TTL、ヘルスチェックと、配信層のオリジン、キャッシュ、TLS 証明書を別々に確認します。",
+        "キャッシュを使う場合は、更新されたコンテンツをいつ利用者へ届けるか、キャッシュミス時にどのオリジンへ到達するか、オリジン障害時にどの応答を返すかを定義します。DNS だけを変更しても、オリジンの到達性やアクセス許可は解決しません。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon Route 53 とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/Welcome.html"
+        },
+        {
+          "label": "Amazon CloudFront とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+        }
+      ]
+    },
+    {
+      "id": "network-troubleshooting",
+      "title": "通信障害を層ごとに切り分ける",
+      "paragraphs": [
+        "通信障害の調査者は、発信元、名前解決結果、送信先 IP とポート、送信経路、受信側の許可、戻り経路を順に記録します。VPC Flow Logs、ロードバランサーのアクセスログ、アプリケーションログは、どの境界で要求が止まったかを突き止める手がかりになります。",
+        "図ではDNSの問い合わせとHTTPSの接続を分けて示します。利用者は公開ALBに接続し、ALBはプライベートサブネットのターゲットへ別の接続を開きます。",
+        "まずDNSが正しいALBの宛先を返すか確かめ、次に二つの接続でそれぞれ要求と応答を追います。ルートテーブルでは宛先と次の転送先を照合します。セキュリティグループはネットワークインターフェイスごとに、ネットワークACLはサブネットごとに必要な通信を許可しているかを確かめます。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC Flow Logs を使用する",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "soa-network-request-return-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-network-1",
+      "prompt": "企業のネットワーク担当者は、仮想プライベートゲートウェイを使ったAWS Site-to-Site VPNで、VPC（10.20.0.0/16）と社内ネットワーク（192.168.10.0/24）を接続しています。VPNトンネルは稼働中ですが、プライベートサブネットのアプリから社内API（192.168.10.25）のTCP 443への接続がタイムアウトします。通信を許可する範囲を広げずに、経路と許可設定を確認する手順はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "アプリ側で社内CIDR宛てのルートだけを確認し、VPNトンネルが稼働中なら社内側のルートは確認しません。",
+          "explanation": "トンネルが稼働していても、社内ネットワークからVPCへ応答を返すルートに誤りがあると、TCP接続は成立しません。"
+        },
+        {
+          "id": "c",
+          "text": "検証のため、アプリ側のセキュリティグループとネットワークACLで、すべての宛先とポートを一時的に許可します。",
+          "explanation": "許可範囲を広げると他の通信にも影響します。ルートの問題は解消されず、TCP 443の接続を止めている境界も特定できません。"
+        },
+        {
+          "id": "a",
+          "text": "アプリ側のルートが社内CIDRを仮想プライベートゲートウェイへ送り、社内側の復路がVPCのCIDRをVPNへ送ることを確かめます。次にTCP 443の送信と応答が両側の通信制御で許可されるか確認します。",
+          "explanation": "往路と復路のルートを照合してから通信制御を確認すると、VPNトンネルの稼働とは別に、パケットが対象のAPIへ到達して応答が戻る条件を確認できます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-2",
+      "prompt": "ウェブサイトの運用担当者は、独自ドメインの一部利用者だけが古いコンテンツを見る問題を調査します。最も適切な切り分け方法を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Route 53 のレコードと TTL、CloudFront のキャッシュ動作とオリジン応答を分けて確認する。",
+          "explanation": "名前解決とコンテンツ配信の責任範囲を混同せずに調査できます。"
+        },
+        {
+          "id": "b",
+          "text": "DNS のレコードだけを変更し、キャッシュやオリジンは確認しない。",
+          "explanation": "古いコンテンツがキャッシュに残る原因を確認できません。"
+        },
+        {
+          "id": "c",
+          "text": "すべての利用者に直接オリジンへ接続させる。",
+          "explanation": "問題の原因を確認せず、配信設計と保護を損ないます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-3",
+      "prompt": "インターネット利用者から ALB を経由してプライベートサブネットのアプリケーションへ到達できない事象を調査します。最も適切な調査手順を1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "名前解決、ALB のリスナーとターゲットヘルス、各サブネットのルート、ALB とターゲットのセキュリティグループ、NACL、戻り経路を順に確認する。",
+          "explanation": "経路と許可を層ごとに確認し、停止した境界を絞り込めます。"
+        },
+        {
+          "id": "b",
+          "text": "アプリケーションのコードだけを確認する。",
+          "explanation": "入口、経路、許可、ヘルスチェックの問題を見落とします。"
+        },
+        {
+          "id": "c",
+          "text": "すべての通信ログを無効にして再試行する。",
+          "explanation": "切り分けに必要な証跡を失います。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "DNS",
+    "Route table",
+    "IGW",
+    "ALB",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Return path",
+    "AWS Site-to-Site VPN",
+    "Virtual private gateway"
+  ]
+}

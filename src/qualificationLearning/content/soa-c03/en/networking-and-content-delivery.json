@@ -1,0 +1,142 @@
+{
+  "id": "networking-and-content-delivery",
+  "title": "Verify communication paths and content delivery in both directions",
+  "objective": "Operate while distinguishing name resolution, routes, permissions, forward and return paths, and delivery caches.",
+  "prerequisites": [
+    {
+      "slug": "security-and-compliance",
+      "title": "Continuously verify security and compliance",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-and-return-path",
+      "title": "Trace the destination and return paths separately",
+      "paragraphs": [
+        "A VPC route table maps a destination CIDR or prefix list to a target for traffic leaving a subnet or gateway. When investigating reachability, operations personnel do not stop after checking the route from the source subnet; they also verify the return path on the destination side.",
+        "Even within the same VPC, there may be multiple Availability Zones, subnets, and route tables. A connection cannot be established if any of the security group, network ACL, host firewall, or load balancer settings rejects the traffic, even when a route exists."
+      ],
+      "sources": [
+        {
+          "label": "Configure route tables",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        }
+      ]
+    },
+    {
+      "id": "dns-and-delivery",
+      "title": "Separating Name Resolution from the Delivery Layer",
+      "paragraphs": [
+        "When users connect to a service by name, DNS resolves the name to a destination, while CloudFront and load balancers handle subsequent content delivery and request distribution. Operations staff separately check DNS records, TTL, and health checks, as well as the delivery layer’s origin, cache, and TLS certificate.",
+        "When using a cache, define when updated content will be delivered to users, which origin will be reached on a cache miss, and which response will be returned if the origin fails. Changing only DNS does not resolve origin reachability or access permissions."
+      ],
+      "sources": [
+        {
+          "label": "What is Amazon Route 53?",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/Welcome.html"
+        },
+        {
+          "label": "What is Amazon CloudFront?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+        }
+      ]
+    },
+    {
+      "id": "network-troubleshooting",
+      "title": "Troubleshooting Network Failures by Layer",
+      "paragraphs": [
+        "Investigators of network failures record, in order, the source, the name-resolution result, the destination IP address and port, the outbound path, the receiving side’s permissions, and the return path. VPC Flow Logs, load balancer access logs, and application logs provide clues for determining at which boundary the request stopped.",
+        "The diagram separates DNS queries from HTTPS connections. The client connects to the public ALB, and the ALB opens a separate connection to a target in a private subnet.",
+        "First, verify that DNS returns the correct ALB destination, then trace the requests and responses separately across the two connections. In the route tables, compare the destination with the next hop. Verify that security groups allow the required traffic for each network interface and that network ACLs allow it for each subnet."
+      ],
+      "sources": [
+        {
+          "label": "Using Amazon VPC Flow Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "soa-network-request-return-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-network-1",
+      "prompt": "A corporate network administrator connects a VPC (10.20.0.0/16) to the corporate network (192.168.10.0/24) using an AWS Site-to-Site VPN with a virtual private gateway. The VPN tunnel is up, but connections from an application in a private subnet to TCP 443 on the internal API (192.168.10.25) time out. Which procedure verifies the routes and permission settings without broadening the allowed traffic?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Check only the application-side route to the corporate CIDR, and do not check the corporate-side route as long as the VPN tunnel is up.",
+          "explanation": "Even when the tunnel is up, the TCP connection cannot be established if the route for returning responses from the corporate network to the VPC is incorrect."
+        },
+        {
+          "id": "c",
+          "text": "For troubleshooting, temporarily allow all destinations and ports in the application's security group and network ACL.",
+          "explanation": "Broadening the allowed range can affect other traffic. It does not resolve a routing problem or identify which boundary is blocking the TCP 443 connection."
+        },
+        {
+          "id": "a",
+          "text": "Verify that the application-side route sends the corporate CIDR to the virtual private gateway and that the return route on the corporate side sends the VPC CIDR to the VPN. Then verify that outbound TCP 443 traffic and the response are allowed by the traffic controls on both sides.",
+          "explanation": "Comparing the forward and return routes before checking the traffic controls verifies the conditions required for packets to reach the target API and for responses to return, independently of whether the VPN tunnel is up."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-2",
+      "prompt": "A website operator is investigating an issue in which only some users of a custom domain see outdated content. Choose one most appropriate way to isolate the cause.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Separately check the Route 53 records and TTL, CloudFront caching behavior, and the origin response.",
+          "explanation": "This investigation keeps name resolution separate from the responsibilities of content delivery."
+        },
+        {
+          "id": "b",
+          "text": "Change only the DNS records without checking the cache or the origin.",
+          "explanation": "This cannot identify whether outdated content remains in the cache."
+        },
+        {
+          "id": "c",
+          "text": "Have all users connect directly to the origin.",
+          "explanation": "This fails to identify the cause and undermines the delivery design and protection."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-3",
+      "prompt": "Investigate the issue where Internet users cannot reach an application in a private subnet through an ALB. Select the single most appropriate troubleshooting procedure.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "In order, check name resolution; the ALB listener and target health; the routes for each subnet; the security groups for the ALB and targets; the NACL; and the return path.",
+          "explanation": "Checking the path and permissions layer by layer helps narrow down the boundary where the connection stopped."
+        },
+        {
+          "id": "b",
+          "text": "Check only the application code.",
+          "explanation": "This can overlook problems with the entry point, path, permissions, and health checks."
+        },
+        {
+          "id": "c",
+          "text": "Disable all communication logs and retry.",
+          "explanation": "This would lose the evidence needed for troubleshooting."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "DNS",
+    "Route table",
+    "IGW",
+    "ALB",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Return path",
+    "AWS Site-to-Site VPN",
+    "Virtual private gateway"
+  ]
+}

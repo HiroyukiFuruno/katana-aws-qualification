@@ -1,0 +1,151 @@
+{
+  "id": "observability-and-remediation",
+  "title": "Operate observation through remediation as one continuous process",
+  "objective": "Collect signals that indicate user impact, validate hypotheses about the cause, and safely execute approved remediation.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "Fundamentals of Cloud"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentication and Authorization"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Connectivity and Routing"
+    }
+  ],
+  "sections": [
+    {
+      "id": "signals-and-context",
+      "title": "Break Symptoms Down into Measurable Signals",
+      "paragraphs": [
+        "Operators responsible for an order API running on EC2 do not diagnose incidents based solely on CPU utilization. They correlate the target operation, request count, error rate, latency, calls to dependencies, and log timestamps along the same timeline to determine which users were affected and by which operations.",
+        "Amazon CloudWatch alarms can compare metric or mathematical-expression values with a threshold over multiple periods and execute notifications or actions. Thresholds, evaluation periods, missing-data treatment, and notification destinations are determined in relation to user impact and the actions that can be taken."
+      ],
+      "sources": [
+        {
+          "label": "SOA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "Using Alarms in Amazon CloudWatch",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch_Alarms.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-before-action",
+      "title": "Align Evidence and Hypotheses Before Remediation",
+      "paragraphs": [
+        "Incident responders do not treat an alarm firing as the cause itself. They compare metrics, application logs, CloudTrail operation history, and the times of configuration changes to distinguish, for example, whether errors increased immediately after a deployment or whether a dependency was delayed.",
+        "During triage, they explicitly identify the affected Region, account, workload, start time, and end time. They do not extend changes to every environment based solely on correlation; they record a reproducible hypothesis and rollback conditions, then test within a limited scope of impact."
+      ],
+      "sources": [
+        {
+          "label": "SOA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "What Is AWS CloudTrail?",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        }
+      ]
+    },
+    {
+      "id": "runbook-remediation",
+      "title": "Remediation Requires Procedures and Stop Conditions",
+      "paragraphs": [
+        "Remediation personnel document the target resources, pre-execution checks, execution permissions, success criteria, stop conditions, and rollback in an approved runbook. AWS Systems Manager Automation simplifies common maintenance, deployment, and remediation tasks, but it does not eliminate the need for runbook prerequisites or target selection.",
+        "Design automated remediation in the order of detection, containment, execution, and re-observation. After execution, verify improvement using the same user-impact metrics and logs. If there is no improvement, do not continue the automation; escalate or roll back instead.",
+        "At the top of the diagram, the Orders API receives user requests and calls a dependency. In the middle, compare CloudWatch metrics, application logs in CloudWatch Logs, and AWS API activity in CloudTrail for the same time period and scope. At the bottom, operations staff use Systems Manager Automation only on approved targets and verify the outcome with the same metrics. If there is no improvement, stop automated remediation and decide whether to escalate or roll back."
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-observability-remediation-loop"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-observe-1",
+      "prompt": "The on-call engineer for the Orders API received a report from a user that order confirmation is slow. Select one combination of observations that is most appropriate to compare first when investigating the cause.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "For the same time period and the same operation, compare the request count, p95 latency, error rate, calls to dependencies, and related logs.",
+          "explanation": "This allows user impact and changes along the request path to be correlated under the same conditions."
+        },
+        {
+          "id": "b",
+          "text": "Check only the CPU utilization of an arbitrary EC2 instance.",
+          "explanation": "A single resource metric is insufficient to determine the impact of the target operation or its dependencies."
+        },
+        {
+          "id": "c",
+          "text": "Immediately after receiving the incident report, restart the instances in all Regions.",
+          "explanation": "An unjustified change applied across the entire environment can broaden the scope of the impact."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-2",
+      "prompt": "An operations engineer designing CloudWatch alarms wants to link notifications to actions that can be taken afterward. Choose one most appropriate alarm configuration policy.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Set the same threshold for all metrics.",
+          "explanation": "This cannot reflect the normal values or impact levels of each workload."
+        },
+        {
+          "id": "c",
+          "text": "Do not configure notification targets; record only the alarm name.",
+          "explanation": "Even if an issue is detected, this does not lead to a response."
+        },
+        {
+          "id": "a",
+          "text": "Clearly define the metric that reflects user impact, the threshold, evaluation period, treatment of missing data, and notification targets.",
+          "explanation": "This allows the alarm state transitions and response actions to be validated."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-3",
+      "prompt": "For a service whose error rate has increased immediately after deployment, choose the one most appropriate item the person responsible for remediation should verify before safely starting automated remediation.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Immediately apply the same change to all environments without verifying the cause of the errors.",
+          "explanation": "This may mistake a correlation for a cause and worsen the incident."
+        },
+        {
+          "id": "a",
+          "text": "Verify the target, change time, related logs, success criteria, stop conditions, and rollback conditions in the runbook.",
+          "explanation": "This clarifies the cause hypothesis and the safety boundaries for remediation."
+        },
+        {
+          "id": "c",
+          "text": "Disable monitoring after remediation.",
+          "explanation": "This prevents verification of whether the remediation succeeded."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudTrail",
+    "Systems Manager Automation",
+    "Runbook",
+    "Metric",
+    "Log",
+    "CloudWatch alarm",
+    "Rollback"
+  ]
+}

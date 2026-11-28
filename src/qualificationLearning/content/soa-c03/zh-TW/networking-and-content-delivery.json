@@ -1,0 +1,142 @@
+{
+  "id": "networking-and-content-delivery",
+  "title": "雙向驗證通訊路徑與內容傳遞",
+  "objective": "能夠區分名稱解析、路由、權限、傳送路徑與返回路徑，以及傳遞快取，並據此進行營運。",
+  "prerequisites": [
+    {
+      "slug": "security-and-compliance",
+      "title": "持續驗證安全性與合規性",
+      "courseId": "soa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "route-and-return-path",
+      "title": "分別追蹤目的地與返回路徑",
+      "paragraphs": [
+        "VPC 路由表會針對離開子網路或閘道的流量，將目的地 CIDR 或字首清單對應至目標。調查可達性的維運人員不會只檢查來源子網路的路由，也會確認目的地一側的返回路徑。",
+        "即使在同一個 VPC 內，也可能有多個可用區、子網路和路由表。即使存在路徑，只要安全性群組、網路 ACL、主機防火牆或負載平衡器設定中的任何一項拒絕流量，就無法建立連線。"
+      ],
+      "sources": [
+        {
+          "label": "設定路由表",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        }
+      ]
+    },
+    {
+      "id": "dns-and-delivery",
+      "title": "將名稱解析與傳遞層分離",
+      "paragraphs": [
+        "當使用者透過名稱連線至服務時，DNS 會將名稱解析為回應目的地，而 CloudFront 和負載平衡器則負責後續的內容傳遞與請求分散。維運人員會分別檢查 DNS 記錄、TTL 和運作狀態檢查，以及傳遞層的來源站台、快取和 TLS 憑證。",
+        "使用快取時，必須定義何時將更新後的內容傳遞給使用者、快取未命中時要連線到哪個來源站台，以及來源站台發生故障時要回傳何種回應。只變更 DNS 並不能解決來源站台的可達性或存取許可問題。"
+      ],
+      "sources": [
+        {
+          "label": "什麼是 Amazon Route 53",
+          "url": "https://docs.aws.amazon.com/ja_jp/Route53/latest/DeveloperGuide/Welcome.html"
+        },
+        {
+          "label": "什麼是 Amazon CloudFront",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/Introduction.html"
+        }
+      ]
+    },
+    {
+      "id": "network-troubleshooting",
+      "title": "依層排查網路故障",
+      "paragraphs": [
+        "網路故障調查人員會依序記錄來源、名稱解析結果、目的地 IP 和連接埠、傳送路徑、接收端的允許規則，以及返回路徑。VPC Flow Logs、負載平衡器存取日誌和應用程式日誌，有助於找出請求在哪個邊界停止。",
+        "圖中將 DNS 查詢與 HTTPS 連線分開顯示。用戶端連線到公開 ALB，而 ALB 會再對私有子網路中的目標開啟另一個連線。",
+        "首先確認 DNS 是否回傳正確的 ALB 目的地，接著分別追蹤兩個連線中的要求與回應。在路由表中，比對目的地與下一個轉送目標。確認安全性群組是否針對每個網路介面允許必要的流量，並確認網路 ACL 是否針對每個子網路允許必要的流量。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Amazon VPC Flow Logs",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/flow-logs.html"
+        }
+      ],
+      "figureId": "soa-network-request-return-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-network-1",
+      "prompt": "企業網路管理員使用具有虛擬私有閘道的 AWS Site-to-Site VPN，將 VPC（10.20.0.0/16）與企業內部網路（192.168.10.0/24）連線。VPN 通道正在運作，但私有子網路中的應用程式連線至內部 API（192.168.10.25）的 TCP 443 時發生逾時。在不擴大允許的流量範圍下，應執行哪個程序來確認路由和允許設定？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只確認應用程式端前往企業 CIDR 的路由；只要 VPN 通道正在運作，就不確認企業端的路由。",
+          "explanation": "即使通道正在運作，如果企業網路將回應傳回 VPC 的路由不正確，TCP 連線仍無法建立。"
+        },
+        {
+          "id": "c",
+          "text": "為了進行驗證，暫時在應用程式的安全性群組和網路 ACL 中允許所有目的地和連接埠。",
+          "explanation": "擴大允許範圍會影響其他流量。這無法解決路由問題，也無法找出阻擋 TCP 443 連線的界線。"
+        },
+        {
+          "id": "a",
+          "text": "確認應用程式端的路由會將企業 CIDR 傳送至虛擬私有閘道，並確認企業端的回程路由會將 VPC CIDR 傳送至 VPN。接著確認兩端的流量控制都允許輸出 TCP 443 流量及其回應。",
+          "explanation": "先比對正向和回程路由，再確認流量控制，即可確認封包到達目標 API 並讓回應返回所需的條件，而不受 VPN 通道是否正在運作的影響。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-2",
+      "prompt": "網站營運人員正在調查一個問題：自訂網域的部分使用者看到的是舊內容。請選擇一種最適當的問題切分方法。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "分別檢查 Route 53 記錄與 TTL、CloudFront 的快取行為，以及來源站回應。",
+          "explanation": "這樣可以避免混淆名稱解析與內容傳遞各自的責任範圍。"
+        },
+        {
+          "id": "b",
+          "text": "只變更 DNS 記錄，不檢查快取或來源站。",
+          "explanation": "這樣無法確認舊內容是否因仍保留在快取中而造成。"
+        },
+        {
+          "id": "c",
+          "text": "讓所有使用者直接連線到來源站。",
+          "explanation": "這會在未確認問題原因的情況下損害內容傳遞設計與防護。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-network-3",
+      "prompt": "調查網際網路使用者無法透過 ALB 到達私有子網路中應用程式的問題。請選擇一項最適當的調查步驟。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "依序檢查名稱解析、ALB 的接聽程式和目標運作狀態、各子網路的路由、ALB 與目標的安全群組、NACL，以及返回路徑。",
+          "explanation": "逐層檢查路徑與許可，可以縮小連線在哪個邊界中斷。"
+        },
+        {
+          "id": "b",
+          "text": "只檢查應用程式程式碼。",
+          "explanation": "這會忽略入口、路徑、許可和運作狀態檢查方面的問題。"
+        },
+        {
+          "id": "c",
+          "text": "停用所有通訊日誌後重試。",
+          "explanation": "這會遺失疑難排解所需的證據。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "DNS",
+    "Route table",
+    "IGW",
+    "ALB",
+    "Security group",
+    "NACL",
+    "VPC Flow Logs",
+    "Return path",
+    "AWS Site-to-Site VPN",
+    "Virtual private gateway"
+  ]
+}

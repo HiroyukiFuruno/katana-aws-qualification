@@ -1,0 +1,151 @@
+{
+  "id": "observability-and-remediation",
+  "title": "Operar da observabilidade à remediação como um processo contínuo",
+  "objective": "Coletar sinais que indiquem o impacto para os usuários, validar hipóteses sobre a causa e executar com segurança a remediação aprovada.",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "Fundamentos da nuvem"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Autenticação e autorização"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "Conectividade e roteamento"
+    }
+  ],
+  "sections": [
+    {
+      "id": "signals-and-context",
+      "title": "Decompor sintomas em sinais mensuráveis",
+      "paragraphs": [
+        "Os operadores responsáveis por uma API de pedidos executada no EC2 não diagnosticam incidentes apenas com base na utilização da CPU. Eles correlacionam, na mesma linha do tempo, a operação de destino, a contagem de solicitações, a taxa de erros, a latência, as chamadas para dependências e os carimbos de data e hora dos logs, para confirmar quais usuários foram afetados e por quais operações.",
+        "Os alarmes do Amazon CloudWatch podem comparar os valores de métricas ou expressões matemáticas com um limite ao longo de vários períodos e executar notificações ou ações. O limite, os períodos de avaliação, o tratamento de dados ausentes e os destinos das notificações são determinados de acordo com o impacto para os usuários e as ações que podem ser tomadas."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SOA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "Uso de alarmes no Amazon CloudWatch",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch_Alarms.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-before-action",
+      "title": "Reunir evidências e hipóteses antes da remediação",
+      "paragraphs": [
+        "Os responsáveis pela resposta a incidentes não consideram a ocorrência de um alarme como a própria causa. Eles comparam métricas, logs da aplicação, o histórico de operações do CloudTrail e os horários das alterações de configuração para distinguir, por exemplo, se os erros aumentaram logo após uma implantação ou se houve atraso em uma dependência.",
+        "Durante a triagem, eles identificam explicitamente a Região, a conta, a carga de trabalho, o horário de início e o horário de término afetados. Eles não ampliam as alterações para todos os ambientes com base apenas em correlação; registram uma hipótese reproduzível e as condições de reversão e, em seguida, fazem a validação limitando o escopo do impacto."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SOA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "O que é o AWS CloudTrail?",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        }
+      ]
+    },
+    {
+      "id": "runbook-remediation",
+      "title": "A remediação exige procedimentos e condições de parada",
+      "paragraphs": [
+        "Os responsáveis pela remediação documentam no runbook aprovado os recursos-alvo, as verificações prévias, as permissões de execução, os critérios de sucesso, as condições de parada e o rollback. O AWS Systems Manager Automation simplifica tarefas comuns de manutenção, implantação e correção, mas não elimina a necessidade dos pré-requisitos do runbook nem da seleção dos alvos.",
+        "Projete a remediação automatizada na ordem de detecção, contenção, execução e nova observação. Após a execução, confirme a melhoria usando as mesmas métricas e os mesmos logs de impacto para os usuários. Se não houver melhoria, não continue a automação; faça uma escalação ou execute o rollback.",
+        "Na parte superior do diagrama, a API de pedidos recebe solicitações dos usuários e chama um serviço do qual depende. No centro, compare as métricas do CloudWatch, os logs da aplicação no CloudWatch Logs e a atividade das APIs da AWS no CloudTrail para o mesmo período e escopo. Na parte inferior, a equipe de operações executa o Systems Manager Automation apenas nos destinos aprovados e verifica o resultado com as mesmas métricas. Se não houver melhora, a equipe interrompe a correção automatizada e decide se deve escalar o incidente ou reverter a alteração."
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-observability-remediation-loop"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-observe-1",
+      "prompt": "O responsável de plantão pela API de pedidos recebeu uma mensagem de um usuário informando que a confirmação do pedido está lenta. Ao investigar a causa, selecione uma combinação de observações mais adequada para comparar primeiro.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Para o mesmo período e a mesma operação, comparar a contagem de solicitações, a latência p95, a taxa de erros, as chamadas às dependências e os logs relacionados.",
+          "explanation": "Isso permite correlacionar o impacto para o usuário com as mudanças no caminho da solicitação sob as mesmas condições."
+        },
+        {
+          "id": "b",
+          "text": "Verificar apenas a utilização de CPU de uma instância EC2 qualquer.",
+          "explanation": "Uma única métrica de recurso não é suficiente para determinar o impacto da operação-alvo ou de suas dependências."
+        },
+        {
+          "id": "c",
+          "text": "Reiniciar as instâncias em todas as Regiões imediatamente após receber o relatório do incidente.",
+          "explanation": "Uma alteração abrangente sem fundamento pode ampliar o escopo do impacto."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-2",
+      "prompt": "A pessoa responsável pelas operações que está projetando alarmes do CloudWatch deseja vincular as notificações a ações que possam ser executadas depois. Escolha uma única política de configuração de alarmes mais adequada.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Definir o mesmo limite para todas as métricas.",
+          "explanation": "Isso não permite refletir os valores normais nem o nível de impacto de cada workload."
+        },
+        {
+          "id": "c",
+          "text": "Não configurar destinos de notificação e registrar apenas o nome do alarme.",
+          "explanation": "Mesmo que um problema seja detectado, isso não leva a uma resposta."
+        },
+        {
+          "id": "a",
+          "text": "Definir claramente a métrica que representa o impacto para os usuários, o limite, o período de avaliação, o tratamento de dados ausentes e os destinos de notificação.",
+          "explanation": "Isso permite validar as transições de estado do alarme e as ações de resposta."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-3",
+      "prompt": "Para um serviço cuja taxa de erros aumentou imediatamente após a implantação, escolha o item mais apropriado que a pessoa responsável pela remediação deve verificar antes de iniciar a remediação automatizada com segurança.",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Aplicar imediatamente a mesma alteração a todos os ambientes sem verificar a causa dos erros.",
+          "explanation": "Isso pode confundir uma correlação com uma causa e agravar o incidente."
+        },
+        {
+          "id": "a",
+          "text": "Verificar no runbook o alvo, o horário da alteração, os logs relacionados, os critérios de sucesso, as condições de parada e as condições de rollback.",
+          "explanation": "Isso esclarece a hipótese de causa e os limites de segurança da remediação."
+        },
+        {
+          "id": "c",
+          "text": "Desativar o monitoramento após a remediação.",
+          "explanation": "Isso impede verificar se a remediação foi bem-sucedida."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudTrail",
+    "Systems Manager Automation",
+    "Runbook",
+    "Metric",
+    "Log",
+    "CloudWatch alarm",
+    "Rollback"
+  ]
+}

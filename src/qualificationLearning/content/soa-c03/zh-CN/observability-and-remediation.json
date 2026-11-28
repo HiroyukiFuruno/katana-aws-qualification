@@ -1,0 +1,151 @@
+{
+  "id": "observability-and-remediation",
+  "title": "将从观测到修复作为一个连续流程进行运维",
+  "objective": "收集能够反映用户影响的信号，验证原因假设，并安全地执行已获批准的修复。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "云的基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "连接与路由"
+    }
+  ],
+  "sections": [
+    {
+      "id": "signals-and-context",
+      "title": "将症状分解为可测量的信号",
+      "paragraphs": [
+        "负责运行在 EC2 上的订单 API 的运营人员不会仅凭 CPU 利用率判断故障。他们会在同一时间轴上关联目标操作、请求数、错误率、延迟、对依赖项的调用以及日志时间戳，以确认哪些用户受到影响，以及受到哪些操作的影响。",
+        "Amazon CloudWatch 警报可以在多个评估周期内将指标或数学表达式的值与阈值进行比较，并执行通知或操作。阈值、评估周期、缺失数据的处理方式以及通知目标，应根据用户影响和可采取的应对措施来确定。"
+      ],
+      "sources": [
+        {
+          "label": "SOA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "在 Amazon CloudWatch 中使用警报",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch_Alarms.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-before-action",
+      "title": "在修复前整理证据和假设",
+      "paragraphs": [
+        "故障响应人员不会把告警触发本身视为原因。他们会比较指标、应用程序日志、CloudTrail 操作历史记录以及配置更改的时间，以区分例如错误是否在部署后立即增加，还是依赖项出现了延迟。",
+        "在排查过程中，他们会明确记录受影响的区域、账户、工作负载、开始时间和结束时间。他们不会仅凭相关性就将更改扩展到所有环境，而是先记录可复现的假设和回滚条件，然后在限定的影响范围内进行验证。"
+      ],
+      "sources": [
+        {
+          "label": "SOA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "什么是 AWS CloudTrail？",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        }
+      ]
+    },
+    {
+      "id": "runbook-remediation",
+      "title": "修复需要操作流程和停止条件",
+      "paragraphs": [
+        "修复人员会在经过批准的运行手册中记录目标资源、执行前检查、执行权限、成功条件、停止条件和回滚方案。AWS Systems Manager Automation 可简化常见的维护、部署和修复任务，但不能免除对运行手册前提条件或目标选择的要求。",
+        "自动修复应按检测、限制影响、执行、重新观测的顺序进行设计。执行后，使用相同的用户影响指标和日志确认是否有所改善；如果没有改善，则不要继续自动化，而应升级处理或执行回滚。",
+        "图的上方展示订单 API 接收用户请求并调用依赖服务。中间对照同一时间段、同一范围内的 CloudWatch 指标、CloudWatch Logs 中的应用程序日志和 CloudTrail 中的 AWS API 操作记录。下方展示运维团队只对获批的目标运行 Systems Manager Automation，并用相同的指标确认结果。如果没有改善，则停止自动修复，并决定是否升级处置或回滚。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-observability-remediation-loop"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-observe-1",
+      "prompt": "订单 API 的值班负责人收到用户反馈，称订单确认速度很慢。调查原因时，请选择一组最适合首先进行比较的观测值。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "针对相同时间段和相同操作，比较请求数、p95 延迟、错误率、依赖项调用以及相关日志。",
+          "explanation": "这样可以在相同条件下，将用户影响与请求路径上的变化对应起来。"
+        },
+        {
+          "id": "b",
+          "text": "只检查任意一个 EC2 实例的 CPU 利用率。",
+          "explanation": "仅凭单个资源指标，无法判断目标操作或其依赖项的影响。"
+        },
+        {
+          "id": "c",
+          "text": "收到故障报告后立即重启所有区域中的实例。",
+          "explanation": "缺乏依据的全局变更会扩大影响范围。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-2",
+      "prompt": "负责设计 CloudWatch 警报的运维人员希望将通知与通知后可以执行的响应措施联系起来。请选择一项最合适的警报配置方针。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "为所有指标设置相同的阈值。",
+          "explanation": "这无法反映各工作负载的正常值或影响程度。"
+        },
+        {
+          "id": "c",
+          "text": "不设置通知目标，只记录警报名称。",
+          "explanation": "即使检测到问题，也无法促成响应。"
+        },
+        {
+          "id": "a",
+          "text": "明确规定反映用户影响的指标、阈值、评估周期、缺失数据的处理方式以及通知目标。",
+          "explanation": "这样可以验证警报状态转换和响应操作。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-3",
+      "prompt": "对于部署后立即开始错误率上升的服务，请选择负责修复的人员在安全地启动自动修复之前应确认的最恰当事项。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "不确认错误原因，就立即将相同的更改应用到所有环境。",
+          "explanation": "这可能会将相关性误认为因果关系，从而扩大故障。"
+        },
+        {
+          "id": "a",
+          "text": "在运行手册中确认目标、变更时间、相关日志、成功条件、停止条件和回滚条件。",
+          "explanation": "这样可以明确原因假设以及修复的安全边界。"
+        },
+        {
+          "id": "c",
+          "text": "在修复后禁用监控。",
+          "explanation": "这样将无法确认修复是否成功。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudTrail",
+    "Systems Manager Automation",
+    "Runbook",
+    "Metric",
+    "Log",
+    "CloudWatch alarm",
+    "Rollback"
+  ]
+}

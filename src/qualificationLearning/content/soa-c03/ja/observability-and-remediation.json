@@ -1,0 +1,151 @@
+{
+  "id": "observability-and-remediation",
+  "title": "観測から修復までを一続きに運用する",
+  "objective": "利用者影響を示す信号を集め、原因仮説を検証し、承認済みの修復を安全に実行できる。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "クラウドの基本概念"
+    },
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    },
+    {
+      "slug": "routing-connectivity",
+      "title": "接続とルーティング"
+    }
+  ],
+  "sections": [
+    {
+      "id": "signals-and-context",
+      "title": "症状を測定可能な信号へ分解する",
+      "paragraphs": [
+        "EC2 で稼働する注文 API の運用担当者は、CPU 使用率だけで障害を判断しません。対象操作、リクエスト数、エラー率、レイテンシー、依存先への呼び出し、ログの時刻を同じ時間軸で結び付け、どの利用者がどの操作で影響を受けたかを確認します。",
+        "Amazon CloudWatch のアラームは、メトリクスまたは数式の値を複数期間にわたってしきい値と比較し、通知やアクションを実行できます。しきい値、評価期間、欠損データの扱い、通知先は、利用者影響と対応可能な行動に対応付けて決めます。"
+      ],
+      "sources": [
+        {
+          "label": "SOA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "Amazon CloudWatch でのアラームの使用",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudWatch/latest/monitoring/CloudWatch_Alarms.html"
+        }
+      ]
+    },
+    {
+      "id": "evidence-before-action",
+      "title": "修復の前に証拠と仮説をそろえる",
+      "paragraphs": [
+        "障害対応者は、アラームの発生を原因そのものとみなしません。メトリクス、アプリケーションログ、CloudTrail の操作履歴、設定変更の時刻を比較し、たとえばデプロイ直後のエラー増加なのか、依存先の遅延なのかを区別します。",
+        "切り分けでは、影響を受けたリージョン、アカウント、ワークロード、開始時刻と終了時刻を明示します。相関だけで全環境へ変更を広げず、再現可能な仮説とロールバック条件を記録してから、影響範囲を限定して検証します。"
+      ],
+      "sources": [
+        {
+          "label": "SOA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/sysops-administrator-associate-03/sysops-administrator-associate-03.html"
+        },
+        {
+          "label": "AWS CloudTrail とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/awscloudtrail/latest/userguide/cloudtrail-user-guide.html"
+        }
+      ]
+    },
+    {
+      "id": "runbook-remediation",
+      "title": "修復は手順と停止条件を持つ",
+      "paragraphs": [
+        "修復担当者は、承認済みランブックに対象リソース、事前確認、実行権限、成功条件、停止条件、ロールバックを記載します。AWS Systems Manager Automation は、一般的なメンテナンス、デプロイ、修正タスクを簡素化しますが、ランブックの前提や対象選択を不要にはしません。",
+        "自動修復は、検知、限定、実行、再観測の順で設計します。実行後には、同じ利用者影響の指標とログを使って改善を確認し、改善しない場合は自動化を継続せず、エスカレーションまたはロールバックします。",
+        "図の上段は、利用者のリクエストを受け付ける注文 API と、その API が呼び出す依存サービスです。中央では、同じ時間帯と対象範囲で CloudWatch のメトリクス、CloudWatch Logs のアプリケーションログ、CloudTrail の AWS API 操作履歴を照合します。下段では、運用担当者が承認された対象だけに Systems Manager Automation を実行し、同じ指標で効果を確かめます。改善しなければ自動修復を止め、エスカレーションまたはロールバックを判断します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Systems Manager Automation",
+          "url": "https://docs.aws.amazon.com/ja_jp/systems-manager/latest/userguide/systems-manager-automation.html"
+        }
+      ],
+      "figureId": "soa-observability-remediation-loop"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "soa-observe-1",
+      "prompt": "注文 API の当番担当者は、利用者から「注文確定が遅い」と連絡を受けました。原因調査で最初に比較すべき最も適切な観測値の組み合わせを1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "同じ時間帯・同じ操作について、リクエスト数、p95 レイテンシー、エラー率、依存先呼び出し、関連ログを比較する。",
+          "explanation": "利用者影響と経路上の変化を同じ条件で対応付けられます。"
+        },
+        {
+          "id": "b",
+          "text": "任意の EC2 インスタンスの CPU 使用率だけを確認する。",
+          "explanation": "単一のリソース指標だけでは、対象操作や依存先の影響を判断できません。"
+        },
+        {
+          "id": "c",
+          "text": "障害連絡を受けた直後に、全リージョンのインスタンスを再起動する。",
+          "explanation": "根拠のない全体変更は影響範囲を広げます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-2",
+      "prompt": "CloudWatch アラームを設計する運用担当者は、通知後に実行できる対応へ結び付けたいと考えています。最も適切なアラーム設定方針を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "すべてのメトリクスに同じしきい値を設定する。",
+          "explanation": "ワークロードごとの通常値や影響度を反映できません。"
+        },
+        {
+          "id": "c",
+          "text": "通知先を設定せず、アラーム名だけを記録する。",
+          "explanation": "検知しても対応につながりません。"
+        },
+        {
+          "id": "a",
+          "text": "利用者影響に対応する指標、しきい値、評価期間、欠損データの扱い、通知先を明確にする。",
+          "explanation": "アラームの状態遷移と対応行動を検証できます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "soa-observe-3",
+      "prompt": "デプロイ直後からエラー率が増加したサービスについて、修復担当者が安全に自動修復を始める前に確認すべき最も適切な事項を1つ選んでください。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "エラーの原因を確認せず、すべての環境へ同じ変更を直ちに適用する。",
+          "explanation": "相関を原因と誤認し、障害を拡大するおそれがあります。"
+        },
+        {
+          "id": "a",
+          "text": "対象、変更時刻、関連ログ、成功条件、停止条件、ロールバック条件をランブックで確認する。",
+          "explanation": "原因仮説と修復の安全境界を明確にできます。"
+        },
+        {
+          "id": "c",
+          "text": "修復後の監視を無効にする。",
+          "explanation": "修復の成否を確認できません。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudWatch",
+    "CloudTrail",
+    "Systems Manager Automation",
+    "Runbook",
+    "Metric",
+    "Log",
+    "CloudWatch alarm",
+    "Rollback"
+  ]
+}

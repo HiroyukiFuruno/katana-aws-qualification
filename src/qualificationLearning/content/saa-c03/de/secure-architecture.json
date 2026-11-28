@@ -1,0 +1,174 @@
+{
+  "id": "secure-architecture",
+  "title": "Eine sichere Architektur entwerfen",
+  "objective": "Die Zuständigkeiten für Authentifizierung, Autorisierung, Verschlüsselung und Auditing in Bezug auf Benutzer, Daten und Kommunikationspfade erläutern.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "Authentifizierung und Autorisierung"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Datenschutz"
+    }
+  ],
+  "sections": [
+    {
+      "id": "least-privilege",
+      "title": "Effektive Berechtigungen minimieren",
+      "paragraphs": [
+        "Der Architekt eines Einzelhandelsunternehmens entwirft eine IAM-Rolle, die nur auf die für die Bestell-API erforderlichen S3-Buckets zugreifen kann. Er trennt, wer authentifiziert wird, davon, welche Aktionen für welche Ressourcen erlaubt sind, und verwendet keine weitreichenden Administratorberechtigungen als Standard.",
+        "S3-Buckets und Objekte sind standardmäßig privat. Kombinieren Sie IAM-Richtlinien, Bucket-Richtlinien und Block Public Access entsprechend den Anforderungen. Auch wenn eine öffentliche Bereitstellung erforderlich ist, darf nur der Bereitstellungspfad zugelassen werden."
+      ],
+      "sources": [
+        {
+          "label": "Prüfungsleitfaden für SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Was ist Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "IAM-Funktionen in Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/security_iam_service-with-iam.html"
+        }
+      ]
+    },
+    {
+      "id": "data-and-keys",
+      "title": "Eine Schutzmethode anhand der Datenklassifizierung auswählen",
+      "paragraphs": [
+        "Architekten, die medizinische Termindaten verarbeiten, bewerten Daten im Ruhezustand und Daten während der Übertragung getrennt. Bei der Verschlüsselung im Ruhezustand prüfen sie den Schlüsselbesitzer, die zur Nutzung berechtigten Principals, die Audit-Aufzeichnungen und die Verwendung bei der Wiederherstellung.",
+        "Bei der Verschlüsselung während der Übertragung stellen sie jedes Segment in einem Diagramm dar – vom Benutzer zum Einstiegspunkt, vom Einstiegspunkt zur Workload sowie zwischen der VPC und lokalen Systemen – und zeigen, wo TLS oder IPsec terminiert wird. Die Verschlüsselung allein macht den Entwurf von Zugriffsberechtigungen nicht überflüssig."
+      ],
+      "sources": [
+        {
+          "label": "Prüfungsleitfaden für SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Zielgruppen des Application Load Balancer",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-target-groups.html"
+        }
+      ]
+    },
+    {
+      "id": "secure-vpc-path",
+      "title": "Kommunikationspfade den Kontrollpunkten zuordnen",
+      "paragraphs": [
+        "Der Browser des Benutzers verbindet sich mit einem internetseitig erreichbaren ALB. Der ALB beendet diese Verbindung und stellt eine separate Verbindung zur Anwendung in einem privaten Subnetz her. Die Anwendung stellt anschließend eine weitere Verbindung zu der RDS-Datenbank her, die Bestelldaten verarbeitet. Legen Sie für jedes Segment separat fest, welcher Datenverkehr verschlüsselt und welcher von welcher Quelle stammende Datenverkehr zugelassen werden soll.",
+        "Routingtabellen wählen das nächste Ziel aus, an das der Datenverkehr weitergeleitet wird. Sicherheitsgruppen erlauben Verbindungen zu Netzwerkschnittstellen, beispielsweise denen der Anwendung, und lassen auch Antworten auf zugelassenen Datenverkehr passieren. Netzwerk-ACLs bewerten eingehenden und ausgehenden Datenverkehr an der Subnetzgrenze getrennt.",
+        "Prüfen Sie im Diagramm zuerst, in welchen Subnetzen sich der ALB, die Anwendung und die Datenbank befinden. Ermitteln Sie anschließend, welche Grenzen die Anfragen und Antworten überschreiten und an welchen Stellen für die Antwort eine zusätzliche Berechtigung erforderlich ist."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: Routingtabellen konfigurieren",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Geltungsbereich von Netzwerk-ACLs",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
+        },
+        {
+          "label": "Sicherheitsgruppen des ALB",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html"
+        }
+      ],
+      "figureId": "saa-secure-vpc-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-secure-1",
+      "prompt": "Die Rechnungs-API ruft Rechnungen unter `invoices/` aus einem privaten S3-Bucket im selben AWS-Konto ab, wobei der Objektschlüssel angegeben wird. Der Bucket ist mit einem von S3 verwalteten Schlüssel verschlüsselt. Die API listet oder aktualisiert keine Objekte. Welche Berechtigung ist für die Ausführungsrolle der API geeignet?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "`s3:GetObject` für Objekte im gesamten Bucket zulassen.",
+          "explanation": "Obwohl dies auf das Abrufen beschränkt ist, können damit auch Objekte aus Präfixen außerhalb des Rechnungspräfixes gelesen werden."
+        },
+        {
+          "id": "b",
+          "text": "`s3:GetObject` nur für Objekte unter `invoices/` zulassen.",
+          "explanation": "Damit werden sowohl die erforderliche Operation als auch ihr Ziel eingeschränkt. Da der Objektschlüssel bekannt ist, wird keine Berechtigung zum Auflisten des Buckets benötigt."
+        },
+        {
+          "id": "c",
+          "text": "`s3:ListBucket` für den Bucket zulassen und für die Auflistung eine Bedingung für `invoices/` hinzufügen.",
+          "explanation": "Das Auflisten von Objekten und das Lesen ihrer Inhalte sind unterschiedliche Operationen. `s3:GetObject` ist nicht zulässig."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-secure-2",
+      "prompt": "Ein medizinischer Terminservice muss die Verbindungen zwischen dem Browser und dem öffentlichen ALB sowie zwischen dem ALB und der privaten EC2-Instance verschlüsseln. Wenn TLS auf der Browserseite am ALB beendet wird, welche Konfiguration ist geeignet?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Richten Sie am ALB einen HTTPS-Listener ein und verwenden Sie HTTP für die Weiterleitung vom ALB zu EC2.",
+          "explanation": "Die Verbindung auf der Benutzerseite ist verschlüsselt, aber die Kommunikation vom ALB zu EC2 ist nicht verschlüsselt."
+        },
+        {
+          "id": "b",
+          "text": "Lassen Sie den ALB Daten über HTTP empfangen und verwenden Sie HTTPS nur für die Weiterleitung vom ALB zu EC2.",
+          "explanation": "Da nur die Verbindung zu EC2 verschlüsselt wird, erfüllt dies nicht die Anforderung für die Verbindung zwischen Browser und ALB."
+        },
+        {
+          "id": "c",
+          "text": "Richten Sie am ALB einen HTTPS-Listener ein und konfigurieren Sie HTTPS auch für die Zielgruppe, die für die Weiterleitung vom ALB zu EC2 verwendet wird.",
+          "explanation": "Der ALB beendet TLS mit dem Benutzer und stellt eine separate HTTPS-Verbindung zum Ziel her. Beide Verbindungen sind verschlüsselt."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-secure-3",
+      "prompt": "Ein Knoten eines öffentlichen ALB verbindet sich mit TCP-Port 443 einer privaten EC2-Instance und verwendet TCP-Port 49152 als Quellport. Die Sicherheitsgruppe auf der EC2-Seite lässt diese Verbindung zu, und das EC2-Subnetz verwendet eine Netzwerk-ACL. Die Anfrage erreicht die EC2-Instance, aber die Antwort, die das EC2-Subnetz verlässt, wird abgelehnt. Welche Antwort muss die Netzwerk-ACL auf der EC2-Seite zulassen?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Die Antwort vom EC2-Subnetz zum ALB-Subnetz mit dem TCP-Zielport 49152 zulassen.",
+          "explanation": "Bei Netzwerk-ACLs müssen beide Richtungen des Datenverkehrs separat zugelassen werden. Der Zielport dieser Antwort ist der Port, den der ALB-Knoten als Quellport der Verbindung verwendet hat."
+        },
+        {
+          "id": "b",
+          "text": "Die Antwort vom EC2-Subnetz zum ALB-Subnetz mit dem TCP-Zielport 443 zulassen.",
+          "explanation": "Port 443 ist der Port, an dem die EC2-Instance die Anfrage bei dieser Verbindung empfangen hat. Die Antwort ist für TCP-Port 49152 des ALB-Knotens bestimmt."
+        },
+        {
+          "id": "c",
+          "text": "Eingehenden TCP-Datenverkehr an Port 49152 in das EC2-Subnetz zulassen.",
+          "explanation": "Die Antwort verlässt das EC2-Subnetz. Eine zusätzliche eingehende Regel behebt die Ablehnung des ausgehenden Datenverkehrs nicht."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM policy",
+    "Resource-based policy",
+    "S3",
+    "Bucket policy",
+    "GetObject",
+    "S3 Block Public Access",
+    "SSE-S3",
+    "KMS",
+    "TLS",
+    "IPsec",
+    "VPC",
+    "ALB",
+    "EC2",
+    "NACL",
+    "Security group",
+    "ENI",
+    "Route table",
+    "Target group",
+    "HTTPS",
+    "TCP",
+    "Ephemeral port"
+  ]
+}

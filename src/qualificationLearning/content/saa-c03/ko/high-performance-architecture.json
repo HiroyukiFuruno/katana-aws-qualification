@@ -1,0 +1,143 @@
+{
+  "id": "high-performance-architecture",
+  "title": "고성능 아키텍처 설계",
+  "objective": "요청 패턴, 데이터 액세스 및 네트워크 경로를 바탕으로 성능 최적화 방안을 선택할 수 있습니다.",
+  "prerequisites": [
+    {
+      "slug": "resilient-architecture",
+      "title": "복원력 있는 아키텍처 설계",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure",
+      "title": "성능 요구 사항을 관측 가능하게 만들기",
+      "paragraphs": [
+        "설계자는 ‘빠르다’라는 모호한 요구 사항을 대상 작업, 동시 사용자 수, p95 지연 시간, 처리량, 허용 가능한 오류율로 세분화합니다. CPU만으로는 사용자 경험을 판단할 수 없습니다."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 시험 안내서",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-data",
+      "title": "반복 읽기를 적절히 가깝게 만들기",
+      "paragraphs": [
+        "상품 카탈로그처럼 읽기가 빈번하고 업데이트 빈도가 낮은 데이터에는 캐시 또는 CDN을 고려할 수 있습니다. 다만 업데이트 후 얼마 동안 오래된 값을 허용할지, 캐시를 무효화하는 방법과 장애 발생 시 동작 방식을 결정해야 합니다."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 시험 가이드",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "performance-path",
+      "title": "사용자에서 데이터까지의 지연 시간 추적",
+      "paragraphs": [
+        "상품 목록을 제공하는 서비스에서는 CloudFront에 필요한 응답이 있으면 즉시 반환할 수 있습니다. 캐시에서 응답을 반환할 수 없는 경우 CloudFront가 오리진에 연결합니다. 이 사례에서는 퍼블릭 ALB를 오리진으로 지정하고, ALB가 프라이빗 서브넷의 애플리케이션으로 요청을 전달합니다. DNS는 이름을 사용해 연결 대상을 조회하는 데 사용됩니다.",
+        "사용자의 응답 시간이 길어지면 먼저 캐시에서 반환된 요청과 오리진까지 도달한 요청을 구분합니다. 오리진으로 진행된 요청의 응답 시간과 ALB 대상 응답 시간을 비교하면 다음에 측정할 구간을 좁힐 수 있습니다. 애플리케이션 측에서는 동일한 상품을 처리하는 요청의 DB 대기 시간 등을 확인합니다.",
+        "그림에서는 CloudFront에서 응답이 반환되는 경우와 ALB에서 애플리케이션까지 요청이 진행되는 경우를 비교합니다. 각 경로에서 어떤 측정값을 사용하면 지연 시간이 증가한 위치를 조사할 수 있는지 설명할 수 있어야 합니다."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 시험 가이드",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "CloudFront 측정값",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/monitoring-using-cloudwatch.html"
+        }
+      ],
+      "figureId": "saa-performance-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-performance-1",
+      "prompt": "온라인 스토어가 동일한 상품 카탈로그를 많은 사용자에게 제공합니다. CloudFront 공유 캐시로 응답 속도를 높이면서, 긴급한 가격 수정이 발생하면 일반 TTL을 기다리지 않고 대상 페이지의 캐시를 업데이트하려고 합니다. 어떤 정책이 적절합니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "전체 카탈로그를 동일한 긴 TTL로 유지하고, 가격이 변경되면 오리진 콘텐츠만 업데이트합니다.",
+          "explanation": "캐시된 응답은 만료될 때까지 계속 사용되므로 긴급한 수정 사항을 즉시 반영할 수 있는 방법이 없습니다."
+        },
+        {
+          "id": "b",
+          "text": "신선도 요구 사항에 따라 TTL을 정하고, 긴급한 경우 영향을 받는 경로를 무효화합니다. 변경 후 페이지가 제공되는지도 확인합니다.",
+          "explanation": "일반적인 응답 효율성과 만료 전 신선도를 모두 처리하며, 긴급한 경우 변경 대상에 한정해 콘텐츠를 다시 가져올 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "전체 카탈로그에서 CloudFront 캐싱을 비활성화합니다.",
+          "explanation": "오리진 업데이트를 반영할 수는 있지만, 공유 캐시로 읽기 속도를 높인다는 요구 사항은 충족하지 못합니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-performance-2",
+      "prompt": "주문 API 사용자로부터 주문 확정만 느려졌다는 연락을 받았습니다. 운영 담당자가 동일한 작업의 지연으로 영향을 받은 사용자가 얼마나 되는지 파악하고 부하 차이도 고려하여 변경 전후를 비교하려면 어떤 기록을 수집해야 합니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "변경 전후에 동일한 길이의 시간 구간과 동일한 집계 조건을 사용하여 주문 확정의 응답 시간 p95, 오류율, 요청 수를 비교합니다.",
+          "explanation": "느린 응답을 오류 및 부하 차이와 연관 지어 사용자에게 미친 영향을 조사할 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "모든 API의 평균 응답 시간과 서비스 전체의 평균 CPU 사용률만 비교합니다.",
+          "explanation": "주문 확정에만 발생한 문제나 특히 느린 요청이 집계에 묻힙니다."
+        },
+        {
+          "id": "c",
+          "text": "오류를 제외한 응답 시간의 최댓값을 요청 수와 별도로 한 번만 확인합니다.",
+          "explanation": "단 하나의 극단적인 값이나 샘플 수의 차이에 영향을 받으므로 전체 사용자에 미친 영향을 비교할 수 없습니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-performance-3",
+      "prompt": "상품 카탈로그 사용자가 경험하는 p95 응답 시간이 악화되었습니다. CloudFront 캐시에서 반환되는 응답은 이전과 같이 빠르지만, 캐시에 없는 상품만 느려졌습니다. 운영 담당자가 가장 먼저 수행해야 할 조사는 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "CloudFront 캐시에서 반환된 응답만 다시 측정하고 애플리케이션은 확인하지 않는다.",
+          "explanation": "빠른 응답만 다시 측정해서는 오리진에 도달한 요청이 어느 지점에서 지연되었는지 확인할 수 없습니다."
+        },
+        {
+          "id": "b",
+          "text": "ALB가 처리한 모든 HTTP 요청을 합산하고, 요청 수가 증가했다면 캐시를 일괄 무효화한다.",
+          "explanation": "요청 수가 증가했다는 사실만으로는 지연이 발생한 지점을 알 수 없습니다. 캐시를 일괄 무효화하면 오리진의 부하가 증가할 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "동일한 상품과 시간대를 기준으로, 캐시에서 반환되지 못한 요청의 오리진 응답 시간과 ALB 및 애플리케이션의 측정 결과를 대조한다.",
+          "explanation": "이를 통해 CloudFront에서 오리진까지의 구간과 애플리케이션 측의 대기 시간을 분리하고, 다음에 어느 지점을 더 자세히 측정할지 선택할 수 있습니다."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFront",
+    "CDN",
+    "DNS",
+    "TTL",
+    "Cache hit ratio",
+    "Cache invalidation",
+    "Origin",
+    "ALB",
+    "TargetResponseTime",
+    "p95",
+    "Error rate",
+    "Throughput",
+    "ElastiCache"
+  ]
+}

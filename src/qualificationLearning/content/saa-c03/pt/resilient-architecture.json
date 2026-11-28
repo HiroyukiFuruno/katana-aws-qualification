@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "Projetar arquiteturas resilientes",
+  "objective": "Projetar a disponibilidade e a proteção de dados com base no escopo da falha, no RTO, no RPO e nos procedimentos de recuperação.",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "Projetar uma arquitetura segura",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "Definição dos objetivos de recuperação com base no escopo da falha",
+      "paragraphs": [
+        "A equipe responsável pelo serviço de pedidos define um objetivo de tempo de recuperação (RTO) e um objetivo de ponto de recuperação (RPO) para cada operação comercial. O RTO indica em quantos minutos o serviço deve ser restaurado, enquanto o RPO indica até que ponto no tempo os dados precisam ser recuperados.",
+        "Na seção superior da figura, quando ocorre uma falha em uma AZ, o tráfego é alternado para um DB em espera na mesma Region. Conforme mostrado na seção central, preparar-se para uma interrupção que afete toda uma Region envolve replicar os backups para outra Region antecipadamente e medir o tempo necessário para restaurar o DB e alternar o destino de conexão do aplicativo. Na seção inferior, em caso de exclusão acidental, selecione o ponto de recuperação imediatamente anterior à exclusão."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Implantação de instância de DB Multi-AZ do Amazon RDS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "Replicar backups automatizados do RDS para outra Region",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "Planejamento de objetivos de recuperação e recuperação de desastres",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "Confinar falhas ao processamento assíncrono",
+      "paragraphs": [
+        "Quando a confirmação do pedido é acoplada de forma síncrona à conversão de imagens, uma falha temporária no lado da conversão pode impedir que a API de pedidos responda. Os projetistas separam os processos usando mensagens duráveis e definem como lidar com novas tentativas, duplicidades e falhas."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Tempo limite de visibilidade do Amazon SQS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "A recuperação inclui a validação",
+      "paragraphs": [
+        "O responsável pela recuperação determina a ordem de restauração e como verificar a integridade, e valida antecipadamente as condições para mudar o destino de conexão dos usuários.",
+        "Em um caso no qual a tabela de pedidos foi excluída acidentalmente às 10:15, a equipe confirma que é possível restaurá-la para as 10:14 e a restaura em outra instância de banco de dados RDS. No DB restaurado, identifica os pedidos ausentes e também confere os pedidos legítimos recebidos após as 10:14. Depois de reunir todos os pedidos necessários para as operações comerciais e concluir o teste de conexão, a equipe altera o destino de conexão dos usuários."
+      ],
+      "sources": [
+        {
+          "label": "Framework AWS Well-Architected",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "Restaurar uma instância de banco de dados do Amazon RDS para um momento específico",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "Existe um requisito para restaurar a API de pedidos em até 10 minutos, mesmo que uma AZ na mesma Região fique indisponível. Atualmente, tanto a aplicação atrás do ALB quanto o RDS estão localizados em apenas uma AZ. Qual proposta deve ser validada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Copiar os backups para outra Região e restaurá-los manualmente em um novo ambiente quando ocorrer uma falha.",
+          "explanation": "Os backups são importantes, mas essa proposta exige uma restauração em outra Região sempre que ocorrer uma falha de AZ. Ainda não há um caminho para retornar em até 10 minutos."
+        },
+        {
+          "id": "b",
+          "text": "Distribuir somente a aplicação em duas AZs e continuar usando o RDS de uma única AZ como está.",
+          "explanation": "Mesmo que a aplicação continue disponível, não será possível processar os pedidos se o banco de dados compartilhado for afetado pela falha."
+        },
+        {
+          "id": "c",
+          "text": "Distribuir a aplicação em duas AZs e usar também uma implantação Multi-AZ para o RDS. Considerar uma falha de AZ e medir o tempo até a retomada do processamento dos pedidos.",
+          "explanation": "Isso fornece tanto à aplicação quanto ao banco de dados meios de continuar o processamento em outra AZ, permitindo verificar se a meta de 10 minutos é realmente atingida."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "Há um serviço de cadastro de produtos no qual não há problema se a conversão de imagens levar vários minutos. O cadastro em si já foi registrado, e as solicitações de conversão foram enviadas ao Amazon SQS. Se o processamento de conversão parar por cerca de 30 minutos, ainda dentro do período de retenção da mensagem, como evitar que a tela de cadastro espere e recuperar as solicitações não processadas após a recuperação?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Chame o processamento de conversão de forma síncrona a partir da tela de cadastro e apenas aumente o tempo limite de resposta.",
+          "explanation": "Essa arquitetura faz a tela de cadastro esperar até a conversão terminar. Ela não atende ao requisito de desacoplar o trabalho."
+        },
+        {
+          "id": "b",
+          "text": "Processe as conversões de forma assíncrona a partir da fila e exclua a mensagem após o sucesso. Para permitir novas tentativas, faça com que a mesma solicitação mantenha o mesmo resultado.",
+          "explanation": "As solicitações não processadas podem permanecer na fila. Mesmo que haja nova entrega, o processamento pode evitar o cadastro duplicado da mesma imagem."
+        },
+        {
+          "id": "c",
+          "text": "Exclua a mensagem assim que o processamento de conversão a receber e, após terminar, grave apenas o resultado.",
+          "explanation": "Se o processamento de conversão parar no meio do caminho, a mensagem necessária para processar novamente a solicitação já terá sido excluída."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "O administrador do banco de dados de um sistema de pedidos excluiu acidentalmente alguns pedidos do Amazon RDS executado em várias AZs. Os backups automáticos estão habilitados, e foi confirmado que o banco de dados pode ser restaurado para o momento imediatamente anterior à exclusão. Qual procedimento deve ser usado para recuperar os pedidos excluídos e, ao mesmo tempo, manter no banco de dados atual os pedidos válidos aceitos após a exclusão? Selecione uma opção.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Restaure uma instância de DB separada para o momento imediatamente anterior à exclusão, extraia as linhas necessárias, compare-as com o banco de dados atual e, em seguida, restaure-as.",
+          "explanation": "Isso permite consultar as linhas anteriores à exclusão e manter no banco de dados atual os novos pedidos que não estiverem incluídos na instância restaurada."
+        },
+        {
+          "id": "b",
+          "text": "Faça failover para a instância em espera do Multi-AZ e use-a como o estado anterior à exclusão.",
+          "explanation": "A exclusão acidental também é sincronizada com a instância em espera. Para selecionar o momento imediatamente anterior à exclusão, é necessário restaurar para um ponto específico no tempo a partir de um backup automático."
+        },
+        {
+          "id": "c",
+          "text": "Use diretamente como destino de conexão de produção o banco de dados restaurado para o momento imediatamente anterior à exclusão.",
+          "explanation": "Os pedidos confirmados depois do momento especificado não estão presentes na instância restaurada; portanto, sem uma comparação, o requisito não é atendido."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

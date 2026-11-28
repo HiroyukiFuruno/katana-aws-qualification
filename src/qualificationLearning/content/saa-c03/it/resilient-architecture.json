@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "Progettare architetture resilienti",
+  "objective": "Progettare la disponibilità e la protezione dei dati in base all’ambito del guasto, a RTO e RPO e alle procedure di ripristino.",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "Progettare un'architettura sicura",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "Definire gli obiettivi di ripristino in base all’ambito del guasto",
+      "paragraphs": [
+        "Il team responsabile del servizio ordini definisce un obiettivo del tempo di ripristino (RTO) e un obiettivo del punto di ripristino (RPO) per ogni operazione aziendale. L’RTO indica entro quanti minuti deve essere ripristinato il servizio, mentre l’RPO indica fino a quale momento nel tempo è necessario ripristinare i dati.",
+        "Nella sezione superiore della figura, quando si verifica un guasto in una AZ, il traffico viene trasferito a un DB di standby nella stessa Region. Come mostrato nella sezione centrale, prepararsi a un’interruzione dell’intera Region significa replicare in anticipo i backup in un’altra Region e quindi misurare il tempo necessario per ripristinare il DB e cambiare la destinazione di connessione dell’applicazione. Nella sezione inferiore, in caso di eliminazione accidentale, selezionare il punto di ripristino immediatamente precedente all’eliminazione."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Implementazione di un’istanza DB Multi-AZ di Amazon RDS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "Replicazione dei backup automatici di RDS in un’altra Region",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "Pianificazione degli obiettivi di ripristino e del disaster recovery",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "Confinare i guasti nell’elaborazione asincrona",
+      "paragraphs": [
+        "Quando la conferma dell’ordine è collegata in modo sincrono alla conversione delle immagini, un guasto temporaneo sul lato della conversione può impedire la risposta dell’API degli ordini. I progettisti separano i processi usando una messaggistica durevole e definiscono come gestire i tentativi ripetuti, i duplicati e gli errori."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Timeout di visibilità di Amazon SQS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "Il ripristino include la convalida",
+      "paragraphs": [
+        "Il responsabile del ripristino determina l’ordine di ripristino e il metodo per verificare l’integrità, quindi convalida in anticipo le condizioni per cambiare la destinazione di connessione degli utenti.",
+        "In un caso in cui la tabella degli ordini è stata eliminata accidentalmente alle 10:15, il team conferma che può essere ripristinata alle 10:14 e la ripristina in un’altra istanza DB RDS. Nel DB ripristinato, identifica gli ordini mancanti e verifica inoltre gli ordini legittimi ricevuti dopo le 10:14. Dopo aver raccolto tutti gli ordini necessari per le attività aziendali e aver completato i test di connessione, il team modifica la destinazione di connessione degli utenti."
+      ],
+      "sources": [
+        {
+          "label": "Framework AWS Well-Architected",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "Ripristinare un’istanza DB di Amazon RDS a un momento specifico",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "È necessario ripristinare l’API degli ordini entro 10 minuti anche se una AZ nella stessa Regione diventa non disponibile. Attualmente, sia l’applicazione dietro l’ALB sia RDS si trovano in una sola AZ. Quale proposta è necessario convalidare?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Copiare i backup in un’altra Regione e ripristinarli manualmente in un nuovo ambiente quando si verifica un guasto.",
+          "explanation": "I backup sono importanti, ma questa proposta richiede un ripristino in un’altra Regione ogni volta che si verifica un guasto di una AZ. Non esiste ancora un percorso per tornare operativi entro 10 minuti."
+        },
+        {
+          "id": "b",
+          "text": "Distribuire solo l’applicazione in due AZ e continuare a utilizzare RDS in una singola AZ come attualmente.",
+          "explanation": "Anche se l’applicazione rimane disponibile, non è possibile elaborare gli ordini se il database condiviso è interessato dal guasto."
+        },
+        {
+          "id": "c",
+          "text": "Distribuire l’applicazione in due AZ e utilizzare anche una distribuzione Multi-AZ per RDS. Presupporre un guasto di una AZ e misurare il tempo necessario per riprendere l’elaborazione degli ordini.",
+          "explanation": "In questo modo sia l’applicazione sia il database dispongono di un mezzo per continuare l’elaborazione in un’altra AZ, consentendo di verificare se l’obiettivo di 10 minuti viene effettivamente raggiunto."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "Esiste un servizio di registrazione dei prodotti per il quale non è un problema se la conversione delle immagini richiede alcuni minuti. La registrazione stessa è già stata registrata e le richieste di conversione sono inviate ad Amazon SQS. Se l'elaborazione della conversione si interrompe per circa 30 minuti, pur rimanendo entro il periodo di conservazione del messaggio, come si può evitare di far attendere la schermata di registrazione e recuperare le richieste non elaborate dopo il ripristino?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Richiamare l'elaborazione della conversione in modo sincrono dalla schermata di registrazione e limitarsi a estendere il timeout di risposta.",
+          "explanation": "Questa architettura fa attendere la schermata di registrazione finché la conversione non termina. Non soddisfa il requisito di disaccoppiare il lavoro."
+        },
+        {
+          "id": "b",
+          "text": "Elaborare le conversioni in modo asincrono dalla coda ed eliminare il messaggio dopo il successo. In previsione dei tentativi, fare in modo che la stessa richiesta produca lo stesso risultato.",
+          "explanation": "Le richieste non elaborate possono rimanere nella coda. Anche se un messaggio viene riconsegnato, l'elaborazione può evitare di registrare due volte la stessa immagine."
+        },
+        {
+          "id": "c",
+          "text": "Eliminare il messaggio non appena l'elaborazione della conversione lo riceve e, al termine, scrivere soltanto il risultato.",
+          "explanation": "Se l'elaborazione della conversione si interrompe a metà, il messaggio necessario per elaborare di nuovo la richiesta è già stato eliminato."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "Il responsabile del database di un sistema di ordini ha eliminato accidentalmente alcuni ordini in Amazon RDS, eseguito su più AZ. I backup automatici sono abilitati ed è stato confermato che il database può essere ripristinato al momento immediatamente precedente all’eliminazione. Quale procedura è appropriata per recuperare gli ordini eliminati mantenendo al contempo nel database corrente gli ordini validi accettati dopo l’eliminazione? Seleziona una risposta.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Ripristinare un’istanza DB separata al momento immediatamente precedente all’eliminazione, estrarre le righe necessarie, confrontarle con il database corrente e quindi ripristinarle.",
+          "explanation": "In questo modo è possibile consultare le righe precedenti all’eliminazione e mantenere nel database corrente i nuovi ordini non inclusi nell’istanza ripristinata."
+        },
+        {
+          "id": "b",
+          "text": "Eseguire il failover verso l’istanza standby Multi-AZ e usarla come stato precedente all’eliminazione.",
+          "explanation": "L’eliminazione accidentale viene sincronizzata anche con l’istanza standby. Per selezionare il momento immediatamente precedente all’eliminazione, è necessario eseguire un ripristino a un momento specifico da un backup automatico."
+        },
+        {
+          "id": "c",
+          "text": "Usare direttamente come destinazione della connessione di produzione il database ripristinato al momento immediatamente precedente all’eliminazione.",
+          "explanation": "Gli ordini confermati dopo il momento specificato non sono presenti nell’istanza ripristinata; pertanto, senza un confronto, il requisito non viene soddisfatto."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

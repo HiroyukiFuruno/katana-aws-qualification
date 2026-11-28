@@ -1,0 +1,140 @@
+{
+  "id": "cost-optimized-architecture",
+  "title": "設計成本最佳化的架構",
+  "objective": "根據使用量、存取頻率、可用性需求與營運負擔比較成本和限制條件。",
+  "prerequisites": [
+    {
+      "slug": "high-performance-architecture",
+      "title": "設計高效能架構",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "cost-model",
+      "title": "將成本與使用模式連結",
+      "paragraphs": [
+        "成本最佳化並不是選擇最便宜的服務。負責人會區分持續使用、變動負載、可預測的使用期間，以及可停止的處理作業，然後比較符合效能與可用性需求的選項。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "EC2 Spot 執行個體",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/using-spot-instances.html"
+        }
+      ]
+    },
+    {
+      "id": "storage-lifecycle",
+      "title": "根據存取頻率和保留期間選擇儲存位置",
+      "paragraphs": [
+        "在 S3 中，您可以根據頻繁讀取資料、低頻存取或封存的需求選擇儲存類別。生命週期設定可以將資料轉移至其他儲存類別或使其到期，但也應評估還原時間和最低儲存期間。"
+      ],
+      "sources": [
+        {
+          "label": "什麼是 Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Amazon S3 儲存類別",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/storage-class-intro.html"
+        }
+      ]
+    },
+    {
+      "id": "review-tradeoffs",
+      "title": "依據品質與成本重新評估設計變更",
+      "paragraphs": [
+        "變更預約服務的設計時，不能只比較每月費用，還應在同一張表中比較 RTO、RPO、延遲、營運工作量與資料保留義務。Well-Architected 是用來檢視設計決策優缺點的架構。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected 架構",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-cost-1",
+      "prompt": "資料平台負責人將依法必須保留 7 年的稽核檔案儲存在 Amazon S3。平時幾乎不會讀取這些檔案，但稽核開始後，必須在 1 分鐘內擷取每個檔案。重新檢視儲存成本時，哪種做法適當？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將可立即擷取的低頻存取儲存類別列為候選，並配合保留要求，比較不需還原即可擷取、最低儲存期間和擷取費用。",
+          "explanation": "這樣可以針對同時符合低存取頻率和短擷取時間要求的候選方案，比較儲存費用與擷取費用。"
+        },
+        {
+          "id": "b",
+          "text": "選擇儲存費用最低的封存儲存，並在稽核當天提出還原請求。",
+          "explanation": "只根據儲存費用做選擇，可能無法符合在 1 分鐘內擷取檔案的要求。"
+        },
+        {
+          "id": "c",
+          "text": "只要持續加密靜態資料，就在期限之前刪除較舊的檔案以降低費用。",
+          "explanation": "加密不能成為縮短保留期間的依據。這會違反保留義務。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-cost-2",
+      "prompt": "夜間的影像重新產生批次可以記錄已完成的進度，並從另一個執行個體恢復執行。處理必須在早上 6:00 前完成，但即使部分執行遭到中斷，只要能在期限前恢復，就不會有問題。哪一種方案適合降低成本？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "在單一 Spot 執行個體上處理所有工作，且不測量中斷後恢復所需的時間。",
+          "explanation": "即使是可中斷的工作，也需要能夠遵守期限的恢復方式，以及所需時間的估算。"
+        },
+        {
+          "id": "b",
+          "text": "按照尖峰需求全天候預留足夠的隨需容量，即使在不執行工作的時段也持續執行。",
+          "explanation": "這種方式在操作上很簡單，但會產生僅在夜間使用的容量費用，也沒有善用工作可中斷的條件。"
+        },
+        {
+          "id": "c",
+          "text": "對於可中斷的工作，將 Spot 列為候選方案並測量恢復所需的時間；如果接近截止期限，也要規劃使用隨需容量。",
+          "explanation": "這樣可以利用工作可中斷的特性來降低成本，同時準備替代方案，以確保在處理期限前完成工作。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-cost-3",
+      "prompt": "有一項提案是將預約服務的 DB 更換為較小的執行個體，以降低每月費用。合約要求預約確認的 p95 延遲維持在 400 毫秒以下，而月底到達的流量通常是平時的 2 倍。在設計審查中，應確認哪些條件？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "確認工作日白天的平均 CPU 使用率偏低，且每月費用會低於目前的費用。",
+          "explanation": "僅憑平均值和費用，無法判斷月底尖峰期間是否能符合回應時間要求。"
+        },
+        {
+          "id": "b",
+          "text": "在相當於月底的負載下確認回應時間、錯誤率、DB 的剩餘容量和復原程序，並將其與目前方案比較，同時納入任何額外費用。",
+          "explanation": "這樣即可依據需求判斷較低成本的組態是否符合必要的品質標準，以及失敗時是否能夠回復。"
+        },
+        {
+          "id": "c",
+          "text": "只確認 DB 執行個體數量和儲存容量相同。",
+          "explanation": "即使執行個體數量和儲存容量相同，可用的 CPU、記憶體和輸入輸出餘裕也可能不同，進而影響回應時間。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "S3 storage class",
+    "S3 Lifecycle",
+    "Spot Instances",
+    "On-Demand Instances",
+    "RTO",
+    "RPO",
+    "p95",
+    "AWS Well-Architected Framework"
+  ]
+}

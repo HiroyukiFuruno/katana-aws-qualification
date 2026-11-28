@@ -1,6 +1,6 @@
 import { type Locale, localePath } from '../locales.ts';
 import localized from './catalog.json' with { type: 'json' };
-import type { StudyMetadata } from './types.ts';
+import type { StudyMetadata, StudyPrerequisite } from './types.ts';
 
 const catalog: StudyMetadata = localized;
 const pathFor = (courseId: string) => `study/${courseId}/learn`;
@@ -9,6 +9,12 @@ export const qualificationLearningPages = Object.entries(catalog.ja).flatMap(([c
   pathFor(courseId),
   ...Object.keys(course.units).map((unitId) => `${pathFor(courseId)}/${unitId}`),
 ]);
+
+export function qualificationPrerequisitePath(locale: Locale, { slug, courseId }: StudyPrerequisite) {
+  if (!courseId) return localePath(locale, `study/fundamentals/${slug}`);
+  const root = pathFor(courseId);
+  return localePath(locale, slug ? `${root}/${slug}` : root);
+}
 
 export function qualificationLearningPath(locale: Locale, courseId: string) {
   return catalog[locale][courseId] ? localePath(locale, pathFor(courseId)) : undefined;

@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "Diseñar arquitecturas resilientes",
+  "objective": "Diseñar la disponibilidad y la protección de datos en función del alcance de la falla, el RTO, el RPO y los procedimientos de recuperación.",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "Diseñar una arquitectura segura",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "Definir los objetivos de recuperación según el alcance de la interrupción",
+      "paragraphs": [
+        "El equipo responsable del servicio de pedidos define un objetivo de tiempo de recuperación (RTO) y un objetivo de punto de recuperación (RPO) para cada operación empresarial. El RTO indica en cuántos minutos se debe restaurar el servicio, mientras que el RPO indica hasta qué momento deben recuperarse los datos.",
+        "En la sección superior de la figura, cuando se produce un fallo en una AZ, el tráfico se cambia a una DB en espera en la misma Region. Como se muestra en la sección central, prepararse para una interrupción que afecte a toda una Region implica replicar previamente las copias de seguridad en otra Region y, después, medir el tiempo necesario para restaurar la DB y cambiar el destino de conexión de la aplicación. En la sección inferior, en caso de eliminación accidental, seleccione el punto de recuperación inmediatamente anterior a la eliminación."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Implementación de una instancia de DB Multi-AZ de Amazon RDS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "Replicar las copias de seguridad automatizadas de RDS en otra Region",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "Planificación de los objetivos de recuperación y la recuperación ante desastres",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "Aislar los fallos en el procesamiento asíncrono",
+      "paragraphs": [
+        "Cuando la confirmación del pedido está vinculada de forma síncrona a la conversión de imágenes, un fallo temporal en el lado de la conversión puede impedir que responda la API de pedidos. Los diseñadores separan los procesos mediante mensajería duradera y definen cómo gestionar los reintentos, los duplicados y los fallos."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Tiempo de espera de visibilidad de Amazon SQS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "La recuperación incluye la validación",
+      "paragraphs": [
+        "La persona responsable de la recuperación determina el orden de restauración y el método para comprobar la integridad, y valida de antemano las condiciones para cambiar el destino de conexión de los usuarios.",
+        "En un caso en el que la tabla de pedidos se eliminó accidentalmente a las 10:15, el equipo confirma que puede restaurarse a las 10:14 y la restaura en otra instancia de base de datos de RDS. En la DB restaurada, identifica los pedidos que faltan y también concilia los pedidos legítimos recibidos después de las 10:14. Después de reunir todos los pedidos necesarios para las operaciones empresariales y completar las pruebas de conexión, el equipo cambia el destino de conexión de los usuarios."
+      ],
+      "sources": [
+        {
+          "label": "Marco de AWS Well-Architected",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "Restaurar una instancia de base de datos de Amazon RDS a un momento específico",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "Existe el requisito de restaurar la API de pedidos en un plazo máximo de 10 minutos, incluso si una AZ de la misma Región deja de estar disponible. Actualmente, tanto la aplicación situada detrás del ALB como RDS se encuentran únicamente en una AZ. ¿Qué propuesta debería validar?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Copiar las copias de seguridad a otra Región y restaurarlas manualmente en un entorno nuevo cuando se produzca un fallo.",
+          "explanation": "Las copias de seguridad son importantes, pero esta propuesta requiere restaurar en otra Región cada vez que se produce un fallo de una AZ. Todavía no existe una vía para recuperarse en un plazo máximo de 10 minutos."
+        },
+        {
+          "id": "b",
+          "text": "Distribuir únicamente la aplicación en dos AZ y seguir utilizando RDS en una sola AZ como hasta ahora.",
+          "explanation": "Aunque la aplicación siga disponible, no se podrán procesar los pedidos si la base de datos compartida se ve afectada por el fallo."
+        },
+        {
+          "id": "c",
+          "text": "Distribuir la aplicación en dos AZ y utilizar también una implementación Multi-AZ para RDS. Suponer un fallo de una AZ y medir el tiempo hasta que se reanude el procesamiento de pedidos.",
+          "explanation": "Esto proporciona tanto a la aplicación como a la base de datos medios para continuar el procesamiento en otra AZ, lo que permite comprobar si realmente se cumple el objetivo de 10 minutos."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "Existe un servicio de registro de productos para el que no hay inconveniente si la conversión de imágenes tarda varios minutos. El registro en sí ya se ha guardado y las solicitudes de conversión se envían a Amazon SQS. Si el procesamiento de conversión se detiene durante unos 30 minutos, dentro del período de retención del mensaje, ¿cómo puede evitar que la pantalla de registro espere y recuperar las solicitudes sin procesar después de la recuperación?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Invoque el procesamiento de conversión de forma síncrona desde la pantalla de registro y limite la acción a ampliar el tiempo de espera de la respuesta.",
+          "explanation": "Este diseño hace que la pantalla de registro espere hasta que finalice la conversión. No cumple el requisito de desacoplar el trabajo."
+        },
+        {
+          "id": "b",
+          "text": "Procese las conversiones de forma asíncrona desde la cola y elimine el mensaje después de obtener éxito. Para permitir reintentos, asegúrese de que la misma solicitud conserve el mismo resultado.",
+          "explanation": "Las solicitudes sin procesar pueden permanecer en la cola. Incluso si un mensaje se vuelve a entregar, el procesamiento puede evitar registrar dos veces la misma imagen."
+        },
+        {
+          "id": "c",
+          "text": "Elimine el mensaje en cuanto lo reciba el procesamiento de conversión y, al finalizar, escriba únicamente el resultado.",
+          "explanation": "Si el procesamiento de conversión se detiene a mitad de camino, el mensaje necesario para volver a procesar la solicitud ya se ha eliminado."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "El administrador de bases de datos de un sistema de pedidos eliminó accidentalmente algunos pedidos en Amazon RDS, que se ejecuta en varias AZ. Las copias de seguridad automáticas están habilitadas y se ha confirmado que la base de datos se puede restaurar al momento inmediatamente anterior a la eliminación. ¿Qué procedimiento debe utilizarse para recuperar los pedidos eliminados y, al mismo tiempo, conservar en la base de datos actual los pedidos válidos aceptados después de la eliminación? Seleccione una opción.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Restaurar una instancia de DB independiente al momento inmediatamente anterior a la eliminación, extraer las filas necesarias, compararlas con la base de datos actual y, después, restaurarlas.",
+          "explanation": "Esto permite consultar las filas anteriores a la eliminación y conservar en la base de datos actual los pedidos nuevos que no estén incluidos en la instancia restaurada."
+        },
+        {
+          "id": "b",
+          "text": "Realizar una conmutación por error a la instancia en espera de Multi-AZ y utilizarla como el estado anterior a la eliminación.",
+          "explanation": "La eliminación accidental también se sincroniza con la instancia en espera. Para seleccionar el momento inmediatamente anterior a la eliminación, es necesario restaurar a un momento específico desde una copia de seguridad automática."
+        },
+        {
+          "id": "c",
+          "text": "Utilizar directamente como destino de conexión de producción la base de datos restaurada al momento inmediatamente anterior a la eliminación.",
+          "explanation": "Los pedidos confirmados después del momento especificado no están presentes en la instancia restaurada, por lo que el requisito no se cumple sin realizar una comparación."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

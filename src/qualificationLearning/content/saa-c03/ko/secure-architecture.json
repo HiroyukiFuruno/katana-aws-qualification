@@ -1,0 +1,174 @@
+{
+  "id": "secure-architecture",
+  "title": "보안 아키텍처 설계",
+  "objective": "사용자, 데이터, 통신 경로별로 인증, 권한 부여, 암호화 및 감사의 책임을 설명할 수 있다.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "인증 및 권한 부여"
+    },
+    {
+      "slug": "data-protection",
+      "title": "데이터 보호"
+    }
+  ],
+  "sections": [
+    {
+      "id": "least-privilege",
+      "title": "유효 권한 최소화",
+      "paragraphs": [
+        "소매 회사의 설계자는 주문 API에 필요한 S3 버킷에만 액세스할 수 있는 IAM 역할을 설계합니다. 누가 인증되는지와 어떤 리소스에 어떤 작업을 허용할지를 구분하며, 광범위한 관리자 권한을 기본값으로 사용하지 않습니다.",
+        "S3 버킷과 객체는 기본적으로 프라이빗입니다. 요구 사항에 따라 IAM 정책, 버킷 정책, Block Public Access를 조합하고, 공개 배포가 필요한 경우에도 배포 경로만 허용합니다."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 시험 안내서",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon S3란 무엇인가요?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Amazon S3의 IAM 기능",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/security_iam_service-with-iam.html"
+        }
+      ]
+    },
+    {
+      "id": "data-and-keys",
+      "title": "데이터 분류에 따라 보호 방식 선택하기",
+      "paragraphs": [
+        "의료 예약 데이터를 처리하는 설계자는 저장 중인 데이터와 전송 중인 데이터를 별도로 평가합니다. 저장 중인 데이터의 암호화에서는 키 소유자, 사용이 허용된 보안 주체, 감사 기록 및 복구 시 사용 여부를 확인합니다.",
+        "전송 중 데이터의 암호화에서는 사용자에서 진입점까지, 진입점에서 워크로드까지, 그리고 VPC와 온프레미스 간의 각 구간을 다이어그램으로 나타내고 TLS 또는 IPsec이 어디에서 종료되는지 표시합니다. 암호화만으로 액세스 권한 설계를 생략할 수 있는 것은 아닙니다."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 시험 안내서",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Application Load Balancer 대상 그룹",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-target-groups.html"
+        }
+      ]
+    },
+    {
+      "id": "secure-vpc-path",
+      "title": "통신 경로와 제어 지점 연결하기",
+      "paragraphs": [
+        "사용자의 브라우저는 인터넷 연결형 ALB에 연결합니다. ALB는 해당 연결을 종료하고 프라이빗 서브넷에 있는 애플리케이션에 별도의 연결을 엽니다. 애플리케이션은 주문 데이터를 처리하는 RDS에 다시 별도의 연결을 엽니다. 각 구간별로 어떤 트래픽을 암호화하고 어떤 소스에서 시작된 트래픽을 허용할지 결정합니다.",
+        "라우팅 테이블은 트래픽을 다음으로 전달할 대상을 선택합니다. 보안 그룹은 애플리케이션과 같은 리소스의 네트워크 인터페이스에 대한 연결을 허용하며, 허용된 트래픽에 대한 응답도 통과시킵니다. 네트워크 ACL은 서브넷 경계에서 인바운드와 아웃바운드 트래픽을 별도로 평가합니다.",
+        "그림에서 먼저 ALB, 애플리케이션, DB가 각각 어떤 서브넷에 있는지 확인하세요. 그런 다음 요청과 응답이 어떤 경계를 통과하는지, 그리고 응답에 별도의 허용이 필요한 지점을 식별하세요."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: 라우팅 테이블 구성",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "네트워크 ACL 적용 범위",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
+        },
+        {
+          "label": "ALB 보안 그룹",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html"
+        }
+      ],
+      "figureId": "saa-secure-vpc-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-secure-1",
+      "prompt": "청구서 API는 동일한 AWS 계정의 비공개 S3 버킷(S3 관리형 키로 암호화됨)에서 객체 키를 지정하여 `invoices/` 아래의 청구서를 가져옵니다. 목록 조회나 업데이트는 수행하지 않습니다. API 실행 역할에 부여할 적절한 권한은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "버킷 전체의 객체에 대해 `s3:GetObject`를 허용한다.",
+          "explanation": "가져오기 작업으로 제한되기는 하지만 청구서 접두사 이외의 접두사에서도 읽을 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "`invoices/` 아래의 객체에 대해서만 `s3:GetObject`를 허용한다.",
+          "explanation": "필요한 작업과 대상 모두를 제한할 수 있습니다. 객체 키를 알고 있으므로 버킷 목록 권한은 필요하지 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "버킷에 대해 `s3:ListBucket`을 허용하고 목록에 `invoices/` 조건을 추가한다.",
+          "explanation": "객체 목록 조회와 객체 내용 읽기는 서로 다른 작업입니다. `s3:GetObject`가 허용되지 않습니다."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-secure-2",
+      "prompt": "의료 예약 서비스에서는 브라우저와 퍼블릭 ALB 사이, 그리고 ALB와 프라이빗 EC2 인스턴스 사이의 통신을 암호화해야 합니다. 브라우저 측 TLS를 ALB에서 종료하는 경우, 적절한 구성은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "ALB에 HTTPS 리스너를 배치하고, ALB에서 EC2로 전달할 때는 HTTP를 사용합니다.",
+          "explanation": "사용자 측 연결은 암호화되지만 ALB에서 EC2로의 통신은 암호화되지 않습니다."
+        },
+        {
+          "id": "b",
+          "text": "ALB는 HTTP로 요청을 받고, ALB에서 EC2로 전달할 때만 HTTPS를 사용하도록 설정합니다.",
+          "explanation": "EC2로의 연결만 암호화하므로 브라우저와 ALB 사이 연결에 대한 요구 사항을 충족하지 못합니다."
+        },
+        {
+          "id": "c",
+          "text": "ALB에 HTTPS 리스너를 배치하고, ALB에서 EC2로 전달하는 데 사용하는 대상 그룹에도 HTTPS를 설정합니다.",
+          "explanation": "ALB는 사용자와의 TLS를 종료하고 대상에 별도의 HTTPS 연결을 설정합니다. 두 구간 모두 암호화됩니다."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-secure-3",
+      "prompt": "퍼블릭 ALB의 노드가 TCP 49152를 소스 포트로 사용하여 프라이빗 EC2의 TCP 443에 연결합니다. EC2 측 보안 그룹은 이 연결을 허용하며, EC2 서브넷에서는 네트워크 ACL을 사용합니다. 요청은 EC2에 도달하지만 EC2 서브넷을 나가는 응답이 거부됩니다. EC2 측 네트워크 ACL에서 허용해야 하는 응답은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "EC2 서브넷에서 ALB 서브넷으로 전송되는, 대상 TCP 포트가 49152인 응답을 허용합니다.",
+          "explanation": "네트워크 ACL에서는 양방향 트래픽을 각각 허용해야 합니다. 이 응답의 대상 포트는 ALB 노드가 연결에 소스 포트로 사용한 포트입니다."
+        },
+        {
+          "id": "b",
+          "text": "EC2 서브넷에서 ALB 서브넷으로 전송되는, 대상 TCP 포트가 443인 응답을 허용합니다.",
+          "explanation": "443은 이 연결에서 EC2가 요청을 받은 포트입니다. 응답의 대상은 ALB 노드의 TCP 49152 포트입니다."
+        },
+        {
+          "id": "c",
+          "text": "EC2 서브넷으로 들어오는 TCP 49152를 허용합니다.",
+          "explanation": "응답은 EC2 서브넷에서 나갑니다. 인바운드 규칙을 추가해도 아웃바운드 거부는 해결되지 않습니다."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM policy",
+    "Resource-based policy",
+    "S3",
+    "Bucket policy",
+    "GetObject",
+    "S3 Block Public Access",
+    "SSE-S3",
+    "KMS",
+    "TLS",
+    "IPsec",
+    "VPC",
+    "ALB",
+    "EC2",
+    "NACL",
+    "Security group",
+    "ENI",
+    "Route table",
+    "Target group",
+    "HTTPS",
+    "TCP",
+    "Ephemeral port"
+  ]
+}

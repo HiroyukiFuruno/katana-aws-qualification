@@ -11,11 +11,12 @@ export type StudySection = {
   sources: StudySource[];
   figureId?: string;
 };
+export type StudyPrerequisite = { title: string; slug: string; courseId?: string };
 export type StudyUnit = {
   id: string;
   title: string;
   objective: string;
-  prerequisites: { title: string; slug: string }[];
+  prerequisites: StudyPrerequisite[];
   sections: StudySection[];
   checkpoints: StudyCheckpoint[];
   glossaryTerms: string[];

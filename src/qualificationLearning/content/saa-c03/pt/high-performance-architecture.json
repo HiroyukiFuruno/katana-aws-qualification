@@ -1,0 +1,143 @@
+{
+  "id": "high-performance-architecture",
+  "title": "Projetando arquiteturas de alto desempenho",
+  "objective": "Selecionar otimizações de desempenho com base nos padrões de solicitação, no acesso aos dados e nos caminhos de rede.",
+  "prerequisites": [
+    {
+      "slug": "resilient-architecture",
+      "title": "Projetar arquiteturas resilientes",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure",
+      "title": "Tornando os requisitos de desempenho observáveis",
+      "paragraphs": [
+        "Os designers decompõem o requisito ambíguo de que algo seja “rápido” em operação-alvo, número de usuários simultâneos, latência p95, throughput e taxa de erros aceitável. A CPU, por si só, não determina a experiência do usuário."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-data",
+      "title": "Aproximar adequadamente as leituras repetidas",
+      "paragraphs": [
+        "Para dados com muitas leituras e baixa frequência de atualizações, como um catálogo de produtos, considere usar um cache ou uma CDN. No entanto, determine por quanto tempo valores antigos serão aceitáveis após uma atualização, como invalidar o cache e como o sistema deverá se comportar em caso de falha."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "performance-path",
+      "title": "Rastreando a latência do usuário até os dados",
+      "paragraphs": [
+        "Em um serviço que entrega listas de produtos, o CloudFront pode retornar imediatamente a resposta necessária quando ela está disponível. Se não for possível retornar a resposta do cache, o CloudFront se conecta à origem. Neste cenário, um ALB voltado para a Internet é especificado como a origem, e o ALB encaminha as solicitações para uma aplicação em uma sub-rede privada. O DNS é usado para consultar o destino da conexão pelo nome.",
+        "Quando o tempo de resposta do usuário aumenta, primeiro separe as solicitações atendidas pelo cache das solicitações que chegaram à origem. Comparar o tempo de resposta das solicitações que prosseguiram até a origem com o tempo de resposta do destino do ALB ajuda a restringir o próximo segmento a ser medido. No lado da aplicação, verifique o tempo de espera do DB e outras métricas das solicitações que processam o mesmo produto.",
+        "O diagrama compara os casos em que o CloudFront retorna a resposta com os casos em que a solicitação prossegue do ALB até a aplicação. Para cada caminho, você deve ser capaz de explicar quais medições podem identificar onde a latência aumentou."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Métricas do CloudFront",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/monitoring-using-cloudwatch.html"
+        }
+      ],
+      "figureId": "saa-performance-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-performance-1",
+      "prompt": "Uma loja online distribui o mesmo catálogo de produtos para muitos usuários. Ela quer acelerar as respostas usando o cache compartilhado do CloudFront e, ao mesmo tempo, atualizar o cache das páginas afetadas sem esperar o TTL normal quando for necessário corrigir preços com urgência. Qual política é adequada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Manter todo o catálogo com o mesmo TTL longo e, quando houver alteração de preço, atualizar somente o conteúdo da origem.",
+          "explanation": "Como as respostas armazenadas em cache continuam sendo usadas até expirarem, não há um mecanismo para refletir imediatamente correções urgentes."
+        },
+        {
+          "id": "b",
+          "text": "Definir o TTL de acordo com os requisitos de atualidade e, em uma emergência, invalidar os caminhos afetados. Também confirmar que as páginas após a alteração estão sendo distribuídas.",
+          "explanation": "Essa abordagem trata tanto da eficiência normal das respostas quanto da atualidade dentro do período de validade e, em uma emergência, permite buscar novamente o conteúdo apenas para os itens afetados."
+        },
+        {
+          "id": "c",
+          "text": "Desativar o cache do CloudFront para todo o catálogo.",
+          "explanation": "Isso permite refletir as atualizações na origem, mas não atende ao requisito de acelerar as leituras usando um cache compartilhado."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-performance-2",
+      "prompt": "Os usuários da API de pedidos informaram que apenas a confirmação do pedido ficou mais lenta. Quando a equipe de operações quer entender quantos usuários foram afetados pela latência da mesma operação e comparar o antes e o depois da alteração, considerando também as diferenças de carga, quais registros deve reunir?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Compare o tempo de resposta p95, a taxa de erros e o número de solicitações da confirmação do pedido antes e depois da alteração, usando intervalos de tempo com a mesma duração e as mesmas condições de agregação.",
+          "explanation": "Isso permite relacionar respostas mais lentas a falhas e diferenças de carga para investigar o impacto sobre os usuários."
+        },
+        {
+          "id": "b",
+          "text": "Compare apenas o tempo médio de resposta de todas as APIs e a utilização média de CPU de todo o serviço.",
+          "explanation": "O problema específico da confirmação do pedido e as solicitações especialmente lentas ficarão ocultos na agregação."
+        },
+        {
+          "id": "c",
+          "text": "Verifique apenas uma vez o tempo máximo de resposta, excluindo os erros e separando essa verificação do número de solicitações.",
+          "explanation": "A comparação será influenciada por um único valor extremo e pelas diferenças no número de amostras e, portanto, não permitirá comparar o impacto sobre todos os usuários."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-performance-3",
+      "prompt": "O tempo de resposta p95 percebido pelos usuários do catálogo de produtos piorou. As respostas retornadas pelo cache do CloudFront continuam tão rápidas quanto antes, e somente os produtos que não estão no cache ficaram mais lentos. Qual investigação a equipe de operações deve realizar primeiro?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Medir novamente apenas as respostas retornadas pelo cache do CloudFront, sem verificar a aplicação.",
+          "explanation": "Medir novamente apenas as respostas rápidas não permite identificar em que ponto as solicitações que chegaram à origem sofreram atraso."
+        },
+        {
+          "id": "b",
+          "text": "Somar todas as solicitações HTTP processadas pelo ALB e, se a quantidade tiver aumentado, invalidar o cache em massa.",
+          "explanation": "O aumento na quantidade de solicitações, por si só, não mostra onde ocorreu o atraso. A invalidação em massa pode aumentar a carga na origem."
+        },
+        {
+          "id": "c",
+          "text": "Para o mesmo produto e período, comparar o tempo de resposta da origem das solicitações que não puderam ser retornadas pelo cache com as medições do ALB e da aplicação.",
+          "explanation": "Isso separa o trecho entre o CloudFront e a origem do tempo de espera no lado da aplicação, permitindo escolher onde fazer uma medição mais detalhada em seguida."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFront",
+    "CDN",
+    "DNS",
+    "TTL",
+    "Cache hit ratio",
+    "Cache invalidation",
+    "Origin",
+    "ALB",
+    "TargetResponseTime",
+    "p95",
+    "Error rate",
+    "Throughput",
+    "ElastiCache"
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "id": "cost-optimized-architecture",
+  "title": "비용을 최적화한 아키텍처 설계",
+  "objective": "사용량, 액세스 빈도, 가용성 요구 사항 및 운영 부담을 기준으로 비용과 제약 조건을 비교합니다.",
+  "prerequisites": [
+    {
+      "slug": "high-performance-architecture",
+      "title": "고성능 아키텍처 설계",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "cost-model",
+      "title": "비용을 사용 패턴과 연결하기",
+      "paragraphs": [
+        "비용 최적화는 가장 저렴한 서비스를 선택하는 것이 아닙니다. 담당자는 지속적인 사용, 변동하는 워크로드, 예측 가능한 사용 기간, 중지할 수 있는 처리를 구분한 다음 성능 및 가용성 요구 사항을 충족하는 옵션을 비교합니다."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 시험 안내서",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "EC2 Spot 인스턴스",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/using-spot-instances.html"
+        }
+      ]
+    },
+    {
+      "id": "storage-lifecycle",
+      "title": "액세스 빈도와 보존 기간에 따라 저장 위치 선택하기",
+      "paragraphs": [
+        "S3에서는 자주 읽는 데이터, 액세스 빈도가 낮은 데이터, 아카이브 데이터의 요구 사항에 따라 스토리지 클래스를 선택할 수 있습니다. 수명 주기 구성으로 데이터를 다른 클래스로 전환하거나 만료시킬 수 있으며, 복원 시간과 최소 스토리지 기간도 평가해야 합니다."
+      ],
+      "sources": [
+        {
+          "label": "Amazon S3란 무엇인가",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Amazon S3 스토리지 클래스",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/storage-class-intro.html"
+        }
+      ]
+    },
+    {
+      "id": "review-tradeoffs",
+      "title": "품질과 비용을 기준으로 설계 변경 재평가",
+      "paragraphs": [
+        "예약 서비스의 설계를 변경할 때는 월별 비용뿐만 아니라 RTO, RPO, 지연 시간, 운영 작업량, 데이터 보존 의무도 동일한 표에서 비교해야 합니다. Well-Architected는 설계 결정의 장단점을 확인하기 위한 프레임워크입니다."
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected 프레임워크",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-cost-1",
+      "prompt": "데이터 플랫폼 담당자는 법률에 따라 7년 동안 보존해야 하는 감사 파일을 Amazon S3에 저장하고 있습니다. 평소에는 거의 읽지 않지만, 감사가 시작되면 각 파일을 1분 이내에 가져와야 합니다. 스토리지 비용을 재검토할 때 적절한 접근 방식은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "즉시 가져올 수 있는 저접근 빈도용 스토리지 클래스를 후보로 선정하고, 복원 없이 가져올 수 있는지, 최소 보관 기간 및 가져오기 요금을 보존 요구 사항과 함께 비교합니다.",
+          "explanation": "이렇게 하면 낮은 액세스 빈도와 짧은 가져오기 시간 요구 사항을 모두 충족하는 후보의 스토리지 비용과 가져오기 비용을 비교할 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "스토리지 요금이 가장 저렴한 아카이브를 선택하고 감사 당일에 복원 요청을 보냅니다.",
+          "explanation": "스토리지 요금만 기준으로 선택하면 1분 이내에 파일을 가져와야 한다는 요구 사항을 충족하지 못할 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "저장 중 암호화를 계속 유지한다면 보존 기한 전에 오래된 파일을 삭제하여 비용을 줄입니다.",
+          "explanation": "암호화는 보존 기간을 단축할 근거가 되지 않습니다. 이는 보존 의무를 위반합니다."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-cost-2",
+      "prompt": "야간 이미지 재생성 배치는 진행 상황을 기록하고 다른 인스턴스에서 재개할 수 있습니다. 오전 6시까지 처리를 완료해야 하지만, 일부 실행이 중단되더라도 기한 내에 재개할 수 있다면 문제가 되지 않습니다. 비용을 줄이기 위한 방안으로 적절한 것은 무엇입니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "단일 Spot 인스턴스에서 모든 작업을 처리하고, 중단 시 재개하는 데 걸리는 시간은 측정하지 않습니다.",
+          "explanation": "중단 가능한 작업이라도 기한을 지킬 수 있는 재개 방법과 필요한 시간을 파악해야 합니다."
+        },
+        {
+          "id": "b",
+          "text": "최대 사용량에 맞춰 온디맨드 용량을 주야간 계속 확보하고, 실행하지 않는 시간대에도 계속 실행합니다.",
+          "explanation": "운영상 단순하지만 밤에만 사용하는 용량에 대한 비용이 발생합니다. 작업을 중단할 수 있다는 조건도 활용하지 못합니다."
+        },
+        {
+          "id": "c",
+          "text": "중단 가능한 작업에는 Spot을 후보로 고려하고 재개에 걸리는 시간을 측정합니다. 기한이 임박할 경우를 대비해 온디맨드 용량도 계획합니다.",
+          "explanation": "작업을 중단할 수 있다는 특성을 활용해 비용을 줄이면서도 처리 기한을 지킬 수 있도록 대체 수단을 마련할 수 있습니다."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-cost-3",
+      "prompt": "월별 비용을 낮추기 위해 예약 서비스의 DB를 더 작은 인스턴스로 변경하는 방안이 있습니다. 예약 확정의 p95 지연 시간을 400밀리초 이하로 유지해야 한다는 계약이 있으며, 월말에는 평소의 2배에 해당하는 트래픽이 유입됩니다. 설계 검토에서 어떤 조건을 확인해야 합니까?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "평일 주간의 평균 CPU 사용률이 낮고 월별 요금이 현재보다 낮아지는지 확인합니다.",
+          "explanation": "평균값과 요금만으로는 월말 혼잡 시에도 응답 시간 기준을 충족할 수 있는지 알 수 없습니다."
+        },
+        {
+          "id": "b",
+          "text": "월말에 해당하는 부하에서 응답 시간, 오류율, DB의 여유 용량 및 복구 절차를 확인하고, 추가 비용을 포함하여 현재 방안과 비교합니다.",
+          "explanation": "이를 통해 요구 사항에 따라 저렴한 구성이 필요한 품질을 충족하는지, 실패했을 때 되돌릴 수 있는지를 판단할 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "DB 인스턴스 수와 스토리지 용량이 동일한지만 확인합니다.",
+          "explanation": "인스턴스 수와 스토리지 용량이 같더라도 CPU, 메모리 및 입출력 여유 용량은 달라질 수 있으며, 이는 응답 시간에 영향을 줍니다."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "S3 storage class",
+    "S3 Lifecycle",
+    "Spot Instances",
+    "On-Demand Instances",
+    "RTO",
+    "RPO",
+    "p95",
+    "AWS Well-Architected Framework"
+  ]
+}

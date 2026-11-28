@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "設計具韌性的架構",
+  "objective": "根據故障範圍、RTO、RPO 與復原程序，設計可用性與資料保護方案。",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "設計安全架構",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "根據故障範圍決定復原目標",
+      "paragraphs": [
+        "訂單服務負責人會針對每項業務決定復原時間目標（RTO）和復原點目標（RPO）。RTO 表示希望在幾分鐘內復原服務，RPO 則表示必須復原到哪個時間點的資料。",
+        "圖的上半部表示：一個 AZ 發生故障時，切換至相同 Region 中的待命 DB。若要因應圖中段所示的整個 Region 停止運作，則需事先將備份複製到另一個 Region，接著測量復原 DB 並切換應用程式連線目標所需的時間。對於圖下半部所示的誤刪除，請選取刪除前一刻的復原時間點。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon RDS 多可用區域 DB 執行個體部署",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "將 RDS 自動備份複製到另一個 Region",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "規劃復原目標與災難復原",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "將故障隔離在非同步處理中",
+      "paragraphs": [
+        "如果將訂單確認與影像轉換以同步方式連結，轉換端的暫時性故障就可能使訂單 API 無法回應。設計人員使用耐久的訊息傳遞來分離這些處理，並定義重試、重複訊息及失敗時的處理方式。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon SQS 可見性逾時",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "復原包含驗證在內",
+      "paragraphs": [
+        "復原負責人決定還原順序與完整性確認方法，並事先驗證切換使用者連線目標的條件。",
+        "在訂單資料表於10:15遭到誤刪的案例中，確認可以還原至10:14，並將其還原到另一個RDS DB執行個體。在還原後的DB中找出遺失的訂單，同時核對10:14之後接收的有效訂單。備妥業務所需的訂單並完成連線測試後，再變更使用者的連線目標。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "將Amazon RDS的DB執行個體還原到特定時間點",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "即使同一個 Region 中的一個 AZ 變得無法使用，也必須在 10 分鐘內復原訂單 API。目前，ALB 後方的應用程式和 RDS 都只位於一個 AZ。應驗證哪個方案？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將備份複製到另一個 Region，並在發生故障時手動將其還原到新的環境。",
+          "explanation": "備份很重要，但此方案每次發生 AZ 故障時，都需要在另一個 Region 中進行還原。目前仍沒有能在 10 分鐘內恢復的途徑。"
+        },
+        {
+          "id": "b",
+          "text": "只將應用程式部署到兩個 AZ，並維持目前使用單一 AZ 中 RDS 的方式。",
+          "explanation": "即使應用程式仍然可用，如果共用的資料庫受到故障影響，也無法處理訂單。"
+        },
+        {
+          "id": "c",
+          "text": "將應用程式部署到兩個 AZ，並同時為 RDS 使用多可用區部署。假設發生 AZ 故障，測量直到訂單處理恢復所需的時間。",
+          "explanation": "這會同時為應用程式和資料庫準備在另一個 AZ 繼續處理的方式，讓您能確認是否確實達到 10 分鐘的目標。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "有一項商品註冊服務，即使影像轉換需要數分鐘也沒有問題。註冊本身已經記錄完成，轉換請求已傳送至 Amazon SQS。若轉換處理在訊息保留期間內停止約 30 分鐘，該如何在不讓註冊畫面等待的情況下，於復原後擷取尚未處理的請求？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "從註冊畫面同步呼叫轉換處理，並且只延長回應逾時時間。",
+          "explanation": "此設計會讓註冊畫面等待直到轉換完成，無法滿足將工作分離的需求。"
+        },
+        {
+          "id": "b",
+          "text": "從佇列以非同步方式處理轉換，並在成功後刪除訊息。為重試做好準備，讓相同請求維持相同結果。",
+          "explanation": "尚未處理的請求可以留在佇列中。即使訊息再次傳遞，處理也能避免重複註冊相同影像。"
+        },
+        {
+          "id": "c",
+          "text": "轉換處理一收到訊息就刪除該訊息，並在完成後只寫入結果。",
+          "explanation": "若轉換處理在中途停止，用來重新處理該請求的訊息已經被刪除。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "訂單系統的資料庫管理員在跨多個 AZ 執行的 Amazon RDS 中誤刪了部分訂單。已啟用自動備份，並已確認可以將資料庫還原到刪除前的時間點。若要在保留刪除後接收的正常訂單於目前資料庫中的同時，還原已刪除的訂單，應採用哪個程序？請選擇一項。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將另一個 DB 執行個體還原到刪除前的時間點，擷取所需的資料列，與目前資料庫進行比對後，再將其還原回去。",
+          "explanation": "這樣可以參照刪除前的資料列，同時將還原目標中未包含的新訂單保留在目前資料庫中。"
+        },
+        {
+          "id": "b",
+          "text": "切換至 Multi-AZ 備用執行個體，並將其作為刪除前的狀態使用。",
+          "explanation": "誤刪除也會同步至備用執行個體。若要選取刪除前的時間點，必須從自動備份執行時間點還原。"
+        },
+        {
+          "id": "c",
+          "text": "直接將還原至刪除前時間點的資料庫作為生產環境的連線目標。",
+          "explanation": "還原目標中沒有指定時間之後確認的訂單，因此未經比對就無法滿足要求。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

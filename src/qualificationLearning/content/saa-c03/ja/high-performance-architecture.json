@@ -1,0 +1,143 @@
+{
+  "id": "high-performance-architecture",
+  "title": "高パフォーマンスなアーキテクチャを設計する",
+  "objective": "要求パターン、データアクセス、ネットワーク経路から性能対策を選べる。",
+  "prerequisites": [
+    {
+      "slug": "resilient-architecture",
+      "title": "レジリエントなアーキテクチャを設計する",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure",
+      "title": "性能要件を観測可能にする",
+      "paragraphs": [
+        "設計者は「高速」という曖昧な要求を、対象操作、同時利用者、p95レイテンシー、スループット、許容エラー率へ分解します。CPUだけでは利用者の体験を判断しません。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-data",
+      "title": "繰り返す読取りを適切に近づける",
+      "paragraphs": [
+        "商品カタログのように読取りが多く更新頻度が低いデータでは、キャッシュやCDNを検討します。ただし、更新後いつまで古い値を許容するか、キャッシュ無効化、障害時の動作を決めます。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "performance-path",
+      "title": "利用者からデータまでの待ち時間を追う",
+      "paragraphs": [
+        "商品一覧を配信するサービスでは、CloudFrontに必要な応答があればその場で返せます。キャッシュから返せない場合は、CloudFrontがオリジンに接続します。この事例では、オリジンに公開ALBを指定し、ALBがプライベートサブネットのアプリへ転送します。DNSは名前から接続先を調べるために使います。",
+        "利用者の応答時間が伸びたら、まずキャッシュから返した要求と、オリジンまで届いた要求を分けます。オリジンへ進んだ要求の応答時間とALBのターゲット応答時間を突き合わせると、次に測る区間を絞れます。アプリ側では、同じ商品を扱う要求のDB待ち時間などを確認します。",
+        "図で、CloudFrontで応答が返る場合と、ALBからアプリまで進む場合を比べます。経路ごとに、どの計測値なら待ち時間が増えた場所を調べられるか説明できるようにします。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "CloudFrontの計測値",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/monitoring-using-cloudwatch.html"
+        }
+      ],
+      "figureId": "saa-performance-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-performance-1",
+      "prompt": "オンラインストアは、同じ商品カタログを多くの利用者に配ります。CloudFrontの共有キャッシュで応答を速くしつつ、緊急の価格修正では通常のTTLを待たずに対象ページのキャッシュを更新できるようにしたいと考えています。どの方針が適切ですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "全カタログを同じ長いTTLで保持し、価格変更時はオリジンの内容だけを更新する。",
+          "explanation": "キャッシュ済みの応答は期限まで使われるため、急な修正がすぐに反映される仕組みがありません。"
+        },
+        {
+          "id": "b",
+          "text": "鮮度に合わせてTTLを決め、緊急時は対象パスを無効化する。変更後のページが配信されることも確認する。",
+          "explanation": "通常の応答効率と期限内の鮮度を両方扱い、緊急時には変更対象に絞って取り直せます。"
+        },
+        {
+          "id": "c",
+          "text": "すべてのカタログでCloudFrontのキャッシュを無効にする。",
+          "explanation": "オリジンの更新を反映できますが、共有キャッシュで読み取りを速くする要件は満たしません。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-performance-2",
+      "prompt": "注文APIの利用者から、注文確定だけが遅くなったと連絡がありました。運用担当者が、同一操作の遅延がどれだけの利用者に影響したかを理解し、負荷の違いも考慮して変更前後を比較したいときは、どの記録を揃えますか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "注文確定の応答時間のp95、エラー率、リクエスト数を、変更前後で同じ長さの時間帯と同じ集計条件で比べる。",
+          "explanation": "遅い側の応答と、失敗や負荷の違いを結び付けて利用者への影響を調べられます。"
+        },
+        {
+          "id": "b",
+          "text": "全APIの平均応答時間と、サービス全体の平均CPU使用率だけを比べる。",
+          "explanation": "注文確定だけの問題や、特に遅いリクエストが集計に埋もれます。"
+        },
+        {
+          "id": "c",
+          "text": "エラーを除いた応答時間の最大値を、リクエスト数とは別に一度だけ確かめる。",
+          "explanation": "一件の極端な値やサンプル件数の差に影響され、利用者全体への影響を比較できません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-performance-3",
+      "prompt": "商品カタログの利用者側のp95応答時間が悪化しました。CloudFrontでキャッシュから返した応答は従来どおり速く、キャッシュにない商品だけ遅くなっています。運用担当者が最初に行うべき調査はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "CloudFrontのキャッシュから返した応答だけを再計測し、アプリは確認しない。",
+          "explanation": "速い側だけを測り直しても、オリジンへ到達した要求の遅延箇所を特定できません。"
+        },
+        {
+          "id": "b",
+          "text": "ALBが処理した全HTTPリクエストを合計し、件数が増えていればキャッシュを一括無効化する。",
+          "explanation": "件数の増加だけでは遅延箇所が分かりません。一括無効化でオリジンへの負荷が増える可能性があります。"
+        },
+        {
+          "id": "c",
+          "text": "同じ商品と時間帯で、キャッシュから返せなかった要求のオリジン応答時間と、ALBやアプリの計測を突き合わせる。",
+          "explanation": "CloudFrontからオリジンへの区間と、アプリ側の待ち時間を分け、次に詳しく測る場所を選べます。"
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFront",
+    "CDN",
+    "DNS",
+    "TTL",
+    "Cache hit ratio",
+    "Cache invalidation",
+    "Origin",
+    "ALB",
+    "TargetResponseTime",
+    "p95",
+    "Error rate",
+    "Throughput",
+    "ElastiCache"
+  ]
+}

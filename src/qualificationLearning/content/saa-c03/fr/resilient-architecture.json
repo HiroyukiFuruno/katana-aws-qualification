@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "Concevoir des architectures résilientes",
+  "objective": "Concevoir la disponibilité et la protection des données en fonction de l’étendue des défaillances, du RTO, du RPO et des procédures de récupération.",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "Concevoir une architecture sécurisée",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "Définir les objectifs de récupération en fonction de l’étendue de la panne",
+      "paragraphs": [
+        "L’équipe responsable du service de commandes définit un objectif de délai de récupération (RTO) et un objectif de point de récupération (RPO) pour chaque activité métier. Le RTO indique dans quel délai, en minutes, le service doit être restauré, tandis que le RPO indique jusqu’à quel moment les données doivent être récupérées.",
+        "Dans la partie supérieure de la figure, lorsqu’une panne survient dans une AZ, le trafic est basculé vers une DB de secours dans la même Region. Comme l’illustre la partie centrale, se préparer à l’arrêt d’une Region entière consiste à répliquer au préalable les sauvegardes vers une autre Region, puis à mesurer le temps nécessaire pour restaurer la DB et basculer la cible de connexion de l’application. Dans la partie inférieure, en cas de suppression accidentelle, sélectionnez le point de récupération juste avant la suppression."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’examen SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Déploiement d’une instance de DB Multi-AZ Amazon RDS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "Répliquer les sauvegardes automatiques RDS vers une autre Region",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "Planification des objectifs de récupération et de la reprise après sinistre",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "Confiner les pannes au traitement asynchrone",
+      "paragraphs": [
+        "Lorsque la confirmation de commande est couplée de manière synchrone à la conversion d’images, une panne temporaire du côté de la conversion peut empêcher l’API de commande de répondre. Les concepteurs séparent les processus à l’aide d’une messagerie durable et définissent la gestion des nouvelles tentatives, des doublons et des échecs."
+      ],
+      "sources": [
+        {
+          "label": "Guide de l’examen SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Délai de visibilité d’Amazon SQS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "La récupération inclut la validation",
+      "paragraphs": [
+        "Le responsable de la récupération détermine l’ordre de restauration et la méthode de vérification de l’intégrité, puis valide à l’avance les conditions permettant de basculer la destination de connexion des utilisateurs.",
+        "Dans un cas où la table des commandes a été supprimée par erreur à 10 h 15, l’équipe vérifie qu’elle peut être restaurée à 10 h 14 et la restaure sur une autre instance de base de données RDS. Dans la DB restaurée, elle identifie les commandes manquantes et vérifie également les commandes légitimes reçues après 10 h 14. Après avoir réuni toutes les commandes nécessaires à l’activité et effectué les tests de connexion, elle modifie la destination de connexion des utilisateurs."
+      ],
+      "sources": [
+        {
+          "label": "Framework AWS Well-Architected",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "Restaurer une instance de base de données Amazon RDS à un point précis dans le temps",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "Il existe une exigence de restaurer l’API de commandes en 10 minutes au maximum, même si une AZ de la même Région devient indisponible. Actuellement, l’application située derrière l’ALB et RDS ne sont tous deux présents que dans une seule AZ. Quelle proposition faut-il valider ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Copier les sauvegardes dans une autre Région et les restaurer manuellement dans un nouvel environnement lorsqu’une panne survient.",
+          "explanation": "Les sauvegardes sont importantes, mais cette proposition nécessite une restauration dans une autre Région à chaque panne d’AZ. Il n’existe toujours pas de moyen de rétablir le service en 10 minutes au maximum."
+        },
+        {
+          "id": "b",
+          "text": "Déployer uniquement l’application dans deux AZ et continuer à utiliser RDS dans une seule AZ comme actuellement.",
+          "explanation": "Même si l’application reste disponible, il est impossible de traiter les commandes si la base de données commune est affectée par la panne."
+        },
+        {
+          "id": "c",
+          "text": "Déployer l’application dans deux AZ et utiliser également un déploiement Multi-AZ pour RDS. Supposer une panne d’AZ et mesurer le temps nécessaire à la reprise du traitement des commandes.",
+          "explanation": "Cette solution fournit à la fois à l’application et à la base de données un moyen de continuer le traitement dans une autre AZ, afin de vérifier que l’objectif de 10 minutes est réellement atteint."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "Un service d’enregistrement de produits peut tolérer qu’une conversion d’image prenne plusieurs minutes. L’enregistrement lui-même est déjà consigné et les demandes de conversion sont envoyées à Amazon SQS. Si le processus de conversion s’arrête pendant environ 30 minutes, tout en restant dans la période de rétention des messages, comment éviter de faire attendre l’écran d’enregistrement et récupérer les demandes non traitées après le rétablissement ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Appelez le processus de conversion de façon synchrone depuis l’écran d’enregistrement et prolongez uniquement le délai d’expiration de la réponse.",
+          "explanation": "Cette architecture fait attendre l’écran d’enregistrement jusqu’à la fin de la conversion. Elle ne respecte pas l’exigence de découpler le travail."
+        },
+        {
+          "id": "b",
+          "text": "Traitez les conversions de façon asynchrone depuis la file d’attente et supprimez chaque message après réussite. Prévoyez les nouvelles tentatives afin qu’une même demande produise le même résultat.",
+          "explanation": "Les demandes non traitées peuvent rester dans la file d’attente. Même en cas de nouvelle livraison, le traitement peut éviter d’enregistrer deux fois la même image."
+        },
+        {
+          "id": "c",
+          "text": "Supprimez le message dès que le processus de conversion le reçoit, puis n’écrivez que le résultat une fois le traitement terminé.",
+          "explanation": "Si le processus de conversion s’arrête en cours d’exécution, le message nécessaire pour retraiter la demande a déjà été supprimé."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "Le responsable de la base de données d’un système de commandes a supprimé accidentellement certaines commandes dans Amazon RDS exécuté sur plusieurs AZ. Les sauvegardes automatiques sont activées et il a été confirmé que la base de données peut être restaurée à l’instant précédant immédiatement la suppression. Quelle procédure faut-il utiliser pour récupérer les commandes supprimées tout en conservant dans la base de données actuelle les commandes valides reçues après la suppression ? Sélectionnez une réponse.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Restaurer une instance DB distincte à l’instant précédant immédiatement la suppression, extraire les lignes nécessaires, les comparer à la base de données actuelle, puis les restaurer.",
+          "explanation": "Cette procédure permet de consulter les lignes antérieures à la suppression tout en conservant dans la base de données actuelle les nouvelles commandes qui ne figurent pas dans l’instance restaurée."
+        },
+        {
+          "id": "b",
+          "text": "Basculer vers l’instance de secours Multi-AZ et l’utiliser comme état antérieur à la suppression.",
+          "explanation": "La suppression accidentelle est également synchronisée avec l’instance de secours. Pour sélectionner l’instant précédant immédiatement la suppression, il faut effectuer une restauration à un point précis dans le temps à partir d’une sauvegarde automatique."
+        },
+        {
+          "id": "c",
+          "text": "Utiliser directement comme cible de connexion de production la base de données restaurée à l’instant précédant immédiatement la suppression.",
+          "explanation": "Les commandes confirmées après l’instant indiqué ne figurent pas dans l’instance restaurée. Sans comparaison, cette solution ne satisfait donc pas l’exigence."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

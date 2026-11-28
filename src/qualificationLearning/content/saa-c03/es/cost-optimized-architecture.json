@@ -1,0 +1,140 @@
+{
+  "id": "cost-optimized-architecture",
+  "title": "Diseñar una arquitectura optimizada en costos",
+  "objective": "Comparar los costos y las restricciones en función del volumen de uso, la frecuencia de acceso, los requisitos de disponibilidad y la carga operativa.",
+  "prerequisites": [
+    {
+      "slug": "high-performance-architecture",
+      "title": "Diseño de arquitecturas de alto rendimiento",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "cost-model",
+      "title": "Relacionar los costos con los patrones de uso",
+      "paragraphs": [
+        "La optimización de costos no consiste en elegir el servicio más barato. Los responsables distinguen entre el uso continuo, las cargas de trabajo variables, los períodos de uso previsibles y el procesamiento que se puede detener; después, comparan las opciones que cumplen los requisitos de rendimiento y disponibilidad."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Instancias EC2 Spot",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/using-spot-instances.html"
+        }
+      ]
+    },
+    {
+      "id": "storage-lifecycle",
+      "title": "Elegir un destino de almacenamiento según la frecuencia de acceso y el período de retención",
+      "paragraphs": [
+        "En S3, puede elegir una clase de almacenamiento según los requisitos de los datos que se leen con frecuencia, el acceso poco frecuente o el archivado. Las configuraciones del ciclo de vida pueden trasladar los datos a otra clase o hacer que caduquen, pero también debe evaluar el tiempo de recuperación y el período mínimo de almacenamiento."
+      ],
+      "sources": [
+        {
+          "label": "¿Qué es Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Clases de almacenamiento de Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/storage-class-intro.html"
+        }
+      ]
+    },
+    {
+      "id": "review-tradeoffs",
+      "title": "Reevaluar los cambios de diseño en función de la calidad y el costo",
+      "paragraphs": [
+        "Al cambiar el diseño de un servicio de reservas, compare en la misma tabla no solo el costo mensual, sino también el RTO, el RPO, la latencia, el esfuerzo operativo y las obligaciones de retención de datos. Well-Architected proporciona un marco para examinar las ventajas y desventajas de las decisiones de diseño."
+      ],
+      "sources": [
+        {
+          "label": "Marco AWS Well-Architected",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-cost-1",
+      "prompt": "Un responsable de la plataforma de datos almacena en Amazon S3 archivos de auditoría que la ley exige conservar durante 7 años. Normalmente casi nunca se leen, pero cuando comienza una auditoría, cada archivo debe recuperarse en un plazo de 1 minuto. ¿Cuál es el enfoque adecuado al revisar los costos de almacenamiento?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Considerar clases de acceso poco frecuente que permitan la recuperación inmediata y comparar la recuperación sin restauración, el período mínimo de almacenamiento y las tarifas de recuperación con los requisitos de conservación.",
+          "explanation": "Esto permite comparar los costos de almacenamiento y recuperación de las opciones que cumplen tanto el requisito de baja frecuencia de acceso como el de un tiempo de recuperación corto."
+        },
+        {
+          "id": "b",
+          "text": "Elegir la clase de archivado con el costo de almacenamiento más bajo y enviar una solicitud de restauración el día de la auditoría.",
+          "explanation": "Elegir basándose únicamente en el costo de almacenamiento puede no cumplir el requisito de recuperar los archivos en un plazo de 1 minuto."
+        },
+        {
+          "id": "c",
+          "text": "Mantener el cifrado de los datos en reposo y eliminar los archivos antiguos antes de que termine el plazo de conservación para reducir los costos.",
+          "explanation": "El cifrado no justifica acortar el período de conservación. Esto incumpliría la obligación de conservación."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-cost-2",
+      "prompt": "Un proceso por lotes nocturno de regeneración de imágenes puede registrar el progreso realizado y reanudarse desde otra instancia. El procesamiento debe terminar antes de las 6:00 de la mañana, pero no hay problema si algunas ejecuciones se interrumpen, siempre que puedan reanudarse antes de la fecha límite. ¿Qué opción es adecuada para reducir los costos?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Procesar todo el trabajo en una sola instancia Spot sin medir el tiempo necesario para reanudarlo después de una interrupción.",
+          "explanation": "Incluso para trabajos que pueden interrumpirse, se necesita un método de reanudación que permita cumplir la fecha límite y conocer el tiempo necesario."
+        },
+        {
+          "id": "b",
+          "text": "Reservar capacidad bajo demanda para el pico de uso durante todo el día y la noche, y mantenerla en ejecución incluso durante los periodos en los que no se ejecuta ningún trabajo.",
+          "explanation": "Es una opción sencilla desde el punto de vista operativo, pero genera costos por una capacidad que solo se utiliza por la noche. No aprovecha el hecho de que el trabajo puede interrumpirse."
+        },
+        {
+          "id": "c",
+          "text": "Considerar Spot para los trabajos que pueden interrumpirse y medir el tiempo necesario para reanudarlos. Planificar también capacidad bajo demanda si se acerca la fecha límite.",
+          "explanation": "Esta opción reduce los costos al aprovechar que el trabajo puede interrumpirse y, al mismo tiempo, proporciona una alternativa para garantizar que se cumpla el plazo de procesamiento."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-cost-3",
+      "prompt": "Existe una propuesta para cambiar la DB del servicio de reservas por una instancia más pequeña con el fin de reducir los costes mensuales. Hay un contrato que exige mantener en 400 milisegundos o menos la latencia p95 de la confirmación de reservas, y a final de mes normalmente llega el doble del tráfico habitual. ¿Qué condiciones deben verificarse en la revisión del diseño?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Verificar que el uso medio de CPU sea bajo durante el día en los días laborables y que el coste mensual sea inferior al actual.",
+          "explanation": "El promedio y el coste por sí solos no permiten saber si se cumplirá el requisito de tiempo de respuesta durante el pico de final de mes."
+        },
+        {
+          "id": "b",
+          "text": "Con una carga equivalente a la de final de mes, verificar el tiempo de respuesta, la tasa de errores, la capacidad disponible de la DB y los procedimientos de recuperación, y comparar la propuesta con el diseño actual, incluidos los costes adicionales.",
+          "explanation": "Esto permite determinar, según los requisitos, si la configuración más económica cumple los niveles de calidad necesarios y si puede revertirse en caso de fallo."
+        },
+        {
+          "id": "c",
+          "text": "Verificar únicamente que el número de instancias de la DB y la capacidad de almacenamiento sean iguales.",
+          "explanation": "Aunque el número de instancias y la capacidad de almacenamiento sean iguales, la capacidad disponible de CPU, memoria y entrada/salida puede variar y afectar al tiempo de respuesta."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "S3 storage class",
+    "S3 Lifecycle",
+    "Spot Instances",
+    "On-Demand Instances",
+    "RTO",
+    "RPO",
+    "p95",
+    "AWS Well-Architected Framework"
+  ]
+}

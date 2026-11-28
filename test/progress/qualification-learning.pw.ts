@@ -27,6 +27,14 @@ const courses = [
     answer: /DNSフェイルオーバーは新しい名前解決で返す宛先を変える/,
     choiceCount: 4,
   },
+  {
+    courseId: 'saa-c03',
+    firstTitle: 'セキュアなアーキテクチャを設計する',
+    nextUnit: 'resilient-architecture',
+    prompt: /請求書APIは/,
+    answer: /配下のオブジェクトだけを対象に/,
+    choiceCount: 3,
+  },
 ];
 const figure = '.qualification-figure';
 
@@ -65,6 +73,11 @@ for (const { courseId, firstTitle, nextUnit, prompt, answer, choiceCount } of co
     const next = page.locator(`.qualification-related a[href$="/${nextUnit}/"]`);
     await next.click();
     await expect(page).toHaveURL(`${learningIndex}${nextUnit}/`);
+    if (courseId === 'saa-c03') {
+      await expect(
+        page.locator('.qualification-related a[href$="/learn/secure-architecture/"]'),
+      ).toHaveText(firstTitle);
+    }
     await page.goto(learningIndex);
     const examRequests: string[] = [];
     page.on('request', (request) => {

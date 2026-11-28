@@ -3,7 +3,7 @@ import { type Locale, localePath } from '../locales.ts';
 import { messages } from '../messages.ts';
 import studyCopy from './copy.json' with { type: 'json' };
 import figureIndex from './figures.json' with { type: 'json' };
-import type { qualificationLearningRoute } from './routes';
+import { type qualificationLearningRoute, qualificationPrerequisitePath } from './routes';
 import { StudyCheckpointForm } from './StudyCheckpoint';
 import type { StudyFigure, StudyUnit } from './types';
 
@@ -114,11 +114,14 @@ export function LearningArticle({
           </ul>
         </details>
         <nav aria-label={unit.title} className="qualification-related">
-          {unit.prerequisites.map(({ title, slug }) => (
-            <a key={slug} href={localePath(locale, `study/fundamentals/${slug}`)}>
-              {title}
-            </a>
-          ))}
+          {unit.prerequisites.map((prerequisite) => {
+            const href = qualificationPrerequisitePath(locale, prerequisite);
+            return (
+              <a key={href} href={href}>
+                {prerequisite.title}
+              </a>
+            );
+          })}
           {nextUnitId ? (
             <a href={localePath(locale, `${route.page}/${nextUnitId}`)}>
               {route.course.units[nextUnitId].title}

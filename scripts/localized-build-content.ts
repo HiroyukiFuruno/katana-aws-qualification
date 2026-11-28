@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import type { SiteContent } from '../src/contentTypes';
 import type { DeliveryIndexAsset, DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
-import lessonFigures from '../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
 import { lessonReadingCopy } from '../src/fundamentals/delivery/lessonReadingCopy.ts';
 import { isPrivateLessonPage, lessonPageAt } from '../src/fundamentals/delivery/routePages.ts';
+import { imageSlot } from '../src/images/catalog.ts';
 import type { Locale } from '../src/locales';
 import { localePath } from '../src/locales.ts';
 
@@ -13,11 +13,9 @@ type StaticLessonContent = {
   body: {
     heading: string;
     paragraphs: string[];
-    figure?: { url: string; alt: string; width: number; height: number };
+    figureSlot?: string;
   };
 };
-
-const figures = new Map(Object.entries(lessonFigures));
 
 function compact(value: string) {
   return value.replaceAll(/\s+/g, ' ').trim();
@@ -93,7 +91,7 @@ export async function localizedBuildContent(locale: Locale) {
       body: {
         heading: checkpoint?.title ?? step.label,
         paragraphs: paragraphs.length ? paragraphs : [objective],
-        figure: step.kind === 'reading' ? figures.get(step.id) : undefined,
+        figureSlot: step.kind === 'reading' ? imageSlot('fundamentals', step.id) : undefined,
       },
     };
   }

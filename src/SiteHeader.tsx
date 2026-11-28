@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AccountNavigation, useHomePath } from './auth/AccountNavigation';
+import { ImageSlot } from './images/ImageSlot';
 import { localePath } from './locales';
 import { SiteControls, usePreferences } from './preferences';
 import { useDismissiblePopover } from './useDismissiblePopover';
@@ -68,7 +69,7 @@ export function SiteHeader({ section, subpage }: { section: string; subpage?: st
       </a>
       <div className="shell topbar">
         <a className="brand" href={homePath} aria-label={t('siteName')} translate="no">
-          <img src="/katana-icon-128.png" width="40" height="40" alt="" />
+          <ImageSlot id="site/header/logo" />
           <span className="brand-name">
             {t('brandName')} <span>{t('brandDescriptor')}</span>
           </span>

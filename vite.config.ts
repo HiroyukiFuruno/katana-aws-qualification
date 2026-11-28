@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { defineConfig, type HtmlTagDescriptor, loadEnv } from 'vite';
 import { catalogStats } from './scripts/catalog-stats.ts';
 import { certifications, studyCourses } from './src/certifications.ts';
+import { documentImageAttributes } from './src/images/catalog.ts';
 import { messages } from './src/messages.ts';
 import { pageTitle } from './src/pageTitles.ts';
 import { routeAt } from './src/routes.ts';
@@ -27,9 +28,12 @@ export default defineConfig(({ command, isPreview, mode }) => {
           const name = certifications.find((cert) => cert.id === id)?.name;
           const escapeMetadata = (text: string) =>
             text.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
-          return html
-            .replace('__PAGE_TITLE__', escapeMetadata(pageTitle(route?.page ?? '', locale, name)))
-            .replace('__PAGE_DESCRIPTION__', escapeMetadata(messages[locale].landingIntro));
+          return {
+            html: html
+              .replace('__PAGE_TITLE__', escapeMetadata(pageTitle(route?.page ?? '', locale, name)))
+              .replace('__PAGE_DESCRIPTION__', escapeMetadata(messages[locale].landingIntro)),
+            tags: [{ tag: 'link', attrs: documentImageAttributes(locale) }],
+          };
         },
       },
       {

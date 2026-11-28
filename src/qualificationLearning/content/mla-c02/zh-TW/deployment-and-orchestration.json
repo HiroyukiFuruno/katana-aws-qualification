@@ -1,0 +1,160 @@
+{
+  "id": "deployment-and-orchestration",
+  "title": "安全部署並自動化 ML 與 AI 工作流程",
+  "objective": "依據需求選擇推論方式、資源、管線、核准與復原方案，並以可重現的方式運作。",
+  "prerequisites": [
+    {
+      "slug": "data-preparation",
+      "title": "為 ML 與 AI 準備資料",
+      "courseId": "mla-c02"
+    },
+    {
+      "slug": "model-and-fm-development",
+      "title": "依據需求評估 ML 模型與基礎模型",
+      "courseId": "mla-c02"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-inference-mode",
+      "title": "根據請求模式選擇推論方式",
+      "paragraphs": [
+        "部署人員會根據回應時間、處理量、輸入大小、向使用者傳回結果的方式和費用，比較即時、非同步和批次推論方式。需要持續低延遲的線上請求，與可在夜間進行大量處理的預測，需要不同的端點和擴展策略。",
+        "Amazon SageMaker AI 是一項全受管服務，可用來建置和訓練模型，並將模型部署到已準備好執行的託管環境。即使在模型部署後，也要將輸入格式、身分驗證、網路可達性、逾時、錯誤回應和容量與使用者需求進行比對。",
+        "圖中比較執行預測的位置，以及傳遞結果的方式。在即時推論中，端點會立即回應。在非同步推論中，傳送至端點的要求會進入佇列，處理結果會儲存到 Amazon S3。如果輸入檔案已備妥於 Amazon S3，且可以稍後集中取得結果，便不需要準備端點即可執行 Batch Transform 工作。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 考試指南：部署與協調",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02.html"
+        },
+        {
+          "label": "什麼是 Amazon SageMaker AI？",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/whatis.html"
+        },
+        {
+          "label": "SageMaker AI 的非同步推論",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/async-inference.html"
+        },
+        {
+          "label": "SageMaker AI 的批次轉換",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-mode-boundaries"
+    },
+    {
+      "id": "pipeline-and-approval",
+      "title": "在管線中設置品質閘門",
+      "paragraphs": [
+        "ML 管線不只是依序串接資料準備、訓練、評估、註冊和部署。它會明確定義每個階段的輸入與輸出、成功標準、發生失敗時的停止行為、執行角色及核准者，確保未通過評估的模型不會進入生產環境。",
+        "使用模型登錄檔和核准工作流程時，應將模型成品、評估結果、資料與程式碼版本，以及核准依據建立關聯。重新執行時能使用相同的輸入，並能追蹤哪個版本部署到了哪個環境，是復原的前提。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon SageMaker AI 的功能",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/whatis-features.html"
+        }
+      ]
+    },
+    {
+      "id": "progressive-deployment",
+      "title": "透過漸進式發布降低使用者影響",
+      "paragraphs": [
+        "發布新模型時，請識別流向現有模型和候選模型的流量，並在限定範圍內比較品質、延遲、錯誤率、成本和安全性。如果未事先決定比較對象和成功標準，A/B 測試或漸進式發布就只會變成同時運作。",
+        "記錄部署版本、組態、端點分配，以及負責回滾決策的人員，以便發生異常時立即恢復到已知正常的模型。即使候選模型的效能較高，只要不符合安全性或服務目標，就不要擴大其發布範圍。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 考試指南：工作流程部署與編排",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02.html"
+        }
+      ],
+      "figureId": "mla-progressive-deployment"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-1",
+      "prompt": "財務部門的營運人員需要每天晚上透過一次推論工作處理數百萬張發票，並在隔天早上前從 Amazon S3 取得結果。不需要立即回應使用者，而且受到營運限制，無法建立推論端點。哪種推論方式符合這些需求？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "使用 SageMaker Batch Transform，在單一工作中處理 S3 中的發票資料，並將結果儲存到 S3。",
+          "explanation": "Batch Transform 不需要建立推論端點，即可將 S3 輸入內容作為工作處理，並將結果寫入 S3。"
+        },
+        {
+          "id": "b",
+          "text": "使用 SageMaker 非同步推論，在夜間將發票處理要求加入佇列，並將結果儲存到 S3。",
+          "explanation": "非同步推論可以將結果寫入 S3，但需要建立用來接收要求的推論端點。"
+        },
+        {
+          "id": "c",
+          "text": "準備 SageMaker 即時推論端點，逐張傳送發票並接收結果。",
+          "explanation": "即時推論需要端點。由於不需要立即回應，而且這項需求是在隔天早上前批次取得結果，因此也不符合本次需求。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-deploy-2",
+      "prompt": "模型更新管線的負責人希望避免評估失敗的模型進入正式環境。哪一種設計最合適？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "將所有完成訓練的模型自動覆寫到正式環境。",
+          "explanation": "評估與核准之間沒有界線。"
+        },
+        {
+          "id": "c",
+          "text": "不記錄模型版本，也不準備發生失敗時的復原機制。",
+          "explanation": "發生故障時無法返回已知的正常狀態。"
+        },
+        {
+          "id": "a",
+          "text": "將評估成功標準設為品質閘門，並在記錄評估結果、模型版本及核准依據後，才允許註冊與部署。",
+          "explanation": "可以阻止未達標準的模型，並追蹤採用該模型的理由。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-deploy-3",
+      "prompt": "負責逐步部署候選模型的人員需要判斷是否擴大部署範圍。下列哪種判斷方法最適當？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "識別候選模型與現有模型，在有限流量下比較品質、延遲、錯誤率、成本與安全性。如果成本或安全性超過門檻，即使品質較好，也不要擴大部署範圍。",
+          "explanation": "這樣可以限制對使用者的影響，只有在符合包括變更條件在內的所有標準時，才能擴大部署範圍。"
+        },
+        {
+          "id": "b",
+          "text": "只要候選模型的準確率較高，就不確認成本或安全性門檻，直接切換全部流量。",
+          "explanation": "這樣即使品質以外的生產環境需求超過門檻，也會繼續部署，因而忽略變更條件。"
+        },
+        {
+          "id": "c",
+          "text": "不決定發生異常時的回復目標，並在部署後停止監控。",
+          "explanation": "如此便無法偵測問題或復原服務。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Deployment",
+    "Deployment pipeline",
+    "Quality gate",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact",
+    "Batch Transform"
+  ]
+}

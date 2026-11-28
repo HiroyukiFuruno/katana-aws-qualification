@@ -1,0 +1,160 @@
+{
+  "id": "deployment-and-orchestration",
+  "title": "ML と AI のワークフローを安全にデプロイし自動化する",
+  "objective": "推論方式、リソース、パイプライン、承認、ロールバックを要件に応じて選び、再現可能に運用できる。",
+  "prerequisites": [
+    {
+      "slug": "data-preparation",
+      "title": "ML と AI のためのデータを準備する",
+      "courseId": "mla-c02"
+    },
+    {
+      "slug": "model-and-fm-development",
+      "title": "ML モデルと基盤モデルを要件で評価する",
+      "courseId": "mla-c02"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-inference-mode",
+      "title": "推論方式を要求パターンから選ぶ",
+      "paragraphs": [
+        "デプロイ担当者は、リアルタイム、非同期、バッチの推論方式を、応答時間、処理量、入力サイズ、利用者への返却方法、費用で比較します。常時低遅延が必要なオンライン要求と、夜間に大量処理できる予測では、必要なエンドポイントとスケーリング方針が異なります。",
+        "Amazon SageMaker AI は、モデルを構築、トレーニングし、稼働準備が整ったホスト環境にデプロイできるフルマネージドサービスです。モデルのデプロイ後も、入力形式、認証、ネットワーク到達性、タイムアウト、エラー応答、容量を利用者の要求と照合します。",
+        "図では、予測を実行する場所と結果の渡し方を比べます。リアルタイム推論では、エンドポイントがその場で応答します。非同期推論では、エンドポイントへの要求がキューに入り、処理結果は Amazon S3 に保存されます。入力ファイルが Amazon S3 にそろい、結果も後からまとめて受け取れる場合は、エンドポイントを用意せずに Batch Transform ジョブを実行できます。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 試験ガイド: デプロイとオーケストレーション",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02.html"
+        },
+        {
+          "label": "Amazon SageMaker AI とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/whatis.html"
+        },
+        {
+          "label": "SageMaker AI の非同期推論",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/async-inference.html"
+        },
+        {
+          "label": "SageMaker AI のバッチ変換",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-mode-boundaries"
+    },
+    {
+      "id": "pipeline-and-approval",
+      "title": "パイプラインに品質ゲートを置く",
+      "paragraphs": [
+        "ML パイプラインは、データ準備、学習、評価、登録、デプロイを単に順番につなぐものではありません。各段階の入力と出力、成功基準、失敗時の停止、実行ロール、承認者を明示し、評価を通らないモデルが本番へ進まないようにします。",
+        "モデルレジストリと承認ワークフローを使う場合は、モデルアーティファクト、評価結果、データとコードの版、承認の根拠を関連付けます。再実行時に同じ入力を使えることと、どの版がどの環境へ出たかを追跡できることが、ロールバックの前提です。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon SageMaker AI の機能",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/whatis-features.html"
+        }
+      ]
+    },
+    {
+      "id": "progressive-deployment",
+      "title": "段階的な配信で利用者影響を抑える",
+      "paragraphs": [
+        "新しいモデルを出すときは、既存モデルと候補モデルのトラフィックを識別し、限定した範囲で品質、レイテンシー、エラー率、費用、安全性を比較します。A/B テストや段階的配信は、比較対象と成功基準を事前に決めなければ、単なる同時稼働になります。",
+        "異常が起きた場合に直ちに既知の正常なモデルへ戻せるよう、デプロイ版、設定、エンドポイントの割り当て、ロールバック判断者を記録します。候補モデルの性能が高くても、安全性またはサービス目標を満たさなければ展開範囲を広げません。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 試験ガイド: ワークフローのデプロイとオーケストレーション",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02.html"
+        }
+      ],
+      "figureId": "mla-progressive-deployment"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-1",
+      "prompt": "経理部門の運用担当者は、数百万件の請求書を毎晩1回の推論ジョブで処理し、翌朝までに結果を Amazon S3 から受け取る必要があります。利用者への即時応答は不要で、運用上の制約から推論エンドポイントは作成できません。どの推論方式が要件を満たしますか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "SageMaker の Batch Transform で、S3 にある請求書データを1回のジョブで処理し、結果を S3 に保存する。",
+          "explanation": "Batch Transform は推論エンドポイントを作らず、S3 の入力をジョブとして処理して結果を S3 に書き出せます。"
+        },
+        {
+          "id": "b",
+          "text": "SageMaker の非同期推論を使い、夜間に請求書の処理リクエストをキューに入れて、結果を S3 に保存する。",
+          "explanation": "非同期推論は結果を S3 に書き出せますが、リクエストを送る推論エンドポイントを作成する必要があります。"
+        },
+        {
+          "id": "c",
+          "text": "SageMaker のリアルタイム推論エンドポイントを用意し、請求書を1件ずつ送って結果を受け取る。",
+          "explanation": "リアルタイム推論にはエンドポイントが必要です。即時応答が不要で、翌朝までに一括で結果を受け取る今回の要件にも合いません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-deploy-2",
+      "prompt": "モデル更新用パイプラインの責任者は、評価に失敗したモデルが本番へ出ないようにしたいと考えています。最も適切な設計はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "学習が完了した全モデルを、自動的に本番へ上書きする。",
+          "explanation": "評価と承認の境界がありません。"
+        },
+        {
+          "id": "c",
+          "text": "モデル版を記録せず、失敗時のロールバックも用意しない。",
+          "explanation": "障害時に既知の正常状態へ戻せません。"
+        },
+        {
+          "id": "a",
+          "text": "評価の成功基準を品質ゲートにし、評価結果、モデル版、承認の根拠を記録してから登録・デプロイを許可する。",
+          "explanation": "未達モデルを停止し、採用理由を追跡できます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-deploy-3",
+      "prompt": "候補モデルを段階的にデプロイする担当者は、展開範囲を広げる判断を行います。最も適切な判断方法はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "候補と既存のモデルを識別し、限定トラフィックで品質、レイテンシー、エラー率、費用、安全性を比較する。費用または安全性が基準を超えた場合は、品質が良くても展開範囲を広げない。",
+          "explanation": "利用者影響を限定し、変更した条件を含むすべての基準を満たす場合だけ展開を広げられます。"
+        },
+        {
+          "id": "b",
+          "text": "候補モデルの精度が高ければ、費用または安全性の基準を確認せず全トラフィックを切り替える。",
+          "explanation": "品質以外の本番要件が基準を超えていても展開してしまい、変更した条件を見落とします。"
+        },
+        {
+          "id": "c",
+          "text": "異常時の戻し先を決めず、展開後の監視を停止する。",
+          "explanation": "問題を検出・復旧できません。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Deployment",
+    "Deployment pipeline",
+    "Quality gate",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact",
+    "Batch Transform"
+  ]
+}

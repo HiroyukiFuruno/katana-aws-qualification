@@ -1,0 +1,154 @@
+{
+  "id": "data-preparation",
+  "title": "ML と AI のためのデータを準備する",
+  "objective": "データの出所、変換、品質、利用目的を結び付け、再現可能で安全な学習用データを準備できる。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "クラウドの基本概念"
+    },
+    {
+      "slug": "data-protection",
+      "title": "データ保護"
+    },
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    }
+  ],
+  "sections": [
+    {
+      "id": "collect-store-lineage",
+      "title": "取り込み元から利用先までの系統を残す",
+      "paragraphs": [
+        "ML エンジニアは、S3、RDS、ストリームなどのデータソースを取り込む前に、所有者、更新頻度、形式、個人情報の有無、利用目的を確認します。データセット名だけでは、どの時点のどの入力から学習用データが作られたかを説明できません。",
+        "データを保存するときは、アクセスパターン、容量、保持期間、暗号化、アクセス権限をデータの性質に合わせます。取り込み、変換、学習、評価に使ったデータとコードのバージョンを記録すれば、後からモデルの出力を追跡し、同じ条件で再実行できます。RAGのチャンクに保持するアクセス制御メタデータは検索候補を絞るための情報であり、検索時には利用者のロールや権限を別途照合して認可済みのチャンクだけを返します。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 試験ガイド: データの準備",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        },
+        {
+          "label": "Amazon SageMaker AI の機能",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/whatis-features.html"
+        }
+      ],
+      "figureId": "mla-data-lineage"
+    },
+    {
+      "id": "transform-for-task",
+      "title": "用途に応じて変換と前処理を選ぶ",
+      "paragraphs": [
+        "分類、回帰、検索拡張生成（RAG）では、必要な入力の形が異なります。表形式データでは、欠損値、外れ値、単位、カテゴリの表現を確認し、学習と推論で同じ変換を適用できるようにします。変換の根拠と実装を分離せず、データセットと一緒に管理します。",
+        "RAG の文書準備では、文書をそのままベクトル化するのではなく、検索で必要な意味のまとまり、更新単位、メタデータ、アクセス制御を定義します。チャンキング、埋め込み、ベクトルストアは、検索品質だけでなく、元文書への参照可能性と情報漏えい防止にも影響します。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 試験ガイド: データ変換と前処理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        },
+        {
+          "label": "Amazon Bedrock の概要",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/what-is-bedrock.html"
+        }
+      ]
+    },
+    {
+      "id": "quality-bias-integrity",
+      "title": "品質、偏り、完全性を検証する",
+      "paragraphs": [
+        "データ品質の確認では、件数だけでなく、必須列、型、値域、重複、欠損、ラベルの一貫性、学習と評価の分割方法を検査します。検査に失敗したデータを静かに補完して進めるのではなく、失敗内容、対象範囲、修正または除外の判断を記録します。",
+        "偏りやクラス不均衡は、全体精度だけでは見えないことがあります。利用者またはデータ群ごとの分布と評価指標を確認し、収集、ラベル付け、分割、重み付け、拡張のどこに原因があるかを調べます。評価データを学習へ混ぜると、性能評価の信頼性を失います。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 試験ガイド: データ品質とバイアス",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-1",
+      "prompt": "需要予測モデルの担当者は、取り込み元または変換コードの版が変わった後も、ある予測結果がどの入力データから作られたかを説明したいと考えています。最も適切な方法はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "最新のモデルだけを保存し、学習データと変換の履歴を削除する。",
+          "explanation": "出力の再現性と調査可能性を失います。"
+        },
+        {
+          "id": "c",
+          "text": "データセット名だけを共有し、更新時刻や出所は記録しない。",
+          "explanation": "どの入力を使ったか判断できません。"
+        },
+        {
+          "id": "a",
+          "text": "取り込み元、データ版、変換コード、学習・評価データ、モデルアーティファクトを関連付けて記録する。",
+          "explanation": "版が変わった後も、入力からモデルまでの系統と影響範囲を追跡できます。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-2",
+      "prompt": "社内規程を検索する RAG アプリケーションの担当者は、検索結果を原文へたどれるようにしたいと考えています。最も適切な文書準備はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "意味のまとまりで文書を分割し、原文の識別子、更新情報、検索候補を絞るアクセス制御メタデータを各チャンクへ保持する。検索時は利用者のロールや権限を別途照合し、認可済みのチャンクだけを返す。",
+          "explanation": "検索結果を出所へ結び付けられます。メタデータによる候補絞り込みとは別に、利用者の権限を強制的に照合してから返却できます。"
+        },
+        {
+          "id": "b",
+          "text": "すべての文書を一つの巨大な文字列にし、出所情報を削除して埋め込む。",
+          "explanation": "検索結果の根拠と更新単位が失われます。"
+        },
+        {
+          "id": "c",
+          "text": "アクセス制御を確認せず、社内文書を無条件に外部公開する。",
+          "explanation": "データ保護の要件を満たしません。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-3",
+      "prompt": "採用支援モデルの評価担当者は、少数の応募者群で再現率が低いことを確認しました。次に最も適切に行うことはどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "全体精度だけが高ければ、群別の結果を確認しない。",
+          "explanation": "特定の群への影響を見逃します。"
+        },
+        {
+          "id": "a",
+          "text": "群ごとのデータ分布、ラベル品質、分割方法、評価指標を調べ、原因に応じて収集や前処理を改善する。",
+          "explanation": "全体指標に隠れた偏りや不均衡を検証できます。"
+        },
+        {
+          "id": "c",
+          "text": "評価データを学習データへ追加して、指標が上がるかを見る。",
+          "explanation": "評価の独立性を失い、性能を過大評価します。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "RDS",
+    "Data lineage",
+    "Data classification",
+    "Dataset provenance",
+    "Data quality",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

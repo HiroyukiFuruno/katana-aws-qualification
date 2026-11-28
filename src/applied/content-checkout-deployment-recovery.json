@@ -1,0 +1,1166 @@
+{
+  "ja": {
+    "id": "checkout-deployment-recovery",
+    "title": "注文サービスの段階公開を止め、安全に復旧する",
+    "intro": "小売会社のリリース担当者は、購入手続きの新版を少しずつ公開します。Application Load Balancer（ALB）は注文確定のリクエストを旧版と新版の二つのターゲットグループに振り分けます。両方のアプリはAmazon RDS for PostgreSQLの同じ注文テーブルを読み書きします。運用チームは、確定済みの注文を失わず、同じ注文を二重に受け付けずに復旧する必要があります。",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "展開を止める条件",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "最初は旧版の重みを95、新版を5にします。この構成ではターゲットグループのスティッキーセッションを使いません。重みは振り分けの比率を決め、運用チームは実際のリクエスト数も確認します。",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "運用チームは公開前に「10分間に新版へ200件以上の注文確定リクエストがあり、HTTP 5xxが2%を超えたら、配分の拡大を止める」と決めました。公開直後の10分には次の結果が出ました。",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["同じ10分の注文確定リクエスト", "旧版", "新版"],
+            "rows": [
+              ["リクエスト数", "15,200", "800"],
+              ["HTTP 5xxの件数", "104", "48"],
+              ["HTTP 5xxの割合", "約0.68%", "6.0%"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "新版へのリクエストは800件で、HTTP 5xxの割合は6.0%です。リクエスト数は200件以上で、HTTP 5xxの割合は2%を超えているため、担当者は拡大を止めます。旧版と新版を合わせたHTTP 5xxの割合は0.95%で、新版で起きている悪化が見えにくくなります。担当者は、新版で注文確定に失敗したリクエストをトレースとアプリケーションログで調べます。",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "旧版へ戻す前に確認すること",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "図でALBから旧版と新版へ向かう線と、両方が読み書きするDBを見比べてください。ALBの振り分け先を変えると、これから届くリクエストの行き先が変わります。新版がすでに共有DBに保存した注文はそこに残ります。",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "この事例では、新しい列は追加済みで、旧版はその列を参照しません。新版だけが理解する注文状態を書き始める機能は無効です。担当者は設定と実データを調べ、新版が作った注文を旧版で読み直せることと、旧版から注文を確定できることを確かめます。処理中のリクエストや新版だけが動かすバックグラウンド処理が残っていないかも確認します。",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "旧版で安全に処理できると分かったため、担当者はALBの振り分けを旧版に戻します。条件が違って新版専用の注文状態がすでに保存され、旧版では読めない場合は、影響する書き込みの停止や、両方の状態を扱える修正版を検討します。RDSで特定時点に復元すると新しいDBインスタンスが作られ、指定時刻より後に受け付けた注文はそこにありません。切り替えを考えるなら、まずその間の注文を照合して復旧する方法が必要です。",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "復旧を確認する",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "担当者は旧版へ新規通信が戻ったことを確認し、同じ注文確定処理について、切り替え前と同じ10分間の単位で成功率、HTTP 5xx、応答時間を比較します。注文が確定したのに画面で失敗として表示された記録や、再試行で二重に作った注文がないか、注文番号とアプリのログを照合します。",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "HTTP 5xxが減っても、取りこぼしや二重注文が見つかれば復旧作業は続きます。利用者側で確認できる表示と、保存された注文の状態の両方が、平常時に期待する状態へ戻ったことを記録します。",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "条件を変えて考える",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "別の公開作業で、新版がすでに50件の注文を新版専用の状態で保存し、旧版がその注文を開くとエラーになることが分かりました。担当者は配分の拡大を止め、新版専用の状態を書き込む機能を停止し、処理中のリクエストとバックグラウンド処理にも停止が反映されたことを確認しました。既存の注文を守りながら復旧するために、次に何を確認すべきでしょうか。",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "旧版が50件を含む注文を正しく処理できるようにする方法を確認します。両方の状態を扱える修正版を出す場合と、保存済みの状態を安全に変換して旧版で扱えることを確かめる場合を比較します。その間、処理できない注文は一時的に受け付けを止めるなどして守ります。ALBの重みを変えても、保存済みの状態はそのままです。",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "参考資料",
+    "sources": [
+      {
+        "label": "Application Load Balancerのリスナールールと転送アクション",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon RDSのDBインスタンスを特定の時点に復元する",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "デプロイ時におけるロールバックの安全性の確保",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "en": {
+    "id": "checkout-deployment-recovery",
+    "title": "Stop the phased release of the order service and recover safely",
+    "intro": "A retail company’s release manager is gradually rolling out a new version of the checkout process. Application Load Balancer (ALB) distributes order-confirmation requests between two target groups: the old version and the new version. Both applications read from and write to the same orders table in Amazon RDS for PostgreSQL. The operations team must recover without losing confirmed orders or accepting the same order twice.",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "Conditions for Stopping the Deployment",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Initially, set the weight to 95 for the old version and 5 for the new version. This configuration does not use sticky sessions for the target groups. The weights determine the traffic distribution ratio, and the operations team also checks the actual number of requests.",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Before the release, the operations team decided: “If there are at least 200 order-confirmation requests to the new version within 10 minutes and HTTP 5xx exceeds 2%, stop increasing the allocation.” The following results were observed during the 10 minutes immediately after the release.",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": [
+              "Order-confirmation requests during the same 10 minutes",
+              "Old version",
+              "New version"
+            ],
+            "rows": [
+              ["Number of requests", "15,200", "800"],
+              ["Number of HTTP 5xx responses", "104", "48"],
+              ["HTTP 5xx rate", "Approximately 0.68%", "6.0%"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "There were 800 requests to the new version, and the HTTP 5xx rate was 6.0%. Because the number of requests was at least 200 and the HTTP 5xx rate exceeded 2%, the responsible team stops increasing the allocation. The combined HTTP 5xx rate for the old and new versions was 0.95%, making the deterioration occurring in the new version less visible. The team investigates the requests that failed order confirmation in the new version using traces and application logs.",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "What to Check Before Rolling Back to the Previous Version",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Compare the diagram’s lines from the ALB to the previous and new versions, along with the DB that both versions read from and write to. Changing the ALB’s routing destinations changes where incoming requests will go. Orders that the new version has already saved in the shared DB remain there.",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "In this case, the new column has already been added, and the previous version does not reference it. The feature that starts writing order statuses understood only by the new version is disabled. The operator examines the configuration and actual data, and verifies that orders created by the new version can be read again by the previous version and that orders can be finalized from the previous version. The operator also checks whether any requests in progress or background processing run only by the new version remain.",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Because it has been determined that the previous version can process the orders safely, the operator changes the ALB routing back to the previous version. If the conditions differ and order statuses specific to the new version have already been saved but cannot be read by the previous version, the operator considers stopping the affected writes or using a revised version that can handle both statuses. Restoring RDS to a specific point in time creates a new DB instance, and orders accepted after the specified time are not there. If a switch is being considered, a method for reconciling and recovering the orders from that interval is needed first.",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "Verify recovery",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "The operator confirms that new traffic has returned to the old version and compares the success rate, HTTP 5xx responses, and response time for the same order-confirmation process using the same 10-minute intervals as before the switch. The operator cross-checks order numbers against the application logs to determine whether there are records where the order was confirmed but displayed as failed, or orders created twice because of retries.",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Even if HTTP 5xx responses decrease, recovery work continues if missed orders or duplicate orders are found. The operator records that both the display visible to users and the state of the stored orders have returned to the state expected during normal operation.",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "Consider Changing the Conditions",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "In another deployment, it was discovered that the new version had already stored 50 orders in a state intended only for the new version, and the old version produced an error when it opened those orders. The operator stopped increasing the traffic allocation, disabled the functionality that writes the new-version-only state, and confirmed that the stop had taken effect for requests in progress and background processing as well. To recover while protecting the existing orders, what should be checked next?",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Confirm how to enable the old version to process orders containing the 50 affected orders correctly. Compare releasing a revised version that can handle both states with safely converting the stored state and verifying that the old version can handle it. In the meantime, protect orders that cannot be processed, for example by temporarily stopping acceptance of them. Changing the ALB weights does not change the stored state.",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "References",
+    "sources": [
+      {
+        "label": "Application Load Balancer listener rules and forwarding actions",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "Restoring an Amazon RDS DB instance to a specific point in time",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "Ensuring rollback safety during deployment",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "ko": {
+    "id": "checkout-deployment-recovery",
+    "title": "주문 서비스의 단계적 릴리스를 중단하고 안전하게 복구하기",
+    "intro": "한 소매 회사의 릴리스 담당자가 결제 프로세스의 새 버전을 점진적으로 배포하고 있습니다. Application Load Balancer(ALB)는 주문 확정 요청을 이전 버전과 새 버전이라는 두 개의 대상 그룹으로 분산합니다. 두 애플리케이션 모두 Amazon RDS for PostgreSQL의 동일한 주문 테이블을 읽고 씁니다. 운영 팀은 확정된 주문을 잃거나 동일한 주문을 두 번 접수하지 않고 복구해야 합니다.",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "배포를 중지하는 조건",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "처음에는 이전 버전의 가중치를 95, 새 버전의 가중치를 5로 설정합니다. 이 구성에서는 대상 그룹의 고정 세션을 사용하지 않습니다. 가중치는 트래픽을 분배하는 비율을 결정하며, 운영 팀은 실제 요청 수도 확인합니다.",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "운영 팀은 릴리스 전에 다음과 같이 결정했습니다. “10분 동안 새 버전으로 전송된 주문 확정 요청이 200건 이상이고 HTTP 5xx가 2%를 초과하면 할당 비율 확대를 중지한다.” 릴리스 직후 10분 동안 다음 결과가 발생했습니다.",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["같은 10분 동안의 주문 확정 요청", "이전 버전", "새 버전"],
+            "rows": [
+              ["요청 수", "15200", "800"],
+              ["HTTP 5xx 수", "104", "48"],
+              ["HTTP 5xx 비율", "약 0.68%", "6.0%"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "새 버전으로 전송된 요청은 800건이고 HTTP 5xx 비율은 6.0%입니다. 요청 수가 200건 이상이고 HTTP 5xx 비율이 2%를 초과했으므로 담당자는 할당 비율 확대를 중지합니다. 이전 버전과 새 버전을 합한 HTTP 5xx 비율은 0.95%이므로 새 버전에서 발생한 악화가 잘 드러나지 않습니다. 담당자는 추적 정보와 애플리케이션 로그를 사용하여 새 버전에서 주문 확정에 실패한 요청을 조사합니다.",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "이전 버전으로 되돌리기 전에 확인할 사항",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "그림에서 ALB에서 이전 버전과 새 버전으로 향하는 선과 두 버전이 모두 읽고 쓰는 DB를 비교해 보십시오. ALB의 라우팅 대상을 변경하면 앞으로 도착하는 요청의 목적지가 바뀝니다. 새 버전이 이미 공유 DB에 저장한 주문은 그곳에 남아 있습니다.",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "이 사례에서는 새 열이 이미 추가되었으며 이전 버전은 해당 열을 참조하지 않습니다. 새 버전만 이해할 수 있는 주문 상태를 쓰기 시작하는 기능은 비활성화되어 있습니다. 담당자는 구성과 실제 데이터를 조사하여 새 버전이 만든 주문을 이전 버전에서 다시 읽을 수 있고, 이전 버전에서 주문을 확정할 수 있는지 확인합니다. 처리 중인 요청이나 새 버전만 실행하는 백그라운드 처리 작업이 남아 있지 않은지도 확인합니다.",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "이전 버전에서 안전하게 처리할 수 있음이 확인되었으므로 담당자는 ALB의 라우팅을 이전 버전으로 되돌립니다. 조건이 달라 새 버전 전용 주문 상태가 이미 저장되었고 이전 버전에서 읽을 수 없는 경우에는 영향을 받는 쓰기를 중지하거나 두 상태를 모두 처리할 수 있는 수정 버전을 사용하는 방법을 검토합니다. RDS를 특정 시점으로 복원하면 새 DB 인스턴스가 생성되며, 지정된 시각 이후에 접수된 주문은 그곳에 없습니다. 전환을 고려한다면 먼저 그 기간의 주문을 대조하고 복구할 방법이 필요합니다.",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "복구 확인",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "담당자는 새 트래픽이 이전 버전으로 돌아왔는지 확인하고, 동일한 주문 확정 처리에 대해 전환 전과 같은 10분 단위로 성공률, HTTP 5xx, 응답 시간을 비교합니다. 주문은 확정되었지만 화면에는 실패로 표시된 기록이나 재시도로 인해 주문이 중복 생성된 기록이 없는지 주문 번호와 애플리케이션 로그를 대조합니다.",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "HTTP 5xx가 감소하더라도 누락된 주문이나 중복 주문이 발견되면 복구 작업은 계속됩니다. 사용자가 확인할 수 있는 화면 표시와 저장된 주문 상태가 모두 정상 운영 시 기대되는 상태로 돌아왔다는 사실을 기록합니다.",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "조건을 바꾸어 생각하기",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "또 다른 배포 작업에서 새 버전이 이미 새 버전 전용 상태로 주문 50건을 저장했으며, 이전 버전이 해당 주문을 열면 오류가 발생한다는 사실이 밝혀졌습니다. 담당자는 트래픽 할당 확대를 중지하고, 새 버전 전용 상태를 기록하는 기능을 중지했으며, 처리 중인 요청과 백그라운드 처리에도 중지가 반영되었는지 확인했습니다. 기존 주문을 보호하면서 복구하려면 다음으로 무엇을 확인해야 할까요?",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "이전 버전이 해당 50건의 주문을 포함한 주문을 올바르게 처리할 수 있도록 하는 방법을 확인합니다. 두 상태를 모두 처리할 수 있는 수정 버전을 배포하는 방법과 저장된 상태를 안전하게 변환한 후 이전 버전에서 처리할 수 있는지 확인하는 방법을 비교합니다. 그동안 처리할 수 없는 주문은 일시적으로 접수를 중지하는 등의 방법으로 보호합니다. ALB의 가중치를 변경해도 저장된 상태 자체는 변하지 않습니다.",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "참고 자료",
+    "sources": [
+      {
+        "label": "Application Load Balancer 리스너 규칙 및 전달 작업",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "Amazon RDS DB 인스턴스를 특정 시점으로 복원하기",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "배포 중 롤백의 안전성 보장",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "zh-CN": {
+    "id": "checkout-deployment-recovery",
+    "title": "停止订单服务的分阶段发布并安全恢复",
+    "intro": "一家零售公司的发布负责人正在逐步发布结账流程的新版本。Application Load Balancer（ALB）将订单确认请求分配到两个目标组：旧版本和新版本。两个应用都对 Amazon RDS for PostgreSQL 中的同一个订单表执行读取和写入操作。运维团队必须在不丢失已确认订单、也不重复接受同一订单的情况下完成恢复。",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "停止部署的条件",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "最初将旧版本的权重设为 95，将新版本设为 5。在此配置中，不使用目标组的粘性会话。权重决定流量分配比例，运维团队还会检查实际请求数。",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "运维团队在发布前决定：“如果 10 分钟内发往新版本的订单确认请求达到 200 个或以上，且 HTTP 5xx 超过 2%，就停止扩大分配比例。”发布后立即开始的 10 分钟内出现了以下结果。",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["同一 10 分钟内的订单确认请求", "旧版本", "新版本"],
+            "rows": [
+              ["请求数", "15200", "800"],
+              ["HTTP 5xx 数量", "104", "48"],
+              ["HTTP 5xx 比例", "约 0.68%", "6.0%"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "发往新版本的请求有 800 个，HTTP 5xx 比例为 6.0%。由于请求数达到 200 个或以上，且 HTTP 5xx 比例超过 2%，负责人停止扩大分配比例。旧版本和新版本合计的 HTTP 5xx 比例为 0.95%，因此新版本中发生的恶化不易被发现。负责人使用跟踪记录和应用程序日志调查新版本中订单确认失败的请求。",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "切回旧版本前需要确认的事项",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "请对照图中从 ALB 分别指向旧版本和新版本的线路，以及由两者共同读写的 DB。更改 ALB 的分发目标后，接下来到达的请求将被发送到不同的位置。新版本已经保存到共享 DB 中的订单仍会保留在那里。",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "在本案例中，新列已经添加完成，旧版本不会引用该列。仅有新版本能够理解的订单状态写入功能已被禁用。负责人检查配置和实际数据，确认新版本创建的订单可以由旧版本重新读取，并且可以通过旧版本完成订单。还要确认是否仍有正在处理的请求，或只有新版本运行的后台处理任务。",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "由于已确认旧版本能够安全处理，负责人将 ALB 的分发切回旧版本。如果条件不同，且新版本专用的订单状态已经保存、旧版本无法读取，则应考虑停止受影响的写入，或使用能够处理两种状态的修正版。将 RDS 恢复到特定时间点会创建新的 DB 实例，在指定时间之后接收的订单不会存在于其中。如果要考虑切换，首先需要一种核对并恢复这段期间订单的方法。",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "确认恢复情况",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "负责人确认新流量已返回旧版本，并针对相同的订单确认处理，按照切换前相同的 10 分钟时间单位比较成功率、HTTP 5xx 和响应时间。负责人将订单号与应用日志进行核对，检查是否存在订单已经确认但页面显示为失败的记录，或因重试而重复创建的订单。",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "即使 HTTP 5xx 减少，只要发现漏单或重复订单，恢复工作仍会继续。负责人记录用户侧可确认的显示内容和已保存订单的状态均已恢复到正常运行时所预期的状态。",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "改变条件来思考",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "在另一次发布作业中，发现新版本已经以仅供新版本使用的状态保存了 50 个订单，而旧版本打开这些订单时会出错。负责人停止扩大流量分配，停止写入仅供新版本使用的状态的功能，并确认停止操作也已反映到正在处理的请求和后台处理上。为了在保护现有订单的同时恢复服务，接下来应确认什么？",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "确认如何让旧版本正确处理包含这 50 个订单的订单数据。比较两种做法：发布能够处理两种状态的修正版，或安全地转换已保存的状态并确认旧版本能够处理转换后的状态。在此期间，应保护无法处理的订单，例如暂时停止接收这些订单。即使改变 ALB 的权重，已保存的状态也不会改变。",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "参考资料",
+    "sources": [
+      {
+        "label": "Application Load Balancer 侦听器规则和转发操作",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "将 Amazon RDS 数据库实例恢复到特定时间点",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "确保部署期间回滚的安全性",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "zh-TW": {
+    "id": "checkout-deployment-recovery",
+    "title": "停止訂單服務的分階段發布並安全復原",
+    "intro": "一家零售公司的發布負責人正在逐步發布結帳流程的新版本。Application Load Balancer（ALB）會將訂單確認請求分配到兩個目標群組：舊版本和新版本。兩個應用程式都會讀取及寫入 Amazon RDS for PostgreSQL 中的同一個訂單資料表。營運團隊必須在不遺失已確認訂單、也不重複接受同一筆訂單的情況下完成復原。",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "停止部署的條件",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "一開始將舊版本的權重設為 95，新版本設為 5。在此設定中，不使用目標群組的黏性工作階段。權重決定流量分配比例，營運團隊也會確認實際請求數。",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "營運團隊在發布前決定：「如果 10 分鐘內發往新版本的訂單確認請求達到 200 個以上，且 HTTP 5xx 超過 2%，就停止擴大分配比例。」發布後立即開始的 10 分鐘內出現了以下結果。",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": ["同一個 10 分鐘內的訂單確認請求", "舊版本", "新版本"],
+            "rows": [
+              ["請求數", "15200", "800"],
+              ["HTTP 5xx 數量", "104", "48"],
+              ["HTTP 5xx 比例", "約 0.68%", "6.0%"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "發往新版本的請求有 800 個，HTTP 5xx 比例為 6.0%。由於請求數達到 200 個以上，且 HTTP 5xx 比例超過 2%，負責人停止擴大分配比例。舊版本和新版本合計的 HTTP 5xx 比例為 0.95%，因此新版本中發生的惡化不易被發現。負責人使用追蹤記錄和應用程式日誌調查新版本中訂單確認失敗的請求。",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "切回舊版前需要確認的事項",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "請對照圖中從 ALB 分別指向舊版與新版的線路，以及由兩者共同讀寫的 DB。變更 ALB 的分流目標後，接下來送達的請求目的地也會改變。新版已經儲存在共用 DB 中的訂單仍會留在那裡。",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "在此案例中，新欄位已經新增完成，舊版不會參照該欄位。只有新版能理解的訂單狀態寫入功能已停用。負責人檢查設定與實際資料，確認新版建立的訂單可以由舊版重新讀取，並且可以透過舊版完成訂單。也要確認是否仍有處理中的請求，或只有新版會執行的背景處理作業。",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "由於已確認舊版可以安全處理訂單，負責人便將 ALB 的分流切回舊版。如果條件不同，且新版專用的訂單狀態已經儲存、舊版無法讀取，則應考慮停止受影響的寫入，或使用能夠處理兩種狀態的修正版。將 RDS 還原到特定時間點會建立新的 DB 執行個體，指定時間之後接收的訂單不會存在於其中。如果要考慮切換，首先需要一種核對並復原該期間訂單的方法。",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "確認復原情況",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "負責人確認新的流量已返回舊版本，並針對相同的訂單確認處理，依照切換前相同的 10 分鐘時間單位比較成功率、HTTP 5xx 和回應時間。負責人將訂單編號與應用程式日誌進行比對，檢查是否有訂單已確認但畫面顯示為失敗的紀錄，或因重試而重複建立的訂單。",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "即使 HTTP 5xx 減少，只要發現漏單或重複訂單，復原作業仍會繼續。負責人記錄使用者端可確認的顯示內容，以及已儲存訂單的狀態，都已恢復到正常運作時預期的狀態。",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "改變條件來思考",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "在另一次發布作業中，發現新版已經以僅供新版使用的狀態儲存了 50 筆訂單，而舊版開啟這些訂單時會發生錯誤。負責人停止擴大流量分配、停用寫入僅供新版使用狀態的功能，並確認停止操作也已反映在處理中的請求和背景處理上。為了在保護既有訂單的同時復原服務，接下來應確認什麼？",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "確認如何讓舊版正確處理包含這 50 筆訂單的資料。比較兩種方式：發布能處理兩種狀態的修正版，或安全地轉換已儲存的狀態，並確認舊版能夠處理轉換後的狀態。在此期間，應保護無法處理的訂單，例如暫時停止接收這些訂單。即使變更 ALB 的權重，已儲存的狀態也不會改變。",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "參考資料",
+    "sources": [
+      {
+        "label": "Application Load Balancer 接聽程式規則與轉送動作",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "將 Amazon RDS 資料庫執行個體還原至特定時間點",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "確保部署期間復原作業的安全性",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "pt": {
+    "id": "checkout-deployment-recovery",
+    "title": "Interromper a implantação gradual do serviço de pedidos e recuperar com segurança",
+    "intro": "O responsável por lançamentos de uma empresa de varejo está implantando gradualmente uma nova versão do processo de checkout. O Application Load Balancer (ALB) distribui as solicitações de confirmação de pedidos entre dois grupos de destino: a versão antiga e a nova. Os dois aplicativos leem e gravam na mesma tabela de pedidos no Amazon RDS for PostgreSQL. A equipe de operações precisa recuperar o serviço sem perder pedidos confirmados nem aceitar o mesmo pedido duas vezes.",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "Condições para interromper a implantação",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Inicialmente, defina o peso como 95 para a versão antiga e 5 para a versão nova. Nessa configuração, não são usadas sessões persistentes nos grupos de destino. Os pesos determinam a proporção da distribuição do tráfego, e a equipe de operações também verifica o número real de solicitações.",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Antes do lançamento, a equipe de operações decidiu: “Se houver pelo menos 200 solicitações de confirmação de pedido para a versão nova em 10 minutos e a taxa de HTTP 5xx ultrapassar 2%, interromperemos o aumento da alocação.” Os resultados a seguir foram observados nos 10 minutos imediatamente após o lançamento.",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": [
+              "Solicitações de confirmação de pedido nos mesmos 10 minutos",
+              "Versão antiga",
+              "Versão nova"
+            ],
+            "rows": [
+              ["Número de solicitações", "15200", "800"],
+              ["Número de respostas HTTP 5xx", "104", "48"],
+              ["Taxa de HTTP 5xx", "Aproximadamente 0,68%", "6,0%"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Houve 800 solicitações para a versão nova, e a taxa de HTTP 5xx foi de 6,0%. Como o número de solicitações foi de pelo menos 200 e a taxa de HTTP 5xx ultrapassou 2%, a equipe responsável interrompe o aumento da alocação. A taxa combinada de HTTP 5xx das versões antiga e nova foi de 0,95%, o que torna menos visível a deterioração ocorrida na versão nova. A equipe investiga, usando traces e logs da aplicação, as solicitações que falharam na confirmação do pedido na versão nova.",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "O que verificar antes de reverter para a versão anterior",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Compare no diagrama as linhas que vão do ALB para a versão anterior e para a nova versão, além do DB que ambas leem e gravam. Ao alterar os destinos de roteamento do ALB, o destino das solicitações que chegarem daqui em diante será alterado. Os pedidos que a nova versão já salvou no DB compartilhado permanecerão lá.",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Neste caso, a nova coluna já foi adicionada, e a versão anterior não faz referência a ela. O recurso que começa a gravar estados de pedido compreendidos somente pela nova versão está desativado. O responsável examina a configuração e os dados reais e verifica se os pedidos criados pela nova versão podem ser lidos novamente pela versão anterior e se os pedidos podem ser finalizados usando a versão anterior. Ele também verifica se ainda existem solicitações em processamento ou processamento em segundo plano executado somente pela nova versão.",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Como foi confirmado que a versão anterior pode processar os pedidos com segurança, o responsável altera o roteamento do ALB de volta para a versão anterior. Se as condições forem diferentes e estados de pedido específicos da nova versão já tiverem sido salvos, mas não puderem ser lidos pela versão anterior, ele considera interromper as gravações afetadas ou usar uma versão revisada que possa lidar com ambos os estados. Restaurar o RDS para um ponto específico no tempo cria uma nova instância de DB, e os pedidos aceitos depois do horário especificado não estarão nela. Se uma mudança estiver sendo considerada, primeiro será necessário um método para conferir e recuperar os pedidos desse intervalo.",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "Verificar a recuperação",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "O responsável confirma que o novo tráfego voltou para a versão antiga e compara a taxa de sucesso, os HTTP 5xx e o tempo de resposta do mesmo processamento de confirmação de pedidos, usando os mesmos intervalos de 10 minutos de antes da mudança. Ele cruza os números dos pedidos com os logs da aplicação para verificar se há registros em que o pedido foi confirmado, mas exibido como falha, ou pedidos criados duas vezes devido a novas tentativas.",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Mesmo que os HTTP 5xx diminuam, o trabalho de recuperação continua se forem encontrados pedidos perdidos ou duplicados. O responsável registra que tanto a exibição que pode ser verificada pelo usuário quanto o estado dos pedidos armazenados retornaram ao estado esperado durante a operação normal.",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "Considerar a mudança das condições",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Em outra implantação, descobriu-se que a nova versão já havia armazenado 50 pedidos em um estado destinado exclusivamente à nova versão, e que a versão antiga produzia um erro ao abrir esses pedidos. O responsável interrompeu a ampliação da alocação, desativou a funcionalidade que grava o estado exclusivo da nova versão e confirmou que a interrupção também havia sido aplicada às solicitações em processamento e ao processamento em segundo plano. Para recuperar o serviço protegendo os pedidos existentes, o que deve ser verificado em seguida?",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Verifique como permitir que a versão antiga processe corretamente os pedidos que contêm os 50 pedidos afetados. Compare a disponibilização de uma versão revisada capaz de lidar com os dois estados com a conversão segura do estado armazenado e a confirmação de que a versão antiga consegue lidar com ele. Enquanto isso, proteja os pedidos que não podem ser processados, por exemplo, interrompendo temporariamente sua aceitação. Alterar os pesos do ALB não altera o estado armazenado.",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referências",
+    "sources": [
+      {
+        "label": "Regras de listener e ações de encaminhamento do Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "Restaurar uma instância de banco de dados do Amazon RDS para um ponto específico no tempo",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "Garantir a segurança do rollback durante uma implantação",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "fr": {
+    "id": "checkout-deployment-recovery",
+    "title": "Arrêter le déploiement progressif du service de commandes et rétablir le service en toute sécurité",
+    "intro": "Le responsable des mises en production d’une entreprise de vente au détail déploie progressivement une nouvelle version du processus de paiement. Application Load Balancer (ALB) répartit les demandes de confirmation de commande entre deux groupes cibles : l’ancienne version et la nouvelle. Les deux applications lisent et écrivent dans la même table de commandes sur Amazon RDS for PostgreSQL. L’équipe d’exploitation doit rétablir le service sans perdre les commandes confirmées ni accepter deux fois la même commande.",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "Conditions d’arrêt du déploiement",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Au départ, définissez le poids à 95 pour l’ancienne version et à 5 pour la nouvelle version. Cette configuration n’utilise pas de sessions persistantes pour les groupes cibles. Les poids déterminent la proportion de répartition du trafic, et l’équipe d’exploitation vérifie également le nombre réel de requêtes.",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Avant la mise en production, l’équipe d’exploitation a décidé : « Si au moins 200 requêtes de confirmation de commande sont envoyées vers la nouvelle version en 10 minutes et que le taux HTTP 5xx dépasse 2 %, il faut arrêter d’augmenter la répartition. » Les résultats suivants ont été observés pendant les 10 minutes qui ont immédiatement suivi la mise en production.",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": [
+              "Requêtes de confirmation de commande pendant les mêmes 10 minutes",
+              "Ancienne version",
+              "Nouvelle version"
+            ],
+            "rows": [
+              ["Nombre de requêtes", "15200", "800"],
+              ["Nombre de réponses HTTP 5xx", "104", "48"],
+              ["Taux HTTP 5xx", "Environ 0,68 %", "6,0 %"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "La nouvelle version a reçu 800 requêtes et le taux HTTP 5xx était de 6,0 %. Comme le nombre de requêtes était d’au moins 200 et que le taux HTTP 5xx dépassait 2 %, l’équipe responsable arrête d’augmenter la répartition. Le taux HTTP 5xx combiné de l’ancienne et de la nouvelle version était de 0,95 %, ce qui rend moins visible la dégradation observée dans la nouvelle version. L’équipe examine, à l’aide des traces et des journaux de l’application, les requêtes pour lesquelles la confirmation de commande a échoué dans la nouvelle version.",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "Points à vérifier avant de revenir à la version précédente",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Comparez les lignes du schéma qui vont de l’ALB vers la version précédente et la nouvelle version, ainsi que la DB que les deux versions lisent et écrivent. Modifier les cibles de routage de l’ALB change la destination des requêtes qui arriveront désormais. Les commandes que la nouvelle version a déjà enregistrées dans la DB partagée y restent.",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Dans ce cas, la nouvelle colonne a déjà été ajoutée et la version précédente ne la référence pas. La fonctionnalité qui commence à écrire des états de commande compris uniquement par la nouvelle version est désactivée. Le responsable examine la configuration et les données réelles, puis vérifie que les commandes créées par la nouvelle version peuvent être relues par la version précédente et que les commandes peuvent être finalisées depuis la version précédente. Il vérifie également qu’il ne reste aucune requête en cours ni aucun traitement en arrière-plan exécuté uniquement par la nouvelle version.",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Puisqu’il a été établi que la version précédente peut traiter les commandes en toute sécurité, le responsable rétablit le routage de l’ALB vers la version précédente. Si les conditions sont différentes et que des états de commande propres à la nouvelle version ont déjà été enregistrés mais ne peuvent pas être lus par la version précédente, il faut envisager d’arrêter les écritures concernées ou d’utiliser une version corrigée capable de gérer les deux états. Restaurer RDS à un point précis dans le temps crée une nouvelle instance DB, et les commandes acceptées après l’heure spécifiée ne s’y trouvent pas. Si un basculement est envisagé, il faut d’abord prévoir une méthode pour rapprocher et récupérer les commandes de cet intervalle.",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "Vérifier le rétablissement",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Le responsable vérifie que le nouveau trafic est revenu vers l’ancienne version et compare, pour le même traitement de confirmation de commande, le taux de réussite, les HTTP 5xx et le temps de réponse par intervalles de 10 minutes identiques à ceux utilisés avant le basculement. Il rapproche les numéros de commande des journaux de l’application afin de rechercher des enregistrements dans lesquels la commande a été confirmée mais affichée comme ayant échoué, ou des commandes créées en double à la suite de nouvelles tentatives.",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Même si les HTTP 5xx diminuent, le rétablissement se poursuit si des commandes manquées ou en double sont détectées. Le responsable consigne que l’affichage visible par l’utilisateur et l’état des commandes enregistrées sont tous deux revenus à l’état attendu en fonctionnement normal.",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "Réfléchir en modifiant les conditions",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Lors d’une autre mise en production, il a été découvert que la nouvelle version avait déjà enregistré 50 commandes dans un état réservé à la nouvelle version et que l’ancienne version générait une erreur lorsqu’elle ouvrait ces commandes. Le responsable a arrêté d’augmenter la répartition du trafic, désactivé la fonctionnalité qui écrit l’état réservé à la nouvelle version et confirmé que l’arrêt s’était également appliqué aux requêtes en cours et aux traitements en arrière-plan. Pour rétablir le service tout en protégeant les commandes existantes, que faut-il vérifier ensuite ?",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Vérifier comment permettre à l’ancienne version de traiter correctement les commandes contenant les 50 commandes concernées. Comparer le déploiement d’une version corrigée capable de gérer les deux états avec la conversion sécurisée de l’état enregistré et la vérification que l’ancienne version peut le traiter. Entre-temps, protéger les commandes qui ne peuvent pas être traitées, par exemple en suspendant temporairement leur acceptation. Modifier les pondérations de l’ALB ne change pas l’état enregistré.",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Références",
+    "sources": [
+      {
+        "label": "Règles d’écoute et actions de transfert d’Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "Restaurer une instance de base de données Amazon RDS à un point précis dans le temps",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "Garantir la sécurité du rollback lors d’un déploiement",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "de": {
+    "id": "checkout-deployment-recovery",
+    "title": "Die schrittweise Veröffentlichung des Bestellservices stoppen und sicher wiederherstellen",
+    "intro": "Der Release-Verantwortliche eines Einzelhandelsunternehmens führt schrittweise eine neue Version des Bestellvorgangs ein. Application Load Balancer (ALB) verteilt Bestätigungsanfragen für Bestellungen auf zwei Zielgruppen: die alte und die neue Version. Beide Anwendungen lesen aus derselben Bestelltabelle in Amazon RDS for PostgreSQL und schreiben in sie. Das Betriebsteam muss den Service wiederherstellen, ohne bestätigte Bestellungen zu verlieren oder dieselbe Bestellung zweimal anzunehmen.",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "Bedingungen zum Stoppen des Deployments",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Legen Sie zunächst das Gewicht für die alte Version auf 95 und für die neue Version auf 5 fest. In dieser Konfiguration werden keine Sticky Sessions für die Zielgruppen verwendet. Die Gewichte bestimmen das Verhältnis der Verkehrsverteilung, und das Betriebsteam prüft außerdem die tatsächliche Anzahl der Anfragen.",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Vor dem Release legte das Betriebsteam fest: „Wenn innerhalb von 10 Minuten mindestens 200 Bestätigungsanfragen für Bestellungen an die neue Version gesendet werden und HTTP 5xx 2 % überschreitet, wird die Erhöhung der Zuweisung gestoppt.“ In den 10 Minuten unmittelbar nach dem Release wurden die folgenden Ergebnisse beobachtet.",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": [
+              "Bestätigungsanfragen für Bestellungen in denselben 10 Minuten",
+              "Alte Version",
+              "Neue Version"
+            ],
+            "rows": [
+              ["Anzahl der Anfragen", "15200", "800"],
+              ["Anzahl der HTTP-5xx-Antworten", "104", "48"],
+              ["HTTP-5xx-Rate", "Ca. 0,68 %", "6,0 %"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Die neue Version erhielt 800 Anfragen, und die HTTP-5xx-Rate betrug 6,0 %. Da die Anzahl der Anfragen mindestens 200 betrug und die HTTP-5xx-Rate 2 % überschritt, stoppt das verantwortliche Team die Erhöhung der Zuweisung. Die kombinierte HTTP-5xx-Rate der alten und neuen Version betrug 0,95 %, wodurch die Verschlechterung in der neuen Version weniger sichtbar wird. Das Team untersucht mithilfe von Traces und Anwendungslogs die Anfragen, bei denen die Bestätigung der Bestellung in der neuen Version fehlgeschlagen ist.",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "Was vor dem Zurücksetzen auf die vorherige Version zu prüfen ist",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Vergleichen Sie im Diagramm die Verbindungen vom ALB zur vorherigen und zur neuen Version sowie die DB, aus der beide Versionen lesen und in die beide schreiben. Wenn Sie die Routing-Ziele des ALB ändern, ändert sich das Ziel der künftig eingehenden Anforderungen. Bestellungen, die die neue Version bereits in der gemeinsamen DB gespeichert hat, bleiben dort erhalten.",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "In diesem Fall wurde die neue Spalte bereits hinzugefügt, und die vorherige Version referenziert sie nicht. Die Funktion, die beginnt, nur von der neuen Version verstandene Bestellstatus zu schreiben, ist deaktiviert. Der Verantwortliche untersucht die Konfiguration und die tatsächlichen Daten und überprüft, ob von der neuen Version erstellte Bestellungen von der vorherigen Version erneut gelesen werden können und ob Bestellungen über die vorherige Version abgeschlossen werden können. Außerdem wird geprüft, ob noch Anforderungen in Bearbeitung oder Hintergrundverarbeitungen vorhanden sind, die nur von der neuen Version ausgeführt werden.",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Da festgestellt wurde, dass die vorherige Version die Bestellungen sicher verarbeiten kann, stellt der Verantwortliche das Routing des ALB auf die vorherige Version zurück. Wenn die Bedingungen anders sind und versionsspezifische Bestellstatus der neuen Version bereits gespeichert wurden, von der vorherigen Version aber nicht gelesen werden können, sollte erwogen werden, die betroffenen Schreibvorgänge zu stoppen oder eine überarbeitete Version zu verwenden, die beide Status verarbeiten kann. Durch die Wiederherstellung von RDS auf einen bestimmten Zeitpunkt wird eine neue DB-Instance erstellt; Bestellungen, die nach dem angegebenen Zeitpunkt angenommen wurden, sind dort nicht vorhanden. Wenn ein Umschalten in Betracht gezogen wird, wird zunächst eine Methode benötigt, um die Bestellungen aus diesem Zeitraum abzugleichen und wiederherzustellen.",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "Wiederherstellung überprüfen",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Die zuständige Person bestätigt, dass neuer Datenverkehr zur alten Version zurückgeleitet wurde, und vergleicht für denselben Bestätigungsprozess einer Bestellung die Erfolgsrate, HTTP 5xx und die Antwortzeit in denselben 10-Minuten-Intervallen wie vor der Umschaltung. Sie gleicht die Bestellnummern mit den Anwendungsprotokollen ab, um zu prüfen, ob es Aufzeichnungen gibt, bei denen die Bestellung bestätigt, auf dem Bildschirm jedoch als fehlgeschlagen angezeigt wurde, oder ob durch Wiederholungen doppelte Bestellungen erstellt wurden.",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Auch wenn die HTTP 5xx zurückgehen, wird die Wiederherstellung fortgesetzt, wenn fehlende oder doppelte Bestellungen gefunden werden. Die zuständige Person dokumentiert, dass sowohl die für Benutzer sichtbare Anzeige als auch der Zustand der gespeicherten Bestellungen wieder dem im Normalbetrieb erwarteten Zustand entsprechen.",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "Die Bedingungen ändern und neu überlegen",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Bei einer anderen Bereitstellung wurde festgestellt, dass die neue Version bereits 50 Bestellungen in einem ausschließlich für die neue Version vorgesehenen Zustand gespeichert hatte und dass die alte Version beim Öffnen dieser Bestellungen einen Fehler verursachte. Der Verantwortliche stoppte die Ausweitung der Verkehrsverteilung, deaktivierte die Funktion zum Schreiben des ausschließlich für die neue Version vorgesehenen Zustands und bestätigte, dass der Stopp auch für laufende Anfragen und Hintergrundverarbeitung wirksam geworden war. Was sollte als Nächstes geprüft werden, um den Betrieb wiederherzustellen und dabei die vorhandenen Bestellungen zu schützen?",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Prüfen, wie die alte Version so angepasst werden kann, dass sie Bestellungen mit den 50 betroffenen Bestellungen korrekt verarbeitet. Vergleichen, ob eine überarbeitete Version bereitgestellt wird, die beide Zustände verarbeiten kann, oder ob der gespeicherte Zustand sicher konvertiert und anschließend bestätigt wird, dass die alte Version ihn verarbeiten kann. In der Zwischenzeit sind nicht verarbeitbare Bestellungen zu schützen, beispielsweise indem ihre Annahme vorübergehend gestoppt wird. Eine Änderung der ALB-Gewichte ändert den gespeicherten Zustand nicht.",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referenzen",
+    "sources": [
+      {
+        "label": "Listener-Regeln und Weiterleitungsaktionen von Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "Eine Amazon RDS-DB-Instance auf einen bestimmten Zeitpunkt wiederherstellen",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "Die Sicherheit eines Rollbacks während einer Bereitstellung gewährleisten",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "es": {
+    "id": "checkout-deployment-recovery",
+    "title": "Detener la implementación gradual del servicio de pedidos y recuperarlo de forma segura",
+    "intro": "El responsable de lanzamientos de una empresa minorista está implementando gradualmente una nueva versión del proceso de compra. Application Load Balancer (ALB) distribuye las solicitudes de confirmación de pedidos entre dos grupos de destino: la versión anterior y la nueva. Ambas aplicaciones leen y escriben en la misma tabla de pedidos de Amazon RDS for PostgreSQL. El equipo de operaciones debe recuperar el servicio sin perder pedidos confirmados ni aceptar dos veces el mismo pedido.",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "Condiciones para detener el despliegue",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Inicialmente, establece el peso en 95 para la versión antigua y en 5 para la versión nueva. Esta configuración no utiliza sesiones persistentes para los grupos de destino. Los pesos determinan la proporción de distribución del tráfico, y el equipo de operaciones también comprueba el número real de solicitudes.",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Antes del lanzamiento, el equipo de operaciones decidió: «Si hay al menos 200 solicitudes de confirmación de pedido dirigidas a la versión nueva en 10 minutos y HTTP 5xx supera el 2 %, se debe detener el aumento de la asignación». Durante los 10 minutos inmediatamente posteriores al lanzamiento se obtuvieron los siguientes resultados.",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": [
+              "Solicitudes de confirmación de pedido durante los mismos 10 minutos",
+              "Versión antigua",
+              "Versión nueva"
+            ],
+            "rows": [
+              ["Número de solicitudes", "15200", "800"],
+              ["Número de respuestas HTTP 5xx", "104", "48"],
+              ["Tasa de HTTP 5xx", "Aproximadamente 0,68 %", "6,0 %"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "La versión nueva recibió 800 solicitudes y la tasa de HTTP 5xx fue del 6,0 %. Como el número de solicitudes fue de al menos 200 y la tasa de HTTP 5xx superó el 2 %, el equipo responsable detiene el aumento de la asignación. La tasa combinada de HTTP 5xx de las versiones antigua y nueva fue del 0,95 %, por lo que el empeoramiento producido en la versión nueva resulta menos visible. El equipo investiga, mediante trazas y registros de la aplicación, las solicitudes cuya confirmación de pedido falló en la versión nueva.",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "Qué comprobar antes de volver a la versión anterior",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Compare en el diagrama las líneas que van del ALB a la versión anterior y a la nueva versión, junto con la DB de la que ambas versiones leen y en la que ambas escriben. Al cambiar los destinos de enrutamiento del ALB, cambia el destino de las solicitudes que lleguen a partir de ahora. Los pedidos que la nueva versión ya haya guardado en la DB compartida permanecen allí.",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "En este caso, la nueva columna ya se ha añadido y la versión anterior no hace referencia a ella. La función que empieza a escribir estados de pedido que solo entiende la nueva versión está deshabilitada. El responsable examina la configuración y los datos reales, y comprueba que los pedidos creados por la nueva versión puedan volver a leerse con la versión anterior y que los pedidos puedan finalizarse desde la versión anterior. También comprueba que no queden solicitudes en curso ni procesos en segundo plano ejecutados únicamente por la nueva versión.",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Como se ha determinado que la versión anterior puede procesar los pedidos de forma segura, el responsable devuelve el enrutamiento del ALB a la versión anterior. Si las condiciones son diferentes y ya se han guardado estados de pedido específicos de la nueva versión que la versión anterior no puede leer, se debe considerar detener las escrituras afectadas o utilizar una versión revisada que pueda gestionar ambos estados. Restaurar RDS a un momento específico crea una nueva instancia de DB, y los pedidos aceptados después de la hora especificada no están allí. Si se contempla un cambio, primero se necesita un método para conciliar y recuperar los pedidos de ese intervalo.",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "Verificar la recuperación",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "La persona responsable confirma que el tráfico nuevo ha vuelto a la versión anterior y compara, para el mismo proceso de confirmación de pedidos, la tasa de éxito, los HTTP 5xx y el tiempo de respuesta en los mismos intervalos de 10 minutos que antes del cambio. Contrasta los números de pedido con los registros de la aplicación para comprobar si existen registros en los que el pedido se confirmó, pero se mostró como fallido, o pedidos creados dos veces debido a reintentos.",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Aunque los HTTP 5xx disminuyan, el trabajo de recuperación continúa si se encuentran pedidos omitidos o duplicados. La persona responsable registra que tanto la información visible para el usuario como el estado de los pedidos almacenados han vuelto al estado esperado durante el funcionamiento normal.",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "Pensar cambiando las condiciones",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "En otra implementación, se descubrió que la nueva versión ya había almacenado 50 pedidos en un estado destinado exclusivamente a la nueva versión y que la versión antigua producía un error al abrir esos pedidos. El responsable detuvo la ampliación de la distribución del tráfico, deshabilitó la funcionalidad que escribe el estado exclusivo de la nueva versión y confirmó que la detención también se había aplicado a las solicitudes en curso y al procesamiento en segundo plano. Para recuperarse mientras se protegen los pedidos existentes, ¿qué debe comprobarse a continuación?",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Comprobar cómo permitir que la versión antigua procese correctamente los pedidos que contienen los 50 pedidos afectados. Comparar la implementación de una versión revisada capaz de manejar ambos estados con la conversión segura del estado almacenado y la comprobación de que la versión antigua puede manejarlo. Mientras tanto, proteger los pedidos que no se puedan procesar, por ejemplo, deteniendo temporalmente su aceptación. Cambiar los pesos del ALB no cambia el estado almacenado.",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Referencias",
+    "sources": [
+      {
+        "label": "Reglas de listener y acciones de reenvío de Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "Restaurar una instancia de base de datos de Amazon RDS a un momento específico",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "Garantizar la seguridad de la reversión durante una implementación",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  },
+  "it": {
+    "id": "checkout-deployment-recovery",
+    "title": "Arrestare il rilascio graduale del servizio ordini e ripristinarlo in sicurezza",
+    "intro": "Il responsabile dei rilasci di un’azienda al dettaglio sta distribuendo gradualmente una nuova versione del processo di acquisto. Application Load Balancer (ALB) distribuisce le richieste di conferma degli ordini tra due gruppi target: la versione precedente e quella nuova. Entrambe le applicazioni leggono e scrivono nella stessa tabella degli ordini su Amazon RDS for PostgreSQL. Il team operativo deve ripristinare il servizio senza perdere gli ordini confermati né accettare due volte lo stesso ordine.",
+    "sections": [
+      {
+        "id": "abort-criteria",
+        "title": "Condizioni per interrompere il deployment",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Inizialmente, imposta il peso su 95 per la versione precedente e su 5 per la nuova versione. In questa configurazione non vengono utilizzate sessioni persistenti per i gruppi di destinazione. I pesi determinano la proporzione di distribuzione del traffico e il team operativo verifica anche il numero effettivo di richieste.",
+            "key": "abort-criteria-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Prima del rilascio, il team operativo ha deciso: «Se entro 10 minuti vengono ricevute almeno 200 richieste di conferma dell’ordine dalla nuova versione e HTTP 5xx supera il 2%, interrompere l’aumento dell’allocazione». Nei 10 minuti immediatamente successivi al rilascio sono stati osservati i risultati seguenti.",
+            "key": "abort-criteria-2"
+          },
+          {
+            "kind": "table",
+            "columns": [
+              "Richieste di conferma dell’ordine negli stessi 10 minuti",
+              "Versione precedente",
+              "Nuova versione"
+            ],
+            "rows": [
+              ["Numero di richieste", "15200", "800"],
+              ["Numero di risposte HTTP 5xx", "104", "48"],
+              ["Percentuale HTTP 5xx", "Circa 0,68%", "6,0%"]
+            ],
+            "key": "abort-criteria-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "La nuova versione ha ricevuto 800 richieste e la percentuale HTTP 5xx è stata del 6,0%. Poiché il numero di richieste era almeno 200 e la percentuale HTTP 5xx superava il 2%, il team responsabile interrompe l’aumento dell’allocazione. La percentuale HTTP 5xx combinata delle versioni precedente e nuova era dello 0,95%, rendendo meno visibile il peggioramento verificatosi nella nuova versione. Il team esamina, utilizzando trace e log dell’applicazione, le richieste per le quali la conferma dell’ordine non è riuscita nella nuova versione.",
+            "key": "abort-criteria-4"
+          }
+        ]
+      },
+      {
+        "id": "compatibility",
+        "title": "Cosa verificare prima di tornare alla versione precedente",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Confronta nel diagramma le linee che dall’ALB conducono alla versione precedente e alla nuova versione, insieme al DB da cui entrambe leggono e in cui entrambe scrivono. Modificando le destinazioni di routing dell’ALB, cambia la destinazione delle richieste che arriveranno da quel momento in poi. Gli ordini che la nuova versione ha già salvato nel DB condiviso rimangono lì.",
+            "key": "compatibility-1"
+          },
+          {
+            "kind": "figure",
+            "id": "checkout-deployment-recovery/shared-database",
+            "key": "compatibility-2"
+          },
+          {
+            "kind": "paragraph",
+            "text": "In questo caso, la nuova colonna è già stata aggiunta e la versione precedente non vi fa riferimento. La funzionalità che inizia a scrivere stati dell’ordine compresi solo dalla nuova versione è disabilitata. Il responsabile esamina la configurazione e i dati effettivi e verifica che gli ordini creati dalla nuova versione possano essere riletti dalla versione precedente e che gli ordini possano essere finalizzati dalla versione precedente. Verifica inoltre che non siano rimaste richieste in elaborazione o attività di elaborazione in background eseguite solo dalla nuova versione.",
+            "key": "compatibility-3"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Poiché è stato stabilito che la versione precedente può elaborare gli ordini in sicurezza, il responsabile riporta il routing dell’ALB alla versione precedente. Se le condizioni sono diverse e gli stati dell’ordine specifici della nuova versione sono già stati salvati ma non possono essere letti dalla versione precedente, occorre valutare l’interruzione delle scritture interessate o l’uso di una versione modificata in grado di gestire entrambi gli stati. Il ripristino di RDS a un momento specifico crea una nuova istanza DB e gli ordini accettati dopo l’ora specificata non si trovano lì. Se si sta valutando un passaggio, serve prima un metodo per confrontare e recuperare gli ordini di quell’intervallo.",
+            "key": "compatibility-4"
+          }
+        ]
+      },
+      {
+        "id": "verify-recovery",
+        "title": "Verificare il ripristino",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Il responsabile verifica che il nuovo traffico sia tornato alla versione precedente e confronta, per lo stesso processo di conferma dell’ordine, la percentuale di successo, gli HTTP 5xx e il tempo di risposta negli stessi intervalli di 10 minuti utilizzati prima del passaggio. Confronta i numeri degli ordini con i log dell’applicazione per verificare se esistono record in cui l’ordine è stato confermato ma visualizzato come non riuscito, oppure ordini creati due volte a causa dei tentativi ripetuti.",
+            "key": "verify-recovery-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Anche se gli HTTP 5xx diminuiscono, l’attività di ripristino continua se vengono trovati ordini mancanti o duplicati. Il responsabile registra che sia la visualizzazione disponibile all’utente sia lo stato degli ordini salvati sono tornati allo stato previsto durante il normale funzionamento.",
+            "key": "verify-recovery-2"
+          }
+        ]
+      },
+      {
+        "id": "changed-condition",
+        "title": "Ragionare modificando le condizioni",
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Durante un’altra distribuzione, è stato scoperto che la nuova versione aveva già salvato 50 ordini in uno stato destinato esclusivamente alla nuova versione e che la versione precedente generava un errore quando apriva tali ordini. Il responsabile ha interrotto l’aumento della distribuzione del traffico, disabilitato la funzionalità che scrive lo stato esclusivo della nuova versione e verificato che l’interruzione fosse stata applicata anche alle richieste in corso e all’elaborazione in background. Per ripristinare il servizio proteggendo gli ordini esistenti, che cosa occorre verificare successivamente?",
+            "key": "changed-condition-1"
+          },
+          {
+            "kind": "paragraph",
+            "text": "Verificare come consentire alla versione precedente di elaborare correttamente gli ordini che contengono i 50 ordini interessati. Confrontare la distribuzione di una versione aggiornata in grado di gestire entrambi gli stati con la conversione sicura dello stato salvato e la verifica che la versione precedente sia in grado di gestirlo. Nel frattempo, proteggere gli ordini che non possono essere elaborati, ad esempio interrompendone temporaneamente l’accettazione. La modifica dei pesi dell’ALB non modifica lo stato salvato.",
+            "key": "changed-condition-2"
+          }
+        ]
+      }
+    ],
+    "referencesTitle": "Riferimenti",
+    "sources": [
+      {
+        "label": "Regole del listener e azioni di inoltro di Application Load Balancer",
+        "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/rule-action-types.html",
+        "language": "ja"
+      },
+      {
+        "label": "Ripristinare un’istanza DB Amazon RDS a un momento specifico",
+        "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html",
+        "language": "ja"
+      },
+      {
+        "label": "Garantire la sicurezza del rollback durante una distribuzione",
+        "url": "https://aws.amazon.com/jp/builders-library/ensuring-rollback-safety-during-deployments/",
+        "language": "ja"
+      }
+    ]
+  }
+}

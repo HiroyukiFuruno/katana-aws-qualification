@@ -1,12 +1,8 @@
 import { termAnchor } from '../glossaryAnchor';
 import { type Locale, localePath } from '../locales.ts';
-import { AppliedCaseArticle, type AppliedCaseContent } from './AppliedCaseArticle';
-import caseContent from './content.json' with { type: 'json' };
-import figures from './figures.json' with { type: 'json' };
-import resources from './resources.json' with { type: 'json' };
-import { appliedCases, appliedDirectory, appliedIndexPage, ordersCaseId } from './routes.ts';
-
-const ordersContent = caseContent as Record<Locale, AppliedCaseContent>;
+import { AppliedCaseArticle } from './AppliedCaseArticle';
+import { appliedContentFor, appliedFiguresFor, appliedResourcesFor } from './cases.ts';
+import { appliedCaseForPage, appliedCases, appliedDirectory, appliedIndexPage } from './routes.ts';
 
 export default function AppliedPages({ page, locale }: { page: string; locale: Locale }) {
   const directory = appliedDirectory(locale);
@@ -26,17 +22,19 @@ export default function AppliedPages({ page, locale }: { page: string; locale: L
       </main>
     );
   }
-  if (page !== `${appliedIndexPage}/${ordersCaseId}`) throw new Error(`Unknown applied page: ${page}`);
+  const entry = appliedCaseForPage(locale, page);
+  if (!entry) throw new Error(`Unknown applied page: ${page}`);
+  const lesson = appliedContentFor(locale, entry.id);
   return (
     <AppliedCaseArticle
-      lesson={ordersContent[locale]}
-      figures={figures}
+      lesson={lesson}
+      figures={appliedFiguresFor(lesson)}
       back={{ href: localePath(locale, appliedIndexPage), label: directory.title }}
-      foundations={appliedCases(locale)[0].prerequisites.map(({ slug, title }) => ({
+      foundations={entry.prerequisites.map(({ slug, title }) => ({
         href: localePath(locale, `study/fundamentals/${slug}`),
         label: title,
       }))}
-      glossary={resources[ordersCaseId].glossaryTerms.map((term) => ({
+      glossary={appliedResourcesFor(entry.id).glossaryTerms.map((term) => ({
         href: `${localePath(locale, 'glossary')}#${termAnchor(term)}`,
         label: term,
       }))}

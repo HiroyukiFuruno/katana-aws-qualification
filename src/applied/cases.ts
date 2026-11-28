@@ -2,6 +2,9 @@ import type { Locale } from '../locales.ts';
 import { locales } from '../locales.ts';
 import catalogSource from './catalog.json' with { type: 'json' };
 import ordersApiLatency from './content.json' with { type: 'json' };
+import checkoutDeploymentRecovery from './content-checkout-deployment-recovery.json' with {
+  type: 'json',
+};
 import privateAppS3 from './content-private-app-s3.json' with { type: 'json' };
 import figuresSource from './figures.json' with { type: 'json' };
 import resourcesSource from './resources.json' with { type: 'json' };
@@ -23,6 +26,7 @@ export const appliedCatalog = catalogSource as AppliedCatalog;
 const appliedContent = {
   'orders-api-latency': ordersApiLatency,
   'private-app-s3': privateAppS3,
+  'checkout-deployment-recovery': checkoutDeploymentRecovery,
 } as unknown as Record<string, Record<Locale, AppliedCaseContent>>;
 const appliedFigures = figuresSource as Record<string, AppliedFigure>;
 const appliedResources = resourcesSource as Record<string, AppliedResource>;

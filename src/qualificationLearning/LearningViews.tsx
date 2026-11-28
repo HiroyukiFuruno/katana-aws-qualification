@@ -1,14 +1,14 @@
+import { imageSlot } from '../images/catalog';
+import { ImageSlot } from '../images/ImageSlot';
 import { termAnchor } from '../glossaryAnchor';
 import { type Locale, localePath } from '../locales.ts';
 import { messages } from '../messages.ts';
 import studyCopy from './copy.json' with { type: 'json' };
-import figureIndex from './figures.json' with { type: 'json' };
 import { type qualificationLearningRoute, qualificationPrerequisitePath } from './routes';
 import { StudyCheckpointForm } from './StudyCheckpoint';
-import type { StudyFigure, StudyUnit } from './types';
+import type { StudyUnit } from './types';
 
 export type LearningRoute = NonNullable<ReturnType<typeof qualificationLearningRoute>>;
-const figures: Record<string, StudyFigure> = figureIndex;
 
 function ExamLink({ courseId, locale }: { courseId: string; locale: Locale }) {
   return <a href={`${localePath(locale, `study/${courseId}`)}?mode=exam`}>{messages[locale].exam}</a>;
@@ -55,40 +55,31 @@ export function LearningArticle({
           <h1>{unit.title}</h1>
           <p>{unit.objective}</p>
         </header>
-        {unit.sections.map((section) => {
-          const figure = section.figureId && figures[section.figureId];
-          if (section.figureId && !figure) throw new Error(`Unknown study figure: ${section.figureId}`);
-          return (
-            <section key={section.id} aria-labelledby={section.id}>
-              <h2 id={section.id}>{section.title}</h2>
-              {section.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-              {figure && (
-                <figure lang="en" className="qualification-figure" data-figure={section.figureId}>
-                  <img src={figure.src} alt={figure.alt} width={figure.width} height={figure.height} />
-                  <figcaption lang={locale}>
-                    <a href={figure.src} target="_blank" rel="noreferrer">
-                      {copy.openDiagram}
+        {unit.sections.map((section) => (
+          <section key={section.id} aria-labelledby={section.id}>
+            <h2 id={section.id}>{section.title}</h2>
+            {section.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+            <ImageSlot
+              id={imageSlot('qualification', route.courseId, unit.id, section.id)}
+              locale={locale}
+              expandLabel={copy.openDiagram}
+            />
+            <details>
+              <summary>{copy.sources}</summary>
+              <ul>
+                {section.sources.map(({ label, url }) => (
+                  <li key={url}>
+                    <a href={url} hrefLang="ja">
+                      {label}
                     </a>
-                  </figcaption>
-                </figure>
-              )}
-              <details>
-                <summary>{copy.sources}</summary>
-                <ul>
-                  {section.sources.map(({ label, url }) => (
-                    <li key={url}>
-                      <a href={url} hrefLang="ja">
-                        {label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            </section>
-          );
-        })}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </section>
+        ))}
         <section aria-labelledby="qualification-checkpoint-title">
           <h2 id="qualification-checkpoint-title">{copy.checkpoints}</h2>
           {interactive ? (

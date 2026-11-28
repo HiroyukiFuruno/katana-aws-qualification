@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import lessonFigures from '../../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
+import { imageForSlot, imagePlacementsFor } from '../../src/images/catalog';
 import { lessonPath } from '../../src/fundamentals/delivery/navigation';
 import { messages } from '../../src/messages';
 import { lessonAssets, selectLessonAnswer, visibleLessonSteps } from './fundamentals.helpers';
@@ -71,9 +71,12 @@ test('lesson recovery actions fit and have breathing room on a narrow screen', a
   }
 });
 
-for (const [stepId, figure] of Object.entries(lessonFigures)) {
+for (const slot of imagePlacementsFor('fundamentals')) {
+  const stepId = slot.slice('fundamentals/'.length);
   for (const locale of ['ja', 'de'] as const) {
-    test(`${locale}: lesson diagrams use shared English assets at ${stepId}`, async ({ page }) => {
+    const figure = imageForSlot(slot, locale);
+    if (!figure) throw new Error(`Missing lesson image: ${slot}/${locale}`);
+    test(`${locale}: lesson diagrams use the assigned language at ${stepId}`, async ({ page }) => {
       const unitId = stepId.split(':')[0];
       const asset = lessonAssets.find(({ unit }) => unit.id === unitId);
       if (!asset) throw new Error(`Missing public lesson: ${unitId}`);
@@ -97,9 +100,10 @@ for (const [stepId, figure] of Object.entries(lessonFigures)) {
 
       const diagram = page.locator('.lesson-reading .lesson-figure');
       const image = diagram.getByRole('img');
-      await expect(diagram).toHaveAttribute('lang', 'en');
-      await expect(image).toHaveAttribute('src', figure.url);
+      await expect(diagram).toHaveAttribute('lang', locale === 'ja' ? 'ja' : 'en');
+      await expect(image).toHaveAttribute('src', figure.src);
       await expect(image).toHaveAttribute('alt', figure.alt);
+      await expect(diagram.getByRole('link')).toHaveAttribute('href', figure.src);
       await expect
         .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
         .toBeGreaterThan(0);

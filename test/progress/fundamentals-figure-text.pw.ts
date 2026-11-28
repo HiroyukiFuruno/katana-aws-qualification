@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import lessonFigures from '../../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
+import { imageForSlot, imagePlacementsFor } from '../../src/images/catalog';
 
 const figures = [
   {
@@ -59,12 +59,15 @@ const figures = [
   },
 ] as const;
 
-for (const [id, asset] of Object.entries(lessonFigures)) {
+for (const slot of imagePlacementsFor('fundamentals')) {
+  const id = slot.slice('fundamentals/'.length);
+  const asset = imageForSlot(slot, 'en');
+  if (!asset) throw new Error(`Missing image: ${slot}`);
   const reference = figures.find((figure) => figure.id === id);
-  test(`${reference?.name ?? asset.url} fits the mobile SVG`, async ({ page }) => {
+  test(`${reference?.name ?? asset.src} fits the mobile SVG`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
     await page.emulateMedia({ colorScheme: 'dark' });
-    const response = await page.goto(asset.url);
+    const response = await page.goto(asset.src);
     expect(response?.ok()).toBe(true);
 
     await expect(page.locator('svg foreignObject')).toHaveCount(0);

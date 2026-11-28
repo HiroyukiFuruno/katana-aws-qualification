@@ -6,9 +6,8 @@ import checkoutDeploymentRecovery from './content-checkout-deployment-recovery.j
   type: 'json',
 };
 import privateAppS3 from './content-private-app-s3.json' with { type: 'json' };
-import figuresSource from './figures.json' with { type: 'json' };
 import resourcesSource from './resources.json' with { type: 'json' };
-import { type AppliedCaseContent, type AppliedFigure, appliedFigureIds } from './types.ts';
+import type { AppliedCaseContent } from './types.ts';
 
 export type AppliedPrerequisite = { slug: string; title: string };
 export type AppliedCaseCatalog = {
@@ -28,7 +27,6 @@ const appliedContent = {
   'private-app-s3': privateAppS3,
   'checkout-deployment-recovery': checkoutDeploymentRecovery,
 } as unknown as Record<string, Record<Locale, AppliedCaseContent>>;
-const appliedFigures = figuresSource as Record<string, AppliedFigure>;
 const appliedResources = resourcesSource as Record<string, AppliedResource>;
 
 export const appliedCaseIds = Object.keys(appliedCatalog.en.cases);
@@ -51,14 +49,4 @@ export function appliedResourcesFor(caseId: string) {
   const resource = appliedResources[caseId];
   if (!resource) throw new Error(`Missing applied resources: ${caseId}`);
   return resource;
-}
-
-export function appliedFiguresFor(content: AppliedCaseContent) {
-  return Object.fromEntries(
-    appliedFigureIds(content).map((id) => {
-      const figure = appliedFigures[id];
-      if (!figure) throw new Error(`Unknown applied figure: ${id}`);
-      return [id, figure];
-    }),
-  );
 }

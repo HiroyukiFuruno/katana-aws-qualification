@@ -1,3 +1,4 @@
+import { ImageSlot } from './images/ImageSlot';
 import { usePreferences } from './preferences';
 
 export function LandingHero() {
@@ -32,7 +33,7 @@ export function LandingHero() {
         </div>
         <div className="landing-identity" aria-hidden="true">
           <span>{t('siteShortName')}</span>
-          <span className="landing-identity-mark" />
+          <ImageSlot id="site/landing/identity" />
           <span>{t('landingPace')}</span>
         </div>
       </div>

@@ -1,15 +1,6 @@
 import type { User } from '@supabase/auth-js';
+import { httpsImageSource } from '../images/catalog';
 import type { Account } from './types';
-
-function httpsUrl(value: unknown) {
-  if (typeof value !== 'string' || !value.trim()) return undefined;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && !url.username && !url.password ? url.href : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 function profileText(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -25,7 +16,7 @@ export function accountFrom(user: User): Account {
     id: user.id,
     email: user.email ?? '',
     displayName,
-    avatarUrl: httpsUrl(Reflect.get(profile, 'avatar_url') ?? Reflect.get(profile, 'picture')),
+    avatarUrl: httpsImageSource(Reflect.get(profile, 'avatar_url') ?? Reflect.get(profile, 'picture')),
     identities: (user.identities ?? []).map((identity) => ({
       id: identity.identity_id,
       provider: identity.provider,

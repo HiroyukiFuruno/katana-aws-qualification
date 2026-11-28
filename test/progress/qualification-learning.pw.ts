@@ -2,12 +2,12 @@ import { expect, type Locator, test } from '@playwright/test';
 import { answerExamQuestion, expectGuestKeys } from './guest-exam.helpers';
 import { qualificationLearningCases } from './qualification-learning.cases';
 
-const figureAsset = '/qualification-learning/figures/';
+const teachingAsset = /\/(?:fundamentals|applied|qualification-learning)\/figures\//u;
 const figure = '.qualification-figure';
 
 async function expectTeachingFigure(lessonFigure: Locator) {
-  await expect(lessonFigure).toHaveAttribute('lang', 'en');
-  await expect(lessonFigure.getByRole('img')).toHaveAttribute('src', new RegExp(figureAsset));
+  await expect(lessonFigure).toHaveAttribute('lang', 'ja');
+  await expect(lessonFigure.getByRole('img')).toHaveAttribute('src', teachingAsset);
   await expect
     .poll(() => lessonFigure.getByRole('img').evaluate((image: HTMLImageElement) => image.naturalWidth))
     .toBeGreaterThan(0);
@@ -57,14 +57,13 @@ for (const {
     }
     if (additionalFigure) {
       await page.goto(`${learningIndex}${additionalFigure.unit}/`);
-      const asset = `${figureAsset}${courseId}/${additionalFigure.asset}.svg`;
-      const comparison = page.locator(figure).filter({ has: page.locator(`img[src="${asset}"]`) });
+      const comparison = page.locator(`${figure}[data-figure="${additionalFigure.asset}"]`);
       await expectTeachingFigure(comparison);
     }
     await page.goto(learningIndex);
     const examRequests: string[] = [];
     page.on('request', (request) => {
-      if (request.url().includes(figureAsset)) examRequests.push(request.url());
+      if (teachingAsset.test(new URL(request.url()).pathname)) examRequests.push(request.url());
     });
     await page.getByRole('main').getByRole('link', { name: '模擬試験', exact: true }).click();
     await expect(page).toHaveURL(`/ja/study/${courseId}/?mode=exam`);
@@ -90,7 +89,7 @@ for (const {
     await solution.locator(':scope > summary').click();
     await expect(solution).toHaveAttribute('open', '');
     await expect(page.locator(figure)).toHaveCount(0);
-    await expect(page.locator(`img[src*="${figureAsset}"]`)).toHaveCount(0);
+    await expect(page.locator('img[src*="/figures/"]')).toHaveCount(0);
     expect(examRequests).toEqual([]);
     await expectGuestKeys(page);
   });

@@ -2,14 +2,12 @@ import type { Locale } from '../locales.ts';
 import type { Question } from '../questions.ts';
 
 export type StudyCheckpoint = Pick<Question, 'id' | 'prompt' | 'choices' | 'correct'>;
-export type StudyFigure = { src: string; alt: string; width: number; height: number };
 export type StudySource = { label: string; url: string };
 export type StudySection = {
   id: string;
   title: string;
   paragraphs: string[];
   sources: StudySource[];
-  figureId?: string;
 };
 export type StudyPrerequisite = { title: string; slug: string; courseId?: string };
 export type StudyUnit = {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ImageSlot } from '../images/ImageSlot';
 import { localePath } from '../locales';
 import { usePreferences } from '../preferences';
 import { useDismissiblePopover } from '../useDismissiblePopover';
@@ -16,15 +17,12 @@ export function AccountNavigation() {
   const { state, service } = useAccount();
   const { locale, t } = usePreferences();
   const [open, setOpen] = useState(false);
-  const [avatarFailedFor, setAvatarFailedFor] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const { group, button } = useDismissiblePopover(open, setOpen);
   const signedIn = state.status === 'ready' && state.account;
   const account = signedIn ? state.account : null;
   const label = account?.displayName || account?.email || t('accountProfileFallback');
-  const avatarUrl =
-    account?.avatarUrl && account.avatarUrl !== avatarFailedFor ? account.avatarUrl : undefined;
 
   async function signOut() {
     if (!service) return;
@@ -52,19 +50,16 @@ export function AccountNavigation() {
         onClick={() => setOpen((current) => !current)}
       >
         <span className="account-avatar" aria-hidden="true">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt=""
-              referrerPolicy="no-referrer"
-              onError={() => setAvatarFailedFor(avatarUrl)}
-            />
-          ) : (
-            <svg className="account-avatar-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.5" />
-              <path d="M4.5 20c.8-3.5 3.3-5.5 7.5-5.5s6.7 2 7.5 5.5" />
-            </svg>
-          )}
+          <ImageSlot
+            id="auth/avatar"
+            source={account?.avatarUrl}
+            fallback={
+              <svg className="account-avatar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M4.5 20c.8-3.5 3.3-5.5 7.5-5.5s6.7 2 7.5 5.5" />
+              </svg>
+            }
+          />
         </span>
         <span className="account-avatar-label" title={account ? label : t('accountSignIn')}>
           {account ? label : t('accountSignIn')}

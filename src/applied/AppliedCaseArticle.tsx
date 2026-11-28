@@ -1,4 +1,8 @@
-import type { AppliedBlock, AppliedCaseContent, AppliedFigure } from './types.ts';
+import { Fragment } from 'react';
+import { imageSlot } from '../images/catalog.ts';
+import { ImageSlot } from '../images/ImageSlot.ts';
+import type { Locale } from '../locales.ts';
+import type { AppliedBlock, AppliedCaseContent } from './types.ts';
 
 type Link = { href: string; label: string };
 
@@ -11,7 +15,7 @@ function inline(text: string) {
   });
 }
 
-function CaseBlock({ block, figures }: { block: AppliedBlock; figures: Record<string, AppliedFigure> }) {
+function CaseBlock({ block }: { block: AppliedBlock }) {
   switch (block.kind) {
     case 'paragraph':
       return <p>{inline(block.text)}</p>;
@@ -23,17 +27,6 @@ function CaseBlock({ block, figures }: { block: AppliedBlock; figures: Record<st
           ))}
         </ol>
       );
-    case 'figure': {
-      const figure = figures[block.id];
-      if (!figure) throw new Error(`Unknown applied figure: ${block.id}`);
-      return (
-        <figure className="applied-case-figure" lang="en">
-          <a href={figure.path} target="_blank" rel="noreferrer">
-            <img src={figure.path} alt={figure.alt} width={figure.width} height={figure.height} />
-          </a>
-        </figure>
-      );
-    }
     case 'table':
       return (
         <table className="applied-case-table">
@@ -63,13 +56,13 @@ function CaseBlock({ block, figures }: { block: AppliedBlock; figures: Record<st
 
 export function AppliedCaseArticle({
   lesson,
-  figures,
+  locale,
   back,
   foundations,
   glossary,
 }: {
   lesson: AppliedCaseContent;
-  figures: Record<string, AppliedFigure>;
+  locale: Locale;
   back: Link;
   foundations: Link[];
   glossary: Link[];
@@ -96,8 +89,12 @@ export function AppliedCaseArticle({
         {lesson.sections.map((section) => (
           <section key={section.id} aria-labelledby={section.id} className="applied-case-section">
             <h2 id={section.id}>{section.title}</h2>
+            <ImageSlot id={imageSlot('applied', lesson.id, section.id, 'start')} locale={locale} />
             {section.blocks.map((block) => (
-              <CaseBlock key={block.key} block={block} figures={figures} />
+              <Fragment key={block.key}>
+                <CaseBlock block={block} />
+                <ImageSlot id={imageSlot('applied', lesson.id, section.id, block.key)} locale={locale} />
+              </Fragment>
             ))}
           </section>
         ))}

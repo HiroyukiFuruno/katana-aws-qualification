@@ -1,3 +1,4 @@
+import { imageSlotMarkup } from '../src/images/staticMarkup.ts';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { appliedPageMetadata } from '../src/applied/routes.ts';
@@ -67,10 +68,7 @@ for (const locale of locales) {
           content.descriptionFor(entry),
       ),
     );
-    const figure = lesson?.body.figure;
-    const staticFigure = figure
-      ? `<figure class="lesson-figure" lang="en"><img src="${escapeHtml(figure.url)}" alt="${escapeHtml(figure.alt)}" width="${figure.width}" height="${figure.height}"></figure>`
-      : '';
+    const staticFigure = imageSlotMarkup(lesson?.body.figureSlot, locale);
     const staticLessonBody = lesson
       ? `<main data-static-lesson="true"><article><h1>${escapeHtml(lesson.body.heading)}</h1>${lesson.body.paragraphs.map((paragraph, index) => `<p>${escapeHtml(paragraph)}</p>${index === 0 ? staticFigure : ''}`).join('')}</article></main>`
       : '';

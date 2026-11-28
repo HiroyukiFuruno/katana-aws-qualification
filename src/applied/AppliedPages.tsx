@@ -1,7 +1,7 @@
 import { termAnchor } from '../glossaryAnchor';
 import { type Locale, localePath } from '../locales.ts';
 import { AppliedCaseArticle } from './AppliedCaseArticle';
-import { appliedContentFor, appliedFiguresFor, appliedResourcesFor } from './cases.ts';
+import { appliedContentFor, appliedResourcesFor } from './cases.ts';
 import { appliedCaseForPage, appliedCases, appliedDirectory, appliedIndexPage } from './routes.ts';
 
 export default function AppliedPages({ page, locale }: { page: string; locale: Locale }) {
@@ -28,7 +28,7 @@ export default function AppliedPages({ page, locale }: { page: string; locale: L
   return (
     <AppliedCaseArticle
       lesson={lesson}
-      figures={appliedFiguresFor(lesson)}
+      locale={locale}
       back={{ href: localePath(locale, appliedIndexPage), label: directory.title }}
       foundations={entry.prerequisites.map(({ slug, title }) => ({
         href: localePath(locale, `study/fundamentals/${slug}`),

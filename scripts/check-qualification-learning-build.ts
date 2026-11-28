@@ -3,19 +3,28 @@ import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { studyCourses } from '../src/certifications.ts';
 import { localePath, locales } from '../src/locales.ts';
-import figures from '../src/qualificationLearning/figures.json' with { type: 'json' };
+import {
+  imageCatalog,
+  imageForSlot,
+  imagePlacement,
+  imagePlacementsFor,
+  imageSlot,
+} from '../src/images/catalog.ts';
 import {
   qualificationLearningPages,
   qualificationLearningRoute,
   qualificationPrerequisitePath,
 } from '../src/qualificationLearning/routes.ts';
-import type { StudyFigure, StudyUnit } from '../src/qualificationLearning/types.ts';
+import type { StudyUnit } from '../src/qualificationLearning/types.ts';
 import { isAnswerComplete, isCorrectAnswer, parseQuestions } from '../src/questions.ts';
 
-import { assetPrefix, checkQualificationFigure } from './check-qualification-figure.ts';
-
 const origin = 'https://kaq.katana-projects.org';
-const figureBank: Record<string, StudyFigure> = figures;
+const teachingPaths = Object.values(imageCatalog.assets)
+  .filter(({ language }) => language !== undefined)
+  .map(({ src }) => src);
+const figureIds = imagePlacementsFor('qualification')
+  .map((id) => imagePlacement(id)?.identifier)
+  .filter((id) => id !== undefined);
 const sitemap = await readFile('dist/sitemap.xml', 'utf8');
 assert(qualificationLearningPages.length, 'No published qualification learning content');
 const allExistingIds = new Set<string>();
@@ -27,8 +36,8 @@ for (const { course } of studyCourses) {
     ...course.practice.map(({ path }) => path),
   ])) {
     const data = await readFile(`public/${bank}`, 'utf8');
-    assert(!data.includes(assetPrefix), `A teaching figure URL occurs in ${bank}`);
-    for (const figure of Object.keys(figureBank)) assert(!data.includes(figure), `${bank}/${figure}`);
+    for (const reference of [...teachingPaths, ...figureIds])
+      assert(!data.includes(reference), `${bank}/${reference}`);
     for (const question of parseQuestions(JSON.parse(data))) {
       allExistingIds.add(question.id);
       for (const key of ['figure', 'figures', 'figureId', 'diagram', 'diagrams'])
@@ -37,15 +46,11 @@ for (const { course } of studyCourses) {
   }
 }
 
-for (const figure of Object.values(figureBank)) await checkQualificationFigure(figure);
+const observedPlacements = new Set<string>();
 const courseQuestionIds = new Set<string>();
 const keyFor = (unit: StudyUnit) => ({
   id: unit.id,
-  sections: unit.sections.map(({ id, figureId, sources }) => [
-    id,
-    figureId,
-    sources.map(({ url }) => url),
-  ]),
+  sections: unit.sections.map(({ id, sources }) => [id, sources.map(({ url }) => url)]),
   checkpoints: unit.checkpoints.map(({ id, correct, choices }) => [
     id,
     correct,
@@ -107,14 +112,18 @@ for (const locale of ['ja' as const, ...locales.filter((value) => value !== 'ja'
     for (const term of unit.glossaryTerms) assert(glossary.has(term), `${assetPath}/${term}`);
     for (const section of unit.sections) {
       assert(section.paragraphs.length && section.sources.length, `${assetPath}/${section.id}`);
-      if (!section.figureId) continue;
-      const figure = figureBank[section.figureId];
+      const slot = imageSlot('qualification', route.courseId, unit.id, section.id);
+      const figure = imageForSlot(slot, locale);
+      if (!figure) continue;
+      const placement = imagePlacement(slot);
       assert(
-        figure &&
-          html.includes(`data-figure="${section.figureId}"`) &&
-          html.includes(`src="${figure.src}"`),
+        placement?.identifier &&
+          html.includes(`data-figure="${placement.identifier}"`) &&
+          html.includes(`src="${figure.src}"`) &&
+          html.includes(`href="${figure.src}"`),
         assetPath,
       );
+      observedPlacements.add(slot);
     }
     for (const question of unit.checkpoints) {
       assert(
@@ -129,6 +138,8 @@ for (const locale of ['ja' as const, ...locales.filter((value) => value !== 'ja'
     }
   }
 }
+
+assert.deepEqual([...observedPlacements].sort(), imagePlacementsFor('qualification').sort());
 
 console.log(
   `Validated ${qualificationLearningPages.length} qualification learning routes in ten locales and figure isolation from all 14 mock banks`,

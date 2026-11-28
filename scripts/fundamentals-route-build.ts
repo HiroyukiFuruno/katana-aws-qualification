@@ -1,6 +1,6 @@
+import { imageForSlot, imagePlacementsFor } from '../src/images/catalog.ts';
 import { access, readFile } from 'node:fs/promises';
 import type { DeliveryUnitAsset } from '../src/fundamentals/delivery/artifactTypes';
-import lessonFigures from '../src/fundamentals/delivery/lesson-figures.json' with { type: 'json' };
 import { lessonPath } from '../src/fundamentals/delivery/navigation';
 import {
   privateLessonPageNames,
@@ -33,7 +33,8 @@ if (publicLessonPageNames.length !== new Set(publicLessonPageNames).size)
 if (privateLessonPageNames.length !== new Set(privateLessonPageNames).size)
   throw new Error('Duplicate private lesson pages.');
 
-for (const [stepId, figure] of Object.entries(lessonFigures)) {
+for (const slot of imagePlacementsFor('fundamentals')) {
+  const stepId = slot.slice('fundamentals/'.length);
   const unitId = stepId.split(':')[0];
   const slug = unitId.split('.')[1];
   const asset: DeliveryUnitAsset = JSON.parse(
@@ -41,25 +42,17 @@ for (const [stepId, figure] of Object.entries(lessonFigures)) {
   );
   const step = asset.steps.find(({ id }) => id === stepId);
   if (step?.kind !== 'reading') throw new Error(`Missing reading step for figure: ${stepId}`);
-  const svg = await readFile(`dist${figure.url}`, 'utf8');
-  if (!svg.includes('<svg') || /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(svg))
-    throw new Error(`Invalid English lesson diagram: ${figure.url}`);
-  const viewBox = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/u);
-  if (
-    !viewBox ||
-    Math.round(Number(viewBox[1])) !== figure.width ||
-    Math.round(Number(viewBox[2])) !== figure.height
-  )
-    throw new Error(`Incorrect lesson diagram dimensions: ${figure.url}`);
   for (const locale of locales) {
+    const figure = imageForSlot(slot, locale);
+    if (!figure) throw new Error(`Missing lesson diagram: ${slot}/${locale}`);
     const path = lessonPath({ locale, unitId, stage: 'slides', position: step.position });
     const html = await readFile(`dist${path}index.html`, 'utf8');
     if (
-      !html.includes(
-        `<img src="${figure.url}" alt="${figure.alt}" width="${figure.width}" height="${figure.height}">`,
-      )
+      !html.includes(`<figure class="lesson-figure" lang="${figure.language}">`) ||
+      !html.includes(`src="${figure.src}"`) ||
+      !html.includes(`href="${figure.src}"`)
     )
-      throw new Error(`Missing shared figure in static reading: ${path}`);
+      throw new Error(`Missing figure or expansion link in static reading: ${path}`);
   }
 }
 

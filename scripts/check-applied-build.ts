@@ -3,11 +3,11 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   appliedContentFor,
-  appliedFiguresFor,
   appliedResourcesFor,
   assertAppliedCatalogParity,
 } from '../src/applied/cases.ts';
 import { appliedCases, appliedIndexPage } from '../src/applied/routes.ts';
+import { imageForSlot, imagePlacementsFor, imageSlot } from '../src/images/catalog.ts';
 import { localePath, locales } from '../src/locales.ts';
 
 const origin = 'https://kaq.katana-projects.org';
@@ -29,10 +29,21 @@ for (const locale of locales) {
 
   for (const entry of appliedCases(locale)) {
     const content = appliedContentFor(locale, entry.id);
-    const figures = Object.values(appliedFiguresFor(content));
+    const placements = imagePlacementsFor(imageSlot('applied', entry.id));
+    const anchors = new Set(
+      content.sections.flatMap((section) =>
+        ['start', ...section.blocks.map(({ key }) => key)].map((anchor) =>
+          imageSlot('applied', entry.id, section.id, anchor),
+        ),
+      ),
+    );
+    const figures = placements.map((slot) => {
+      assert(anchors.has(slot), slot);
+      const image = imageForSlot(slot, locale);
+      assert(image, slot);
+      return image.src;
+    });
     const resources = appliedResourcesFor(entry.id);
-    for (const { path } of figures)
-      assert((await readFile(join('dist', path), 'utf8')).includes('<svg'), path);
     const detail = localePath(locale, entry.page);
     const html = await htmlAt(detail);
     assert(course.includes(`href="${detail}"`), detail);
@@ -47,13 +58,13 @@ for (const locale of locales) {
       );
     const renderedFigures = [
       ...html.matchAll(
-        /<figure class="applied-case-figure" lang="en"><a href="([^"]+)"[^>]*><img src="([^"]+)"/gu,
+        /<figure class="applied-case-figure" lang="(?:en|ja)"><a href="([^"]+)"[^>]*><img src="([^"]+)"/gu,
       ),
     ].map(([, link, source]) => {
       assert.equal(link, source, detail);
       return source;
     });
-    assert.deepEqual(renderedFigures.sort(), figures.map((figure) => figure.path).sort(), detail);
+    assert.deepEqual(renderedFigures.sort(), figures.sort(), detail);
     for (const { slug } of entry.prerequisites)
       assert(html.includes(`href="${localePath(locale, `study/fundamentals/${slug}`)}"`), detail);
     for (const term of resources.glossaryTerms) assert(glossary.has(term), `${detail}/${term}`);
@@ -61,5 +72,5 @@ for (const locale of locales) {
 }
 
 console.log(
-  'Validated applied study directories, published article HTML, shared English figures, and glossary in all locales',
+  'Validated applied study directories, published article HTML, localized figures, and glossary in all locales',
 );

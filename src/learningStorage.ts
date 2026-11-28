@@ -7,6 +7,7 @@ export const examKeyPrefix = 'katana.certification-exam.v1.';
 export const legacyIncorrectIndex = 'saa-study.incorrect.v1';
 export const guestLessonPrefix = 'katana.fundamentals-progress.v1.';
 export const lessonRecordPrefix = 'katana.fundamentals-record-asset.v1.';
+export const appliedSlidePrefix = 'katana.applied-slides.v1.';
 
 export function clearBrowserLearningRecords() {
   const keys = [historyKey, profileKey, legacyIncorrectIndex, legacyExamKey];
@@ -15,7 +16,8 @@ export function clearBrowserLearningRecords() {
     if (
       key?.startsWith(examKeyPrefix) ||
       key?.startsWith(guestLessonPrefix) ||
-      key?.startsWith(lessonRecordPrefix)
+      key?.startsWith(lessonRecordPrefix) ||
+      key?.startsWith(appliedSlidePrefix)
     )
       keys.push(key);
   }

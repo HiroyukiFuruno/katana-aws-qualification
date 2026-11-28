@@ -6,7 +6,9 @@ import {
   appliedResourcesFor,
   assertAppliedCatalogParity,
 } from '../src/applied/cases.ts';
-import { appliedCases, appliedIndexPage } from '../src/applied/routes.ts';
+import { appliedCases, appliedIndexPage, appliedSlideHref } from '../src/applied/routes.ts';
+import { appliedSearchCopy, appliedServiceGroups } from '../src/applied/serviceCatalog.ts';
+import { appliedReflection } from '../src/applied/slideContent.ts';
 import { imageForSlot, imagePlacementsFor, imageSlot } from '../src/images/catalog.ts';
 import { localePath, locales } from '../src/locales.ts';
 
@@ -24,6 +26,14 @@ for (const locale of locales) {
   ]);
   assert(study.includes(`href="${directory}"`) && base.includes(`href="${directory}"`), directory);
   assert(sitemap.includes(`<loc>${origin}${directory}</loc>`), directory);
+  assert(course.includes(appliedSearchCopy(locale).heading), directory);
+  assert.deepEqual(
+    appliedServiceGroups.map(({ caseId }) => caseId).sort(),
+    appliedCases(locale)
+      .map(({ id }) => id)
+      .sort(),
+    directory,
+  );
   const bank = JSON.parse(await readFile(`dist/translations/${locale}/site.json`, 'utf8'));
   const glossary = new Set<string>(bank.glossary.map(({ term }: { term: string }) => term));
 
@@ -46,6 +56,27 @@ for (const locale of locales) {
     const resources = appliedResourcesFor(entry.id);
     const detail = localePath(locale, entry.page);
     const html = await htmlAt(detail);
+    const slides = appliedSlideHref(detail);
+    const shell = await htmlAt(slides);
+    assert(html.includes(`href="${slides}"`) && course.includes(`href="${slides}"`), slides);
+    assert(shell.includes('<meta name="robots" content="noindex, nofollow">'), slides);
+    assert(!sitemap.includes(`<loc>${origin}${slides}</loc>`), slides);
+    assert(shell.includes('<div id="root"></div>'), slides);
+    if (locale === 'ja') {
+      for (const section of content.sections) {
+        const refersToFigure = section.blocks.some(
+          (block) => block.kind === 'paragraph' && /図(?:の|を|に|で|から)/u.test(block.text),
+        );
+        if (!refersToFigure) continue;
+        const own = imagePlacementsFor(imageSlot('applied', entry.id, section.id));
+        const reference = imageForSlot(imageSlot('applied-slide', entry.id, section.id), locale);
+        assert(own.length || reference, `${slides}#${section.id}: missing referenced diagram`);
+      }
+    }
+    const checks = content.sections
+      .map((section) => appliedReflection(entry.id, section))
+      .filter(Boolean);
+    assert.equal(checks.length, entry.id === 'orders-api-latency' ? 0 : 1, slides);
     assert(course.includes(`href="${detail}"`), detail);
     assert(html.includes(`<html lang="${locale}">`) && html.includes('<h1>'), detail);
     assert(html.includes(`<link rel="canonical" href="${origin}${detail}">`), detail);
@@ -72,5 +103,5 @@ for (const locale of locales) {
 }
 
 console.log(
-  'Validated applied study directories, published article HTML, localized figures, and glossary in all locales',
+  'Validated service filtering sources, applied article HTML, private slide shells, reflection sources, figures, and glossary in all locales',
 );

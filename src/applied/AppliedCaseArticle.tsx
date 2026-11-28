@@ -1,69 +1,21 @@
-import { Fragment } from 'react';
-import { imageSlot } from '../images/catalog.ts';
-import { ImageSlot } from '../images/ImageSlot.ts';
 import type { Locale } from '../locales.ts';
-import type { AppliedBlock, AppliedCaseContent } from './types.ts';
+import { AppliedSectionContent, inlineCaseText } from './AppliedSectionContent.tsx';
+import type { AppliedCaseContent } from './types.ts';
 
 type Link = { href: string; label: string };
-
-function inline(text: string) {
-  let offset = 0;
-  return text.split('`').map((part, index) => {
-    const start = offset;
-    offset += part.length + 1;
-    return index % 2 === 0 ? part : <code key={start}>{part}</code>;
-  });
-}
-
-function CaseBlock({ block }: { block: AppliedBlock }) {
-  switch (block.kind) {
-    case 'paragraph':
-      return <p>{inline(block.text)}</p>;
-    case 'steps':
-      return (
-        <ol>
-          {block.items.map((item) => (
-            <li key={item}>{inline(item)}</li>
-          ))}
-        </ol>
-      );
-    case 'table':
-      return (
-        <table className="applied-case-table">
-          <thead>
-            <tr>
-              {block.columns.map((column) => (
-                <th key={column} scope="col">
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {block.rows.map(([name, ...values]) => (
-              <tr key={name}>
-                <th scope="row">{inline(name)}</th>
-                {values.map((value, column) => (
-                  <td key={block.columns[column + 1]}>{inline(value)}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      );
-  }
-}
 
 export function AppliedCaseArticle({
   lesson,
   locale,
   back,
+  slides,
   foundations,
   glossary,
 }: {
   lesson: AppliedCaseContent;
   locale: Locale;
   back: Link;
+  slides: Link;
   foundations: Link[];
   glossary: Link[];
 }) {
@@ -76,6 +28,9 @@ export function AppliedCaseArticle({
           </a>
           <h1>{lesson.title}</h1>
           <p>{lesson.intro}</p>
+          <a className="action-button" href={slides.href}>
+            {slides.label}
+          </a>
         </header>
         <nav aria-label={lesson.title}>
           <ul className="applied-case-sections">
@@ -89,13 +44,7 @@ export function AppliedCaseArticle({
         {lesson.sections.map((section) => (
           <section key={section.id} aria-labelledby={section.id} className="applied-case-section">
             <h2 id={section.id}>{section.title}</h2>
-            <ImageSlot id={imageSlot('applied', lesson.id, section.id, 'start')} locale={locale} />
-            {section.blocks.map((block) => (
-              <Fragment key={block.key}>
-                <CaseBlock block={block} />
-                <ImageSlot id={imageSlot('applied', lesson.id, section.id, block.key)} locale={locale} />
-              </Fragment>
-            ))}
+            <AppliedSectionContent lessonId={lesson.id} section={section} locale={locale} />
           </section>
         ))}
         <section id="references" className="applied-case-section">
@@ -109,7 +58,7 @@ export function AppliedCaseArticle({
             {lesson.sources.map(({ label, url, language }) => (
               <li key={url}>
                 <a href={url} hrefLang={language} target="_blank" rel="noreferrer">
-                  {inline(label)}
+                  {inlineCaseText(label)}
                 </a>
               </li>
             ))}

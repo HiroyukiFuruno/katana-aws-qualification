@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { appliedDirectory, appliedIndexPage } from './applied/routes';
 import { AccountNavigation, useHomePath } from './auth/AccountNavigation';
 import { ImageSlot } from './images/ImageSlot';
 import { localePath } from './locales';
@@ -9,9 +10,12 @@ function StudyNavigation({ active, subpage }: { active: boolean; subpage?: strin
   const { locale, t } = usePreferences();
   const [open, setOpen] = useState(false);
   const { group, button } = useDismissiblePopover(open, setOpen);
-
   const currentQuestions =
-    subpage === 'questions' ? 'page' : subpage && subpage !== 'fundamentals' ? 'location' : undefined;
+    subpage === 'questions'
+      ? 'page'
+      : subpage && subpage !== 'fundamentals' && subpage !== 'applied'
+        ? 'location'
+        : undefined;
 
   return (
     <div className="study-navigation" ref={group}>
@@ -43,6 +47,15 @@ function StudyNavigation({ active, subpage }: { active: boolean; subpage?: strin
             onClick={() => setOpen(false)}
           >
             {t('learnFundamentals')}
+          </a>
+        </li>
+        <li>
+          <a
+            href={localePath(locale, appliedIndexPage)}
+            aria-current={subpage === 'applied' ? 'page' : undefined}
+            onClick={() => setOpen(false)}
+          >
+            {appliedDirectory(locale).title}
           </a>
         </li>
         <li>

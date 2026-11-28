@@ -1,4 +1,4 @@
-import { appliedStudyPages } from './applied/routes.ts';
+import { appliedSlidePages, appliedStudyPages } from './applied/routes.ts';
 import { certifications, studyCourses } from './certifications.ts';
 import { privateLessonPageNames, publicLessonPageNames } from './fundamentals/delivery/routePages.ts';
 import { type Locale, localePath, locales } from './locales.ts';
@@ -22,7 +22,7 @@ export const publishedPages = [
 ];
 
 export const accountPages = ['login', 'auth/callback', 'dashboard', 'account/settings'];
-export const privateLessonPages = privateLessonPageNames;
+export const privateLessonPages = [...privateLessonPageNames, ...appliedSlidePages];
 
 export function publishedLocalesFor(_page: string): readonly Locale[] {
   return locales;

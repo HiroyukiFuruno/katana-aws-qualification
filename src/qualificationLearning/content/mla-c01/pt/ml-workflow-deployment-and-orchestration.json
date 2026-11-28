@@ -1,0 +1,184 @@
+{
+  "id": "ml-workflow-deployment-and-orchestration",
+  "title": "Implantação e orquestração de fluxos de trabalho de ML",
+  "objective": "Projetar fluxos de trabalho de ML reproduzíveis, conectando métodos de inferência, gates de qualidade, aprovações, implantação e reversão.",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "Fluxo de CI/CD"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Implantação e recuperação"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "Testes e gates de qualidade"
+    },
+    {
+      "slug": "observability",
+      "title": "Monitoramento e melhoria"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-batch-or-real-time-by-decision-timing",
+      "title": "Escolha o método de inferência com base no tempo até a decisão",
+      "paragraphs": [
+        "Use a inferência em tempo real quando for necessário obter uma previsão em pouco tempo para cada solicitação. A inferência em lote é adequada quando muitos itens podem ser processados em conjunto e os resultados podem ser usados em operações comerciais subsequentes. Ao fazer a escolha, verifique quando a previsão será necessária, o volume de solicitações, a latência aceitável, as reexecuções, o tamanho da entrada e o custo operacional.",
+        "Antes de alterar o método de inferência após a implantação, verifique o contrato de entrada e como as saídas são recebidas. Enviar uma entrada grande destinada ao processamento em lote para um chamador em tempo real pode não ser compatível com o tempo de espera do usuário nem com o tratamento de falhas.",
+        "Na parte superior do diagrama, o chamador solicita uma previsão ao endpoint (Endpoint) e recebe uma resposta imediatamente. Na parte inferior, um trabalho de transformação em lote (Batch job) processa o conjunto de dados de entrada (Input dataset) preparado no Amazon S3 e salva os resultados das previsões (Output dataset) no Amazon S3. Operações posteriores, como revisões, usam as previsões salvas mais tarde."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "Inferência em tempo real do SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/realtime-endpoints.html"
+        },
+        {
+          "label": "Transformação em lote do SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-decision-timing"
+    },
+    {
+      "id": "pipeline-gates-and-artifacts",
+      "title": "Os pipelines têm gates de qualidade, não apenas uma ordem de processamento",
+      "paragraphs": [
+        "Nos pipelines de ML, a preparação dos dados, o treinamento, a avaliação, o registro e a implantação são executados em sequência. No entanto, o pipeline não deve avançar apenas porque o processamento anterior foi concluído; ele só deve prosseguir quando condições como qualidade dos dados, métricas de avaliação, verificações de segurança e aprovações forem atendidas.",
+        "O Amazon SageMaker Pipelines oferece maneiras de combinar etapas como processamento, treinamento, avaliação, ramificação condicional e verificações de qualidade. Especificar explicitamente os artefatos transferidos entre as etapas e as condições de aprovação ou reprovação pode reduzir omissões nas decisões manuais.",
+        "Para reproduzir o mesmo processamento com as mesmas entradas e configurações, gerencie a definição do pipeline, as dependências, os contêineres, os parâmetros e os locais dos artefatos. Não deixe o procedimento de produção registrado apenas como etapas manuais em um notebook."
+      ],
+      "sources": [
+        {
+          "label": "Adicionar etapas no Amazon SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/build-and-manage-steps-types.html"
+        },
+        {
+          "label": "PDF do Guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "progressive-release-and-rollback",
+      "title": "A implantação em produção deve combinar observabilidade e reversão",
+      "paragraphs": [
+        "Mesmo que um modelo candidato seja aprovado na avaliação, isso não significa que ele será aplicado a todo o tráfego de produção de uma só vez. Faça uma implantação gradual para um público limitado e observe a qualidade das previsões, a latência, os erros e o impacto nos usuários para decidir se deve ampliar a implantação ou interrompê-la.",
+        "Durante a reversão, verifique o modelo aprovado anteriormente, os contratos de entrada e saída, o roteamento e as configurações de monitoramento. Reverter apenas o modelo não necessariamente restaura a qualidade anterior se os contratos de pré-processamento ou de atributos tiverem mudado.",
+        "O sucesso de uma implantação não significa que o endpoint foi iniciado, mas que ele consegue fornecer previsões com segurança nas condições definidas. Antes da implantação, determine as condições de sucesso, interrupção e reversão, bem como a pessoa responsável, e tome decisões com base nas observações reais."
+      ],
+      "sources": [
+        {
+          "label": "Guia do exame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "Modelos, versões de modelo e Model Group do SageMaker Model Registry",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-001",
+      "prompt": "O engenheiro de ML de um banco classifica 10 milhões de transações finalizadas todas as noites por risco de fraude até a manhã seguinte e encaminha os resultados aos responsáveis pela análise. Não é necessário responder imediatamente a cada transação. Se os dados finalizados puderem ser processados em lote, qual é o método de inferência mais adequado?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Processar o conjunto de dados de transações finalizadas com inferência em lote, ordenar as transações da maior para a menor probabilidade prevista de fraude e encaminhá-las aos analistas.",
+          "explanation": "Os dados das transações do dia ficam disponíveis à noite, e as previsões são usadas na manhã seguinte. Ao agrupar os arquivos para a inferência e determinar a ordem de análise com base na pontuação de risco de cada transação, não é necessário receber uma resposta de um endpoint sempre que uma transação ocorre."
+        },
+        {
+          "id": "a",
+          "text": "Enviar cada transação para um endpoint em tempo real assim que ocorrer e aguardar as respostas até todas as manhãs.",
+          "explanation": "Como não há exigência de decisões imediatas por solicitação, essa abordagem é ineficiente para o requisito de processar um grande volume de dados em conjunto e usá-lo até a manhã seguinte."
+        },
+        {
+          "id": "c",
+          "text": "Não usar o modelo e encaminhar diretamente à análise da manhã seguinte as classificações do dia anterior.",
+          "explanation": "Isso não atende ao objetivo de avaliar as transações finalizadas naquele dia, e os resultados das previsões ficarão desatualizados."
+        },
+        {
+          "id": "d",
+          "text": "Omitir a validação das entradas e misturar transações de formatos diferentes no mesmo lote.",
+          "explanation": "Não verificar o contrato de entrada e a qualidade dos dados pode causar falhas de inferência ou classificações incorretas."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-002",
+      "prompt": "Os engenheiros de ML da fábrica automatizam o processo desde o retreinamento de um modelo de detecção de anomalias até seu registro para produção. Para evitar que um modelo com métricas de avaliação abaixo do limite seja encaminhado por engano como candidato à produção, qual é o design de pipeline mais adequado?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Passar a saída da etapa de avaliação para uma ramificação condicional e encaminhar para registro, aprovação e implantação apenas os modelos que atendem ao limite.",
+          "explanation": "Correto. Tratar os resultados da avaliação como um gate de qualidade impede que candidatos reprovados avancem para as etapas seguintes."
+        },
+        {
+          "id": "a",
+          "text": "Quando o trabalho de treinamento terminar, implantar o modelo mais recente sem verificar os resultados da avaliação.",
+          "explanation": "A conclusão do treinamento não indica que o modelo atende aos critérios de aceitação."
+        },
+        {
+          "id": "c",
+          "text": "Alterar manualmente as métricas de avaliação todas as vezes para fazer com que todos os modelos sejam aprovados.",
+          "explanation": "Alterar arbitrariamente o limite de qualidade elimina os critérios de aceitação e a responsabilização do pipeline."
+        },
+        {
+          "id": "d",
+          "text": "Verificar a qualidade dos dados somente quando ocorrer um problema em produção.",
+          "explanation": "A qualidade dos dados deve ser verificada antes e durante o treinamento e a avaliação, não apenas depois da implantação."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-003",
+      "prompt": "Um engenheiro de ML de uma seguradora está implantando gradualmente um novo modelo de avaliação de sinistros para parte dos casos. Após a implantação, a taxa de erros aumentou, e descobriu-se que a versão do pré-processamento também havia sido alterada ao mesmo tempo. Qual é a ação de reversão mais apropriada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Reverter apenas o modelo para a versão anterior, sem verificar o pré-processamento nem o contrato de entrada.",
+          "explanation": "Se o pré-processamento tiver mudado, até mesmo o modelo antigo poderá não receber a entrada esperada, e a qualidade talvez não seja restaurada."
+        },
+        {
+          "id": "b",
+          "text": "Ignorar a taxa de erros e implantar o modelo em mais casos para estabilizar a média.",
+          "explanation": "Isso amplia o impacto do problema e contraria o objetivo da implantação gradual: observar com segurança e interromper quando necessário."
+        },
+        {
+          "id": "c",
+          "text": "Reverter em conjunto o modelo aprovado anteriormente, o pré-processamento correspondente, o contrato de entrada, o roteamento e as configurações de monitoramento, e investigar a causa.",
+          "explanation": "Correto. Reverta o modelo junto com a configuração relacionada e preserve as evidências necessárias para evitar a recorrência do mesmo incidente."
+        },
+        {
+          "id": "d",
+          "text": "Excluir os logs do novo modelo e manter apenas o modelo antigo.",
+          "explanation": "Isso elimina os registros de execução do novo modelo necessários para a investigação e impede estabelecer uma base para melhorias e uma nova implantação."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Quality gate",
+    "Deployment pipeline",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact"
+  ]
+}

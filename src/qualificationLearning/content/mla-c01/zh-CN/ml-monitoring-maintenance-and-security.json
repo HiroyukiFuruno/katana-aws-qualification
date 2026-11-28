@@ -1,0 +1,182 @@
+{
+  "id": "ml-monitoring-maintenance-and-security",
+  "title": "ML 解决方案的监控、维护与安全",
+  "objective": "分别监测数据、预测结果、实测结果、基础设施和权限，以便安全地调查问题的影响范围并采取应对措施。",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署与恢复"
+    }
+  ],
+  "sections": [
+    {
+      "id": "monitor-data-prediction-and-ground-truth",
+      "title": "分别观测数据变化和模型性能变化",
+      "paragraphs": [
+        "监控生产模型时，不仅要查看请求数量和错误，还要检查输入数据分布、预测分布，以及之后获得的真实结果。输入分布不同于训练时分布所产生的数据漂移，与将预测结果和实际标签进行比较后发现的模型质量下降，并不是同一种现象。",
+        "Amazon SageMaker Model Monitor 可以捕获输入和输出，并将其与基线进行比较，以监控数据质量和模型质量的偏差。要衡量模型质量，不仅要有预测结果，还必须将其与之后确定的 Ground Truth 标签进行关联。",
+        "图示解读：分别查看 Training baseline 与 Input and prediction capture 进行比较的路径，以及 Delayed ground truth 与 Prediction 合并的路径。前者表示输入的变化，后者表示实际的预测性能；不要将它们作为同一个警报处理。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Amazon SageMaker Model Monitor 监控数据和模型质量",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker AI 的模型质量",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor-model-quality.html"
+        }
+      ],
+      "figureId": "ground-truth-monitoring-boundaries"
+    },
+    {
+      "id": "incident-triage-and-maintenance",
+      "title": "警报不是原因，而是调查的起点",
+      "paragraphs": [
+        "出现警报时，并不一定要立即重新训练模型或替换模型。应区分输入收集故障、预处理变更、推理端点故障、标签到达延迟，以及实际的数据分布变化。对照目标时间段、模型版本、输入和输出，以及基础设施状态。",
+        "即使检测到数据漂移，性能也不一定已经下降。相反，即使输入分布保持稳定，标签定义变更或使用情况变化也可能导致性能下降。应将实际观测标签可用的时间与处理措施的紧急程度区分开来。",
+        "重新训练并不是万能的处理措施。如果原因是数据缺失、权限问题或输入格式变更，那么使用包含相同问题的数据重新训练也不会改善情况。完成修正后，应先确认复现案例、数据质量、模型质量和运营指标，再进行部署。"
+      ],
+      "sources": [
+        {
+          "label": "使用 Amazon SageMaker Model Monitor 监控数据和模型质量",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker Model Dashboard",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-dashboard.html"
+        }
+      ]
+    },
+    {
+      "id": "security-and-access-evidence",
+      "title": "分别保护模型、数据、推理和日志",
+      "paragraphs": [
+        "在 ML 系统中，训练数据、特征、模型构件、推理端点、密钥和日志分别具有不同的敏感性。不要为一个执行角色授予访问所有 S3 存储桶、模型和日志的权限，而应仅允许每个处理角色所需的资源和操作。",
+        "结合使用加密、网络边界、密钥管理、IAM 最小权限和审计日志。即使进行了加密，如果允许不必要的主体进行解密或读取，也不能实现保护。日志还可能包含输入或预测结果，因此应管理其查看、保留和删除。",
+        "审计必须能够追踪哪个主体在何时针对哪些数据执行了哪个模型版本。调查访问被拒绝的原因时，也应在临时授予广泛权限之前，分别检查目标资源、执行角色、策略和网络可达性。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "MLA-C01 考试指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-monitor-001",
+      "prompt": "一家物流公司的 ML 工程师正在监控一个用于预测配送延迟的生产模型。输入分布已偏离训练时的分布，但实际到达时间的标签会延迟到达，因此目前还无法比较模型质量。在此时，最恰当的判断是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "由于输入分布发生了变化，在确认性能下降之前就立即删除模型。",
+          "explanation": "数据漂移是开始调查的线索；如果没有通过实际测量得到的标签验证模型质量，就不能断定性能已经下降。"
+        },
+        {
+          "id": "b",
+          "text": "调查并记录输入的变化，并在标签到达后，将预测结果与实测标签合并，以评估模型质量。",
+          "explanation": "正确。当前应调查输入分布，并在标签到达后，通过图中所示的另一条路径确认实际的预测性能。"
+        },
+        {
+          "id": "c",
+          "text": "丢弃预测记录，只长期保存输入分布。",
+          "explanation": "这样将无法比较预测结果与 Ground Truth，因此无法测量模型质量。"
+        },
+        {
+          "id": "d",
+          "text": "在 Ground Truth 到达之前，不确认输入变化的原因或影响范围。",
+          "explanation": "可以尽早调查输入收集、预处理和使用条件的变化，因此什么也不做并不恰当。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-monitor-002",
+      "prompt": "某零售公司的 ML 工程师收到了需求预测模型的质量警报。同一天，输入数据收集作业有一部分失败，实际销售标签也延迟了 2 天到达。首先应采取的最恰当行动是什么？",
+      "choices": [
+        {
+          "id": "c",
+          "text": "核对目标期间、模型版本、输入收集、预测结果和标签到达情况，区分问题究竟出在数据、基础设施还是性能上。",
+          "explanation": "正确。不要将警报直接等同于原因，而应关联必要的证据，以判断安全的处理方式。"
+        },
+        {
+          "id": "a",
+          "text": "不区分原因，立即使用相同的数据开始重新训练。",
+          "explanation": "如果原因是收集失败或标签延迟，重新训练可能会重现或加重问题。"
+        },
+        {
+          "id": "b",
+          "text": "忽略质量警报，在实际销售标签到达之前不检查记录。",
+          "explanation": "输入收集失败及其影响范围可以立即确认；忽略这些问题会使错误预测继续存在。"
+        },
+        {
+          "id": "d",
+          "text": "停止警报通知，只根据用户投诉判断质量。",
+          "explanation": "这样会失去早期检测和调查依据，只有在用户受到的影响扩大后才能采取措施。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-monitor-003",
+      "prompt": "一家医疗设备公司的 ML 工程师正在调查推理作业无法访问输入数据的问题。在临时向执行角色授予广泛的管理员权限之前，最合适的检查顺序是什么？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "向所有作业授予管理员权限；如果问题得到解决，再调查原因。",
+          "explanation": "过度授予权限会扩大对敏感数据的访问范围，也会使根本原因更难确定。"
+        },
+        {
+          "id": "c",
+          "text": "删除输入数据和日志，然后创建一个新存储桶。",
+          "explanation": "这会丢失审计和故障调查证据，也无法解决权限或可达性问题。"
+        },
+        {
+          "id": "d",
+          "text": "让所有开发人员共享相同的凭证，使任何人都可以运行推理作业。",
+          "explanation": "这样无法追踪执行操作的主体，并且违反最小权限和审计要求。"
+        },
+        {
+          "id": "b",
+          "text": "分别检查执行角色、目标数据、所需操作、相关策略以及网络可达性。",
+          "explanation": "正确。这样既能保持最小权限，又能调查问题发生在哪个访问控制边界上。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model drift",
+    "Data drift",
+    "Data quality",
+    "Model quality",
+    "Ground truth",
+    "Model Monitor",
+    "Prediction capture",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "Encryption at rest",
+    "Encryption in transit",
+    "Audit log",
+    "Data lineage"
+  ]
+}

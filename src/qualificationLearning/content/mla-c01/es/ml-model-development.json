@@ -1,0 +1,179 @@
+{
+  "id": "ml-model-development",
+  "title": "Desarrollo de modelos de ML",
+  "objective": "Explicar las decisiones sobre modelos, ajuste y control de versiones relacionando el impacto de los errores empresariales con las métricas de evaluación.",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "Pruebas y puertas de calidad"
+    },
+    {
+      "slug": "observability",
+      "title": "Supervisión y mejora"
+    },
+    {
+      "slug": "cicd",
+      "title": "Flujo de CI/CD"
+    },
+    {
+      "slug": "core-services",
+      "title": "Servicios principales de AWS"
+    }
+  ],
+  "sections": [
+    {
+      "id": "metric-follows-decision-cost",
+      "title": "Elegir las métricas de evaluación según el impacto de los errores",
+      "paragraphs": [
+        "En la evaluación de modelos, no decida si acepta un modelo basándose únicamente en un valor, como la exactitud. Confirme con los usuarios de negocio si tendría un mayor impacto no detectar una anomalía o tratar un elemento normal como anómalo. Cuando los elementos que se deben detectar son poco frecuentes, predecir que todos son normales puede producir una exactitud aparente elevada.",
+        "En la clasificación, utilice precisión, recuperación, umbrales y una matriz de confusión para distinguir los tipos de errores. En la regresión, considere el tamaño de los errores y si la subestimación o la sobreestimación constituye el problema principal. Las métricas de evaluación no sustituyen el criterio operativo, sino que proporcionan evidencia para respaldarlo.",
+        "Lectura de la figura: observe las cuatro celdas que se forman al cruzar las condiciones reales de la izquierda con los resultados previstos de la parte superior. Decida si debe reducir False negative o False positive según las pérdidas de negocio y la capacidad de respuesta, y compare los resultados con los mismos datos de validación después de cambiar el umbral."
+      ],
+      "sources": [
+        {
+          "label": "PDF de la guía del examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "threshold-decision-cost"
+    },
+    {
+      "id": "validation-tuning-and-overfitting",
+      "title": "Ajustar con datos de validación y usar los datos de prueba solo al final",
+      "paragraphs": [
+        "El ajuste de hiperparámetros y la selección de características no pueden decidirse únicamente con los datos de entrenamiento. Compare las soluciones candidatas mediante datos de validación, confirme la selección y, después, compruebe el rendimiento final esperado con datos de prueba que no se hayan utilizado. Usar repetidamente los datos de prueba para realizar ajustes provoca una sobreestimación del rendimiento con datos desconocidos.",
+        "Si solo mejora la métrica de entrenamiento mientras empeora la métrica de validación, es posible que el modelo se esté ajustando en exceso a características accidentales de los datos de entrenamiento. No cambie a la vez el volumen de datos, las características, la complejidad del modelo, la regularización y el tiempo de entrenamiento; compare cada hipótesis por separado.",
+        "Al comparar soluciones candidatas de modelos, registre las métricas, la versión del conjunto de datos, el código, la configuración, el tratamiento de la aleatoriedad y el entorno de ejecución. Un buen resultado que no se puede reproducir no puede explicarse ni validarse como candidato para producción."
+      ],
+      "sources": [
+        {
+          "label": "Guía del examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    },
+    {
+      "id": "model-registry-and-approval",
+      "title": "Identificar el modelo que se adoptará mediante artefactos y evidencias",
+      "paragraphs": [
+        "Lo que se implementa en producción no es el «archivo de modelo más reciente», sino un artefacto que permite identificar con qué datos, código, configuración y resultados de evaluación se creó el modelo. En Amazon SageMaker Model Registry, cada nuevo entrenamiento genera una versión del paquete del modelo y la asocia a un Model Group.",
+        "El registro del modelo vincula las métricas de evaluación, el ámbito de uso, las limitaciones conocidas, la persona aprobadora, la versión de los datos de entrenamiento, el contenedor y las dependencias. Esto permite determinar, cuando surge un problema, qué modelo se utilizó y dónde, y a qué solución candidata se puede volver.",
+        "La aprobación no se realiza automáticamente solo porque una métrica supere un único umbral. La persona responsable del uso previsto comprueba la seguridad, los sesgos, las condiciones de uso y si es posible supervisar el modelo durante la operación, y después lo aprueba."
+      ],
+      "sources": [
+        {
+          "label": "Modelos, versiones de modelos y Model Group en SageMaker Model Registry",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        },
+        {
+          "label": "Guía del examen MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-model-001",
+      "prompt": "Un ingeniero de ML de una empresa operadora de aeropuertos está evaluando un modelo de clasificación para detectar la introducción de materiales peligrosos como candidato para producción. Las omisiones permiten que los materiales peligrosos pasen, mientras que los falsos positivos generan inspecciones adicionales. Si, por motivos de seguridad, el impacto de las omisiones es mayor, ¿qué decisión debe tomarse primero?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Predecir que todos los elementos son normales para aumentar la exactitud aparente.",
+          "explanation": "Esto aumentaría los casos de False negative en los que no se detectan materiales peligrosos y contravendría los requisitos de seguridad."
+        },
+        {
+          "id": "c",
+          "text": "No utilizar el modelo de detección para eliminar por completo las inspecciones adicionales.",
+          "explanation": "Dejar de realizar la detección sin evaluar el riesgo de omisiones para la seguridad no es una decisión adecuada."
+        },
+        {
+          "id": "d",
+          "text": "Reescribir las etiquetas correctas de los datos de evaluación para que coincidan con las predicciones.",
+          "explanation": "Esto cambia el criterio de evaluación, no el rendimiento del modelo, por lo que impide medir el impacto de los errores."
+        },
+        {
+          "id": "b",
+          "text": "Comprobar el número y el impacto de False negative y False positive, y evaluar el equilibrio entre un umbral que reduzca las omisiones y la capacidad de inspección.",
+          "explanation": "Correcto. Relacionar los dos tipos de errores mostrados en el diagrama con sus impactos operativos y comparar, con los mismos datos, los resultados de cambiar el umbral."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-model-002",
+      "prompt": "Un ingeniero de ML de una empresa inmobiliaria compara varios candidatos de hiperparámetros. El candidato A tiene la métrica más alta en los datos de entrenamiento, pero en los datos de validación su métrica es inferior a la del candidato B. ¿Cuál es la siguiente acción más adecuada?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Registrar el candidato A en producción basándose únicamente en su métrica de entrenamiento.",
+          "explanation": "Esto pasa por alto el sobreajuste a los datos de entrenamiento y no verifica el rendimiento con datos no vistos."
+        },
+        {
+          "id": "b",
+          "text": "Usar los datos de prueba para realizar ajustes repetidos hasta que se invierta el orden de los candidatos.",
+          "explanation": "Usar los datos de prueba para ajustar el modelo hace que pierdan su función como conjunto de evaluación final."
+        },
+        {
+          "id": "c",
+          "text": "Seleccionar el candidato B usando los datos de validación y, después de la selección, verificar el rendimiento final con datos de prueba que no se hayan utilizado.",
+          "explanation": "Correcto. Ajuste y seleccione usando los datos de validación y, después, verifique el rendimiento de generalización con datos de prueba independientes."
+        },
+        {
+          "id": "d",
+          "text": "Calcular el promedio de los candidatos A y B y omitir la evaluación.",
+          "explanation": "Calcular el promedio no muestra las causas de los errores ni si el resultado cumple los requisitos operativos, por lo que no proporciona una base para la selección."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-model-003",
+      "prompt": "El ingeniero de ML de una empresa financiera registra un modelo de detección de fraude reentrenado como candidato para producción. Más adelante, necesita investigar la base de una predicción y, si hay un problema, volver a un candidato anterior. ¿Cuál es el registro más importante que se debe crear al registrar el modelo?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Sobrescribir únicamente el nombre del archivo del modelo con la fecha más reciente.",
+          "explanation": "No se puede rastrear con qué datos, código, configuración y resultados de evaluación se creó el modelo."
+        },
+        {
+          "id": "d",
+          "text": "Registrar la versión del modelo vinculada a los datos, el código, la configuración, los resultados de evaluación, las restricciones y la aprobación.",
+          "explanation": "Correcto. Esto permite rastrear la procedencia del modelo y la justificación de su aprobación, y utilizar esa información para investigar y volver de forma segura a una versión anterior cuando surjan problemas."
+        },
+        {
+          "id": "b",
+          "text": "Conservar solo las métricas de evaluación y no registrar las versiones de los datos de entrenamiento ni del preprocesamiento.",
+          "explanation": "Las métricas por sí solas no permiten comprobar las diferencias en las entradas o el preprocesamiento, el procedimiento de reproducción ni el alcance del impacto."
+        },
+        {
+          "id": "c",
+          "text": "Conservar solo el nombre del aprobador y no asignar una versión al modelo candidato.",
+          "explanation": "Aunque se conozca al responsable de la aprobación, no se puede identificar qué artefacto se aprobó."
+        }
+      ],
+      "correct": ["d"]
+    }
+  ],
+  "glossaryTerms": [
+    "Classification",
+    "Regression",
+    "Precision",
+    "Recall",
+    "Accuracy",
+    "Threshold",
+    "Confusion matrix",
+    "False positive",
+    "False negative",
+    "Hyperparameter",
+    "Overfitting",
+    "Regularization",
+    "Model artifact",
+    "Model Registry",
+    "Model Group",
+    "Model package",
+    "Model evaluation",
+    "Model bias",
+    "Reproducibility"
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "id": "ml-workflow-deployment-and-orchestration",
+  "title": "ML 工作流的部署与编排",
+  "objective": "通过连接推理方式、质量门禁、审批、部署和回滚，设计可复现的 ML 工作流。",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CD 流程"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "部署与恢复"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "测试与质量门禁"
+    },
+    {
+      "slug": "observability",
+      "title": "监控与改进"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-batch-or-real-time-by-decision-timing",
+      "title": "根据决策所需时间选择推理方式",
+      "paragraphs": [
+        "当每个请求都需要在短时间内获得预测结果时，应使用实时推理。当可以将大量对象集中处理，并在后续业务中使用结果时，批量推理更为适合。选择时，请确认需要预测的时间、请求量、可接受的延迟、重新运行、输入大小和运营成本。",
+        "在部署后更改推理方式之前，请确认输入契约以及接收输出的方式。即使向实时调用方发送用于批处理的大量输入，也可能不符合用户的等待时间要求或失败时的处理方式。",
+        "图的上方显示，应用向端点（Endpoint）发送预测请求，并立即收到响应。图的下方显示，批量转换作业（Batch job）读取 Amazon S3 中准备好的输入数据集（Input dataset），并将预测结果（Output dataset）保存到 Amazon S3，供后续审核等业务使用。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker AI 实时推理",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/realtime-endpoints.html"
+        },
+        {
+          "label": "SageMaker AI 批量转换",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-decision-timing"
+    },
+    {
+      "id": "pipeline-gates-and-artifacts",
+      "title": "流水线不仅要有处理顺序，还要有质量门禁",
+      "paragraphs": [
+        "在 ML 流水线中，数据准备、训练、评估、注册和部署按顺序执行。但是，不能仅因为前一个处理已结束就进入下一步；只有满足数据质量、评估指标、安全检查和审批等条件后，才能继续执行。",
+        "Amazon SageMaker Pipelines 支持组合处理、训练、评估、条件分支和质量检查等步骤。明确步骤之间传递的构件以及通过或不通过的条件，有助于减少人工决策时的遗漏。",
+        "为了在输入和设置相同的情况下重现相同的处理过程，需要管理流水线定义、依赖关系、容器、参数和构件位置。不要只把生产环境的操作流程作为笔记本中的手动步骤保留下来。"
+      ],
+      "sources": [
+        {
+          "label": "在 Amazon SageMaker AI 中添加步骤",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/build-and-manage-steps-types.html"
+        },
+        {
+          "label": "MLA-C01 考试指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "progressive-release-and-rollback",
+      "title": "生产环境部署应与观测和回滚配套",
+      "paragraphs": [
+        "即使候选模型通过了评估，也不一定会一次性应用于全部生产流量。应先面向有限的目标范围分阶段部署，并观测预测质量、延迟、错误和对用户的影响，据此决定扩大部署范围还是停止部署。",
+        "回滚时，应确认之前获批准的模型、输入和输出契约、路由以及监控设置。即使只恢复模型，如果预处理或特征契约已经发生变化，也不一定能恢复到之前的质量水平。",
+        "部署成功并不意味着端点已启动，而是意味着端点能够在规定条件下安全地提供预测。在部署前，应确定成功、停止和回滚的条件以及负责人，并根据实际观测值作出判断。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker Model Registry 中的模型、模型版本和 Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-001",
+      "prompt": "某银行的机器学习工程师需要在每天早上之前，按照欺诈风险对每晚最终确定的1,000万笔交易进行排序，并将结果交给审核人员。不要求对每笔交易即时响应；如果可以批量处理已确定的数据，最合适的推理方式是哪一种？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "使用批量推理处理已确认的交易数据集，按照预测的欺诈风险从高到低排列交易，并交给审核人员。",
+          "explanation": "当天的交易数据会在夜间收集完毕，而预测结果将在次日早晨使用。将文件集中起来进行推理，并根据每笔交易的风险分数确定审核顺序，就不需要在每笔交易发生时都从端点获取响应。"
+        },
+        {
+          "id": "a",
+          "text": "在每笔交易发生时将其发送到实时端点，并一直等待响应到每天早上。",
+          "explanation": "题目没有要求对每个请求立即作出判断，因此，对于需要将大量数据集中处理并在第二天早上前使用的要求而言，这种方式效率低下。"
+        },
+        {
+          "id": "c",
+          "text": "不使用模型，直接将前一天的排序结果交给第二天早上的审核人员。",
+          "explanation": "这无法满足评估当天已确定交易的目的，而且预测结果会过时。"
+        },
+        {
+          "id": "d",
+          "text": "省略输入验证，将格式不同的交易混入同一个批次。",
+          "explanation": "如果不验证输入契约和数据质量，可能导致推理失败或排序错误。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-002",
+      "prompt": "工厂的 ML 工程师将异常检测模型从重新训练到注册到生产环境的流程自动化。为了避免将评估指标低于基准的模型错误地推进为生产候选模型，最合适的管道设计是什么？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "将评估步骤的输出传递给条件分支，仅将满足基准的模型推进到注册、批准和部署阶段。",
+          "explanation": "正确。将评估结果作为质量门禁，可以防止未通过的候选模型进入后续阶段。"
+        },
+        {
+          "id": "a",
+          "text": "训练作业结束后，不查看评估结果，直接部署最新模型。",
+          "explanation": "训练完成并不表示模型满足验收条件。"
+        },
+        {
+          "id": "c",
+          "text": "每次都手动修改评估指标，使所有模型都通过。",
+          "explanation": "任意更改质量基准会使管道失去验收条件和问责性。"
+        },
+        {
+          "id": "d",
+          "text": "只有在生产环境中出现问题时，才检查数据质量。",
+          "explanation": "数据质量必须在训练和评估的前置阶段进行检查，而不是只在部署后检查。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-003",
+      "prompt": "保险公司的 ML 工程师正在为一部分案件分阶段部署新的理赔评估模型。部署后，错误率上升，并发现预处理版本也同时发生了更改。最合适的回滚措施是哪一项？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只将模型回滚到以前的版本，不检查预处理和输入契约。",
+          "explanation": "如果预处理发生了变化，即使使用旧模型，也可能无法收到其预期的输入，因此质量可能无法恢复。"
+        },
+        {
+          "id": "b",
+          "text": "忽略错误率，向更多案件部署，以稳定平均值。",
+          "explanation": "这会扩大问题的影响范围，并违背分阶段部署的目的，即安全地观测并在必要时停止。"
+        },
+        {
+          "id": "c",
+          "text": "将之前已获批准的模型，以及相应的预处理、输入契约、路由和监控设置作为一个整体回滚，并调查原因。",
+          "explanation": "正确。将模型与周边配置关联起来一起回滚，并保留防止同一故障再次发生所需的证据。"
+        },
+        {
+          "id": "d",
+          "text": "删除新模型的日志，只保留旧模型。",
+          "explanation": "这会丢失调查所需的新模型执行记录，也无法为改进和重新部署建立依据。"
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Quality gate",
+    "Deployment pipeline",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact"
+  ]
+}

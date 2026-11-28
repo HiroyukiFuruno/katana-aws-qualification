@@ -1,0 +1,184 @@
+{
+  "id": "ml-workflow-deployment-and-orchestration",
+  "title": "MLワークフローのデプロイとオーケストレーション",
+  "objective": "推論方式、品質ゲート、承認、展開、復帰を結び付け、再現可能なMLワークフローを設計できる。",
+  "prerequisites": [
+    {
+      "slug": "cicd",
+      "title": "CI/CDの流れ"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "デプロイと復旧"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "テストと品質ゲート"
+    },
+    {
+      "slug": "observability",
+      "title": "監視と改善"
+    }
+  ],
+  "sections": [
+    {
+      "id": "choose-batch-or-real-time-by-decision-timing",
+      "title": "推論方式は意思決定までの時間で選ぶ",
+      "paragraphs": [
+        "リアルタイム推論は、要求ごとに短い時間で予測が必要な場合に使います。バッチ推論は、大量の対象をまとめて処理し、結果を後続の業務で使える場合に適します。選択では、予測が必要な時刻、要求量、許容遅延、再実行、入力の大きさ、運用コストを確認します。",
+        "デプロイ後の推論方式を変える前に、入力契約と出力の受け取り方を確認します。リアルタイムの呼び出し側にバッチ用の大量入力を送っても、利用者の待ち時間や失敗時の扱いが合わないことがあります。",
+        "図の上段では、呼び出し元がエンドポイント（Endpoint）に予測を要求し、その場で応答を受け取ります。下段では、Amazon S3 にそろった入力データ（Input dataset）をバッチ変換ジョブ（Batch job）で処理し、予測結果（Output dataset）を Amazon S3 に保存します。審査などの後続業務は、保存された予測を後から使います。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker AI のリアルタイム推論",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/realtime-endpoints.html"
+        },
+        {
+          "label": "SageMaker AI のバッチ変換",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/batch-transform.html"
+        }
+      ],
+      "figureId": "mla-inference-decision-timing"
+    },
+    {
+      "id": "pipeline-gates-and-artifacts",
+      "title": "パイプラインは処理順だけでなく品質ゲートを持つ",
+      "paragraphs": [
+        "MLパイプラインでは、データ準備、学習、評価、登録、デプロイを順に実行します。ただし、前の処理が終了したことだけで次へ進めるのではなく、データ品質、評価指標、セキュリティ検査、承認などの条件を満たした場合だけ次へ進めます。",
+        "Amazon SageMaker Pipelinesには、処理、学習、評価、条件分岐、品質検査などのステップを組み合わせる方法があります。ステップ間で渡す成果物と、合格・不合格の条件を明示すると、手作業の判断漏れを減らせます。",
+        "同じ入力と設定なら同じ処理を再現できるよう、パイプライン定義、依存関係、コンテナ、パラメータ、成果物の場所を管理します。本番の手順をノートブックの手作業にだけ残しません。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon SageMaker AIでステップを追加する",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/build-and-manage-steps-types.html"
+        },
+        {
+          "label": "MLA-C01 試験ガイドPDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "progressive-release-and-rollback",
+      "title": "本番展開は観測と復帰をセットにする",
+      "paragraphs": [
+        "モデル候補が評価を通過しても、すべての本番トラフィックへ一度に適用するとは限りません。限られた対象へ段階展開し、予測の品質、待ち時間、エラー、利用者影響を観測して拡大または停止を判断します。",
+        "復帰では、前の承認済みモデル、入力・出力契約、ルーティング、監視設定を確認します。モデルだけを戻しても、前処理や特徴量の契約が変わっていれば、以前の品質へ戻るとは限りません。",
+        "デプロイの成功はエンドポイントが起動したことではなく、定めた条件で安全に予測を提供できることです。展開前に成功・停止・復帰の条件と責任者を決め、実際の観測値で判断します。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "SageMaker Model Registryのモデル、モデルバージョン、Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-deploy-001",
+      "prompt": "銀行のMLエンジニアは、毎晩確定する1,000万件の取引を翌朝までに不正リスクで順位付けし、審査担当者へ渡します。取引ごとの即時応答は要件ではなく、確定データを一括で処理できる場合、最も適切な推論方式はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "確定した取引データセットをバッチ推論で処理し、予測した不正リスクの高い順に取引を並べて審査担当者へ渡す。",
+          "explanation": "当日の取引データは夜にそろい、予測を使うのは翌朝です。ファイルをまとめて推論し、取引ごとのリスクスコアから審査順を決めれば、各取引が発生するたびにエンドポイントから応答を受け取る必要がありません。"
+        },
+        {
+          "id": "a",
+          "text": "各取引を発生のたびにリアルタイムエンドポイントへ送り、毎朝まで応答を待つ。",
+          "explanation": "要求ごとの即時判断が必要という条件はなく、大量データをまとめて翌朝までに使う要件に対して非効率です。"
+        },
+        {
+          "id": "c",
+          "text": "モデルを使わず、前日の順位をそのまま翌朝の審査へ渡す。",
+          "explanation": "当日の確定取引を評価する目的を満たさず、予測結果が古くなります。"
+        },
+        {
+          "id": "d",
+          "text": "入力検証を省き、形式が異なる取引も同じバッチへ混在させる。",
+          "explanation": "入力契約と品質を確認しないと、推論失敗や誤った順位付けの原因になります。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-002",
+      "prompt": "工場のMLエンジニアは、異常検知モデルの再学習から本番登録までを自動化します。評価指標が基準未満のモデルを誤って本番候補へ進めないため、最も適切なパイプライン設計はどれですか。",
+      "choices": [
+        {
+          "id": "b",
+          "text": "評価ステップの出力を条件分岐へ渡し、基準を満たしたモデルだけを登録・承認・デプロイへ進める。",
+          "explanation": "正解です。評価結果を品質ゲートとして扱い、不合格の候補が後続工程へ進むことを防げます。"
+        },
+        {
+          "id": "a",
+          "text": "学習ジョブが終了したら、評価結果を見ずに最新モデルをデプロイする。",
+          "explanation": "学習の完了は、モデルが受入条件を満たすことを示しません。"
+        },
+        {
+          "id": "c",
+          "text": "評価指標を毎回手で書き換え、すべてのモデルを合格にする。",
+          "explanation": "品質基準を恣意的に変えると、パイプラインの受入条件と説明責任を失います。"
+        },
+        {
+          "id": "d",
+          "text": "本番で問題が出た場合だけ、データ品質を確認する。",
+          "explanation": "データ品質はデプロイ後ではなく、学習と評価の前段から確認する必要があります。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-deploy-003",
+      "prompt": "保険会社のMLエンジニアは、新しい査定モデルを一部の案件に段階展開します。展開後にエラー率が上がり、前処理の版も同時に変更されていたと分かりました。最も適切な復帰対応はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "モデルだけを以前の版へ戻し、前処理と入力契約は確認しない。",
+          "explanation": "前処理が変わっていれば、旧モデルでも期待した入力を受け取れず、品質が戻らない可能性があります。"
+        },
+        {
+          "id": "b",
+          "text": "エラー率を無視し、より多くの案件へ展開して平均値を安定させる。",
+          "explanation": "問題の影響範囲を広げ、段階展開の目的である安全な観測と停止に反します。"
+        },
+        {
+          "id": "c",
+          "text": "前の承認済みモデル、対応する前処理・入力契約、ルーティング、監視設定を組として復帰し、原因を調査する。",
+          "explanation": "正解です。モデルと周辺構成を結び付けて復帰し、同じ障害を再発させないための証跡を確保します。"
+        },
+        {
+          "id": "d",
+          "text": "新モデルのログを削除し、旧モデルだけを残す。",
+          "explanation": "原因調査に必要な新モデルの実行記録を失い、改善と再展開の根拠を作れません。"
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Real-time inference",
+    "Asynchronous inference",
+    "Batch inference",
+    "Endpoint",
+    "SageMaker Pipelines",
+    "Quality gate",
+    "Deployment pipeline",
+    "Canary deployment",
+    "Rollback",
+    "Model Registry",
+    "Model package",
+    "Model artifact"
+  ]
+}

@@ -1,0 +1,182 @@
+{
+  "id": "ml-monitoring-maintenance-and-security",
+  "title": "Monitoring, Maintenance, and Security of ML Solutions",
+  "objective": "Observe data, predictions, measured results, infrastructure, and permissions separately so that you can safely investigate and respond to the scope of a problem’s impact.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Monitoring and Improvement"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Authentication and Authorization"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Deployment and Recovery"
+    }
+  ],
+  "sections": [
+    {
+      "id": "monitor-data-prediction-and-ground-truth",
+      "title": "Observe data changes and model performance changes separately",
+      "paragraphs": [
+        "When monitoring a production model, check not only request volume and errors, but also the distributions of input data and predictions, as well as ground-truth results obtained later. Data drift, in which the input distribution changes from the training-time distribution, and a decline in model quality measured by comparing predictions with observed labels are not the same phenomenon.",
+        "Amazon SageMaker Model Monitor can capture inputs and outputs and monitor deviations in data quality and model quality by comparing them with a baseline. To measure model quality, you must associate predictions with Ground Truth labels confirmed later.",
+        "How to read the diagram: distinguish the path where Training baseline is compared with Input and prediction capture from the path where Delayed ground truth is joined with Prediction. The former shows changes in the input, while the latter shows actual prediction performance; do not treat them as the same alert."
+      ],
+      "sources": [
+        {
+          "label": "Monitoring data and model quality using Amazon SageMaker Model Monitor",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Model quality in Amazon SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor-model-quality.html"
+        }
+      ],
+      "figureId": "ground-truth-monitoring-boundaries"
+    },
+    {
+      "id": "incident-triage-and-maintenance",
+      "title": "Alerts Are the Starting Point for Investigation, Not the Cause",
+      "paragraphs": [
+        "When an alert is triggered, it does not always mean that you should immediately retrain the model or replace it. Distinguish among problems with input collection, changes to preprocessing, failures of the inference endpoint, delays in label arrival, and actual changes in the data distribution. Correlate the target period, model version, inputs and outputs, and infrastructure status.",
+        "Even when data drift is detected, performance does not necessarily decline. Conversely, performance can decline because label definitions or usage patterns have changed, even when the input distribution remains stable. Separate the time when observed labels become available from the urgency of the response.",
+        "Retraining is not a universal remedy. If the cause is missing data, permissions, or a change in input format, retraining with data that contains the same problem will not improve the situation. After making corrections, verify the reproduction case, data quality, model quality, and operational metrics before deployment."
+      ],
+      "sources": [
+        {
+          "label": "Data and model quality monitoring using Amazon SageMaker Model Monitor",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker Model Dashboard",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-dashboard.html"
+        }
+      ]
+    },
+    {
+      "id": "security-and-access-evidence",
+      "title": "Protect models, data, inference, and logs separately",
+      "paragraphs": [
+        "In ML systems, training data, features, model artifacts, inference endpoints, secrets, and logs each have different levels of sensitivity. Rather than granting a single execution role permissions to all S3 buckets, models, and logs, allow only the resources and operations required for each processing role.",
+        "Combine encryption, network boundaries, secrets management, IAM least privilege, and audit logs. Encryption alone does not provide protection if unnecessary principals are allowed to decrypt or read the data. Logs may also contain inputs or predictions, so manage their access, retention, and deletion.",
+        "Auditing must allow you to trace which principal executed which model version against which data and when. When investigating the cause of an access denial, separately check the target resource, execution role, policy, and network reachability before temporarily granting broad permissions."
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "MLA-C01 Exam Guide PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-monitor-001",
+      "prompt": "A logistics company's ML engineer monitors a production model that predicts delivery delays. The input distribution has changed from the training data, but labels for the actual arrival times arrive late, so model quality cannot yet be compared. What is the most appropriate decision at this point?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Delete the model immediately because the input distribution has changed, without verifying any performance degradation.",
+          "explanation": "Data drift is the starting point for an investigation; you cannot conclude that performance has degraded without verifying model quality against observed labels."
+        },
+        {
+          "id": "b",
+          "text": "Investigate and record the changes in the inputs, then evaluate model quality by joining the predictions with the measured labels after the labels arrive.",
+          "explanation": "Correct. At this point, investigate the input distribution, then confirm the actual prediction performance through the separate path shown in the diagram after the labels arrive."
+        },
+        {
+          "id": "c",
+          "text": "Discard the prediction records and retain only the input distribution for the long term.",
+          "explanation": "This makes it impossible to compare the predictions with Ground Truth, so model quality cannot be measured."
+        },
+        {
+          "id": "d",
+          "text": "Do not investigate the causes or scope of the input changes until Ground Truth arrives.",
+          "explanation": "The causes of changes in input collection, preprocessing, and usage conditions can be investigated early, so taking no action is inappropriate."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-monitor-002",
+      "prompt": "A retail company's ML engineer received a quality alert for a demand forecasting model. On the same day, part of the input-data collection job failed, and the actual-sales labels are also arriving two days late. What is the most appropriate first action?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Reconcile the target period, model version, input collection, forecasts, and label arrival, and determine whether the problem is with the data, infrastructure, or performance.",
+          "explanation": "Correct. Do not equate the alert with its cause; link the necessary evidence to determine a safe response."
+        },
+        {
+          "id": "a",
+          "text": "Without distinguishing the cause, immediately start retraining with the same data.",
+          "explanation": "If the collection failure or label delay is the cause, retraining could reproduce or worsen the problem."
+        },
+        {
+          "id": "b",
+          "text": "Ignore the quality alert and do not review the records until the actual-sales labels arrive.",
+          "explanation": "The input-collection failure and its impact can be checked immediately; ignoring them would allow incorrect forecasts to continue."
+        },
+        {
+          "id": "d",
+          "text": "Stop the alert notifications and assess quality solely from user complaints.",
+          "explanation": "This would eliminate the basis for early detection and investigation, allowing the user impact to spread before action can be taken."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-monitor-003",
+      "prompt": "An ML engineer at a medical device company is investigating an issue in which an inference job cannot access its input data. Before temporarily granting broad administrator permissions to the execution role, what is the most appropriate order of checks?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Grant administrator permissions to all jobs and investigate the cause if the problem is resolved.",
+          "explanation": "This expands access to sensitive data through excessive permissions and also makes it more difficult to identify the root cause."
+        },
+        {
+          "id": "c",
+          "text": "Delete the input data and logs, then create a new bucket.",
+          "explanation": "This loses audit and incident-investigation evidence and does not resolve the permissions or reachability problem."
+        },
+        {
+          "id": "d",
+          "text": "Share the same credentials among all developers so that anyone can run the inference job.",
+          "explanation": "This prevents you from tracing the party that performed the execution and violates least-privilege and audit requirements."
+        },
+        {
+          "id": "b",
+          "text": "Check the execution role, target data, required operations, related policies, and network reachability separately.",
+          "explanation": "Correct. This allows you to investigate at which access-control boundary the problem occurs while maintaining least privilege."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model drift",
+    "Data drift",
+    "Data quality",
+    "Model quality",
+    "Ground truth",
+    "Model Monitor",
+    "Prediction capture",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "Encryption at rest",
+    "Encryption in transit",
+    "Audit log",
+    "Data lineage"
+  ]
+}

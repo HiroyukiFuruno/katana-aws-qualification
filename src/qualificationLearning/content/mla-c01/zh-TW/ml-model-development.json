@@ -1,0 +1,179 @@
+{
+  "id": "ml-model-development",
+  "title": "ML 模型開發",
+  "objective": "能夠將業務錯誤的影響與評估指標連結起來，並說明模型、調校與版本管理方面的決策。",
+  "prerequisites": [
+    {
+      "slug": "testing-quality",
+      "title": "測試與品質閘門"
+    },
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    },
+    {
+      "slug": "cicd",
+      "title": "CI/CD 流程"
+    },
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服務"
+    }
+  ],
+  "sections": [
+    {
+      "id": "metric-follows-decision-cost",
+      "title": "根據錯誤的影響選擇評估指標",
+      "paragraphs": [
+        "在模型評估中，不能只根據準確率這一個數值來決定是否採用模型。應與業務部門確認：漏掉異常，還是把正常項目當成異常處理，哪一種影響較大。當檢測對象很少時，即使把所有項目都判定為正常，也可能產生表面上很高的準確率。",
+        "在分類中，使用精確率、召回率、閾值和混淆矩陣來區分錯誤類型。在迴歸中，應考慮誤差的大小，以及低估或高估哪一種更成問題。評估指標不能取代營運時的判斷，而是為判斷提供佐證。",
+        "閱讀圖表：查看左側的實際狀態與上方的預測結果相交形成的四個儲存格。應根據業務損失和應對能力決定要減少 False negative 還是 False positive，並在變更閾值後使用相同的驗證資料進行比較。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考試指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "threshold-decision-cost"
+    },
+    {
+      "id": "validation-tuning-and-overfitting",
+      "title": "使用驗證資料進行調整，最後才使用測試資料",
+      "paragraphs": [
+        "僅憑訓練資料無法決定超參數調整或特徵選擇。使用驗證資料比較候選方案並確定選擇後，再使用未接觸過的測試資料確認最終的預期表現。反覆將測試資料用於調整，會高估模型在未知資料上的效能。",
+        "如果只有訓練指標獲得改善，而驗證指標惡化，模型可能過度適配訓練資料中的偶然特徵。不要同時變更資料量、特徵、模型複雜度、正則化和訓練時間；應針對每個假設分別進行比較。",
+        "比較模型候選方案時，請記錄指標、資料集版本、程式碼、設定、隨機性的處理方式以及執行環境。無法重現的良好結果，不能作為正式環境候選方案進行說明與驗證。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    },
+    {
+      "id": "model-registry-and-approval",
+      "title": "透過成果物與佐證確定採用的模型",
+      "paragraphs": [
+        "要部署到正式環境的並不是「最新的模型檔案」，而是能夠確定模型由哪些資料、程式碼、設定和評估結果建立的成果物。在 Amazon SageMaker Model Registry 中，每次重新訓練都會為模型套件建立版本，並將其關聯至 Model Group。",
+        "模型註冊會關聯評估指標、使用範圍、已知限制、核准者、訓練資料版本、容器和相依性。如此一來，發生問題時，就能判斷哪個模型在哪裡使用，以及可以回復到哪個候選模型。",
+        "模型不會只因某項指標超過單一閾值就自動獲得核准。負責該用途的人員會確認安全性、偏差、使用條件，以及是否能在營運中進行監控，然後予以核准。"
+      ],
+      "sources": [
+        {
+          "label": "SageMaker Model Registry 中的模型、模型版本與 Model Group",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-registry-models.html"
+        },
+        {
+          "label": "MLA-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-model-001",
+      "prompt": "一家機場營運公司的 ML 工程師正在評估一個用來偵測攜帶危險物品進入機場的分類模型，準備將其作為正式環境的候選模型。漏檢會讓危險物品通過，誤檢則會觸發額外檢查。如果從安全角度來看，漏檢的影響較大，首先應做出哪項判斷？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將所有項目預測為正常，以提高表面準確率。",
+          "explanation": "這會增加漏檢危險物品的 False negative，並違反安全要求。"
+        },
+        {
+          "id": "c",
+          "text": "為了完全消除額外檢查，不使用偵測模型。",
+          "explanation": "在未評估安全方面的漏檢風險之前就停止偵測，並不是恰當的判斷。"
+        },
+        {
+          "id": "d",
+          "text": "將評估資料中的正確標籤改寫為符合預測結果。",
+          "explanation": "這改變的是評估標準，而不是模型效能，因此無法衡量錯誤的影響。"
+        },
+        {
+          "id": "b",
+          "text": "確認 False negative 與 False positive 的數量及影響，然後評估能抑制漏檢的閾值與檢查能力之間的平衡。",
+          "explanation": "正確。將圖中所示的兩類錯誤與業務影響連結起來，並使用相同資料比較變更閾值後的結果。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-model-002",
+      "prompt": "一家房地產公司的 ML 工程師正在比較多個超參數候選方案。候選方案 A 在訓練資料上的指標最高，但在驗證資料上的指標低於候選方案 B。下一步最適當的行動是什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "僅根據訓練指標，將候選方案 A 註冊到正式環境。",
+          "explanation": "這會忽略對訓練資料的過度擬合，也無法確認模型在未見資料上的效能。"
+        },
+        {
+          "id": "b",
+          "text": "使用測試資料反覆調整，直到候選方案的排名反轉。",
+          "explanation": "使用測試資料進行調整，會使測試資料失去最終評估資料的作用。"
+        },
+        {
+          "id": "c",
+          "text": "根據驗證資料選擇候選方案 B，然後在選擇完成後，使用未接觸過的測試資料確認最終效能。",
+          "explanation": "正確。使用驗證資料進行調整與選擇，再使用獨立的測試資料確認泛化效能。"
+        },
+        {
+          "id": "d",
+          "text": "取候選方案 A 和 B 的平均值，並省略評估。",
+          "explanation": "取平均值無法說明錯誤的原因，也無法表明結果是否符合營運需求，因此不能作為選擇依據。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-model-003",
+      "prompt": "一家金融公司的 ML 工程師將重新訓練的詐欺偵測模型註冊為正式環境候選模型。之後，他們需要調查某個預測的依據，並在發生問題時回復到先前的候選模型。註冊時最重要的紀錄是什麼？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只以最新日期覆寫模型檔案名稱。",
+          "explanation": "無法追蹤模型是由哪些資料、程式碼、設定和評估結果建立的。"
+        },
+        {
+          "id": "d",
+          "text": "將模型版本與資料、程式碼、設定、評估結果、限制條件和核准資訊連結後註冊。",
+          "explanation": "正確。這樣可以追蹤模型的來源和核准依據，並在發生問題時用於調查和安全回復。"
+        },
+        {
+          "id": "b",
+          "text": "只保留評估指標，不記錄訓練資料和前處理的版本。",
+          "explanation": "僅憑指標無法確認輸入或前處理的差異、重現步驟或影響範圍。"
+        },
+        {
+          "id": "c",
+          "text": "只保留核准者姓名，不為候選模型標註版本。",
+          "explanation": "即使知道核准負責人，也無法確定核准的是哪個成品。"
+        }
+      ],
+      "correct": ["d"]
+    }
+  ],
+  "glossaryTerms": [
+    "Classification",
+    "Regression",
+    "Precision",
+    "Recall",
+    "Accuracy",
+    "Threshold",
+    "Confusion matrix",
+    "False positive",
+    "False negative",
+    "Hyperparameter",
+    "Overfitting",
+    "Regularization",
+    "Model artifact",
+    "Model Registry",
+    "Model Group",
+    "Model package",
+    "Model evaluation",
+    "Model bias",
+    "Reproducibility"
+  ]
+}

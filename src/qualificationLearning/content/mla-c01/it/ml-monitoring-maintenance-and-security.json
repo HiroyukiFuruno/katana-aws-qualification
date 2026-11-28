@@ -1,0 +1,182 @@
+{
+  "id": "ml-monitoring-maintenance-and-security",
+  "title": "Monitoraggio, manutenzione e sicurezza delle soluzioni ML",
+  "objective": "Osserva separatamente i dati, le previsioni, i risultati misurati, l’infrastruttura e le autorizzazioni, così da poter indagare in sicurezza sull’entità dell’impatto di un problema e reagire di conseguenza.",
+  "prerequisites": [
+    {
+      "slug": "observability",
+      "title": "Monitoraggio e miglioramento"
+    },
+    {
+      "slug": "identity-access",
+      "title": "Autenticazione e autorizzazione"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protezione dei dati"
+    },
+    {
+      "slug": "release-rollback",
+      "title": "Distribuzione e ripristino"
+    }
+  ],
+  "sections": [
+    {
+      "id": "monitor-data-prediction-and-ground-truth",
+      "title": "Osservare separatamente i cambiamenti nei dati e quelli nelle prestazioni del modello",
+      "paragraphs": [
+        "Quando si monitora un modello in produzione, è necessario controllare non solo il numero di richieste e gli errori, ma anche le distribuzioni dei dati di input e delle previsioni, oltre ai risultati effettivi ottenuti in seguito. Il data drift, in cui la distribuzione degli input cambia rispetto a quella usata durante l’addestramento, e il calo della qualità del modello misurato confrontando le previsioni con le etichette osservate non sono lo stesso fenomeno.",
+        "Amazon SageMaker Model Monitor può acquisire input e output e monitorare le deviazioni nella qualità dei dati e del modello confrontandoli con una baseline. Per misurare la qualità del modello, è necessario associare le previsioni alle etichette Ground Truth confermate in seguito.",
+        "Come leggere il diagramma: distinguere il percorso in cui Training baseline viene confrontato con Input and prediction capture dal percorso in cui Delayed ground truth viene unito a Prediction. Il primo mostra i cambiamenti negli input, mentre il secondo mostra le prestazioni effettive delle previsioni; non considerarli lo stesso avviso."
+      ],
+      "sources": [
+        {
+          "label": "Monitoraggio della qualità dei dati e del modello con Amazon SageMaker Model Monitor",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Qualità del modello in Amazon SageMaker AI",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor-model-quality.html"
+        }
+      ],
+      "figureId": "ground-truth-monitoring-boundaries"
+    },
+    {
+      "id": "incident-triage-and-maintenance",
+      "title": "Gli avvisi sono il punto di partenza dell’indagine, non la causa",
+      "paragraphs": [
+        "Quando viene attivato un avviso, non significa necessariamente che sia necessario riaddestrare o sostituire immediatamente il modello. Occorre distinguere tra problemi nella raccolta degli input, modifiche alla pre-elaborazione, guasti dell’endpoint di inferenza, ritardi nell’arrivo delle etichette e cambiamenti effettivi nella distribuzione dei dati. Correlare il periodo interessato, la versione del modello, gli input e gli output e lo stato dell’infrastruttura.",
+        "Anche quando viene rilevato un drift dei dati, le prestazioni non necessariamente peggiorano. Al contrario, le prestazioni possono peggiorare a causa di modifiche alle definizioni delle etichette o alle modalità di utilizzo, anche quando la distribuzione degli input rimane stabile. Distinguere il momento in cui le etichette osservate diventano disponibili dall’urgenza dell’intervento.",
+        "Il riaddestramento non è una soluzione universale. Se la causa è la mancanza di dati, un problema di autorizzazioni o una modifica del formato degli input, riaddestrare il modello con dati che contengono lo stesso problema non migliorerà la situazione. Dopo aver apportato le correzioni, verificare il caso riproducibile, la qualità dei dati, la qualità del modello e le metriche operative prima della distribuzione."
+      ],
+      "sources": [
+        {
+          "label": "Monitoraggio della qualità dei dati e del modello mediante Amazon SageMaker Model Monitor",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-monitor.html"
+        },
+        {
+          "label": "Amazon SageMaker Model Dashboard",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/model-dashboard.html"
+        }
+      ]
+    },
+    {
+      "id": "security-and-access-evidence",
+      "title": "Proteggere separatamente modelli, dati, inferenza e log",
+      "paragraphs": [
+        "Nei sistemi ML, i dati di addestramento, le caratteristiche, gli artefatti del modello, gli endpoint di inferenza, i segreti e i log hanno ciascuno un diverso livello di sensibilità. Anziché concedere a un singolo ruolo di esecuzione le autorizzazioni per tutti i bucket S3, i modelli e i log, consenti solo le risorse e le operazioni necessarie per ciascun ruolo di elaborazione.",
+        "Combina crittografia, confini di rete, gestione dei segreti, principio del privilegio minimo IAM e log di audit. Anche se i dati sono crittografati, non sono protetti se principal non necessari possono decrittografarli o leggerli. I log possono contenere anche input o previsioni; pertanto, gestiscine l’accesso, la conservazione e l’eliminazione.",
+        "L’audit deve consentire di tracciare quale principal ha eseguito quale versione del modello su quali dati e quando. Quando indaghi sulla causa di un accesso negato, verifica separatamente la risorsa di destinazione, il ruolo di esecuzione, la policy e la raggiungibilità della rete prima di concedere temporaneamente autorizzazioni estese."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "PDF della guida all’esame MLA-C01",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-monitor-001",
+      "prompt": "L’ingegnere ML di un’azienda di logistica monitora un modello in produzione che prevede i ritardi nelle consegne. La distribuzione degli input è cambiata rispetto a quella usata per l’addestramento, ma le etichette degli orari effettivi di arrivo arrivano in ritardo; pertanto, non è ancora possibile confrontare la qualità del modello. Qual è la decisione più appropriata in questo momento?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Eliminare immediatamente il modello perché la distribuzione degli input è cambiata, senza verificare una riduzione delle prestazioni.",
+          "explanation": "Il data drift è il punto di partenza di un’indagine; senza verificare la qualità del modello tramite etichette osservate, non si può concludere che le prestazioni siano diminuite."
+        },
+        {
+          "id": "b",
+          "text": "Analizzare e registrare i cambiamenti negli input, quindi valutare la qualità del modello combinando le previsioni con le etichette misurate dopo il loro arrivo.",
+          "explanation": "Corretto. A questo punto, analizzare la distribuzione degli input e, dopo l’arrivo delle etichette, confermare le prestazioni effettive delle previsioni tramite il percorso separato mostrato nel diagramma."
+        },
+        {
+          "id": "c",
+          "text": "Eliminare i record delle previsioni e conservare a lungo termine solo la distribuzione degli input.",
+          "explanation": "In questo modo non sarebbe possibile confrontare le previsioni con Ground Truth e quindi misurare la qualità del modello."
+        },
+        {
+          "id": "d",
+          "text": "Non verificare le cause o l’ambito dei cambiamenti negli input finché non arriva Ground Truth.",
+          "explanation": "È possibile analizzare tempestivamente i cambiamenti nella raccolta degli input, nel pre-processing e nelle condizioni d’uso; pertanto, non fare nulla non è appropriato."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-monitor-002",
+      "prompt": "L’ingegnere ML di un’azienda di vendita al dettaglio ha ricevuto un avviso sulla qualità di un modello di previsione della domanda. Lo stesso giorno, una parte del processo di raccolta dei dati di input non è riuscita e anche le etichette delle vendite effettive stanno arrivando con due giorni di ritardo. Qual è la prima azione più appropriata?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Confrontare il periodo di riferimento, la versione del modello, la raccolta degli input, le previsioni e l’arrivo delle etichette, distinguendo se il problema riguarda i dati, l’infrastruttura o le prestazioni.",
+          "explanation": "Corretto. Non bisogna identificare l’avviso con la sua causa; occorre collegare le prove necessarie per decidere una risposta sicura."
+        },
+        {
+          "id": "a",
+          "text": "Senza distinguere la causa, avviare immediatamente il riaddestramento usando gli stessi dati.",
+          "explanation": "Se la causa è il mancato funzionamento della raccolta o il ritardo delle etichette, il riaddestramento potrebbe riprodurre o aggravare il problema."
+        },
+        {
+          "id": "b",
+          "text": "Ignorare l’avviso sulla qualità e non controllare i registri finché non arrivano le etichette delle vendite effettive.",
+          "explanation": "Il problema nella raccolta dei dati di input e il relativo impatto possono essere verificati immediatamente; ignorarli permetterebbe il protrarsi di previsioni errate."
+        },
+        {
+          "id": "d",
+          "text": "Disattivare le notifiche degli avvisi e valutare la qualità esclusivamente sulla base dei reclami degli utenti.",
+          "explanation": "In questo modo si perderebbero le basi per il rilevamento precoce e l’indagine, consentendo all’impatto sugli utenti di estendersi prima di poter intervenire."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "mla-monitor-003",
+      "prompt": "Un ingegnere ML di un’azienda di dispositivi medici sta analizzando un problema per cui un processo di inferenza non riesce ad accedere ai dati di input. Prima di concedere temporaneamente autorizzazioni di amministratore estese al ruolo di esecuzione, qual è l’ordine di verifica più appropriato?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Concedere autorizzazioni di amministratore a tutti i processi e analizzare la causa se il problema viene risolto.",
+          "explanation": "In questo modo si amplia l’accesso ai dati riservati tramite autorizzazioni eccessive e diventa inoltre più difficile individuare la causa principale."
+        },
+        {
+          "id": "c",
+          "text": "Eliminare i dati di input e i log, quindi creare un nuovo bucket.",
+          "explanation": "In questo modo si perdono le prove per l’audit e l’analisi dell’incidente e non si risolve il problema delle autorizzazioni o della raggiungibilità."
+        },
+        {
+          "id": "d",
+          "text": "Condividere le stesse credenziali tra tutti gli sviluppatori, in modo che chiunque possa eseguire il processo di inferenza.",
+          "explanation": "In questo modo non è possibile tracciare l’entità che ha eseguito l’operazione e si violano i requisiti di privilegio minimo e audit."
+        },
+        {
+          "id": "b",
+          "text": "Verificare separatamente il ruolo di esecuzione, i dati di destinazione, le operazioni necessarie, le policy correlate e la raggiungibilità della rete.",
+          "explanation": "Corretto. Questo consente di analizzare a quale limite del controllo degli accessi si verifica il problema, mantenendo il principio del privilegio minimo."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "Model drift",
+    "Data drift",
+    "Data quality",
+    "Model quality",
+    "Ground truth",
+    "Model Monitor",
+    "Prediction capture",
+    "IAM",
+    "IAM role",
+    "Least privilege",
+    "Encryption at rest",
+    "Encryption in transit",
+    "Audit log",
+    "Data lineage"
+  ]
+}

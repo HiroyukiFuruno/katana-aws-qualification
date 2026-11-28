@@ -1,0 +1,173 @@
+{
+  "id": "ml-data-preparation",
+  "title": "機器學習的資料準備",
+  "objective": "根據預測目標、資料所代表的時間點、資料品質和分割方法，說明並選擇可用於訓練和評估的資料集。",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "主要 AWS 服務"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    },
+    {
+      "slug": "testing-quality",
+      "title": "測試與品質閘門"
+    },
+    {
+      "slug": "observability",
+      "title": "監控與改善"
+    }
+  ],
+  "sections": [
+    {
+      "id": "define-label-features-and-time-boundary",
+      "title": "僅使用預測時點可用的資訊建立特徵",
+      "paragraphs": [
+        "準備 ML 資料時，首先要定義要預測的內容以及預測時間。例如，如果要在出貨前預測退貨，就不能將出貨後才確定的退貨原因或退款結果用作特徵。請將做為預測目標的標籤，與預測時點可用的特徵分開。",
+        "如果錯誤劃定時間邊界，就可能混入只有在訓練期間才知道答案的資料。發生這種資料洩漏時，離線評估結果可能很高，但在正式環境中無法重現。請記錄資料的產生時間、變得可用的時間，以及進行預測的時間，並逐一確認每個特徵。",
+        "圖解讀方式：由左至右依序追蹤原始資料、依時間點進行的分割、特徵處理，以及訓練、驗證和測試資料。以虛線表示的 Future outcome 可以用作標籤，但不得將它回饋到預測時點可用的特徵中。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        },
+        {
+          "label": "MLA-C01 考試指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ],
+      "figureId": "feature-time-boundary"
+    },
+    {
+      "id": "quality-and-representative-splits",
+      "title": "讓品質檢查與資料分割符合使用條件",
+      "paragraphs": [
+        "在使用模型之前，先檢查遺漏值、重複值、異常值、單位差異和標籤錯誤。品質檢查不僅要確認遺漏率，還要確認資料的意義與收集途徑。例如，銷售額是真正為零，還是尚未收集，會導致不同的處理方式。",
+        "將資料分割為訓練集、驗證集和測試集時，要維持資料與正式環境中將遇到的資料之間的關係。如果要預測隨時間變化的需求，僅使用隨機分割可能無法適當衡量未來的效能。對於同一客戶或裝置會多次出現的資料，要避免同一主體同時混入訓練集與測試集。",
+        "不要在每次調校時都為了方便而變更評估資料。如果持續根據測試資料的結果選擇設定，測試資料本身就會被用於訓練，因而無法正確衡量模型對未知資料的效能。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考試指南 PDF",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.pdf"
+        }
+      ]
+    },
+    {
+      "id": "reproducible-feature-processing",
+      "title": "將前處理作為可重現的程序進行管理",
+      "paragraphs": [
+        "如果訓練時的前處理與推論時的前處理不同，即使使用相同的模型，結果也可能改變。請將缺失值填補、類別轉換、正規化，以及特徵欄的順序以程式碼和設定進行管理，並在訓練與推論中使用相同的定義。",
+        "除了資料集的位置之外，也要記錄目標期間、擷取條件、結構描述、前處理版本和品質檢查結果。如此即可追蹤某個模型是由哪些輸入建立的，以及重新訓練時發生了哪些變更。",
+        "對於包含個人資料或機密資訊的特徵，請確認使用目的、檢視權限、遮罩處理和保留期間。即使某些資訊能提升效能，也不要因為這個理由，將預測用途不需要的資訊不受限制地加入特徵中。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C01 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-01/machine-learning-engineer-associate-01.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-001",
+      "prompt": "一家電子商務公司的 ML 工程師會在收到訂單時預測退貨的可能性。出貨後才確定的退貨原因只能用作正確標籤。在收到訂單時可用的特徵中，哪一項選擇最合適？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "將在收到訂單後、出貨時才確定的承運商收件時間用作特徵。",
+          "explanation": "承運商收件時間在收到訂單時尚未確定，因此包含預測時間之後的資訊，會造成資料洩漏。"
+        },
+        {
+          "id": "a",
+          "text": "將在收到訂單時已確定的商品、訂單時間和配送目的地區域用作特徵。",
+          "explanation": "正確。這些資訊在收到訂單時即可取得，因此在生產環境中也能以相同條件輸入。"
+        },
+        {
+          "id": "c",
+          "text": "將是否已完成退款用作特徵。",
+          "explanation": "退款是退貨後的處理結果，無法用於在收到訂單時進行的預測。"
+        },
+        {
+          "id": "d",
+          "text": "將未來的退貨件數以相同的值新增到所有訂單。",
+          "explanation": "由於包含未來資訊，這會不當地讓針對個別訂單在收到訂單時所做的預測看起來更準確。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-002",
+      "prompt": "一家電力公司的 ML 工程師正在評估一個預測隔日需求的模型。需求會隨季節和星期幾而大幅變化。要衡量模型在未知未來日期上的效能，哪種資料切分最適合？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "將整個期間的資料列隨機混合，並把同一日期的紀錄分散到訓練集和測試集。",
+          "explanation": "這樣無法得到接近未來條件的評估結果，而且混入相同時期的資訊可能會高估效能。"
+        },
+        {
+          "id": "c",
+          "text": "一邊查看測試期間的結果，一邊反覆使用同一個測試期間進行特徵選擇。",
+          "explanation": "這會將測試結果重複用於調校，使測試集失去衡量未知資料效能的作用。"
+        },
+        {
+          "id": "d",
+          "text": "只將需求最低的日期作為測試集，以穩定評估結果。",
+          "explanation": "這無法代表生產環境中會遇到的變動，因此無法顯示模型在實際運作條件下的效能。"
+        },
+        {
+          "id": "b",
+          "text": "使用較早的期間進行訓練、下一個期間進行驗證、最後一個期間進行測試，同時維持時間序列的順序。",
+          "explanation": "正確。這種切分接近預測時由過去推進到未來的條件，可以評估模型對未來期間的泛化能力。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "mla-data-003",
+      "prompt": "醫院的 ML 工程師正在準備用於預測再入院風險的特徵。經確認，訓練時與正式推論時使用的缺失值補值方法不同。最適合的修正方式為何？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "分別保留訓練時與推論時的補值方法，且不向使用者說明結果差異。",
+          "explanation": "輸入分布和特徵的意義會改變，因此無法在正式環境中重現模型的行為。"
+        },
+        {
+          "id": "b",
+          "text": "一律將缺失值替換為零，而不確認資料的意義。",
+          "explanation": "零是實測值還是未收集的值，其意義並不相同，因此無條件替換會降低品質。"
+        },
+        {
+          "id": "c",
+          "text": "將補值規則及其版本作為共用的前處理加以管理，並在訓練和推論中套用相同的定義。",
+          "explanation": "正確。讓前處理具備可重現性，可以避免訓練時與推論時的特徵產生偏差。"
+        },
+        {
+          "id": "d",
+          "text": "只將有缺失值的患者同時從訓練和推論中刪除。",
+          "explanation": "如果不調查缺失的原因及影響就予以排除，可能會損害相關患者的公平性和適用範圍。"
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "Label",
+    "Feature",
+    "Data lineage",
+    "Data leakage",
+    "Time-based split",
+    "Group split",
+    "Imputation",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

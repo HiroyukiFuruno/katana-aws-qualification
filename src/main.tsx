@@ -1,7 +1,8 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AnalyticsSettings } from './AnalyticsSettings';
 import './applied/applied-case.css';
+import { appliedArticleForSlides } from './applied/routes';
 import { AccountPages } from './auth/AccountPages';
 import { AccountPrivacy } from './auth/AccountPrivacy';
 import { AuthCallback } from './auth/AuthCallback';
@@ -19,8 +20,8 @@ import { GlossaryPage } from './GlossaryPage';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
 import { GuestStorageSettings, ProgressGate } from './progress/ProgressGate';
-import { Roadmap } from './Roadmap';
 import { qualificationLearningRoute } from './qualificationLearning/routes';
+import { Roadmap } from './Roadmap';
 import { accountPages, routeAt } from './routes';
 import { SiteAdLayout } from './SiteAd';
 import { SiteFooter } from './SiteFooter';
@@ -44,11 +45,12 @@ function App() {
   const consent = useCookieConsent();
   const currentUrl = useLessonLocation();
   const route = routeAt(currentUrl.pathname);
+  const slideArticle = route ? appliedArticleForSlides(route.page) : undefined;
   const lesson = lessonRouteAt(currentUrl.pathname, currentUrl.search);
   const { state } = useAccount();
   const site = useSitePreferences();
   useSiteAnalytics(currentUrl.pathname, consent.value === 'granted');
-  usePageTitle(route?.page, locale, content.certifications, Boolean(lesson));
+  usePageTitle(slideArticle ?? route?.page, locale, content.certifications, Boolean(lesson));
   useEffect(() => {
     if (route?.page === '' && state.status === 'ready' && state.account && !site.loading) {
       location.replace(dashboardPath(site.values.locale ?? locale));
@@ -58,6 +60,21 @@ function App() {
   const qualificationLearning = qualificationLearningRoute(locale, route.page);
   const [section, courseId] = route.page.split('/');
   const selected = section === 'study' ? studyCourses.find((cert) => cert.id === courseId) : undefined;
+  if (slideArticle) {
+    return (
+      <>
+        <Suspense fallback={<main id="main" className="shell" />}>
+          <AppliedPages
+            page={slideArticle}
+            locale={locale}
+            slides
+            requestedStep={currentUrl.searchParams.get('step') ?? undefined}
+          />
+        </Suspense>
+        <CookieConsent />
+      </>
+    );
+  }
   if (section === 'study' && courseId === 'fundamentals') {
     return (
       <>
@@ -106,7 +123,7 @@ function App() {
           </ProgressGate>
         ) : section === 'study' && courseId === 'applied' ? (
           <Suspense fallback={<main id="main" className="shell" />}>
-            <AppliedPages page={route.page} locale={locale} />
+            <AppliedPages page={route.page} locale={locale} interactive />
           </Suspense>
         ) : section === 'study' && courseId === 'questions' ? (
           <StudyDirectory />

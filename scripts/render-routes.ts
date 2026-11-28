@@ -1,7 +1,7 @@
-import { imageSlotMarkup } from '../src/images/staticMarkup.ts';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { appliedPageMetadata } from '../src/applied/routes.ts';
+import { appliedArticleForSlides, appliedPageMetadata } from '../src/applied/routes.ts';
+import { imageSlotMarkup } from '../src/images/staticMarkup.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { type Message, messages } from '../src/messages.ts';
 import { qualificationLearningRoute } from '../src/qualificationLearning/routes.ts';
@@ -122,6 +122,8 @@ for (const locale of locales) {
 for (const locale of locales) {
   const content = await localizedBuildContent(locale);
   for (const entry of privateLessonPages) {
+    const article = appliedArticleForSlides(entry);
+    const title = article ? appliedPageMetadata(locale, article)?.title : await content.titleFor(entry);
     const path = localePath(locale, entry);
     const directory = join('dist', path);
     await mkdir(directory, { recursive: true });
@@ -129,7 +131,7 @@ for (const locale of locales) {
       .replace('lang="en"', `lang="${locale}"`)
       .replace(
         /<title>[^<]+<\/title>/,
-        `<title>${escapeHtml((await content.titleFor(entry)) ?? messages[locale].learnFundamentals)} | ${escapeHtml(messages[locale].siteName)}</title>`,
+        `<title>${escapeHtml(title ?? messages[locale].learnFundamentals)} | ${escapeHtml(messages[locale].siteName)}</title>`,
       )
       .replace(/<link rel="canonical" href="[^"]*">/, '')
       .replace(

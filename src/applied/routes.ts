@@ -8,6 +8,12 @@ export const appliedStudyPages = [
   ...appliedCaseIds.map((id) => `${appliedIndexPage}/${id}`),
 ];
 
+export const appliedSlidePages = appliedCaseIds.map((id) => `${appliedIndexPage}/${id}/slides`);
+
+export function appliedArticleForSlides(page: string) {
+  return appliedSlidePages.includes(page) ? page.slice(0, -'/slides'.length) : undefined;
+}
+
 export type AppliedCaseEntry = AppliedCaseCatalog & { id: string; page: string };
 
 export function appliedDirectory(locale: Locale) {
@@ -29,4 +35,9 @@ export function appliedCaseForPage(locale: Locale, page: string) {
 export function appliedPageMetadata(locale: Locale, page: string) {
   if (page === appliedIndexPage) return appliedDirectory(locale);
   return appliedCaseForPage(locale, page);
+}
+
+export function appliedSlideHref(articleHref: string, sectionId?: string) {
+  const step = sectionId ? `?${new URLSearchParams({ step: sectionId })}` : '';
+  return `${articleHref}slides/${step}`;
 }

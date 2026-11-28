@@ -5,10 +5,18 @@ import { LessonSlideFooter } from './LessonSlideFooter';
 import './learner.css';
 import './learner-responsive.css';
 
+type SlideHeading = Pick<
+  LessonStep,
+  'id' | 'kind' | 'label' | 'position' | 'totalSteps' | 'remainingSteps'
+> & {
+  estimatedSeconds?: number;
+};
+
 export type LessonSlideShellProps = {
-  step: LessonStep;
+  step: SlideHeading;
   unitTitle: string;
   catalogHref: string;
+  catalogLabel?: string;
   onCatalog?: () => void | Promise<void>;
   children: ReactNode;
   previousHref?: string;
@@ -27,6 +35,7 @@ export function LessonSlideShell({
   step,
   unitTitle,
   catalogHref,
+  catalogLabel,
   onCatalog,
   children,
   previousHref,
@@ -45,7 +54,7 @@ export function LessonSlideShell({
   const catalogBusy = useRef(false);
   const total = Math.max(step.totalSteps, 1);
   const position = Math.min(Math.max(step.position, 1), total);
-  const minutes = Math.max(1, Math.ceil(step.estimatedSeconds / 60));
+  const seconds = step.estimatedSeconds;
   useLayoutEffect(() => {
     if (step.id) {
       window.scrollTo(0, 0);
@@ -86,17 +95,19 @@ export function LessonSlideShell({
           onClick={catalogClick}
           aria-disabled={saving}
         >
-          {t('lessonBackToCatalog')}
+          {catalogLabel ?? t('lessonBackToCatalog')}
         </a>
         <p className="lesson-slide-unit">{unitTitle}</p>
         <div className="lesson-slide-meta">
           <span aria-live="polite">{t('lessonStepProgress', { current: position, total })}</span>
           <span>{t('lessonStepsRemaining', { count: Math.max(step.remainingSteps, 0) })}</span>
-          <span>
-            {step.estimatedSeconds < 60
-              ? t('lessonEstimatedSeconds', { count: step.estimatedSeconds })
-              : t('lessonEstimatedMinutes', { count: minutes })}
-          </span>
+          {seconds !== undefined && (
+            <span>
+              {seconds < 60
+                ? t('lessonEstimatedSeconds', { count: seconds })
+                : t('lessonEstimatedMinutes', { count: Math.ceil(seconds / 60) })}
+            </span>
+          )}
         </div>
         <progress aria-label={t('lessonProgress')} max={total} value={position}>
           {position} / {total}

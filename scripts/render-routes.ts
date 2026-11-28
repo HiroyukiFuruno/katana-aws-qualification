@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { appliedPageMetadata } from '../src/applied/routes.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { type Message, messages } from '../src/messages.ts';
+import { qualificationLearningRoute } from '../src/qualificationLearning/routes.ts';
 import { accountPages, privateLessonPages, publishedLocalesFor, publishedPages } from '../src/routes.ts';
 import { localizedBuildContent } from './localized-build-content.ts';
 
@@ -45,9 +46,10 @@ for (const locale of locales) {
     const path = localePath(locale, entry);
     const lesson = await content.lessonFor(entry);
     const applied = appliedPageMetadata(locale, entry);
+    const qualification = qualificationLearningRoute(locale, entry);
     const baseTitle = Object.hasOwn(indexTitles, entry)
       ? dictionary[indexTitles[entry as keyof typeof indexTitles]]
-      : (applied?.title ?? (await content.titleFor(entry)));
+      : (applied?.title ?? qualification?.title ?? (await content.titleFor(entry)));
     if (!baseTitle) throw new Error(`Missing title for ${entry}`);
     const alternateLinks = [...supported, 'x-default']
       .map(
@@ -59,7 +61,10 @@ for (const locale of locales) {
       descriptionFor(
         entry,
         dictionary,
-        lesson?.description ?? applied?.description ?? content.descriptionFor(entry),
+        lesson?.description ??
+          applied?.description ??
+          qualification?.description ??
+          content.descriptionFor(entry),
       ),
     );
     const figure = lesson?.body.figure;

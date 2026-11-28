@@ -1,6 +1,7 @@
 import { certifications, levelMessage, studyCourses } from './certifications';
 import { localePath } from './locales';
 import { usePreferences } from './preferences';
+import { qualificationLearningPath } from './qualificationLearning/routes';
 import { useContent } from './useContent';
 
 type DirectoryProps =
@@ -66,7 +67,13 @@ export function CertificationDirectory(props: DirectoryProps) {
                         </span>
                       </label>
                     ) : (
-                      <a className="certification-row" href={localePath(locale, `${mode}/${cert.id}`)}>
+                      <a
+                        className="certification-row"
+                        href={
+                          (mode === 'study' ? qualificationLearningPath(locale, cert.id) : undefined) ??
+                          localePath(locale, `${mode}/${cert.id}`)
+                        }
+                      >
                         <div className="certification-row-content">
                           {code}
                           <h3>{content.certifications[cert.id].name}</h3>

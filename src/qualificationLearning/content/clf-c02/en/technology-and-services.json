@@ -1,0 +1,220 @@
+{
+  "id": "technology-and-services",
+  "title": "Choose Core Services Based on Requirements",
+  "objective": "Distinguish requirements for processing, storage, databases, and event processing, and explain the major AWS services in terms of their intended uses and operational responsibilities.",
+  "prerequisites": [
+    {
+      "slug": "core-services",
+      "title": "Core AWS Services"
+    },
+    {
+      "slug": "networking-basics",
+      "title": "Communication Fundamentals"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    }
+  ],
+  "sections": [
+    {
+      "id": "service-category-first",
+      "title": "Separate the type of work before choosing a service name",
+      "paragraphs": [
+        "When choosing a service, first separate the type of work you need to handle. Processing that runs programs, storage that saves files and other data, databases that manage related data, event processing that connects services, and mechanisms that control network reachability all have different purposes and decision criteria. Simply saying “use AWS” does not determine which services are needed.",
+        "Amazon EC2 is a computing service that lets you use as many virtual servers as needed. Users manage the operating system, network settings, applications, and other components. For services such as Amazon ECS and Amazon EKS, which run containers, and AWS Lambda, which processes events while reducing server-management responsibilities, compare the execution model and operational responsibilities before choosing.",
+        "Amazon S3 is an object storage service. It is suitable for storing images, backups, logs, and other data as objects. Its purpose differs from Amazon EBS, which is block storage connected to EC2, and Amazon EFS, which is file storage that can be shared by multiple computing resources. Also consider access frequency, retention period, restoration requirements, storage class, and access control."
+      ],
+      "sources": [
+        {
+          "label": "What is Amazon EC2?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/concepts.html"
+        },
+        {
+          "label": "What is Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "managed-database",
+      "title": "Operational responsibility for the database is also a requirement",
+      "paragraphs": [
+        "When handling related data such as orders, customers, and inventory, the team checks the data model, integrity, queries, and availability. Amazon RDS is a managed service for setting up, operating, and scaling relational databases, and it supports management tasks such as backups, software patching, failure detection, and recovery.",
+        "Using a managed database does not eliminate the user's decisions. The user determines which database engine to use, who can connect, which data to retain, and the level of availability required for the business. Do not assume that the term managed means all configuration and responsibility are transferred to AWS.",
+        "During selection, clarify the data structures required by existing applications and the operational constraints. If relational database functionality and existing SQL usage are requirements, consider Amazon RDS or Amazon Aurora as candidate solutions. In contrast, for requirements involving low-latency access centered on key-value data, compare Amazon DynamoDB; for requirements involving caching frequently accessed data, compare Amazon ElastiCache. Choose based on the data model and access requirements, not on the service name."
+      ],
+      "sources": [
+        {
+          "label": "What is Amazon RDS?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Welcome.html"
+        }
+      ]
+    },
+    {
+      "id": "event-driven-processing",
+      "title": "Separating Processing by Event Trigger",
+      "paragraphs": [
+        "For workflows such as creating a thumbnail after a user uploads an image, consider an architecture that triggers subsequent processing from an event instead of bundling the upload and conversion into the same operation. Amazon S3 can send object-creation and object-deletion events to a Lambda function. The Lambda function processes events asynchronously.",
+        "In this architecture, distinguish among S3 event notifications, resource-based permissions that allow a Lambda function to be invoked, and the execution role that the function uses to operate on other AWS resources. Saying only that the process is event-driven leaves out who performs the processing and with which permissions.",
+        "S3 event notifications are designed for at-least-once delivery, so the same event may occasionally be duplicated or delivered out of order. The function owner designs idempotent processing so that handling the same event multiple times does not corrupt the result. Because writing to the same bucket can trigger the same function again and cause unintended repetition, use separate input and output buckets or restrict the target prefix."
+      ],
+      "sources": [
+        {
+          "label": "Processing S3 Event Notifications Using Lambda",
+          "url": "https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/with-s3.html"
+        },
+        {
+          "label": "Amazon S3 Event Notifications",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/EventNotifications.html"
+        },
+        {
+          "label": "Ordering and Duplication of S3 Events",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html"
+        }
+      ],
+      "figureId": "clf-event-driven-service-flow"
+    },
+    {
+      "id": "networking-and-delivery-interfaces",
+      "title": "Choose connection and change methods based on purpose",
+      "paragraphs": [
+        "VPC is the foundation for creating a logically isolated network within AWS. When determining the configuration, clarify whether to expose the application to the internet, connect to an on-premises environment, and which IP address DNS should resolve the domain name to. Depending on the requirements, use security groups, Amazon Route 53, AWS Site-to-Site VPN, and AWS Direct Connect as appropriate.",
+        "Ways to operate services and resources include the AWS Management Console, AWS CLI, AWS SDK, and APIs. When repeatedly creating the same configuration, consider infrastructure management as code, such as AWS CloudFormation. Decide whether manual work or automation is more appropriate based on the frequency of changes, reproducibility, approval procedures, and the operational capacity available.",
+        "For asynchronous integration between services, Amazon SNS is used to deliver notifications, Amazon SQS temporarily stores messages to separate processing, and Amazon EventBridge is used for event-driven integration. Do not rely solely on synchronous calls; make the choice while considering the scope of impact during failures and processing delays."
+      ],
+      "sources": [
+        {
+          "label": "CLF-C02 Domain 3: Cloud Technology and Services",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02-domain3.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "clf-technology-001",
+      "prompt": "A publishing content manager wants to store the original images attached to articles for a long time and retrieve them from an application whenever needed. Which service best meets the requirement to store files as objects?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon S3",
+          "explanation": "Amazon S3 is an object storage service that stores and protects data such as images as objects. For long-term storage, choose storage classes and lifecycle settings that match the requirements."
+        },
+        {
+          "id": "b",
+          "text": "Amazon EBS",
+          "explanation": "Amazon EBS is block storage that connects to EC2 instances. It is not the first choice for an application that needs to store and retrieve files as objects."
+        },
+        {
+          "id": "c",
+          "text": "Amazon EFS",
+          "explanation": "Amazon EFS is file storage that can be shared by multiple computing resources. Its management method and usage model differ from the requirements for object storage."
+        },
+        {
+          "id": "d",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS is a service for managing relational databases, not a service for storing original images as objects."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-002",
+      "prompt": "The development lead for a photo-sharing service wants to automatically create resized images after users upload images to an S3 input bucket. Which architecture is appropriate for branching subsequent processing based on the upload?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Invoke a Lambda function from an S3 object creation event and save the processed images in a location different from the input location.",
+          "explanation": "S3 event notifications can invoke Lambda asynchronously, and separating the output location helps avoid recursive invocations. Because notifications are delivered at least once, the function should use idempotent processing to handle duplicate events safely."
+        },
+        {
+          "id": "b",
+          "text": "Invoke a Lambda function from an S3 object creation event and save the processed images under the same input prefix.",
+          "explanation": "Writing back to the same bucket and target prefix may cause the output to trigger the same event again. Separate the input and output, or narrow the filter."
+        },
+        {
+          "id": "c",
+          "text": "Manage both permission to invoke the Lambda function and permission for the function to operate on S3 using only the same personal access key.",
+          "explanation": "The resource-based permission that allows S3 to invoke Lambda and the execution role that allows the function to operate on other resources serve different purposes. Do not rely on personal access keys."
+        },
+        {
+          "id": "d",
+          "text": "Assume that each event is received only once and do not check whether the same image has already been processed.",
+          "explanation": "S3 event notifications are delivered at least once, so duplicate or out-of-order notifications can occur. Processing must be designed to remain safe when duplicates occur."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "clf-technology-003",
+      "prompt": "The product owner of a reservation service wants to use existing SQL to handle related reservation, customer, and payment data. Reducing database operations work is also a requirement. Which service is the most appropriate first candidate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Amazon RDS",
+          "explanation": "Amazon RDS is a managed service for operating relational databases and helps with management tasks such as using existing SQL, backups, and patching. Amazon Aurora is also a candidate to compare for relational requirements."
+        },
+        {
+          "id": "b",
+          "text": "Amazon DynamoDB",
+          "explanation": "DynamoDB is a managed NoSQL database to consider for requirements centered on low-latency access to key-value data. Given the conditions of existing SQL and relational data, it is not the first candidate."
+        },
+        {
+          "id": "c",
+          "text": "Amazon ElastiCache",
+          "explanation": "ElastiCache is intended for caching frequently accessed data. It is not the primary database for managing the persistent relational data of reservations, customers, and payments."
+        },
+        {
+          "id": "d",
+          "text": "Amazon S3",
+          "explanation": "S3 is suitable for object storage, but it is not the first candidate for the requirements of a relational database and using existing SQL."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "EC2",
+    "Virtual server",
+    "ECS",
+    "EKS",
+    "Lambda",
+    "Serverless",
+    "S3",
+    "Object storage",
+    "Bucket",
+    "Object key",
+    "S3 storage class",
+    "EBS",
+    "Block storage",
+    "EFS",
+    "File storage",
+    "RDS",
+    "Aurora",
+    "Relational database",
+    "SQL",
+    "DynamoDB",
+    "ElastiCache",
+    "Access pattern",
+    "S3 event notification",
+    "Event-driven architecture",
+    "Resource-based policy",
+    "IAM role",
+    "Idempotency",
+    "VPC",
+    "Security group",
+    "Route 53",
+    "AWS Site-to-Site VPN",
+    "AWS Direct Connect",
+    "AWS Management Console",
+    "AWS CLI",
+    "AWS SDK",
+    "API call",
+    "CloudFormation",
+    "Infrastructure as code",
+    "SNS",
+    "SQS",
+    "EventBridge"
+  ]
+}

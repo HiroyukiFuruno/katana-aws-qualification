@@ -66,7 +66,9 @@ export function validQuestionFormat(question: Question) {
   }
 }
 
-export function isAnswerComplete(question: Question, selected: readonly string[]) {
+type AnswerKey = Pick<Question, 'correct' | 'choices' | 'format'>;
+
+export function isAnswerComplete(question: AnswerKey, selected: readonly string[]) {
   return (
     selected.length === question.correct.length &&
     new Set(selected).size === selected.length &&
@@ -74,7 +76,7 @@ export function isAnswerComplete(question: Question, selected: readonly string[]
   );
 }
 
-export function isCorrectAnswer(question: Question, selected: readonly string[]) {
+export function isCorrectAnswer(question: AnswerKey, selected: readonly string[]) {
   if (!isAnswerComplete(question, selected)) return false;
   return question.format
     ? question.correct.every((id, index) => id === selected[index])

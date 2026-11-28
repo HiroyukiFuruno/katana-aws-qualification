@@ -8,6 +8,8 @@ import type { SiteContent } from '../src/contentTypes.ts';
 import type { DeliveryIndexAsset } from '../src/fundamentals/delivery/artifactTypes.ts';
 import { localePath, locales } from '../src/locales.ts';
 import { messages } from '../src/messages.ts';
+import { qualificationLearningPath } from '../src/qualificationLearning/routes.ts';
+import { renderQualificationDirectories } from './render-qualification-directories.tsx';
 import { StudyEntryCards } from '../src/StudyEntryCards.tsx';
 
 async function insert(locale: (typeof locales)[number], page: string, content: string) {
@@ -36,6 +38,7 @@ for (const locale of locales) {
   );
   for (const page of appliedStudyPages)
     await insert(locale, page, renderToStaticMarkup(<AppliedPages page={page} locale={locale} />));
+  await renderQualificationDirectories(locale, insert);
   const indexPath =
     locale === 'ja'
       ? 'public/fundamentals/delivery/index.json'
@@ -77,10 +80,15 @@ for (const locale of locales) {
             {entries.map((cert) => (
               <li key={cert.id}>
                 <a
-                  href={localePath(
-                    locale,
-                    `${page === 'certifications' ? 'certifications' : 'study'}/${cert.id}`,
-                  )}
+                  href={
+                    (page === 'study/questions'
+                      ? qualificationLearningPath(locale, cert.id)
+                      : undefined) ??
+                    localePath(
+                      locale,
+                      `${page === 'certifications' ? 'certifications' : 'study'}/${cert.id}`,
+                    )
+                  }
                 >
                   {site.certifications[cert.id]?.name ?? cert.name} ({cert.id.toUpperCase()})
                 </a>
@@ -127,7 +135,13 @@ for (const locale of locales) {
           <h2>{copy.certAudience}</h2>
           <p>{guide.audience}</p>
           <a href={localePath(locale, 'certifications')}>{copy.backCertGuides}</a>
-          {cert.course && <a href={localePath(locale, `study/${cert.id}`)}>{copy.openCourse}</a>}
+          {cert.course && (
+            <a
+              href={qualificationLearningPath(locale, cert.id) ?? localePath(locale, `study/${cert.id}`)}
+            >
+              {copy.openCourse}
+            </a>
+          )}
         </main>,
       ),
     );

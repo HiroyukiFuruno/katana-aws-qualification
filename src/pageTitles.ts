@@ -1,3 +1,4 @@
+import { qualificationLearningRoute } from './qualificationLearning/routes.ts';
 import { appliedPageMetadata } from './applied/routes.ts';
 import type { Locale } from './locales';
 import { type Message, messages } from './messages.ts';
@@ -21,6 +22,9 @@ export function pageTitle(page: string | undefined, locale: Locale, certificatio
   const dictionary = messages[locale];
   const key = page === undefined ? undefined : titles[page];
   const applied = page === undefined ? undefined : appliedPageMetadata(locale, page);
-  const title = key ? dictionary[key] : (applied?.title ?? certificationName ?? dictionary.notFound);
+  const qualification = page === undefined ? undefined : qualificationLearningRoute(locale, page);
+  const title = key
+    ? dictionary[key]
+    : (applied?.title ?? qualification?.title ?? certificationName ?? dictionary.notFound);
   return `${title} | ${dictionary.siteName}`;
 }

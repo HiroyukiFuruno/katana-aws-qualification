@@ -20,6 +20,7 @@ import { localePath } from './locales';
 import { usePreferences } from './preferences';
 import { GuestStorageSettings, ProgressGate } from './progress/ProgressGate';
 import { Roadmap } from './Roadmap';
+import { qualificationLearningRoute } from './qualificationLearning/routes';
 import { accountPages, routeAt } from './routes';
 import { SiteAdLayout } from './SiteAd';
 import { SiteFooter } from './SiteFooter';
@@ -35,6 +36,7 @@ import './CertificationOverview.css';
 import './style.css';
 
 const AppliedPages = lazy(() => import('./applied/AppliedPages'));
+const QualificationLearningScreen = lazy(() => import('./qualificationLearning/LearningScreen'));
 
 function App() {
   const { t, locale } = usePreferences();
@@ -53,6 +55,7 @@ function App() {
     }
   }, [route, state, locale, site.loading, site.values.locale]);
   if (!route) return <NotFound />;
+  const qualificationLearning = qualificationLearningRoute(locale, route.page);
   const [section, courseId] = route.page.split('/');
   const selected = section === 'study' ? studyCourses.find((cert) => cert.id === courseId) : undefined;
   if (section === 'study' && courseId === 'fundamentals') {
@@ -88,6 +91,10 @@ function App() {
           <AuthCallback />
         ) : accountPages.includes(route.page) ? (
           <AccountPages page={route.page} hash={currentUrl.hash} />
+        ) : qualificationLearning ? (
+          <Suspense fallback={<main id="main" className="shell" />}>
+            <QualificationLearningScreen route={qualificationLearning} locale={locale} />
+          </Suspense>
         ) : selected?.course ? (
           <ProgressGate>
             <CourseApp

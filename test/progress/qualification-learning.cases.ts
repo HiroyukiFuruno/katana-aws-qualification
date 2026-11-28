@@ -94,4 +94,12 @@ export const qualificationLearningCases: QualificationLearningCase[] = [
       asset: 'mla-inference-decision-timing',
     },
   },
+  {
+    courseId: 'mla-c02',
+    firstTitle: 'ML と AI のためのデータを準備する',
+    nextUnit: 'model-and-fm-development',
+    prompt: /需要予測モデルの担当者は、取り込み元または変換コードの版が変わった後も/,
+    answer: /取り込み元、データ版、変換コード、学習・評価データ、モデルアーティファクトを関連付け/,
+    choiceCount: 3,
+  },
 ];

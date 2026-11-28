@@ -1,0 +1,154 @@
+{
+  "id": "data-preparation",
+  "title": "為 ML 與 AI 準備資料",
+  "objective": "連結資料來源、轉換、品質與使用目的，準備可重現且安全的訓練資料。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "雲端基本概念"
+    },
+    {
+      "slug": "data-protection",
+      "title": "資料保護"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身分驗證與授權"
+    }
+  ],
+  "sections": [
+    {
+      "id": "collect-store-lineage",
+      "title": "保留從資料來源到使用端的資料譜系",
+      "paragraphs": [
+        "在擷取 S3、RDS 和串流等資料來源之前，ML 工程師會確認擁有者、更新頻率、格式、是否包含個人資訊，以及使用目的。僅憑資料集名稱，無法說明訓練資料是由哪個時間點的哪項輸入所建立。",
+        "儲存資料時，應根據資料的性質調整存取模式、容量、保留期間、加密方式和存取權限。記錄擷取、轉換、訓練和評估所使用的資料與程式碼版本後，便能在之後追蹤模型輸出，並在相同條件下重新執行。RAG 區塊中保留的存取控制中繼資料用於縮小搜尋候選範圍；搜尋時，還必須另外核對使用者的角色與權限，只傳回已獲授權的區塊。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 考試指南：資料準備",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        },
+        {
+          "label": "Amazon SageMaker AI 的功能",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/whatis-features.html"
+        }
+      ],
+      "figureId": "mla-data-lineage"
+    },
+    {
+      "id": "transform-for-task",
+      "title": "依用途選擇轉換與前處理",
+      "paragraphs": [
+        "分類、迴歸和檢索增強生成（RAG）所需的輸入形式各不相同。對於表格式資料，請檢查遺漏值、離群值、單位和類別表示方式，以便在訓練和推論期間套用相同的轉換。不要將轉換依據與實作分開，而應將兩者與資料集一起管理。",
+        "準備 RAG 文件時，不要直接將文件原樣向量化，而應定義檢索所需的語意單位、更新單位、中繼資料和存取控制。分塊、嵌入和向量儲存不僅會影響檢索品質，也會影響參照原始文件的能力以及防止資訊外洩的能力。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 考試指南：資料轉換與前處理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        },
+        {
+          "label": "Amazon Bedrock 概觀",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/what-is-bedrock.html"
+        }
+      ]
+    },
+    {
+      "id": "quality-bias-integrity",
+      "title": "驗證品質、偏差與完整性",
+      "paragraphs": [
+        "資料品質檢查不僅要檢查筆數，還要檢查必要欄、資料型別、值域、重複項目、遺漏值、標籤一致性，以及資料的訓練與評估分割方式。對於檢查失敗的資料，不應默默補齊後繼續處理，而應記錄失敗內容、受影響的範圍，以及修正或排除資料的決定。",
+        "僅靠整體準確率有時無法看出偏差與類別不平衡。請檢查各使用者或資料群組的分布與評估指標，並調查原因出在收集、標記、分割、加權還是擴增。將評估資料混入訓練資料會失去效能評估的可靠性。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 考試指南：資料品質與偏差",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-1",
+      "prompt": "需求預測模型負責人希望即使資料擷取來源或轉換程式碼的版本變更後，也能說明某個預測結果是由哪些輸入資料產生的。最適合的方法是什麼？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只保存最新模型，並刪除訓練資料與轉換歷程。",
+          "explanation": "這會失去輸出的可重現性與可調查性。"
+        },
+        {
+          "id": "c",
+          "text": "只分享資料集名稱，不記錄更新時間或來源。",
+          "explanation": "無法判斷使用了哪些輸入資料。"
+        },
+        {
+          "id": "a",
+          "text": "關聯並記錄資料來源、資料版本、轉換程式碼、訓練資料與評估資料，以及模型成品。",
+          "explanation": "即使版本變更後，也能追蹤從輸入到模型的資料譜系與影響範圍。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-2",
+      "prompt": "負責搜尋內部規章的 RAG 應用程式人員，希望能將搜尋結果追溯到原始文件。哪種文件準備方式最適合？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "依語意完整的單元切分文件，並在每個區塊中保留原始文件識別碼、更新資訊，以及用於縮小搜尋候選範圍的存取控制中繼資料。擷取時，另外核對使用者的角色與權限，只回傳已獲授權的區塊。",
+          "explanation": "這樣可以將搜尋結果與其來源建立關聯。除了使用中繼資料縮小候選範圍之外，還能先強制核對使用者權限，再回傳結果。"
+        },
+        {
+          "id": "b",
+          "text": "將所有文件合併成一個巨大的字串，刪除來源資訊後進行嵌入。",
+          "explanation": "搜尋結果的依據和更新單位都會遺失。"
+        },
+        {
+          "id": "c",
+          "text": "不檢查存取控制，就無條件地將內部文件公開到外部。",
+          "explanation": "這不符合資料保護要求。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-3",
+      "prompt": "招募支援模型的評估人員確認，少數應徵者群組的召回率偏低。接下來最適當的做法是什麼？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只要整體準確率很高，就不檢查各群組的結果。",
+          "explanation": "這會忽略對特定群組的影響。"
+        },
+        {
+          "id": "a",
+          "text": "調查各群組的資料分布、標籤品質、資料分割方式和評估指標，並根據原因改善資料收集或前處理。",
+          "explanation": "如此即可驗證隱藏在整體指標中的偏誤或不平衡。"
+        },
+        {
+          "id": "c",
+          "text": "將評估資料加入訓練資料，觀察指標是否提升。",
+          "explanation": "這會失去評估的獨立性，並高估模型效能。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "RDS",
+    "Data lineage",
+    "Data classification",
+    "Dataset provenance",
+    "Data quality",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

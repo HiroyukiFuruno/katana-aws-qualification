@@ -1,0 +1,154 @@
+{
+  "id": "data-preparation",
+  "title": "为 ML 和 AI 准备数据",
+  "objective": "将数据来源、转换过程、质量和使用目的联系起来，准备可复现且安全的训练数据。",
+  "prerequisites": [
+    {
+      "slug": "cloud-concepts",
+      "title": "云的基本概念"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    },
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    }
+  ],
+  "sections": [
+    {
+      "id": "collect-store-lineage",
+      "title": "保留从数据源到使用端的谱系",
+      "paragraphs": [
+        "在摄取 S3、RDS 和流等数据源之前，机器学习工程师会确认所有者、更新频率、格式、是否包含个人信息以及使用目的。仅凭数据集名称，无法说明训练数据是由哪个时间点的哪项输入创建的。",
+        "存储数据时，应根据数据的性质匹配访问模式、容量、保留期、加密方式和访问权限。记录摄取、转换、训练和评估所使用的数据及代码版本后，便可以在之后追踪模型输出，并在相同条件下重新运行。RAG 分块中保留的访问控制元数据用于缩小搜索候选范围；搜索时，还必须单独核对用户的角色和权限，只返回已获授权的分块。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 考试指南：数据准备",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        },
+        {
+          "label": "Amazon SageMaker AI 的功能",
+          "url": "https://docs.aws.amazon.com/ja_jp/sagemaker/latest/dg/whatis-features.html"
+        }
+      ],
+      "figureId": "mla-data-lineage"
+    },
+    {
+      "id": "transform-for-task",
+      "title": "根据用途选择转换和预处理",
+      "paragraphs": [
+        "分类、回归和检索增强生成（RAG）所需的输入形式各不相同。对于表格数据，应检查缺失值、异常值、单位和类别表示方式，以便在训练和推理期间应用相同的转换。不要将转换依据与实现分开，而应将二者与数据集一起管理。",
+        "准备 RAG 文档时，不要直接将文档原样向量化，而应定义检索所需的语义单元、更新单元、元数据和访问控制。分块、嵌入和向量存储不仅会影响检索质量，还会影响对原始文档的引用能力以及防止信息泄露的能力。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 考试指南：数据转换和预处理",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        },
+        {
+          "label": "Amazon Bedrock 概览",
+          "url": "https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/what-is-bedrock.html"
+        }
+      ]
+    },
+    {
+      "id": "quality-bias-integrity",
+      "title": "验证质量、偏差和完整性",
+      "paragraphs": [
+        "数据质量检查不仅要检查记录数，还要检查必需列、数据类型、值域、重复项、缺失值、标签一致性，以及数据的训练集和评估集划分方式。对于检查失败的数据，不应静默填补后继续处理，而应记录失败详情、受影响的范围，以及修正或排除该数据的决定。",
+        "仅凭整体准确率有时无法发现偏差和类别不平衡。应检查各个用户或数据组的分布和评估指标，并调查问题源于数据收集、标签标注、数据划分、加权还是数据增强。将评估数据混入训练数据会损害性能评估的可靠性。"
+      ],
+      "sources": [
+        {
+          "label": "MLA-C02 考试指南：数据质量与偏差",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/machine-learning-engineer-associate-02/machine-learning-engineer-associate-02-domain1.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "mla-data-1",
+      "prompt": "需求预测模型负责人希望即使数据摄取源或转换代码的版本发生变化，也能说明某个预测结果是由哪些输入数据生成的。最合适的方法是什么？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只保存最新模型，并删除训练数据和转换历史。",
+          "explanation": "这会失去输出的可复现性和可调查性。"
+        },
+        {
+          "id": "c",
+          "text": "只共享数据集名称，不记录更新时间或来源。",
+          "explanation": "无法判断使用了哪些输入数据。"
+        },
+        {
+          "id": "a",
+          "text": "关联并记录数据来源、数据版本、转换代码、训练数据和评估数据，以及模型制品。",
+          "explanation": "即使版本发生变化，也可以追踪从输入到模型的数据谱系和影响范围。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-2",
+      "prompt": "负责搜索内部规章的 RAG 应用程序的人员希望能够将搜索结果追溯到原始文档。哪种文档准备方式最合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "按语义完整的单元拆分文档，并在每个分块中保留原始文档标识符、更新信息以及用于缩小搜索候选范围的访问控制元数据。检索时，另外核对用户的角色和权限，只返回已获授权的分块。",
+          "explanation": "这样可以将搜索结果与其来源关联起来。除了使用元数据缩小候选范围外，还可以先强制核对用户权限，再返回结果。"
+        },
+        {
+          "id": "b",
+          "text": "将所有文档合并成一个巨大的字符串，删除来源信息后进行嵌入。",
+          "explanation": "搜索结果的依据和更新单位都会丢失。"
+        },
+        {
+          "id": "c",
+          "text": "不检查访问控制，就无条件地将内部文档公开到外部。",
+          "explanation": "这不符合数据保护要求。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "mla-data-3",
+      "prompt": "招聘支持模型的评估人员确认，某个小规模应聘者群体的召回率较低。接下来最合适的做法是什么？",
+      "choices": [
+        {
+          "id": "b",
+          "text": "只要整体准确率较高，就不检查各群体的结果。",
+          "explanation": "这会忽视对特定群体的影响。"
+        },
+        {
+          "id": "a",
+          "text": "调查各群体的数据分布、标签质量、数据划分方法和评估指标，并根据原因改进数据收集或预处理。",
+          "explanation": "这样可以验证隐藏在整体指标中的偏差或不平衡。"
+        },
+        {
+          "id": "c",
+          "text": "将评估数据添加到训练数据中，观察指标是否提高。",
+          "explanation": "这会失去评估的独立性，并高估模型性能。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "RDS",
+    "Data lineage",
+    "Data classification",
+    "Dataset provenance",
+    "Data quality",
+    "RAG",
+    "Chunking",
+    "Embedding",
+    "Vector store",
+    "Model bias",
+    "Subgroup evaluation"
+  ]
+}

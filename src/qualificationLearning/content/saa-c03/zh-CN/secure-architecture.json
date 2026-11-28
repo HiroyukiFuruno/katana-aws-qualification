@@ -1,0 +1,174 @@
+{
+  "id": "secure-architecture",
+  "title": "设计安全架构",
+  "objective": "能够说明针对用户、数据和通信路径分别承担的身份验证、授权、加密和审计责任。",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "身份验证和授权"
+    },
+    {
+      "slug": "data-protection",
+      "title": "数据保护"
+    }
+  ],
+  "sections": [
+    {
+      "id": "least-privilege",
+      "title": "最小化有效权限",
+      "paragraphs": [
+        "一家零售公司的架构师设计一个 IAM 角色，使其只能访问订单 API 所需的 S3 存储桶。架构师将谁经过身份验证与允许对哪些资源执行哪些操作区分开来，并且不会将宽泛的管理员权限设为默认权限。",
+        "S3 存储桶和对象默认是私有的。根据要求组合使用 IAM policy、存储桶 policy 和 Block Public Access；即使需要公开分发，也只允许分发路径。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "什么是 Amazon S3？",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Amazon S3 中的 IAM 功能",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/security_iam_service-with-iam.html"
+        }
+      ]
+    },
+    {
+      "id": "data-and-keys",
+      "title": "根据数据分类选择保护方式",
+      "paragraphs": [
+        "处理医疗预约数据的设计人员会分别评估静态数据和传输中数据。对于静态数据加密，他们会确认密钥所有者、获准使用密钥的主体、审计记录，以及恢复时的使用方式。",
+        "对于传输中加密，他们会绘制各个区段：从用户到入口、从入口到工作负载，以及 VPC 与本地部署系统之间的区段，并标明 TLS 或 IPsec 在何处终止。仅靠加密并不能省略访问权限的设计。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Application Load Balancer 目标组",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-target-groups.html"
+        }
+      ]
+    },
+    {
+      "id": "secure-vpc-path",
+      "title": "对应通信路径与控制点",
+      "paragraphs": [
+        "用户的浏览器连接到面向公网的 ALB。ALB 终止该连接，并向私有子网中的应用建立另一条连接。应用随后再向处理订单数据的 RDS 建立一条连接。请分别针对每个区段决定要加密哪些通信，以及允许哪些来源发起的通信。",
+        "路由表选择通信接下来要发送到的目标。安全组允许对应用等资源所使用的网络接口建立连接，也会放行对已允许通信的响应。网络 ACL 在子网边界分别评估入站和出站通信。",
+        "在图中，请先确认 ALB、应用和数据库分别位于哪些子网。然后判断请求和响应会经过哪些边界，以及响应在哪些位置需要额外的许可。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC：配置路由表",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "网络 ACL 的适用范围",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
+        },
+        {
+          "label": "ALB 的安全组",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html"
+        }
+      ],
+      "figureId": "saa-secure-vpc-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-secure-1",
+      "prompt": "发票 API 会从同一 AWS 账户中的私有 S3 桶（使用 S3 托管密钥加密）获取 `invoices/` 下的发票，并指定对象键。它不会获取列表或更新对象。应为 API 的执行角色授予哪项权限？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "允许对整个存储桶中的对象使用 `s3:GetObject`。",
+          "explanation": "虽然仅限于获取操作，但也可以读取发票前缀以外的其他前缀中的对象。"
+        },
+        {
+          "id": "b",
+          "text": "仅允许对 `invoices/` 下的对象使用 `s3:GetObject`。",
+          "explanation": "这样既限定了所需的操作，也限定了操作对象。由于已知对象键，因此不需要存储桶列表权限。"
+        },
+        {
+          "id": "c",
+          "text": "允许对存储桶使用 `s3:ListBucket`，并为列表添加 `invoices/` 条件。",
+          "explanation": "获取对象列表和读取对象内容是两种不同的操作。此选项未允许 `s3:GetObject`。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-secure-2",
+      "prompt": "医疗预约服务必须加密浏览器与公有 ALB 之间，以及 ALB 与私有 EC2 实例之间的通信。如果在 ALB 上终止浏览器侧的 TLS，哪种配置是合适的？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "在 ALB 上配置 HTTPS 侦听器，并使用 HTTP 将请求从 ALB 转发到 EC2。",
+          "explanation": "用户侧的连接已加密，但 ALB 到 EC2 的通信未加密。"
+        },
+        {
+          "id": "b",
+          "text": "让 ALB 通过 HTTP 接收请求，仅将 ALB 到 EC2 的转发设置为 HTTPS。",
+          "explanation": "由于仅加密了到 EC2 的连接，因此不满足浏览器与 ALB 之间连接的要求。"
+        },
+        {
+          "id": "c",
+          "text": "在 ALB 上配置 HTTPS 侦听器，并将用于从 ALB 转发到 EC2 的目标组也配置为 HTTPS。",
+          "explanation": "ALB 终止与用户之间的 TLS，并与目标建立单独的 HTTPS 连接。两个连接都经过加密。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-secure-3",
+      "prompt": "公共 ALB 的节点以 TCP 49152 作为源端口，连接到私有 EC2 的 TCP 443 端口。EC2 侧的安全组允许此连接，并且 EC2 子网使用网络 ACL。请求可以到达 EC2，但离开 EC2 子网的响应被拒绝。EC2 侧的网络 ACL 应允许哪项响应？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "允许从 EC2 子网到 ALB 子网、目标 TCP 端口为 49152 的响应。",
+          "explanation": "网络 ACL 必须分别允许往返两个方向的流量。此响应的目标端口是 ALB 节点在连接中使用的源端口。"
+        },
+        {
+          "id": "b",
+          "text": "允许从 EC2 子网到 ALB 子网、目标 TCP 端口为 443 的响应。",
+          "explanation": "443 是 EC2 在此连接中接收请求的端口。响应的目标是 ALB 节点的 TCP 49152 端口。"
+        },
+        {
+          "id": "c",
+          "text": "允许进入 EC2 子网的 TCP 49152 流量。",
+          "explanation": "响应是从 EC2 子网发出的。添加入站规则无法解决出站方向的拒绝问题。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM policy",
+    "Resource-based policy",
+    "S3",
+    "Bucket policy",
+    "GetObject",
+    "S3 Block Public Access",
+    "SSE-S3",
+    "KMS",
+    "TLS",
+    "IPsec",
+    "VPC",
+    "ALB",
+    "EC2",
+    "NACL",
+    "Security group",
+    "ENI",
+    "Route table",
+    "Target group",
+    "HTTPS",
+    "TCP",
+    "Ephemeral port"
+  ]
+}

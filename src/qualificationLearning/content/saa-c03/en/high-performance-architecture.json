@@ -1,0 +1,143 @@
+{
+  "id": "high-performance-architecture",
+  "title": "Designing High-Performance Architectures",
+  "objective": "Choose performance optimizations based on request patterns, data access, and network paths.",
+  "prerequisites": [
+    {
+      "slug": "resilient-architecture",
+      "title": "Designing Resilient Architectures",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure",
+      "title": "Making Performance Requirements Observable",
+      "paragraphs": [
+        "Designers break down the ambiguous requirement “fast” into the target operation, concurrent users, p95 latency, throughput, and acceptable error rate. CPU alone does not determine the user experience."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-data",
+      "title": "Bring repeated reads closer appropriately",
+      "paragraphs": [
+        "For data with frequent reads and infrequent updates, such as a product catalog, consider using a cache or CDN. However, decide how long stale values are acceptable after an update, how to invalidate the cache, and how the system should behave during failures."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "performance-path",
+      "title": "Tracing Latency from the User to the Data",
+      "paragraphs": [
+        "In a service that delivers product lists, CloudFront can return the required response immediately when it has one available. If it cannot return the response from the cache, CloudFront connects to the origin. In this scenario, a public-facing ALB is specified as the origin, and the ALB forwards requests to an application in a private subnet. DNS is used to look up the destination from its name.",
+        "When the user's response time increases, first separate requests served from the cache from requests that reached the origin. Comparing the response time of requests that proceeded to the origin with the ALB target response time helps narrow down which segment to measure next. On the application side, check the DB wait time and other metrics for requests handling the same product.",
+        "The diagram compares cases where CloudFront returns the response with cases where the request proceeds from the ALB to the application. Be able to explain, for each path, which measurements can identify where the latency increased."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "CloudFront Metrics",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/monitoring-using-cloudwatch.html"
+        }
+      ],
+      "figureId": "saa-performance-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-performance-1",
+      "prompt": "An online store distributes the same product catalog to many users. It wants to speed up responses with CloudFront’s shared cache while being able to update the cache for affected pages without waiting for the normal TTL when prices must be corrected urgently. Which policy is appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Keep the entire catalog with the same long TTL, and update only the origin content when prices change.",
+          "explanation": "Because cached responses continue to be used until they expire, there is no mechanism to reflect urgent corrections immediately."
+        },
+        {
+          "id": "b",
+          "text": "Set the TTL according to freshness requirements, and invalidate the affected paths in an emergency. Also confirm that the pages after the change are being delivered.",
+          "explanation": "This addresses both normal response efficiency and freshness within the expiration period, while allowing the changed content to be fetched again specifically for the affected items in an emergency."
+        },
+        {
+          "id": "c",
+          "text": "Disable CloudFront caching for the entire catalog.",
+          "explanation": "This reflects updates at the origin, but it does not satisfy the requirement to speed up reads with a shared cache."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-performance-2",
+      "prompt": "Users of the order API reported that only order confirmation had become slower. When operations staff want to understand how many users were affected by latency in the same operation and compare before and after the change while accounting for differences in load, which records should they collect?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Compare the p95 response time, error rate, and request count for order confirmation before and after the change, using time windows of the same length and the same aggregation conditions.",
+          "explanation": "This makes it possible to link slower responses with failures and differences in load to investigate the impact on users."
+        },
+        {
+          "id": "b",
+          "text": "Compare only the average response time for all APIs and the service-wide average CPU utilization.",
+          "explanation": "The issue specific to order confirmation and especially slow requests will be buried in the aggregate."
+        },
+        {
+          "id": "c",
+          "text": "Check the maximum response time excluding errors only once, separately from the request count.",
+          "explanation": "The comparison will be affected by a single extreme value and differences in sample counts, so it cannot show the impact on all users."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-performance-3",
+      "prompt": "The p95 response time experienced by users of the product catalog has deteriorated. Responses served from the CloudFront cache remain as fast as before, and only products not in the cache have become slower. What investigation should the operations team perform first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Measure only the responses served from the CloudFront cache again, without checking the application.",
+          "explanation": "Rechecking only the fast responses cannot identify where requests that reached the origin were delayed."
+        },
+        {
+          "id": "b",
+          "text": "Add up all HTTP requests processed by the ALB, and if the count has increased, invalidate the cache in bulk.",
+          "explanation": "An increase in request count alone does not reveal where the delay is. Bulk invalidation could increase the load on the origin."
+        },
+        {
+          "id": "c",
+          "text": "For the same product and time period, correlate the origin response time of requests that could not be served from the cache with measurements from the ALB and application.",
+          "explanation": "This separates the segment from CloudFront to the origin from the wait time on the application side, allowing you to choose where to measure in more detail next."
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFront",
+    "CDN",
+    "DNS",
+    "TTL",
+    "Cache hit ratio",
+    "Cache invalidation",
+    "Origin",
+    "ALB",
+    "TargetResponseTime",
+    "p95",
+    "Error rate",
+    "Throughput",
+    "ElastiCache"
+  ]
+}

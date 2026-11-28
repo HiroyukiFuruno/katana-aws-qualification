@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "レジリエントなアーキテクチャを設計する",
+  "objective": "障害範囲、RTO、RPO、復旧手順から可用性とデータ保護を設計できる。",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "セキュアなアーキテクチャを設計する",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "障害範囲から復旧目標を決める",
+      "paragraphs": [
+        "注文サービスの担当者は、業務ごとに目標復旧時間（RTO）と目標復旧時点（RPO）を決めます。RTOはサービスを何分以内に復旧したいか、RPOはどの時点までのデータを取り戻す必要があるかを表します。",
+        "図の上段では、一つのAZで障害が起きたとき、同じリージョンのスタンバイDBへ切り替えます。中段のようにリージョン全体の停止に備える場合は、事前に別リージョンへバックアップを複製し、DBを復元してアプリの接続先を切り替えるまでの時間を測ります。下段の誤削除では、削除直前の復元時点を選びます。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon RDSのマルチAZ DBインスタンス配置",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "RDS自動バックアップを別リージョンに複製する",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "復旧目標とディザスタリカバリの計画",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "障害を非同期処理へ閉じ込める",
+      "paragraphs": [
+        "注文確定と画像変換を同期で結ぶと、変換側の一時障害が注文APIの応答を止めます。設計者は耐久性のあるメッセージングで処理を分け、再試行、重複、失敗時の扱いを定義します。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon SQSの可視性タイムアウト",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "復旧は検証までを含める",
+      "paragraphs": [
+        "復旧担当者は復元順序と整合性の確認方法を決め、利用者の接続先を切り替える条件を事前に検証します。",
+        "注文テーブルを誤って10時15分に削除した事例では、10時14分へ復元できることを確認し、別のRDS DBインスタンスに復元します。復元したDBで欠けた注文を特定し、10時14分以降に受け付けた正当な注文も照合します。業務で必要な注文をそろえ、接続テストを通してから利用者の接続先を変更します。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected フレームワーク",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "Amazon RDSのDBインスタンスを特定の時点へ復元する",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "同じリージョンの一つのAZが利用できなくなった場合でも、注文APIを10分以内に復旧させる要件があります。現在はALBの背後にあるアプリとRDSが、どちらも一つのAZにしかありません。どの案を検証すべきですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "別リージョンへバックアップをコピーし、障害時に新しい環境へ手動で復元する。",
+          "explanation": "バックアップは重要ですが、この案ではAZ障害のたびに別リージョンでの復元が必要です。10分以内に戻る経路がまだありません。"
+        },
+        {
+          "id": "b",
+          "text": "アプリだけを二つのAZへ配置し、単一AZのRDSは今のまま使う。",
+          "explanation": "アプリが残っても、共通のDBが障害の影響を受けると注文を処理できません。"
+        },
+        {
+          "id": "c",
+          "text": "アプリを二つのAZへ配置し、RDSにもマルチAZ配置を使う。AZ障害を想定し、注文再開までの時間を測る。",
+          "explanation": "アプリとDBの両方に別AZで処理を続ける手段を用意し、実際に10分の目標を満たすか確かめられます。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "画像変換に数分かかっても構わない商品登録サービスがあります。登録自体はすでに記録済みで、変換の依頼はAmazon SQSへ送信されています。変換処理がメッセージの保持期間内で30分ほど停止しても、登録画面を待たせず、復旧後に未処理の依頼を回収したいときはどうしますか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "登録画面から変換処理を同期呼び出しし、応答の上限時間だけを引き延ばす。",
+          "explanation": "変換が終わるまで登録画面を待たせる構成です。作業を切り離す要件を満たしません。"
+        },
+        {
+          "id": "b",
+          "text": "変換はキューから非同期で処理し、成功後にメッセージを削除する。再試行に備え、同じ依頼で同じ結果を保てるようにする。",
+          "explanation": "未処理の依頼をキューに残せます。再配信があっても同じ画像を重複登録しない処理にできます。"
+        },
+        {
+          "id": "c",
+          "text": "変換処理が受信した時点でメッセージを削除し、終了後は結果だけを書き込む。",
+          "explanation": "途中で変換処理が停止すると、依頼を再処理するためのメッセージがすでに消えています。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "注文システムのDB担当者は、複数のAZで稼働するAmazon RDSで一部の注文を誤って削除しました。自動バックアップは有効で、削除直前の時点に復元できることを確認済みです。削除後に受け付けた正常な注文を現行DBに保持しながら、削除した注文を戻すには、どの手順が適切ですか。1つ選んでください。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "削除直前の時刻に別のDBインスタンスを復元し、必要な行を抽出して現行DBと照合した上で戻す。",
+          "explanation": "削除前の行を参照でき、復元先に含まれない新しい注文を現行DBに保持できます。"
+        },
+        {
+          "id": "b",
+          "text": "マルチAZのスタンバイへ切り替え、削除前の状態として使う。",
+          "explanation": "誤削除もスタンバイに同期されます。削除直前の時点を選ぶには、自動バックアップから特定時点に復元する手順が必要です。"
+        },
+        {
+          "id": "c",
+          "text": "削除直前に復元したDBをそのまま本番の接続先にする。",
+          "explanation": "指定時刻より後に確定した注文が復元先にないため、照合なしでは要件を満たしません。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

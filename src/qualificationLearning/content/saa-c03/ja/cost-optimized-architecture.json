@@ -1,0 +1,140 @@
+{
+  "id": "cost-optimized-architecture",
+  "title": "コストを最適化したアーキテクチャを設計する",
+  "objective": "利用量、アクセス頻度、可用性要件、運用負荷から費用と制約を比較できる。",
+  "prerequisites": [
+    {
+      "slug": "high-performance-architecture",
+      "title": "高パフォーマンスなアーキテクチャを設計する",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "cost-model",
+      "title": "費用を利用パターンへ結び付ける",
+      "paragraphs": [
+        "コスト最適化は最安のサービスを選ぶことではありません。責任者は、常時利用、変動負荷、予測可能な利用期間、停止可能な処理を分け、性能と可用性の要件を満たす選択肢を比較します。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "EC2 Spotインスタンス",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/using-spot-instances.html"
+        }
+      ]
+    },
+    {
+      "id": "storage-lifecycle",
+      "title": "アクセス頻度と保持期間で保存先を選ぶ",
+      "paragraphs": [
+        "S3では頻繁に読むデータ、低頻度アクセス、アーカイブの要件に応じてストレージクラスを選べます。ライフサイクル設定はデータを別クラスへ移行または期限切れにできますが、復元時間と最低保存期間も評価します。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon S3 とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Amazon S3 ストレージクラス",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/storage-class-intro.html"
+        }
+      ]
+    },
+    {
+      "id": "review-tradeoffs",
+      "title": "設計変更を品質と費用で再判定する",
+      "paragraphs": [
+        "予約サービスの設計を変更するときは、月額だけでなく、RTO、RPO、レイテンシー、運用作業、データ保持義務を同じ表で比較します。Well-Architectedは、設計判断の長所と短所を確認する枠組みです。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected フレームワーク",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-cost-1",
+      "prompt": "データ基盤の担当者は、法令で7年保持する監査ファイルをAmazon S3に保存しています。普段はほとんど読みませんが、監査が始まれば個々のファイルを1分以内に取得する必要があります。保管費を見直す場合に適切な進め方はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "すぐに取得できる低頻度向けのクラスを候補にし、復元不要の取得、最低保管期間、取得料金を保持要件と合わせて比較する。",
+          "explanation": "低いアクセス頻度と短い取得時間の両方を満たす候補について、保管費と取得費を比較できます。"
+        },
+        {
+          "id": "b",
+          "text": "最も保管料が安いアーカイブを選び、監査当日に復元リクエストを送る。",
+          "explanation": "保管料だけの選択では、ファイルを1分以内に取得する要件を満たせない可能性があります。"
+        },
+        {
+          "id": "c",
+          "text": "保存中の暗号化を続けていれば、期限より前に古いファイルを削除して費用を下げる。",
+          "explanation": "暗号化は保存期間を短縮する根拠にはなりません。保持義務に違反します。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-cost-2",
+      "prompt": "夜間の画像再生成バッチは、途中までの成果を記録して別のインスタンスから再開できます。朝6時までに処理を終える必要がありますが、一部の実行が中断しても期日までに再開できれば問題ありません。費用を抑える案として適切なものはどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "全作業を単一のSpotインスタンスで処理し、中断時の再開時間は測らない。",
+          "explanation": "中断できる作業でも、締切を守れる再開手段と所要時間が必要です。"
+        },
+        {
+          "id": "b",
+          "text": "ピークに合わせたオンデマンド容量を昼夜通して確保し、実行しない時間帯も起動し続ける。",
+          "explanation": "運用上は単純ですが、夜しか使わない容量の費用が発生します。中断可能という条件を活かしていません。"
+        },
+        {
+          "id": "c",
+          "text": "中断できる作業にはSpotを候補にし、再開にかかる時間を測る。締切が近づいた場合のオンデマンド容量も計画する。",
+          "explanation": "仕事の中断しやすさを利用して費用を抑えつつ、処理期限を守るための代替手段を用意できます。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-cost-3",
+      "prompt": "月額費用を下げるため、予約サービスのDBを小さいインスタンスに変更する案があります。予約確定のp95を400ミリ秒以下に保つ契約があり、月末には通常の2倍のトラフィックが到着します。設計レビューでどの条件を確認すべきですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "平日昼間の平均CPUが低く、月額料金が今より下がることを確認する。",
+          "explanation": "平均値と料金だけでは、月末の混雑時に応答時間の基準を守れるか分かりません。"
+        },
+        {
+          "id": "b",
+          "text": "月末相当の負荷で応答時間、エラー率、DBの余力と復旧手順を確認し、追加費用も含めて現行案と比較する。",
+          "explanation": "安い構成で必要な品質を満たすか、失敗したときに戻せるかを条件に合わせて判断できます。"
+        },
+        {
+          "id": "c",
+          "text": "DBの台数とストレージの容量が同じであることだけを確認する。",
+          "explanation": "同じ台数と容量でも、CPUやメモリ、入出力の余力が変わり、応答時間に影響します。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "S3 storage class",
+    "S3 Lifecycle",
+    "Spot Instances",
+    "On-Demand Instances",
+    "RTO",
+    "RPO",
+    "p95",
+    "AWS Well-Architected Framework"
+  ]
+}

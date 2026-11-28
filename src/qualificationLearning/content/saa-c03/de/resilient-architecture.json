@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "Resiliente Architekturen entwerfen",
+  "objective": "Verfügbarkeit und Datenschutz auf Grundlage des Ausfallumfangs, von RTO und RPO sowie der Wiederherstellungsverfahren entwerfen.",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "Eine sichere Architektur entwerfen",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "Wiederherstellungsziele anhand des Ausfallumfangs festlegen",
+      "paragraphs": [
+        "Das für den Bestellservice zuständige Team legt für jeden Geschäftsprozess ein Recovery Time Objective (RTO) und ein Recovery Point Objective (RPO) fest. Das RTO gibt an, innerhalb wie vieler Minuten der Service wiederhergestellt werden soll, während das RPO angibt, bis zu welchem Zeitpunkt die Daten wiederhergestellt werden müssen.",
+        "Im oberen Abschnitt der Abbildung wird bei einem Ausfall in einer AZ auf eine Standby-DB in derselben Region umgeschaltet. Wie im mittleren Abschnitt dargestellt, umfasst die Vorbereitung auf einen Ausfall der gesamten Region die vorherige Replikation von Backups in eine andere Region. Anschließend wird die Zeit gemessen, die zum Wiederherstellen der DB und zum Umschalten des Verbindungsziels der Anwendung erforderlich ist. Im unteren Abschnitt wird bei einer versehentlichen Löschung der Wiederherstellungspunkt unmittelbar vor der Löschung ausgewählt."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03-Prüfungsleitfaden",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Bereitstellung einer Amazon-RDS-Multi-AZ-DB-Instance",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "Automatische RDS-Backups in eine andere Region replizieren",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "Wiederherstellungsziele und Notfallwiederherstellung planen",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "Fehler in der asynchronen Verarbeitung isolieren",
+      "paragraphs": [
+        "Wenn die Bestellbestätigung synchron an die Bildkonvertierung gekoppelt ist, kann ein vorübergehender Fehler auf der Konvertierungsseite verhindern, dass die Bestell-API antwortet. Die Entwickler trennen die Prozesse mithilfe dauerhafter Nachrichtenübermittlung und legen fest, wie Wiederholungen, Duplikate und Fehler behandelt werden."
+      ],
+      "sources": [
+        {
+          "label": "Prüfungsleitfaden für SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Sichtbarkeitstimeout von Amazon SQS",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "Wiederherstellung umfasst auch die Validierung",
+      "paragraphs": [
+        "Die für die Wiederherstellung verantwortliche Person legt die Reihenfolge der Wiederherstellung und die Methode zur Prüfung der Integrität fest und validiert vorab die Bedingungen für die Umschaltung des Verbindungsziels der Benutzer.",
+        "In einem Fall, in dem die Auftragstabelle versehentlich um 10:15 Uhr gelöscht wurde, bestätigt das Team, dass sie auf 10:14 Uhr wiederhergestellt werden kann, und stellt sie in einer anderen RDS-DB-Instance wieder her. In der wiederhergestellten DB identifiziert das Team fehlende Aufträge und gleicht außerdem die nach 10:14 Uhr eingegangenen rechtmäßigen Aufträge ab. Nachdem alle für den Geschäftsbetrieb erforderlichen Aufträge zusammengestellt und Verbindungstests durchgeführt wurden, ändert das Team das von den Benutzern verwendete Verbindungsziel."
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "Eine Amazon-RDS-DB-Instance auf einen bestimmten Zeitpunkt wiederherstellen",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "Es besteht die Anforderung, die Bestell-API innerhalb von 10 Minuten wiederherzustellen, selbst wenn eine AZ in derselben Region nicht verfügbar ist. Derzeit befinden sich sowohl die Anwendung hinter dem ALB als auch RDS nur in einer AZ. Welchen Vorschlag sollten Sie validieren?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Die Backups in eine andere Region kopieren und sie bei einem Ausfall manuell in einer neuen Umgebung wiederherstellen.",
+          "explanation": "Backups sind wichtig, aber bei diesem Vorschlag ist bei jedem Ausfall einer AZ eine Wiederherstellung in einer anderen Region erforderlich. Es gibt weiterhin keinen Wiederherstellungspfad innerhalb von 10 Minuten."
+        },
+        {
+          "id": "b",
+          "text": "Nur die Anwendung auf zwei AZs verteilen und RDS weiterhin wie bisher in einer einzelnen AZ verwenden.",
+          "explanation": "Selbst wenn die Anwendung verfügbar bleibt, können keine Bestellungen verarbeitet werden, wenn die gemeinsame Datenbank vom Ausfall betroffen ist."
+        },
+        {
+          "id": "c",
+          "text": "Die Anwendung auf zwei AZs verteilen und auch für RDS eine Multi-AZ-Bereitstellung verwenden. Einen Ausfall einer AZ annehmen und die Zeit bis zur Wiederaufnahme der Bestellverarbeitung messen.",
+          "explanation": "Damit stehen sowohl der Anwendung als auch der Datenbank Möglichkeiten zur Verfügung, die Verarbeitung in einer anderen AZ fortzusetzen. So lässt sich überprüfen, ob das Ziel von 10 Minuten tatsächlich erreicht wird."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "Es gibt einen Produktregistrierungsdienst, bei dem es kein Problem ist, wenn die Bildkonvertierung mehrere Minuten dauert. Die Registrierung selbst wurde bereits gespeichert, und die Konvertierungsanforderungen wurden an Amazon SQS gesendet. Wie stellen Sie sicher, dass der Registrierungsbildschirm nicht warten muss und dass nach der Wiederherstellung noch nicht verarbeitete Anforderungen abgerufen werden können, wenn die Konvertierungsverarbeitung innerhalb der Nachrichtenaufbewahrungszeit etwa 30 Minuten lang ausfällt?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Rufen Sie die Konvertierungsverarbeitung vom Registrierungsbildschirm synchron auf und verlängern Sie nur das Antwortzeitlimit.",
+          "explanation": "Bei dieser Architektur muss der Registrierungsbildschirm warten, bis die Konvertierung abgeschlossen ist. Sie erfüllt die Anforderung nicht, die Arbeit zu entkoppeln."
+        },
+        {
+          "id": "b",
+          "text": "Verarbeiten Sie Konvertierungen asynchron aus der Warteschlange und löschen Sie die Nachricht nach erfolgreicher Verarbeitung. Sorgen Sie für Wiederholungsversuche dafür, dass dieselbe Anforderung dasselbe Ergebnis liefert.",
+          "explanation": "Nicht verarbeitete Anforderungen können in der Warteschlange verbleiben. Selbst bei einer erneuten Zustellung kann die Verarbeitung verhindern, dass dasselbe Bild doppelt registriert wird."
+        },
+        {
+          "id": "c",
+          "text": "Löschen Sie die Nachricht, sobald die Konvertierungsverarbeitung sie empfängt, und schreiben Sie nach Abschluss nur das Ergebnis.",
+          "explanation": "Wenn die Konvertierungsverarbeitung mittendrin ausfällt, wurde die Nachricht, die zur erneuten Verarbeitung der Anforderung benötigt wird, bereits gelöscht."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "Der Datenbankadministrator eines Bestellsystems hat versehentlich einige Bestellungen in Amazon RDS gelöscht, das über mehrere AZs hinweg betrieben wird. Automatische Backups sind aktiviert, und es wurde bestätigt, dass die Datenbank auf den Zeitpunkt unmittelbar vor der Löschung wiederhergestellt werden kann. Welches Verfahren ist geeignet, um die gelöschten Bestellungen wiederherzustellen und gleichzeitig die nach der Löschung angenommenen gültigen Bestellungen in der aktuellen Datenbank zu behalten? Wählen Sie eine Antwort.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Eine separate DB-Instance auf den Zeitpunkt unmittelbar vor der Löschung wiederherstellen, die benötigten Zeilen extrahieren, sie mit der aktuellen Datenbank abgleichen und anschließend wiederherstellen.",
+          "explanation": "So können die Zeilen aus der Zeit vor der Löschung eingesehen werden, während neue Bestellungen, die in der wiederhergestellten Instance nicht enthalten sind, in der aktuellen Datenbank erhalten bleiben."
+        },
+        {
+          "id": "b",
+          "text": "Auf die Multi-AZ-Standby-Instance umschalten und sie als Zustand vor der Löschung verwenden.",
+          "explanation": "Die versehentliche Löschung wird ebenfalls mit der Standby-Instance synchronisiert. Um den Zeitpunkt unmittelbar vor der Löschung auszuwählen, ist eine Wiederherstellung aus einem automatischen Backup zu einem bestimmten Zeitpunkt erforderlich."
+        },
+        {
+          "id": "c",
+          "text": "Die auf den Zeitpunkt unmittelbar vor der Löschung wiederhergestellte Datenbank direkt als Produktionsverbindungsziel verwenden.",
+          "explanation": "Nach dem angegebenen Zeitpunkt bestätigte Bestellungen sind in der wiederhergestellten Instance nicht vorhanden. Ohne Abgleich wird die Anforderung daher nicht erfüllt."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "Designing Resilient Architectures",
+  "objective": "Design availability and data protection based on failure scope, RTO, RPO, and recovery procedures.",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "Designing a Secure Architecture",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "Defining Recovery Objectives Based on the Scope of a Failure",
+      "paragraphs": [
+        "The team responsible for the order service defines a recovery time objective (RTO) and recovery point objective (RPO) for each business operation. The RTO indicates how many minutes the service should be restored within, while the RPO indicates how far back the data must be recovered.",
+        "In the top section of the figure, when a failure occurs in one AZ, traffic is switched to a standby DB in the same Region. As shown in the middle section, preparing for an outage affecting an entire Region involves replicating backups to another Region in advance, then measuring the time required to restore the DB and switch the application's connection target. In the bottom section, for an accidental deletion, select the recovery point immediately before the deletion."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon RDS Multi-AZ DB Instance Deployment",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "Replicating RDS Automated Backups to Another Region",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "Planning Recovery Objectives and Disaster Recovery",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "Contain Failures Within Asynchronous Processing",
+      "paragraphs": [
+        "When order confirmation is coupled synchronously with image processing, a temporary failure on the processing side can prevent the order API from responding. Designers separate the processes using durable messaging and define how to handle retries, duplicates, and failures."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon SQS Visibility Timeout",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "Recovery Includes Validation",
+      "paragraphs": [
+        "The recovery lead determines the restoration order and how to verify integrity, then validates in advance the conditions for switching users to the restored connection endpoint.",
+        "In a case where the order table was accidentally deleted at 10:15, the team confirms that it can be restored to 10:14 and restores it to a different RDS DB instance. Using the restored DB, the team identifies missing orders and also reconciles legitimate orders accepted after 10:14. After assembling all orders required for business operations and completing connection tests, the team changes the connection endpoint used by users."
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "Restoring a DB instance for Amazon RDS to a specific point in time",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "There is a requirement to restore the order API within 10 minutes even if one AZ in the same Region becomes unavailable. Currently, both the application behind the ALB and RDS are located in only one AZ. Which proposal should you validate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Copy the backups to another Region and manually restore them in a new environment when a failure occurs.",
+          "explanation": "Backups are important, but this proposal requires restoration in another Region every time an AZ failure occurs. There is still no path to recovery within 10 minutes."
+        },
+        {
+          "id": "b",
+          "text": "Deploy only the application across two AZs and continue using the single-AZ RDS as it is.",
+          "explanation": "Even if the application remains available, orders cannot be processed if the shared database is affected by the failure."
+        },
+        {
+          "id": "c",
+          "text": "Deploy the application across two AZs and use a Multi-AZ deployment for RDS as well. Assume an AZ failure and measure the time until order processing resumes.",
+          "explanation": "This provides both the application and the database with ways to continue processing in another AZ, allowing you to verify whether the 10-minute target is actually met."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "A product-registration service can tolerate image conversion taking several minutes. The registration itself has already been recorded, and conversion requests are sent to Amazon SQS. If the conversion process stops for about 30 minutes, still within the message-retention period, how can you avoid making the registration screen wait and collect unprocessed requests after recovery?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Invoke the conversion process synchronously from the registration screen and only extend the response timeout.",
+          "explanation": "This design makes the registration screen wait until conversion finishes. It does not meet the requirement to decouple the work."
+        },
+        {
+          "id": "b",
+          "text": "Process conversions asynchronously from the queue and delete each message after success. Make the same request produce the same result to prepare for retries.",
+          "explanation": "Unprocessed requests can remain in the queue. Even if a message is delivered again, processing can avoid registering the same image more than once."
+        },
+        {
+          "id": "c",
+          "text": "Delete the message as soon as the conversion process receives it, then write only the result after it finishes.",
+          "explanation": "If the conversion process stops partway through, the message needed to process the request again has already been deleted."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "A database administrator for an order system accidentally deleted some orders from Amazon RDS running across multiple AZs. Automatic backups are enabled, and it has been confirmed that the database can be restored to the point immediately before the deletion. Which procedure should be used to recover the deleted orders while retaining valid orders accepted after the deletion in the current database? Select one.",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Restore a separate DB instance to the time immediately before the deletion, extract the required rows, compare them with the current database, and then restore them.",
+          "explanation": "This lets you access the rows from before the deletion while retaining in the current database any new orders that are not included in the restored instance."
+        },
+        {
+          "id": "b",
+          "text": "Fail over to the Multi-AZ standby and use it as the state from before the deletion.",
+          "explanation": "The accidental deletion is also synchronized to the standby. To select the point immediately before the deletion, you must restore to a specific point in time from an automatic backup."
+        },
+        {
+          "id": "c",
+          "text": "Use the database restored to the time immediately before the deletion directly as the production endpoint.",
+          "explanation": "Orders confirmed after the specified time are not present in the restored instance, so this does not meet the requirement without comparison."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

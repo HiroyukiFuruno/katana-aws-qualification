@@ -1,0 +1,174 @@
+{
+  "id": "secure-architecture",
+  "title": "Progettare un'architettura sicura",
+  "objective": "Spiegare le responsabilità relative ad autenticazione, autorizzazione, crittografia e auditing per utenti, dati e percorsi di comunicazione.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "Autenticazione e autorizzazione"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Protezione dei dati"
+    }
+  ],
+  "sections": [
+    {
+      "id": "least-privilege",
+      "title": "Ridurre al minimo le autorizzazioni effettive",
+      "paragraphs": [
+        "L’architetto di un’azienda di vendita al dettaglio progetta un ruolo IAM che può accedere solo ai bucket S3 necessari per l’API degli ordini. Separa chi viene autenticato dalle azioni consentite sulle singole risorse e non usa ampie autorizzazioni amministrative come impostazione predefinita.",
+        "I bucket e gli oggetti S3 sono privati per impostazione predefinita. Combina le policy IAM, le policy del bucket e Block Public Access in base ai requisiti; anche quando è necessaria una distribuzione pubblica, consenti solo il percorso di distribuzione."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Che cos’è Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Funzionalità IAM in Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/security_iam_service-with-iam.html"
+        }
+      ]
+    },
+    {
+      "id": "data-and-keys",
+      "title": "Scegliere un metodo di protezione in base alla classificazione dei dati",
+      "paragraphs": [
+        "I progettisti che gestiscono dati relativi ad appuntamenti medici valutano separatamente i dati a riposo e i dati in transito. Per la crittografia dei dati a riposo, verificano il proprietario della chiave, le entità principali autorizzate a utilizzarla, i log di audit e il suo utilizzo durante il ripristino.",
+        "Per la crittografia dei dati in transito, rappresentano in un diagramma ogni segmento: dall’utente al punto di ingresso, dal punto di ingresso al carico di lavoro e tra la VPC e i sistemi on-premises; indicano inoltre dove terminano TLS o IPsec. La crittografia da sola non elimina la necessità di progettare le autorizzazioni di accesso."
+      ],
+      "sources": [
+        {
+          "label": "Guida all’esame SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Gruppi target di Application Load Balancer",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-target-groups.html"
+        }
+      ]
+    },
+    {
+      "id": "secure-vpc-path",
+      "title": "Associare i percorsi di comunicazione ai punti di controllo",
+      "paragraphs": [
+        "Il browser dell’utente si connette a un ALB con accesso da Internet. L’ALB termina questa connessione e ne apre una separata verso l’applicazione che si trova in una sottorete privata. L’applicazione apre quindi un’altra connessione al database RDS che gestisce i dati degli ordini. Decidi separatamente, per ogni segmento, quali comunicazioni crittografare e quali comunicazioni provenienti da ciascuna origine consentire.",
+        "Le tabelle di routing selezionano la destinazione successiva a cui inviare il traffico. I gruppi di sicurezza consentono le connessioni alle interfacce di rete, ad esempio quelle utilizzate dall’applicazione, e consentono anche le risposte al traffico autorizzato. Le ACL di rete valutano separatamente il traffico in entrata e in uscita al confine della sottorete.",
+        "Nel diagramma, identifica innanzitutto in quali sottoreti si trovano l’ALB, l’applicazione e il database. Quindi determina quali confini attraversano le richieste e le risposte e in quali punti è necessaria un’autorizzazione aggiuntiva per la risposta."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: configurare le tabelle di routing",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Ambito di applicazione delle ACL di rete",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
+        },
+        {
+          "label": "Gruppi di sicurezza dell’ALB",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html"
+        }
+      ],
+      "figureId": "saa-secure-vpc-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-secure-1",
+      "prompt": "L’API delle fatture recupera, specificando la chiave dell’oggetto, le fatture contenute nel percorso `invoices/` di un bucket S3 privato dello stesso account AWS (crittografato con una chiave gestita da S3). Non esegue operazioni di elenco o aggiornamento. Quale autorizzazione è appropriata per il ruolo di esecuzione dell’API?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Consentire `s3:GetObject` per gli oggetti dell’intero bucket.",
+          "explanation": "Sebbene sia limitata al recupero, questa autorizzazione consente anche di leggere oggetti da prefissi diversi da quello delle fatture."
+        },
+        {
+          "id": "b",
+          "text": "Consentire `s3:GetObject` solo per gli oggetti sotto `invoices/`.",
+          "explanation": "In questo modo si limitano sia l’operazione necessaria sia il relativo obiettivo. Poiché la chiave dell’oggetto è nota, non è necessaria l’autorizzazione per elencare il bucket."
+        },
+        {
+          "id": "c",
+          "text": "Consentire `s3:ListBucket` sul bucket e aggiungere alla richiesta di elenco una condizione per `invoices/`.",
+          "explanation": "Elencare gli oggetti e leggerne il contenuto sono operazioni distinte. `s3:GetObject` non è consentito."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-secure-2",
+      "prompt": "Un servizio di prenotazione di appuntamenti medici deve crittografare le connessioni tra il browser e l’ALB pubblico e tra l’ALB e l’istanza EC2 privata. Se il TLS lato browser viene terminato sull’ALB, quale configurazione è appropriata?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Posizionare un listener HTTPS sull’ALB e usare HTTP per inoltrare il traffico dall’ALB a EC2.",
+          "explanation": "La connessione lato utente è crittografata, ma la comunicazione dall’ALB a EC2 non lo è."
+        },
+        {
+          "id": "b",
+          "text": "Configurare l’ALB per ricevere il traffico tramite HTTP e usare HTTPS solo per l’inoltro dall’ALB a EC2.",
+          "explanation": "Poiché viene crittografata solo la connessione a EC2, questa configurazione non soddisfa il requisito della connessione tra il browser e l’ALB."
+        },
+        {
+          "id": "c",
+          "text": "Posizionare un listener HTTPS sull’ALB e configurare HTTPS anche per il gruppo di destinazione utilizzato per inoltrare il traffico dall’ALB a EC2.",
+          "explanation": "L’ALB termina il TLS con l’utente e apre una connessione HTTPS separata verso la destinazione. Entrambe le connessioni sono crittografate."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-secure-3",
+      "prompt": "Un nodo di un ALB pubblico si connette alla porta TCP 443 di un’istanza EC2 privata utilizzando la porta TCP 49152 come porta di origine. Il gruppo di sicurezza sul lato EC2 consente questa connessione e la sottorete EC2 utilizza una network ACL. La richiesta raggiunge EC2, ma la risposta in uscita dalla sottorete EC2 viene rifiutata. Quale risposta deve consentire la network ACL sul lato EC2?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Consentire la risposta dalla sottorete EC2 alla sottorete dell’ALB con porta TCP di destinazione 49152.",
+          "explanation": "Con le network ACL, le due direzioni del traffico devono essere consentite separatamente. La porta di destinazione di questa risposta è la porta che il nodo dell’ALB ha utilizzato come porta di origine della connessione."
+        },
+        {
+          "id": "b",
+          "text": "Consentire la risposta dalla sottorete EC2 alla sottorete dell’ALB con porta TCP di destinazione 443.",
+          "explanation": "La porta 443 è la porta sulla quale EC2 ha ricevuto la richiesta in questa connessione. La risposta è destinata alla porta TCP 49152 del nodo dell’ALB."
+        },
+        {
+          "id": "c",
+          "text": "Consentire il traffico TCP 49152 in entrata nella sottorete EC2.",
+          "explanation": "La risposta esce dalla sottorete EC2. L’aggiunta di una regola in entrata non risolve il rifiuto del traffico in uscita."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM policy",
+    "Resource-based policy",
+    "S3",
+    "Bucket policy",
+    "GetObject",
+    "S3 Block Public Access",
+    "SSE-S3",
+    "KMS",
+    "TLS",
+    "IPsec",
+    "VPC",
+    "ALB",
+    "EC2",
+    "NACL",
+    "Security group",
+    "ENI",
+    "Route table",
+    "Target group",
+    "HTTPS",
+    "TCP",
+    "Ephemeral port"
+  ]
+}

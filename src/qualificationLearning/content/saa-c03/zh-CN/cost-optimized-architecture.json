@@ -1,0 +1,140 @@
+{
+  "id": "cost-optimized-architecture",
+  "title": "设计成本优化的架构",
+  "objective": "根据使用量、访问频率、可用性要求和运营负担比较成本与约束条件。",
+  "prerequisites": [
+    {
+      "slug": "high-performance-architecture",
+      "title": "设计高性能架构",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "cost-model",
+      "title": "将成本与使用模式关联起来",
+      "paragraphs": [
+        "成本优化并不意味着选择最便宜的服务。负责人会区分持续使用、负载变化、可预测的使用周期以及可停止的处理，然后比较能够满足性能和可用性要求的选项。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "EC2 Spot 实例",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/using-spot-instances.html"
+        }
+      ]
+    },
+    {
+      "id": "storage-lifecycle",
+      "title": "根据访问频率和保留期限选择存储位置",
+      "paragraphs": [
+        "在 S3 中，您可以根据频繁读取数据、低频访问或归档的需求选择存储类。生命周期配置可以将数据迁移到其他存储类或使其过期，但还应评估检索时间和最低存储期限。"
+      ],
+      "sources": [
+        {
+          "label": "什么是 Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Amazon S3 存储类",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/storage-class-intro.html"
+        }
+      ]
+    },
+    {
+      "id": "review-tradeoffs",
+      "title": "根据质量和成本重新评估设计变更",
+      "paragraphs": [
+        "更改预订服务的设计时，应在同一张表中比较月度费用，以及 RTO、RPO、延迟、运维工作量和数据保留义务，而不能只比较月度费用。Well-Architected 是用于确认设计决策优缺点的框架。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected 框架",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-cost-1",
+      "prompt": "数据平台负责人将依法必须保留 7 年的审计文件存储在 Amazon S3 中。平时几乎不会读取这些文件，但审计开始后，必须在 1 分钟内检索每个文件。重新评估存储成本时，哪种做法是合适的？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "将可立即检索的低频访问存储类列为候选，并结合保留要求，比较无需恢复即可检索、最低存储期限和检索费用。",
+          "explanation": "这样可以针对同时满足低访问频率和较短检索时间要求的候选方案，比较存储费用和检索费用。"
+        },
+        {
+          "id": "b",
+          "text": "选择存储费用最低的归档存储，并在审计当天发送恢复请求。",
+          "explanation": "仅根据存储费用进行选择，可能无法满足在 1 分钟内检索文件的要求。"
+        },
+        {
+          "id": "c",
+          "text": "只要继续对静态数据进行加密，就在期限之前删除旧文件以降低费用。",
+          "explanation": "加密不能作为缩短存储期限的依据。这会违反保留义务。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-cost-2",
+      "prompt": "夜间的图像重新生成批处理可以记录已完成的进度，并从另一台实例恢复运行。处理必须在早上 6:00 前完成，但即使部分运行被中断，只要能在截止时间前恢复，就不会有问题。以下哪种方案适合降低成本？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "在单个 Spot 实例上处理所有工作，并且不测量发生中断后恢复所需的时间。",
+          "explanation": "即使是可中断的工作，也需要确保能够按时限恢复的方法，以及所需时间的估算。"
+        },
+        {
+          "id": "b",
+          "text": "根据峰值需求昼夜持续预留足够的按需容量，即使不执行任务的时段也保持运行。",
+          "explanation": "这种方式在运营上很简单，但会产生仅在夜间使用的容量成本，也没有利用工作可中断这一条件。"
+        },
+        {
+          "id": "c",
+          "text": "对于可中断的工作，优先考虑 Spot，并测量恢复所需的时间。同时，规划在截止时间临近时使用按需容量。",
+          "explanation": "这种方案利用工作可中断的特点来降低成本，同时准备替代方案，以确保在处理期限前完成任务。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-cost-3",
+      "prompt": "有一个提议是将预订服务的 DB 更换为较小的实例，以降低月度费用。合同要求预订确认的 p95 延迟保持在 400 毫秒以内，而月末到达的流量通常是平时的 2 倍。在设计评审中，应确认哪些条件？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "确认工作日白天的平均 CPU 利用率较低，并且月度费用会低于当前费用。",
+          "explanation": "仅凭平均值和费用，无法判断月末高峰期间是否能够满足响应时间要求。"
+        },
+        {
+          "id": "b",
+          "text": "在相当于月末的负载下确认响应时间、错误率、DB 的剩余容量和恢复步骤，并将其与当前方案进行比较，同时计入额外费用。",
+          "explanation": "这样可以根据要求判断低成本配置是否满足所需的质量标准，以及发生故障时是否能够回退。"
+        },
+        {
+          "id": "c",
+          "text": "仅确认 DB 实例数量和存储容量相同。",
+          "explanation": "即使实例数量和存储容量相同，可用的 CPU、内存和输入输出余量也可能不同，从而影响响应时间。"
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "S3 storage class",
+    "S3 Lifecycle",
+    "Spot Instances",
+    "On-Demand Instances",
+    "RTO",
+    "RPO",
+    "p95",
+    "AWS Well-Architected Framework"
+  ]
+}

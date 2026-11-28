@@ -1,0 +1,159 @@
+{
+  "id": "resilient-architecture",
+  "title": "设计具有弹性的架构",
+  "objective": "根据故障范围、RTO、RPO 和恢复流程设计可用性与数据保护方案。",
+  "prerequisites": [
+    {
+      "slug": "secure-architecture",
+      "title": "设计安全架构",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "failure-scope",
+      "title": "根据故障范围确定恢复目标",
+      "paragraphs": [
+        "订单服务负责人会为每项业务确定恢复时间目标（RTO）和恢复点目标（RPO）。RTO表示希望在多少分钟内恢复服务，RPO表示必须恢复到哪个时间点的数据。",
+        "图的上半部分表示：一个 AZ 发生故障时，切换到同一 Region 中的备用 DB。对于中间部分所示的整个 Region 停止运行的情况，需要提前将备份复制到另一个 Region，然后测量恢复 DB 并切换应用程序连接目标所需的时间。对于下半部分所示的误删除，应选择删除前一刻的恢复时间点。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon RDS 多可用区 DB 实例部署",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html"
+        },
+        {
+          "label": "将 RDS 自动备份复制到另一个 Region",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_ReplicateBackups.html"
+        },
+        {
+          "label": "规划恢复目标和灾难恢复",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/reliability-pillar/plan-for-disaster-recovery-dr.html"
+        }
+      ],
+      "figureId": "saa-rds-recovery-boundaries"
+    },
+    {
+      "id": "decouple",
+      "title": "将故障隔离在异步处理中",
+      "paragraphs": [
+        "如果将订单确认与图像转换进行同步连接，转换端的临时故障就会阻止订单 API 响应。设计人员使用持久消息传递来分离这些处理，并定义重试、重复消息和失败时的处理方式。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon SQS 可见性超时",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "title": "恢复包括验证在内",
+      "paragraphs": [
+        "恢复负责人确定恢复顺序和完整性验证方法，并预先验证切换用户连接目标的条件。",
+        "在订单表于10:15被误删除的案例中，确认可以恢复到10:14，并将其恢复到另一个RDS DB实例。在恢复后的DB中确定缺失的订单，同时核对10:14之后接收的有效订单。备齐业务所需的订单并完成连接测试后，再更改用户使用的连接目标。"
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        },
+        {
+          "label": "将Amazon RDS的DB实例恢复到特定时间点",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/USER_PIT.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-resilient-1",
+      "prompt": "即使同一 Region 中的一个 AZ 变得不可用，也必须在 10 分钟内恢复订单 API。目前，ALB 后面的应用程序和 RDS 都只位于一个 AZ 中。应验证哪种方案？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "将备份复制到另一个 Region，并在发生故障时手动将其恢复到新环境中。",
+          "explanation": "备份很重要，但该方案要求每次发生 AZ 故障时都在另一个 Region 中进行恢复。目前仍然没有能够在 10 分钟内恢复的路径。"
+        },
+        {
+          "id": "b",
+          "text": "仅将应用程序部署到两个 AZ 中，并继续按当前方式使用单个 AZ 中的 RDS。",
+          "explanation": "即使应用程序仍然可用，如果共享数据库受到故障影响，也无法处理订单。"
+        },
+        {
+          "id": "c",
+          "text": "将应用程序部署到两个 AZ 中，并同时为 RDS 使用多可用区部署。假设发生 AZ 故障，并测量订单恢复处理所需的时间。",
+          "explanation": "这样可以为应用程序和数据库都提供在另一个 AZ 中继续处理的方式，从而验证是否确实达到 10 分钟的目标。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-resilient-2",
+      "prompt": "有一个商品注册服务，即使图像转换需要几分钟也没有问题。注册本身已经记录完毕，转换请求已发送到 Amazon SQS。如果转换处理在消息保留期内停止约 30 分钟，怎样才能不让注册页面等待，并在恢复后获取尚未处理的请求？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "从注册页面同步调用转换处理，只延长响应超时时间。",
+          "explanation": "这种设计会让注册页面一直等待，直到转换完成。它不满足将工作解耦的要求。"
+        },
+        {
+          "id": "b",
+          "text": "从队列异步处理转换，并在成功后删除消息。为重试做好准备，使同一请求始终产生相同结果。",
+          "explanation": "未处理的请求可以保留在队列中。即使消息被再次投递，处理也可以避免重复注册同一图像。"
+        },
+        {
+          "id": "c",
+          "text": "在转换处理收到消息时立即删除该消息，并在结束后只写入结果。",
+          "explanation": "如果转换处理在中途停止，用于重新处理该请求的消息已经被删除。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-resilient-3",
+      "prompt": "订单系统的数据库管理员在跨多个 AZ 运行的 Amazon RDS 中误删了部分订单。已启用自动备份，并已确认可以将数据库恢复到删除前的时间点。要在保留删除后接收的正常订单于当前数据库中的同时恢复已删除的订单，应采用哪种操作步骤？请选择一项。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "将另一个 DB 实例恢复到删除前的时间点，提取所需的行，与当前数据库进行核对，然后将这些行恢复到当前数据库。",
+          "explanation": "这样既可以查看删除前的行，也可以将恢复目标中不包含的新订单保留在当前数据库中。"
+        },
+        {
+          "id": "b",
+          "text": "切换到 Multi-AZ 备用实例，并将其作为删除前的状态使用。",
+          "explanation": "误删除也会同步到备用实例。要选择删除前的时间点，必须从自动备份执行时间点恢复。"
+        },
+        {
+          "id": "c",
+          "text": "直接将恢复到删除前时间点的数据库用作生产连接目标。",
+          "explanation": "恢复目标中不包含指定时间之后确认的订单，因此不进行核对就无法满足要求。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "RTO",
+    "RPO",
+    "AZ",
+    "AWS Region",
+    "RDS",
+    "Multi-AZ deployment",
+    "PITR",
+    "SQS",
+    "Queue",
+    "Idempotency",
+    "Visibility timeout",
+    "Backup",
+    "Failover"
+  ]
+}

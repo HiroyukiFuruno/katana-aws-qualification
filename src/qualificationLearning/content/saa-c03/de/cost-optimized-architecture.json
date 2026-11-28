@@ -1,0 +1,140 @@
+{
+  "id": "cost-optimized-architecture",
+  "title": "Eine kostenoptimierte Architektur entwerfen",
+  "objective": "Kosten und Einschränkungen anhand des Nutzungsvolumens, der Zugriffshäufigkeit, der Verfügbarkeitsanforderungen und des Betriebsaufwands vergleichen.",
+  "prerequisites": [
+    {
+      "slug": "high-performance-architecture",
+      "title": "Hochleistungsarchitekturen entwerfen",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "cost-model",
+      "title": "Kosten mit Nutzungsmustern verknüpfen",
+      "paragraphs": [
+        "Kostenoptimierung berücksichtigt die Nutzung sowie die Anforderungen an Leistung und Verfügbarkeit. Verantwortliche unterscheiden zwischen kontinuierlicher Nutzung, variabler Auslastung, vorhersehbaren Nutzungszeiträumen und unterbrechbaren Verarbeitungsvorgängen. Anschließend vergleichen sie die Kosten der Optionen, die die Anforderungen erfüllen."
+      ],
+      "sources": [
+        {
+          "label": "Prüfungsleitfaden für SAA-C03",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "EC2-Spot-Instances",
+          "url": "https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/using-spot-instances.html"
+        }
+      ]
+    },
+    {
+      "id": "storage-lifecycle",
+      "title": "Den Speicherort anhand der Zugriffshäufigkeit und Aufbewahrungsdauer auswählen",
+      "paragraphs": [
+        "In S3 können Sie anhand der Anforderungen für häufig gelesene Daten, seltenen Zugriff oder Archivierung eine Speicherklasse auswählen. Lebenszykluskonfigurationen können Daten in eine andere Klasse verschieben oder ablaufen lassen; Sie sollten jedoch auch die Wiederherstellungszeit und die Mindestspeicherdauer bewerten."
+      ],
+      "sources": [
+        {
+          "label": "Was ist Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Amazon-S3-Speicherklassen",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/storage-class-intro.html"
+        }
+      ]
+    },
+    {
+      "id": "review-tradeoffs",
+      "title": "Designänderungen anhand von Qualität und Kosten neu bewerten",
+      "paragraphs": [
+        "Wenn das Design eines Reservierungsdienstes geändert wird, sollten in derselben Tabelle nicht nur die monatlichen Kosten, sondern auch RTO, RPO, Latenz, Betriebsaufwand und Pflichten zur Datenaufbewahrung verglichen werden. Well-Architected bietet einen Rahmen, um die Vor- und Nachteile von Designentscheidungen zu prüfen."
+      ],
+      "sources": [
+        {
+          "label": "AWS Well-Architected Framework",
+          "url": "https://docs.aws.amazon.com/ja_jp/wellarchitected/latest/framework/welcome.html"
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-cost-1",
+      "prompt": "Ein Verantwortlicher für die Datenplattform speichert in Amazon S3 Prüfdateien, die gesetzlich 7 Jahre lang aufbewahrt werden müssen. Im Normalbetrieb werden sie fast nie gelesen, aber sobald eine Prüfung beginnt, muss jede einzelne Datei innerhalb von 1 Minute abgerufen werden können. Welche Vorgehensweise ist bei der Überprüfung der Speicherkosten geeignet?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Klassen für seltene Zugriffe mit sofortigem Abruf als Kandidaten berücksichtigen und Abrufe ohne Wiederherstellung, die minimale Speicherdauer sowie Abrufgebühren mit den Aufbewahrungsanforderungen vergleichen.",
+          "explanation": "So lassen sich Speicher- und Abrufkosten für Kandidaten vergleichen, die sowohl die geringe Zugriffshäufigkeit als auch die kurze erforderliche Abrufzeit erfüllen."
+        },
+        {
+          "id": "b",
+          "text": "Das Archiv mit den niedrigsten Speicherkosten auswählen und am Tag der Prüfung eine Wiederherstellungsanforderung senden.",
+          "explanation": "Eine Auswahl allein nach den Speicherkosten erfüllt möglicherweise nicht die Anforderung, Dateien innerhalb von 1 Minute abzurufen."
+        },
+        {
+          "id": "c",
+          "text": "Die Verschlüsselung ruhender Daten beibehalten und ältere Dateien vor Ablauf der Aufbewahrungsfrist löschen, um Kosten zu senken.",
+          "explanation": "Die Verschlüsselung ist keine Grundlage dafür, die Aufbewahrungsdauer zu verkürzen. Dies würde gegen die Aufbewahrungspflicht verstoßen."
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-cost-2",
+      "prompt": "Ein nächtlicher Batch zur Bildneuerstellung kann den bisherigen Fortschritt speichern und auf einer anderen Instance fortgesetzt werden. Die Verarbeitung muss bis 6 Uhr morgens abgeschlossen sein. Es ist jedoch unproblematisch, wenn einzelne Ausführungen unterbrochen werden, sofern sie bis zum Termin fortgesetzt werden können. Welche Option eignet sich zur Kostensenkung?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Die gesamte Arbeit auf einer einzigen Spot Instance ausführen und die für die Fortsetzung nach einer Unterbrechung benötigte Zeit nicht messen.",
+          "explanation": "Auch bei unterbrechbaren Arbeiten benötigen Sie eine Möglichkeit zur Fortsetzung, mit der die Frist eingehalten werden kann, sowie eine Messung der dafür erforderlichen Zeit."
+        },
+        {
+          "id": "b",
+          "text": "Für den Spitzenbedarf rund um die Uhr On-Demand-Kapazität reservieren und sie auch in Zeiträumen weiterlaufen lassen, in denen keine Arbeit ausgeführt wird.",
+          "explanation": "Das ist betrieblich einfach, verursacht aber Kosten für Kapazität, die nur nachts genutzt wird. Außerdem wird die Möglichkeit, die Arbeit zu unterbrechen, nicht genutzt."
+        },
+        {
+          "id": "c",
+          "text": "Für unterbrechbare Arbeiten Spot in Betracht ziehen und die für die Fortsetzung benötigte Zeit messen. Zusätzlich On-Demand-Kapazität einplanen, falls die Frist näher rückt.",
+          "explanation": "So lassen sich die Kosten senken, indem die Unterbrechbarkeit der Arbeit genutzt wird, während zugleich eine Alternative zur Einhaltung der Verarbeitungsfrist bereitsteht."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-cost-3",
+      "prompt": "Es gibt den Vorschlag, die DB des Reservierungsdienstes durch eine kleinere Instance zu ersetzen, um die monatlichen Kosten zu senken. Ein Vertrag schreibt vor, die p95-Latenz für die Bestätigung von Reservierungen bei höchstens 400 Millisekunden zu halten, und am Monatsende trifft normalerweise das Doppelte des üblichen Datenverkehrs ein. Welche Bedingungen sollten bei der Designprüfung überprüft werden?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Überprüfen, ob die durchschnittliche CPU-Auslastung tagsüber an Werktagen niedrig ist und die monatlichen Kosten unter den bisherigen Kosten liegen werden.",
+          "explanation": "Anhand des Durchschnittswerts und der Kosten allein lässt sich nicht feststellen, ob die Vorgabe für die Antwortzeit während der Auslastungsspitze am Monatsende eingehalten werden kann."
+        },
+        {
+          "id": "b",
+          "text": "Bei einer Last, die der Situation am Monatsende entspricht, die Antwortzeit, die Fehlerrate, die verfügbaren DB-Kapazitätsreserven und die Wiederherstellungsverfahren überprüfen und die Ergebnisse einschließlich zusätzlicher Kosten mit der aktuellen Lösung vergleichen.",
+          "explanation": "So lässt sich anhand der Anforderungen beurteilen, ob die günstigere Konfiguration die erforderliche Qualität erfüllt und ob sie bei einem Fehler zurückgesetzt werden kann."
+        },
+        {
+          "id": "c",
+          "text": "Nur überprüfen, ob die Anzahl der DB-Instanzen und die Speicherkapazität gleich sind.",
+          "explanation": "Auch bei gleicher Anzahl von Instanzen und gleicher Speicherkapazität können die verfügbaren Reserven bei CPU, Arbeitsspeicher und Ein-/Ausgabe unterschiedlich sein und dadurch die Antwortzeit beeinflussen."
+        }
+      ],
+      "correct": ["b"]
+    }
+  ],
+  "glossaryTerms": [
+    "S3",
+    "S3 storage class",
+    "S3 Lifecycle",
+    "Spot Instances",
+    "On-Demand Instances",
+    "RTO",
+    "RPO",
+    "p95",
+    "AWS Well-Architected Framework"
+  ]
+}

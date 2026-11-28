@@ -1,0 +1,143 @@
+{
+  "id": "high-performance-architecture",
+  "title": "設計高效能架構",
+  "objective": "能夠根據請求模式、資料存取方式和網路路徑選擇效能最佳化措施。",
+  "prerequisites": [
+    {
+      "slug": "resilient-architecture",
+      "title": "設計具韌性的架構",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure",
+      "title": "讓效能需求變得可觀測",
+      "paragraphs": [
+        "設計人員會將「快速」這項模糊需求分解為目標操作、同時使用者數、p95 延遲、輸送量和可接受的錯誤率。不能只依據 CPU 判斷使用者體驗。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-data",
+      "title": "適當縮短重複讀取的距離",
+      "paragraphs": [
+        "對於商品目錄這類讀取頻繁但更新頻率較低的資料，可以考慮使用快取或 CDN。不過，必須決定更新後可接受舊值持續多久、如何使快取失效，以及發生故障時系統應如何運作。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "performance-path",
+      "title": "追蹤從使用者到資料的延遲",
+      "paragraphs": [
+        "在提供商品清單的服務中，如果 CloudFront 有所需的回應，就可以立即傳回該回應。如果無法從快取傳回回應，CloudFront 就會連線到來源。在此情境中，將面向公網的 ALB 指定為來源，ALB 會將請求轉送到私有子網路中的應用程式。DNS 用於根據名稱查找連線目標。",
+        "當使用者的回應時間變長時，首先將從快取傳回的請求與到達來源的請求區分開來。將繼續前往來源的請求之回應時間與 ALB 目標回應時間進行比較，可以縮小下一步需要測量的區段範圍。在應用程式端，檢查處理相同商品之請求的 DB 等待時間等指標。",
+        "圖中比較了由 CloudFront 傳回回應的情況，以及請求從 ALB 繼續到應用程式的情況。應能針對每條路徑說明，哪些測量值可以協助找出延遲增加的位置。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考試指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "CloudFront 指標",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/monitoring-using-cloudwatch.html"
+        }
+      ],
+      "figureId": "saa-performance-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-performance-1",
+      "prompt": "線上商店向許多使用者提供相同的產品目錄。它希望利用 CloudFront 的共用快取加快回應，同時在緊急修正價格時，不必等待通常的 TTL 就能更新受影響頁面的快取。哪種策略適當？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "以相同的長 TTL 保存整個目錄，價格變更時只更新來源內容。",
+          "explanation": "由於快取中的回應會持續使用到過期，因此沒有機制能立即反映緊急修正。"
+        },
+        {
+          "id": "b",
+          "text": "根據新鮮度需求設定 TTL，並在緊急情況下使受影響的路徑失效。同時確認變更後的頁面確實已送出。",
+          "explanation": "這同時處理了正常的回應效率與有效期限內的新鮮度；發生緊急情況時，也能只針對受影響的內容重新擷取頁面。"
+        },
+        {
+          "id": "c",
+          "text": "對整個目錄停用 CloudFront 快取。",
+          "explanation": "這能反映來源的更新，但無法滿足利用共用快取加快讀取速度的要求。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-performance-2",
+      "prompt": "訂單 API 的使用者回報，只有訂單確認變慢了。當營運人員想了解相同操作的延遲影響了多少使用者，並在考量負載差異的情況下比較變更前後時，應收集哪些記錄？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "比較變更前後訂單確認的回應時間 p95、錯誤率和請求數，並使用長度相同的時間區間與相同的彙總條件。",
+          "explanation": "如此即可將較慢的回應與失敗及負載差異連結起來，以調查對使用者的影響。"
+        },
+        {
+          "id": "b",
+          "text": "只比較所有 API 的平均回應時間，以及整個服務的平均 CPU 使用率。",
+          "explanation": "訂單確認本身的問題，以及特別慢的請求，會被彙總結果掩蓋。"
+        },
+        {
+          "id": "c",
+          "text": "排除錯誤後，只單獨檢查一次回應時間的最大值，不考慮請求數。",
+          "explanation": "結果會受到單一極端值和樣本數差異的影響，因此無法比較對所有使用者的影響。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-performance-3",
+      "prompt": "商品目錄使用者端的 p95 回應時間變差了。CloudFront 從快取傳回的回應仍和以往一樣快速，只有不在快取中的商品變慢。營運人員首先應進行哪項調查？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只重新測量從 CloudFront 快取傳回的回應，不檢查應用程式。",
+          "explanation": "只重新測量較快的回應，無法找出已到達來源的請求在哪個環節發生延遲。"
+        },
+        {
+          "id": "b",
+          "text": "加總 ALB 處理的所有 HTTP 請求，如果請求數增加，就一次使快取失效。",
+          "explanation": "僅憑請求數增加無法找出延遲發生的位置。一次使所有快取失效可能會增加來源的負載。"
+        },
+        {
+          "id": "c",
+          "text": "針對相同的商品和時段，將無法從快取傳回的請求之來源回應時間，與 ALB 和應用程式的測量結果互相比對。",
+          "explanation": "這能區分 CloudFront 到來源之間的區段與應用程式端的等待時間，並據此選擇下一步要在哪裡進行更詳細的測量。"
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFront",
+    "CDN",
+    "DNS",
+    "TTL",
+    "Cache hit ratio",
+    "Cache invalidation",
+    "Origin",
+    "ALB",
+    "TargetResponseTime",
+    "p95",
+    "Error rate",
+    "Throughput",
+    "ElastiCache"
+  ]
+}

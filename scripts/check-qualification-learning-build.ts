@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { studyCourses } from '../src/certifications.ts';
 import { localePath, locales } from '../src/locales.ts';
@@ -7,6 +7,7 @@ import figures from '../src/qualificationLearning/figures.json' with { type: 'js
 import {
   qualificationLearningPages,
   qualificationLearningRoute,
+  qualificationPrerequisitePath,
 } from '../src/qualificationLearning/routes.ts';
 import type { StudyFigure, StudyUnit } from '../src/qualificationLearning/types.ts';
 import { isAnswerComplete, isCorrectAnswer, parseQuestions } from '../src/questions.ts';
@@ -16,7 +17,6 @@ const figureBank: Record<string, StudyFigure> = figures;
 const assetPrefix = '/qualification-learning/figures/';
 const sitemap = await readFile('dist/sitemap.xml', 'utf8');
 assert(qualificationLearningPages.length, 'No published qualification learning content');
-
 const allExistingIds = new Set<string>();
 for (const { course } of studyCourses) {
   if (!course) continue;
@@ -53,7 +53,6 @@ for (const figure of Object.values(figureBank)) {
   assert(viewBox?.length === 4 && viewBox.every(Number.isFinite), figure.src);
   assert.deepEqual([figure.width, figure.height], viewBox.slice(2).map(Math.ceil), figure.src);
 }
-
 const courseQuestionIds = new Set<string>();
 const keyFor = (unit: StudyUnit) => ({
   id: unit.id,
@@ -67,7 +66,7 @@ const keyFor = (unit: StudyUnit) => ({
     correct,
     choices.map(({ id }) => id),
   ]),
-  prerequisites: unit.prerequisites.map(({ slug }) => slug),
+  prerequisites: unit.prerequisites.map(({ courseId, slug }) => [courseId, slug]),
   glossaryTerms: unit.glossaryTerms,
 });
 const identities = new Map<string, ReturnType<typeof keyFor>>();
@@ -118,6 +117,8 @@ for (const locale of ['ja' as const, ...locales.filter((value) => value !== 'ja'
         courseQuestionIds.add(question.id);
       }
     } else assert.deepEqual(keyFor(unit), identities.get(page), assetPath);
+    for (const item of unit.prerequisites)
+      await access(join('dist', qualificationPrerequisitePath(locale, item), 'index.html'));
     for (const term of unit.glossaryTerms) assert(glossary.has(term), `${assetPath}/${term}`);
     for (const section of unit.sections) {
       assert(section.paragraphs.length && section.sources.length, `${assetPath}/${section.id}`);

@@ -1,0 +1,174 @@
+{
+  "id": "secure-architecture",
+  "title": "Designing a Secure Architecture",
+  "objective": "Explain the responsibilities for authentication, authorization, encryption, and auditing for users, data, and communication paths.",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "Authentication and Authorization"
+    },
+    {
+      "slug": "data-protection",
+      "title": "Data Protection"
+    }
+  ],
+  "sections": [
+    {
+      "id": "least-privilege",
+      "title": "Minimizing Effective Permissions",
+      "paragraphs": [
+        "A retail company architect designs an IAM role that can access only the S3 buckets required by the order API. The architect separates who is authenticated from which actions are permitted on which resources, and does not use broad administrator permissions as the default.",
+        "S3 buckets and objects are private by default. Combine IAM policies, bucket policies, and Block Public Access according to the requirements, and even when public delivery is needed, allow only the delivery path."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "What is Amazon S3?",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "IAM Features for Amazon S3",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/security_iam_service-with-iam.html"
+        }
+      ]
+    },
+    {
+      "id": "data-and-keys",
+      "title": "Choosing a Protection Method Based on Data Classification",
+      "paragraphs": [
+        "Designers handling medical appointment data evaluate data at rest and data in transit separately. For encryption at rest, they verify the key owner, the principals authorized to use it, audit records, and its use during recovery.",
+        "For encryption in transit, they diagram each segment—from the user to the entry point, from the entry point to the workload, and between the VPC and on-premises systems—and show where TLS or IPsec terminates. Encryption alone does not eliminate the need to design access permissions."
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 Exam Guide",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Application Load Balancer target groups",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-target-groups.html"
+        }
+      ]
+    },
+    {
+      "id": "secure-vpc-path",
+      "title": "Map Traffic Paths to Control Points",
+      "paragraphs": [
+        "The user's browser connects to a public-facing ALB. The ALB terminates that connection and opens a separate connection to the application in a private subnet. The application then opens another connection to the RDS database that handles order data. Decide separately for each segment which traffic to encrypt and which source traffic to allow.",
+        "Route tables select the next destination for traffic. Security groups allow connections to network interfaces, such as those used by the application, and also allow responses to permitted traffic. Network ACLs evaluate inbound and outbound traffic separately at the subnet boundary.",
+        "In the diagram, first identify which subnets contain the ALB, application, and database. Then determine which boundaries the requests and responses cross and where an additional permission is required for the response."
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: Configure route tables",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "Network ACL scope of application",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
+        },
+        {
+          "label": "ALB security groups",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html"
+        }
+      ],
+      "figureId": "saa-secure-vpc-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-secure-1",
+      "prompt": "The Invoice API retrieves invoices under `invoices/` from a private S3 bucket in the same AWS account (encrypted with an S3-managed key), specifying the object key. It does not list or update objects. Which permission is appropriate for the API's execution role?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Allow `s3:GetObject` for objects throughout the bucket.",
+          "explanation": "Although this is limited to retrieval, it also allows reading from prefixes other than the invoice prefix."
+        },
+        {
+          "id": "b",
+          "text": "Allow `s3:GetObject` only for objects under `invoices/`.",
+          "explanation": "This limits both the required operation and its target. Because the object key is known, bucket-listing permission is not required."
+        },
+        {
+          "id": "c",
+          "text": "Allow `s3:ListBucket` on the bucket and add a condition for `invoices/` to the listing.",
+          "explanation": "Listing objects and reading their contents are separate operations. `s3:GetObject` is not allowed."
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-secure-2",
+      "prompt": "A medical appointment service must encrypt the connections between the browser and the public ALB, and between the ALB and the private EC2 instance. If TLS on the browser side is terminated at the ALB, which configuration is appropriate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Place an HTTPS listener on the ALB and use HTTP for forwarding from the ALB to EC2.",
+          "explanation": "The user-facing connection is encrypted, but communication from the ALB to EC2 is not encrypted."
+        },
+        {
+          "id": "b",
+          "text": "Have the ALB receive traffic over HTTP and use HTTPS only for forwarding from the ALB to EC2.",
+          "explanation": "Because only the connection to EC2 is encrypted, this does not meet the requirement for the connection between the browser and the ALB."
+        },
+        {
+          "id": "c",
+          "text": "Place an HTTPS listener on the ALB and configure HTTPS for the target group used to forward traffic from the ALB to EC2 as well.",
+          "explanation": "The ALB terminates TLS with the user and opens a separate HTTPS connection to the target. Both connections are encrypted."
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-secure-3",
+      "prompt": "A node of a public ALB connects to TCP 443 on a private EC2 instance using TCP 49152 as the source port. The security group on the EC2 side allows this connection, and the EC2 subnet uses a network ACL. The request reaches the EC2 instance, but the response leaving the EC2 subnet is denied. Which response should be allowed by the network ACL on the EC2 side?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Allow the response from the EC2 subnet to the ALB subnet with destination TCP port 49152.",
+          "explanation": "Network ACLs require the two directions to be allowed separately. The destination of this response is the port that the ALB node used as the source port for the connection."
+        },
+        {
+          "id": "b",
+          "text": "Allow the response from the EC2 subnet to the ALB subnet with destination TCP port 443.",
+          "explanation": "Port 443 is the port on which the EC2 instance received the request in this connection. The response is destined for TCP port 49152 on the ALB node."
+        },
+        {
+          "id": "c",
+          "text": "Allow inbound TCP 49152 to the EC2 subnet.",
+          "explanation": "The response leaves the EC2 subnet. Adding an inbound rule does not resolve the outbound denial."
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM policy",
+    "Resource-based policy",
+    "S3",
+    "Bucket policy",
+    "GetObject",
+    "S3 Block Public Access",
+    "SSE-S3",
+    "KMS",
+    "TLS",
+    "IPsec",
+    "VPC",
+    "ALB",
+    "EC2",
+    "NACL",
+    "Security group",
+    "ENI",
+    "Route table",
+    "Target group",
+    "HTTPS",
+    "TCP",
+    "Ephemeral port"
+  ]
+}

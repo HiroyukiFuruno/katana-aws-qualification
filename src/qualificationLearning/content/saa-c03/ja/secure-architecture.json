@@ -1,0 +1,174 @@
+{
+  "id": "secure-architecture",
+  "title": "セキュアなアーキテクチャを設計する",
+  "objective": "利用者、データ、通信経路ごとに認証、認可、暗号化、監査の責任を説明できる。",
+  "prerequisites": [
+    {
+      "slug": "identity-access",
+      "title": "認証と認可"
+    },
+    {
+      "slug": "data-protection",
+      "title": "データ保護"
+    }
+  ],
+  "sections": [
+    {
+      "id": "least-privilege",
+      "title": "実効権限を最小化する",
+      "paragraphs": [
+        "小売会社の設計者は、注文APIが必要とするS3バケットだけへアクセスできるIAMロールを設計します。誰が認証され、どのアクションをどのリソースへ許可するかを分け、広い管理者権限を初期値にしません。",
+        "S3バケットとオブジェクトはデフォルトでプライベートです。IAMポリシー、バケットポリシー、ブロックパブリックアクセスを要件に応じて組み合わせ、公開配信が必要な場合も配信経路だけを許可します。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Amazon S3 とは",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/Welcome.html"
+        },
+        {
+          "label": "Amazon S3でのIAMの機能",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonS3/latest/userguide/security_iam_service-with-iam.html"
+        }
+      ]
+    },
+    {
+      "id": "data-and-keys",
+      "title": "データの分類から保護方式を選ぶ",
+      "paragraphs": [
+        "医療予約データを扱う設計者は、保存中と転送中のデータを別々に評価します。保存中の暗号化では、鍵の所有者、利用を許可する主体、監査記録、復旧時の利用を確認します。",
+        "転送中の暗号化では、利用者から入口、入口からワークロード、VPCとオンプレミスの各区間を図にし、TLSまたはIPsecがどこで終端するかを示します。暗号化だけでアクセス許可の設計を省略できるわけではありません。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 試験ガイド",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "Application Load Balancerのターゲットグループ",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-target-groups.html"
+        }
+      ]
+    },
+    {
+      "id": "secure-vpc-path",
+      "title": "通信経路と制御点を対応付ける",
+      "paragraphs": [
+        "利用者のブラウザーは公開ALBへ接続します。ALBはその接続を終端し、プライベートサブネットにあるアプリへ別の接続を開きます。アプリは、注文データを扱うRDSへさらに別の接続を開きます。どの区間を暗号化し、どの送信元の通信を許可するかを、区間ごとに決めます。",
+        "ルートテーブルは通信を次に送る先を選びます。セキュリティグループはアプリなどのネットワークインターフェイスに対して接続を許可し、許可した通信への応答も通します。ネットワークACLはサブネットの境界で、受信と送信を別々に評価します。",
+        "図では、ALB、アプリ、DBが何のサブネットにあるかを先に確認してください。その上で、要求と応答がどの境界を通り、応答に対して別の許可が必要な箇所を見分けます。"
+      ],
+      "sources": [
+        {
+          "label": "Amazon VPC: ルートテーブルを設定する",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/VPC_Route_Tables.html"
+        },
+        {
+          "label": "ネットワークACLの適用範囲",
+          "url": "https://docs.aws.amazon.com/ja_jp/vpc/latest/userguide/vpc-network-acls.html"
+        },
+        {
+          "label": "ALBのセキュリティグループ",
+          "url": "https://docs.aws.amazon.com/ja_jp/elasticloadbalancing/latest/application/load-balancer-update-security-groups.html"
+        }
+      ],
+      "figureId": "saa-secure-vpc-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-secure-1",
+      "prompt": "請求書APIは、同じAWSアカウントの非公開S3バケット（S3マネージドキーで暗号化）にある `invoices/` 配下の請求書を、キーを指定して取得します。一覧の取得や更新は行いません。APIの実行ロールに与える権限として適切なものはどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "バケット全体のオブジェクトを対象に `s3:GetObject` を許可する。",
+          "explanation": "取得だけに制限していますが、請求書以外のプレフィックスからも読み取れます。"
+        },
+        {
+          "id": "b",
+          "text": "`invoices/` 配下のオブジェクトだけを対象に `s3:GetObject` を許可する。",
+          "explanation": "必要な操作と対象の両方を限定できます。オブジェクトのキーが分かっているため、バケットの一覧権限は不要です。"
+        },
+        {
+          "id": "c",
+          "text": "バケットを対象に `s3:ListBucket` を許可し、一覧に `invoices/` の条件を付ける。",
+          "explanation": "一覧の取得と内容の読み取りは別の操作です。`s3:GetObject` が許可されていません。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-secure-2",
+      "prompt": "医療予約サービスでは、ブラウザーと公開ALBの間、およびALBと非公開EC2の間を暗号化する必要があります。ブラウザー側のTLSをALBで終端する場合、設定として適切なものはどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "ALBにHTTPSリスナーを置き、ALBからEC2への転送にはHTTPを使う。",
+          "explanation": "利用者側は暗号化されますが、ALBからEC2への通信は暗号化されません。"
+        },
+        {
+          "id": "b",
+          "text": "ALBはHTTPで受け、ALBからEC2への転送だけをHTTPSにする。",
+          "explanation": "EC2への区間だけを暗号化するため、ブラウザーとALBの間の要件を満たしません。"
+        },
+        {
+          "id": "c",
+          "text": "ALBにHTTPSリスナーを置き、ALBからEC2へのターゲットグループにもHTTPSを設定する。",
+          "explanation": "ALBは利用者とのTLSを終端し、ターゲットへ別のHTTPS接続を開きます。両区間で暗号化します。"
+        }
+      ],
+      "correct": ["c"]
+    },
+    {
+      "id": "saa-secure-3",
+      "prompt": "公開ALBのノードがTCP 49152を送信元ポートにして、非公開EC2のTCP 443へ接続します。EC2側のセキュリティグループはこの接続を許可し、EC2のサブネットではネットワークACLを使っています。要求はEC2に届きますが、EC2のサブネットを出る応答が拒否されています。EC2側のネットワークACLで許可すべき応答はどれですか。",
+      "choices": [
+        {
+          "id": "a",
+          "text": "EC2のサブネットからALBのサブネットへ、宛先TCP 49152の応答を許可する。",
+          "explanation": "ネットワークACLでは往復を個別に許可します。この応答の宛先はALBノードが接続元に使ったポートです。"
+        },
+        {
+          "id": "b",
+          "text": "EC2のサブネットからALBのサブネットへ、宛先TCP 443の応答を許可する。",
+          "explanation": "443はこの接続でEC2が要求を受けたポートです。応答先はALBノードのTCP 49152です。"
+        },
+        {
+          "id": "c",
+          "text": "EC2のサブネットへの受信TCP 49152を許可する。",
+          "explanation": "応答はEC2のサブネットから出ます。受信のルールを追加しても送信側の拒否は解消しません。"
+        }
+      ],
+      "correct": ["a"]
+    }
+  ],
+  "glossaryTerms": [
+    "IAM",
+    "IAM role",
+    "IAM policy",
+    "Resource-based policy",
+    "S3",
+    "Bucket policy",
+    "GetObject",
+    "S3 Block Public Access",
+    "SSE-S3",
+    "KMS",
+    "TLS",
+    "IPsec",
+    "VPC",
+    "ALB",
+    "EC2",
+    "NACL",
+    "Security group",
+    "ENI",
+    "Route table",
+    "Target group",
+    "HTTPS",
+    "TCP",
+    "Ephemeral port"
+  ]
+}

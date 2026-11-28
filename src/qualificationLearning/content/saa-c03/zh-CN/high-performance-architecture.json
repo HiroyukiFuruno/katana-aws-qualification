@@ -1,0 +1,143 @@
+{
+  "id": "high-performance-architecture",
+  "title": "设计高性能架构",
+  "objective": "能够根据请求模式、数据访问方式和网络路径选择性能优化措施。",
+  "prerequisites": [
+    {
+      "slug": "resilient-architecture",
+      "title": "设计具有弹性的架构",
+      "courseId": "saa-c03"
+    }
+  ],
+  "sections": [
+    {
+      "id": "measure",
+      "title": "让性能要求变得可观测",
+      "paragraphs": [
+        "设计人员会将“快速”这一模糊要求分解为目标操作、并发用户数、p95 延迟、吞吐量和可接受的错误率。不能仅凭 CPU 判断用户体验。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "cache-and-data",
+      "title": "适当缩短重复读取的距离",
+      "paragraphs": [
+        "对于商品目录等读取频繁但更新频率较低的数据，可以考虑使用缓存或 CDN。不过，需要确定更新后允许旧值持续多长时间、如何使缓存失效，以及发生故障时系统应如何运行。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        }
+      ]
+    },
+    {
+      "id": "performance-path",
+      "title": "追踪从用户到数据的延迟",
+      "paragraphs": [
+        "在提供商品列表的服务中，如果 CloudFront 有所需的响应，就可以立即返回该响应。如果无法从缓存返回响应，CloudFront 就会连接到源站。在此场景中，将面向公网的 ALB 指定为源站，ALB 会将请求转发到私有子网中的应用程序。DNS 用于根据名称查找连接目标。",
+        "当用户的响应时间变长时，首先将从缓存返回的请求与到达源站的请求区分开来。将继续前往源站的请求的响应时间与 ALB 目标响应时间进行比较，可以缩小下一步需要测量的区段范围。在应用程序侧，检查处理同一商品的请求的 DB 等待时间等指标。",
+        "图中比较了由 CloudFront 返回响应的情况，以及请求从 ALB 继续到应用程序的情况。应能够针对每条路径说明，哪些测量值可以帮助确定延迟增加的位置。"
+      ],
+      "sources": [
+        {
+          "label": "SAA-C03 考试指南",
+          "url": "https://docs.aws.amazon.com/ja_jp/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html"
+        },
+        {
+          "label": "CloudFront 指标",
+          "url": "https://docs.aws.amazon.com/ja_jp/AmazonCloudFront/latest/DeveloperGuide/monitoring-using-cloudwatch.html"
+        }
+      ],
+      "figureId": "saa-performance-path"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "saa-performance-1",
+      "prompt": "一家在线商店向许多用户提供相同的商品目录。它希望利用 CloudFront 的共享缓存来加快响应，同时在紧急修正价格时，无需等待通常的 TTL 即可更新相关页面的缓存。哪种策略合适？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "为整个目录设置相同的较长 TTL，并在价格变更时只更新源站内容。",
+          "explanation": "由于缓存的响应会一直使用到过期，因此没有机制可以立即反映紧急修正。"
+        },
+        {
+          "id": "b",
+          "text": "根据新鲜度要求设置 TTL，并在紧急情况下使受影响的路径失效。同时确认变更后的页面确实已被分发。",
+          "explanation": "这种方式同时处理了正常的响应效率和有效期内的新鲜度；发生紧急情况时，还可以仅针对受影响的内容重新获取页面。"
+        },
+        {
+          "id": "c",
+          "text": "对整个目录禁用 CloudFront 缓存。",
+          "explanation": "这种方式可以反映源站的更新，但无法满足利用共享缓存加快读取速度的要求。"
+        }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "saa-performance-2",
+      "prompt": "订单 API 的用户反馈，只有订单确认变慢了。当运维人员希望了解同一操作的延迟影响了多少用户，并在考虑负载差异的情况下比较变更前后时，应收集哪些记录？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "对比变更前后的订单确认响应时间 p95、错误率和请求数，并使用长度相同的时间窗口和相同的聚合条件。",
+          "explanation": "这样可以将较慢的响应与失败及负载差异联系起来，从而调查对用户的影响。"
+        },
+        {
+          "id": "b",
+          "text": "只比较所有 API 的平均响应时间和整个服务的平均 CPU 使用率。",
+          "explanation": "订单确认特有的问题以及特别慢的请求会被汇总数据掩盖。"
+        },
+        {
+          "id": "c",
+          "text": "排除错误后，只单独检查一次响应时间的最大值，不考虑请求数。",
+          "explanation": "结果会受到单个极端值和样本数差异的影响，因此无法比较对所有用户的影响。"
+        }
+      ],
+      "correct": ["a"]
+    },
+    {
+      "id": "saa-performance-3",
+      "prompt": "商品目录用户侧的 p95 响应时间变差了。CloudFront 从缓存返回的响应仍和以前一样快，只有不在缓存中的商品变慢了。运维人员首先应进行哪项调查？",
+      "choices": [
+        {
+          "id": "a",
+          "text": "只重新测量从 CloudFront 缓存返回的响应，不检查应用程序。",
+          "explanation": "只重新测量较快的响应，无法确定已到达源站的请求在哪个环节发生了延迟。"
+        },
+        {
+          "id": "b",
+          "text": "汇总 ALB 处理的全部 HTTP 请求，如果请求数增加，就一次性使缓存失效。",
+          "explanation": "仅凭请求数增加无法确定延迟发生在哪里。一次性使缓存失效可能会增加源站的负载。"
+        },
+        {
+          "id": "c",
+          "text": "针对相同的商品和时间段，将无法从缓存返回的请求的源站响应时间，与 ALB 和应用程序的测量结果进行对照。",
+          "explanation": "这样可以区分 CloudFront 到源站之间的区段和应用程序侧的等待时间，从而决定下一步应在哪个位置进行更详细的测量。"
+        }
+      ],
+      "correct": ["c"]
+    }
+  ],
+  "glossaryTerms": [
+    "CloudFront",
+    "CDN",
+    "DNS",
+    "TTL",
+    "Cache hit ratio",
+    "Cache invalidation",
+    "Origin",
+    "ALB",
+    "TargetResponseTime",
+    "p95",
+    "Error rate",
+    "Throughput",
+    "ElastiCache"
+  ]
+}
